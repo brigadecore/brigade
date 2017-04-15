@@ -7,3 +7,7 @@ Acid core.
 - `acid-ubuntu`: Basic Ubuntu image plus `make` and `git`
 
 These can be build from the top-level `make docker-build` target.
+
+## What is `hook.sh` for?
+
+The `hook.sh` script is the top-level command

@@ -7,18 +7,27 @@ gopath = "/go"
 // path that Acid sets.
 localPath = gopath + "/src/github.com/" + pr.repository.name
 
-job1 = {
-  name: "run-unit-tests",
-  image: "acid-go:latest",
-  env: {
+job1 = new Job("run-unit-tests");
+
+// Since this is Go, we want a go runner.
+job1.image = "acid-go:latest";
+
+// Set a few environment variables.
+job1.env = {
     "DEST_PATH": localPath,
     "GOPATH": gopath
-  },
-  tasks:[
-    "go get github.com/Masterminds/glide",
-    "glide install",
-    "make test-fast"
-  ]
-}
+};
 
-run(job1, pr)
+job1.secrets = {
+  "DB_USER": "mysecret.username",
+  "DB_PASS": "mysecret.password",
+};
+
+// Run three tasks in order.
+job1.tasks = [
+  "go get github.com/Masterminds/glide",
+  "glide install",
+  "make test-fast"
+];
+
+job1.run(pr);
