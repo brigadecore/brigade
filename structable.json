@@ -1,0 +1,11 @@
+{
+  "ref": "refs/heads/master",
+  "head_commit": {
+    "id": "a1a302ef78ec3d85606dcf104a9a168542004036"
+  },
+  "repository":{
+    "name": "Masterminds/structable",
+    "clone_url": "https://github.com/Masterminds/structable.git"
+  },
+  "sender":{}
+}
