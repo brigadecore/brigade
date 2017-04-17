@@ -1,3 +1,4 @@
 _cache/
 bin/
 vendor/
+chart/rootfs/acid
