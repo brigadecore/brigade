@@ -7,6 +7,7 @@ acidImage = "acid-ubuntu:latest"
 
 // Prototype for Job.
 function Job(name, tasks) {
+  my = this
   // Name will become the prefix for the pod/configmap names.
   this.name = name;
   // Tasks is the list of tasks to run. They are executed in sequence inside of
@@ -24,8 +25,33 @@ function Job(name, tasks) {
   // This will override a matching env var from the env map.
   this.secrets = {}
 
+  // podName is set by run(), and contains the name of the pod created.
+  this.podName
+
   // run sends this job to Kubernetes.
-  this.run = function(pushRecord) { run(this, pushRecord); };
+  this.run = function(pushRecord) { this.podName = run(this, pushRecord); return this; };
+
+  // waitUntilDone waits until a pod hits "Succeeded".
+  // If pod returns "Failed", this throws an exception.
+  // If pod runs for more than 15 minutes (300 * 3-second intervals), throws a timeout exception.
+  this.waitUntilDone = function() {
+    for (i = 0; i < 300; i++) {
+      console.log("checking status of " + my.podName)
+      k = kubernetes.withNS("default")
+      mypod = k.coreV1.pod.get(my.podName)
+      console.log(JSON.stringify(mypod))
+      console.log("Pod " + my.podName + " is in state " + mypod.status.phase)
+      if (mypod.status.phase == "Failed") {
+        throw "Pod " + my.podName + " failed to run to completion";
+      }
+      if (mypod.status.phase == "Succeeded") {
+        return true
+      }
+      // Sleep for a defined amount of time.
+      sleep(3)
+    }
+    throw "timed out waiting for pod " + my.podName + " to run"
+  };
 }
 
 function run(job, pushRecord) {
@@ -77,11 +103,13 @@ function run(job, pushRecord) {
   k = kubernetes.withNS("default")
   console.log("Creating configmap " + cm.metadata.name)
   console.log(JSON.stringify(cm))
-  //k.extensions.configmap.create(cm)
+  k.extensions.configmap.create(cm)
   console.log("Creating pod " + runner.spec.containers[0].name)
   console.log(JSON.stringify(runner))
-  //k.coreV1.pod.create(runner)
+  k.coreV1.pod.create(runner)
   console.log("running...")
+
+  return runnerName;
 }
 
 function newRunnerPod(podname) {
@@ -89,24 +117,25 @@ function newRunnerPod(podname) {
     "kind": "Pod",
     "apiVersion": "v1",
     "metadata": {
-        "name": podname,
-        "namespace": "default",
-        "labels": {
-          "heritage": "Quokka",
-          "managedBy": "acid"
-        }
+      "name": podname,
+      "namespace": "default",
+      "labels": {
+        "heritage": "Quokka",
+        "managedBy": "acid"
+      }
     },
     "spec": {
-        "containers": [
-            {
-                "name": "acidrun",
-                "image": acidImage,
-                "command": [
-                    "/hook.sh"
-                ],
-                "imagePullPolicy": "IfNotPresent"
-            }
-        ]
+      "restartPolicy": "Never",
+      "containers": [
+        {
+          "name": "acidrun",
+          "image": acidImage,
+          "command": [
+            "/hook.sh"
+          ],
+          "imagePullPolicy": "IfNotPresent"
+        }
+      ]
     }
   };
 }
