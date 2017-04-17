@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/Masterminds/vcs"
 	"github.com/deis/quokka/pkg/javascript"
@@ -22,12 +23,18 @@ const (
 
 func main() {
 	router := gin.Default()
+	router.GET("/", func(c *gin.Context) { c.JSON(200, gin.H{"message": "OK"}) })
 	router.POST("/webhook/push", pushWebhook)
 
 	router.Run(":7744")
 }
 
 func pushWebhook(c *gin.Context) {
+
+	// TODO:
+	// - [ ] Validate token
+	// - [ ] Check which event triggered.
+
 	push := &PushHook{}
 	if err := c.BindJSON(push); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
@@ -37,6 +44,8 @@ func pushWebhook(c *gin.Context) {
 	// Start up a build
 	if err := build(push); err != nil {
 		log.Printf("error on pushWebhook: %s", err)
+		// TODO: Make the returned message pretty. We don't need the error message
+		// to go back to GitHub.
 		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
 		return
 	}
@@ -75,6 +84,12 @@ func execScripts(push *PushHook, scripts ...[]byte) error {
 	if err := libk8s.Register(rt.VM); err != nil {
 		return err
 	}
+
+	// FIXME: This should make its way into quokka.
+	rt.VM.Set("sleep", func(seconds int) {
+		time.Sleep(time.Duration(seconds) * time.Second)
+	})
+
 	out, _ := json.Marshal(push)
 	rt.VM.Object("pushRecord = " + string(out))
 	for _, script := range scripts {
