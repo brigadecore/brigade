@@ -1,5 +1,5 @@
 hash: 11879b3073f187986e14390b2cf203782a707859ec97671de59dcaf4b93de2bd
-updated: 2017-04-14T11:22:15.632191282-06:00
+updated: 2017-04-18T09:55:33.7441-06:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -27,7 +27,7 @@ imports:
   subpackages:
   - spew
 - name: github.com/deis/quokka
-  version: 606b7cbc1e95bc66df8e89248f606c409b2df08a
+  version: 533d7f8af0e0640f44d70379b929e6d37f31d3cf
   subpackages:
   - pkg/javascript
   - pkg/javascript/jsutil

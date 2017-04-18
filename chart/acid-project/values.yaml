@@ -1,0 +1,5 @@
+# Name of the project, in the form "user/project"
+project: "technosophos/zolver"
+repository: "github.com/technosophos/zolver"
+# Used by GitHub to compute hooks.
+secret: "IBrakeForSeaBeasts"

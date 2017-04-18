@@ -9,7 +9,7 @@ localPath = gopath + "/src/github.com/" + pushRecord.repository.name
 job1 = new Job("run-unit-tests");
 
 // Since this is Go, we want a go runner.
-job1.image = "acid-go:latest";
+job1.image = "technosophos/acid-go:latest";
 
 // Set a few environment variables.
 job1.env = {

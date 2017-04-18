@@ -1,0 +1,5 @@
+Your new Acid project has been created.
+
+To check it's state, run:
+
+  helm status {{.Release.Name}}

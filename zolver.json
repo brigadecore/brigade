@@ -1,0 +1,12 @@
+{
+  "ref": "refs/heads/master",
+  "head_commit": {
+    "id": "d36f0682e3d7d1b619bef04945be8b0062d69841"
+  },
+  "repository":{
+    "name": "zolver",
+    "full_name": "technosophos/zolver",
+    "clone_url": "https://github.com/technosophos/zolver.git"
+  },
+  "sender":{}
+}

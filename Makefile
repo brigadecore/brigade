@@ -1,5 +1,9 @@
 REG=technosophos
 
+# For test runs
+ZOLVER_EVENT="X-GitHub-Event: push"
+ZOLVER_TEST_COMMIT=d36f0682e3d7d1b619bef04945be8b0062d69841
+
 .PHONY: build
 build:
 	go build -o bin/acid .
@@ -30,13 +34,14 @@ docker-push:
 docker-test: docker-build
 docker-test:
 	docker run \
-		-e CLONE_URL=https://github.com/Masterminds/structable.git \
-		-e HEAD_COMMIT_ID=a1a302ef78ec3d85606dcf104a9a168542004036 \
-		acid-ubuntu:latest
+		-e CLONE_URL=https://github.com/technosophos/zolver.git \
+		-e HEAD_COMMIT_ID=$(ZOLVER_TEST_COMMIT) \
+		$(REG)/acid-go:latest
 
 .PHONY: curl-test
 curl-test:
-	-kubectl delete pod run-unit-tests-a1a302ef78ec3d85606dcf104a9a168542004036
-	-kubectl delete cm run-unit-tests-a1a302ef78ec3d85606dcf104a9a168542004036 && sleep 10
-	curl -X POST localhost:7744/webhook/push -vvv -T ./structable.json
+	-kubectl delete pod test-zolver-$(ZOLVER_TEST_COMMIT)
+	-kubectl delete cm  test-zolver-$(ZOLVER_TEST_COMMIT) && sleep 10
+	curl -X POST -H $(ZOLVER_EVENT) localhost:7744/webhook/push \
+		-vvv -T ./zolver.json
 
