@@ -1,0 +1,12 @@
+apiVersion: v1
+entries:
+  acid:
+  - apiVersion: v1
+    created: 2017-04-18T18:41:37.488877268-06:00
+    description: A Helm chart for Kubernetes
+    digest: 3540fc1d9a4805314fec138a878bb2a59bad09d93badc677bc1f70380dd3d617
+    name: acid
+    urls:
+    - acid-0.1.0.tgz
+    version: 0.1.0
+generated: 2017-04-18T18:41:37.48701172-06:00
