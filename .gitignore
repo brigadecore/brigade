@@ -2,3 +2,4 @@ _cache/
 bin/
 vendor/
 chart/rootfs/acid
+chart/rootfs/runner.js
