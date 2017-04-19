@@ -39,10 +39,13 @@ docker-test:
 		-e HEAD_COMMIT_ID=$(ZOLVER_TEST_COMMIT) \
 		$(REG)/acid-go:latest
 
-.PHONY: curl-test
-curl-test:
+.PHONY: test-unit
+	go test -v .
+
+.PHONY: test-functional
+test-functional:
 	-kubectl delete pod test-zolver-$(ZOLVER_TEST_COMMIT)
 	-kubectl delete cm  test-zolver-$(ZOLVER_TEST_COMMIT) && sleep 10
 	curl -X POST -H $(ZOLVER_EVENT) localhost:7744/webhook/push \
-		-vvv -T ./zolver.json
+		-vvv -T ./_functional_tests/zolver.json
 
