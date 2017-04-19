@@ -52,7 +52,8 @@ then monitors them for status changes.
 The easiest way to get started with Acid is to install it using Helm:
 
 ```console
-$ helm install ./chart/acid
+$ helm repo add acid https://deis.github.io/acid
+$ helm install acid/acid
 ```
 
 To create new products, use the `acid-project` Helm chart:
