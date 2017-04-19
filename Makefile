@@ -11,6 +11,7 @@ build:
 .PHONY: build-docker-bin
 build-docker-bin:
 	GOOS=linux GOARCH=amd64 go build -o chart/rootfs/acid .
+	cp runner.js chart/rootfs/
 
 .PHONY: run
 run: build

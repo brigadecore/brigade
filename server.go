@@ -42,9 +42,12 @@ func pushWebhook(c *gin.Context) {
 	if event == "ping" {
 		log.Print("Received ping from GitHub")
 		c.JSON(200, gin.H{"message": "OK"})
+		return
 	} else if event == "" {
 		// TODO: Once we're wired up with GitHub, need to return here.
 		log.Print("No event header.")
+		c.JSON(200, gin.H{"message": "OK"})
+		return
 	} else if event != "push" {
 		log.Printf("Expected event push, got %s", event)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Only 'push' is supported. Got " + event})

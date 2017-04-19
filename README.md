@@ -19,21 +19,65 @@ however many stages, jobs, and tasks you want.
 A simple `acid.js` file looks like this:
 
 ```javascript
-run({
-  name: "run-unit-tests",
-  image: "acid-ubuntu:latest",
-  tasks:[
-    "echo 'running tests...'",
-    "make test"
-  ]
-}, pushRecord);
+// Define a build step:
+j = new Job("run-unit-tests");
+
+// Use a custom image (this is actually the default)
+j.image = "acid-ubuntu:latest";
+
+// Define a couple of tasks:
+j.tasks = [
+  "echo 'running tests'",
+  "make test"
+];
+
+// Run the build:
+j.run(pushRecord)
 ```
 
 The above creates a new job named `run-unit-tests`. It starts with the AcidIC
-image `acid-ubuntu`. And then it runs two tasks:
+image `acid-ubuntu:latest` (the default image). And then it runs two tasks:
 
 - `echo 'running tests'` to print a log message
 - `make test` to run the project's `Makefile test` target.
+
+Check your `acid.js` file into the root of your project's repository.
+
+## Acid :heart: Kubernetes
+
+Acid is Kubernetes-native. Your Acid jobs are translated into one or more Kubernetes
+pods, configmaps, and secrets. Acid launches these resources into Kubernetes and
+then monitors them for status changes.
+
+The easiest way to get started with Acid is to install it using Helm:
+
+```console
+$ helm install ./chart/acid
+```
+
+To create new products, use the `acid-project` Helm chart:
+
+```console
+$ cp ./chart/acid-project/values.yaml myvalues.yaml
+$ # edit myvalues.yaml
+$ helm install ./chart/acid-project -f myvalues.yaml
+```
+
+_Make sure you change the `secret`_. You will use that secret when setting up GitHub
+hooks.
+
+## Acid :heart: GitHub
+
+To add Acid support to your GitHub project, set up an acid server, and then in
+your GitHub project:
+
+- Go to "Settings"
+- Click "Webhooks"
+- Click the "Add webhook" button
+- For "Payload URL", add the URL: "http://<YOUR IP>:7744/webhook/push"
+- For "Content type", choose "application/json"
+- For "Secret", use the secret you configured in your Helm config.
+- Choose "Just the push event"
 
 ## Acid :heart: Docker
 
@@ -51,15 +95,7 @@ CMD /hook.sh
 (We provide a nice little `hook.sh` script to bootstrap your environment, but you
 can definitely create your own).
 
-## Acid :heart: Kubernetes
-
-Acid is Kubernetes-native. Your Acid jobs are translated into one or more Kubernetes
-pods, configmaps, and secrets. Acid launches these resources into Kubernetes and
-then monitors them for status changes.
-
-The Acid server can run on or off cluster. Your choice.
-
-## Development
+## Acid :heart: Developers
 
 To get started:
 

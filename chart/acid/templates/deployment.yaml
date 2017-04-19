@@ -5,7 +5,7 @@ metadata:
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
   template:
     metadata:
       labels:
@@ -25,5 +25,3 @@ spec:
           httpGet:
             path: /
             port: {{ .Values.service.internalPort }}
-        resources:
-{{ toYaml .Values.resources | indent 12 }}
