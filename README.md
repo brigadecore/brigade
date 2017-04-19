@@ -59,9 +59,10 @@ $ helm install acid/acid
 To create new products, use the `acid-project` Helm chart:
 
 ```console
-$ cp ./chart/acid-project/values.yaml myvalues.yaml
+$ helm fetch acid/acid-project
+$ helm inspect values acid-project-*.tgz > myvalues.yaml
 $ # edit myvalues.yaml
-$ helm install ./chart/acid-project -f myvalues.yaml
+$ helm install acid-project-*.tgz -f myvalues.yaml
 ```
 
 _Make sure you change the `secret`_. You will use that secret when setting up GitHub
