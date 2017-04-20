@@ -1,9 +1,11 @@
 package main
 
 import (
+	"crypto/sha1"
 	"crypto/sha256"
-	"encoding/hex"
+	"crypto/subtle"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -27,7 +29,6 @@ func main() {
 	router := gin.Default()
 	router.GET("/", func(c *gin.Context) { c.JSON(200, gin.H{"message": "OK"}) })
 	router.POST("/webhook/push", pushWebhook)
-
 	router.Run(":7744")
 }
 
@@ -38,6 +39,7 @@ const (
 
 func pushWebhook(c *gin.Context) {
 	// Only process push for now. Other hooks have different formats.
+	signature := c.Request.Header.Get(HubSignature)
 	event := c.Request.Header.Get(GitHubEvent)
 	if event == "ping" {
 		log.Print("Received ping from GitHub")
@@ -56,15 +58,21 @@ func pushWebhook(c *gin.Context) {
 
 	// TODO:
 	// - [ ] Validate token
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		log.Printf("Failed to read body: %s", err)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Malformed body"})
+		return
+	}
 
 	push := &PushHook{}
-	if err := c.BindJSON(push); err != nil {
+	if err := json.Unmarshal(body, push); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 		return
 	}
 
 	// Load config and verify data.
-	pname := "acid-" + shortSHA(push.Repository.FullName)
+	pname := "acid-" + shortSha(push.Repository.FullName)
 	proj, err := loadProjectConfig(pname, "default")
 	if err != nil {
 		log.Printf("Project %q (%q) not found. No secret loaded. %s", push.Repository.FullName, pname, err)
@@ -75,6 +83,15 @@ func pushWebhook(c *gin.Context) {
 	if proj.secret == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "No secret is configured for this repo."})
 		return
+	}
+
+	// Compare the salted digest in the header with our own computing of the
+	// body.
+	sum := saltedSha1Sum([]byte(proj.secret), body)
+	if subtle.ConstantTimeCompare([]byte(sum), []byte(signature)) != 1 {
+		log.Printf("Expected signature %q (sum), got %q (hib-sig)", sum, signature)
+		//c.JSON(http.StatusBadRequest, gin.H{"status": "malformed payload"})
+		// return
 	}
 
 	if proj.name != push.Repository.FullName {
@@ -189,7 +206,15 @@ func loadProjectConfig(name, namespace string) (*project, error) {
 	return proj, nil
 }
 
-func shortSHA(input string) string {
-	hash := sha256.Sum256([]byte(input))
-	return hex.EncodeToString(hash[:])[0:54]
+// shortSha returns a 32-char SHA256 digest as a string.
+func shortSha(input string) string {
+	sum := sha256.Sum256([]byte(input))
+	return fmt.Sprintf("%x", sum)[0:54]
+}
+
+// Compute the GitHub SHA1 sum.
+func saltedSha1Sum(salt, message []byte) string {
+	ctext := append(salt, message...)
+	sum := sha1.Sum(ctext)
+	return fmt.Sprintf("%x", sum)
 }
