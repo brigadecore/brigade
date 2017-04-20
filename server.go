@@ -216,5 +216,5 @@ func shortSha(input string) string {
 func saltedSha1Sum(salt, message []byte) string {
 	ctext := append(salt, message...)
 	sum := sha1.Sum(ctext)
-	return fmt.Sprintf("%x", sum)
+	return fmt.Sprintf("sha1=%x", sum)
 }

@@ -2,6 +2,7 @@ REG=technosophos
 
 # For test runs
 ZOLVER_EVENT="X-GitHub-Event: push"
+ZOLVER_HUB_SIGNATURE="X-Hub-Signature: sha1=206ed654666106fe879a17b171f60dde3661ebb9"
 ZOLVER_TEST_COMMIT=d36f0682e3d7d1b619bef04945be8b0062d69841
 
 .PHONY: build
@@ -47,6 +48,9 @@ test-unit:
 test-functional:
 	-kubectl delete pod test-zolver-$(ZOLVER_TEST_COMMIT)
 	-kubectl delete cm  test-zolver-$(ZOLVER_TEST_COMMIT) && sleep 10
-	curl -X POST -H $(ZOLVER_EVENT) localhost:7744/webhook/push \
+	curl -X POST \
+		-H $(ZOLVER_EVENT) \
+		-H $(ZOLVER_HUB_SIGNATURE) \
+		localhost:7744/webhook/push \
 		-vvv -T ./_functional_tests/zolver.json
 

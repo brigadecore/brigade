@@ -20,7 +20,7 @@ func TestSaltedSha11Sum(t *testing.T) {
 	// $ echo "This is the way the world ends.Not with a bang, but a whimper." | shasum -a 1
 	salt := []byte("This is the way the world ends.")
 	message := []byte("Not with a bang, but a whimper.\n")
-	expect := "239a4a7c96c3f04ffea7f785d03fb21901565e26"
+	expect := "sha1=239a4a7c96c3f04ffea7f785d03fb21901565e26"
 	if got := saltedSha1Sum(salt, message); got != expect {
 		t.Fatalf("Expected \n\t%q, got\n\t%q", expect, got)
 	}
