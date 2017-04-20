@@ -40,6 +40,7 @@ docker-test:
 		$(REG)/acid-go:latest
 
 .PHONY: test-unit
+test-unit:
 	go test -v .
 
 .PHONY: test-functional
