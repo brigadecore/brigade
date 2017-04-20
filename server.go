@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/hmac"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -87,7 +88,7 @@ func pushWebhook(c *gin.Context) {
 
 	// Compare the salted digest in the header with our own computing of the
 	// body.
-	sum := saltedSha1Sum([]byte(proj.secret), body)
+	sum := sha1HMAC([]byte(proj.secret), body)
 	if subtle.ConstantTimeCompare([]byte(sum), []byte(signature)) != 1 {
 		log.Printf("Expected signature %q (sum), got %q (hib-sig)", sum, signature)
 		//c.JSON(http.StatusBadRequest, gin.H{"status": "malformed payload"})
@@ -212,9 +213,12 @@ func shortSha(input string) string {
 	return fmt.Sprintf("%x", sum)[0:54]
 }
 
-// Compute the GitHub SHA1 sum.
-func saltedSha1Sum(salt, message []byte) string {
-	ctext := append(salt, message...)
-	sum := sha1.Sum(ctext)
+// Compute the GitHub SHA1 HMAC.
+func sha1HMAC(salt, message []byte) string {
+	// GitHub creates a SHA1 HMAC, where the key is the GitHub secret and the
+	// message is the JSON body.
+	digest := hmac.New(sha1.New, salt)
+	digest.Write(message)
+	sum := digest.Sum(nil)
 	return fmt.Sprintf("sha1=%x", sum)
 }

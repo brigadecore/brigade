@@ -15,13 +15,11 @@ func TestShortSha(t *testing.T) {
 	}
 }
 
-func TestSaltedSha11Sum(t *testing.T) {
-	// The expect line was computed with this command:
-	// $ echo "This is the way the world ends.Not with a bang, but a whimper." | shasum -a 1
+func TestSha1HMAC(t *testing.T) {
 	salt := []byte("This is the way the world ends.")
 	message := []byte("Not with a bang, but a whimper.\n")
-	expect := "sha1=239a4a7c96c3f04ffea7f785d03fb21901565e26"
-	if got := saltedSha1Sum(salt, message); got != expect {
+	expect := "sha1=0ca6713b350828f53c6dcced9232aeace3e60708"
+	if got := sha1HMAC(salt, message); got != expect {
 		t.Fatalf("Expected \n\t%q, got\n\t%q", expect, got)
 	}
 }

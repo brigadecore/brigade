@@ -54,10 +54,12 @@ function Job(name, tasks) {
   };
 }
 
+
 function run(job, pushRecord) {
-  cid = pushRecord.head_commit.id
-  cmName = job.name + "-" + cid
-  runnerName = job.name + "-" + cid
+  // $JOB-$TIME-$GITSHA
+  k8sName = job.name + "-" + Date.now() + "-" + pushRecord.head_commit.id.substring(0, 8);
+  cmName = k8sName
+  runnerName = k8sName
 
   cm = newCM(cmName)
   runner = newRunnerPod(runnerName)
