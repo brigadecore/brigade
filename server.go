@@ -65,6 +65,7 @@ func pushWebhook(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Malformed body"})
 		return
 	}
+	defer c.Request.Body.Close()
 
 	push := &PushHook{}
 	if err := json.Unmarshal(body, push); err != nil {
@@ -90,9 +91,10 @@ func pushWebhook(c *gin.Context) {
 	// body.
 	sum := sha1HMAC([]byte(proj.secret), body)
 	if subtle.ConstantTimeCompare([]byte(sum), []byte(signature)) != 1 {
-		log.Printf("Expected signature %q (sum), got %q (hib-sig)", sum, signature)
-		//c.JSON(http.StatusBadRequest, gin.H{"status": "malformed payload"})
-		// return
+		log.Printf("Expected signature %q (sum), got %q (hub-signature)", sum, signature)
+		//log.Printf("%s", body)
+		c.JSON(http.StatusForbidden, gin.H{"status": "malformed signature"})
+		return
 	}
 
 	if proj.name != push.Repository.FullName {
