@@ -1,8 +1,8 @@
 FROM debian:jessie-slim
 
 RUN apt-get update && apt-get install -y git curl
-RUN curl -O https://storage.googleapis.com/kubernetes-release/release/v1.6.1/bin/linux/amd64/kubectl
-RUN mv kubectl /usr/bin/kubectl
+RUN curl -L https://storage.googleapis.com/kubernetes-release/release/v1.6.1/bin/linux/amd64/kubectl -o /usr/bin/kubectl
+RUN chmod +x /usr/bin/kubectl
 
 COPY acid /usr/bin/acid
 COPY runner.js /runner.js
