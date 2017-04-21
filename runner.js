@@ -63,6 +63,8 @@ function run(job, pushRecord) {
 
   cm = newCM(cmName)
   runner = newRunnerPod(runnerName)
+  runner.metadata.labels.jobname = pushRecord.repository.owner.name + "-" + pushRecord.repository.name
+  runner.metadata.labels.commit = pushRecord.head_commit.id
 
   // Add env vars.
   envVars = []

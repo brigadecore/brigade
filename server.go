@@ -30,6 +30,10 @@ func main() {
 	router := gin.Default()
 	router.GET("/", func(c *gin.Context) { c.JSON(200, gin.H{"message": "OK"}) })
 	router.POST("/webhook/push", pushWebhook)
+
+	// Lame UI
+	router.GET("/log/:org/:project", logToHTML)
+
 	router.Run(":7744")
 }
 
