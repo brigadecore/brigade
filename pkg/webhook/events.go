@@ -142,6 +142,7 @@ func build(push *PushHook) error {
 	return execScripts(push, d, acidScript)
 }
 
+// execScripts prepares the JS runtime and feeds it the objects it needs.
 func execScripts(push *PushHook, scripts ...[]byte) error {
 	rt := javascript.NewRuntime()
 	if err := libk8s.Register(rt.VM); err != nil {

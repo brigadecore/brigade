@@ -30,4 +30,4 @@ job1.tasks = [
 ];
 
 // Run and wait for it to finish.
-job1.run(pushRecord).waitUntilDone();
+job1.run(pushRecord);

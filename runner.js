@@ -1,13 +1,17 @@
+/* global pushRecord _ sleep kubernetes */
+/* exported Job WaitGroup run */
+
 // This is the runner wrapping script.
-console.log("GOT HERE")
+console.log("Loading ACID core")
 console.log(pushRecord.repository.name)
 
 // The default image is stock ubuntu 16.04 + make and git.
-acidImage = "acid-ubuntu:latest"
+var acidImage = "acid-ubuntu:latest"
 
 // Prototype for Job.
 function Job(name, tasks) {
-  my = this
+  var my = this
+
   // Name will become the prefix for the pod/configmap names.
   this.name = name;
   // Tasks is the list of tasks to run. They are executed in sequence inside of
@@ -29,18 +33,35 @@ function Job(name, tasks) {
   this.podName
 
   // run sends this job to Kubernetes.
-  this.run = function(pushRecord) { this.podName = run(this, pushRecord); return this; };
+  this.run = function() {
+    this.background(pushRecord)
+    this.wait()
+  };
+
+  this.background = function() {
+    this.podName = run(this, pushRecord);
+  };
 
   // waitUntilDone waits until a pod hits "Succeeded".
+  this.waitUntilDone = function() {}
+
+  // wait waits until a pod hits "Succeeded"
+  //
+  // wait() can be called on backgrounded objects.
+  //
+  // wait() is automatically called by this.run.
+  //
   // If pod returns "Failed", this throws an exception.
   // If pod runs for more than 15 minutes (300 * 3-second intervals), throws a timeout exception.
-  this.waitUntilDone = function() {
-    for (i = 0; i < 300; i++) {
+  this.wait = function() {
+    for (var i = 0; i < 300; i++) {
       console.log("checking status of " + my.podName)
-      k = kubernetes.withNS("default")
-      mypod = k.coreV1.pod.get(my.podName)
+      var k = kubernetes.withNS("default")
+      var mypod = k.coreV1.pod.get(my.podName)
+
       console.log(JSON.stringify(mypod))
       console.log("Pod " + my.podName + " is in state " + mypod.status.phase)
+
       if (mypod.status.phase == "Failed") {
         throw "Pod " + my.podName + " failed to run to completion";
       }
@@ -54,26 +75,46 @@ function Job(name, tasks) {
   };
 }
 
+// WaitGroup waits for multiple jobs to finish. It will throw an error
+// as soon as a job reports an error.
+function WaitGroup() {
+  this.jobs = []
 
+  this.add = function(job) {
+    this.jobs.push(job)
+  }
+
+  this.wait = function() {
+    this.jobs.forEach(function (j) {
+      j.wait()
+    })
+  }
+}
+
+// run runs a job for a pushRecord. It does not wait for the job to complete.
+// This is a low-level primitive.
 function run(job, pushRecord) {
   // $JOB-$TIME-$GITSHA
-  k8sName = job.name + "-" + Date.now() + "-" + pushRecord.head_commit.id.substring(0, 8);
-  cmName = k8sName
-  runnerName = k8sName
+  var k8sName = job.name + "-" + Date.now() + "-" + pushRecord.head_commit.id.substring(0, 8);
+  var cmName = k8sName
+  var runnerName = k8sName
+  var cm = newCM(cmName)
+  var runner = newRunnerPod(runnerName)
 
-  cm = newCM(cmName)
-  runner = newRunnerPod(runnerName)
   runner.metadata.labels.jobname = pushRecord.repository.owner.name + "-" + pushRecord.repository.name
   runner.metadata.labels.commit = pushRecord.head_commit.id
 
   // Add env vars.
-  envVars = []
-  _.each(job.env, function(val, key, l) {
+  var envVars = []
+
+  //_.each(job.env, function(val, key, l) {
+  _.each(job.env, function(val, key) {
     envVars.push({name: key, value: val});
   });
   // Add secrets as env vars.
-  _.each(job.secrets, function(val, key, l) {
-    parts = val.split(".", 2)
+  _.each(job.secrets, function(val, key) {
+    var parts = val.split(".", 2)
+
     envVars.push({
       name: "key",
       valueFrom: {
@@ -101,10 +142,12 @@ function run(job, pushRecord) {
   }
 
   // Join the tasks to make a new command:
-  newCmd = job.tasks.join(" && ")
+  var newCmd = job.tasks.join(" && ")
+
   cm.data["main.sh"] = newCmd
 
-  k = kubernetes.withNS("default")
+  var k = kubernetes.withNS("default")
+
   console.log("Creating configmap " + cm.metadata.name)
   console.log(JSON.stringify(cm))
   k.extensions.configmap.create(cm)
@@ -162,4 +205,4 @@ function newCM(name) {
   };
 }
 
-console.log("Loaded runner")
+console.log("Loaded ACID")
