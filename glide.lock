@@ -1,5 +1,5 @@
 hash: 0581aa988b2e42734b23ed31e3fa26b5b482c0545e0f1ab15f114e35993f891d
-updated: 2017-04-19T19:27:12.601559371-07:00
+updated: 2017-05-12T13:56:43.062498606-06:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -27,7 +27,7 @@ imports:
   subpackages:
   - spew
 - name: github.com/deis/quokka
-  version: 533d7f8af0e0640f44d70379b929e6d37f31d3cf
+  version: 9c192110a8bc6d0080f645a0dca7789f4a0d514b
   subpackages:
   - pkg/javascript
   - pkg/javascript/jsutil
@@ -85,7 +85,7 @@ imports:
 - name: github.com/manucorporat/sse
   version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
 - name: github.com/Masterminds/vcs
-  version: 795e20f901c3d561de52811fb3488a2cb2c8588b
+  version: 3084677c2c188840777bff30054f2b553729d329
 - name: github.com/mattn/go-isatty
   version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
 - name: github.com/pborman/uuid

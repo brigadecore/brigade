@@ -42,7 +42,7 @@ docker-test:
 
 .PHONY: test-unit
 test-unit:
-	go test -v .
+	go test -v . ./pkg/...
 
 .PHONY: test-functional
 test-functional:

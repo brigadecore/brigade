@@ -1,4 +1,4 @@
-package main
+package webhook
 
 // PushHook defines a hook body for a push request.
 type PushHook struct {
