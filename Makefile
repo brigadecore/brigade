@@ -25,11 +25,13 @@ docker-build:
 	docker build -t $(REG)/acid:latest chart/rootfs
 	docker build -t $(REG)/acid-ubuntu:latest acidic/acid-ubuntu
 	docker build -t $(REG)/acid-go:latest acidic/acid-go
+	docker build -t $(REG)/acid-node:latest acidic/acid-node
 
 .PHONY: docker-push
 docker-push:
 	docker push $(REG)/acid
 	docker push $(REG)/acid-go
+	docker push $(REG)/acid-node
 	docker push $(REG)/acid-ubuntu
 
 .PHONY: docker-test
@@ -39,6 +41,14 @@ docker-test:
 		-e CLONE_URL=https://github.com/technosophos/zolver.git \
 		-e HEAD_COMMIT_ID=$(ZOLVER_TEST_COMMIT) \
 		$(REG)/acid-go:latest
+	docker run \
+		-e CLONE_URL=https://github.com/technosophos/zolver.git \
+		-e HEAD_COMMIT_ID=$(ZOLVER_TEST_COMMIT) \
+		$(REG)/acid-node:latest
+	docker run \
+		-e CLONE_URL=https://github.com/technosophos/zolver.git \
+		-e HEAD_COMMIT_ID=$(ZOLVER_TEST_COMMIT) \
+		$(REG)/acid-ubuntu:latest
 
 .PHONY: test-unit
 test-unit:
@@ -54,3 +64,6 @@ test-functional:
 		localhost:7744/webhook/push \
 		-vvv -T ./_functional_tests/zolver.json
 
+.PHONY: test-js
+test-js:
+	eslint runner.js

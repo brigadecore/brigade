@@ -107,12 +107,12 @@ function run(job, pushRecord) {
   // Add env vars.
   var envVars = []
 
-  //_.each(job.env, function(val, key, l) {
+  // _.each(job.env, function(val, key, l) {
   _.each(job.env, function(val, key) {
     envVars.push({name: key, value: val});
   });
   // Add secrets as env vars.
-  _.each(job.secrets, function(val, key) {
+  _.each(job.secrets, function(val) {
     var parts = val.split(".", 2)
 
     envVars.push({
