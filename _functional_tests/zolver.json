@@ -6,7 +6,10 @@
   "repository":{
     "name": "zolver",
     "full_name": "technosophos/zolver",
-    "clone_url": "https://github.com/technosophos/zolver.git"
+    "clone_url": "https://github.com/technosophos/zolver.git",
+    "owner": {
+      "name": "technosophos"
+    }
   },
   "sender":{}
 }

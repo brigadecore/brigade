@@ -73,22 +73,22 @@ func Push(c *gin.Context) {
 	}
 
 	// Load config and verify data.
-	pname := "acid-" + shortSha(push.Repository.FullName)
-	proj, err := loadProjectConfig(pname, "default")
+	pname := "acid-" + ShortSHA(push.Repository.FullName)
+	proj, err := LoadProjectConfig(pname, "default")
 	if err != nil {
 		log.Printf("Project %q (%q) not found. No secret loaded. %s", push.Repository.FullName, pname, err)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
 		return
 	}
 
-	if proj.secret == "" {
+	if proj.Secret == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "No secret is configured for this repo."})
 		return
 	}
 
 	// Compare the salted digest in the header with our own computing of the
 	// body.
-	sum := sha1HMAC([]byte(proj.secret), body)
+	sum := SHA1HMAC([]byte(proj.Secret), body)
 	if subtle.ConstantTimeCompare([]byte(sum), []byte(signature)) != 1 {
 		log.Printf("Expected signature %q (sum), got %q (hub-signature)", sum, signature)
 		//log.Printf("%s", body)
@@ -96,9 +96,9 @@ func Push(c *gin.Context) {
 		return
 	}
 
-	if proj.name != push.Repository.FullName {
+	if proj.Name != push.Repository.FullName {
 		// TODO: Test this. I believe it should error out if these don't match.
-		log.Printf("!!!WARNING!!! Expected project secret to have name %q, got %q", push.Repository.FullName, proj.name)
+		log.Printf("!!!WARNING!!! Expected project secret to have name %q, got %q", push.Repository.FullName, proj.Name)
 	}
 
 	// Start up a build
@@ -183,15 +183,15 @@ func cloneRepo(url, version, toDir string) error {
 	return nil
 }
 
-type project struct {
-	name   string
-	repo   string
-	secret string
+type Project struct {
+	Name   string
+	Repo   string
+	Secret string
 }
 
-func loadProjectConfig(name, namespace string) (*project, error) {
+func LoadProjectConfig(name, namespace string) (*Project, error) {
 	kc, err := libk8s.KubeClient()
-	proj := &project{}
+	proj := &Project{}
 	if err != nil {
 		return proj, err
 	}
@@ -202,9 +202,9 @@ func loadProjectConfig(name, namespace string) (*project, error) {
 		return proj, err
 	}
 
-	proj.name = secret.Name
-	proj.repo = string(secret.Data["repository"])
-	proj.secret = string(secret.Data["secret"])
+	proj.Name = secret.Name
+	proj.Repo = string(secret.Data["repository"])
+	proj.Secret = string(secret.Data["secret"])
 
 	return proj, nil
 }
