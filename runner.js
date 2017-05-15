@@ -36,14 +36,20 @@ function Job(name, tasks) {
   this.run = function() {
     this.background(pushRecord)
     this.wait()
+
+    return this
   };
 
   this.background = function() {
     this.podName = run(this, pushRecord);
   };
 
-  // waitUntilDone waits until a pod hits "Succeeded".
-  this.waitUntilDone = function() {}
+  // waitUntilDone is here for backwards compatibility, but does nothing.
+  // DEPRECATED: Will be removed during Alpha
+  this.waitUntilDone = function() {
+
+    return this
+  }
 
   // wait waits until a pod hits "Succeeded"
   //
