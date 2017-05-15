@@ -1,6 +1,10 @@
 # Acid: Acme Continuous Integration and Deployment
 
-Acid is a native Kubernetes CI/CD system. Here's how it works:
+Acid is designed to give you the ease of use of a hosted CI/CD solution, but
+running on your own Kubernetes cluster. And it's flexibile enough to accomodate
+sophisticated multi-step builds.
+
+Here's how it works:
 
 - You define an `acid.js` file in the root of your GitHub repository.
 - Add a GitHub hook pointing to your Acid server
