@@ -141,7 +141,7 @@ func build(push *PushHook) error {
 	// TODO:
 	// - [ ] Remove the cached directory at the end of the build?
 
-	if err := cloneRepo(push.Repository.CloneURL, push.HeadCommit.Id, toDir); err != nil {
+	if err := cloneRepo(push.Repository.SSHURL, push.HeadCommit.Id, toDir); err != nil {
 		log.Printf("error cloning %s to %s: %s", push.Repository.CloneURL, toDir, err)
 		return err
 	}
