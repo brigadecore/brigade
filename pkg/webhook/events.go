@@ -101,6 +101,25 @@ func Push(c *gin.Context) {
 		log.Printf("!!!WARNING!!! Expected project secret to have name %q, got %q", push.Repository.FullName, proj.Name)
 	}
 
+	// If we need an SSH key, set it here
+	if proj.SSHKey != "" {
+		key, err := ioutil.TempFile("", "")
+		if err != nil {
+			log.Printf("error creating ssh key cache: %s", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "Authentication impossible"})
+			return
+		}
+		keyfile := key.Name()
+		defer os.Remove(keyfile)
+		if _, err := key.WriteString(proj.SSHKey); err != nil {
+			log.Printf("error writing ssh key cache: %s", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "Authentication impossible"})
+			return
+		}
+		os.Setenv("ACID_REPO_KEY", keyfile)
+		defer os.Setenv("ACID_REPO_KEY", "") // purely defensive... not really necessary
+	}
+
 	// Start up a build
 	if err := build(push); err != nil {
 		log.Printf("error on pushWebhook: %s", err)
@@ -187,6 +206,7 @@ type Project struct {
 	Name   string
 	Repo   string
 	Secret string
+	SSHKey string
 }
 
 func LoadProjectConfig(name, namespace string) (*Project, error) {
@@ -205,6 +225,7 @@ func LoadProjectConfig(name, namespace string) (*Project, error) {
 	proj.Name = secret.Name
 	proj.Repo = string(secret.Data["repository"])
 	proj.Secret = string(secret.Data["secret"])
+	proj.SSHKey = string(secret.Data["sshKey"])
 
 	return proj, nil
 }

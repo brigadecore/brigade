@@ -6,5 +6,8 @@ RUN apt-get update && apt-get install -y git curl \
 
 COPY acid /usr/bin/acid
 COPY runner.js /runner.js
+COPY gitssh.sh /gitssh.sh
+
+ENV GIT_SSH=/gitssh.sh
 
 CMD /usr/bin/acid
