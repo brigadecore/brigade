@@ -189,8 +189,8 @@ func cloneRepo(url, version, toDir string) error {
 		return err
 	}
 	if err := repo.Get(); err != nil {
-		if err := repo.Update(); err != nil {
-			log.Printf("WARNING: Could neither clone nor update repo. %s", err)
+		if err2 := repo.Update(); err2 != nil {
+			log.Printf("WARNING: Could neither clone nor update repo %q. Clone: %s Update: %s", url, err, err2)
 		}
 	}
 
