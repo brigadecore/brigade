@@ -17,7 +17,7 @@ func TestExecScripts(t *testing.T) {
 func TestExecScripts_Runner(t *testing.T) {
 	// This test essentially does a parsing chek on runner.js, too.
 	ph := &PushHook{}
-	script := []byte(`console.log('loaded')`)
+	script := []byte(`console.log(secName)`)
 
 	runner, err := ioutil.ReadFile(filepath.Join("..", "..", runnerJS))
 	if err != nil {

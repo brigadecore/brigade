@@ -188,7 +188,7 @@ func execScripts(push *PushHook, scripts ...[]byte) error {
 
 	// Add a reference to the secret. This lets the builder grab items from
 	// the secret.
-	rt.VM.Object("secName = 'acid-" + ShortSHA(push.Repository.FullName))
+	rt.VM.Object("secName = 'acid-" + ShortSHA(push.Repository.FullName) + "'")
 
 	out, _ := json.Marshal(push)
 	rt.VM.Object("pushRecord = " + string(out))
