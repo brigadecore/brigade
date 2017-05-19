@@ -1,4 +1,4 @@
-/* global pushRecord _ sleep kubernetes */
+/* global pushRecord _ sleep kubernetes secName */
 /* exported Job WaitGroup run */
 
 // This is the runner wrapping script.
@@ -118,16 +118,30 @@ function run(job, pushRecord) {
     envVars.push({name: key, value: val});
   });
   // Add secrets as env vars.
-  _.each(job.secrets, function(val) {
-    var parts = val.split(".", 2)
+  _.each(job.secrets, function(val, key) {
 
+    // Some secrets we explicitly block.
+    if (_.contains(["secret"], val)) {
+      return
+    }
+
+    // Get secrets from the given secName
     envVars.push({
-      name: "key",
+      name: key,
       valueFrom: {
-        secretKeyRef: {name: parts[0], key: parts[1]}
+        secretKeyRef: {name: secName, key: val}
       }
-    })
+    });
   });
+
+  // Automatically mount the sshKey:
+  envVars.push({
+    name: "ACID_REPO_KEY",
+    valueFrom: {
+      secretKeyRef: {name: secName, key: "sshKey"}
+    }
+  });
+
   // Add top-level env vars. These must override any attempt to set the values
   // to something else.
   envVars.push({ name: "CLONE_URL", value: pushRecord.repository.clone_url })
