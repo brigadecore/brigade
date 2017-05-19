@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/Masterminds/vcs"
@@ -244,7 +245,8 @@ func LoadProjectConfig(name, namespace string) (*Project, error) {
 	proj.Name = secret.Name
 	proj.Repo = string(secret.Data["repository"])
 	proj.Secret = string(secret.Data["secret"])
-	proj.SSHKey = string(secret.Data["sshKey"])
+	// Note that we have to undo the key escaping.
+	proj.SSHKey = strings.Replace(string(secret.Data["sshKey"]), "$", "\n", -1)
 
 	return proj, nil
 }
