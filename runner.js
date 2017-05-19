@@ -145,6 +145,8 @@ function run(job, pushRecord) {
   // Add top-level env vars. These must override any attempt to set the values
   // to something else.
   envVars.push({ name: "CLONE_URL", value: pushRecord.repository.clone_url })
+  envVars.push({ name: "SSH_URL", value: pushRecord.repository.ssh_url })
+  envVars.push({ name: "GIT_URL", value: pushRecord.repository.git_url })
   envVars.push({ name: "HEAD_COMMIT_ID", value: pushRecord.head_commit.id })
   runner.spec.containers[0].env = envVars
 
