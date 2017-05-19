@@ -4,6 +4,7 @@ REG=technosophos
 ZOLVER_EVENT="X-GitHub-Event: push"
 ZOLVER_TEST_COMMIT=cbb38c431c40d9168e652f6a43a73a245fb3ef99
 TEST_DIR=./_functional_tests
+DOCKER_BUILD_FLAGS := 
 
 .PHONY: build
 build:
@@ -23,9 +24,9 @@ run:
 docker-build: build-docker-bin
 docker-build:
 	docker build -t $(REG)/acid:latest chart/rootfs
-	docker build --no-cache -t $(REG)/acid-ubuntu:latest acidic/acid-ubuntu
-	docker build --no-cache -t $(REG)/acid-go:latest acidic/acid-go
-	docker build --no-cache -t $(REG)/acid-node:latest acidic/acid-node
+	docker build $(DOCKER_BUILD_FLAGS) -t $(REG)/acid-ubuntu:latest acidic/acid-ubuntu
+	docker build $(DOCKER_BUILD_FLAGS) -t $(REG)/acid-go:latest acidic/acid-go
+	docker build $(DOCKER_BUILD_FLAGS) -t $(REG)/acid-node:latest acidic/acid-node
 
 .PHONY: docker-push
 docker-push:
