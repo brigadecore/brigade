@@ -161,6 +161,19 @@ func build(push *PushHook) error {
 	return execScripts(push, d, acidScript)
 }
 
+type originalError interface {
+	Original() error
+	Out() string
+}
+
+func logOriginalError(err error) {
+	oerr, ok := err.(originalError)
+	if ok {
+		log.Println(oerr.Original().Error())
+		log.Println(oerr.Out())
+	}
+}
+
 // execScripts prepares the JS runtime and feeds it the objects it needs.
 func execScripts(push *PushHook, scripts ...[]byte) error {
 	rt := javascript.NewRuntime()
@@ -189,7 +202,9 @@ func cloneRepo(url, version, toDir string) error {
 		return err
 	}
 	if err := repo.Get(); err != nil {
+		logOriginalError(err) // FIXME: Audit this in case this might dump sensitive info.
 		if err2 := repo.Update(); err2 != nil {
+			logOriginalError(err2)
 			log.Printf("WARNING: Could neither clone nor update repo %q. Clone: %s Update: %s", url, err, err2)
 		}
 	}
