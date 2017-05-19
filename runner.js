@@ -137,7 +137,7 @@ function run(job, pushRecord) {
   // Automatically mount the sshKey:
   envVars.push({
     name: "ACID_REPO_KEY",
-    value: "/hook/ssh/idrsa"
+    value: "/hook/ssh/sshKey"
   });
 
   // Add top-level env vars. These must override any attempt to set the values
@@ -151,7 +151,7 @@ function run(job, pushRecord) {
   // Add config map volume
   runner.spec.volumes = [
     { name: cmName, configMap: {name: cmName }},
-    { name: "idrsa", secret: { secretName: "sshKey" }}
+    { name: "idrsa", secret: { secretName: secName }}
   ];
   runner.spec.containers[0].volumeMounts = [
     { name: cmName, mountPath: "/hook/data"},
