@@ -200,7 +200,8 @@ function newRunnerPod(podname) {
           "command": [
             "/hook.sh"
           ],
-          "imagePullPolicy": "IfNotPresent"
+          // FIXME: Change to "IfNotPresent"
+          "imagePullPolicy": "Always"
         }
       ]
     }

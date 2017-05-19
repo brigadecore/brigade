@@ -23,9 +23,9 @@ run:
 docker-build: build-docker-bin
 docker-build:
 	docker build -t $(REG)/acid:latest chart/rootfs
-	docker build -t $(REG)/acid-ubuntu:latest acidic/acid-ubuntu
-	docker build -t $(REG)/acid-go:latest acidic/acid-go
-	docker build -t $(REG)/acid-node:latest acidic/acid-node
+	docker build --no-cache -t $(REG)/acid-ubuntu:latest acidic/acid-ubuntu
+	docker build --no-cache -t $(REG)/acid-go:latest acidic/acid-go
+	docker build --no-cache -t $(REG)/acid-node:latest acidic/acid-node
 
 .PHONY: docker-push
 docker-push:
