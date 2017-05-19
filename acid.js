@@ -35,7 +35,6 @@ var jsLint = new Job("acid-js-build");
 jsLint.image = "technosophos/acid-node:latest";
 jsLint.tasks = [
   "npm install --quiet eslint",
-  "sleep 900",
   "make test-js"
 ];
 
