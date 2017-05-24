@@ -57,8 +57,6 @@ func Push(c *gin.Context) {
 	// Only process push for now. Other hooks have different formats.
 	signature := c.Request.Header.Get(HubSignature)
 
-	// TODO:
-	// - [ ] Validate token
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		log.Printf("Failed to read body: %s", err)
