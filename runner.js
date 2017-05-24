@@ -134,14 +134,14 @@ function run(job, pushRecord) {
     });
   });
 
-  // Automatically mount the sshKey:
-  envVars.push({
-    name: "ACID_REPO_KEY",
-    // value: "/hook/ssh/sshKey"
-    valueFrom: {
-      secretKeyRef: { name: secName, key: "sshKey" }
-    }
-  });
+  // // Automatically mount the sshKey:
+  // envVars.push({
+  //   name: "ACID_REPO_KEY",
+  //   // value: "/hook/ssh/sshKey"
+  //   valueFrom: {
+  //     secretKeyRef: { name: secName, key: "sshKey" }
+  //   }
+  // });
 
   // Add top-level env vars. These must override any attempt to set the values
   // to something else.
