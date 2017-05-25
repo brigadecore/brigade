@@ -9,7 +9,7 @@ import (
 func main() {
 	router := gin.Default()
 	router.GET("/", func(c *gin.Context) { c.JSON(200, gin.H{"message": "OK"}) })
-	router.POST("/webhook/push", webhook.EventRouter)
+	router.POST("/events/github", webhook.EventRouter)
 
 	// Lame UI
 	router.GET("/log/:org/:project", logToHTML)

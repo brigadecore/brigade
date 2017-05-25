@@ -80,7 +80,7 @@ your GitHub project:
 - Go to "Settings"
 - Click "Webhooks"
 - Click the "Add webhook" button
-- For "Payload URL", add the URL: "http://YOUR_HOSTNAME:7744/webhook/push"
+- For "Payload URL", add the URL: "http://YOUR_HOSTNAME:7744/events/github"
 - For "Content type", choose "application/json"
 - For "Secret", use the secret you configured in your Helm config.
 - Choose "Just the push event"

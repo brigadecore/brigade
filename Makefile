@@ -4,7 +4,7 @@ REG=technosophos
 ZOLVER_EVENT="X-GitHub-Event: push"
 ZOLVER_TEST_COMMIT=cbb38c431c40d9168e652f6a43a73a245fb3ef99
 TEST_DIR=./_functional_tests
-DOCKER_BUILD_FLAGS := 
+DOCKER_BUILD_FLAGS :=
 
 .PHONY: build
 build:
@@ -63,7 +63,7 @@ test-functional:
 	curl -X POST \
 		-H $(ZOLVER_EVENT) \
 		-H "X-Hub-Signature: $(shell cat $(TEST_DIR)/zolver-generated.hash)" \
-		localhost:7744/webhook/push \
+		localhost:7744/events/github \
 		-vvv -T $(TEST_DIR)/zolver-generated.json
 
 .PHONY: test-js
