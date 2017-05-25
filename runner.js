@@ -86,10 +86,21 @@ function Job(name, tasks) {
 function WaitGroup() {
   this.jobs = []
 
+  // add adds a new job to the waitgroup
   this.add = function(job) {
     this.jobs.push(job)
   }
 
+  // run runs every job in the group, and then waits for them to complete.
+  this.run = function() {
+    this.jobs.forEach(function (j) {
+      j.background()
+    })
+    this.wait()
+  }
+
+  // wait waits until jobs are complete. Note that this does not run the jobs. They
+  // must be started externally. (See WaitGroup.run or Job.background)
   this.wait = function() {
     this.jobs.forEach(function (j) {
       j.wait()
@@ -107,7 +118,8 @@ function run(job, pushRecord) {
   var cm = newCM(cmName)
   var runner = newRunnerPod(runnerName)
 
-  runner.metadata.labels.jobname = pushRecord.repository.owner.name + "-" + pushRecord.repository.name
+  runner.metadata.labels.jobname = job.name
+  runner.metadata.labels.belongsto = pushRecord.repository.owner.name + "-" + pushRecord.repository.name
   runner.metadata.labels.commit = pushRecord.head_commit.id
 
   // Add env vars.
@@ -134,14 +146,12 @@ function run(job, pushRecord) {
     });
   });
 
-  // // Automatically mount the sshKey:
-  // envVars.push({
-  //   name: "ACID_REPO_KEY",
-  //   // value: "/hook/ssh/sshKey"
-  //   valueFrom: {
-  //     secretKeyRef: { name: secName, key: "sshKey" }
-  //   }
-  // });
+  if (sshKey) {
+    envVars.push({
+      name: "ACID_REPO_KEY",
+      value: sshKey
+    })
+  }
 
   // Add top-level env vars. These must override any attempt to set the values
   // to something else.
