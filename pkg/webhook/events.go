@@ -3,16 +3,16 @@ package webhook
 import (
 	"crypto/subtle"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/Masterminds/vcs"
-	"github.com/deis/quokka/pkg/javascript"
+	"github.com/deis/acid/pkg/js"
 	"github.com/deis/quokka/pkg/javascript/libk8s"
 
 	"gopkg.in/gin-gonic/gin.v1"
@@ -53,6 +53,7 @@ func EventRouter(c *gin.Context) {
 	}
 }
 
+// Push responds to a push event.
 func Push(c *gin.Context) {
 	// Only process push for now. Other hooks have different formats.
 	signature := c.Request.Header.Get(HubSignature)
@@ -120,7 +121,7 @@ func Push(c *gin.Context) {
 	}
 
 	// Start up a build
-	if err := build(push); err != nil {
+	if err := build(push, proj); err != nil {
 		log.Printf("error on pushWebhook: %s", err)
 		// TODO: Make the returned message pretty. We don't need the error message
 		// to go back to GitHub.
@@ -131,17 +132,23 @@ func Push(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "Complete"})
 }
 
-func build(push *PushHook) error {
+func build(push *PushHook, proj *Project) error {
 	toDir := filepath.Join("_cache", push.Repository.FullName)
 	if err := os.MkdirAll(toDir, 0755); err != nil {
 		log.Printf("error making %s: %s", toDir, err)
 		return err
 	}
+
+	url := push.Repository.CloneURL
+	if len(proj.SSHKey) != 0 {
+		log.Printf("Switch to SSH URL %s because key is of length %d", push.Repository.SSHURL, len(proj.SSHKey))
+		url = push.Repository.SSHURL
+	}
+
 	// TODO:
 	// - [ ] Remove the cached directory at the end of the build?
-
-	if err := cloneRepo(push.Repository.SSHURL, push.HeadCommit.Id, toDir); err != nil {
-		log.Printf("error cloning %s to %s: %s", push.Repository.CloneURL, toDir, err)
+	if err := cloneRepo(url, push.HeadCommit.Id, toDir); err != nil {
+		log.Printf("error cloning %s to %s: %s", url, toDir, err)
 		return err
 	}
 
@@ -157,7 +164,7 @@ func build(push *PushHook) error {
 	if err != nil {
 		return err
 	}
-	return execScripts(push, d, acidScript)
+	return execScripts(push, proj.SSHKey, d, acidScript)
 }
 
 type originalError interface {
@@ -174,29 +181,26 @@ func logOriginalError(err error) {
 }
 
 // execScripts prepares the JS runtime and feeds it the objects it needs.
-func execScripts(push *PushHook, scripts ...[]byte) error {
-	rt := javascript.NewRuntime()
-	if err := libk8s.Register(rt.VM); err != nil {
+func execScripts(push *PushHook, sshKey string, scripts ...[]byte) error {
+
+	// Serialize push record
+	pushRecord, err := json.Marshal(push)
+	if err != nil {
 		return err
 	}
 
-	// FIXME: This should make its way into quokka.
-	rt.VM.Set("sleep", func(seconds int) {
-		time.Sleep(time.Duration(seconds) * time.Second)
-	})
-
-	// Add a reference to the secret. This lets the builder grab items from
-	// the secret.
-	rt.VM.Object("secName = 'acid-" + ShortSHA(push.Repository.FullName) + "'")
-
-	out, _ := json.Marshal(push)
-	rt.VM.Object("pushRecord = " + string(out))
-	for _, script := range scripts {
-		if _, err := rt.VM.Run(script); err != nil {
-			return err
-		}
+	// Create a new JS sandbox and configure it.
+	sandbox, err := js.New()
+	if err != nil {
+		return fmt.Errorf("failed to load sandbox: %s", err)
 	}
-	return nil
+	sandbox.Variable("sshKey", strings.Replace(sshKey, "\n", "$", -1))
+	sandbox.Variable("configName", "acid-"+ShortSHA(push.Repository.FullName))
+
+	if err := sandbox.ExecString(`pushRecord = ` + string(pushRecord)); err != nil {
+		return fmt.Errorf("failed JS bootstrap: %s", err)
+	}
+	return sandbox.ExecAll(scripts...)
 }
 
 func cloneRepo(url, version, toDir string) error {

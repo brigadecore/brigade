@@ -1,11 +1,17 @@
 #!/bin/sh
-extra=""
 
+dest=${DEST_PATH:-src}
+
+url=$CLONE_URL
 if [ "" != "${ACID_REPO_KEY}" ]; then
-  KEY="./id_dsa"
-  echo ${ACID_REPO_KEY} | sed 's/\$/\n/g' > $KEY
-  chmod 600 $KEY
-  extra="-i $KEY -o StrictHostKeyChecking=no"
+  url=$SSH_URL
 fi
 
-ssh $extra $@
+echo "Clone ${url}#${HEAD_COMMIT_ID} into ${dest}"
+
+git clone $url $dest
+cd $dest
+git checkout $HEAD_COMMIT_ID
+
+ls -lah /hook/data
+. /hook/data/main.sh
