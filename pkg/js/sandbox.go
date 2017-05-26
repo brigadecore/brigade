@@ -39,11 +39,11 @@ func New() (*Sandbox, error) {
 
 // Preload loads scripts that have been precompiled.
 //
-// The script must reside in lib.Scripts.
+// The script must reside in the lib.
 func (s *Sandbox) Preload(script string) error {
-	data, ok := lib.Scripts[script]
-	if !ok {
-		return fmt.Errorf("unknown library: %s", script)
+	data, err := lib.Script(script)
+	if err != nil {
+		return err
 	}
 	return s.ExecString(data)
 }

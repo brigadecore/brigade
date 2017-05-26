@@ -1,17 +1,15 @@
 package lib
 
 import (
-	"path/filepath"
 	"testing"
 )
 
-func TestScripts(t *testing.T) {
-	jsFiles, err := filepath.Glob("*.js")
+func TestScript(t *testing.T) {
+	b, err := Script("js/runner.js")
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if len(jsFiles) != len(Scripts) {
-		t.Fatalf("Expected %d (*.js) scripts, got %d (Scripts)", len(jsFiles), len(Scripts))
+	if len(b) == 0 {
+		t.Error("Expected script to have contents. Got empty []byte.")
 	}
 }

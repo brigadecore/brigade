@@ -208,7 +208,7 @@ func execScripts(sandbox *js.Sandbox, push *PushHook, sshKey string, acidJS []by
 	}
 
 	log.Println("Loading runner.js")
-	if err := sandbox.Preload("pkg/js/lib/runner.js"); err != nil {
+	if err := sandbox.Preload("js/runner.js"); err != nil {
 		return fmt.Errorf("runner.js: %s", err)
 	}
 

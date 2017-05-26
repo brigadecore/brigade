@@ -71,7 +71,10 @@ test-functional:
 
 .PHONY: test-js
 test-js:
-	eslint runner.js
+	eslint js/runner.js
+
+generate:
+	go-bindata --pkg lib --nometadata -o pkg/js/lib/generated.go js
 
 
 generate:
