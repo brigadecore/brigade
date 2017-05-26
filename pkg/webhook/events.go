@@ -159,12 +159,12 @@ func build(push *PushHook, proj *Project) error {
 		return err
 	}
 	log.Print(string(acidScript))
-
-	d, err := ioutil.ReadFile(runnerJS)
+	sandbox, err := js.New()
 	if err != nil {
 		return err
 	}
-	return execScripts(push, proj.SSHKey, d, acidScript)
+
+	return execScripts(sandbox, push, proj.SSHKey, acidScript)
 }
 
 type originalError interface {
@@ -181,26 +181,38 @@ func logOriginalError(err error) {
 }
 
 // execScripts prepares the JS runtime and feeds it the objects it needs.
-func execScripts(push *PushHook, sshKey string, scripts ...[]byte) error {
-
+func execScripts(sandbox *js.Sandbox, push *PushHook, sshKey string, acidJS []byte) error {
 	// Serialize push record
 	pushRecord, err := json.Marshal(push)
 	if err != nil {
 		return err
 	}
 
-	// Create a new JS sandbox and configure it.
-	sandbox, err := js.New()
-	if err != nil {
-		return fmt.Errorf("failed to load sandbox: %s", err)
-	}
+	// Configure sandbox
 	sandbox.Variable("sshKey", strings.Replace(sshKey, "\n", "$", -1))
 	sandbox.Variable("configName", "acid-"+ShortSHA(push.Repository.FullName))
+	// TODO: When we add more events, we need to fix this
+	sandbox.Variable("eventName", "github.push")
 
+	// We do this so that the JSON is correctly marshaled by Go and unmarshaled by Otto.
 	if err := sandbox.ExecString(`pushRecord = ` + string(pushRecord)); err != nil {
 		return fmt.Errorf("failed JS bootstrap: %s", err)
 	}
-	return sandbox.ExecAll(scripts...)
+
+	log.Println("Loading acid.js")
+
+	// Wrap the AcidJS in a function that we can call later.
+	acidScript := `var registerEvents = function(events){` + string(acidJS) + `}`
+	if err := sandbox.ExecString(acidScript); err != nil {
+		return fmt.Errorf("acid.js is not well formed: %s\n%s", err, acidScript)
+	}
+
+	log.Println("Loading runner.js")
+	if err := sandbox.Preload("pkg/js/lib/runner.js"); err != nil {
+		return fmt.Errorf("runner.js: %s", err)
+	}
+
+	return nil
 }
 
 func cloneRepo(url, version, toDir string) error {

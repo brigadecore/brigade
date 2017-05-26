@@ -1,4 +1,4 @@
-/* global pushRecord _ sleep kubernetes secName */
+/* global pushRecord _ sleep kubernetes secName registerEvents eventName */
 /* exported Job WaitGroup run */
 
 // This is the runner wrapping script.
@@ -7,6 +7,28 @@ console.log(pushRecord.repository.name)
 
 // The default image is stock ubuntu 16.04 + make and git.
 var acidImage = "acid-ubuntu:latest"
+
+// EventHandler describes the list of events that Acid is aware of.
+function EventHandler() {
+  this.github = {
+    push: function(data){},
+    pullRequest: function(data){}
+  }
+}
+
+// Event describes an event that was triggered.
+// An event is passed to an event hanlder. The event handler can use this
+// object to acquire the data that triggered the event
+function Event(eventName, req) {
+  // name is the event name (e.g. 'github.push')
+  this.name = eventName
+  // request is the event data from the request.
+  // For a GitHub hook, it's the payload received from GitHub
+  this.request = req
+  // config contains the configuration for this request.
+  // This is a dictionary.
+  this.config = {}
+}
 
 // Prototype for Job.
 function Job(name, tasks) {
@@ -241,4 +263,41 @@ function newCM(name) {
   };
 }
 
+function lookupEvent(name, handler) {
+  // FIXME: For some reason, split does not work. It causes timeouts.
+  parts = name.split('\.', -1)
+  if (parts.length != 2) {
+    throw "Expected event name in form namespace.name, got " + name
+  }
+
+  return handler[parts[0]][parts[1]]
+}
+
+// ===========================
+// Main loader
+// ===========================
+
 console.log("Loaded ACID")
+
+if (!registerEvents) {
+  throw "No event handlers defined"
+}
+
+
+e = new Event(eventName, pushRecord)
+e.config = {
+  // MPB: I don't think there is any reason to pass this in, is there?
+  //"sshKey": sshKey,
+  "configName": configName
+}
+
+eventHandler = new EventHandler()
+console.log(JSON.stringify(eventHandler))
+registerEvents(eventHandler)
+
+console.log("events loaded. Firing " + eventName)
+
+//fn = lookupEvent(eventName, eventHandler)
+//fn(pushRecord)
+eventHandler.github.push(e)
+

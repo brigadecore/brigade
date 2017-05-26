@@ -19,7 +19,7 @@ mockCore = {
         return _.find(mockPods, function(ele) {
           return ele.metadata.name == name
         })
-      }
+      },
       create: function(def) {
         // Succeeded, Running, and Failed are some valid values.
         def.status = { phase: "Succeeded" }
