@@ -3,7 +3,6 @@
 package js
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/deis/acid/pkg/js/lib"

@@ -76,11 +76,6 @@ test-js:
 generate:
 	go-bindata --pkg lib --nometadata -o pkg/js/lib/generated.go js
 
-
-generate:
-	go build -o bin/js2lib cmd/js2lib/main.go
-	./bin/js2lib pkg/js/lib/scripts.go pkg/js/lib/*.js
-
 HAS_GOMETALINTER := $(shell command -v gometalinter;)
 HAS_GLIDE := $(shell command -v glide;)
 HAS_GOX := $(shell command -v gox;)
