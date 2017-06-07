@@ -69,3 +69,26 @@ test-functional:
 .PHONY: test-js
 test-js:
 	eslint runner.js
+
+HAS_GOMETALINTER := $(shell command -v gometalinter;)
+HAS_GLIDE := $(shell command -v glide;)
+HAS_GOX := $(shell command -v gox;)
+HAS_GIT := $(shell command -v git;)
+HAS_BINDATA := $(shell command -v go-bindata;)
+
+.PHONY: bootstrap
+bootstrap:
+ifndef HAS_GOMETALINTER
+	go get -u github.com/alecthomas/gometalinter
+	gometalinter --install
+endif
+ifndef HAS_GLIDE
+	go get -u github.com/Masterminds/glide
+endif
+ifndef HAS_GIT
+	$(error You must install git)
+endif
+ifndef HAS_BINDATA
+	go get github.com/jteeuwen/go-bindata/...
+endif
+	glide install --strip-vendor
