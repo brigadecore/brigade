@@ -6,6 +6,7 @@ sophisticated multi-step builds.
 
 Here's how it works:
 
+- Install Acid into your Kubernetes cluster (if you haven't already)
 - You define an `acid.js` file in the root of your GitHub repository.
 - Add a GitHub hook pointing to your Acid server
 - On each push event (including tagging), Acid runs your `acid.js` file.
@@ -23,20 +24,24 @@ however many stages, jobs, and tasks you want.
 A simple `acid.js` file looks like this:
 
 ```javascript
-// Define a build step:
-j = new Job("run-unit-tests");
 
-// Use a custom image (this is actually the default)
-j.image = "acid-ubuntu:latest";
+// Acid lets you respond to different Github events:
+events.github.push = function(e) {
+  // Define a build step:
+  j = new Job("run-unit-tests");
 
-// Define a couple of tasks:
-j.tasks = [
-  "echo 'running tests'",
-  "make test"
-];
+  // Use a custom image (this is actually the default)
+  j.image = "acid-ubuntu:latest";
 
-// Run the build:
-j.run(pushRecord)
+  // Define a couple of tasks:
+  j.tasks = [
+    "echo 'running tests'",
+    "make test"
+  ];
+
+  // Run the build:
+  j.run()
+}
 ```
 
 The above creates a new job named `run-unit-tests`. It starts with the AcidIC

@@ -2,8 +2,9 @@ package webhook
 
 import (
 	"io/ioutil"
-	"path/filepath"
 	"testing"
+
+	"github.com/deis/acid/pkg/js"
 )
 
 // mock8s provides a mock for libk8s.
@@ -11,8 +12,12 @@ const mock8s = "../../testdata/mock8s.js"
 
 func TestExecScripts(t *testing.T) {
 	ph := &PushHook{}
-	script := []byte(`console.log('loaded')`)
-	if err := execScripts(ph, "", script); err != nil {
+	script := []byte(`events.github.push = function() { console.log('loaded') }`)
+	s, err := js.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := execScripts(s, ph, "", script); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -25,7 +30,7 @@ func mustReadScript(t *testing.T, filename string) []byte {
 	return script
 }
 
-func TestExecScripts_Runner(t *testing.T) {
+func TestExecScripts_AcidJS(t *testing.T) {
 	// This test essentially does a parsing chek on runner.js, too.
 	ref := "c0ff334411"
 	ph := &PushHook{
@@ -64,16 +69,24 @@ func TestExecScripts_Runner(t *testing.T) {
 		sshKey string
 		fail   bool
 	}{
-		{"log", []byte(`console.log(sshKey)`), "foo", false},
+		{"log", []byte(`events.github.push = function() {console.log("hello") }`), "foo", false},
+		{"log", []byte(`events.github.push = function() {console.log(sshKey) }`), "foo", false},
 		{"basic", mustReadScript(t, "testdata/job_no_sshkey.js"), "", false},
 		{"with-sshkey", mustReadScript(t, "testdata/job_sshkey.js"), "my-ssh-key", false},
 		{"waitgroup", mustReadScript(t, "testdata/waitgroup.js"), "", false},
 	}
 
 	mock := mustReadScript(t, mock8s)
-	runner := mustReadScript(t, filepath.Join("..", "..", runnerJS))
 	for _, tt := range tests {
-		if err := execScripts(ph, tt.sshKey, mock, runner, tt.script); err != nil {
+		t.Logf("Running %s", tt.name)
+		s, err := js.New()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := s.ExecAll(mock); err != nil {
+			t.Fatal(err)
+		}
+		if err := execScripts(s, ph, tt.sshKey, tt.script); err != nil {
 			if tt.fail {
 				continue
 			}

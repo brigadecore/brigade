@@ -5,6 +5,7 @@ package js
 import (
 	"time"
 
+	"github.com/deis/acid/pkg/js/lib"
 	"github.com/deis/quokka/pkg/javascript"
 	"github.com/deis/quokka/pkg/javascript/libk8s"
 )
@@ -16,6 +17,7 @@ type Sandbox struct {
 	rt *javascript.Runtime
 }
 
+// New creates a new *Sandbox
 func New() (*Sandbox, error) {
 	rt := javascript.NewRuntime()
 	s := &Sandbox{
@@ -34,11 +36,23 @@ func New() (*Sandbox, error) {
 	return s, nil
 }
 
-// Set a variable in the runtime.
+// Preload loads scripts that have been precompiled.
+//
+// The script must reside in the lib.
+func (s *Sandbox) Preload(script string) error {
+	data, err := lib.Script(script)
+	if err != nil {
+		return err
+	}
+	return s.ExecString(data)
+}
+
+// Variable Sets a variable in the runtime.
 func (s *Sandbox) Variable(name string, val interface{}) {
 	s.rt.VM.Set(name, val)
 }
 
+// ExecString executes the given string as a JavaScript file.
 func (s *Sandbox) ExecString(script string) error {
 	_, err := s.rt.VM.Run(script)
 	return err

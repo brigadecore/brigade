@@ -7,10 +7,12 @@ TEST_DIR=./_functional_tests
 DOCKER_BUILD_FLAGS :=
 
 .PHONY: build
+build: generate
 build:
 	go build -o bin/acid .
 
 .PHONY: build-docker-bin
+build-docker-bin: generate
 build-docker-bin:
 	GOOS=linux GOARCH=amd64 go build -o chart/rootfs/acid .
 	cp runner.js chart/rootfs/
@@ -52,6 +54,7 @@ docker-test:
 		$(REG)/acid-ubuntu:latest
 
 .PHONY: test-unit
+test-unit: generate
 test-unit:
 	go test -v . ./pkg/...
 
@@ -68,7 +71,10 @@ test-functional:
 
 .PHONY: test-js
 test-js:
-	eslint runner.js
+	eslint js/runner.js
+
+generate:
+	go-bindata --pkg lib --nometadata -o pkg/js/lib/generated.go js
 
 HAS_GOMETALINTER := $(shell command -v gometalinter;)
 HAS_GLIDE := $(shell command -v glide;)
