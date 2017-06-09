@@ -1,4 +1,4 @@
-REG=technosophos
+REG=acidic.azurecr.io
 
 # For test runs
 ZOLVER_EVENT="X-GitHub-Event: push"
@@ -15,7 +15,6 @@ build:
 build-docker-bin: generate
 build-docker-bin:
 	GOOS=linux GOARCH=amd64 go build -o chart/rootfs/acid .
-	cp runner.js chart/rootfs/
 
 .PHONY: run
 run: build

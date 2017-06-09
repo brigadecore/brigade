@@ -14,6 +14,7 @@ import (
 	"github.com/Masterminds/vcs"
 	"github.com/deis/acid/pkg/js"
 	"github.com/deis/quokka/pkg/javascript/libk8s"
+	"github.com/google/go-github/github"
 
 	"gopkg.in/gin-gonic/gin.v1"
 )
@@ -101,35 +102,57 @@ func Push(c *gin.Context) {
 		log.Printf("!!!WARNING!!! Expected project secret to have name %q, got %q", push.Repository.FullName, proj.Name)
 	}
 
+	go buildStatus(push, proj)
+
+	c.JSON(http.StatusOK, gin.H{"status": "Complete"})
+}
+
+// buildStatus runs a build, and sets upstream status accordingly.
+func buildStatus(push *PushHook, proj *Project) {
 	// If we need an SSH key, set it here
 	if proj.SSHKey != "" {
 		key, err := ioutil.TempFile("", "")
 		if err != nil {
 			log.Printf("error creating ssh key cache: %s", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "Authentication impossible"})
 			return
 		}
 		keyfile := key.Name()
 		defer os.Remove(keyfile)
 		if _, err := key.WriteString(proj.SSHKey); err != nil {
 			log.Printf("error writing ssh key cache: %s", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "Authentication impossible"})
 			return
 		}
 		os.Setenv("ACID_REPO_KEY", keyfile)
-		defer os.Setenv("ACID_REPO_KEY", "") // purely defensive... not really necessary
+		defer os.Unsetenv("ACID_REPO_KEY") // purely defensive... not really necessary
 	}
 
-	// Start up a build
+	targetURL := "http://localhost:8080" // FIXME
+	msg := "Building"
+	svc := "acid"
+	status := &github.RepoStatus{
+		State:       &StatePending,
+		TargetURL:   &targetURL,
+		Description: &msg,
+		Context:     &svc,
+	}
+	if err := setRepoStatus(push, proj, status); err != nil {
+		// For this one, we just log an error and continue.
+		log.Printf("Error setting status to %s: %s", *status.State, err)
+	}
 	if err := build(push, proj); err != nil {
-		log.Printf("error on pushWebhook: %s", err)
-		// TODO: Make the returned message pretty. We don't need the error message
-		// to go back to GitHub.
-		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
-		return
+		log.Printf("Build failed: %s", err)
+		msg = err.Error()
+		status.State = &StateFailure
+		status.Description = &msg
+	} else {
+		msg = "Acid build passed"
+		status.State = &StateSuccess
+		status.Description = &msg
 	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "Complete"})
+	if err := setRepoStatus(push, proj, status); err != nil {
+		// For this one, we just log an error and continue.
+		log.Printf("After build, error setting status to %s: %s", *status.State, err)
+	}
 }
 
 func build(push *PushHook, proj *Project) error {
@@ -236,11 +259,18 @@ func cloneRepo(url, version, toDir string) error {
 	return nil
 }
 
+// Project describes an Acid project
 type Project struct {
-	Name   string
-	Repo   string
+	// Name is the name ofthe project
+	Name string
+	// Repo is the GitHub repository URL
+	Repo string
+	// Secret is the GitHub shared key
 	Secret string
+	// SSHKey is the SSH key the client will use to clone the repo
 	SSHKey string
+	// GitHubToken is used for oauth2 for client interactions. This is different than the secret.
+	GitHubToken string
 }
 
 func LoadProjectConfig(name, namespace string) (*Project, error) {

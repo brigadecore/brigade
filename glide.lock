@@ -1,5 +1,5 @@
-hash: 0581aa988b2e42734b23ed31e3fa26b5b482c0545e0f1ab15f114e35993f891d
-updated: 2017-05-15T15:10:36.186058207-06:00
+hash: bb13f446ae492538c3ca15f4b374c4f5a8080a0855d829b29afd185ba8ce5a6f
+updated: 2017-06-08T16:38:07.687828677-06:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -68,6 +68,14 @@ imports:
   version: 2402d76f3d41f928c7902a765dfc872356dd3aad
   subpackages:
   - proto
+- name: github.com/google/go-github
+  version: 7a51fb928f52a196d5f31daefb8a489453ef54ff
+  subpackages:
+  - github
+- name: github.com/google/go-querystring
+  version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
+  subpackages:
+  - query
 - name: github.com/google/gofuzz
   version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
 - name: github.com/howeyc/gopass

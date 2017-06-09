@@ -4,3 +4,8 @@ import:
   version: ~1.1.4
 - package: github.com/deis/quokka
 - package: github.com/Masterminds/vcs
+- package: golang.org/x/oauth2
+- package: github.com/google/go-github
+- package: github.com/google/go-querystring
+  subpackages:
+  - query
