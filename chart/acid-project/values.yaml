@@ -3,3 +3,19 @@ project: "technosophos/zolver"
 repository: "github.com/technosophos/zolver"
 # Used by GitHub to compute hooks.
 secret: "IBrakeForSeaBeasts"
+
+# OPTIONAL: Use this to have Acid update your project about the build.
+# You probably want this if you want pull requests or commits to show
+# the build status.
+# githubToken: "github oauth token"
+
+# OPTIONAL: Use this for private repositories
+# This is the PRIVATE key that Acid will use to clone a private repo.
+# You should generate a special key for this. Don't reuse another one.
+# sshKey: |-
+#  -----BEGIN RSA PRIVATE KEY-----
+#  IIEpAIBAAKCAg1wyZD164xNLrANjRrcsbieLwHJ6fKD3LC19E...
+#  ...
+#  ...
+#  -----END RSA PRIVATE KEY-----
+
