@@ -1,5 +1,5 @@
 image:
-  repository: technosophos/acid
+  repository: acidic.azurecr.io/acid
   tag: latest
   pullPolicy: Always
 service:
