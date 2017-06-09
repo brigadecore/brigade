@@ -25,12 +25,12 @@ func New() (*Sandbox, error) {
 	}
 
 	// Add the "built-in" libraries here:
-	if err := libk8s.Register(rt.VM); err != nil {
+	if err := libk8s.Register(rt.VM()); err != nil {
 		return s, err
 	}
 
 	// FIXME: This should make its way into quokka.
-	rt.VM.Set("sleep", func(seconds int) {
+	rt.VM().Set("sleep", func(seconds int) {
 		time.Sleep(time.Duration(seconds) * time.Second)
 	})
 	return s, nil
@@ -49,19 +49,19 @@ func (s *Sandbox) Preload(script string) error {
 
 // Variable Sets a variable in the runtime.
 func (s *Sandbox) Variable(name string, val interface{}) {
-	s.rt.VM.Set(name, val)
+	s.rt.VM().Set(name, val)
 }
 
 // ExecString executes the given string as a JavaScript file.
 func (s *Sandbox) ExecString(script string) error {
-	_, err := s.rt.VM.Run(script)
+	_, err := s.rt.VM().Run(script)
 	return err
 }
 
 // ExecAll takes a list of scripts and executes them.
 func (s *Sandbox) ExecAll(scripts ...[]byte) error {
 	for _, script := range scripts {
-		if _, err := s.rt.VM.Run(script); err != nil {
+		if _, err := s.rt.VM().Run(script); err != nil {
 			return err
 		}
 	}
