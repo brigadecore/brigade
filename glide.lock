@@ -1,5 +1,5 @@
-hash: bb13f446ae492538c3ca15f4b374c4f5a8080a0855d829b29afd185ba8ce5a6f
-updated: 2017-06-08T16:38:07.687828677-06:00
+hash: 1855c1f0966ec28757d7bbb928649be465151bd46cd2dc67c2c26477b87eccae
+updated: 2017-06-09T15:30:22.381239937-06:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -27,7 +27,7 @@ imports:
   subpackages:
   - spew
 - name: github.com/deis/quokka
-  version: ff865fb1203d048ac4801a60c07605c278787334
+  version: bb6edf6a024a3c18a2c5050523b7f85e202fef04
   subpackages:
   - pkg/javascript
   - pkg/javascript/jsutil
