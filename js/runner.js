@@ -1,4 +1,4 @@
-/* global pushRecord _ sleep kubernetes secName registerEvents eventName */
+/* global pushRecord _ sleep kubernetes secName registerEvents eventName sshKey configName */
 /* exported Job WaitGroup run */
 
 // This is the runner wrapping script.
@@ -10,9 +10,10 @@ var acidImage = "acid-ubuntu:latest"
 
 // EventHandler describes the list of events that Acid is aware of.
 function EventHandler() {
+  // Every event handler gets the param 'data', which is the body of the request.
   this.github = {
-    push: function(data){},
-    pullRequest: function(data){}
+    push: function() {},
+    pullRequest: function() {}
   }
 }
 
@@ -263,16 +264,6 @@ function newCM(name) {
   };
 }
 
-function lookupEvent(name, handler) {
-  // FIXME: For some reason, split does not work. It causes timeouts.
-  parts = name.split('\.', -1)
-  if (parts.length != 2) {
-    throw "Expected event name in form namespace.name, got " + name
-  }
-
-  return handler[parts[0]][parts[1]]
-}
-
 // ===========================
 // Main loader
 // ===========================
@@ -284,20 +275,28 @@ if (!registerEvents) {
 }
 
 
-e = new Event(eventName, pushRecord)
+var e = new Event(eventName, pushRecord)
+
 e.config = {
   // MPB: I don't think there is any reason to pass this in, is there?
-  //"sshKey": sshKey,
+  // "sshKey": sshKey,
   "configName": configName
 }
 
-eventHandler = new EventHandler()
+var eventHandler = new EventHandler()
+
 console.log(JSON.stringify(eventHandler))
 registerEvents(eventHandler)
 
 console.log("events loaded. Firing " + eventName)
 
-//fn = lookupEvent(eventName, eventHandler)
-//fn(pushRecord)
-eventHandler.github.push(e)
+// fn = lookupEvent(eventName, eventHandler)
+// fn(pushRecord)
+switch (eventName) {
+  case "github.push":
+    eventHandler.github.push(e)
+    break
+  default:
+    throw "Unknown event " + eventName
+}
 
