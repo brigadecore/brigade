@@ -38,7 +38,7 @@ func setRepoStatus(push *PushHook, proj *Project, status *github.RepoStatus) err
 		c,
 		push.Repository.Owner.Name,
 		push.Repository.Name,
-		push.HeadCommit.SHA,
+		push.HeadCommit.Id,
 		status)
 	return err
 }
