@@ -85,7 +85,7 @@ test-functional:
 # JS test is local only
 .PHONY: test-js
 test-js:
-	eslint js/runner.js
+	eslint js/runner.js acid.js
 
 # Compile the JS into the Go
 # We don't call `go generate` anymore because it is a redundant abstraction.
