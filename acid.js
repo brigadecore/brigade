@@ -28,6 +28,8 @@ events.github.push = function(e) {
 
   // Run three tasks in order.
   goBuild.tasks = [
+    "date",
+    "echo Begin test-unit",
     "go get github.com/Masterminds/glide",
     "go get github.com/jteeuwen/go-bindata/...",
     "glide install --strip-vendor",
@@ -38,12 +40,15 @@ events.github.push = function(e) {
 
   jsLint.image = "technosophos/acid-node:latest";
   jsLint.tasks = [
+    "date",
+    "echo Begin test-js",
     "npm install -g --quiet eslint",
     "make test-js"
   ];
 
   // Run both jobs in parallel, and wait for then both to finish.
   var waiter = new WaitGroup()
+
   waiter.add(jsLint)
   waiter.add(goBuild)
   waiter.run()
