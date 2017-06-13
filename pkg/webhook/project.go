@@ -8,7 +8,7 @@ import (
 
 // Project describes an Acid project
 type Project struct {
-	// Name is the name ofthe project
+	// Name is the computed name of the project (acid-aeff2343a3234ff)
 	Name string
 	// Repo is the GitHub repository URL
 	Repo string
@@ -18,6 +18,8 @@ type Project struct {
 	SSHKey string
 	// GitHubToken is used for oauth2 for client interactions. This is different than the secret.
 	GitHubToken string
+	// ShortName is the short project name (deis/acid)
+	ShortName string
 }
 
 // LoadProjectConfig loads a project config from inside of Kubernetes.
@@ -40,6 +42,7 @@ func LoadProjectConfig(name, namespace string) (*Project, error) {
 	proj.GitHubToken = string(secret.Data["githubToken"])
 	// Note that we have to undo the key escaping.
 	proj.SSHKey = strings.Replace(string(secret.Data["sshKey"]), "$", "\n", -1)
+	proj.ShortName = secret.Annotations["projectName"]
 
 	return proj, nil
 }

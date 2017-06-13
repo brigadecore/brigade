@@ -13,6 +13,7 @@ func main() {
 
 	// Lame UI
 	router.GET("/log/:org/:project", logToHTML)
+	router.GET("/log/:org/:project/status.svg", badge)
 
 	router.Run(":7744")
 }

@@ -127,7 +127,7 @@ func buildStatus(push *PushHook, proj *Project) {
 
 	targetURL := "http://localhost:8080" // FIXME
 	msg := "Building"
-	svc := "acid"
+	svc := StatusContext
 	status := &github.RepoStatus{
 		State:       &StatePending,
 		TargetURL:   &targetURL,
