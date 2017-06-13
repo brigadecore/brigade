@@ -29,7 +29,8 @@ events.github.push = function(e) {
   // Run three tasks in order.
   goBuild.tasks = [
     "go get github.com/Masterminds/glide",
-    "glide install",
+    "go get github.com/jteeuwen/go-bindata/...",
+    "glide install --strip-vendor",
     "make test-unit"
   ];
 
