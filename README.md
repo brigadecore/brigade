@@ -1,5 +1,7 @@
 # Acid: Acme Continuous Integration and Deployment
 
+[![Build Status](http://localhost:7744/log/deis/acid/status.svg)](http://localhost:7744/log/deis/acid)
+
 Acid is designed to give you the ease of use of a hosted CI/CD solution, but
 running on your own Kubernetes cluster. And it's flexibile enough to accomodate
 sophisticated multi-step builds.

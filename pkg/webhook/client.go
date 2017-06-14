@@ -3,6 +3,7 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"golang.org/x/oauth2"
 
@@ -16,6 +17,8 @@ var (
 	StateError   = "error"
 	StateSuccess = "success"
 )
+
+const StatusContext = "acid"
 
 // ghClient gets a new GitHub client object.
 //
@@ -41,4 +44,25 @@ func setRepoStatus(push *PushHook, proj *Project, status *github.RepoStatus) err
 		push.HeadCommit.Id,
 		status)
 	return err
+}
+
+// GetRepoStatus gets the Acid repository status.
+// The ref can be a SHA or a branch or tag.
+func GetRepoStatus(proj *Project, ref string) (*github.RepoStatus, error) {
+	c := context.Background()
+	client := ghClient(proj.GitHubToken)
+	parts := strings.SplitN(proj.ShortName, "/", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("project name %q is malformed", proj.ShortName)
+	}
+	statii, _, err := client.Repositories.ListStatuses(c, parts[0], parts[1], ref, &github.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, status := range statii {
+		if *status.Context == StatusContext {
+			return status, nil
+		}
+	}
+	return nil, fmt.Errorf("no acid status found")
 }
