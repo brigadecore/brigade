@@ -3,37 +3,118 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os/exec"
+	"regexp"
 
 	"gopkg.in/gin-gonic/gin.v1"
 
 	"github.com/deis/acid/pkg/webhook"
+	"github.com/deis/quokka/pkg/javascript/libk8s"
+
+	//v1core "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
+const namespace = "default"
+
 func logToHTML(c *gin.Context) {
-	org, _ := c.Get("org")
-	proj, _ := c.Get("project")
-	log.Printf("Loading logs for %s-%s", org, proj)
+	org := c.Param("org")
+	proj := c.Param("project")
+	commit := c.Param("commit")
+
+	if proj == "favicon.ico" {
+		c.JSON(404, gin.H{"message": "Not found"})
+		return
+	}
+
+	pname := fmt.Sprintf("%s/%s", org, proj)
+	log.Printf("Loading logs for %q", pname)
+	sec := "acid-" + webhook.ShortSHA(pname)
+	p, err := webhook.LoadProjectConfig(sec, namespace)
+	if err != nil {
+		log.Printf("logToHTML: error loading project: %s", err)
+	}
 
 	c.Writer.Write([]byte(bootstrapHead))
 	defer c.Writer.Write([]byte(bootstrapFoot))
 
+	if len(commit) > 0 {
+		if !SHAish(commit) {
+			last, err := webhook.GetLastCommit(p, commit)
+			if err != nil {
+				log.Printf("error parsing commit reference %s: %s", commit, err)
+				c.Writer.WriteString("No reference")
+				return
+			}
+			commit = last
+		}
+	}
+	fmt.Fprintf(c.Writer, "<p>Logs for Git reference %q</p>", commit)
+
+	name := fmt.Sprintf("%s-%s", org, proj)
+	pods, err := taskPods(commit, name, namespace)
+	if err != nil {
+		log.Printf("could not load task pods: %s", err)
+		c.Writer.WriteString("No task pods found. Has the job started?")
+		return
+	}
+
+	panelHead := `<div class="panel panel-%s"><div class="panel-heading"><h3 class="panel-title">%s</h3></div><div class="panel-body"><pre>`
+	panelFoot := `</pre></div></div>`
+	for _, p := range pods.Items {
+		st := "info"
+		switch p.Status.Phase {
+		case v1.PodPending, v1.PodRunning:
+			st = "warning"
+		case v1.PodFailed:
+			st = "danger"
+		case v1.PodSucceeded:
+			st = "success"
+
+		}
+
+		// Print out logs for this item
+		fmt.Fprintf(c.Writer, panelHead, st, p.Name)
+		podLog(p.ObjectMeta.Name, c)
+		fmt.Fprintln(c.Writer, panelFoot)
+	}
+}
+
+func podLog(name string, c *gin.Context) error {
 	path, err := exec.LookPath("kubectl")
 	if err != nil {
 		path = "/usr/bin/kubectl"
 	}
 
-	// Load the project logs from where?
-	cmd := exec.Command(path, "logs", "-l", "jobname") //fmt.Sprintf("jobname=%s-%s", org, proj))
+	cmd := exec.Command(path, "logs", name)
 	cmd.Stdout = c.Writer
 	cmd.Stderr = c.Writer
 	if err := cmd.Run(); err != nil {
 		log.Printf("error running kubectl: %s", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "Oops! I Did it again. I played with your heart. I got lost in the game."})
-		return
+		fmt.Fprintf(c.Writer, "no logs for %s", name)
+		return err
+	}
+	return nil
+}
+
+// taskPods gets the pods associated with this task
+func taskPods(commit, name, namespace string) (*v1.PodList, error) {
+	// Load the pods that ran as part of this build.
+	kc, err := libk8s.KubeClient()
+	if err != nil {
+		return nil, err
 	}
 
+	lo := v1.ListOptions{LabelSelector: fmt.Sprintf("commit=%s,belongsto=%s", commit, name)}
+
+	return kc.CoreV1().Pods(namespace).List(lo)
+}
+
+var sha = regexp.MustCompile("^[a-f0-9]{40}$")
+
+// SHAish returns true if the given string looks like a GitHub SHA
+func SHAish(s string) bool {
+	return sha.MatchString(s)
 }
 
 func badge(c *gin.Context) {
@@ -45,7 +126,7 @@ func badge(c *gin.Context) {
 	pname := fmt.Sprintf("%s/%s", org, proj)
 	log.Printf("Loading project %s", pname)
 	n := "acid-" + webhook.ShortSHA(pname)
-	p, err := webhook.LoadProjectConfig(n, "default")
+	p, err := webhook.LoadProjectConfig(n, namespace)
 	if err != nil {
 		log.Printf("badge: error loading project: %s", err)
 		c.Writer.WriteString(badgeFailing)
@@ -134,10 +215,8 @@ const bootstrapHead = `
     <div class="container">
       <div class="starter-template">
         <h1>Log Output</h1>
-          <pre>
 `
 const bootstrapFoot = `
-        </pre>
       </div>
     </div><!-- /.container -->
 

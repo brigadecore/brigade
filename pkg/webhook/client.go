@@ -66,3 +66,15 @@ func GetRepoStatus(proj *Project, ref string) (*github.RepoStatus, error) {
 	}
 	return nil, fmt.Errorf("no acid status found")
 }
+
+// GetLastCommit gets the last commit on the give reference (branch name or tag).
+func GetLastCommit(proj *Project, ref string) (string, error) {
+	c := context.Background()
+	client := ghClient(proj.GitHubToken)
+	parts := strings.SplitN(proj.ShortName, "/", 2)
+	if len(parts) != 2 {
+		return "", fmt.Errorf("project name %q is malformed", proj.ShortName)
+	}
+	sha, _, err := client.Repositories.GetCommitSHA1(c, parts[0], parts[1], ref, "")
+	return sha, err
+}
