@@ -1,4 +1,4 @@
-events.github.push = function (e) {
+events.push = function (e) {
     console.log("Starting waitgroup")
     one = new Job("one")
     one.tasks = [

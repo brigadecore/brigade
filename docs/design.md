@@ -170,8 +170,8 @@ It does _not_ allow loading of external JS via NPM or other JavaScript loaders.
 The traditional Acid.js JavaScript implements one or more _event handlers_.
 
 ```javascript
-// This handles a GitHub Push webhook.
-events.github.push = function(e) {
+// This handles a Push webhook.
+events..push = function(e) {
   // Do some stuff
 }
 // This handles the daily cron run

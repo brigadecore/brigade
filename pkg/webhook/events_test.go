@@ -12,7 +12,7 @@ const mock8s = "../../testdata/mock8s.js"
 
 func TestExecScripts(t *testing.T) {
 	ph := &PushHook{}
-	script := []byte(`events.github.push = function() { console.log('loaded') }`)
+	script := []byte(`events.push = function() { console.log('loaded') }`)
 	s, err := js.New()
 	if err != nil {
 		t.Fatal(err)
@@ -69,8 +69,8 @@ func TestExecScripts_AcidJS(t *testing.T) {
 		sshKey string
 		fail   bool
 	}{
-		{"log", []byte(`events.github.push = function() {console.log("hello") }`), "foo", false},
-		{"log", []byte(`events.github.push = function() {console.log(sshKey) }`), "foo", false},
+		{"log", []byte(`events.push = function() {console.log("hello") }`), "foo", false},
+		{"log", []byte(`events.push = function() {console.log(sshKey) }`), "foo", false},
 		{"basic", mustReadScript(t, "testdata/job_no_sshkey.js"), "", false},
 		{"with-sshkey", mustReadScript(t, "testdata/job_sshkey.js"), "my-ssh-key", false},
 		{"waitgroup", mustReadScript(t, "testdata/waitgroup.js"), "", false},

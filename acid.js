@@ -4,8 +4,8 @@
 // ============================================================================
 /* global Job WaitGroup events */
 
-// This handles a GitHub Push webhook.
-events.github.push = function(e) {
+// This handles a Push webhook.
+events.push = function(e) {
   // This is a Go project, so we want to set it up for Go.
   var gopath = "/go"
 

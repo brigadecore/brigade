@@ -21,7 +21,7 @@ function EventHandler() {
 // An event is passed to an event hanlder. The event handler can use this
 // object to acquire the data that triggered the event
 function Event(eventName, req) {
-  // name is the event name (e.g. 'github.push')
+  // name is the event name (e.g. 'push')
   this.name = eventName
   // request is the event data from the request.
   // For a GitHub hook, it's the payload received from GitHub
@@ -293,8 +293,8 @@ console.log("events loaded. Firing " + eventName)
 // fn = lookupEvent(eventName, eventHandler)
 // fn(pushRecord)
 switch (eventName) {
-  case "github.push":
-    eventHandler.github.push(e)
+  case "push":
+    eventHandler.push(e)
     break
   default:
     throw "Unknown event " + eventName

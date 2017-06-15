@@ -1,4 +1,4 @@
-events.github.push = function(e) {
+events.push = function(e) {
   j = new Job("test-no-key")
   j.tasks = [
     "echo hello"
