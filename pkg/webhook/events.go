@@ -214,7 +214,7 @@ func execScripts(sandbox *js.Sandbox, push *PushHook, sshKey string, acidJS []by
 	sandbox.Variable("sshKey", strings.Replace(sshKey, "\n", "$", -1))
 	sandbox.Variable("configName", "acid-"+ShortSHA(push.Repository.FullName))
 	// TODO: When we add more events, we need to fix this
-	sandbox.Variable("eventName", "github.push")
+	sandbox.Variable("eventName", "push")
 
 	// We do this so that the JSON is correctly marshaled by Go and unmarshaled by Otto.
 	if err := sandbox.ExecString(`pushRecord = ` + string(pushRecord)); err != nil {

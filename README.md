@@ -28,7 +28,7 @@ A simple `acid.js` file looks like this:
 ```javascript
 
 // Acid lets you respond to different Github events:
-events.github.push = function(e) {
+events.push = function(e) {
   // Define a build step:
   j = new Job("run-unit-tests");
 

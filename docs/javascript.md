@@ -18,7 +18,7 @@ Here is how you handle a push request from GitHub (which is usually the main
 think you want to do):
 
 ```
-events.github.push = function(e) {
+events.push = function(e) {
   var j = new Job("my-job")
   //...
   j.run()
@@ -29,7 +29,7 @@ Every event handler function gets an `Event` (`e`) object.
 
 Defined events:
 
-- `events.github.push`: A new commit was pushed to the main project
+- `events.push`: A new commit was pushed to the main project
 
 ### The Event object
 
@@ -40,7 +40,7 @@ Properties:
 - `request`: The object received from the event trigger. For GitHub requests, its
   the data we get from GitHub.
 - `config`: A dictionary of configuration name/value pairs.
-- `name`: The name of the event (e.g. `github.push`)
+- `name`: The name of the event (e.g. `push`)
 
 
 ### The Job object
