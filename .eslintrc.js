@@ -1,6 +1,21 @@
 module.exports = {
+    "globals": {
+      // builtin
+      "_": false, // lodash
+      "kubernetes": false,
+      "sleep": false,
+      "registerEvents": false,
+      // defined
+      "EventHandler": true,
+      "Job": true,
+      "WaitGroup": true,
+      "run": true,
+      "waitForJob": true,
+      "fireEvent": true,
+      "_event": true
+    },
     "env": {
-        "browser": true
+        "node": true
     },
     "extends": "eslint:recommended",
     "rules": {
@@ -168,7 +183,8 @@ module.exports = {
         "no-trailing-spaces": "error",
         "no-undef-init": "error",
         "no-undefined": "error",
-        "no-underscore-dangle": "error",
+        // MPB: Nope.
+        "no-underscore-dangle": "off",
         "no-unmodified-loop-condition": "error",
         "no-unneeded-ternary": "error",
         "no-unused-expressions": "off",

@@ -3,7 +3,6 @@ package webhook
 import (
 	"crypto/subtle"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -23,10 +22,7 @@ const (
 	HubSignature = `X-Hub-Signature`
 )
 
-const (
-	runnerJS = "runner.js"
-	acidJS   = "acid.js"
-)
+const acidJS = "acid.js"
 
 // EventRouter routes a webhook to its appropriate handler.
 //
@@ -181,12 +177,23 @@ func build(push *PushHook, proj *Project) error {
 		return err
 	}
 	log.Print(string(acidScript))
-	sandbox, err := js.New()
-	if err != nil {
-		return err
+
+	e := &js.Event{
+		Type:      "push",
+		Provider:  "github",
+		Commit:    push.HeadCommit.Id,
+		ProjectID: "acid-" + ShortSHA(push.Repository.FullName),
+		Repo: js.Repo{
+			Name:     push.Repository.FullName,
+			CloneURL: push.Repository.CloneURL,
+			SSHURL:   push.Repository.SSHURL,
+			GitURL:   push.Repository.GitURL,
+			SSHKey:   strings.Replace(proj.SSHKey, "\n", "$", -1),
+		},
+		Payload: push,
 	}
 
-	return execScripts(sandbox, push, proj.SSHKey, acidScript)
+	return js.HandleEvent(e, acidScript)
 }
 
 type originalError interface {
@@ -200,41 +207,6 @@ func logOriginalError(err error) {
 		log.Println(oerr.Original().Error())
 		log.Println(oerr.Out())
 	}
-}
-
-// execScripts prepares the JS runtime and feeds it the objects it needs.
-func execScripts(sandbox *js.Sandbox, push *PushHook, sshKey string, acidJS []byte) error {
-	// Serialize push record
-	pushRecord, err := json.Marshal(push)
-	if err != nil {
-		return err
-	}
-
-	// Configure sandbox
-	sandbox.Variable("sshKey", strings.Replace(sshKey, "\n", "$", -1))
-	sandbox.Variable("configName", "acid-"+ShortSHA(push.Repository.FullName))
-	// TODO: When we add more events, we need to fix this
-	sandbox.Variable("eventName", "push")
-
-	// We do this so that the JSON is correctly marshaled by Go and unmarshaled by Otto.
-	if err := sandbox.ExecString(`pushRecord = ` + string(pushRecord)); err != nil {
-		return fmt.Errorf("failed JS bootstrap: %s", err)
-	}
-
-	log.Println("Loading acid.js")
-
-	// Wrap the AcidJS in a function that we can call later.
-	acidScript := `var registerEvents = function(events){` + string(acidJS) + `}`
-	if err := sandbox.ExecString(acidScript); err != nil {
-		return fmt.Errorf("acid.js is not well formed: %s\n%s", err, acidScript)
-	}
-
-	log.Println("Loading runner.js")
-	if err := sandbox.Preload("js/runner.js"); err != nil {
-		return fmt.Errorf("runner.js: %s", err)
-	}
-
-	return nil
 }
 
 func cloneRepo(url, version, toDir string) error {

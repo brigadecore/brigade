@@ -3,6 +3,8 @@
 package js
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/deis/acid/pkg/js/lib"
@@ -10,11 +12,31 @@ import (
 	"github.com/deis/quokka/pkg/javascript/libk8s"
 )
 
+// defaultScripts is the ordered list of scripts loaded before an eventHandler.
+var defaultScripts = []string{
+	"js/run.js",
+	"js/event.js",
+	"js/job.js",
+	"js/waitgroup.js",
+	"js/runner.js",
+}
+
+// HandleEvent creates a default sandbox and then executes the given Acid.js for the given event.
+func HandleEvent(e *Event, acidjs []byte) error {
+	s, err := New()
+	if err != nil {
+		return err
+	}
+
+	return s.HandleEvent(e, acidjs)
+}
+
 // Sandbox gives access to a particular JavaScript runtime that is configured for Acid.
 //
 // Do not re-use sandboxes.
 type Sandbox struct {
-	rt *javascript.Runtime
+	rt      *javascript.Runtime
+	scripts []string
 }
 
 // New creates a new *Sandbox
@@ -23,6 +45,9 @@ func New() (*Sandbox, error) {
 	s := &Sandbox{
 		rt: rt,
 	}
+
+	s.scripts = make([]string, len(defaultScripts))
+	copy(s.scripts, defaultScripts)
 
 	// Add the "built-in" libraries here:
 	if err := libk8s.Register(rt.VM()); err != nil {
@@ -36,10 +61,35 @@ func New() (*Sandbox, error) {
 	return s, nil
 }
 
-// Preload loads scripts that have been precompiled.
+func (s *Sandbox) HandleEvent(e *Event, script []byte) error {
+	event, err := json.Marshal(e)
+	if err != nil {
+		return err
+	}
+
+	// Placeholder for NodeJS compat.
+	s.Variable("exports", map[string]interface{}{})
+
+	// Wrap the AcidJS in a function that we can call later.
+	acidScript := `var registerEvents = function(events){` + string(script) + `}`
+	if err := s.ExecString(acidScript); err != nil {
+		return fmt.Errorf("acid.js is not well formed: %s\n%s", err, acidScript)
+	}
+
+	for _, p := range s.scripts {
+		if err := s.LoadPrecompiled(p); err != nil {
+			return fmt.Errorf("%s: %s", p, err)
+		}
+	}
+
+	// Execute the event.
+	return s.ExecString("fireEvent(" + string(event) + ")")
+}
+
+// LoadPrecompiled loads scripts that have been precompiled.
 //
 // The script must reside in the lib.
-func (s *Sandbox) Preload(script string) error {
+func (s *Sandbox) LoadPrecompiled(script string) error {
 	data, err := lib.Script(script)
 	if err != nil {
 		return err
