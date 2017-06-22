@@ -4,6 +4,8 @@
 // All Kubernetes API calls should be localized here. Other modules should not
 // call 'kubernetes' directly.
 
+var sidecarImage = "acidic.azurecr.io/vcs-sidecar:latest"
+
 // wait takes a job-like object and waits until it succeeds or fails.
 function waitForJob(job) {
   var my = job
@@ -45,10 +47,10 @@ function run(job, e) {
   // Add env vars.
   var envVars = []
 
-  // _.each(job.env, function(val, key, l) {
   _.each(job.env, function(val, key) {
     envVars.push({name: key, value: val});
   });
+
   // Add secrets as env vars.
   _.each(job.secrets, function(val, key) {
 
@@ -66,6 +68,9 @@ function run(job, e) {
     });
   });
 
+  // Do we still want to add this to the image directly? While it is a security
+  // thing, not adding it would result in users not being able to push anything
+  // upstream into the pod.
   if (e.repo.sshKey) {
     envVars.push({
       name: "ACID_REPO_KEY",
@@ -83,15 +88,26 @@ function run(job, e) {
 
   // Add config map volume
   runner.spec.volumes = [
-    { name: cmName, configMap: {name: cmName }}
+    { name: cmName, configMap: {name: cmName }},
+    { name: "vcs-sidecar", emptyDir: {}}
     // , { name: "idrsa", secret: { secretName: secName }}
   ];
   runner.spec.containers[0].volumeMounts = [
-    { name: cmName, mountPath: "/hook/data"},
+    { name: cmName, mountPath: "/hook"},
+    { name: "vcs-sidecar", mountPath: "/src"}
     // , { name: "idrsa", mountPath: "/hook/ssh", readOnly: true}
   ];
 
+  // Add the sidecar.
+  var sidecar = sidecarSpec(e, "/src", sidecarImage)
+
+  // TODO: convert this to an init container with Kube 1.6
+  // runner.spec.initContainers = [sidecar]
+  runner.metadata.annotations["pod.beta.kubernetes.io/init-containers"] = "[" + JSON.stringify(sidecar) + "]"
+
   // Join the tasks to make a new command:
+  // TODO: This should probably generate a shell script, starting with
+  // something like set -eo pipefail, and using newlines instead of &&.
   var newCmd = job.tasks.join(" && ")
 
   cm.data["main.sh"] = newCmd
@@ -99,14 +115,51 @@ function run(job, e) {
   var k = kubernetes.withNS("default")
 
   console.log("Creating configmap " + cm.metadata.name)
-  console.log(JSON.stringify(cm))
+  //console.log(JSON.stringify(cm))
   k.extensions.configmap.create(cm)
   console.log("Creating pod " + runner.spec.containers[0].name)
-  console.log(JSON.stringify(runner))
+  //console.log(JSON.stringify(runner))
   k.coreV1.pod.create(runner)
   console.log("running...")
 
   return runnerName;
+}
+
+function sidecarSpec(e, local, image) {
+  var imageTag = image
+  var repoURL = e.repo.cloneURL
+
+  if (!imageTag) {
+    imageTag = "acid/vcs-sidecar:latest"
+  }
+
+  if (e.repo.sshKey != "") {
+    repoURL = e.repo.sshURL
+  }
+
+  spec = {
+    name: "acid-vcs-sidecar",
+    env: [
+      { name: "VCS_REPO", value: repoURL },
+      { name: "VCS_LOCAL_PATH", value: local },
+      { name: "VCS_REVISION", value: e.commit },
+    ],
+    image: imageTag,
+    command: ["/vcs-sidecar"],
+    imagePullPolicy: "Always",
+    volumeMounts: [
+      { name: "vcs-sidecar", mountPath: local},
+    ]
+  }
+
+  if (e.repo.sshKey) {
+   spec.env.envVars.push({
+      name: "ACID_REPO_KEY",
+      value: e.repo.sshKey
+    })
+  }
+
+  return spec
 }
 
 function newRunnerPod(podname, acidImage) {
@@ -119,7 +172,8 @@ function newRunnerPod(podname, acidImage) {
       "labels": {
         "heritage": "Quokka",
         "managedBy": "acid"
-      }
+      },
+      "annotations": {}
     },
     "spec": {
       "restartPolicy": "Never",
@@ -128,7 +182,8 @@ function newRunnerPod(podname, acidImage) {
           "name": "acidrun",
           "image": acidImage,
           "command": [
-            "/hook.sh"
+            "/bin/sh",
+            "/hook/main.sh"
           ],
           // FIXME: Change to "IfNotPresent"
           "imagePullPolicy": "Always"

@@ -4,10 +4,9 @@
 DOCKER_REGISTRY ?= acidic.azurecr.io
 DOCKER_BUILD_FLAGS :=
 
-# Zolver is a repo that we use for some testing. Really, we need to replace this
-# whole thing with something better.
-ZOLVER_EVENT="X-GitHub-Event: push"
-ZOLVER_TEST_COMMIT=cbb38c431c40d9168e652f6a43a73a245fb3ef99
+# Test Repo is https://github.com/deis/empty-testbed
+TEST_REPO_EVENT="X-GitHub-Event: push"
+TEST_REPO_COMMIT=6f24c2fd0f13dc95f9056a6448f16607b8d1fa6e
 
 # The location of the functional tests.
 TEST_DIR=./_functional_tests
@@ -16,12 +15,14 @@ TEST_DIR=./_functional_tests
 build: generate
 build:
 	go build -o bin/acid .
+	go build -o bin/vcs-sidecar cmd/vcs-sidecar/main.go
 
 # Cross-compile for Docker+Linux
 .PHONY: build-docker-bin
 build-docker-bin: generate
 build-docker-bin:
 	GOOS=linux GOARCH=amd64 go build -o chart/rootfs/acid .
+	GOOS=linux GOARCH=amd64 go build -o acidic/vcs-sidecar/rootfs/vcs-sidecar cmd/vcs-sidecar/main.go
 
 .PHONY: run
 run: build
@@ -34,35 +35,13 @@ run:
 docker-build: build-docker-bin
 docker-build:
 	docker build -t $(DOCKER_REGISTRY)/acid:latest chart/rootfs
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-ubuntu:latest acidic/acid-ubuntu
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-go:latest acidic/acid-go
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-node:latest acidic/acid-node
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/vcs-sidecar:latest acidic/vcs-sidecar
 
 # You must be logged into DOCKER_REGISTRY before you can push.
 .PHONY: docker-push
 docker-push:
 	docker push $(DOCKER_REGISTRY)/acid
-	docker push $(DOCKER_REGISTRY)/acid-go
-	docker push $(DOCKER_REGISTRY)/acid-node
-	docker push $(DOCKER_REGISTRY)/acid-ubuntu
-
-# docker-test attempts to fetch known commits from a live repo, and then perform some basic tests.
-# This, too, should be replaced by something more robust
-.PHONY: docker-test
-docker-test: docker-build
-docker-test:
-	docker run \
-		-e CLONE_URL=https://github.com/technosophos/zolver.git \
-		-e HEAD_COMMIT_ID=$(ZOLVER_TEST_COMMIT) \
-		$(DOCKER_REGISTRY)/acid-go:latest
-	docker run \
-		-e CLONE_URL=https://github.com/technosophos/zolver.git \
-		-e HEAD_COMMIT_ID=$(ZOLVER_TEST_COMMIT) \
-		$(DOCKER_REGISTRY)/acid-node:latest
-	docker run \
-		-e CLONE_URL=https://github.com/technosophos/zolver.git \
-		-e HEAD_COMMIT_ID=$(ZOLVER_TEST_COMMIT) \
-		$(DOCKER_REGISTRY)/acid-ubuntu:latest
+	docker push $(DOCKER_REGISTRY)/vcs-sidecar
 
 # Unit tests. Local only.
 .PHONY: test-unit
@@ -71,16 +50,27 @@ test-unit:
 	go test -v . ./pkg/...
 
 # Functional tests assume access to github.com
+# To set this up in your local environment:
+# - Make sure kubectl is pointed to the right cluster
+# - Create "myvals.yaml" and set to something like this:
+#   project: "deis/empty-testbed"
+#   repository: "github.com/deis/empty-testbed"
+#   secret: "MySecret"
+# - Run "helm install ./chart/acid-project -f myvals.yaml
+# - Run "make run" in one terminal
+# - Run "make test-functional" in another terminal
+#
+# This will clone the github.com/deis/empty-testbed repo and run the acid.js
+# file found there.
 .PHONY: test-functional
 test-functional:
-	-kubectl delete pod test-zolver-$(ZOLVER_TEST_COMMIT)
-	-kubectl delete cm  test-zolver-$(ZOLVER_TEST_COMMIT) && sleep 10
-	go run $(TEST_DIR)/generate.go $(ZOLVER_TEST_COMMIT)
-	curl -X POST \
-		-H $(ZOLVER_EVENT) \
-		-H "X-Hub-Signature: $(shell cat $(TEST_DIR)/zolver-generated.hash)" \
+	-kubectl delete pod test-repo-$(TEST_REPO_COMMIT)
+	-kubectl delete cm  test-repo-$(TEST_REPO_COMMIT) && sleep 10
+	go run $(TEST_DIR)/generate.go $(TEST_REPO_COMMIT) && curl -X POST \
+		-H $(TEST_REPO_EVENT) \
+		-H "X-Hub-Signature: $(shell cat $(TEST_DIR)/test-repo-generated.hash)" \
 		localhost:7744/events/github \
-		-vvv -T $(TEST_DIR)/zolver-generated.json
+		-vvv -T $(TEST_DIR)/test-repo-generated.json
 
 # JS test is local only
 .PHONY: test-js

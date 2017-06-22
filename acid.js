@@ -18,7 +18,7 @@ events.push = function(e) {
   var goBuild = new Job("acid-test");
 
   // Since this is Go, we want a go runner.
-  goBuild.image = "technosophos/acid-go:latest";
+  goBuild.image = "golang:1.8";
 
   // Set a few environment variables.
   goBuild.env = {
@@ -32,6 +32,10 @@ events.push = function(e) {
     "echo Begin test-unit",
     "go get github.com/Masterminds/glide",
     "go get github.com/jteeuwen/go-bindata/...",
+    // Need to move the source into GOPATH so vendor/ works as desired.
+    "mkdir -p " + localPath,
+    "mv /src/* " + localPath,
+    "cd " + localPath,
     "glide install --strip-vendor",
     "make test-unit"
   ];
@@ -42,6 +46,7 @@ events.push = function(e) {
   jsLint.tasks = [
     "date",
     "echo Begin test-js",
+    "cd /src"
     "npm install -g --quiet eslint",
     "make test-js"
   ];
