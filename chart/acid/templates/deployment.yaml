@@ -19,9 +19,9 @@ spec:
         - containerPort: {{ .Values.service.internalPort }}
         livenessProbe:
           httpGet:
-            path: /
+            path: /healthz
             port: {{ .Values.service.internalPort }}
         readinessProbe:
           httpGet:
-            path: /
+            path: /healthz
             port: {{ .Values.service.internalPort }}
