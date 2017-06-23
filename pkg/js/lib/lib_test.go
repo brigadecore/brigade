@@ -2,6 +2,8 @@ package lib
 
 import (
 	"testing"
+
+	"github.com/robertkrimen/otto/parser"
 )
 
 func TestScript(t *testing.T) {
@@ -21,6 +23,10 @@ func TestScript(t *testing.T) {
 			t.Error("Expected script to have contents. Got empty []byte.")
 		}
 
-		// TODO: Import Otto and run a test parse on each script.
+		// Just ensure that the JS parses. The code in the files is tested
+		// in pkg/js.
+		if _, err := parser.ParseFile(nil, "", b, 0); err != nil {
+			t.Errorf("parse error on %q: %s", script, err)
+		}
 	}
 }
