@@ -1,18 +1,18 @@
 // Store mock pod definitions here as "name" : $resource
-mockPods = {
+var mockPods = {
 }
 
 // Store configmaps here as "name" : $resource
-mockConfigMaps = {
+var mockConfigMaps = {
 }
 
-kubernetes = {
+var kubernetes = {
   withNS: function(ns) {
     return mockCore
   }
 }
 
-mockCore = {
+var mockCore = {
   coreV1: {
     pod: {
       get: function(name) {
@@ -24,6 +24,7 @@ mockCore = {
         // Succeeded, Running, and Failed are some valid values.
         def.status = { phase: "Succeeded" }
         mockPods[def.metadata.labels.jobname] = def
+
         return def
       }
     }
@@ -32,8 +33,14 @@ mockCore = {
     configmap: {
       create: function(def) {
         mockConfigMaps[def.metadata.labels.jobname] = def
+
         return def
       }
     }
   }
 }
+
+exports.mockPods = mockPods
+exports.mockConfigMaps = mockConfigMaps
+exports.kubernetes = kubernetes
+exports.mockCore = mockCore

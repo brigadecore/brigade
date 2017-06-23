@@ -21,6 +21,10 @@ module.exports = {
     "rules": {
         // MPB: start
         "no-console": "off",
+        "no-unused-vars": [
+          "error",
+          {"args": "none"} // MPB: Do not error if a func arg is unused.
+        ],
         // MPB: end
         "accessor-pairs": "error",
         "array-bracket-spacing": "error",
