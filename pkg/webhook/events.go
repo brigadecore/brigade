@@ -64,7 +64,8 @@ func Push(c *gin.Context) {
 
 	push := &PushHook{}
 	if err := json.Unmarshal(body, push); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+		log.Printf("Failed to parse payload: %s", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Received data is not valid JSON"})
 		return
 	}
 
