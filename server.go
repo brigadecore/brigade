@@ -1,20 +1,35 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/deis/acid/pkg/webhook"
 
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
 func main() {
-	router := gin.Default()
-	router.GET("/", func(c *gin.Context) { c.JSON(200, gin.H{"message": "OK"}) })
-	router.POST("/events/github", webhook.EventRouter)
+	router := gin.New()
+	router.Use(gin.Recovery())
+
+	events := router.Group("/events", gin.Logger())
+	{
+		events.POST("/github", webhook.EventRouter)
+	}
 
 	// Lame UI
-	router.GET("/log/:org/:project", logToHTML)
-	router.GET("/log/:org/:project/status.svg", badge)
-	router.GET("/log/:org/:project/id/:commit", logToHTML)
+	logs := router.Group("/log/:org/:project", gin.Logger())
+	{
+		logs.GET("/", logToHTML)
+		logs.GET("/status.svg", badge)
+		logs.GET("/id/:commit", logToHTML)
+	}
+
+	router.GET("/healthz", healthz)
 
 	router.Run(":7744")
+}
+
+func healthz(c *gin.Context) {
+	c.String(http.StatusOK, http.StatusText(http.StatusOK))
 }
