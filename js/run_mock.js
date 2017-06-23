@@ -2,6 +2,8 @@
 // This package mocks the run.js functions. It can replace run.js for testing.
 
 function waitForJob(job) {
+  console.log(job.name)
+
   return true
 }
 
