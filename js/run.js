@@ -153,7 +153,7 @@ function sidecarSpec(e, local, image) {
   }
 
   if (e.repo.sshKey) {
-   spec.env.envVars.push({
+   spec.env.push({
       name: "ACID_REPO_KEY",
       value: e.repo.sshKey
     })
