@@ -17,7 +17,7 @@ func main() {
 	}
 	commit := os.Args[1]
 
-	data, err := ioutil.ReadFile("./_functional_tests/zolver.json")
+	data, err := ioutil.ReadFile("./_functional_tests/test-repo.json")
 	if err != nil {
 		panic(err)
 	}
@@ -38,8 +38,8 @@ func main() {
 	secret := getSecret(pushHook)
 	hmac := webhook.SHA1HMAC([]byte(secret), out)
 
-	ioutil.WriteFile("./_functional_tests/zolver-generated.json", out, 0755)
-	ioutil.WriteFile("./_functional_tests/zolver-generated.hash", []byte(hmac), 0755)
+	ioutil.WriteFile("./_functional_tests/test-repo-generated.json", out, 0755)
+	ioutil.WriteFile("./_functional_tests/test-repo-generated.hash", []byte(hmac), 0755)
 
 	fmt.Fprintln(os.Stdout, string(out))
 	fmt.Fprintln(os.Stdout, hmac)
