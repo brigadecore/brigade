@@ -108,7 +108,10 @@ function run(job, e) {
   // Join the tasks to make a new command:
   // TODO: This should probably generate a shell script, starting with
   // something like set -eo pipefail, and using newlines instead of &&.
-  var newCmd = job.tasks.join(" && ")
+  var newCmd = ""
+  if (job.tasks) {
+    job.tasks.join(" && ")
+  }
 
   cm.data["main.sh"] = newCmd
 
