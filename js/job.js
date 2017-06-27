@@ -13,7 +13,10 @@ function Job(name, tasks) {
   this.name = name;
   // Tasks is the list of tasks to run. They are executed in sequence inside of
   // a shell (/bin/sh).
-  this.tasks = tasks;
+  this.tasks = [];
+  if (tasks) {
+    this.tasks = tasks
+  }
 
   // A collection of name/value pairs of environment variables.
   this.env = {};

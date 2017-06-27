@@ -81,9 +81,12 @@ func TestHandleEvent_JS(t *testing.T) {
 	}{
 		{"log", []byte(`events.push = function() {console.log("hello") }`), "foo", false},
 		{"log", []byte(`events.push = function(e) {console.log(e.sshKey) }`), "foo", false},
+		{"empty", mustReadScript(t, "testdata/empty_event.js"), "", false},
+		{"empty_tasks", mustReadScript(t, "testdata/empty_tasks.js"), "", false},
 		{"basic", mustReadScript(t, "testdata/job_no_sshkey.js"), "", false},
 		{"with-sshkey", mustReadScript(t, "testdata/job_sshkey.js"), "my-ssh-key", false},
 		{"waitgroup", mustReadScript(t, "testdata/waitgroup.js"), "", false},
+		{"with-secrets", mustReadScript(t, "testdata/job_secrets.js"), "", false},
 	}
 
 	for _, tt := range tests {
