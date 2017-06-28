@@ -7,3 +7,17 @@ service:
   type: LoadBalancer
   externalPort: 7744
   internalPort: 7744
+# By default, this is off. If you enable it, you might want to change the
+# service.type to ClusterIP
+ingress:
+  enabled: false
+  hosts: []
+  # Add TLS configuration
+  # tls: <TLS_CONFIG>
+  # Add custom annotations
+  # annotations:
+  #   name: value
+# DEVELOPMENT ONLY: Use this for off-ACS development
+# Before enabling this, log into the acr registry with Docker and then
+# run `scripts/generate-acr-secret.sh`
+#privateRegistry: acid-registry

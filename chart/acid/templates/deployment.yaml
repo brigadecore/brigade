@@ -25,3 +25,5 @@ spec:
           httpGet:
             path: /healthz
             port: {{ .Values.service.internalPort }}
+      {{ if .Values.privateRegistry }}imagePullSecrets:
+        - name: {{.Values.privateRegistry}}{{ end }}
