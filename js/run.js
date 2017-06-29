@@ -7,12 +7,12 @@
 var sidecarImage = "acidic.azurecr.io/vcs-sidecar:latest"
 
 // wait takes a job-like object and waits until it succeeds or fails.
-function waitForJob(job) {
+function waitForJob(job, e) {
   var my = job
 
   for (var i = 0; i < 300; i++) {
     console.log("checking status of " + my.podName)
-    var k = kubernetes.withNS("default")
+    var k = kubernetes.withNS(e.kubernetes.namespace)
     var mypod = k.coreV1.pod.get(my.podName)
 
     console.log(JSON.stringify(mypod))
@@ -109,19 +109,18 @@ function run(job, e) {
   // TODO: This should probably generate a shell script, starting with
   // something like set -eo pipefail, and using newlines instead of &&.
   var newCmd = ""
+
   if (job.tasks) {
     newCmd = job.tasks.join(" && ")
   }
 
   cm.data["main.sh"] = newCmd
 
-  var k = kubernetes.withNS("default")
+  var k = kubernetes.withNS(e.kubernetes.namespace)
 
   console.log("Creating configmap " + cm.metadata.name)
-  //console.log(JSON.stringify(cm))
   k.extensions.configmap.create(cm)
   console.log("Creating pod " + runner.spec.containers[0].name)
-  //console.log(JSON.stringify(runner))
   k.coreV1.pod.create(runner)
   console.log("running...")
 
@@ -140,7 +139,7 @@ function sidecarSpec(e, local, image) {
     repoURL = e.repo.sshURL
   }
 
-  spec = {
+  var spec = {
     name: "acid-vcs-sidecar",
     env: [
       { name: "VCS_REPO", value: repoURL },
@@ -171,7 +170,6 @@ function newRunnerPod(podname, acidImage) {
     "apiVersion": "v1",
     "metadata": {
       "name": podname,
-      "namespace": "default",
       "labels": {
         "heritage": "Quokka",
         "managedBy": "acid"
@@ -203,7 +201,6 @@ function newCM(name) {
     "apiVersion": "v1",
     "metadata": {
         "name": name,
-        "namespace": "default",
         "labels": {
             "heritage": "Quokka",
         },

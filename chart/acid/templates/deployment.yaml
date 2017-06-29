@@ -25,5 +25,10 @@ spec:
           httpGet:
             path: /healthz
             port: {{ .Values.service.internalPort }}
+        env:
+          - name: ACID_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
       {{ if .Values.privateRegistry }}imagePullSecrets:
         - name: {{.Values.privateRegistry}}{{ end }}
