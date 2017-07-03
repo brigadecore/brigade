@@ -6,7 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -51,6 +53,7 @@ func EventRouter(c *gin.Context) {
 
 // Push responds to a push event.
 func Push(c *gin.Context) {
+	var status = new(github.RepoStatus)
 	// Only process push for now. Other hooks have different formats.
 	signature := c.Request.Header.Get(HubSignature)
 
@@ -68,6 +71,15 @@ func Push(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Received data is not valid JSON"})
 		return
 	}
+
+	targetURL := &url.URL{
+		Scheme: "http",
+		Host:   c.Request.Host,
+		Path:   path.Join("log", push.Repository.FullName, "id", push.HeadCommit.Id),
+	}
+	tURL := targetURL.String()
+	log.Printf("TARGET URL: %s", tURL)
+	status.TargetURL = &tURL
 
 	// Load config and verify data.
 	pname := "acid-" + ShortSHA(push.Repository.FullName)
@@ -98,13 +110,13 @@ func Push(c *gin.Context) {
 		log.Printf("!!!WARNING!!! Expected project secret to have name %q, got %q", push.Repository.FullName, proj.Name)
 	}
 
-	go buildStatus(push, proj)
+	go buildStatus(push, proj, status)
 
 	c.JSON(http.StatusOK, gin.H{"status": "Complete"})
 }
 
 // buildStatus runs a build, and sets upstream status accordingly.
-func buildStatus(push *PushHook, proj *Project) {
+func buildStatus(push *PushHook, proj *Project, status *github.RepoStatus) {
 	// If we need an SSH key, set it here
 	if proj.SSHKey != "" {
 		key, err := ioutil.TempFile("", "")
@@ -122,15 +134,11 @@ func buildStatus(push *PushHook, proj *Project) {
 		defer os.Unsetenv("ACID_REPO_KEY") // purely defensive... not really necessary
 	}
 
-	targetURL := "http://localhost:8080" // FIXME
 	msg := "Building"
 	svc := StatusContext
-	status := &github.RepoStatus{
-		State:       &StatePending,
-		TargetURL:   &targetURL,
-		Description: &msg,
-		Context:     &svc,
-	}
+	status.State = &StatePending
+	status.Description = &msg
+	status.Context = &svc
 	if err := setRepoStatus(push, proj, status); err != nil {
 		// For this one, we just log an error and continue.
 		log.Printf("Error setting status to %s: %s", *status.State, err)
