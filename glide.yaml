@@ -3,7 +3,7 @@ import:
 - package: gopkg.in/gin-gonic/gin.v1
   version: ~1.1.4
 - package: github.com/deis/quokka
-  version: bb6edf6a024a3c18a2c5050523b7f85e202fef04
+  version: 49b5ceb1632f01dbcef7a3c7c59e716725594914
 - package: github.com/Masterminds/vcs
 - package: golang.org/x/oauth2
 - package: github.com/google/go-github
