@@ -1,0 +1,4 @@
+Dockerfile
+bin
+vendor
+vcs-sidecar

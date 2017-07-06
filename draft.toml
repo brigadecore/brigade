@@ -1,0 +1,5 @@
+[environments]
+
+    [environments.development]
+    name = "acid"
+    set = ["ingress.enabled=true", "ondraft=true"]

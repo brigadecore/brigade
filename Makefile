@@ -15,14 +15,14 @@ TEST_DIR=./_functional_tests
 build: generate
 build:
 	go build -o bin/acid .
-	go build -o bin/vcs-sidecar cmd/vcs-sidecar/main.go
+	go build -o bin/vcs-sidecar vcs-sidecar/cmd/vcs-sidecar/main.go
 
 # Cross-compile for Docker+Linux
 .PHONY: build-docker-bin
 build-docker-bin: generate
 build-docker-bin:
-	GOOS=linux GOARCH=amd64 go build -o chart/rootfs/acid .
-	GOOS=linux GOARCH=amd64 go build -o acidic/vcs-sidecar/rootfs/vcs-sidecar cmd/vcs-sidecar/main.go
+	GOOS=linux GOARCH=amd64 go build -o rootfs/usr/bin/acid .
+	GOOS=linux GOARCH=amd64 go build -o vcs-sidecar/rootfs/vcs-sidecar vcs-sidecar/cmd/vcs-sidecar/main.go
 
 .PHONY: run
 run: build
@@ -34,8 +34,8 @@ run:
 .PHONY: docker-build
 docker-build: build-docker-bin
 docker-build:
-	docker build -t $(DOCKER_REGISTRY)/acid:latest chart/rootfs
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/vcs-sidecar:latest acidic/vcs-sidecar
+	docker build -t $(DOCKER_REGISTRY)/acid:latest .
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/vcs-sidecar:latest vcs-sidecar
 
 # You must be logged into DOCKER_REGISTRY before you can push.
 .PHONY: docker-push
