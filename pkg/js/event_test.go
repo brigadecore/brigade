@@ -20,6 +20,7 @@ func TestEvent(t *testing.T) {
 		Kubernetes: Kubernetes{
 			Namespace: "frenchpress	",
 		},
+		Env: map[string]string{"PASSWORD": "coffeeFan"},
 	}
 
 	obj, err := json.Marshal(e)
@@ -36,6 +37,7 @@ func TestEvent(t *testing.T) {
 		`myEvent.type == "push"`,
 		`myEvent.repo.cloneURL == "https://example.com/coffee.git"`,
 		`myEvent.kubernetes.namespace == "frenchpress"`,
+		`myEvent.env.PASSWORD == "coffeeFan"`,
 	} {
 		if err := sandbox.ExecString(script); err != nil {
 			t.Fatalf("error executing %q: %s", script, err)

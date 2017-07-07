@@ -147,6 +147,9 @@ func createTestEvent() *Event {
 			Namespace:  "pandas",
 			VCSSidecar: "mySidecar:latest",
 		},
+		Env: map[string]string{
+			"dbPassword": "mySecretPassword",
+		},
 	}
 	return e
 }

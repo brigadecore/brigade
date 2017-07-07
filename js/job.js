@@ -24,11 +24,6 @@ function Job(name, tasks) {
   // The image and an optional tag.
   this.image = acidImage;
 
-  // A map of ENV_VAR names and Secret names. This will populate the environment
-  // variable with the value found in the secret.
-  // This will override a matching env var from the env map.
-  this.secrets = {}
-
   // podName is set by run(), and contains the name of the pod created.
   this.podName
 
