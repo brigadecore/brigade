@@ -46,7 +46,7 @@ events.push = function(e) {
   jsLint.tasks = [
     "date",
     "echo Begin test-js",
-    "cd /src"
+    "cd /src",
     "npm install -g --quiet eslint",
     "make test-js"
   ];
