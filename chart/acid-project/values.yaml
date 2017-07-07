@@ -1,6 +1,12 @@
 # Name of the project, in the form "user/project"
-project: "technosophos/zolver"
-repository: "github.com/technosophos/zolver"
+project: "deis/empty-testbed"
+
+# Domain/Org/Project
+repository: "github.com/deis/empty-testbed"
+
+# The definitive clone URL. This can be any Git-supported URL format.
+cloneURL: "https://github.com/deis/empty-testbed.git"
+
 # Used by GitHub to compute hooks.
 secret: "IBrakeForSeaBeasts"
 
@@ -18,4 +24,29 @@ secret: "IBrakeForSeaBeasts"
 #  ...
 #  ...
 #  -----END RSA PRIVATE KEY-----
+
+# OPTIONAL: Items in the 'env' array can be mounted as environment variables by
+# the acid.js
+#
+# Example:
+#
+# In JS, do this:
+#
+#   events.push = function(e) {
+#     j = new Job("example")
+#     j.secrets = {"MY_ENV_VAR", myVar}
+#   }
+#
+# And here, add this:
+#
+#   env:
+#     myVar: "super awesome"
+#
+# Inside of the job's pod, $MY_ENV_VAR = "super awesome"
+env: {}
+
+# OPTIONAL: Namespace into which builds will be deployed.
+# Using this has implications for what you can access, so don't set this unless
+# you know what you are doing.
+# namespace: "default"
 

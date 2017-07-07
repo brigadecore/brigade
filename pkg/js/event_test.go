@@ -15,9 +15,10 @@ func TestEvent(t *testing.T) {
 		Repo: Repo{
 			Name:     "technosophos/coffee",
 			CloneURL: "https://example.com/coffee.git",
-			SSHURL:   "ssh://foo@example.com/coffee.git",
-			GitURL:   "git://foo@example.com/coffee.git",
 			SSHKey:   "my voice is my passport. Verify me.",
+		},
+		Kubernetes: Kubernetes{
+			Namespace: "frenchpress	",
 		},
 	}
 
@@ -32,8 +33,9 @@ func TestEvent(t *testing.T) {
 	}
 	for _, script := range []string{
 		"var myEvent = " + string(obj),
-		"console.log(myEvent.type)",
-		"console.log(myEvent.repo.sshURL)",
+		`myEvent.type == "push"`,
+		`myEvent.repo.cloneURL == "https://example.com/coffee.git"`,
+		`myEvent.kubernetes.namespace == "frenchpress"`,
 	} {
 		if err := sandbox.ExecString(script); err != nil {
 			t.Fatalf("error executing %q: %s", script, err)

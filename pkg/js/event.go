@@ -14,6 +14,8 @@ type Event struct {
 	Payload interface{} `json:"payload"`
 	// ProjectID is the ID of the current project.
 	ProjectID string `json:"projectID"`
+	// Kubernetes holds information about Kubernetes
+	Kubernetes Kubernetes `json:"kubernetes"`
 }
 
 // Repo describes a Git repository.
@@ -23,10 +25,10 @@ type Repo struct {
 	// CloneURL is the URL at which the repository can be cloned
 	// Traditionally, this is an HTTPS URL.
 	CloneURL string `json:"cloneURL"`
-	// SSHURL is the URL for SSH-based git operations.
-	SSHURL string `json:"sshURL"`
-	// GitURL is the URL for git protocol.
-	GitURL string `json:"gitURL"`
 	// SSHKey is the auth string for SSH-based cloning
 	SSHKey string `json:"sshKey"`
+}
+
+type Kubernetes struct {
+	Namespace string `json:"namespace"`
 }

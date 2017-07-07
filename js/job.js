@@ -60,7 +60,7 @@ function Job(name, tasks) {
   // If pod returns "Failed", this throws an exception.
   // If pod runs for more than 15 minutes (300 * 3-second intervals), throws a timeout exception.
   this.wait = function() {
-    waitForJob(my)
+    waitForJob(my, exports._event)
   };
 }
 

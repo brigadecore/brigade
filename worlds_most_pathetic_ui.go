@@ -8,6 +8,7 @@ import (
 
 	"gopkg.in/gin-gonic/gin.v1"
 
+	"github.com/deis/acid/pkg/config"
 	"github.com/deis/acid/pkg/webhook"
 	"github.com/deis/quokka/pkg/javascript/libk8s"
 
@@ -15,9 +16,8 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 )
 
-const namespace = "default"
-
 func logToHTML(c *gin.Context) {
+	namespace, _ := config.AcidNamespace(c)
 	org := c.Param("org")
 	proj := c.Param("project")
 	commit := c.Param("commit")
@@ -120,6 +120,7 @@ func SHAish(s string) bool {
 func badge(c *gin.Context) {
 	org := c.Param("org")
 	proj := c.Param("project")
+	namespace, _ := config.AcidNamespace(c)
 
 	c.Writer.Header().Set("content-type", "image/svg+xml;charset=utf-8")
 

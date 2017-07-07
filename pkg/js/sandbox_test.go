@@ -127,8 +127,6 @@ func createTestEvent() *Event {
 			FullName:    "owner/repo",
 			Description: "Test fixture",
 			CloneURL:    "https://example.com/clone",
-			SSHURL:      "ssh://git@example.com/clone",
-			GitURL:      "git://git@example.com/clone",
 		},
 		HeadCommit: testCommit{
 			Id: ref,
@@ -143,9 +141,10 @@ func createTestEvent() *Event {
 		Repo: Repo{
 			Name:     ph.Repository.FullName,
 			CloneURL: ph.Repository.CloneURL,
-			SSHURL:   ph.Repository.SSHURL,
-			GitURL:   ph.Repository.GitURL,
 			SSHKey:   "my voice is my passport. Verify me.",
+		},
+		Kubernetes: Kubernetes{
+			Namespace: "pandas",
 		},
 	}
 	return e
@@ -168,7 +167,5 @@ type testRepository struct {
 	Name        string `json:"name"`
 	FullName    string `json:"full_name"`
 	Description string `json:"description"`
-	GitURL      string `json:"git_url"`
-	SSHURL      string `json:"ssh_url"`
 	CloneURL    string `json:"clone_url"`
 }

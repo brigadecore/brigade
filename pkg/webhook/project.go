@@ -20,9 +20,18 @@ type Project struct {
 	GitHubToken string
 	// ShortName is the short project name (deis/acid)
 	ShortName string
+
+	// The URL to clone for the repository.
+	// It may be any Git-compatible URL format
+	CloneURL string
+
+	// The namespace to clone into.
+	Namespace string
 }
 
 // LoadProjectConfig loads a project config from inside of Kubernetes.
+//
+// The namespace is the namespace where the secret is stored.
 func LoadProjectConfig(name, namespace string) (*Project, error) {
 	kc, err := libk8s.KubeClient()
 	proj := &Project{}
@@ -36,13 +45,23 @@ func LoadProjectConfig(name, namespace string) (*Project, error) {
 		return proj, err
 	}
 
+	def := func(a []byte, b string) string {
+		if len(a) == 0 {
+			return b
+		}
+		return string(a)
+	}
+
 	proj.Name = secret.Name
-	proj.Repo = string(secret.Data["repository"])
-	proj.Secret = string(secret.Data["secret"])
+	proj.Repo = def(secret.Data["repository"], proj.Name)
+	proj.Secret = def(secret.Data["secret"], "")
 	proj.GitHubToken = string(secret.Data["githubToken"])
 	// Note that we have to undo the key escaping.
 	proj.SSHKey = strings.Replace(string(secret.Data["sshKey"]), "$", "\n", -1)
 	proj.ShortName = secret.Annotations["projectName"]
+
+	proj.CloneURL = def(secret.Data["cloneURL"], "")
+	proj.Namespace = def(secret.Data["namespace"], namespace)
 
 	return proj, nil
 }

@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/vcs"
+	"github.com/deis/acid/pkg/config"
 	"github.com/deis/acid/pkg/js"
 	"github.com/google/go-github/github"
 
@@ -83,7 +84,8 @@ func Push(c *gin.Context) {
 
 	// Load config and verify data.
 	pname := "acid-" + ShortSHA(push.Repository.FullName)
-	proj, err := LoadProjectConfig(pname, "default")
+	ns, _ := config.AcidNamespace(c)
+	proj, err := LoadProjectConfig(pname, ns)
 	if err != nil {
 		log.Printf("Project %q (%q) not found. No secret loaded. %s", push.Repository.FullName, pname, err)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
@@ -174,11 +176,10 @@ func build(push *PushHook, proj *Project) error {
 		return err
 	}
 
-	url := push.Repository.CloneURL
-	if len(proj.SSHKey) != 0 {
-		log.Printf("Switch to SSH URL %s because key is of length %d", push.Repository.SSHURL, len(proj.SSHKey))
-		url = push.Repository.SSHURL
-	}
+	// URL is the definitive location of the Git repo we are fetching. We always
+	// take it from the project, which may choose to set the URL to use any
+	// supported Git scheme.
+	url := proj.CloneURL
 
 	// TODO:
 	// - [ ] Remove the cached directory at the end of the build?
@@ -202,12 +203,13 @@ func build(push *PushHook, proj *Project) error {
 		ProjectID: "acid-" + ShortSHA(push.Repository.FullName),
 		Repo: js.Repo{
 			Name:     push.Repository.FullName,
-			CloneURL: push.Repository.CloneURL,
-			SSHURL:   push.Repository.SSHURL,
-			GitURL:   push.Repository.GitURL,
+			CloneURL: url,
 			SSHKey:   strings.Replace(proj.SSHKey, "\n", "$", -1),
 		},
 		Payload: push,
+		Kubernetes: js.Kubernetes{
+			Namespace: proj.Namespace,
+		},
 	}
 
 	return js.HandleEvent(e, acidScript)
@@ -227,6 +229,8 @@ func logOriginalError(err error) {
 }
 
 func cloneRepo(url, version, toDir string) error {
+
+	// TODO: If the URL is 'file://', do we want to symlink or otherwise copy?
 	repo, err := vcs.NewRepo(url, toDir)
 	if err != nil {
 		return err
