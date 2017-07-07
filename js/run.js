@@ -110,7 +110,7 @@ function run(job, e) {
   // something like set -eo pipefail, and using newlines instead of &&.
   var newCmd = ""
   if (job.tasks) {
-    job.tasks.join(" && ")
+    newCmd = job.tasks.join(" && ")
   }
 
   cm.data["main.sh"] = newCmd
