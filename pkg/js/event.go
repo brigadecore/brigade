@@ -30,5 +30,6 @@ type Repo struct {
 }
 
 type Kubernetes struct {
-	Namespace string `json:"namespace"`
+	Namespace  string `json:"namespace"`
+	VCSSidecar string `json:"vcsSidecar"`
 }

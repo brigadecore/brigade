@@ -209,6 +209,9 @@ func build(push *PushHook, proj *Project) error {
 		Payload: push,
 		Kubernetes: js.Kubernetes{
 			Namespace: proj.Namespace,
+			// By putting the sidecar image here, we are allowing an acid.js
+			// to override it.
+			VCSSidecar: proj.VCSSidecarImage,
 		},
 	}
 
