@@ -137,7 +137,7 @@ func buildStatus(push *PushHook, proj *Project) {
 	}
 	if err := build(push, proj); err != nil {
 		log.Printf("Build failed: %s", err)
-		msg = err.Error()
+		msg = truncAt(err.Error(), 140)
 		status.State = &StateFailure
 		status.Description = &msg
 	} else {
@@ -149,6 +149,14 @@ func buildStatus(push *PushHook, proj *Project) {
 		// For this one, we just log an error and continue.
 		log.Printf("After build, error setting status to %s: %s", *status.State, err)
 	}
+}
+
+func truncAt(str string, max int) string {
+	if len(str) > max {
+		short := str[0 : max-3]
+		return string(short) + "..."
+	}
+	return str
 }
 
 func build(push *PushHook, proj *Project) error {
