@@ -86,6 +86,8 @@ function run(job, e) {
   envVars.push({ name: "HEAD_COMMIT_ID", value: e.commit })
   runner.spec.containers[0].env = envVars
 
+  var mountPath = job.mountPath || "/src"
+
   // Add config map volume
   runner.spec.volumes = [
     { name: cmName, configMap: {name: cmName }},
@@ -94,7 +96,7 @@ function run(job, e) {
   ];
   runner.spec.containers[0].volumeMounts = [
     { name: cmName, mountPath: "/hook"},
-    { name: "vcs-sidecar", mountPath: "/src"}
+    { name: "vcs-sidecar", mountPath: mountPath}
     // , { name: "idrsa", mountPath: "/hook/ssh", readOnly: true}
   ];
 
