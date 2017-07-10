@@ -89,16 +89,20 @@ function run(job, e) {
   // runner.spec.initContainers = [sidecar]
   runner.metadata.annotations["pod.beta.kubernetes.io/init-containers"] = "[" + JSON.stringify(sidecar) + "]"
 
-  // Join the tasks to make a new command:
-  // TODO: This should probably generate a shell script, starting with
-  // something like set -eo pipefail, and using newlines instead of &&.
-  var newCmd = ""
+  var newCmd = "#!" + job.shell + "\n\n"
 
+  // if shells that support the `set` command are selected, let's add some sane defaults
+  if (job.shell == "/bin/sh" || job.shell == "/bin/bash") {
+    newCmd += "set -e\n\n"
+  }
+
+  // Join the tasks to make a new command:
   if (job.tasks) {
-    newCmd = job.tasks.join(" && ")
+    newCmd += job.tasks.join("\n")
   }
 
   cm.data["main.sh"] = newCmd
+  console.log("using main.sh:\n" + cm.data["main.sh"])
 
   var k = kubernetes.withNS(e.kubernetes.namespace)
 
