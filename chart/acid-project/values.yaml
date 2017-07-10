@@ -50,3 +50,8 @@ env: {}
 # you know what you are doing.
 # namespace: "default"
 
+# OPTIONAL: vcsSidecar is the image that fetches a repo from a VCS
+# The default version can do a wide variety of VCS systems, but is focused on
+# supporting Git.
+# vcsSidecar: "acidic.azurecr.io/vcs-sidecar:latest"
+

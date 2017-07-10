@@ -144,7 +144,8 @@ func createTestEvent() *Event {
 			SSHKey:   "my voice is my passport. Verify me.",
 		},
 		Kubernetes: Kubernetes{
-			Namespace: "pandas",
+			Namespace:  "pandas",
+			VCSSidecar: "mySidecar:latest",
 		},
 	}
 	return e

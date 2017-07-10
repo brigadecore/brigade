@@ -6,6 +6,8 @@ import (
 	"github.com/deis/quokka/pkg/javascript/libk8s"
 )
 
+const DefaultVCSSidecar = "acidic.azurecr.io/vcs-sidecar:latest"
+
 // Project describes an Acid project
 type Project struct {
 	// Name is the computed name of the project (acid-aeff2343a3234ff)
@@ -27,6 +29,9 @@ type Project struct {
 
 	// The namespace to clone into.
 	Namespace string
+
+	// VCSSidecarImage is the image that is used as a VCS sidecar for this project.
+	VCSSidecarImage string
 }
 
 // LoadProjectConfig loads a project config from inside of Kubernetes.
@@ -62,6 +67,7 @@ func LoadProjectConfig(name, namespace string) (*Project, error) {
 
 	proj.CloneURL = def(secret.Data["cloneURL"], "")
 	proj.Namespace = def(secret.Data["namespace"], namespace)
+	proj.VCSSidecarImage = def(secret.Data["vcsSidecar"], DefaultVCSSidecar)
 
 	return proj, nil
 }

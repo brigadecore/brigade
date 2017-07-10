@@ -4,8 +4,6 @@
 // All Kubernetes API calls should be localized here. Other modules should not
 // call 'kubernetes' directly.
 
-var sidecarImage = "acidic.azurecr.io/vcs-sidecar:latest"
-
 // wait takes a job-like object and waits until it succeeds or fails.
 function waitForJob(job, e) {
   var my = job
@@ -101,7 +99,7 @@ function run(job, e) {
   ];
 
   // Add the sidecar.
-  var sidecar = sidecarSpec(e, "/src", sidecarImage)
+  var sidecar = sidecarSpec(e, "/src", e.kubernetes.vcsSidecar)
 
   // TODO: convert this to an init container with Kube 1.6
   // runner.spec.initContainers = [sidecar]
