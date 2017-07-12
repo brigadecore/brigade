@@ -82,6 +82,7 @@ function run(job, e) {
   envVars.push({ name: "SSH_URL", value: e.repo.sshURL })
   envVars.push({ name: "GIT_URL", value: e.repo.gitURL })
   envVars.push({ name: "HEAD_COMMIT_ID", value: e.commit })
+  envVars.push({ name: "CI", value: "true" })
   runner.spec.containers[0].env = envVars
 
   var mountPath = job.mountPath || "/src"
