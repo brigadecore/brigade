@@ -37,10 +37,14 @@ The Event object describes an event.
 
 Properties:
 
-- `request`: The object received from the event trigger. For GitHub requests, its
+- `type`: The event type (e.g. `push`)
+- `provider`: The entity that caused the event (`github`)
+- `commit`: The commit ID that this script should operate on.
+- `repo`: The repository, which is an object: `{name: "org/name", cloneURL: "https://...", sshKey: "keydata"}`
+- `kubernetes`: An object: `{namespace: "default"}`
+- `env`: A dictionary of environment data that was provided for this project
+- `payload`: The object received from the event trigger. For GitHub requests, its
   the data we get from GitHub.
-- `config`: A dictionary of configuration name/value pairs.
-- `name`: The name of the event (e.g. `push`)
 
 
 ### The Job object
@@ -57,11 +61,25 @@ Parameters:
 
 Properties:
 
+- `name`: The name of the job
 - `image`: A Docker image with optional tag.
+- `tasks`: An array of commands to run for this job
 - `env`: Key/value pairs that will be injected into the environment. The key is
   the variable name (`MY_VAR`), and the value is the string value (`foo`)
-- `secrets`: Key/value pairs where the key is the name of the environment variable
-  and the value is the name of the item in the Secret. `{ "DB_PASS": "dbpassword" }`
+
+It is common to pass data from the `e.env` Event object into the Job object as
+is appropriate:
+
+```javascript
+events.push = function(e) {
+  j = new Job("example")
+  j.env = { "DB_PASSWORD": e.env.dbPassword }
+  //...
+  j.run()
+}
+```
+
+The above will make `$DB_PASSWORD` available to the "example" job's runtime.
 
 Methods:
 
@@ -76,7 +94,7 @@ add jobs, and then run them all in parallel:
 
 ```
 j1 = new Job("one")
-j2 = new Job("two"
+j2 = new Job("two")
 
 // Configure jobs...
 

@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/deis/quokka/pkg/javascript/libk8s"
@@ -32,6 +33,9 @@ type Project struct {
 
 	// VCSSidecarImage is the image that is used as a VCS sidecar for this project.
 	VCSSidecarImage string
+
+	// Env is environment variables for acid.js
+	Env map[string]string
 }
 
 // LoadProjectConfig loads a project config from inside of Kubernetes.
@@ -50,24 +54,37 @@ func LoadProjectConfig(name, namespace string) (*Project, error) {
 		return proj, err
 	}
 
-	def := func(a []byte, b string) string {
-		if len(a) == 0 {
-			return b
-		}
-		return string(a)
-	}
-
 	proj.Name = secret.Name
-	proj.Repo = def(secret.Data["repository"], proj.Name)
-	proj.Secret = def(secret.Data["secret"], "")
-	proj.GitHubToken = string(secret.Data["githubToken"])
-	// Note that we have to undo the key escaping.
-	proj.SSHKey = strings.Replace(string(secret.Data["sshKey"]), "$", "\n", -1)
 	proj.ShortName = secret.Annotations["projectName"]
 
-	proj.CloneURL = def(secret.Data["cloneURL"], "")
-	proj.Namespace = def(secret.Data["namespace"], namespace)
-	proj.VCSSidecarImage = def(secret.Data["vcsSidecar"], DefaultVCSSidecar)
+	return proj, configureProject(proj, secret.Data, namespace)
+}
 
-	return proj, nil
+func def(a []byte, b string) string {
+	if len(a) == 0 {
+		return b
+	}
+	return string(a)
+}
+
+func configureProject(proj *Project, data map[string][]byte, namespace string) error {
+	proj.Repo = def(data["repository"], proj.Name)
+	proj.Secret = def(data["secret"], "")
+	proj.GitHubToken = string(data["githubToken"])
+	// Note that we have to undo the key escaping.
+	proj.SSHKey = strings.Replace(string(data["sshKey"]), "$", "\n", -1)
+
+	proj.CloneURL = def(data["cloneURL"], "")
+	proj.Namespace = def(data["namespace"], namespace)
+	proj.VCSSidecarImage = def(data["vcsSidecar"], DefaultVCSSidecar)
+
+	envVars := map[string]string{}
+	if d := data["env"]; len(d) > 0 {
+		if err := json.Unmarshal(d, &envVars); err != nil {
+			return err
+		}
+	}
+
+	proj.Env = envVars
+	return nil
 }

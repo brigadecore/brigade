@@ -49,23 +49,6 @@ function run(job, e) {
     envVars.push({name: key, value: val});
   });
 
-  // Add secrets as env vars.
-  _.each(job.secrets, function(val, key) {
-
-    // Some secrets we explicitly block.
-    if (_.contains(["secret"], val)) {
-      return
-    }
-
-    // Get secrets from the given secName
-    envVars.push({
-      name: key,
-      valueFrom: {
-        secretKeyRef: {name: e.projectId, key: val}
-      }
-    });
-  });
-
   // Do we still want to add this to the image directly? While it is a security
   // thing, not adding it would result in users not being able to push anything
   // upstream into the pod.

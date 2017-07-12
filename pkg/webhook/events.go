@@ -213,6 +213,7 @@ func build(push *PushHook, proj *Project) error {
 			// to override it.
 			VCSSidecar: proj.VCSSidecarImage,
 		},
+		Env: proj.Env,
 	}
 
 	return js.HandleEvent(e, acidScript)

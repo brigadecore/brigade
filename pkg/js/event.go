@@ -16,6 +16,8 @@ type Event struct {
 	ProjectID string `json:"projectID"`
 	// Kubernetes holds information about Kubernetes
 	Kubernetes Kubernetes `json:"kubernetes"`
+	// Env contains passed-in environment variables.
+	Env map[string]string `json:"env"`
 }
 
 // Repo describes a Git repository.
