@@ -74,7 +74,7 @@ func logToHTML(c *gin.Context) {
 		}
 
 		// Print out logs for this item
-		fmt.Fprintf(c.Writer, panelHead, st, p.Name)
+		fmt.Fprintf(c.Writer, panelHead, st, p.Labels["jobname"])
 		podLog(p.ObjectMeta.Name, c)
 		fmt.Fprintln(c.Writer, panelFoot)
 	}
