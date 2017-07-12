@@ -1,5 +1,6 @@
 image:
-  repository: acidic.azurecr.io/acid
+  registry: acidic.azurecr.io
+  name: acid
   tag: latest
   pullPolicy: Always
 service:

@@ -1,7 +1,7 @@
 _cache/
 bin/
 vendor/
-chart/rootfs/acid
-chart/rootfs/runner.js
+rootfs/acid
+rootfs/runner.js
 _functional_tests/*-generated.*
-acidic/vcs-sidecar/rootfs/vcs-sidecar
+vcs-sidecar/rootfs/vcs-sidecar
