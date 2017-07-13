@@ -11,7 +11,9 @@ const ConfigAcidNamespace = "ACID_NAMESPACE"
 // Middleware is Gin middleware for injecting configuration into the gin.Context at runtime.
 func Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set(ConfigAcidNamespace, os.Getenv(ConfigAcidNamespace))
+		if v, ok := os.LookupEnv(ConfigAcidNamespace); ok {
+			c.Set(ConfigAcidNamespace, v)
+		}
 		c.Next()
 	}
 }
