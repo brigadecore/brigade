@@ -1,6 +1,9 @@
 // The default image is stock ubuntu 16.04 + make and git.
 var acidImage = "acid-ubuntu:latest"
 
+// The default terminal emulator that job tasks will be executed under.
+var defaultTerminal = "/bin/sh"
+
 // Prototype for Job.
 function Job(name, tasks) {
   var my = this
@@ -11,6 +14,10 @@ function Job(name, tasks) {
 
   // Name will become the prefix for the pod/configmap names.
   this.name = name;
+
+  // Shell is the teminal emulator which tasks will run under.
+  this.shell = defaultTerminal;
+  
   // Tasks is the list of tasks to run. They are executed in sequence inside of
   // a shell (/bin/sh).
   this.tasks = [];

@@ -64,6 +64,8 @@ Properties:
 - `name`: The name of the job
 - `image`: A Docker image with optional tag.
 - `tasks`: An array of commands to run for this job
+- `shell`: The terminal emulator that job tasks will be executed under. By default,
+  this is /bin/sh
 - `env`: Key/value pairs that will be injected into the environment. The key is
   the variable name (`MY_VAR`), and the value is the string value (`foo`)
 
