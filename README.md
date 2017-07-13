@@ -119,3 +119,4 @@ To get started:
 
 To build the Docker images, use `make docker-build`.
 
+To deploy via [Draft](https://github.com/Azure/draft), use `make build-docker-bin && draft up`.
