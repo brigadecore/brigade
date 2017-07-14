@@ -43,6 +43,12 @@ docker-push:
 	docker push $(DOCKER_REGISTRY)/acid
 	docker push $(DOCKER_REGISTRY)/vcs-sidecar
 
+# All non-functional tests
+.PHONY: test
+test: test-style
+test: test-unit
+test: test-js
+
 # Unit tests. Local only.
 .PHONY: test-unit
 test-unit: generate
@@ -76,6 +82,32 @@ test-functional:
 .PHONY: test-js
 test-js:
 	eslint js/*.js acid.js
+
+.PHONY: test-style
+test-style:
+	gometalinter.v1 \
+		--disable-all \
+		--enable deadcode \
+		--severity deadcode:error \
+		--enable gofmt \
+		--enable ineffassign \
+		--enable misspell \
+		--enable vet \
+		--tests \
+		--vendor \
+		--deadline 60s \
+		--exclude=generated.go \
+		./...
+	@echo "Recommended style checks ===>"
+	gometalinter.v1 \
+		--disable-all \
+		--enable golint \
+		--vendor \
+		--skip proto \
+		--deadline 60s \
+		--exclude=generated.go \
+		./... || :
+
 
 # Compile the JS into the Go
 # We don't call `go generate` anymore because it is a redundant abstraction.

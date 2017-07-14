@@ -1,7 +1,7 @@
 events.push = function(e) {
   testName = "with-secrets"
   j = new Job(testName)
-  j.env = {"SUPER_SECRET": e.env.dbPassword}
+  j.env = {"SUPER_SECRET": project.secrets.dbPassword}
   j.run()
 
   p = mockPods[testName]

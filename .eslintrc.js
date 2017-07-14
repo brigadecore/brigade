@@ -3,6 +3,7 @@ module.exports = {
       // builtin
       "_": false, // lodash
       "kubernetes": false,
+      "project": false,
       "sleep": false,
       "registerEvents": false,
       // defined

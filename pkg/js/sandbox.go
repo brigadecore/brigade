@@ -22,13 +22,13 @@ var defaultScripts = []string{
 }
 
 // HandleEvent creates a default sandbox and then executes the given Acid.js for the given event.
-func HandleEvent(e *Event, acidjs []byte) error {
+func HandleEvent(e *Event, proj *Project, acidjs []byte) error {
 	s, err := New()
 	if err != nil {
 		return err
 	}
 
-	return s.HandleEvent(e, acidjs)
+	return s.HandleEvent(e, proj, acidjs)
 }
 
 // Sandbox gives access to a particular JavaScript runtime that is configured for Acid.
@@ -61,14 +61,24 @@ func New() (*Sandbox, error) {
 	return s, nil
 }
 
-func (s *Sandbox) HandleEvent(e *Event, script []byte) error {
+// HandleEvent takes an event, a project, and a script, and runs the script with that environment.
+//
+// Project is placed into the global namespace, while `e` is passed into the event handler.
+func (s *Sandbox) HandleEvent(e *Event, p *Project, script []byte) error {
 	event, err := json.Marshal(e)
+	if err != nil {
+		return err
+	}
+	proj, err := json.Marshal(p)
 	if err != nil {
 		return err
 	}
 
 	// Placeholder for NodeJS compat.
 	s.Variable("exports", map[string]interface{}{})
+
+	// Add project as global variable
+	s.ExecString("var project = " + string(proj))
 
 	// Wrap the AcidJS in a function that we can call later.
 	acidScript := `var registerEvents = function(events){` + string(script) + `}`

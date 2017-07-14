@@ -12,7 +12,7 @@ func TestAcidNamespace(t *testing.T) {
 		Keys: map[string]interface{}{"foo": "bar"},
 	}
 	if ns, ok := AcidNamespace(c); ns != "default" && !ok {
-		t.Errorf("expected default/false, got %s/%b", ns, ok)
+		t.Errorf("expected default/false, got %s/%t", ns, ok)
 	}
 }
 
@@ -26,7 +26,7 @@ func TestMiddleware(t *testing.T) {
 
 	Middleware()(c) // Middleware(), Copyright 2017
 	if ns, ok := AcidNamespace(c); ns != "acid" && ok {
-		t.Errorf("expected acid/true, got %s/%b", ns, ok)
+		t.Errorf("expected acid/true, got %s/%t", ns, ok)
 	}
 }
 

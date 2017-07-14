@@ -7,7 +7,7 @@ Acid JavaScript has access to a few libraries:
 - The Underscore.js library is built into Acid.js
 - AcidJS has a number of built-in objects.
 
-## The `events` Global Variable
+## The `events` Global Object
 
 There is a global variable called `events` that provides the event handlers for
 your Acid project. Attach your event handler to this object:
@@ -31,6 +31,36 @@ Defined events:
 
 - `events.push`: A new commit was pushed to the main project
 
+
+### The `project` Global Object
+
+There is a global object named `project` that contains information about the
+project that the acid script is running within.
+
+These fields are primarily derived from the `acid-project` installation on your
+Kubernetes cluster. See the `acid-project`'s `values.yaml` file for more.
+
+Properties:
+
+  - `id`: The unique ID of the project
+  - `name`: The project name, typically `org/name`.
+  - `secrets`: A set of name/values pairs that are stored in a Kubernetes Secret.
+    This is typically where protected data like tokens or passphrases are stored.
+  - `kubernetes`: The object describing this project's Kubernetes settings
+    - `kubernetes.namespace`: The namespace for this project
+    - `kubernetes.vcsSidecar`: The VCS sidecar image/tag
+  - `repo`: Information on the upstream repository (if available).
+    - `repo.name`: The name of the repo (`org/name`)
+    - `repo.cloneURL`: The URL that the VCS software can use to clone the reposiotry.
+    - `repo.sshKey`: The SSH key that can be used to clone the repository (if applicable).
+      This is often empty.
+
+Secrets (`project.secrets`) are passed from the project configuration into a Kubernetes
+Secret, then injected into Acid.
+
+So `helm install acid-project --set secrets.foo=bar` will add `foo: bar` to
+`project.secrets`.
+
 ### The Event object
 
 The Event object describes an event.
@@ -40,9 +70,6 @@ Properties:
 - `type`: The event type (e.g. `push`)
 - `provider`: The entity that caused the event (`github`)
 - `commit`: The commit ID that this script should operate on.
-- `repo`: The repository, which is an object: `{name: "org/name", cloneURL: "https://...", sshKey: "keydata"}`
-- `kubernetes`: An object: `{namespace: "default"}`
-- `env`: A dictionary of environment data that was provided for this project
 - `payload`: The object received from the event trigger. For GitHub requests, its
   the data we get from GitHub.
 
@@ -75,7 +102,7 @@ is appropriate:
 ```javascript
 events.push = function(e) {
   j = new Job("example")
-  j.env = { "DB_PASSWORD": e.env.dbPassword }
+  j.env = { "DB_PASSWORD": project.secrets.dbPassword }
   //...
   j.run()
 }

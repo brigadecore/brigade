@@ -4,12 +4,12 @@ import "testing"
 
 func TestConfigureProject(t *testing.T) {
 	data := map[string][]byte{
-		"repository":  []byte("myrepo"),
-		"secret":      []byte("mysecret"),
-		"githubToken": []byte("like a fish needs a bicycle"),
-		"sshKey":      []byte("hello$world"),
-		"namespace":   []byte("zooropa"),
-		"env":         []byte(`{"bar":"baz","foo":"bar"}`),
+		"repository":   []byte("myrepo"),
+		"sharedSecret": []byte("mysecret"),
+		"githubToken":  []byte("like a fish needs a bicycle"),
+		"sshKey":       []byte("hello$world"),
+		"namespace":    []byte("zooropa"),
+		"secrets":      []byte(`{"bar":"baz","foo":"bar"}`),
 		// Intentionally skip cloneURL, test that this is ""
 	}
 	proj := &Project{Name: "acidTest"}
@@ -24,8 +24,8 @@ func TestConfigureProject(t *testing.T) {
 	if proj.Repo != "myrepo" {
 		t.Error("Repo is not correct")
 	}
-	if proj.Secret != "mysecret" {
-		t.Error("Secret is not correct")
+	if proj.SharedSecret != "mysecret" {
+		t.Error("SharedSecret is not correct")
 	}
 	if proj.GitHubToken != "like a fish needs a bicycle" {
 		t.Error("Fish cannot find its bicycle")
@@ -33,12 +33,12 @@ func TestConfigureProject(t *testing.T) {
 	if proj.SSHKey != "hello\nworld" {
 		t.Errorf("Unexpected SSHKey: %q", proj.SSHKey)
 	}
-	if v, ok := proj.Env["bar"]; !ok {
-		t.Error("Could not find key bar")
+	if v, ok := proj.Secrets["bar"]; !ok {
+		t.Error("Could not find key bar in Secrets")
 	} else if v != "baz" {
 		t.Errorf("Expected baz, got %q", v)
 	}
-	if v, ok := proj.Env["NO SUCH KEY"]; ok {
+	if v, ok := proj.Secrets["NO SUCH KEY"]; ok {
 		t.Fatal("unexpected key")
 	} else if v != "" {
 		t.Fatal("Expected empty string for non-existent key")

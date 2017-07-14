@@ -10,13 +10,16 @@ import (
 const DefaultVCSSidecar = "acidic.azurecr.io/vcs-sidecar:latest"
 
 // Project describes an Acid project
+//
+// This is an internal representation of a project, and contains data that
+// should not be made available to the JavaScript runtime.
 type Project struct {
 	// Name is the computed name of the project (acid-aeff2343a3234ff)
 	Name string
 	// Repo is the GitHub repository URL
 	Repo string
-	// Secret is the GitHub shared key
-	Secret string
+	// SharedSecret is the GitHub shared key
+	SharedSecret string
 	// SSHKey is the SSH key the client will use to clone the repo
 	SSHKey string
 	// GitHubToken is used for oauth2 for client interactions. This is different than the secret.
@@ -34,8 +37,8 @@ type Project struct {
 	// VCSSidecarImage is the image that is used as a VCS sidecar for this project.
 	VCSSidecarImage string
 
-	// Env is environment variables for acid.js
-	Env map[string]string
+	// Secrets is environment variables for acid.js
+	Secrets map[string]string
 }
 
 // LoadProjectConfig loads a project config from inside of Kubernetes.
@@ -69,7 +72,7 @@ func def(a []byte, b string) string {
 
 func configureProject(proj *Project, data map[string][]byte, namespace string) error {
 	proj.Repo = def(data["repository"], proj.Name)
-	proj.Secret = def(data["secret"], "")
+	proj.SharedSecret = def(data["sharedSecret"], "")
 	proj.GitHubToken = string(data["githubToken"])
 	// Note that we have to undo the key escaping.
 	proj.SSHKey = strings.Replace(string(data["sshKey"]), "$", "\n", -1)
@@ -79,12 +82,12 @@ func configureProject(proj *Project, data map[string][]byte, namespace string) e
 	proj.VCSSidecarImage = def(data["vcsSidecar"], DefaultVCSSidecar)
 
 	envVars := map[string]string{}
-	if d := data["env"]; len(d) > 0 {
+	if d := data["secrets"]; len(d) > 0 {
 		if err := json.Unmarshal(d, &envVars); err != nil {
 			return err
 		}
 	}
 
-	proj.Env = envVars
+	proj.Secrets = envVars
 	return nil
 }

@@ -7,8 +7,8 @@ repository: "github.com/deis/empty-testbed"
 # The definitive clone URL. This can be any Git-supported URL format.
 cloneURL: "https://github.com/deis/empty-testbed.git"
 
-# Used by GitHub to compute hooks.
-secret: "IBrakeForSeaBeasts"
+# Used by GitHub and other services to compute hook HMACs.
+sharedSecret: "IBrakeForSeaBeasts"
 
 # OPTIONAL: Use this to have Acid update your project about the build.
 # You probably want this if you want pull requests or commits to show
@@ -25,7 +25,7 @@ secret: "IBrakeForSeaBeasts"
 #  ...
 #  -----END RSA PRIVATE KEY-----
 
-# OPTIONAL: Items in the 'env' array can be mounted as environment variables by
+# OPTIONAL: Items in the 'secrets' array can be mounted as environment variables by
 # the acid.js
 #
 # Example:
@@ -34,16 +34,16 @@ secret: "IBrakeForSeaBeasts"
 #
 #   events.push = function(e) {
 #     j = new Job("example")
-#     j.secrets = {"MY_ENV_VAR", myVar}
+#     j.env= {"MY_ENV_VAR", e.secrets.myVar}
 #   }
 #
 # And here, add this:
 #
-#   env:
+#   secrets:
 #     myVar: "super awesome"
 #
 # Inside of the job's pod, $MY_ENV_VAR = "super awesome"
-env: {}
+secrets: {}
 
 # OPTIONAL: Namespace into which builds will be deployed.
 # Using this has implications for what you can access, so don't set this unless

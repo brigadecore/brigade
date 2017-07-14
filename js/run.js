@@ -10,7 +10,7 @@ function waitForJob(job, e) {
 
   for (var i = 0; i < 300; i++) {
     console.log("checking status of " + my.podName)
-    var k = kubernetes.withNS(e.kubernetes.namespace)
+    var k = kubernetes.withNS(project.kubernetes.namespace)
     var mypod = k.coreV1.pod.get(my.podName)
 
     console.log(JSON.stringify(mypod))
@@ -39,7 +39,7 @@ function run(job, e) {
   var runner = newRunnerPod(runnerName, job.image)
 
   runner.metadata.labels.jobname = job.name
-  runner.metadata.labels.belongsto = e.repo.name.replace("/", "-")
+  runner.metadata.labels.belongsto = project.repo.name.replace(/\//g, "-")
   runner.metadata.labels.commit = e.commit
 
   // Add env vars.
@@ -52,18 +52,18 @@ function run(job, e) {
   // Do we still want to add this to the image directly? While it is a security
   // thing, not adding it would result in users not being able to push anything
   // upstream into the pod.
-  if (e.repo.sshKey) {
+  if (project.repo.sshKey) {
     envVars.push({
       name: "ACID_REPO_KEY",
-      value: e.repo.sshKey
+      value: project.repo.sshKey
     })
   }
 
   // Add top-level env vars. These must override any attempt to set the values
   // to something else.
-  envVars.push({ name: "CLONE_URL", value: e.repo.cloneURL })
-  envVars.push({ name: "SSH_URL", value: e.repo.sshURL })
-  envVars.push({ name: "GIT_URL", value: e.repo.gitURL })
+  envVars.push({ name: "CLONE_URL", value: project.repo.cloneURL })
+  envVars.push({ name: "SSH_URL", value: project.repo.sshURL })
+  envVars.push({ name: "GIT_URL", value: project.repo.gitURL })
   envVars.push({ name: "HEAD_COMMIT_ID", value: e.commit })
   envVars.push({ name: "CI", value: "true" })
   runner.spec.containers[0].env = envVars
@@ -83,7 +83,7 @@ function run(job, e) {
   ];
 
   // Add the sidecar.
-  var sidecar = sidecarSpec(e, "/src", e.kubernetes.vcsSidecar)
+  var sidecar = sidecarSpec(e, "/src", project.kubernetes.vcsSidecar)
 
   // TODO: convert this to an init container with Kube 1.6
   // runner.spec.initContainers = [sidecar]
@@ -104,7 +104,7 @@ function run(job, e) {
   cm.data["main.sh"] = newCmd
   console.log("using main.sh:\n" + cm.data["main.sh"])
 
-  var k = kubernetes.withNS(e.kubernetes.namespace)
+  var k = kubernetes.withNS(project.kubernetes.namespace)
 
   console.log("Creating configmap " + cm.metadata.name)
   k.extensions.configmap.create(cm)
@@ -117,14 +117,14 @@ function run(job, e) {
 
 function sidecarSpec(e, local, image) {
   var imageTag = image
-  var repoURL = e.repo.cloneURL
+  var repoURL = project.repo.cloneURL
 
   if (!imageTag) {
     imageTag = "acid/vcs-sidecar:latest"
   }
 
-  if (e.repo.sshKey != "") {
-    repoURL = e.repo.sshURL
+  if (project.repo.sshKey != "") {
+    repoURL = project.repo.sshURL
   }
 
   var spec = {
@@ -142,10 +142,10 @@ function sidecarSpec(e, local, image) {
     ]
   }
 
-  if (e.repo.sshKey) {
+  if (project.repo.sshKey) {
    spec.env.push({
       name: "ACID_REPO_KEY",
-      value: e.repo.sshKey
+      value: project.repo.sshKey
     })
   }
 

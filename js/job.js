@@ -17,7 +17,7 @@ function Job(name, tasks) {
 
   // Shell is the teminal emulator which tasks will run under.
   this.shell = defaultTerminal;
-  
+
   // Tasks is the list of tasks to run. They are executed in sequence inside of
   // a shell (/bin/sh).
   this.tasks = [];

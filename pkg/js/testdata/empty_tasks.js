@@ -11,4 +11,9 @@ events.push = function(e) {
   if (sidecar.indexOf("mySidecar") < 0) {
     throw "expected to find mySidecar in " + sidecar
   }
+
+  var labels = p.metadata.labels
+  if (labels.belongsto != "github.com-owner-repo") {
+    throw "expected github.com-owner-repo, got " + labels.belongsto
+  }
 }

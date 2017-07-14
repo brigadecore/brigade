@@ -51,5 +51,5 @@ func getSecret(pushHook *webhook.PushHook) string {
 	if err != nil {
 		panic(err)
 	}
-	return proj.Secret
+	return proj.SharedSecret
 }

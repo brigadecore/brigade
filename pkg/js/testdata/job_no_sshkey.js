@@ -1,5 +1,5 @@
 events.push = function(e) {
-  e.repo.sshKey = ""
+  project.repo.sshKey = ""
   j = new Job("test-no-key")
   j.tasks = [
     "echo hello"

@@ -51,7 +51,7 @@ func logToHTML(c *gin.Context) {
 	}
 	fmt.Fprintf(c.Writer, "<p>Logs for Git reference %q</p>", commit)
 
-	name := fmt.Sprintf("%s-%s", org, proj)
+	name := fmt.Sprintf("github.com-%s-%s", org, proj)
 	pods, err := taskPods(commit, name, namespace)
 	if err != nil {
 		log.Printf("could not load task pods: %s", err)

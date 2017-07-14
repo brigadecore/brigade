@@ -2,25 +2,16 @@ package js
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 )
 
 func TestEvent(t *testing.T) {
 	e := &Event{
-		Type:      "push",
-		Provider:  "github",
-		Commit:    "c0ff33c0ffeec0ff33c0ffee",
-		Payload:   map[string]string{"hello": "world"},
-		ProjectID: "acid-c0ff33c0ffee",
-		Repo: Repo{
-			Name:     "technosophos/coffee",
-			CloneURL: "https://example.com/coffee.git",
-			SSHKey:   "my voice is my passport. Verify me.",
-		},
-		Kubernetes: Kubernetes{
-			Namespace: "frenchpress	",
-		},
-		Env: map[string]string{"PASSWORD": "coffeeFan"},
+		Type:     "push",
+		Provider: "github",
+		Commit:   "c0ff33c0ffeec0ff33c0ffee",
+		Payload:  map[string]string{"hello": "world"},
 	}
 
 	obj, err := json.Marshal(e)
@@ -35,9 +26,9 @@ func TestEvent(t *testing.T) {
 	for _, script := range []string{
 		"var myEvent = " + string(obj),
 		`myEvent.type == "push"`,
-		`myEvent.repo.cloneURL == "https://example.com/coffee.git"`,
-		`myEvent.kubernetes.namespace == "frenchpress"`,
-		`myEvent.env.PASSWORD == "coffeeFan"`,
+		`myEvent.provider == "github"`,
+		fmt.Sprintf("myEvent.commit == %q", e.Commit),
+		`myEvent.payload.hello == "world"`,
 	} {
 		if err := sandbox.ExecString(script); err != nil {
 			t.Fatalf("error executing %q: %s", script, err)

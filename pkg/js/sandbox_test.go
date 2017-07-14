@@ -47,20 +47,22 @@ func TestHandleEvent(t *testing.T) {
 	acidjs := `
 	exports.fired = false
 	events.push = function(e) {
-		if (e.repo.name != "owner/repo") {
-			throw "expected owner/repo, got " + e.repo.name
+		if (e.commit != "expectedCommit") {
+			throw "expected expectedCommit, got " + e.commit
 		}
 		exports.fired = true
 	}
 	`
 	e := createTestEvent()
+	e.Commit = "expectedCommit"
+	p := createTestProject()
 	s, err := New()
 	if err != nil {
 		t.Fatal(err)
 	}
 	s.LoadPrecompiled("js/mock8s.js")
 
-	if err := s.HandleEvent(e, []byte(acidjs)); err != nil {
+	if err := s.HandleEvent(e, p, []byte(acidjs)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -72,6 +74,7 @@ func TestHandleEvent(t *testing.T) {
 
 func TestHandleEvent_JS(t *testing.T) {
 	e := createTestEvent()
+	p := createTestProject()
 
 	tests := []struct {
 		name   string
@@ -99,11 +102,11 @@ func TestHandleEvent_JS(t *testing.T) {
 		// Load a kubernetes mock
 		s.LoadPrecompiled("js/mock8s.js")
 
-		if err := s.HandleEvent(e, tt.script); err != nil {
+		if err := s.HandleEvent(e, p, tt.script); err != nil {
 			if tt.fail {
 				continue
 			}
-			t.Fatalf("Script %s failed with : %s", tt.name, err)
+			t.Errorf("Script %s failed with : %s", tt.name, err)
 		} else if tt.fail {
 			t.Errorf("Expected test %s to fail.", tt.name)
 		}
@@ -133,25 +136,31 @@ func createTestEvent() *Event {
 		},
 	}
 	e := &Event{
-		Type:      "push",
-		Provider:  "github",
-		Commit:    ph.Ref,
-		Payload:   ph,
-		ProjectID: "acid-c0ff33c0ffee",
-		Repo: Repo{
-			Name:     ph.Repository.FullName,
-			CloneURL: ph.Repository.CloneURL,
-			SSHKey:   "my voice is my passport. Verify me.",
+		Type:     "push",
+		Provider: "github",
+		Commit:   ph.Ref,
+		Payload:  ph,
+	}
+	return e
+}
+
+func createTestProject() *Project {
+	return &Project{
+		ID:   "acid-c0ff33c0ffee",
+		Name: "testProject",
+		Secrets: map[string]string{
+			"dbPassword": "mySecretPassword",
 		},
 		Kubernetes: Kubernetes{
 			Namespace:  "pandas",
 			VCSSidecar: "mySidecar:latest",
 		},
-		Env: map[string]string{
-			"dbPassword": "mySecretPassword",
+		Repo: Repo{
+			Name:     "github.com/owner/repo",
+			CloneURL: "https://example.com/clone",
+			SSHKey:   "my voice is my passport. Verify me.",
 		},
 	}
-	return e
 }
 
 // The following structs are vaguely reflective of GitHub's push hook

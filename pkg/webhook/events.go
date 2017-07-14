@@ -87,19 +87,19 @@ func Push(c *gin.Context) {
 	ns, _ := config.AcidNamespace(c)
 	proj, err := LoadProjectConfig(pname, ns)
 	if err != nil {
-		log.Printf("Project %q (%q) not found. No secret loaded. %s", push.Repository.FullName, pname, err)
+		log.Printf("Project %q (%q) not found in %q. No secret loaded. %s", push.Repository.FullName, pname, ns, err)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
 		return
 	}
 
-	if proj.Secret == "" {
+	if proj.SharedSecret == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "No secret is configured for this repo."})
 		return
 	}
 
 	// Compare the salted digest in the header with our own computing of the
 	// body.
-	sum := SHA1HMAC([]byte(proj.Secret), body)
+	sum := SHA1HMAC([]byte(proj.SharedSecret), body)
 	if subtle.ConstantTimeCompare([]byte(sum), []byte(signature)) != 1 {
 		log.Printf("Expected signature %q (sum), got %q (hub-signature)", sum, signature)
 		//log.Printf("%s", body)
@@ -196,27 +196,32 @@ func build(push *PushHook, proj *Project) error {
 	}
 	log.Print(string(acidScript))
 
+	projectID := "acid-" + ShortSHA(proj.Repo)
 	e := &js.Event{
-		Type:      "push",
-		Provider:  "github",
-		Commit:    push.HeadCommit.Id,
-		ProjectID: "acid-" + ShortSHA(push.Repository.FullName),
+		Type:     "push",
+		Provider: "github",
+		Commit:   push.HeadCommit.Id,
+		Payload:  push,
+	}
+
+	p := &js.Project{
+		ID:   projectID,
+		Name: proj.Name,
 		Repo: js.Repo{
-			Name:     push.Repository.FullName,
+			Name:     proj.Repo,
 			CloneURL: url,
 			SSHKey:   strings.Replace(proj.SSHKey, "\n", "$", -1),
 		},
-		Payload: push,
 		Kubernetes: js.Kubernetes{
 			Namespace: proj.Namespace,
 			// By putting the sidecar image here, we are allowing an acid.js
 			// to override it.
 			VCSSidecar: proj.VCSSidecarImage,
 		},
-		Env: proj.Env,
+		Secrets: proj.Secrets,
 	}
 
-	return js.HandleEvent(e, acidScript)
+	return js.HandleEvent(e, p, acidScript)
 }
 
 type originalError interface {
