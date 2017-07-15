@@ -11,7 +11,7 @@ events.push = function(e) {
 
   // To set GOPATH correctly, we have to override the default
   // path that Acid sets.
-  var localPath = gopath + "/src/github.com/" + e.repo.name;
+  var localPath = gopath + "/src/github.com/" + project.repo.name;
 
 
   // Create a new job
