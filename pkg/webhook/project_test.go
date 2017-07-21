@@ -1,6 +1,10 @@
 package webhook
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/deis/acid/pkg/acid"
+)
 
 func TestConfigureProject(t *testing.T) {
 	data := map[string][]byte{
@@ -12,7 +16,7 @@ func TestConfigureProject(t *testing.T) {
 		"secrets":      []byte(`{"bar":"baz","foo":"bar"}`),
 		// Intentionally skip cloneURL, test that this is ""
 	}
-	proj := &Project{Name: "acidTest"}
+	proj := &acid.Project{Name: "acidTest"}
 	if err := configureProject(proj, data, "defaultNS"); err != nil {
 		t.Fatal(err)
 	}

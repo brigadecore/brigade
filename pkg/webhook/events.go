@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/vcs"
+	"github.com/deis/acid/pkg/acid"
 	"github.com/deis/acid/pkg/config"
 	"github.com/deis/acid/pkg/js"
 	"github.com/google/go-github/github"
@@ -118,7 +119,7 @@ func Push(c *gin.Context) {
 }
 
 // buildStatus runs a build, and sets upstream status accordingly.
-func buildStatus(push *PushHook, proj *Project, status *github.RepoStatus) {
+func buildStatus(push *PushHook, proj *acid.Project, status *github.RepoStatus) {
 	// If we need an SSH key, set it here
 	if proj.SSHKey != "" {
 		key, err := ioutil.TempFile("", "")
@@ -169,7 +170,7 @@ func truncAt(str string, max int) string {
 	return str
 }
 
-func build(push *PushHook, proj *Project) error {
+func build(push *PushHook, proj *acid.Project) error {
 	toDir := filepath.Join("_cache", push.Repository.FullName)
 	if err := os.MkdirAll(toDir, 0755); err != nil {
 		log.Printf("error making %s: %s", toDir, err)

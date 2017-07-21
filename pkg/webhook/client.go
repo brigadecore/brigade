@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/deis/acid/pkg/acid"
 	"github.com/google/go-github/github"
 )
 
@@ -31,7 +32,7 @@ func ghClient(token string) *github.Client {
 }
 
 // setRepoStatus sets the status on a particular commit in a repo.
-func setRepoStatus(push *PushHook, proj *Project, status *github.RepoStatus) error {
+func setRepoStatus(push *PushHook, proj *acid.Project, status *github.RepoStatus) error {
 	if proj.GitHubToken == "" {
 		return fmt.Errorf("status update skipped because no GitHubToken exists on %s", proj.Name)
 	}
@@ -48,7 +49,7 @@ func setRepoStatus(push *PushHook, proj *Project, status *github.RepoStatus) err
 
 // GetRepoStatus gets the Acid repository status.
 // The ref can be a SHA or a branch or tag.
-func GetRepoStatus(proj *Project, ref string) (*github.RepoStatus, error) {
+func GetRepoStatus(proj *acid.Project, ref string) (*github.RepoStatus, error) {
 	c := context.Background()
 	client := ghClient(proj.GitHubToken)
 	parts := strings.SplitN(proj.ShortName, "/", 2)
@@ -68,7 +69,7 @@ func GetRepoStatus(proj *Project, ref string) (*github.RepoStatus, error) {
 }
 
 // GetLastCommit gets the last commit on the give reference (branch name or tag).
-func GetLastCommit(proj *Project, ref string) (string, error) {
+func GetLastCommit(proj *acid.Project, ref string) (string, error) {
 	c := context.Background()
 	client := ghClient(proj.GitHubToken)
 	parts := strings.SplitN(proj.ShortName, "/", 2)

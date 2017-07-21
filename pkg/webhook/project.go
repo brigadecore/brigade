@@ -4,49 +4,18 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/deis/acid/pkg/acid"
 	"github.com/deis/quokka/pkg/javascript/libk8s"
 )
 
 const DefaultVCSSidecar = "acidic.azurecr.io/vcs-sidecar:latest"
 
-// Project describes an Acid project
-//
-// This is an internal representation of a project, and contains data that
-// should not be made available to the JavaScript runtime.
-type Project struct {
-	// Name is the computed name of the project (acid-aeff2343a3234ff)
-	Name string
-	// Repo is the GitHub repository URL
-	Repo string
-	// SharedSecret is the GitHub shared key
-	SharedSecret string
-	// SSHKey is the SSH key the client will use to clone the repo
-	SSHKey string
-	// GitHubToken is used for oauth2 for client interactions. This is different than the secret.
-	GitHubToken string
-	// ShortName is the short project name (deis/acid)
-	ShortName string
-
-	// The URL to clone for the repository.
-	// It may be any Git-compatible URL format
-	CloneURL string
-
-	// The namespace to clone into.
-	Namespace string
-
-	// VCSSidecarImage is the image that is used as a VCS sidecar for this project.
-	VCSSidecarImage string
-
-	// Secrets is environment variables for acid.js
-	Secrets map[string]string
-}
-
 // LoadProjectConfig loads a project config from inside of Kubernetes.
 //
 // The namespace is the namespace where the secret is stored.
-func LoadProjectConfig(name, namespace string) (*Project, error) {
+func LoadProjectConfig(name, namespace string) (*acid.Project, error) {
 	kc, err := libk8s.KubeClient()
-	proj := &Project{}
+	proj := &acid.Project{}
 	if err != nil {
 		return proj, err
 	}
@@ -70,7 +39,7 @@ func def(a []byte, b string) string {
 	return string(a)
 }
 
-func configureProject(proj *Project, data map[string][]byte, namespace string) error {
+func configureProject(proj *acid.Project, data map[string][]byte, namespace string) error {
 	proj.Repo = def(data["repository"], proj.Name)
 	proj.SharedSecret = def(data["sharedSecret"], "")
 	proj.GitHubToken = string(data["githubToken"])
