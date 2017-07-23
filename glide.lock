@@ -1,5 +1,5 @@
-hash: 7caa0b0ee435bb4bdf92e0a8e0c4258eb90f241ce1788c26a8a15e8b7c7d14b3
-updated: 2017-07-03T17:41:14.57994781-06:00
+hash: b4ea0c592b817bc28eb74efebc888201edee2192b0495c709190120a895e33c5
+updated: 2017-07-23T16:45:00.344272929-07:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -44,10 +44,13 @@ imports:
   - swagger
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
+- name: github.com/gin-contrib/sse
+  version: 22d885f9ecc78bf4ee5d72b937e4bbcdc58e8cae
 - name: github.com/gin-gonic/gin
-  version: e2212d40c62a98b388a5eb48ecbdcf88534688ba
+  version: d39ed41ab3795346f5f843ec31bc0138be07eaab
   subpackages:
   - binding
+  - json
   - render
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
@@ -65,11 +68,11 @@ imports:
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
-  version: 2402d76f3d41f928c7902a765dfc872356dd3aad
+  version: 8616e8ee5e20a1704615e6c8d7afcdac06087a67
   subpackages:
   - proto
 - name: github.com/google/go-github
-  version: 7a51fb928f52a196d5f31daefb8a489453ef54ff
+  version: fb256a0e9b341e277520f4d811b6dc6e5d4aa481
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -84,14 +87,14 @@ imports:
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
 - name: github.com/jonboulle/clockwork
   version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
+- name: github.com/json-iterator/go
+  version: c15b4d116cb805508fd5862d8761a88076b3cc8e
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
   - buffer
   - jlexer
   - jwriter
-- name: github.com/manucorporat/sse
-  version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
 - name: github.com/Masterminds/vcs
   version: 3084677c2c188840777bff30054f2b553729d329
 - name: github.com/mattn/go-isatty
@@ -103,7 +106,7 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/robertkrimen/otto
-  version: bf1c3795ba078da6905fe80bfbc3ed3d8c36e9aa
+  version: fc2eb1bbf1c5c462313c810bb02dc93cd964aebe
   subpackages:
   - ast
   - dbg
@@ -125,13 +128,14 @@ imports:
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
-  version: f315505cf3349909cdf013ea56690da34e96a451
+  version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
   - context
   - context/ctxhttp
   - http2
   - http2/hpack
   - idna
+  - lex/httplex
 - name: golang.org/x/oauth2
   version: 3c3a985cb79f52a3190fbc056984415ca6763d01
   subpackages:
@@ -169,13 +173,13 @@ imports:
   - internal/urlfetch
   - urlfetch
 - name: gopkg.in/gin-gonic/gin.v1
-  version: e2212d40c62a98b388a5eb48ecbdcf88534688ba
+  version: d459835d2b077e44f7c9b453505ee29881d5d12d
 - name: gopkg.in/go-playground/validator.v8
-  version: c193cecd124b5cc722d7ee5538e945bdb3348435
+  version: 5f57d2222ad794d0dffb07e664ea05e2ee07d60c
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/sourcemap.v1
-  version: eef8f47ab679652a7d3a4ee34c34314d255d2536
+  version: 6e83acea0053641eff084973fee085f0c193c61a
   subpackages:
   - base64vlq
 - name: gopkg.in/yaml.v2
