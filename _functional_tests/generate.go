@@ -6,7 +6,9 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/deis/acid/pkg/storage"
 	"github.com/deis/acid/pkg/webhook"
+	"github.com/google/go-github/github"
 )
 
 func main() {
@@ -17,25 +19,35 @@ func main() {
 	}
 	commit := os.Args[1]
 
-	data, err := ioutil.ReadFile("./_functional_tests/test-repo.json")
+	eventType := "pull_request"
+
+	data, err := ioutil.ReadFile("./_functional_tests/test-repo-pull.json")
 	if err != nil {
 		panic(err)
 	}
 
-	pushHook := &webhook.PushHook{}
-	if err := json.Unmarshal(data, pushHook); err != nil {
-		panic(err)
-	}
-
-	// Set the commit ID:
-	pushHook.HeadCommit.Id = commit
-
-	out, err := json.MarshalIndent(pushHook, "", "  ")
+	event, err := github.ParseWebHook(eventType, data)
 	if err != nil {
 		panic(err)
 	}
 
-	secret := getSecret(pushHook)
+	var repo string
+
+	switch event := event.(type) {
+	case *github.PushEvent:
+		event.HeadCommit.ID = github.String(commit)
+		repo = event.Repo.GetFullName()
+	case *github.PullRequestEvent:
+		event.PullRequest.Head.SHA = github.String(commit)
+		repo = event.Repo.GetFullName()
+	}
+
+	out, err := json.MarshalIndent(event, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+
+	secret := getSecret(repo)
 	hmac := webhook.SHA1HMAC([]byte(secret), out)
 
 	ioutil.WriteFile("./_functional_tests/test-repo-generated.json", out, 0755)
@@ -45,9 +57,8 @@ func main() {
 	fmt.Fprintln(os.Stdout, hmac)
 }
 
-func getSecret(pushHook *webhook.PushHook) string {
-	pname := "acid-" + webhook.ShortSHA(pushHook.Repository.FullName)
-	proj, err := webhook.LoadProjectConfig(pname, "default")
+func getSecret(pname string) string {
+	proj, err := storage.New().Get(pname, "default")
 	if err != nil {
 		panic(err)
 	}
