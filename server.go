@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/deis/acid/pkg/config"
+	"github.com/deis/acid/pkg/storage"
 	"github.com/deis/acid/pkg/webhook"
 
 	"gopkg.in/gin-gonic/gin.v1"
@@ -13,17 +14,25 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Recovery())
 
-	events := router.Group("/events", gin.Logger(), config.Middleware())
+	store := storage.New()
+
+	events := router.Group("/events")
 	{
-		events.POST("/github", webhook.EventRouter)
+		events.Use(gin.Logger())
+		events.Use(config.Middleware())
+
+		events.POST("/github", webhook.NewGithubHook(store).Handle)
 	}
 
 	// Lame UI
-	logs := router.Group("/log/:org/:project", gin.Logger(), config.Middleware())
+	ui := router.Group("/log/:org/:project")
 	{
-		logs.GET("/", logToHTML)
-		logs.GET("/status.svg", badge)
-		logs.GET("/id/:commit", logToHTML)
+		ui.Use(gin.Logger())
+		ui.Use(config.Middleware())
+
+		ui.GET("/", logToHTML)
+		ui.GET("/status.svg", badge)
+		ui.GET("/id/:commit", logToHTML)
 	}
 
 	router.GET("/healthz", healthz)

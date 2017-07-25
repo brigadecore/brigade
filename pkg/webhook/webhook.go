@@ -3,6 +3,7 @@ package webhook
 import (
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,50 +14,61 @@ import (
 	"strings"
 
 	"github.com/Masterminds/vcs"
+	"github.com/google/go-github/github"
+	"gopkg.in/gin-gonic/gin.v1"
+
+	"github.com/deis/acid/pkg/acid"
 	"github.com/deis/acid/pkg/config"
 	"github.com/deis/acid/pkg/js"
-	"github.com/google/go-github/github"
-
-	"gopkg.in/gin-gonic/gin.v1"
-)
-
-const (
-	GitHubEvent  = `X-GitHub-Event`
-	HubSignature = `X-Hub-Signature`
 )
 
 const acidJS = "acid.js"
 
-// EventRouter routes a webhook to its appropriate handler.
+type store interface {
+	Get(id, namespace string) (*acid.Project, error)
+}
+
+type githubHook struct {
+	store        store
+	getFile      fileGetter
+	createStatus statusCreator
+}
+
+type fileGetter func(repo, commit, path string, proj *acid.Project) ([]byte, error)
+
+type statusCreator func(repo, commit string, proj *acid.Project, status *github.RepoStatus) error
+
+// NewGithubHook creates a GitHub webhook handler.
+func NewGithubHook(s store) *githubHook {
+	return &githubHook{
+		store:        s,
+		getFile:      getFile,
+		createStatus: setRepoStatus,
+	}
+}
+
+// Handle routes a webhook to its appropriate handler.
 //
 // It does this by sniffing the event from the header, and routing accordingly.
-func EventRouter(c *gin.Context) {
-	event := c.Request.Header.Get(GitHubEvent)
+func (s *githubHook) Handle(c *gin.Context) {
+	event := c.Request.Header.Get("X-GitHub-Event")
 	switch event {
-	case "":
-		// TODO: Once we're wired up with GitHub, need to return here.
-		log.Print("No event header.")
-		c.JSON(200, gin.H{"message": "OK"})
-		return
 	case "ping":
 		log.Print("Received ping from GitHub")
 		c.JSON(200, gin.H{"message": "OK"})
 		return
-	case "push":
-		Push(c)
+	case "push", "pull_request":
+		s.handleEvent(c, event)
 		return
 	default:
 		log.Printf("Expected event push, got %s", event)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "Only 'push' is supported. Got " + event})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid X-GitHub-Event Header"})
 		return
 	}
 }
 
-// Push responds to a push event.
-func Push(c *gin.Context) {
+func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 	var status = new(github.RepoStatus)
-	// Only process push for now. Other hooks have different formats.
-	signature := c.Request.Header.Get(HubSignature)
 
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -66,8 +78,12 @@ func Push(c *gin.Context) {
 	}
 	defer c.Request.Body.Close()
 
-	push := &PushHook{}
-	if err := json.Unmarshal(body, push); err != nil {
+	repo, commit, err := parsePayload(eventType, body)
+	if err != nil {
+		if err == ignoreAction {
+			c.JSON(http.StatusOK, gin.H{"status": "Action skipped"})
+			return
+		}
 		log.Printf("Failed to parse payload: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Received data is not valid JSON"})
 		return
@@ -76,18 +92,17 @@ func Push(c *gin.Context) {
 	targetURL := &url.URL{
 		Scheme: "http",
 		Host:   c.Request.Host,
-		Path:   path.Join("log", push.Repository.FullName, "id", push.HeadCommit.Id),
+		Path:   path.Join("log", repo, "id", commit),
 	}
 	tURL := targetURL.String()
 	log.Printf("TARGET URL: %s", tURL)
 	status.TargetURL = &tURL
 
 	// Load config and verify data.
-	pname := "acid-" + ShortSHA(push.Repository.FullName)
 	ns, _ := config.AcidNamespace(c)
-	proj, err := LoadProjectConfig(pname, ns)
+	proj, err := s.store.Get(repo, ns)
 	if err != nil {
-		log.Printf("Project %q (%q) not found in %q. No secret loaded. %s", push.Repository.FullName, pname, ns, err)
+		log.Printf("Project %q not found in %q. No secret loaded. %s", repo, ns, err)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
 		return
 	}
@@ -97,30 +112,26 @@ func Push(c *gin.Context) {
 		return
 	}
 
-	// Compare the salted digest in the header with our own computing of the
-	// body.
-	sum := SHA1HMAC([]byte(proj.SharedSecret), body)
-	if subtle.ConstantTimeCompare([]byte(sum), []byte(signature)) != 1 {
-		log.Printf("Expected signature %q (sum), got %q (hub-signature)", sum, signature)
-		//log.Printf("%s", body)
+	signature := c.Request.Header.Get("X-Hub-Signature")
+	if err := validateSignature(signature, proj.SharedSecret, body); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"status": "malformed signature"})
 		return
 	}
 
-	if proj.Name != push.Repository.FullName {
+	if proj.Name != repo {
 		// TODO: Test this. I believe it should error out if these don't match.
-		log.Printf("!!!WARNING!!! Expected project secret to have name %q, got %q", push.Repository.FullName, proj.Name)
+		log.Printf("!!!WARNING!!! Expected project secret to have name %q, got %q", repo, proj.Name)
 	}
 
-	go buildStatus(push, proj, status)
+	go s.buildStatus(eventType, repo, commit, body, proj, status)
 
 	c.JSON(http.StatusOK, gin.H{"status": "Complete"})
 }
 
 // buildStatus runs a build, and sets upstream status accordingly.
-func buildStatus(push *PushHook, proj *Project, status *github.RepoStatus) {
+func (s *githubHook) buildStatus(eventType, repo, commit string, payload []byte, proj *acid.Project, status *github.RepoStatus) {
 	// If we need an SSH key, set it here
-	if proj.SSHKey != "" {
+	if proj.Repo.SSHKey != "" {
 		key, err := ioutil.TempFile("", "")
 		if err != nil {
 			log.Printf("error creating ssh key cache: %s", err)
@@ -128,7 +139,7 @@ func buildStatus(push *PushHook, proj *Project, status *github.RepoStatus) {
 		}
 		keyfile := key.Name()
 		defer os.Remove(keyfile)
-		if _, err := key.WriteString(proj.SSHKey); err != nil {
+		if _, err := key.WriteString(proj.Repo.SSHKey); err != nil {
 			log.Printf("error writing ssh key cache: %s", err)
 			return
 		}
@@ -141,11 +152,11 @@ func buildStatus(push *PushHook, proj *Project, status *github.RepoStatus) {
 	status.State = &StatePending
 	status.Description = &msg
 	status.Context = &svc
-	if err := setRepoStatus(push, proj, status); err != nil {
+	if err := s.createStatus(repo, commit, proj, status); err != nil {
 		// For this one, we just log an error and continue.
 		log.Printf("Error setting status to %s: %s", *status.State, err)
 	}
-	if err := build(push, proj); err != nil {
+	if err := s.build(eventType, repo, commit, payload, proj); err != nil {
 		log.Printf("Build failed: %s", err)
 		msg = truncAt(err.Error(), 140)
 		status.State = &StateFailure
@@ -155,7 +166,7 @@ func buildStatus(push *PushHook, proj *Project, status *github.RepoStatus) {
 		status.State = &StateSuccess
 		status.Description = &msg
 	}
-	if err := setRepoStatus(push, proj, status); err != nil {
+	if err := s.createStatus(repo, commit, proj, status); err != nil {
 		// For this one, we just log an error and continue.
 		log.Printf("After build, error setting status to %s: %s", *status.State, err)
 	}
@@ -164,64 +175,107 @@ func buildStatus(push *PushHook, proj *Project, status *github.RepoStatus) {
 func truncAt(str string, max int) string {
 	if len(str) > max {
 		short := str[0 : max-3]
-		return string(short) + "..."
+		return short + "..."
 	}
 	return str
 }
 
-func build(push *PushHook, proj *Project) error {
-	toDir := filepath.Join("_cache", push.Repository.FullName)
+func parsePayload(eventType string, payload []byte) (repo string, commit string, err error) {
+	e, err := github.ParseWebHook(eventType, payload)
+	if err != nil {
+		return "", "", err
+	}
+	switch e := e.(type) {
+	case *github.PushEvent:
+		return e.Repo.GetFullName(), e.HeadCommit.GetID(), nil
+	case *github.PullRequestEvent:
+		return e.Repo.GetFullName(), e.PullRequest.Head.GetSHA(), checkPullRequestAction(e)
+	}
+	return "", "", errors.New("failed parsing event")
+}
+
+func checkPullRequestAction(event *github.PullRequestEvent) error {
+	switch event.GetAction() {
+	case "opened", "synchronize", "reopened":
+		return nil
+	}
+	return ignoreAction
+}
+
+var ignoreAction = errors.New("ignored")
+
+// TODO create abstraction for mocking
+func getFile(repo, commit, path string, proj *acid.Project) ([]byte, error) {
+	toDir := filepath.Join("_cache", repo)
 	if err := os.MkdirAll(toDir, 0755); err != nil {
 		log.Printf("error making %s: %s", toDir, err)
-		return err
+		return nil, err
 	}
 
 	// URL is the definitive location of the Git repo we are fetching. We always
 	// take it from the project, which may choose to set the URL to use any
 	// supported Git scheme.
-	url := proj.CloneURL
+	url := proj.Repo.CloneURL
 
 	// TODO:
 	// - [ ] Remove the cached directory at the end of the build?
-	if err := cloneRepo(url, push.HeadCommit.Id, toDir); err != nil {
+	if err := cloneRepo(url, commit, toDir); err != nil {
 		log.Printf("error cloning %s to %s: %s", url, toDir, err)
-		return err
+		return nil, err
 	}
 
 	// Path to acid file:
-	acidPath := filepath.Join(toDir, acidJS)
-	acidScript, err := ioutil.ReadFile(acidPath)
+	acidPath := filepath.Join(toDir, path)
+	return ioutil.ReadFile(acidPath)
+}
+
+func (s *githubHook) build(eventType, repo, commit string, payload []byte, proj *acid.Project) error {
+	acidScript, err := s.getFile(repo, commit, acidJS, proj)
 	if err != nil {
 		return err
 	}
 	log.Print(string(acidScript))
 
-	projectID := "acid-" + ShortSHA(proj.Repo)
+	var payloadMap map[string]interface{}
+	if err := json.Unmarshal(payload, &payloadMap); err != nil {
+		return err
+	}
+
 	e := &js.Event{
-		Type:     "push",
+		Type:     eventType,
 		Provider: "github",
-		Commit:   push.HeadCommit.Id,
-		Payload:  push,
+		Commit:   commit,
+		Payload:  payloadMap,
 	}
 
 	p := &js.Project{
-		ID:   projectID,
+		ID:   proj.ID,
 		Name: proj.Name,
 		Repo: js.Repo{
-			Name:     proj.Repo,
-			CloneURL: url,
-			SSHKey:   strings.Replace(proj.SSHKey, "\n", "$", -1),
+			Name:     proj.Repo.Name,
+			CloneURL: proj.Repo.CloneURL,
+			SSHKey:   strings.Replace(proj.Repo.SSHKey, "\n", "$", -1),
 		},
 		Kubernetes: js.Kubernetes{
-			Namespace: proj.Namespace,
+			Namespace: proj.Kubernetes.Namespace,
 			// By putting the sidecar image here, we are allowing an acid.js
 			// to override it.
-			VCSSidecar: proj.VCSSidecarImage,
+			VCSSidecar: proj.Kubernetes.VCSSidecar,
 		},
 		Secrets: proj.Secrets,
 	}
 
 	return js.HandleEvent(e, p, acidScript)
+}
+
+// validateSignature compares the salted digest in the header with our own computing of the body.
+func validateSignature(signature, secretKey string, payload []byte) error {
+	sum := SHA1HMAC([]byte(secretKey), payload)
+	if subtle.ConstantTimeCompare([]byte(sum), []byte(signature)) != 1 {
+		log.Printf("Expected signature %q (sum), got %q (hub-signature)", sum, signature)
+		return errors.New("payload signature check failed")
+	}
+	return nil
 }
 
 type originalError interface {

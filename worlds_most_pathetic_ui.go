@@ -6,14 +6,13 @@ import (
 	"os/exec"
 	"regexp"
 
+	"github.com/deis/quokka/pkg/javascript/libk8s"
 	"gopkg.in/gin-gonic/gin.v1"
+	"k8s.io/client-go/pkg/api/v1"
 
 	"github.com/deis/acid/pkg/config"
+	"github.com/deis/acid/pkg/storage"
 	"github.com/deis/acid/pkg/webhook"
-	"github.com/deis/quokka/pkg/javascript/libk8s"
-
-	//v1core "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/pkg/api/v1"
 )
 
 func logToHTML(c *gin.Context) {
@@ -29,8 +28,7 @@ func logToHTML(c *gin.Context) {
 
 	pname := fmt.Sprintf("%s/%s", org, proj)
 	log.Printf("Loading logs for %q", pname)
-	sec := "acid-" + webhook.ShortSHA(pname)
-	p, err := webhook.LoadProjectConfig(sec, namespace)
+	p, err := storage.New().Get(pname, namespace)
 	if err != nil {
 		log.Printf("logToHTML: error loading project: %s", err)
 	}
@@ -126,8 +124,7 @@ func badge(c *gin.Context) {
 
 	pname := fmt.Sprintf("%s/%s", org, proj)
 	log.Printf("Loading project %s", pname)
-	n := "acid-" + webhook.ShortSHA(pname)
-	p, err := webhook.LoadProjectConfig(n, namespace)
+	p, err := storage.New().Get(pname, namespace)
 	if err != nil {
 		log.Printf("badge: error loading project: %s", err)
 		c.Writer.WriteString(badgeFailing)
