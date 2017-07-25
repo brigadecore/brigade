@@ -1,48 +1,3 @@
-package webhook
-
-import (
-	"encoding/json"
-	"testing"
-)
-
-func TestPushHook_Unmarshal(t *testing.T) {
-	push := &PushHook{}
-
-	if err := json.Unmarshal([]byte(testJsonPushPayload), push); err != nil {
-		t.Fatal(err)
-	}
-
-	if len(push.Commits) != 1 {
-		t.Fatalf("Expected 1 commit, got %d", len(push.Commits))
-	}
-
-	if push.HeadCommit.Id != "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c" {
-		t.Errorf("Unexpected commit ID: %q", push.HeadCommit.Id)
-	}
-
-	if push.Repository.Name != "public-repo" {
-		t.Errorf("Unepxted repository name: %q", push.Repository.Name)
-	}
-
-	if push.Repository.Owner.Name != "baxterthehacker" {
-		t.Errorf("Unexpected repo owner name: %q", push.Repository.Owner.Name)
-	}
-
-	if push.Repository.CloneURL != "https://github.com/baxterthehacker/public-repo.git" {
-		t.Errorf("Unexpected repo clone URL: %q", push.Repository.CloneURL)
-	}
-
-	if push.Pusher.Name != "baxterthehacker" {
-		t.Errorf("Unexpected pusher name: %q", push.Pusher.Name)
-	}
-
-	if push.Sender["login"].(string) != "baxterthehacker" {
-		t.Errorf("Unexpected sender login: %v", push.Sender["login"])
-	}
-}
-
-// testJsonPushPayload is copied from the example at https://developer.github.com/v3/activity/events/types/#pushevent
-const testJsonPushPayload = `
 {
   "ref": "refs/heads/changes",
   "before": "9049f1265b7d61be4a8904a9a27120d2064dab3b",
@@ -206,4 +161,3 @@ const testJsonPushPayload = `
     "site_admin": false
   }
 }
-`

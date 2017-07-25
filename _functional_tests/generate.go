@@ -19,9 +19,9 @@ func main() {
 	}
 	commit := os.Args[1]
 
-	eventType := "pull_request"
+	eventType := "push"
 
-	data, err := ioutil.ReadFile("./_functional_tests/test-repo-pull.json")
+	data, err := ioutil.ReadFile("./_functional_tests/test-repo-push.json")
 	if err != nil {
 		panic(err)
 	}
