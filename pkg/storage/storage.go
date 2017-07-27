@@ -36,7 +36,7 @@ func projectID(id string) string {
 // The namespace is the namespace where the secret is stored.
 func loadProjectConfig(id, namespace string) (*acid.Project, error) {
 	kc, err := libk8s.KubeClient()
-	proj := &acid.Project{}
+	proj := &acid.Project{ID: id}
 	if err != nil {
 		return proj, err
 	}

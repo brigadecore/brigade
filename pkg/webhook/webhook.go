@@ -23,6 +23,7 @@ import (
 )
 
 const acidJS = "acid.js"
+const hubSignature = "X-Hub-Signature"
 
 type store interface {
 	Get(id, namespace string) (*acid.Project, error)
@@ -112,7 +113,7 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		return
 	}
 
-	signature := c.Request.Header.Get("X-Hub-Signature")
+	signature := c.Request.Header.Get(hubSignature)
 	if err := validateSignature(signature, proj.SharedSecret, body); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"status": "malformed signature"})
 		return

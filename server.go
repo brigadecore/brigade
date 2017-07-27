@@ -22,6 +22,7 @@ func main() {
 		events.Use(config.Middleware())
 
 		events.POST("/github", webhook.NewGithubHook(store).Handle)
+		events.POST("/exec/:org/:project/:commit", webhook.NewExecHook(store).Handle)
 	}
 
 	// Lame UI
