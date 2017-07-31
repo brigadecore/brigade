@@ -64,7 +64,7 @@ func TestShortSHA(t *testing.T) {
 	str := "I Break For Sea Beasts\n"
 	// c635ce8f0388d039ac9a01d60cfb362dbca8e0722000b614bee75e8e3063621f
 	expect := "c635ce8f0388d039ac9a01d60cfb362dbca8e0722000b614bee75e"
-	if got := ShortSHA(str); got != expect {
+	if got := shortSHA(str); got != expect {
 		t.Fatalf("Expected short SHA\n\t%q, got\n\t%q", expect, got)
 	}
 }
