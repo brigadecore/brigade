@@ -21,11 +21,6 @@ func logToHTML(c *gin.Context) {
 	proj := c.Param("project")
 	commit := c.Param("commit")
 
-	if proj == "favicon.ico" {
-		c.JSON(404, gin.H{"message": "Not found"})
-		return
-	}
-
 	pname := fmt.Sprintf("%s/%s", org, proj)
 	log.Printf("Loading logs for %q", pname)
 	p, err := storage.New().Get(pname, namespace)
@@ -162,7 +157,6 @@ const bootstrapHead = `
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="icon" href="../../favicon.ico">
 
     <title>Acid Logs</title>
 
