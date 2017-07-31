@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
-	"os/exec"
 	"regexp"
 
 	"github.com/deis/quokka/pkg/javascript/libk8s"
@@ -73,26 +73,27 @@ func logToHTML(c *gin.Context) {
 
 		// Print out logs for this item
 		fmt.Fprintf(c.Writer, panelHead, st, p.Labels["jobname"])
-		podLog(p.ObjectMeta.Name, c)
+		podLog(p.ObjectMeta.Name, namespace, c.Writer)
 		fmt.Fprintln(c.Writer, panelFoot)
 	}
 }
 
-func podLog(name string, c *gin.Context) error {
-	path, err := exec.LookPath("kubectl")
+func podLog(name, namespace string, w io.Writer) error {
+	kc, err := libk8s.KubeClient()
 	if err != nil {
-		path = "/usr/bin/kubectl"
-	}
-
-	cmd := exec.Command(path, "logs", name)
-	cmd.Stdout = c.Writer
-	cmd.Stderr = c.Writer
-	if err := cmd.Run(); err != nil {
-		log.Printf("error running kubectl: %s", err)
-		fmt.Fprintf(c.Writer, "no logs for %s", name)
 		return err
 	}
-	return nil
+
+	req := kc.CoreV1().Pods(namespace).GetLogs(name, &v1.PodLogOptions{})
+
+	readCloser, err := req.Stream()
+	if err != nil {
+		return err
+	}
+	defer readCloser.Close()
+
+	_, err = io.Copy(w, readCloser)
+	return err
 }
 
 // taskPods gets the pods associated with this task
