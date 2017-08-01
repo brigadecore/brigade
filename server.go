@@ -31,9 +31,9 @@ func main() {
 		ui.Use(gin.Logger())
 		ui.Use(config.Middleware())
 
-		ui.GET("/", logToHTML)
-		ui.GET("/status.svg", badge)
-		ui.GET("/id/:commit", logToHTML)
+		ui.GET("/", logHandler(store))
+		ui.GET("/status.svg", badgeHandler(store))
+		ui.GET("/id/:commit", logHandler(store))
 	}
 
 	router.GET("/healthz", healthz)

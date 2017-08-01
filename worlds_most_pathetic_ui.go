@@ -15,61 +15,63 @@ import (
 	"github.com/deis/acid/pkg/webhook"
 )
 
-func logToHTML(c *gin.Context) {
-	namespace, _ := config.AcidNamespace(c)
-	org := c.Param("org")
-	proj := c.Param("project")
-	commit := c.Param("commit")
+func logHandler(store storage.Store) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		namespace, _ := config.AcidNamespace(c)
+		org := c.Param("org")
+		proj := c.Param("project")
+		commit := c.Param("commit")
 
-	pname := fmt.Sprintf("%s/%s", org, proj)
-	log.Printf("Loading logs for %q", pname)
-	p, err := storage.New().Get(pname, namespace)
-	if err != nil {
-		log.Printf("logToHTML: error loading project: %s", err)
-	}
+		pname := fmt.Sprintf("%s/%s", org, proj)
+		log.Printf("Loading logs for %q", pname)
+		p, err := store.Get(pname, namespace)
+		if err != nil {
+			log.Printf("logToHTML: error loading project: %s", err)
+		}
 
-	c.Writer.Write([]byte(bootstrapHead))
-	defer c.Writer.Write([]byte(bootstrapFoot))
+		c.Writer.Write([]byte(bootstrapHead))
+		defer c.Writer.Write([]byte(bootstrapFoot))
 
-	if len(commit) > 0 {
-		if !SHAish(commit) {
-			last, err := webhook.GetLastCommit(p, commit)
-			if err != nil {
-				log.Printf("error parsing commit reference %s: %s", commit, err)
-				c.Writer.WriteString("No reference")
-				return
+		if len(commit) > 0 {
+			if !SHAish(commit) {
+				last, err := webhook.GetLastCommit(p, commit)
+				if err != nil {
+					log.Printf("error parsing commit reference %s: %s", commit, err)
+					c.Writer.WriteString("No reference")
+					return
+				}
+				commit = last
 			}
-			commit = last
 		}
-	}
-	fmt.Fprintf(c.Writer, "<p>Logs for Git reference %q</p>", commit)
+		fmt.Fprintf(c.Writer, "<p>Logs for Git reference %q</p>", commit)
 
-	name := fmt.Sprintf("github.com-%s-%s", org, proj)
-	pods, err := taskPods(commit, name, namespace)
-	if err != nil {
-		log.Printf("could not load task pods: %s", err)
-		c.Writer.WriteString("No task pods found. Has the job started?")
-		return
-	}
-
-	panelHead := `<div class="panel panel-%s"><div class="panel-heading"><h3 class="panel-title">%s</h3></div><div class="panel-body"><pre>`
-	panelFoot := `</pre></div></div>`
-	for _, p := range pods.Items {
-		st := "info"
-		switch p.Status.Phase {
-		case v1.PodPending, v1.PodRunning:
-			st = "warning"
-		case v1.PodFailed:
-			st = "danger"
-		case v1.PodSucceeded:
-			st = "success"
-
+		name := fmt.Sprintf("github.com-%s-%s", org, proj)
+		pods, err := taskPods(commit, name, namespace)
+		if err != nil {
+			log.Printf("could not load task pods: %s", err)
+			c.Writer.WriteString("No task pods found. Has the job started?")
+			return
 		}
 
-		// Print out logs for this item
-		fmt.Fprintf(c.Writer, panelHead, st, p.Labels["jobname"])
-		podLog(p.ObjectMeta.Name, namespace, c.Writer)
-		fmt.Fprintln(c.Writer, panelFoot)
+		panelHead := `<div class="panel panel-%s"><div class="panel-heading"><h3 class="panel-title">%s</h3></div><div class="panel-body"><pre>`
+		panelFoot := `</pre></div></div>`
+		for _, p := range pods.Items {
+			st := "info"
+			switch p.Status.Phase {
+			case v1.PodPending, v1.PodRunning:
+				st = "warning"
+			case v1.PodFailed:
+				st = "danger"
+			case v1.PodSucceeded:
+				st = "success"
+
+			}
+
+			// Print out logs for this item
+			fmt.Fprintf(c.Writer, panelHead, st, p.Labels["jobname"])
+			podLog(p.ObjectMeta.Name, namespace, c.Writer)
+			fmt.Fprintln(c.Writer, panelFoot)
+		}
 	}
 }
 
@@ -111,40 +113,42 @@ func SHAish(s string) bool {
 	return sha.MatchString(s)
 }
 
-func badge(c *gin.Context) {
-	org := c.Param("org")
-	proj := c.Param("project")
-	namespace, _ := config.AcidNamespace(c)
+func badgeHandler(store storage.Store) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		org := c.Param("org")
+		proj := c.Param("project")
+		namespace, _ := config.AcidNamespace(c)
 
-	c.Writer.Header().Set("content-type", "image/svg+xml;charset=utf-8")
+		c.Writer.Header().Set("content-type", "image/svg+xml;charset=utf-8")
 
-	pname := fmt.Sprintf("%s/%s", org, proj)
-	log.Printf("Loading project %s", pname)
-	p, err := storage.New().Get(pname, namespace)
-	if err != nil {
-		log.Printf("badge: error loading project: %s", err)
-		c.Writer.WriteString(badgeFailing)
-		return
+		pname := fmt.Sprintf("%s/%s", org, proj)
+		log.Printf("Loading project %s", pname)
+		p, err := store.Get(pname, namespace)
+		if err != nil {
+			log.Printf("badge: error loading project: %s", err)
+			c.Writer.WriteString(badgeFailing)
+			return
+		}
+
+		status, err := webhook.GetRepoStatus(p, "master")
+		if err != nil {
+			log.Printf("badge: error fetching status: %s", err)
+			c.Writer.WriteString(badgeFailing)
+			return
+		}
+
+		badge := badgeRunning
+		switch *status.State {
+		case webhook.StateSuccess:
+			badge = badgePassing
+		case webhook.StatusFailure, webhook.StatusError:
+			log.Printf("badge: marked build failed because status was %s - %q", *status.State, *status.Description)
+			badge = badgeFailing
+		default:
+			log.Printf("badge: status was %s - %q", *status.State, *status.Description)
+		}
+		c.Writer.WriteString(badge)
 	}
-
-	status, err := webhook.GetRepoStatus(p, "master")
-	if err != nil {
-		log.Printf("badge: error fetching status: %s", err)
-		c.Writer.WriteString(badgeFailing)
-		return
-	}
-
-	badge := badgeRunning
-	switch *status.State {
-	case webhook.StateSuccess:
-		badge = badgePassing
-	case webhook.StatusFailure, webhook.StatusError:
-		log.Printf("badge: marked build failed because status was %s - %q", *status.State, *status.Description)
-		badge = badgeFailing
-	default:
-		log.Printf("badge: status was %s - %q", *status.State, *status.Description)
-	}
-	c.Writer.WriteString(badge)
 }
 
 const bootstrapHead = `
