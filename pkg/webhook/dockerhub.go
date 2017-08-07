@@ -53,7 +53,7 @@ func (s *dockerPushHook) Handle(c *gin.Context) {
 
 	// This will clone the repo before responding to the webhook. We need
 	// to make sure that this doesn't cause the hook to hang up.
-	acidJS, err := s.getFile(proj.Repo.Name, commit, "./acid.js", proj)
+	acidJS, err := s.getFile(commit, "./acid.js", proj)
 	if err != nil {
 		log.Printf("aborting DockerImagePush event due to error: %s", err)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "acidjs not found"})
