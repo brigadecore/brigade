@@ -32,7 +32,7 @@ func ghClient(token string) *github.Client {
 }
 
 // setRepoStatus sets the status on a particular commit in a repo.
-func setRepoStatus(repo, commit string, proj *acid.Project, status *github.RepoStatus) error {
+func setRepoStatus(commit string, proj *acid.Project, status *github.RepoStatus) error {
 	if proj.GitHubToken == "" {
 		return fmt.Errorf("status update skipped because no GitHubToken exists on %s", proj.Name)
 	}
