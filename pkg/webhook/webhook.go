@@ -206,6 +206,7 @@ func checkPullRequestAction(event *github.PullRequestEvent) error {
 var ignoreAction = errors.New("ignored")
 
 // TODO create abstraction for mocking
+// TODO: If we have an *acid.Project, why do we need a repo?
 func getFile(repo, commit, path string, proj *acid.Project) ([]byte, error) {
 	toDir := filepath.Join("_cache", repo)
 	if err := os.MkdirAll(toDir, 0755); err != nil {

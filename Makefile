@@ -7,6 +7,7 @@ DOCKER_BUILD_FLAGS :=
 # Test Repo is https://github.com/deis/empty-testbed
 TEST_REPO_EVENT="X-GitHub-Event: push"
 TEST_REPO_COMMIT=6f24c2fd0f13dc95f9056a6448f16607b8d1fa6e
+TEST_REPO_PATH="deis/empty-testbed"
 
 # The location of the functional tests.
 TEST_DIR=./_functional_tests
@@ -69,14 +70,22 @@ test-unit:
 # This will clone the github.com/deis/empty-testbed repo and run the acid.js
 # file found there.
 .PHONY: test-functional
+test-functional: test-functional-prepare
 test-functional:
-	-kubectl delete pod test-repo-$(TEST_REPO_COMMIT)
-	-kubectl delete cm  test-repo-$(TEST_REPO_COMMIT) && sleep 10
-	go run $(TEST_DIR)/generate.go $(TEST_REPO_COMMIT) && curl -X POST \
+	@echo "\n===> PUSH test\n"
+	curl -X POST \
 		-H $(TEST_REPO_EVENT) \
 		-H "X-Hub-Signature: $(shell cat $(TEST_DIR)/test-repo-generated.hash)" \
 		localhost:7744/events/github \
-		-vvv -T $(TEST_DIR)/test-repo-generated.json
+		-T $(TEST_DIR)/test-repo-generated.json
+	@echo "\n===> DockerHub test\n"
+	curl -X POST \
+		localhost:7744/events/dockerhub/$(TEST_REPO_PATH)/$(TEST_REPO_COMMIT) \
+		-T $(TEST_DIR)/dockerhub-push.json
+
+.PHONY: test-functional-prepare
+test-functional-prepare:
+	go run $(TEST_DIR)/generate.go $(TEST_REPO_COMMIT)
 
 # JS test is local only
 .PHONY: test-js

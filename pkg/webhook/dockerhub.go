@@ -1,0 +1,105 @@
+package webhook
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strings"
+
+	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/acid/pkg/config"
+	"github.com/deis/acid/pkg/js"
+
+	"gopkg.in/gin-gonic/gin.v1"
+)
+
+type dockerPushHook struct {
+	store   store
+	getFile fileGetter
+}
+
+// NewDockerPushHook creates a new Docker Push handler for webhooks.
+func NewDockerPushHook(s store) *dockerPushHook {
+	return &dockerPushHook{
+		store:   s,
+		getFile: getFile,
+	}
+}
+
+// Handle handles a Push webhook event from DockerHub or a compatible agent.
+func (s *dockerPushHook) Handle(c *gin.Context) {
+	namespace, _ := config.AcidNamespace(c)
+	orgName := c.Param("org")
+	projName := c.Param("project")
+	commit := c.Param("commit")
+	pname := fmt.Sprintf("%s/%s", orgName, projName)
+
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		log.Printf("Failed to read body: %s", err)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Malformed body"})
+		return
+	}
+	defer c.Request.Body.Close()
+
+	proj, err := s.store.Get(pname, namespace)
+	if err != nil {
+		log.Printf("Project %q not found in %q. No secret loaded. %s", pname, namespace, err)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
+		return
+	}
+
+	// This will clone the repo before responding to the webhook. We need
+	// to make sure that this doesn't cause the hook to hang up.
+	acidJS, err := s.getFile(proj.Repo.Name, commit, "./acid.js", proj)
+	if err != nil {
+		log.Printf("aborting DockerImagePush event due to error: %s", err)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "acidjs not found"})
+		return
+	}
+
+	go notifyDockerImagePush(body, proj, commit, acidJS)
+	c.JSON(200, gin.H{"status": "Success"})
+}
+
+func notifyDockerImagePush(data []byte, proj *acid.Project, commit string, acidJS []byte) {
+	if err := doDockerImagePush(data, proj, commit, acidJS); err != nil {
+		log.Printf("failed dockerimagepush event: %s", err)
+	}
+
+}
+
+func doDockerImagePush(data []byte, proj *acid.Project, commit string, acidJS []byte) error {
+	payload := map[string]interface{}{}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return fmt.Errorf("could not decode hook data: %s", err)
+	}
+
+	e := &js.Event{
+		Type:     "imagePush",
+		Provider: "dockerhub",
+		Commit:   commit,
+		Payload:  payload,
+	}
+
+	p := &js.Project{
+		ID:   proj.ID,
+		Name: proj.Name,
+		Repo: js.Repo{
+			Name:     proj.Repo.Name,
+			CloneURL: proj.Repo.CloneURL,
+			SSHKey:   strings.Replace(proj.Repo.SSHKey, "\n", "$", -1),
+		},
+		Kubernetes: js.Kubernetes{
+			Namespace: proj.Kubernetes.Namespace,
+			// By putting the sidecar image here, we are allowing an acid.js
+			// to override it.
+			VCSSidecar: proj.Kubernetes.VCSSidecar,
+		},
+		Secrets: proj.Secrets,
+	}
+
+	return js.HandleEvent(e, p, acidJS)
+}
