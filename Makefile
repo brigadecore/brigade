@@ -37,6 +37,7 @@ docker-build: build-docker-bin
 docker-build:
 	docker build -t $(DOCKER_REGISTRY)/acid:latest .
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/vcs-sidecar:latest vcs-sidecar
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-runner:latest bim
 
 # You must be logged into DOCKER_REGISTRY before you can push.
 .PHONY: docker-push
@@ -90,7 +91,7 @@ test-functional-prepare:
 # JS test is local only
 .PHONY: test-js
 test-js:
-	eslint js/*.js acid.js
+	docker run $(DOCKER_REGISTRY)/acid-runner:latest npm run test
 
 .PHONY: test-style
 test-style:

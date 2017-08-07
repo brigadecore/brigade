@@ -5,3 +5,4 @@ rootfs/acid
 rootfs/runner.js
 _functional_tests/*-generated.*
 vcs-sidecar/rootfs/vcs-sidecar
+node_modules/

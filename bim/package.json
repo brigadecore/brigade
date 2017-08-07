@@ -1,0 +1,23 @@
+{
+  "name": "bim",
+  "version": "0.1.10",
+  "description": "Bad Idea Machine.",
+  "main": "dist/index",
+  "types": "dist/index",
+  "scripts": {
+    "test": "tsc && mocha ./dist/test",
+    "build": "tsc",
+    "acid": "tsc && node ./dist/src/index.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@kubernetes/typescript-node": "^0.1.1",
+    "@types/chai": "^4.0.1",
+    "@types/mocha": "^2.2.41",
+    "@types/node": "^8.0.14",
+    "chai": "^4.1.0",
+    "mocha": "^3.4.2",
+    "typescript": "^2.4.2"
+  }
+}
