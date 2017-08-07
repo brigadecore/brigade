@@ -31,11 +31,11 @@ func TestGithubHandler(t *testing.T) {
 	}
 
 	s := NewGithubHook(store)
-	s.getFile = func(repo, commit, path string, proj *acid.Project) ([]byte, error) {
+	s.getFile = func(commit, path string, proj *acid.Project) ([]byte, error) {
 		t.Logf("Getting file %s, for commit %s", path, commit)
 		return []byte(""), nil
 	}
-	s.createStatus = func(repo, commit string, proj *acid.Project, status *github.RepoStatus) error {
+	s.createStatus = func(commit string, proj *acid.Project, status *github.RepoStatus) error {
 		t.Logf("Creating status %v, for commit %s", status, commit)
 		return nil
 	}

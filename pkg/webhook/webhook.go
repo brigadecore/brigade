@@ -35,9 +35,9 @@ type githubHook struct {
 	createStatus statusCreator
 }
 
-type fileGetter func(repo, commit, path string, proj *acid.Project) ([]byte, error)
+type fileGetter func(commit, path string, proj *acid.Project) ([]byte, error)
 
-type statusCreator func(repo, commit string, proj *acid.Project, status *github.RepoStatus) error
+type statusCreator func(commit string, proj *acid.Project, status *github.RepoStatus) error
 
 // NewGithubHook creates a GitHub webhook handler.
 func NewGithubHook(s store) *githubHook {
@@ -153,11 +153,11 @@ func (s *githubHook) buildStatus(eventType, repo, commit string, payload []byte,
 	status.State = &StatePending
 	status.Description = &msg
 	status.Context = &svc
-	if err := s.createStatus(repo, commit, proj, status); err != nil {
+	if err := s.createStatus(commit, proj, status); err != nil {
 		// For this one, we just log an error and continue.
 		log.Printf("Error setting status to %s: %s", *status.State, err)
 	}
-	if err := s.build(eventType, repo, commit, payload, proj); err != nil {
+	if err := s.build(eventType, commit, payload, proj); err != nil {
 		log.Printf("Build failed: %s", err)
 		msg = truncAt(err.Error(), 140)
 		status.State = &StateFailure
@@ -167,7 +167,7 @@ func (s *githubHook) buildStatus(eventType, repo, commit string, payload []byte,
 		status.State = &StateSuccess
 		status.Description = &msg
 	}
-	if err := s.createStatus(repo, commit, proj, status); err != nil {
+	if err := s.createStatus(commit, proj, status); err != nil {
 		// For this one, we just log an error and continue.
 		log.Printf("After build, error setting status to %s: %s", *status.State, err)
 	}
@@ -206,9 +206,8 @@ func checkPullRequestAction(event *github.PullRequestEvent) error {
 var ignoreAction = errors.New("ignored")
 
 // TODO create abstraction for mocking
-// TODO: If we have an *acid.Project, why do we need a repo?
-func getFile(repo, commit, path string, proj *acid.Project) ([]byte, error) {
-	toDir := filepath.Join("_cache", repo)
+func getFile(commit, path string, proj *acid.Project) ([]byte, error) {
+	toDir := filepath.Join("_cache", proj.Repo.Name)
 	if err := os.MkdirAll(toDir, 0755); err != nil {
 		log.Printf("error making %s: %s", toDir, err)
 		return nil, err
@@ -231,8 +230,8 @@ func getFile(repo, commit, path string, proj *acid.Project) ([]byte, error) {
 	return ioutil.ReadFile(acidPath)
 }
 
-func (s *githubHook) build(eventType, repo, commit string, payload []byte, proj *acid.Project) error {
-	acidScript, err := s.getFile(repo, commit, acidJS, proj)
+func (s *githubHook) build(eventType, commit string, payload []byte, proj *acid.Project) error {
+	acidScript, err := s.getFile(commit, acidJS, proj)
 	if err != nil {
 		return err
 	}
