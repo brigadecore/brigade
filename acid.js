@@ -4,8 +4,7 @@
 // ============================================================================
 /* global Job WaitGroup events */
 
-// This handles a Push webhook.
-events.push = function(e) {
+function build(e) {
   // This is a Go project, so we want to set it up for Go.
   var gopath = "/go"
 
@@ -58,3 +57,9 @@ events.push = function(e) {
   waiter.add(goBuild)
   waiter.run()
 }
+
+// Handle Push
+events.push = build
+
+// Handle Pull Request
+events.pullRequest = build
