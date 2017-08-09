@@ -9,7 +9,7 @@ import (
 
 	"github.com/deis/acid/pkg/acid"
 	"github.com/deis/acid/pkg/config"
-	"github.com/deis/acid/pkg/js"
+	"github.com/deis/acid/pkg/worker"
 
 	"gopkg.in/gin-gonic/gin.v1"
 )
@@ -59,21 +59,21 @@ func (e *execHook) Handle(c *gin.Context) {
 }
 
 func executeScriptData(commit string, rawScript []byte, proj *acid.Project) (int, gin.H) {
-	e := &js.Event{
+	e := &worker.Event{
 		Type:     "exec",
 		Provider: "client",
 		Commit:   commit,
 	}
-	p := &js.Project{
+	p := &worker.Project{
 		ID:   proj.ID, //"acid-" + storage.ShortSHA(proj.Repo),
 		Name: proj.Name,
-		Repo: js.Repo{
+		Repo: worker.Repo{
 			Name:     proj.Repo.Name,
 			CloneURL: proj.Repo.CloneURL,
 			SSHKey:   strings.Replace(proj.Repo.SSHKey, "\n", "$", -1),
 		},
 		Payload: "",
-		Kubernetes: js.Kubernetes{
+		Kubernetes: worker.Kubernetes{
 			Namespace: proj.Kubernetes.Namespace,
 			// By putting the sidecar image here, we are allowing an acid.js
 			// to override it.
@@ -83,7 +83,7 @@ func executeScriptData(commit string, rawScript []byte, proj *acid.Project) (int
 	}
 
 	// Right now, we do this sychnronously since we have no backchannel.
-	if err := js.HandleEvent(e, p, rawScript); err != nil {
+	if err := worker.HandleEvent(e, p, rawScript); err != nil {
 		return http.StatusInternalServerError, gin.H{"error": err.Error()}
 	}
 	return 200, gin.H{"status": "completed"}

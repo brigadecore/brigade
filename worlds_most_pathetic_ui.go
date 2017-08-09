@@ -6,8 +6,9 @@ import (
 	"log"
 	"regexp"
 
-	"github.com/deis/quokka/pkg/javascript/libk8s"
+	"github.com/deis/acid/pkg/k8s"
 	"gopkg.in/gin-gonic/gin.v1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
 
 	"github.com/deis/acid/pkg/config"
@@ -76,7 +77,7 @@ func logHandler(store storage.Store) gin.HandlerFunc {
 }
 
 func podLog(name, namespace string, w io.Writer) error {
-	kc, err := libk8s.KubeClient()
+	kc, err := k8s.Client()
 	if err != nil {
 		return err
 	}
@@ -96,12 +97,12 @@ func podLog(name, namespace string, w io.Writer) error {
 // taskPods gets the pods associated with this task
 func taskPods(commit, name, namespace string) (*v1.PodList, error) {
 	// Load the pods that ran as part of this build.
-	kc, err := libk8s.KubeClient()
+	kc, err := k8s.Client()
 	if err != nil {
 		return nil, err
 	}
 
-	lo := v1.ListOptions{LabelSelector: fmt.Sprintf("commit=%s,belongsto=%s", commit, name)}
+	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("commit=%s,belongsto=%s", commit, name)}
 
 	return kc.CoreV1().Pods(namespace).List(lo)
 }

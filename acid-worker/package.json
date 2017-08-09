@@ -1,16 +1,19 @@
 {
-  "name": "bim",
+  "name": "acid-worker",
   "version": "0.1.10",
-  "description": "Bad Idea Machine.",
+  "description": "Acid Worker",
   "main": "dist/index",
   "types": "dist/index",
   "scripts": {
+    "prestart": "node prestart.js",
+    "start": "tsc && node ./dist/src/index.js",
     "test": "tsc && mocha ./dist/test",
     "build": "tsc",
-    "acid": "tsc && node ./dist/src/index.js"
+    "acid": "npm start"
   },
-  "author": "",
+  "author": "The Steel Thread Team",
   "license": "MIT",
+  "repository": "https://github.com/deis/acid",
   "devDependencies": {
     "@kubernetes/typescript-node": "^0.1.1",
     "@types/chai": "^4.0.1",

@@ -4,9 +4,14 @@ import (
 	"testing"
 
 	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/acid/pkg/worker"
+	"github.com/deis/acid/pkg/worker/workertest"
 )
 
 func TestExecuteScriptData(t *testing.T) {
+	// Disable Kubernetes:
+	worker.DefaultExecutor = &workertest.MockExecutor{}
+
 	script := `
 events.exec = function(e)  {
 	console.log("Hello")

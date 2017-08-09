@@ -1,8 +1,10 @@
 package: github.com/deis/acid
 import:
+- package: k8s.io/client-go
+  version: 4.0.0-beta.0
+# We let client-go dictate the version of API machinery
+- package: k8s.io/apimachinery/pkg/apis/meta/v1
 - package: gopkg.in/gin-gonic/gin.v1
-- package: github.com/deis/quokka
-  version: 49b5ceb1632f01dbcef7a3c7c59e716725594914
 - package: github.com/Masterminds/vcs
 - package: golang.org/x/oauth2
 - package: github.com/google/go-github

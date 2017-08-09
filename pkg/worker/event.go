@@ -1,4 +1,4 @@
-package js
+package worker
 
 // Event describes a Runner event.
 type Event struct {

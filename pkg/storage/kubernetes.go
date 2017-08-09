@@ -5,7 +5,9 @@ import (
 	"strings"
 
 	"github.com/deis/acid/pkg/acid"
-	"github.com/deis/quokka/pkg/javascript/libk8s"
+	"github.com/deis/acid/pkg/k8s"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // store represents a storage engine for a acid.Project.
@@ -20,14 +22,14 @@ func (s store) Get(id, namespace string) (*acid.Project, error) {
 //
 // The namespace is the namespace where the secret is stored.
 func loadProjectConfig(id, namespace string) (*acid.Project, error) {
-	kc, err := libk8s.KubeClient()
+	kc, err := k8s.Client()
 	proj := &acid.Project{ID: id}
 	if err != nil {
 		return proj, err
 	}
 
 	// The project config is stored in a secret.
-	secret, err := kc.CoreV1().Secrets(namespace).Get(id)
+	secret, err := kc.CoreV1().Secrets(namespace).Get(id, v1.GetOptions{})
 	if err != nil {
 		return proj, err
 	}

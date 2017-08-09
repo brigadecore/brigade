@@ -4,9 +4,15 @@ import (
 	"testing"
 
 	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/acid/pkg/worker"
+	"github.com/deis/acid/pkg/worker/workertest"
 )
 
 func TestDoDockerImagePush(t *testing.T) {
+
+	// Disable Kubernetes:
+	worker.DefaultExecutor = &workertest.MockExecutor{}
+
 	script := `events.dockerhub = function(e) {
 		if (e.payload.push_data.tag == "latest") {
 			throw "Unexpected test: " + e.payload.push_data.tag

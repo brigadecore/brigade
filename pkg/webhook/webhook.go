@@ -19,7 +19,7 @@ import (
 
 	"github.com/deis/acid/pkg/acid"
 	"github.com/deis/acid/pkg/config"
-	"github.com/deis/acid/pkg/js"
+	"github.com/deis/acid/pkg/worker"
 )
 
 const acidJS = "acid.js"
@@ -242,22 +242,22 @@ func (s *githubHook) build(eventType, commit string, payload []byte, proj *acid.
 		return err
 	}
 
-	e := &js.Event{
+	e := &worker.Event{
 		Type:     eventType,
 		Provider: "github",
 		Commit:   commit,
 		Payload:  payloadMap,
 	}
 
-	p := &js.Project{
+	p := &worker.Project{
 		ID:   proj.ID,
 		Name: proj.Name,
-		Repo: js.Repo{
+		Repo: worker.Repo{
 			Name:     proj.Repo.Name,
 			CloneURL: proj.Repo.CloneURL,
 			SSHKey:   strings.Replace(proj.Repo.SSHKey, "\n", "$", -1),
 		},
-		Kubernetes: js.Kubernetes{
+		Kubernetes: worker.Kubernetes{
 			Namespace: proj.Kubernetes.Namespace,
 			// By putting the sidecar image here, we are allowing an acid.js
 			// to override it.
@@ -266,7 +266,7 @@ func (s *githubHook) build(eventType, commit string, payload []byte, proj *acid.
 		Secrets: proj.Secrets,
 	}
 
-	return js.HandleEvent(e, p, acidScript)
+	return worker.HandleEvent(e, p, acidScript)
 }
 
 // validateSignature compares the salted digest in the header with our own computing of the body.

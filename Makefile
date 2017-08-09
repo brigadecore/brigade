@@ -6,21 +6,19 @@ DOCKER_BUILD_FLAGS :=
 
 # Test Repo is https://github.com/deis/empty-testbed
 TEST_REPO_EVENT="X-GitHub-Event: push"
-TEST_REPO_COMMIT=6f24c2fd0f13dc95f9056a6448f16607b8d1fa6e
+TEST_REPO_COMMIT=9c75584920f1297008118915024927cc099d5dcc
 TEST_REPO_PATH="deis/empty-testbed"
 
 # The location of the functional tests.
 TEST_DIR=./_functional_tests
 
 .PHONY: build
-build: generate
 build:
 	go build -o bin/acid .
 	go build -o bin/vcs-sidecar vcs-sidecar/cmd/vcs-sidecar/main.go
 
 # Cross-compile for Docker+Linux
 .PHONY: build-docker-bin
-build-docker-bin: generate
 build-docker-bin:
 	GOOS=linux GOARCH=amd64 go build -o rootfs/usr/bin/acid .
 	GOOS=linux GOARCH=amd64 go build -o vcs-sidecar/rootfs/vcs-sidecar vcs-sidecar/cmd/vcs-sidecar/main.go
@@ -37,13 +35,14 @@ docker-build: build-docker-bin
 docker-build:
 	docker build -t $(DOCKER_REGISTRY)/acid:latest .
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/vcs-sidecar:latest vcs-sidecar
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-runner:latest bim
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-worker:latest acid-worker
 
 # You must be logged into DOCKER_REGISTRY before you can push.
 .PHONY: docker-push
 docker-push:
 	docker push $(DOCKER_REGISTRY)/acid
 	docker push $(DOCKER_REGISTRY)/vcs-sidecar
+	docker push $(DOCKER_REGISTRY)/acid-worker
 
 # All non-functional tests
 .PHONY: test
@@ -53,7 +52,6 @@ test: test-js
 
 # Unit tests. Local only.
 .PHONY: test-unit
-test-unit: generate
 test-unit:
 	go test -v . ./pkg/...
 
@@ -79,6 +77,7 @@ test-functional:
 		-H "X-Hub-Signature: $(shell cat $(TEST_DIR)/test-repo-generated.hash)" \
 		localhost:7744/events/github \
 		-T $(TEST_DIR)/test-repo-generated.json
+	sleep 2
 	@echo "\n===> DockerHub test\n"
 	curl -X POST \
 		localhost:7744/events/dockerhub/$(TEST_REPO_PATH)/$(TEST_REPO_COMMIT) \
@@ -91,7 +90,7 @@ test-functional-prepare:
 # JS test is local only
 .PHONY: test-js
 test-js:
-	docker run $(DOCKER_REGISTRY)/acid-runner:latest npm run test
+	docker run $(DOCKER_REGISTRY)/acid-worker:latest npm run test
 
 .PHONY: test-style
 test-style:
@@ -106,7 +105,6 @@ test-style:
 		--tests \
 		--vendor \
 		--deadline 60s \
-		--exclude=generated.go \
 		./...
 	@echo "Recommended style checks ===>"
 	gometalinter.v1 \
@@ -115,14 +113,8 @@ test-style:
 		--vendor \
 		--skip proto \
 		--deadline 60s \
-		--exclude=generated.go \
 		./... || :
 
-
-# Compile the JS into the Go
-# We don't call `go generate` anymore because it is a redundant abstraction.
-generate:
-	go-bindata --pkg lib --nometadata -o pkg/js/lib/generated.go js
 
 HAS_NPM := $(shell command -v npm;)
 HAS_ESLINT := $(shell command -v eslint;)

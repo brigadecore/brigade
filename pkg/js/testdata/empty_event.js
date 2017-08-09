@@ -1,1 +1,0 @@
-events.push = function(e) {}
