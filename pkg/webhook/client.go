@@ -36,16 +36,16 @@ func setRepoStatus(commit string, proj *acid.Project, status *github.RepoStatus)
 	if proj.GitHubToken == "" {
 		return fmt.Errorf("status update skipped because no GitHubToken exists on %s", proj.Name)
 	}
-	parts := strings.SplitN(proj.Repo.Name, "/", 2)
-	if len(parts) != 2 {
+	parts := strings.SplitN(proj.Repo.Name, "/", 3)
+	if len(parts) != 3 {
 		return fmt.Errorf("project name %q is malformed", proj.Repo.Name)
 	}
 	c := context.Background()
 	client := ghClient(proj.GitHubToken)
 	_, _, err := client.Repositories.CreateStatus(
 		c,
-		parts[0],
 		parts[1],
+		parts[2],
 		commit,
 		status)
 	return err
@@ -56,11 +56,11 @@ func setRepoStatus(commit string, proj *acid.Project, status *github.RepoStatus)
 func GetRepoStatus(proj *acid.Project, ref string) (*github.RepoStatus, error) {
 	c := context.Background()
 	client := ghClient(proj.GitHubToken)
-	parts := strings.SplitN(proj.Repo.Name, "/", 2)
-	if len(parts) != 2 {
+	parts := strings.SplitN(proj.Repo.Name, "/", 3) // github.com/ORG/REPO
+	if len(parts) != 3 {
 		return nil, fmt.Errorf("project name %q is malformed", proj.Repo.Name)
 	}
-	statii, _, err := client.Repositories.ListStatuses(c, parts[0], parts[1], ref, &github.ListOptions{})
+	statii, _, err := client.Repositories.ListStatuses(c, parts[1], parts[2], ref, &github.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -76,10 +76,10 @@ func GetRepoStatus(proj *acid.Project, ref string) (*github.RepoStatus, error) {
 func GetLastCommit(proj *acid.Project, ref string) (string, error) {
 	c := context.Background()
 	client := ghClient(proj.GitHubToken)
-	parts := strings.SplitN(proj.Repo.Name, "/", 2)
-	if len(parts) != 2 {
+	parts := strings.SplitN(proj.Repo.Name, "/", 3)
+	if len(parts) != 3 {
 		return "", fmt.Errorf("project name %q is malformed", proj.Repo.Name)
 	}
-	sha, _, err := client.Repositories.GetCommitSHA1(c, parts[0], parts[1], ref, "")
+	sha, _, err := client.Repositories.GetCommitSHA1(c, parts[1], parts[2], ref, "")
 	return sha, err
 }
