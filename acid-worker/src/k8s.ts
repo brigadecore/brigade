@@ -138,6 +138,13 @@ export class JobRunner implements jobs.JobRunner {
     } else {
       this.secret.data["main.sh"] = b64enc(newCmd)
     }
+
+    if (job.privileged) {
+      for (let i = 0; i < this.runner.spec.containers.length; i++) {
+        this.runner.spec.containers[i].securityContext.privileged = true
+      }
+    }
+
   }
 
   // run starts a job and then waits until it is running.
@@ -295,6 +302,7 @@ function newRunnerPod(podname: string, acidImage: string): kubernetes.V1Pod {
   c1.image = acidImage
   c1.command = ["/bin/sh", "/hook/main.sh"]
   c1.imagePullPolicy = "IfNotPresent"
+  c1.securityContext = new kubernetes.V1SecurityContext()
 
   pod.spec = new kubernetes.V1PodSpec()
   pod.spec.containers = [c1]

@@ -140,6 +140,15 @@ describe("k8s", function() {
           }
         })
       })
+      context("when job is privileged", function() {
+        it("privileges containers", function() {
+          j.privileged = true
+          let jr = new k8s.JobRunner(j, e, p)
+          for (let c of jr.runner.spec.containers) {
+            assert.isTrue(c.securityContext.privileged)
+          }
+        })
+      })
     })
   })
 })
