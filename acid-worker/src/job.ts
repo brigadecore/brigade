@@ -41,6 +41,8 @@ export abstract class Job {
   // Fetch the source repo. Default: true
   public useSource: boolean = true
 
+  public privileged: boolean = false
+
   // _podName is set by the runtime. It is the name of the pod.
   protected _podName: string
 
