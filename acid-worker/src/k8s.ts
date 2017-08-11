@@ -60,6 +60,7 @@ export class JobRunner implements jobs.JobRunner {
     this.runner.metadata.labels.jobname = job.name
     this.runner.metadata.labels.belongsto = belongsto
     this.runner.metadata.labels.commit = commit
+    this.runner.metadata.labels.role = "job"
 
     this.secret.metadata.labels.jobname = job.name
     this.secret.metadata.labels.belongsto = belongsto
@@ -174,7 +175,20 @@ export class JobRunner implements jobs.JobRunner {
     let ns = this.project.kubernetes.namespace
     let cancel = false
 
+    // This is a handle to clear the setTimeout when the promise is fulfilled.
+    let waiter
+
     console.log("Timeout set at " + timeout)
+
+    // At intervals, poll the Kubernetes server and get the pod phase. If the
+    // phase is Succeeded or Failed, bail out. Otherwise, keep polling.
+    //
+    // The timeout sets an upper limit, and if that limit is reached, the
+    // polling will be stopped.
+    //
+    // Essentially, we track two Timer objects: the setTimeout and the setInterval.
+    // That means we have to kill both before exit, otherwise the node.js process
+    // will remain running until all timeouts have executed.
 
     // Poll the server waiting for a Succeeded.
     let poll = new Promise((resolve, reject) => {
@@ -187,32 +201,44 @@ export class JobRunner implements jobs.JobRunner {
           }
           let phase = pod.status.phase
           if (phase == "Succeeded") {
-            clearInterval(i)
+            clearTimers()
             let result = new K8sResult(phase)
             resolve(result)
           } else if (phase == "Failed") {
-            clearInterval(i)
+            clearTimers()
             reject("Pod " + name + " failed to run to completion")
           }
           console.log(pod.metadata.namespace + "/" + pod.metadata.name + " phase " + pod.status.phase)
           // In all other cases we fall through and let the fn be run again.
-        }).catch(reason => reject(reason))
+        }).catch(reason => {
+          console.log("failed pod lookup")
+          clearTimers()
+          reject(reason)
+        })
       }
       let interval = setInterval(() => {
         if (cancel) {
           clearInterval(interval)
+          clearTimeout(waiter)
           return
         }
         console.log("reading " + name + " in namespace " + ns)
         pollOnce(name, ns, interval)
       }, 2000)
+      let clearTimers = () => {
+        clearInterval(interval)
+        clearTimeout(waiter)
+      }
     })
 
+
     // This will fail if the timelimit is reached.
-    let timer = new Promise((solve,ject) => setTimeout(() => {
-      cancel = true
-      ject("time limit exceeded")
-    }, timeout))
+    let timer = new Promise((solve,ject) => {
+      waiter = setTimeout(() => {
+        cancel = true
+        ject("time limit exceeded")
+      }, timeout)
+    })
 
     return Promise.race([poll, timer])
   }
@@ -235,7 +261,7 @@ function sidecarSpec(e: AcidEvent, local: string, image: string, project: Projec
   ]
   spec.image = imageTag
   spec.command = ["/vcs-sidecar"]
-  spec.imagePullPolicy = "Always",
+  spec.imagePullPolicy = "IfNotPresent",
   spec.volumeMounts = [
     volumeMount("vcs-sidecar", local)
   ]
@@ -268,10 +294,11 @@ function newRunnerPod(podname: string, acidImage: string): kubernetes.V1Pod {
   c1.name = "acidrun"
   c1.image = acidImage
   c1.command = ["/bin/sh", "/hook/main.sh"]
-  c1.imagePullPolicy = "Always"
+  c1.imagePullPolicy = "IfNotPresent"
 
   pod.spec = new kubernetes.V1PodSpec()
   pod.spec.containers = [c1]
+  pod.spec.restartPolicy = "Never"
   return pod
 }
 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/deis/acid/pkg/acid"
 	"github.com/deis/acid/pkg/config"
-	"github.com/deis/acid/pkg/js"
+	"github.com/deis/acid/pkg/worker"
 
 	"gopkg.in/gin-gonic/gin.v1"
 )
@@ -77,22 +77,22 @@ func doDockerImagePush(data []byte, proj *acid.Project, commit string, acidJS []
 		return fmt.Errorf("could not decode hook data: %s", err)
 	}
 
-	e := &js.Event{
+	e := &worker.Event{
 		Type:     "imagePush",
 		Provider: "dockerhub",
 		Commit:   commit,
 		Payload:  payload,
 	}
 
-	p := &js.Project{
+	p := &worker.Project{
 		ID:   proj.ID,
 		Name: proj.Name,
-		Repo: js.Repo{
+		Repo: worker.Repo{
 			Name:     proj.Repo.Name,
 			CloneURL: proj.Repo.CloneURL,
 			SSHKey:   strings.Replace(proj.Repo.SSHKey, "\n", "$", -1),
 		},
-		Kubernetes: js.Kubernetes{
+		Kubernetes: worker.Kubernetes{
 			Namespace: proj.Kubernetes.Namespace,
 			// By putting the sidecar image here, we are allowing an acid.js
 			// to override it.
@@ -101,5 +101,5 @@ func doDockerImagePush(data []byte, proj *acid.Project, commit string, acidJS []
 		Secrets: proj.Secrets,
 	}
 
-	return js.HandleEvent(e, p, acidJS)
+	return worker.HandleEvent(e, p, acidJS)
 }

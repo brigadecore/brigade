@@ -1,5 +1,6 @@
-package js
+package worker
 
+// Project describes a worker's view of a project.
 type Project struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
