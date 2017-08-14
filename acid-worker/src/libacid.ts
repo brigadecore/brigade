@@ -25,7 +25,11 @@ export class Job extends jobImpl.Job{
   run(): Promise<jobImpl.Result> {
     let jr = new JobRunner(this, currentEvent, currentProject)
     this._podName = jr.name
-    return jr.run()
+    return jr.run().catch(err => {
+      // Wrap the message to give clear context.
+      let msg = `job ${ this.name }(${ jr.name }): ${ err }`
+      return Promise.reject(msg)
+    })
   }
 }
 

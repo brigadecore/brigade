@@ -163,7 +163,7 @@ export class JobRunner implements jobs.JobRunner {
     return new Promise((resolve, reject) => {
       console.log("Creating secret " + this.secret.metadata.name)
       k.createNamespacedSecret(ns, this.secret).then((result, newSec) => {
-        console.log("Creating pod " + this.runner.spec.containers[0].name)
+        console.log("Creating pod " + this.runner.metadata.name)
         // Once namespace creation has been accepted, we create the pod.
         k.createNamespacedPod(ns, this.runner).then((result, newPod) => {
           resolve(this)
@@ -229,7 +229,6 @@ export class JobRunner implements jobs.JobRunner {
           clearTimeout(waiter)
           return
         }
-        console.log("reading " + name + " in namespace " + ns)
         pollOnce(name, ns, interval)
       }, 2000)
       let clearTimers = () => {
