@@ -2,34 +2,82 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
-	"github.com/deis/acid/pkg/acid"
-	"github.com/deis/acid/pkg/k8s"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api/v1"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/deis/acid/pkg/acid"
 )
 
 // store represents a storage engine for a acid.Project.
-type store struct{}
+type store struct {
+	client kubernetes.Interface
+}
 
 // Get retrieves the project from storage.
-func (s store) Get(id, namespace string) (*acid.Project, error) {
-	return loadProjectConfig(projectID(id), namespace)
+func (s *store) GetProject(id, namespace string) (*acid.Project, error) {
+	return s.loadProjectConfig(projectID(id), namespace)
+}
+
+// Get retrieves the project from storage.
+func (s *store) CreateJobSpec(jobSpec *acid.JobSpec, proj *acid.Project) error {
+	return s.createSecret(jobSpec, proj)
+}
+
+func (s *store) createSecret(j *acid.JobSpec, p *acid.Project) error {
+	shortCommit := j.Commit
+	if len(shortCommit) > 8 {
+		shortCommit = shortCommit[0:8]
+	}
+
+	if j.ID == "" {
+		j.ID = genID()
+	}
+
+	jobName := fmt.Sprintf("acid-worker-%s-%s", j.ID, shortCommit)
+	cleanProjName := strings.Replace(p.Repo.Name, "/", "-", -1)
+
+	secret := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name: jobName,
+			Labels: map[string]string{
+				"heritage":  "acid",
+				"managedBy": "acid",
+				"jobname":   jobName,
+				"belongsto": cleanProjName,
+				"commit":    j.Commit,
+				// Need a different name for this.
+				"role":   "build",
+				"status": "triggered",
+			},
+		},
+		Data: map[string][]byte{
+			"script":  j.Script,
+			"payload": j.Payload,
+		},
+		StringData: map[string]string{
+			"project_id":     p.ID,
+			"event_type":     j.Type,
+			"event_provider": j.Provider,
+			"commit":         j.Commit,
+		},
+	}
+
+	_, err := s.client.CoreV1().Secrets(p.Kubernetes.Namespace).Create(&secret)
+	return err
 }
 
 // loadProjectConfig loads a project config from inside of Kubernetes.
 //
 // The namespace is the namespace where the secret is stored.
-func loadProjectConfig(id, namespace string) (*acid.Project, error) {
-	kc, err := k8s.Client()
+func (s *store) loadProjectConfig(id, namespace string) (*acid.Project, error) {
 	proj := &acid.Project{ID: id}
-	if err != nil {
-		return proj, err
-	}
 
 	// The project config is stored in a secret.
-	secret, err := kc.CoreV1().Secrets(namespace).Get(id, v1.GetOptions{})
+	secret, err := s.client.CoreV1().Secrets(namespace).Get(id, meta.GetOptions{})
 	if err != nil {
 		return proj, err
 	}
@@ -45,7 +93,7 @@ func configureProject(proj *acid.Project, data map[string][]byte, namespace stri
 	proj.GitHubToken = string(data["githubToken"])
 
 	proj.Kubernetes.Namespace = def(data["namespace"], namespace)
-	proj.Kubernetes.VCSSidecar = def(data["vcsSidecar"], DefaultVCSSidecar)
+	proj.Kubernetes.VCSSidecar = def(data["vcsSidecar"], acid.DefaultVCSSidecar)
 
 	proj.Repo = acid.Repo{
 		Name: def(data["repository"], proj.Name),

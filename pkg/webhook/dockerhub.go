@@ -1,16 +1,13 @@
 package webhook
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/deis/acid/pkg/acid"
 	"github.com/deis/acid/pkg/config"
-	"github.com/deis/acid/pkg/worker"
 
 	"gopkg.in/gin-gonic/gin.v1"
 )
@@ -44,7 +41,7 @@ func (s *dockerPushHook) Handle(c *gin.Context) {
 	}
 	defer c.Request.Body.Close()
 
-	proj, err := s.store.Get(pname, namespace)
+	proj, err := s.store.GetProject(pname, namespace)
 	if err != nil {
 		log.Printf("Project %q not found in %q. No secret loaded. %s", pname, namespace, err)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
@@ -60,46 +57,25 @@ func (s *dockerPushHook) Handle(c *gin.Context) {
 		return
 	}
 
-	go notifyDockerImagePush(body, proj, commit, acidJS)
+	go s.notifyDockerImagePush(proj, commit, body, acidJS)
 	c.JSON(200, gin.H{"status": "Success"})
 }
 
-func notifyDockerImagePush(data []byte, proj *acid.Project, commit string, acidJS []byte) {
-	if err := doDockerImagePush(data, proj, commit, acidJS); err != nil {
+func (s *dockerPushHook) notifyDockerImagePush(proj *acid.Project, commit string, payload, acidJS []byte) {
+	if err := s.doDockerImagePush(proj, commit, payload, acidJS); err != nil {
 		log.Printf("failed dockerimagepush event: %s", err)
 	}
 
 }
 
-func doDockerImagePush(data []byte, proj *acid.Project, commit string, acidJS []byte) error {
-	payload := map[string]interface{}{}
-	if err := json.Unmarshal(data, &payload); err != nil {
-		return fmt.Errorf("could not decode hook data: %s", err)
-	}
-
-	e := &worker.Event{
+func (s *dockerPushHook) doDockerImagePush(proj *acid.Project, commit string, payload, acidJS []byte) error {
+	j := &acid.JobSpec{
 		Type:     "imagePush",
 		Provider: "dockerhub",
 		Commit:   commit,
 		Payload:  payload,
+		Script:   acidJS,
 	}
 
-	p := &worker.Project{
-		ID:   proj.ID,
-		Name: proj.Name,
-		Repo: worker.Repo{
-			Name:     proj.Repo.Name,
-			CloneURL: proj.Repo.CloneURL,
-			SSHKey:   strings.Replace(proj.Repo.SSHKey, "\n", "$", -1),
-		},
-		Kubernetes: worker.Kubernetes{
-			Namespace: proj.Kubernetes.Namespace,
-			// By putting the sidecar image here, we are allowing an acid.js
-			// to override it.
-			VCSSidecar: proj.Kubernetes.VCSSidecar,
-		},
-		Secrets: proj.Secrets,
-	}
-
-	return worker.HandleEvent(e, p, acidJS)
+	return s.store.CreateJobSpec(j, proj)
 }

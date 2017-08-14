@@ -1,12 +1,15 @@
 package acid
 
+const DefaultVCSSidecar = "acidic.azurecr.io/vcs-sidecar:latest"
+
 // Project describes an Acid project
 //
 // This is an internal representation of a project, and contains data that
 // should not be made available to the JavaScript runtime.
 type Project struct {
+	// ID is the computed name of the project (acid-aeff2343a3234ff)
 	ID string `json:"id"`
-	// Name is the computed name of the project (acid-aeff2343a3234ff)
+	// Name is the human readable name of project.
 	Name string `json:"name"`
 	// Repo describes the repository where the source code is stored.
 	Repo Repo `json:"repo"`

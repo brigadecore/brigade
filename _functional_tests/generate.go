@@ -2,22 +2,48 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 
+	"github.com/google/go-github/github"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+
 	"github.com/deis/acid/pkg/storage"
 	"github.com/deis/acid/pkg/webhook"
-	"github.com/google/go-github/github"
 )
 
-func main() {
+var (
+	kubeconfig string
+	master     string
+)
 
-	if len(os.Args) < 2 {
+func init() {
+	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
+	flag.StringVar(&master, "master", "", "master url")
+}
+
+func getKubeClient() (*kubernetes.Clientset, error) {
+	// creates the connection
+	config, err := clientcmd.BuildConfigFromFlags(master, kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// creates the clientset
+	return kubernetes.NewForConfig(config)
+}
+
+func main() {
+	flag.Parse()
+
+	if flag.NArg() < 1 {
 		fmt.Fprintln(os.Stderr, "required arg: Git SHA")
 		os.Exit(1)
 	}
-	commit := os.Args[1]
+	commit := flag.Arg(0)
 
 	eventType := "push"
 
@@ -47,20 +73,21 @@ func main() {
 		panic(err)
 	}
 
-	secret := getSecret(repo)
-	hmac := webhook.SHA1HMAC([]byte(secret), out)
+	clientset, err := getKubeClient()
+	if err != nil {
+		panic(err)
+	}
+
+	proj, err := storage.New(clientset).GetProject(repo, "default")
+	if err != nil {
+		panic(err)
+	}
+
+	hmac := webhook.SHA1HMAC([]byte(proj.SharedSecret), out)
 
 	ioutil.WriteFile("./_functional_tests/test-repo-generated.json", out, 0755)
 	ioutil.WriteFile("./_functional_tests/test-repo-generated.hash", []byte(hmac), 0755)
 
 	fmt.Fprintln(os.Stdout, string(out))
 	fmt.Fprintln(os.Stdout, hmac)
-}
-
-func getSecret(pname string) string {
-	proj, err := storage.New().Get(pname, "default")
-	if err != nil {
-		panic(err)
-	}
-	return proj.SharedSecret
 }

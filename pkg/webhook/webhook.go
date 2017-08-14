@@ -2,7 +2,6 @@ package webhook
 
 import (
 	"crypto/subtle"
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"log"
@@ -11,7 +10,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/Masterminds/vcs"
 	"github.com/google/go-github/github"
@@ -19,14 +17,16 @@ import (
 
 	"github.com/deis/acid/pkg/acid"
 	"github.com/deis/acid/pkg/config"
-	"github.com/deis/acid/pkg/worker"
 )
 
-const acidJS = "acid.js"
-const hubSignature = "X-Hub-Signature"
+const (
+	acidJSFile         = "acid.js"
+	hubSignatureHeader = "X-Hub-Signature"
+)
 
 type store interface {
-	Get(id, namespace string) (*acid.Project, error)
+	GetProject(id, namespace string) (*acid.Project, error)
+	CreateJobSpec(jobSpec *acid.JobSpec, proj *acid.Project) error
 }
 
 type githubHook struct {
@@ -101,7 +101,7 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 
 	// Load config and verify data.
 	ns, _ := config.AcidNamespace(c)
-	proj, err := s.store.Get(repo, ns)
+	proj, err := s.store.GetProject(repo, ns)
 	if err != nil {
 		log.Printf("Project %q not found in %q. No secret loaded. %s", repo, ns, err)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
@@ -113,7 +113,7 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		return
 	}
 
-	signature := c.Request.Header.Get(hubSignature)
+	signature := c.Request.Header.Get(hubSignatureHeader)
 	if err := validateSignature(signature, proj.SharedSecret, body); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"status": "malformed signature"})
 		return
@@ -124,13 +124,13 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		log.Printf("!!!WARNING!!! Expected project secret to have name %q, got %q", repo, proj.Name)
 	}
 
-	go s.buildStatus(eventType, repo, commit, body, proj, status)
+	go s.buildStatus(eventType, commit, body, proj, status)
 
 	c.JSON(http.StatusOK, gin.H{"status": "Complete"})
 }
 
 // buildStatus runs a build, and sets upstream status accordingly.
-func (s *githubHook) buildStatus(eventType, repo, commit string, payload []byte, proj *acid.Project, status *github.RepoStatus) {
+func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj *acid.Project, status *github.RepoStatus) {
 	// If we need an SSH key, set it here
 	if proj.Repo.SSHKey != "" {
 		key, err := ioutil.TempFile("", "")
@@ -231,42 +231,20 @@ func getFile(commit, path string, proj *acid.Project) ([]byte, error) {
 }
 
 func (s *githubHook) build(eventType, commit string, payload []byte, proj *acid.Project) error {
-	acidScript, err := s.getFile(commit, acidJS, proj)
+	acidScript, err := s.getFile(commit, acidJSFile, proj)
 	if err != nil {
 		return err
 	}
-	log.Print(string(acidScript))
 
-	var payloadMap map[string]interface{}
-	if err := json.Unmarshal(payload, &payloadMap); err != nil {
-		return err
-	}
-
-	e := &worker.Event{
+	j := &acid.JobSpec{
 		Type:     eventType,
 		Provider: "github",
 		Commit:   commit,
-		Payload:  payloadMap,
+		Payload:  payload,
+		Script:   acidScript,
 	}
 
-	p := &worker.Project{
-		ID:   proj.ID,
-		Name: proj.Name,
-		Repo: worker.Repo{
-			Name:     proj.Repo.Name,
-			CloneURL: proj.Repo.CloneURL,
-			SSHKey:   strings.Replace(proj.Repo.SSHKey, "\n", "$", -1),
-		},
-		Kubernetes: worker.Kubernetes{
-			Namespace: proj.Kubernetes.Namespace,
-			// By putting the sidecar image here, we are allowing an acid.js
-			// to override it.
-			VCSSidecar: proj.Kubernetes.VCSSidecar,
-		},
-		Secrets: proj.Secrets,
-	}
-
-	return worker.HandleEvent(e, p, acidScript)
+	return s.store.CreateJobSpec(j, proj)
 }
 
 // validateSignature compares the salted digest in the header with our own computing of the body.

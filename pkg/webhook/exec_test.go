@@ -4,14 +4,9 @@ import (
 	"testing"
 
 	"github.com/deis/acid/pkg/acid"
-	"github.com/deis/acid/pkg/worker"
-	"github.com/deis/acid/pkg/worker/workertest"
 )
 
 func TestExecuteScriptData(t *testing.T) {
-	// Disable Kubernetes:
-	worker.DefaultExecutor = &workertest.MockExecutor{}
-
 	script := `
 events.exec = function(e)  {
 	console.log("Hello")
@@ -19,7 +14,9 @@ events.exec = function(e)  {
 `
 	proj := createExampleProject()
 	commit := "1234567890abcdef"
-	code, h := executeScriptData(commit, []byte(script), proj)
+
+	hook := NewExecHook(&testStore{})
+	code, h := hook.executeScriptData(commit, []byte(script), proj)
 	if code != 200 {
 		t.Fatalf("Expected 200 code, got %d", code)
 	}

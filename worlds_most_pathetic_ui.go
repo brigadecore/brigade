@@ -6,9 +6,9 @@ import (
 	"log"
 	"regexp"
 
-	"github.com/deis/acid/pkg/k8s"
 	"gopkg.in/gin-gonic/gin.v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 
 	"github.com/deis/acid/pkg/config"
@@ -16,7 +16,7 @@ import (
 	"github.com/deis/acid/pkg/webhook"
 )
 
-func logHandler(store storage.Store) gin.HandlerFunc {
+func logHandler(kc kubernetes.Interface, store storage.Store) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		namespace, _ := config.AcidNamespace(c)
 		org := c.Param("org")
@@ -25,7 +25,7 @@ func logHandler(store storage.Store) gin.HandlerFunc {
 
 		pname := fmt.Sprintf("%s/%s", org, proj)
 		log.Printf("Loading logs for %q", pname)
-		p, err := store.Get(pname, namespace)
+		p, err := store.GetProject(pname, namespace)
 		if err != nil {
 			log.Printf("logToHTML: error loading project: %s", err)
 		}
@@ -47,7 +47,7 @@ func logHandler(store storage.Store) gin.HandlerFunc {
 		fmt.Fprintf(c.Writer, "<p>Logs for Git reference %q</p>", commit)
 
 		name := fmt.Sprintf("github.com-%s-%s", org, proj)
-		pods, err := taskPods(commit, name, namespace)
+		pods, err := taskPods(kc, commit, name, namespace)
 		if err != nil {
 			log.Printf("could not load task pods: %s", err)
 			c.Writer.WriteString("No task pods found. Has the job started?")
@@ -70,18 +70,13 @@ func logHandler(store storage.Store) gin.HandlerFunc {
 
 			// Print out logs for this item
 			fmt.Fprintf(c.Writer, panelHead, st, p.Labels["jobname"])
-			podLog(p.ObjectMeta.Name, namespace, c.Writer)
+			podLog(kc, p.ObjectMeta.Name, namespace, c.Writer)
 			fmt.Fprintln(c.Writer, panelFoot)
 		}
 	}
 }
 
-func podLog(name, namespace string, w io.Writer) error {
-	kc, err := k8s.Client()
-	if err != nil {
-		return err
-	}
-
+func podLog(kc kubernetes.Interface, name, namespace string, w io.Writer) error {
 	req := kc.CoreV1().Pods(namespace).GetLogs(name, &v1.PodLogOptions{})
 
 	readCloser, err := req.Stream()
@@ -95,13 +90,8 @@ func podLog(name, namespace string, w io.Writer) error {
 }
 
 // taskPods gets the pods associated with this task
-func taskPods(commit, name, namespace string) (*v1.PodList, error) {
+func taskPods(kc kubernetes.Interface, commit, name, namespace string) (*v1.PodList, error) {
 	// Load the pods that ran as part of this build.
-	kc, err := k8s.Client()
-	if err != nil {
-		return nil, err
-	}
-
 	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("commit=%s,belongsto=%s", commit, name)}
 
 	return kc.CoreV1().Pods(namespace).List(lo)
@@ -124,7 +114,7 @@ func badgeHandler(store storage.Store) gin.HandlerFunc {
 
 		pname := fmt.Sprintf("%s/%s", org, proj)
 		log.Printf("Loading project %s", pname)
-		p, err := store.Get(pname, namespace)
+		p, err := store.GetProject(pname, namespace)
 		if err != nil {
 			log.Printf("badge: error loading project: %s", err)
 			c.Writer.WriteString(badgeFailing)
