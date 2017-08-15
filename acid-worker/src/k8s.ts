@@ -1,3 +1,9 @@
+/**
+ * k8s contains the Kubernetes implementation of Acid.
+ */
+
+/** */
+
 import * as kubernetes from '@kubernetes/typescript-node'
 import * as jobs from './job'
 import {AcidEvent, Project} from './events'
@@ -20,12 +26,19 @@ class K8sResult implements jobs.Result {
   toString(): string { return this.data }
 }
 
+/**
+ * loadProject takes a Secret name and namespace and loads the Project
+ * from the secret.
+ */
 export function loadProject(name: string, ns: string): Promise<Project> {
   return defaultClient.readNamespacedSecret(name, ns).then( result => {
     return secretToProject(ns, result.body)
   })
 }
 
+/**
+ * JobRunner provides a Kubernetes implementation of the JobRunner interface.
+ */
 export class JobRunner implements jobs.JobRunner {
 
   name: string
@@ -147,15 +160,16 @@ export class JobRunner implements jobs.JobRunner {
 
   }
 
-  // run starts a job and then waits until it is running.
-  //
-  // The Promise it returns will return when the pod is either marked
-  // Success (resolve) or Failure (reject)
+  /* run starts a job and then waits until it is running.
+   *
+   * The Promise it returns will return when the pod is either marked
+   * Success (resolve) or Failure (reject)
+   */
   public run(): Promise<jobs.Result> {
     return this.start().then(r => r.wait())
   }
 
-  // start begins a job, and returns once it is scheduled to run.
+  /** start begins a job, and returns once it is scheduled to run.*/
   public start(): Promise<jobs.JobRunner> {
     // Now we have pod and a secret defined. Time to create them.
     let ns = this.project.kubernetes.namespace
@@ -173,7 +187,7 @@ export class JobRunner implements jobs.JobRunner {
     })
   }
 
-  // wait listens for the running job to complete.
+  /** wait listens for the running job to complete.*/
   public wait(): Promise<jobs.Result> {
     // Should probably protect against the case where start() was not called
     let k = this.client
@@ -360,9 +374,11 @@ function generateScript(job: jobs.Job): string | null {
   return newCmd
 }
 
-// secretToProject transforms a properly formatted Secret into a Project.
-//
-// This is exported for testability, and is not considered part of the stable API.
+/**
+ * secretToProject transforms a properly formatted Secret into a Project.
+ *
+ * This is exported for testability, and is not considered part of the stable API.
+ */
 export function secretToProject(ns: string, secret: kubernetes.V1Secret): Project {
   let p: Project = {
     id: secret.metadata.name,
