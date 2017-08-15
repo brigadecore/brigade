@@ -9,3 +9,4 @@ node_modules/
 acid-worker/src/acid.js
 acid-worker/dist
 acid-controller/rootfs/acid-controler
+acid-worker/doc/
