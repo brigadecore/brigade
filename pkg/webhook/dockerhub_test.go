@@ -4,15 +4,9 @@ import (
 	"testing"
 
 	"github.com/deis/acid/pkg/acid"
-	"github.com/deis/acid/pkg/worker"
-	"github.com/deis/acid/pkg/worker/workertest"
 )
 
 func TestDoDockerImagePush(t *testing.T) {
-
-	// Disable Kubernetes:
-	worker.DefaultExecutor = &workertest.MockExecutor{}
-
 	script := `events.dockerhub = function(e) {
 		if (e.payload.push_data.tag == "latest") {
 			throw "Unexpected test: " + e.payload.push_data.tag
@@ -36,7 +30,9 @@ func TestDoDockerImagePush(t *testing.T) {
 
 	commit := "e1e10"
 
-	if err := doDockerImagePush([]byte(exampleWebhook), proj, commit, []byte(script)); err != nil {
+	hook := NewDockerPushHook(&testStore{})
+
+	if err := hook.doDockerImagePush(proj, commit, []byte(exampleWebhook), []byte(script)); err != nil {
 		t.Errorf("failed docker image push: %s", err)
 	}
 }

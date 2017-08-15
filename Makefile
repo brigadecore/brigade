@@ -12,28 +12,33 @@ TEST_REPO_PATH="deis/empty-testbed"
 # The location of the functional tests.
 TEST_DIR=./_functional_tests
 
+KUBECONFIG ?= ${HOME}/.kube/config
+
 .PHONY: build
 build:
 	go build -o bin/acid .
-	go build -o bin/vcs-sidecar vcs-sidecar/cmd/vcs-sidecar/main.go
+	go build -o bin/acid-controller ./acid-controller/cmd/acid-controller
+	go build -o bin/vcs-sidecar ./vcs-sidecar/cmd/vcs-sidecar
 
 # Cross-compile for Docker+Linux
 .PHONY: build-docker-bin
 build-docker-bin:
 	GOOS=linux GOARCH=amd64 go build -o rootfs/usr/bin/acid .
-	GOOS=linux GOARCH=amd64 go build -o vcs-sidecar/rootfs/vcs-sidecar vcs-sidecar/cmd/vcs-sidecar/main.go
+	GOOS=linux GOARCH=amd64 go build -o ./acid-controller/rootfs/acid-controler ./acid-controller/cmd/acid-controller
+	GOOS=linux GOARCH=amd64 go build -o ./vcs-sidecar/rootfs/vcs-sidecar ./vcs-sidecar/cmd/vcs-sidecar
 
 .PHONY: run
 run: build
 run:
-	bin/acid
+	bin/acid -kubeconfig $(KUBECONFIG)
 
 # To use docker-build, you need to have Docker installed and configured. You should also set
 # DOCKER_REGISTRY to your own personal registry if you are not pushing to the official upstream.
 .PHONY: docker-build
 docker-build: build-docker-bin
 docker-build:
-	docker build -t $(DOCKER_REGISTRY)/acid:latest .
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid:latest .
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-controller:latest acid-controller
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/vcs-sidecar:latest vcs-sidecar
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-worker:latest acid-worker
 
@@ -41,6 +46,7 @@ docker-build:
 .PHONY: docker-push
 docker-push:
 	docker push $(DOCKER_REGISTRY)/acid
+	docker push $(DOCKER_REGISTRY)/acid-controller
 	docker push $(DOCKER_REGISTRY)/vcs-sidecar
 	docker push $(DOCKER_REGISTRY)/acid-worker
 
@@ -85,7 +91,7 @@ test-functional:
 
 .PHONY: test-functional-prepare
 test-functional-prepare:
-	go run $(TEST_DIR)/generate.go $(TEST_REPO_COMMIT)
+	go run $(TEST_DIR)/generate.go -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
 
 # JS test is local only
 .PHONY: test-js

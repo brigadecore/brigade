@@ -1,7 +1,12 @@
 package main
 
 import (
+	"flag"
+	"log"
 	"net/http"
+
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/deis/acid/pkg/config"
 	"github.com/deis/acid/pkg/storage"
@@ -10,11 +15,39 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
+var (
+	kubeconfig string
+	master     string
+)
+
+func init() {
+	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
+	flag.StringVar(&master, "master", "", "master url")
+}
+
+func getKubeClient() (*kubernetes.Clientset, error) {
+	// creates the connection
+	config, err := clientcmd.BuildConfigFromFlags(master, kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// creates the clientset
+	return kubernetes.NewForConfig(config)
+}
+
 func main() {
+	flag.Parse()
+
+	clientset, err := getKubeClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	store := storage.New(clientset)
+
 	router := gin.New()
 	router.Use(gin.Recovery())
-
-	store := storage.New()
 
 	events := router.Group("/events")
 	{
@@ -32,9 +65,9 @@ func main() {
 		ui.Use(gin.Logger())
 		ui.Use(config.Middleware())
 
-		ui.GET("/", logHandler(store))
+		ui.GET("/", logHandler(clientset, store))
 		ui.GET("/status.svg", badgeHandler(store))
-		ui.GET("/id/:commit", logHandler(store))
+		ui.GET("/id/:commit", logHandler(clientset, store))
 	}
 
 	router.GET("/healthz", healthz)

@@ -11,3 +11,4 @@ import:
 - package: github.com/google/go-querystring
   subpackages:
   - query
+- package: github.com/oklog/ulid

@@ -5,11 +5,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/deis/acid/pkg/acid"
 	"github.com/deis/acid/pkg/config"
-	"github.com/deis/acid/pkg/worker"
 
 	"gopkg.in/gin-gonic/gin.v1"
 )
@@ -19,14 +17,12 @@ type execHook struct {
 }
 
 func NewExecHook(s store) *execHook {
-	return &execHook{
-		store: s,
-	}
+	return &execHook{s}
 }
 
 // Handle takes an uploaded Acid script and some configuration and runs the script.
 func (e *execHook) Handle(c *gin.Context) {
-	signature := c.Request.Header.Get(hubSignature)
+	signature := c.Request.Header.Get(hubSignatureHeader)
 	namespace, _ := config.AcidNamespace(c)
 	orgName := c.Param("org")
 	projName := c.Param("project")
@@ -43,47 +39,31 @@ func (e *execHook) Handle(c *gin.Context) {
 	}
 	defer c.Request.Body.Close()
 
-	proj, err := e.store.Get(pname, namespace)
+	proj, err := e.store.GetProject(pname, namespace)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
 		return
 	}
 
-	if err := validateSignature(signature, proj.SharedSecret, []byte(rawScript)); err != nil {
+	if err := validateSignature(signature, proj.SharedSecret, rawScript); err != nil {
 		log.Printf("Error processing exec event: %s", err)
 		c.JSON(http.StatusForbidden, gin.H{"status": "authentication error"})
 		return
 	}
 
-	c.JSON(executeScriptData(commit, rawScript, proj))
+	c.JSON(e.executeScriptData(commit, rawScript, proj))
 }
 
-func executeScriptData(commit string, rawScript []byte, proj *acid.Project) (int, gin.H) {
-	e := &worker.Event{
+func (e *execHook) executeScriptData(commit string, script []byte, proj *acid.Project) (int, gin.H) {
+	j := &acid.JobSpec{
 		Type:     "exec",
 		Provider: "client",
 		Commit:   commit,
-	}
-	p := &worker.Project{
-		ID:   proj.ID, //"acid-" + storage.ShortSHA(proj.Repo),
-		Name: proj.Name,
-		Repo: worker.Repo{
-			Name:     proj.Repo.Name,
-			CloneURL: proj.Repo.CloneURL,
-			SSHKey:   strings.Replace(proj.Repo.SSHKey, "\n", "$", -1),
-		},
-		Payload: "",
-		Kubernetes: worker.Kubernetes{
-			Namespace: proj.Kubernetes.Namespace,
-			// By putting the sidecar image here, we are allowing an acid.js
-			// to override it.
-			VCSSidecar: proj.Kubernetes.VCSSidecar,
-		},
-		Secrets: proj.Secrets,
+		Script:   script,
 	}
 
 	// Right now, we do this sychnronously since we have no backchannel.
-	if err := worker.HandleEvent(e, p, rawScript); err != nil {
+	if err := e.store.CreateJobSpec(j, proj); err != nil {
 		return http.StatusInternalServerError, gin.H{"error": err.Error()}
 	}
 	return 200, gin.H{"status": "completed"}
