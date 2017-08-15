@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/base64"
 	"log"
 	"strings"
 
@@ -40,8 +39,6 @@ const (
 )
 
 func newWorkerPod(secret *v1.Secret) v1.Pod {
-	encodedScript := base64.StdEncoding.EncodeToString(secret.Data["script"])
-
 	envvar := func(key string) v1.EnvVar {
 		return v1.EnvVar{
 			Name: "ACID_" + strings.ToUpper(key),
@@ -61,7 +58,7 @@ func newWorkerPod(secret *v1.Secret) v1.Pod {
 			Name:            "acid-runner",
 			Image:           acidWorkerImage,
 			ImagePullPolicy: acidWorkerPullPolicy,
-			Command:         []string{"npm", "start"},
+			Command:         []string{"yarn", "start"},
 			VolumeMounts: []v1.VolumeMount{{
 				Name:      volumeName,
 				MountPath: volumeMountPath,
@@ -72,12 +69,6 @@ func newWorkerPod(secret *v1.Secret) v1.Pod {
 				envvar("event_type"),
 				envvar("event_provider"),
 				envvar("commit"),
-				{
-					// TODO remove when acid-worker supports acid script mount
-					// mounted to /etc/acid/script
-					Name:  "ACID_SCRIPT",
-					Value: encodedScript,
-				},
 				{
 					Name: "ACID_PROJECT_NAMESPACE",
 					ValueFrom: &v1.EnvVarSource{

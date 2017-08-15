@@ -9,7 +9,7 @@
     "start": "tsc && node --no-deprecation ./dist/src/index.js",
     "test": "tsc && mocha ./dist/test",
     "build": "tsc",
-    "acid": "npm start"
+    "acid": "yarn start"
   },
   "author": "The Steel Thread Team",
   "license": "MIT",
