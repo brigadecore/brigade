@@ -1,18 +1,17 @@
 const process = require("process")
-const {Buffer} = require("buffer")
 const fs = require("fs")
 
-var script = process.env.ACID_SCRIPT
-if (!script || script == "") {
+const script = process.env.ACID_SCRIPT || "/etc/acid/script"
+
+try {
+  var data = fs.readFileSync(script, 'utf8')
+  let wrapper = "const la = require(\"./libacid\");((events, Job, Group, require) => {" +
+    data.toString() +
+    "})(la.events, la.Job, la.Group, () => { throw 'require is disabled' })"
+  fs.writeFile("src/acid.js", wrapper, () => {
+    console.log("prestart: src/acid.js written")
+  })
+} catch(e) {
   console.log("prestart: no script override")
-  process.exit(0)
+  process.exit(1)
 }
-
-
-var buf = Buffer.from(script, "base64")
-let wrapper = "const la = require(\"./libacid\");((events, Job, Group, require) => {" +
-  buf.toString("utf8") +
-  "})(la.events, la.Job, la.Group, () => { throw 'require is disabled' })"
-fs.writeFile("src/acid.js", wrapper, () => {
-  console.log("prestart: src/acid.js written")
-})

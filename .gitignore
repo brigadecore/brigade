@@ -7,4 +7,5 @@ _functional_tests/*-generated.*
 vcs-sidecar/rootfs/vcs-sidecar
 node_modules/
 acid-worker/src/acid.js
-acid-worker/dist/src/acid.js
+acid-worker/dist
+acid-controller/rootfs/acid-controler
