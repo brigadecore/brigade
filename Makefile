@@ -59,7 +59,7 @@ test: test-js
 # Unit tests. Local only.
 .PHONY: test-unit
 test-unit:
-	go test -v . ./pkg/...
+	go test -v . ./pkg/... ./acid-controller/...
 
 # Functional tests assume access to github.com
 # To set this up in your local environment:
