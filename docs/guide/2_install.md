@@ -5,7 +5,7 @@ _This part is a work-in-progress because Acid is still developer-oriented_
 Acid is deployed via Helm. Here are the steps:
 
 1. Make sure `helm` is installed, and `helm version` returns the correct server.
-2. Add the Acid repo: `helm repo add https://deis.github.io/acid`
+2. Add the Acid repo: `helm repo add acid https://deis.github.io/acid`
 3. Install Acid: `helm install acid/acid --name acid-server`
 
 At this point, you have a running Acid service. You can use `helm get acid-server` and other
