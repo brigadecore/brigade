@@ -78,8 +78,8 @@ func TestController(t *testing.T) {
 	if c.Name != "acid-runner" {
 		t.Error("Container.Name is not correct")
 	}
-	if len(c.Env) != 6 {
-		t.Error("expected 6 Container.Env")
+	if len(c.Env) != 5 {
+		t.Error("expected 5 Container.Env")
 	}
 	if c.Image != acidWorkerImage {
 		t.Error("Container.Image is not correct")
