@@ -26,7 +26,7 @@ const (
 
 type store interface {
 	GetProject(id, namespace string) (*acid.Project, error)
-	CreateJobSpec(jobSpec *acid.JobSpec, proj *acid.Project) error
+	CreateBuild(build *acid.Build, proj *acid.Project) error
 }
 
 type githubHook struct {
@@ -236,7 +236,7 @@ func (s *githubHook) build(eventType, commit string, payload []byte, proj *acid.
 		return err
 	}
 
-	j := &acid.JobSpec{
+	b := &acid.Build{
 		Type:     eventType,
 		Provider: "github",
 		Commit:   commit,
@@ -244,7 +244,7 @@ func (s *githubHook) build(eventType, commit string, payload []byte, proj *acid.
 		Script:   acidScript,
 	}
 
-	return s.store.CreateJobSpec(j, proj)
+	return s.store.CreateBuild(b, proj)
 }
 
 // validateSignature compares the salted digest in the header with our own computing of the body.
