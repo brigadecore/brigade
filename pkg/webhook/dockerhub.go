@@ -69,13 +69,12 @@ func (s *dockerPushHook) notifyDockerImagePush(proj *acid.Project, commit string
 }
 
 func (s *dockerPushHook) doDockerImagePush(proj *acid.Project, commit string, payload, acidJS []byte) error {
-	j := &acid.JobSpec{
+	b := &acid.Build{
 		Type:     "imagePush",
 		Provider: "dockerhub",
 		Commit:   commit,
 		Payload:  payload,
 		Script:   acidJS,
 	}
-
-	return s.store.CreateJobSpec(j, proj)
+	return s.store.CreateBuild(b, proj)
 }

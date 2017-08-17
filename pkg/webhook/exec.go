@@ -55,7 +55,7 @@ func (e *execHook) Handle(c *gin.Context) {
 }
 
 func (e *execHook) executeScriptData(commit string, script []byte, proj *acid.Project) (int, gin.H) {
-	j := &acid.JobSpec{
+	b := &acid.Build{
 		Type:     "exec",
 		Provider: "client",
 		Commit:   commit,
@@ -63,7 +63,7 @@ func (e *execHook) executeScriptData(commit string, script []byte, proj *acid.Pr
 	}
 
 	// Right now, we do this sychnronously since we have no backchannel.
-	if err := e.store.CreateJobSpec(j, proj); err != nil {
+	if err := e.store.CreateBuild(b, proj); err != nil {
 		return http.StatusInternalServerError, gin.H{"error": err.Error()}
 	}
 	return 200, gin.H{"status": "completed"}

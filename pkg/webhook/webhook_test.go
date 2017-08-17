@@ -14,17 +14,17 @@ import (
 )
 
 type testStore struct {
-	proj     *acid.Project
-	jobSpecs []*acid.JobSpec
-	err      error
+	proj   *acid.Project
+	builds []*acid.Build
+	err    error
 }
 
 func (s *testStore) GetProject(name, namespace string) (*acid.Project, error) {
 	return s.proj, s.err
 }
 
-func (s *testStore) CreateJobSpec(jobSpec *acid.JobSpec, proj *acid.Project) error {
-	s.jobSpecs = append(s.jobSpecs, jobSpec)
+func (s *testStore) CreateBuild(build *acid.Build, proj *acid.Project) error {
+	s.builds = append(s.builds, build)
 	return s.err
 }
 

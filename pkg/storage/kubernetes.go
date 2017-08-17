@@ -23,46 +23,45 @@ func (s *store) GetProject(id, namespace string) (*acid.Project, error) {
 }
 
 // Get retrieves the project from storage.
-func (s *store) CreateJobSpec(jobSpec *acid.JobSpec, proj *acid.Project) error {
-	return s.createSecret(jobSpec, proj)
+func (s *store) CreateBuild(build *acid.Build, proj *acid.Project) error {
+	return s.createSecret(build, proj)
 }
 
-func (s *store) createSecret(j *acid.JobSpec, p *acid.Project) error {
-	shortCommit := j.Commit
+func (s *store) createSecret(b *acid.Build, p *acid.Project) error {
+	shortCommit := b.Commit
 	if len(shortCommit) > 8 {
 		shortCommit = shortCommit[0:8]
 	}
 
-	if j.ID == "" {
-		j.ID = genID()
+	if b.ID == "" {
+		b.ID = genID()
 	}
 
-	jobName := fmt.Sprintf("acid-worker-%s-%s", j.ID, shortCommit)
+	buildName := fmt.Sprintf("acid-worker-%s-%s", b.ID, shortCommit)
 	cleanProjName := strings.Replace(p.Repo.Name, "/", "-", -1)
 
 	secret := v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
-			Name: jobName,
+			Name: buildName,
 			Labels: map[string]string{
 				"heritage":  "acid",
 				"managedBy": "acid",
-				"jobname":   jobName,
+				"jobname":   buildName,
 				"belongsto": cleanProjName,
-				"commit":    j.Commit,
+				"commit":    b.Commit,
 				// Need a different name for this.
-				"role":   "build",
-				"status": "triggered",
+				"role": "build",
 			},
 		},
 		Data: map[string][]byte{
-			"script":  j.Script,
-			"payload": j.Payload,
+			"script":  b.Script,
+			"payload": b.Payload,
 		},
 		StringData: map[string]string{
 			"project_id":     p.ID,
-			"event_type":     j.Type,
-			"event_provider": j.Provider,
-			"commit":         j.Commit,
+			"event_type":     b.Type,
+			"event_provider": b.Provider,
+			"commit":         b.Commit,
 		},
 	}
 

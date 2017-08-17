@@ -18,7 +18,7 @@ type Store interface {
 	// Get retrieves the project from storage.
 	GetProject(id, namespace string) (*acid.Project, error)
 	// CreateJobSpec creates a new job for the work queue.
-	CreateJobSpec(jobSpec *acid.JobSpec, proj *acid.Project) error
+	CreateBuild(build *acid.Build, proj *acid.Project) error
 }
 
 // New initializes a new storage backend.

@@ -1,6 +1,6 @@
 package acid
 
-type JobSpec struct {
+type Build struct {
 	// ID is the unique ID for a webhook event.
 	ID string `json:"id"`
 	// Type is the event type (push, pull_request, tag, etc.)
