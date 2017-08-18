@@ -81,8 +81,7 @@ func (s *store) loadProjectConfig(id, namespace string) (*acid.Project, error) {
 		return proj, err
 	}
 
-	proj.Name = secret.Name
-	proj.Repo.Name = secret.Annotations["projectName"]
+	proj.Name = secret.Annotations["projectName"]
 
 	return proj, configureProject(proj, secret.Data, namespace)
 }
