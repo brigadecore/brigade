@@ -50,7 +50,7 @@ func main() {
 
 	eventType := "push"
 
-	data, err := ioutil.ReadFile("./_functional_tests/test-repo-push.json")
+	data, err := ioutil.ReadFile("./tests/testdata/test-repo-push.json")
 	if err != nil {
 		panic(err)
 	}
@@ -91,8 +91,8 @@ func main() {
 
 	hmac := webhook.SHA1HMAC([]byte(proj.SharedSecret), out)
 
-	ioutil.WriteFile("./_functional_tests/test-repo-generated.json", out, 0755)
-	ioutil.WriteFile("./_functional_tests/test-repo-generated.hash", []byte(hmac), 0755)
+	ioutil.WriteFile("./tests/testdata/test-repo-generated.json", out, 0755)
+	ioutil.WriteFile("./tests/testdata/test-repo-generated.hash", []byte(hmac), 0755)
 
 	fmt.Fprintln(os.Stdout, string(out))
 	fmt.Fprintln(os.Stdout, hmac)
