@@ -88,11 +88,8 @@ func newWorkerPod(secret *v1.Secret) v1.Pod {
 
 	pod := v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: secret.Name,
-			Labels: map[string]string{
-				"heritage":  "acid",
-				"managedBy": "acid",
-			},
+			Name:   secret.Name,
+			Labels: secret.Labels,
 		},
 		Spec: podSpec,
 	}

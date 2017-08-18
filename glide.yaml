@@ -1,7 +1,7 @@
 package: github.com/deis/acid
 import:
 - package: k8s.io/client-go
-  version: 4.0.0-beta.0
+  version: 4.0.0
 # We let client-go dictate the version of API machinery
 - package: k8s.io/apimachinery/pkg/apis/meta/v1
 - package: gopkg.in/gin-gonic/gin.v1

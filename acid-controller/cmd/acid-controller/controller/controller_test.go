@@ -55,18 +55,7 @@ func TestController(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	labelsMatch := func(a, b map[string]string) bool {
-		aStr := labels.SelectorFromSet(a).String()
-		bStr := labels.SelectorFromSet(b).String()
-		return aStr == bStr
-	}
-
-	lbls := map[string]string{
-		"heritage":  "acid",
-		"managedBy": "acid",
-	}
-
-	if !labelsMatch(pod.GetLabels(), lbls) {
+	if !labels.Equals(pod.GetLabels(), secret.GetLabels()) {
 		t.Error("Pod.Lables do not match")
 	}
 
