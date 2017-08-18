@@ -140,6 +140,31 @@ describe("k8s", function() {
           }
         })
       })
+      context("when cache is enabled", function() {
+        beforeEach(function() {
+          j.cache.enable = true
+        })
+        it("configures volumes", function() {
+          let jr = new k8s.JobRunner(j, e, p)
+          let cname = j.name + "Cache"
+          let found = false
+          for (let v of jr.runner.spec.containers[0].volumeMounts) {
+            if (v.name == cname) {
+              found = true
+              assert.equal(v.mountPath, "/cache")
+            }
+          }
+          assert.isTrue(found)
+          found = false
+          for (let v of jr.runner.spec.volumes) {
+            if (v.name == cname) {
+              found = true
+              assert.equal(v.persistentVolumeClaim.claimName, cname)
+            }
+          }
+          assert.isTrue(found)
+        })
+      })
       context("when job is privileged", function() {
         it("privileges containers", function() {
           j.privileged = true
