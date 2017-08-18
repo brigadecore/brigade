@@ -18,6 +18,7 @@ KUBECONFIG ?= ${HOME}/.kube/config
 build:
 	go build -o bin/acid .
 	go build -o bin/acid-controller ./acid-controller/cmd/acid-controller
+	go build -o bin/acid-api ./acid-api/cmd/acid-api
 	go build -o bin/vcs-sidecar ./vcs-sidecar/cmd/vcs-sidecar
 
 # Cross-compile for Docker+Linux
@@ -25,6 +26,7 @@ build:
 build-docker-bin:
 	GOOS=linux GOARCH=amd64 go build -o rootfs/usr/bin/acid .
 	GOOS=linux GOARCH=amd64 go build -o ./acid-controller/rootfs/acid-controller ./acid-controller/cmd/acid-controller
+	GOOS=linux GOARCH=amd64 go build -o ./acid-api/rootfs/acid-api ./acid-api/cmd/acid-api
 	GOOS=linux GOARCH=amd64 go build -o ./vcs-sidecar/rootfs/vcs-sidecar ./vcs-sidecar/cmd/vcs-sidecar
 
 .PHONY: run
@@ -39,6 +41,7 @@ docker-build: build-docker-bin
 docker-build:
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid:latest .
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-controller:latest acid-controller
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-api:latest acid-api
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/vcs-sidecar:latest vcs-sidecar
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-worker:latest acid-worker
 
@@ -47,6 +50,7 @@ docker-build:
 docker-push:
 	docker push $(DOCKER_REGISTRY)/acid
 	docker push $(DOCKER_REGISTRY)/acid-controller
+	docker push $(DOCKER_REGISTRY)/acid-api
 	docker push $(DOCKER_REGISTRY)/vcs-sidecar
 	docker push $(DOCKER_REGISTRY)/acid-worker
 

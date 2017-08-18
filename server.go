@@ -5,10 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-
 	"github.com/deis/acid/pkg/config"
+	"github.com/deis/acid/pkg/kube"
 	"github.com/deis/acid/pkg/storage"
 	"github.com/deis/acid/pkg/webhook"
 
@@ -25,21 +23,10 @@ func init() {
 	flag.StringVar(&master, "master", "", "master url")
 }
 
-func getKubeClient() (*kubernetes.Clientset, error) {
-	// creates the connection
-	config, err := clientcmd.BuildConfigFromFlags(master, kubeconfig)
-	if err != nil {
-		return nil, err
-	}
-
-	// creates the clientset
-	return kubernetes.NewForConfig(config)
-}
-
 func main() {
 	flag.Parse()
 
-	clientset, err := getKubeClient()
+	clientset, err := kube.GetClient(master, kubeconfig)
 	if err != nil {
 		log.Fatal(err)
 	}
