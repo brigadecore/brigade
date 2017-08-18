@@ -24,7 +24,7 @@ build:
 .PHONY: build-docker-bin
 build-docker-bin:
 	GOOS=linux GOARCH=amd64 go build -o rootfs/usr/bin/acid .
-	GOOS=linux GOARCH=amd64 go build -o ./acid-controller/rootfs/acid-controler ./acid-controller/cmd/acid-controller
+	GOOS=linux GOARCH=amd64 go build -o ./acid-controller/rootfs/acid-controller ./acid-controller/cmd/acid-controller
 	GOOS=linux GOARCH=amd64 go build -o ./vcs-sidecar/rootfs/vcs-sidecar ./vcs-sidecar/cmd/vcs-sidecar
 
 .PHONY: run
