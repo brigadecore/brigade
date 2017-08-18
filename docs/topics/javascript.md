@@ -1,4 +1,4 @@
-# Acid JavaScript
+# About the Acid JavaScript engine
 
 Acid JavaScript is a dialect of JavaScript for writing Acid build files.
 
@@ -9,13 +9,11 @@ Acid JavaScript has access to a few libraries:
 
 ## The `events` Global Object
 
-There is a global variable called `events` that provides the event handlers for
-your Acid project. Attach your event handler to this object:
+There is a global variable called `events` that provides the event handlers for your Acid project. Attach your event handler to this object:
 
 Acid will call events when they occur in the project's lifecycle.
 
-Here is how you handle a push request from GitHub (which is usually the main
-think you want to do):
+Here is how you handle a push request from GitHub (which is usually the main think you want to do):
 
 ```
 events.push = function(e) {
@@ -34,11 +32,9 @@ Defined events:
 
 ### The `project` Global Object
 
-There is a global object named `project` that contains information about the
-project that the acid script is running within.
+There is a global object named `project` that contains information about the project that the acid script is running within.
 
-These fields are primarily derived from the `acid-project` installation on your
-Kubernetes cluster. See the `acid-project`'s `values.yaml` file for more.
+These fields are primarily derived from the `acid-project` installation on your Kubernetes cluster. See the `acid-project`'s `values.yaml` file for more.
 
 Properties:
 
@@ -55,8 +51,7 @@ Properties:
     - `repo.sshKey`: The SSH key that can be used to clone the repository (if applicable).
       This is often empty.
 
-Secrets (`project.secrets`) are passed from the project configuration into a Kubernetes
-Secret, then injected into Acid.
+Secrets (`project.secrets`) are passed from the project configuration into a Kubernetes Secret, then injected into Acid.
 
 So `helm install acid-project --set secrets.foo=bar` will add `foo: bar` to
 `project.secrets`.
@@ -96,8 +91,7 @@ Properties:
 - `env`: Key/value pairs that will be injected into the environment. The key is
   the variable name (`MY_VAR`), and the value is the string value (`foo`)
 
-It is common to pass data from the `e.env` Event object into the Job object as
-is appropriate:
+It is common to pass data from the `e.env` Event object into the Job object as is appropriate:
 
 ```javascript
 events.push = function(e) {
@@ -118,8 +112,7 @@ Methods:
 
 ### The WaitGroup object
 
-A WaitGroup is a tool for running multiple jobs in parallel. Create a WaitGroup,
-add jobs, and then run them all in parallel:
+A WaitGroup is a tool for running multiple jobs in parallel. Create a WaitGroup, add jobs, and then run them all in parallel:
 
 ```
 j1 = new Job("one")

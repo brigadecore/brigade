@@ -2,8 +2,7 @@
 
 This is a high-level explanation of the design of Acid.
 
-Acid is an in-cluster runtime environment. It is the basis for systems like CI
-or CD as well as systems that need in-cluster event handling.
+Acid is an in-cluster runtime environment. It is the basis for systems like CI or CD as well as systems that need in-cluster event handling.
 
 It is designed to:
 
@@ -68,12 +67,9 @@ hook request per `push` event.
 
 ![Flow Diagram](sequence.png)
 
-A hook kicks of an Acid build, which in turn will invoke the repository's `acid.js` file.
-The build is done inside of Kubernetes, with each `Job` being run as a Kubernetes
-pod.
+A hook kicks of an Acid build, which in turn will invoke the repository's `acid.js` file. The build is done inside of Kubernetes, with each `Job` being run as a Kubernetes pod.
 
-Finally, the above can be generalized to a broader pattern. Along with doing GitHub CI operations,
-Acid can be configured to react to other events.
+Finally, the above can be generalized to a broader pattern. Along with doing GitHub CI operations, Acid can be configured to react to other events.
 
 ![Acid watchers](acid-watchers.png)
 
@@ -89,8 +85,7 @@ In all cases, the watchers _trigger events_, and Acid determines what to do base
 
 ## The Server
 
-The Acid server is a _webhook provider_. It listens for webhook requests
-on port _7744_ (default), and executes scripts as a response.
+The Acid server is a _webhook provider_. It listens for webhook requests on port _7744_ (default), and executes scripts as a response.
 
 This section describes how the server responds to a GitHub pull request or push operation.
 
@@ -134,31 +129,19 @@ This is the basic operation of the Acid webhook server.
 
 ### Project Configuration
 
-In Acid, each _project_ has a Kubernetes Secret that stores information about that
-project. An _acid project_ corresponds roughly with the more common notion of a
-project in software development: a buildable unit of code (usually tracked in an SCM)
+In Acid, each _project_ has a Kubernetes Secret that stores information about that project. An _acid project_ corresponds roughly with the more common notion of a project in software development: a buildable unit of code (usually tracked in an SCM)
 
-The outline of how this project is linked to GitHub is explained above. But that same
-project could be hooked up to other services. For example, to replicate the older
-idea of a "nightly build," an in-cluster cron service might trigger a build on
-a project.
+The outline of how this project is linked to GitHub is explained above. But that same project could be hooked up to other services. For example, to replicate the older idea of a "nightly build," an in-cluster cron service might trigger a build on a project.
 
-_ALTERNATE DESIGN_: We could eliminate the idea of per-project configuration and
-instead only have a per-server configuration. In this case, credentials would be
-shared across multiple GitHub projects (as is the case with CircleCI and TravisCI).
-However, this might make it harder to retain per-project configurations.
+_ALTERNATE DESIGN_: We could eliminate the idea of per-project configuration and instead only have a per-server configuration. In this case, credentials would be shared across multiple GitHub projects (as is the case with CircleCI and TravisCI). However, this might make it harder to retain per-project configurations.
 
 ## Acid IC (Integration Containers)
 
-An acid.js file may specify which Docker image to run as part of a build step.
-These images should have a specific set of traits that mark them as integration
-containers. Primarily, they must execute the instructions passed by the Acid
-server.
+An acid.js file may specify which Docker image to run as part of a build step. These images should have a specific set of traits that mark them as integration containers. Primarily, they must execute the instructions passed by the Acid server.
 
 ## JavaScript and acid.js
 
-Acid has a full JavaScript engine inside. This engine provides some supporting
-libraries to provide primitives for:
+Acid has [a full JavaScript engine](javascript.md) inside. This engine provides some supporting libraries to provide primitives for:
 
 - Creating and managing jobs
 - Accessing configuration
@@ -189,12 +172,8 @@ Acid defines itself in terms of the following Kubernetes objects:
 
 The Acid server runs (preferably) as a **Deployment** inside of Kubernetes.
 
-Projects map GitHub projects to Acid build tasks. These are stored inside of
-Kubernetes **secrets** since they contain sensitive information.
+Projects map GitHub projects to Acid build tasks. These are stored inside of Kubernetes **secrets** since they contain sensitive information.
 
-When a Job object is created in acid.js, this translates to a **pod** and a **configmap**.
-The pod is configured to run exactly once. It mounts the configmap as a volume.
-Optionally, an acid.js author may expose some of the items in the project's
-secret to the pod. These are supplied as environment variables.
+When a Job object is created in acid.js, this translates to a **pod** and a **configmap**. The pod is configured to run exactly once. It mounts the configmap as a volume. Optionally, an acid.js author may expose some of the items in the project's secret to the pod. These are supplied as environment variables.
 
 
