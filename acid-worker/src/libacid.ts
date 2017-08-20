@@ -71,3 +71,19 @@ export class Group extends groupImpl.Group {
   // This seems to be how you expose an existing class as an export.
 }
 
+/**
+ * ErrorReport describes an error in the runtie handling of an Acid script.
+ */
+export class ErrorReport {
+  /**
+   * cause is the AcidEvent that caused the error.
+   */
+  public cause: eventsImpl.AcidEvent
+  /**
+   * reason is the message that the error reporter received that describes the error.
+   *
+   * It may be empty if no error description was provided.
+   */
+  public reason?: any
+
+}
