@@ -50,11 +50,36 @@ export class AcidEvent {
     commit?: string;
     /**
      * payload is the event body.
-     * This is the original source from upstream. It is _not_ parsed. For example,
+     * This is the original source from upstream. If upstream returned a string,
+     * it is _not_ parsed. For example,
      * if the upstream provider sends a JSON document, this will contain the
      * JSON as a string that must be decoded with something like `JSON.parse()`
      */
     payload?: any;
+    cause?: Cause;
+}
+
+/**
+ * A Cause is a wrapper around an event. It is used to indicate that this event
+ * caused a condition to occur.
+ *
+ * Frequently this is used to capture a case where an event triggered an error.
+ */
+export class Cause {
+  /**
+   * The event that was the cause.
+   */
+  event: AcidEvent
+  /**
+   * The reason this event has caused a condition. (Typically, an error object)
+   */
+  reason?: any
+  /**
+   * The mechanism that triggered this event.
+   *
+   * For example, an exception cather may report "unahndled exception" here.
+   */
+  trigger?: string
 }
 
 /**
