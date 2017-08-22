@@ -20,7 +20,7 @@
 // Seems to be a bug in typedocs that requires this empty comment.
 /** */
 
-import * as fs from 'fs'
+import * as fs from "fs"
 import * as process from "process"
 
 import * as events from "./events"
@@ -33,11 +33,12 @@ import "./acid"
 
 let projectID: string = process.env.ACID_PROJECT_ID
 let projectNamespace: string = process.env.ACID_PROJECT_NAMESPACE
+let commit = process.env.ACID_COMMIT || "master"
 let e: events.AcidEvent = {
-    buildID: process.env.ACID_BUILD_ID || "unknown",
+    buildID: process.env.ACID_BUILD_ID || App.generateBuildID(commit),
     type: process.env.ACID_EVENT_TYPE || "ping",
     provider: process.env.ACID_EVENT_PROVIDER || "unknown",
-    commit: process.env.ACID_COMMIT || "master",
+    commit: commit
 }
 
 try {

@@ -917,6 +917,10 @@ uglify-to-browserify@~1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/uglify-to-browserify/-/uglify-to-browserify-1.0.2.tgz#6e0924d6bda6b5afe349e39a6d632850a0f882b7"
 
+ulid@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/ulid/-/ulid-0.2.0.tgz#f43cf55c7807aec30d6695cb3bfe93b2e30b61a4"
+
 underscore@1.1.x:
   version "1.1.7"
   resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.1.7.tgz#40bab84bad19d230096e8d6ef628bff055d83db0"

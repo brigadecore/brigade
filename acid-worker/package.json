@@ -24,5 +24,8 @@
     "mocha": "^3.4.2",
     "typedoc": "^0.8.0",
     "typescript": "^2.4.2"
+  },
+  "dependencies": {
+    "ulid": "^0.2.0"
   }
 }
