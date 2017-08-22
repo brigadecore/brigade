@@ -33,7 +33,7 @@ func ghClient(token string) *github.Client {
 
 // setRepoStatus sets the status on a particular commit in a repo.
 func setRepoStatus(commit string, proj *acid.Project, status *github.RepoStatus) error {
-	if proj.GitHubToken == "" {
+	if proj.Github.Token == "" {
 		return fmt.Errorf("status update skipped because no GitHubToken exists on %s", proj.Name)
 	}
 	parts := strings.SplitN(proj.Repo.Name, "/", 3)
@@ -41,7 +41,7 @@ func setRepoStatus(commit string, proj *acid.Project, status *github.RepoStatus)
 		return fmt.Errorf("project name %q is malformed", proj.Repo.Name)
 	}
 	c := context.Background()
-	client := ghClient(proj.GitHubToken)
+	client := ghClient(proj.Github.Token)
 	_, _, err := client.Repositories.CreateStatus(
 		c,
 		parts[1],
@@ -55,7 +55,7 @@ func setRepoStatus(commit string, proj *acid.Project, status *github.RepoStatus)
 // The ref can be a SHA or a branch or tag.
 func GetRepoStatus(proj *acid.Project, ref string) (*github.RepoStatus, error) {
 	c := context.Background()
-	client := ghClient(proj.GitHubToken)
+	client := ghClient(proj.Github.Token)
 	parts := strings.SplitN(proj.Repo.Name, "/", 3) // github.com/ORG/REPO
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("project name %q is malformed", proj.Repo.Name)
@@ -75,7 +75,7 @@ func GetRepoStatus(proj *acid.Project, ref string) (*github.RepoStatus, error) {
 // GetLastCommit gets the last commit on the give reference (branch name or tag).
 func GetLastCommit(proj *acid.Project, ref string) (string, error) {
 	c := context.Background()
-	client := ghClient(proj.GitHubToken)
+	client := ghClient(proj.Github.Token)
 	parts := strings.SplitN(proj.Repo.Name, "/", 3)
 	if len(parts) != 3 {
 		return "", fmt.Errorf("project name %q is malformed", proj.Repo.Name)

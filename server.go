@@ -4,23 +4,26 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 
-	"github.com/deis/acid/pkg/config"
+	"gopkg.in/gin-gonic/gin.v1"
+	"k8s.io/client-go/pkg/api/v1"
+
 	"github.com/deis/acid/pkg/kube"
 	"github.com/deis/acid/pkg/storage"
 	"github.com/deis/acid/pkg/webhook"
-
-	"gopkg.in/gin-gonic/gin.v1"
 )
 
 var (
 	kubeconfig string
 	master     string
+	namespace  string
 )
 
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
+	flag.StringVar(&namespace, "namespace", os.Getenv("ACID_NAMESPACE"), "kubernetes namespace")
 }
 
 func main() {
@@ -31,7 +34,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	store := storage.New(clientset)
+	if namespace == "" {
+		namespace = v1.NamespaceDefault
+	}
+
+	store := storage.New(clientset, namespace)
 
 	router := gin.New()
 	router.Use(gin.Recovery())
@@ -39,7 +46,6 @@ func main() {
 	events := router.Group("/events")
 	{
 		events.Use(gin.Logger())
-		events.Use(config.Middleware())
 
 		events.POST("/github", webhook.NewGithubHook(store).Handle)
 		events.POST("/exec/:org/:project/:commit", webhook.NewExecHook(store).Handle)
@@ -50,7 +56,6 @@ func main() {
 	ui := router.Group("/log/:org/:project")
 	{
 		ui.Use(gin.Logger())
-		ui.Use(config.Middleware())
 
 		ui.GET("/", logHandler(clientset, store))
 		ui.GET("/status.svg", badgeHandler(store))

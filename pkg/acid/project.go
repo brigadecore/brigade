@@ -17,10 +17,16 @@ type Project struct {
 	Kubernetes Kubernetes `json:"kubernetes"`
 	// SharedSecret is the GitHub shared key
 	SharedSecret string `json:"shared_secret"`
-	// GitHubToken is used for oauth2 for client interactions. This is different than the secret.
-	GitHubToken string `json:"git_hub_token"`
+	// Github holds information about Github.
+	Github Github `json:"github"`
 	// Secrets is environment variables for acid.js
 	Secrets map[string]string `json:"secrets"`
+}
+
+// Github describes the Github configuration for a project.
+type Github struct {
+	// Token is used for oauth2 for client interactions.
+	Token string `json:"token"`
 }
 
 // Repo describes a Git repository.

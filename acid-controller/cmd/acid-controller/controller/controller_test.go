@@ -32,8 +32,7 @@ func TestController(t *testing.T) {
 			Namespace: v1.NamespaceDefault,
 			Labels: map[string]string{
 				"heritage":  "acid",
-				"managedBy": "acid",
-				"role":      "build",
+				"component": "build",
 			},
 		},
 	}

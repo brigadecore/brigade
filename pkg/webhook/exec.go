@@ -6,10 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/deis/acid/pkg/acid"
-	"github.com/deis/acid/pkg/config"
-
 	"gopkg.in/gin-gonic/gin.v1"
+
+	"github.com/deis/acid/pkg/acid"
 )
 
 type execHook struct {
@@ -23,7 +22,6 @@ func NewExecHook(s store) *execHook {
 // Handle takes an uploaded Acid script and some configuration and runs the script.
 func (e *execHook) Handle(c *gin.Context) {
 	signature := c.Request.Header.Get(hubSignatureHeader)
-	namespace, _ := config.AcidNamespace(c)
 	orgName := c.Param("org")
 	projName := c.Param("project")
 	// curl -X POST http://example.com/events/exec/technosophos/myproj/master
@@ -39,7 +37,7 @@ func (e *execHook) Handle(c *gin.Context) {
 	}
 	defer c.Request.Body.Close()
 
-	proj, err := e.store.GetProject(pname, namespace)
+	proj, err := e.store.GetProject(pname)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
 		return
@@ -56,14 +54,15 @@ func (e *execHook) Handle(c *gin.Context) {
 
 func (e *execHook) executeScriptData(commit string, script []byte, proj *acid.Project) (int, gin.H) {
 	b := &acid.Build{
-		Type:     "exec",
-		Provider: "client",
-		Commit:   commit,
-		Script:   script,
+		ProjectID: proj.ID,
+		Type:      "exec",
+		Provider:  "client",
+		Commit:    commit,
+		Script:    script,
 	}
 
 	// Right now, we do this sychnronously since we have no backchannel.
-	if err := e.store.CreateBuild(b, proj); err != nil {
+	if err := e.store.CreateBuild(b); err != nil {
 		return http.StatusInternalServerError, gin.H{"error": err.Error()}
 	}
 	return 200, gin.H{"status": "completed"}

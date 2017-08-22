@@ -7,23 +7,23 @@ import (
 	"strings"
 	"time"
 
+	"github.com/oklog/ulid"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/deis/acid/pkg/acid"
-	"github.com/oklog/ulid"
 )
 
 // Store represents a storage engine for a Project.
 type Store interface {
 	// GetProject retrieves the project from storage.
-	GetProject(id, namespace string) (*acid.Project, error)
+	GetProject(id string) (*acid.Project, error)
 	// CreateBuild creates a new job for the work queue.
-	CreateBuild(build *acid.Build, proj *acid.Project) error
+	CreateBuild(build *acid.Build) error
 }
 
 // New initializes a new storage backend.
-func New(c kubernetes.Interface) Store {
-	return &store{c}
+func New(c kubernetes.Interface, namespace string) Store {
+	return &store{c, namespace}
 }
 
 // projectID will encode a project name.

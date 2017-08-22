@@ -11,21 +11,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 
-	"github.com/deis/acid/pkg/config"
 	"github.com/deis/acid/pkg/storage"
 	"github.com/deis/acid/pkg/webhook"
 )
 
 func logHandler(kc kubernetes.Interface, store storage.Store) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		namespace, _ := config.AcidNamespace(c)
 		org := c.Param("org")
 		proj := c.Param("project")
 		commit := c.Param("commit")
 
 		pname := fmt.Sprintf("%s/%s", org, proj)
 		log.Printf("Loading logs for %q", pname)
-		p, err := store.GetProject(pname, namespace)
+		p, err := store.GetProject(pname)
 		if err != nil {
 			log.Printf("logToHTML: error loading project: %s", err)
 		}
@@ -108,13 +106,12 @@ func badgeHandler(store storage.Store) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		org := c.Param("org")
 		proj := c.Param("project")
-		namespace, _ := config.AcidNamespace(c)
 
 		c.Writer.Header().Set("content-type", "image/svg+xml;charset=utf-8")
 
 		pname := fmt.Sprintf("%s/%s", org, proj)
 		log.Printf("Loading project %s", pname)
-		p, err := store.GetProject(pname, namespace)
+		p, err := store.GetProject(pname)
 		if err != nil {
 			log.Printf("badge: error loading project: %s", err)
 			c.Writer.WriteString(badgeFailing)

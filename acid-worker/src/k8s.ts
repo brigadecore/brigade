@@ -64,19 +64,16 @@ export class JobRunner implements jobs.JobRunner {
     this.secret = newSecret(secName)
     this.runner = newRunnerPod(runnerName, job.image)
 
-    let belongsto = project.repo.name.replace(/\//g, "-")
-
     // Experimenting with setting a deadline field after which something
     // can clean up existing builds.
     let expiresAt = Date.now() + expiresInMSec
 
     this.runner.metadata.labels.jobname = job.name
-    this.runner.metadata.labels.belongsto = belongsto
+    this.runner.metadata.labels.project = project.id
     this.runner.metadata.labels.commit = commit
-    this.runner.metadata.labels.role = "job"
 
     this.secret.metadata.labels.jobname = job.name
-    this.secret.metadata.labels.belongsto = belongsto
+    this.secret.metadata.labels.project = project.id
     this.secret.metadata.labels.commit = commit
     this.secret.metadata.labels.expires = String(expiresAt)
 
@@ -307,7 +304,7 @@ function newRunnerPod(podname: string, acidImage: string): kubernetes.V1Pod {
   pod.metadata.name = podname
   pod.metadata.labels = {
     "heritage": "acid",
-    "managedBy": "acid"
+    "component": "job",
   }
 
   let c1 = new kubernetes.V1Container()
@@ -328,7 +325,10 @@ function newSecret(name: string): kubernetes.V1Secret {
   let s = new kubernetes.V1Secret()
   s.metadata = new kubernetes.V1ObjectMeta()
   s.metadata.name = name
-  s.metadata.labels = {"heritage": "acid"}
+  s.metadata.labels = {
+    "heritage": "acid",
+    "component": "job",
+  }
   s.data = {} //{"main.sh": b64enc("echo hello && echo goodbye")}
 
   return s
