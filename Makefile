@@ -6,7 +6,7 @@ DOCKER_BUILD_FLAGS :=
 
 # Test Repo is https://github.com/deis/empty-testbed
 TEST_REPO_EVENT="X-GitHub-Event: push"
-TEST_REPO_COMMIT=9c75584920f1297008118915024927cc099d5dcc
+TEST_REPO_COMMIT=033f10f0d16cf703710b59269a34b8f4ce8537cb
 TEST_REPO_PATH="deis/empty-testbed"
 
 # The location of the functional tests.
