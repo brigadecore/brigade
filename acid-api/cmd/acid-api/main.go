@@ -3,32 +3,51 @@ package main
 import (
 	"flag"
 	"log"
-
-	"github.com/deis/acid/pkg/api"
-	"github.com/deis/acid/pkg/config"
-	"github.com/deis/acid/pkg/kube"
-	"github.com/deis/acid/pkg/storage"
+	"os"
 
 	"gopkg.in/gin-gonic/gin.v1"
+	"k8s.io/client-go/pkg/api/v1"
+
+	"github.com/deis/acid/pkg/api"
+	"github.com/deis/acid/pkg/kube"
+	"github.com/deis/acid/pkg/storage"
 )
 
+var (
+	kubeconfig string
+	master     string
+	namespace  string
+)
+
+func init() {
+	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
+	flag.StringVar(&master, "master", "", "master url")
+	flag.StringVar(&namespace, "namespace", os.Getenv("ACID_NAMESPACE"), "kubernetes namespace")
+}
+
 func main() {
-	kubeMaster := flag.String("master", "", "master url")
-	kubeConfigLocation := flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.Parse()
-	clientset, err := kube.GetClient(*kubeMaster, *kubeConfigLocation)
+	clientset, err := kube.GetClient(master, kubeconfig)
 	if err != nil {
 		log.Fatalf("error creating kubernetes client (%s)", err)
 		return
 	}
-	storage := storage.New(clientset)
+
+	if namespace == "" {
+		namespace = v1.NamespaceDefault
+	}
+
+	storage := storage.New(clientset, namespace)
+
 	router := gin.New()
 	router.Use(gin.Recovery())
-	router.Use(gin.Logger())
-	router.Use(config.Middleware())
 
 	// get an individual project
-	router.GET("/project/:id", api.Project(storage))
+	rest := router.Group("/v1")
+	{
+		rest.Use(gin.Logger())
+		rest.GET("/project/:id", api.Project(storage))
+	}
 
 	router.GET("/healthz", api.Healthz)
 	log.Fatal(router.Run(":7745"))

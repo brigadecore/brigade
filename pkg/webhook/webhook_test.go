@@ -19,11 +19,11 @@ type testStore struct {
 	err    error
 }
 
-func (s *testStore) GetProject(name, namespace string) (*acid.Project, error) {
+func (s *testStore) GetProject(name string) (*acid.Project, error) {
 	return s.proj, s.err
 }
 
-func (s *testStore) CreateBuild(build *acid.Build, proj *acid.Project) error {
+func (s *testStore) CreateBuild(build *acid.Build) error {
 	s.builds = append(s.builds, build)
 	return s.err
 }

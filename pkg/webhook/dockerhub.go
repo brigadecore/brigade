@@ -6,10 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/deis/acid/pkg/acid"
-	"github.com/deis/acid/pkg/config"
-
 	"gopkg.in/gin-gonic/gin.v1"
+
+	"github.com/deis/acid/pkg/acid"
 )
 
 type dockerPushHook struct {
@@ -27,7 +26,6 @@ func NewDockerPushHook(s store) *dockerPushHook {
 
 // Handle handles a Push webhook event from DockerHub or a compatible agent.
 func (s *dockerPushHook) Handle(c *gin.Context) {
-	namespace, _ := config.AcidNamespace(c)
 	orgName := c.Param("org")
 	projName := c.Param("project")
 	commit := c.Param("commit")
@@ -41,9 +39,9 @@ func (s *dockerPushHook) Handle(c *gin.Context) {
 	}
 	defer c.Request.Body.Close()
 
-	proj, err := s.store.GetProject(pname, namespace)
+	proj, err := s.store.GetProject(pname)
 	if err != nil {
-		log.Printf("Project %q not found in %q. No secret loaded. %s", pname, namespace, err)
+		log.Printf("Project %q not found. No secret loaded. %s", pname, err)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
 		return
 	}
@@ -70,11 +68,12 @@ func (s *dockerPushHook) notifyDockerImagePush(proj *acid.Project, commit string
 
 func (s *dockerPushHook) doDockerImagePush(proj *acid.Project, commit string, payload, acidJS []byte) error {
 	b := &acid.Build{
-		Type:     "imagePush",
-		Provider: "dockerhub",
-		Commit:   commit,
-		Payload:  payload,
-		Script:   acidJS,
+		ProjectID: proj.ID,
+		Type:      "imagePush",
+		Provider:  "dockerhub",
+		Commit:    commit,
+		Payload:   payload,
+		Script:    acidJS,
 	}
-	return s.store.CreateBuild(b, proj)
+	return s.store.CreateBuild(b)
 }

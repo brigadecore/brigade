@@ -10,7 +10,7 @@ func TestConfigureProject(t *testing.T) {
 	data := map[string][]byte{
 		"repository":   []byte("myrepo"),
 		"sharedSecret": []byte("mysecret"),
-		"githubToken":  []byte("like a fish needs a bicycle"),
+		"github.token": []byte("like a fish needs a bicycle"),
 		"sshKey":       []byte("hello$world"),
 		"namespace":    []byte("zooropa"),
 		"secrets":      []byte(`{"bar":"baz","foo":"bar"}`),
@@ -31,7 +31,7 @@ func TestConfigureProject(t *testing.T) {
 	if proj.SharedSecret != "mysecret" {
 		t.Error("SharedSecret is not correct")
 	}
-	if proj.GitHubToken != "like a fish needs a bicycle" {
+	if proj.Github.Token != "like a fish needs a bicycle" {
 		t.Error("Fish cannot find its bicycle")
 	}
 	if proj.Repo.SSHKey != "hello\nworld" {

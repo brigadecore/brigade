@@ -14,8 +14,7 @@ import (
 func (c *Controller) createIndexerInformer() {
 	labelSelector := labels.Set{
 		"heritage":  "acid",
-		"managedBy": "acid",
-		"role":      "build",
+		"component": "build",
 	}
 
 	c.indexer, c.informer = cache.NewIndexerInformer(

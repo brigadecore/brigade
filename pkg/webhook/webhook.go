@@ -16,7 +16,6 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 
 	"github.com/deis/acid/pkg/acid"
-	"github.com/deis/acid/pkg/config"
 )
 
 const (
@@ -25,8 +24,8 @@ const (
 )
 
 type store interface {
-	GetProject(id, namespace string) (*acid.Project, error)
-	CreateBuild(build *acid.Build, proj *acid.Project) error
+	GetProject(id string) (*acid.Project, error)
+	CreateBuild(build *acid.Build) error
 }
 
 type githubHook struct {
@@ -99,11 +98,9 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 	log.Printf("TARGET URL: %s", tURL)
 	status.TargetURL = &tURL
 
-	// Load config and verify data.
-	ns, _ := config.AcidNamespace(c)
-	proj, err := s.store.GetProject(repo, ns)
+	proj, err := s.store.GetProject(repo)
 	if err != nil {
-		log.Printf("Project %q not found in %q. No secret loaded. %s", repo, ns, err)
+		log.Printf("Project %q not found. No secret loaded. %s", repo, err)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
 		return
 	}
@@ -237,14 +234,15 @@ func (s *githubHook) build(eventType, commit string, payload []byte, proj *acid.
 	}
 
 	b := &acid.Build{
-		Type:     eventType,
-		Provider: "github",
-		Commit:   commit,
-		Payload:  payload,
-		Script:   acidScript,
+		ProjectID: proj.ID,
+		Type:      eventType,
+		Provider:  "github",
+		Commit:    commit,
+		Payload:   payload,
+		Script:    acidScript,
 	}
 
-	return s.store.CreateBuild(b, proj)
+	return s.store.CreateBuild(b)
 }
 
 // validateSignature compares the salted digest in the header with our own computing of the body.

@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/deis/acid/pkg/storage"
@@ -18,11 +19,13 @@ import (
 var (
 	kubeconfig string
 	master     string
+	namespace  string
 )
 
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
+	flag.StringVar(&namespace, "namespace", os.Getenv("ACID_NAMESPACE"), "kubernetes namespace")
 }
 
 func getKubeClient() (*kubernetes.Clientset, error) {
@@ -78,7 +81,10 @@ func main() {
 		panic(err)
 	}
 
-	proj, err := storage.New(clientset).GetProject(repo, "default")
+	if namespace == "" {
+		namespace = v1.NamespaceDefault
+	}
+	proj, err := storage.New(clientset, namespace).GetProject(repo)
 	if err != nil {
 		panic(err)
 	}
