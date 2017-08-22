@@ -9,7 +9,7 @@ import * as k8s from "./k8s"
 import * as libacid from './libacid'
 
 interface BuildStorage {
-  create(project: events.Project, size?: string): Promise<string>
+  create(buildID: string, project: events.Project, size?: string): Promise<string>
   destroy(): Promise<boolean>
 }
 
@@ -18,27 +18,6 @@ interface BuildStorage {
  */
 interface ProjectLoader {
   (projectID: string, projectNS: string): Promise<events.Project>
-}
-
-let loadProject: ProjectLoader = k8s.loadProject
-let buildStorage: BuildStorage = new k8s.BuildStorage()
-
-/**
- * setLoader sets an alternate project loader.
- *
- * The default loader is the Kubernetes loader.
- */
-export function setLoader(pl: ProjectLoader) {
-  loadProject = pl
-}
-
-/**
- * setBuildStorage sets the storage layer for the build.
- *
- * The default build storage is Kubernetes build storage.
- */
-export function setBuildStorage(bstore: BuildStorage) {
-  buildStorage = bstore
 }
 
 /**
@@ -65,7 +44,18 @@ export class App {
   // it is overwritten by an actual project.
   protected proj: events.Project = new events.Project()
 
+  // true if the "after" event has fired.
   protected afterHasFired: boolean = false
+
+  /**
+   * loadProject is a function that loads projects.
+   */
+  public loadProject: ProjectLoader = k8s.loadProject
+  /**
+   * buildStorage controls the per-build storage layer.
+   */
+  public buildStorage: BuildStorage = new k8s.BuildStorage()
+
 
   /**
    * Create a new App.
@@ -84,10 +74,15 @@ export class App {
 
     // Run if an uncaught rejection happens.
     process.on("unhandledRejection", (reason: any, p: Promise<any>) => {
-      console.log(`FATAL: ${ reason } (rejection)`)
+      var msg = reason
+      // Kubernetes objects put error messages here:
+      if (reason.body && reason.body.message) {
+        msg = reason.body.message
+      }
+      console.log(`FATAL: ${ msg } (rejection)`)
       this.fireError(reason, "unhandledRejection")
       this.exitOnError && process.exit(3)
-      buildStorage.destroy().then( (destroyed) => {
+      this.buildStorage.destroy().then( (destroyed) => {
         if (!destroyed) {
           console.log(`storage not destroyed for ${ this.proj.name }`)
         }
@@ -116,6 +111,11 @@ export class App {
         } as events.Cause
       }
       libacid.fire(after, this.proj)
+      // Teardown storage.
+      // Note that there is no guarantee here that the storage will be available
+      // inside of the "after" event handler. Because "after" is async, the storage
+      // can be torn down before the "after" handlers are executed.
+      this.buildStorage.destroy()
     })
 
     // TODO: fire() should also return a promise, and that promise's result
@@ -127,20 +127,18 @@ export class App {
       // TODO: Can we remove the try/catch block?
       try {
         // Load the project, then fire the event, then fire the "after" event.
-        loadProject(this.projectID, this.projectNS).then (p => {
+        this.loadProject(this.projectID, this.projectNS).then (p => {
           this.proj = p
-          return buildStorage.create(p, "50mi")
+          // Setup storage
+          return this.buildStorage.create(e.buildID.toLowerCase(), p, "50Mi")
         }).then( () => {
-          libacid.fire(e, p)
-        }).then( () => {
-          // Teardown storage
-          return buildStorage.destroy()
-        })
+          libacid.fire(e, this.proj)
+        }) // We want the missing catch() to trigger the main rejection handler.
       } catch (e) {
         console.log(`FATAL: ${ e } (exception)`)
         this.fireError(e, "uncaughtException")
 
-        buildStorage.destroy().then( (destroyed) => {
+        this.buildStorage.destroy().then( (destroyed) => {
           if (!destroyed) {
             console.log(`storage not destroyed for ${ this.proj.name }`)
           }

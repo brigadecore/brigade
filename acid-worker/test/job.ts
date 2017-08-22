@@ -2,16 +2,25 @@ import "mocha"
 import {assert} from "chai"
 import * as mock from "./mock"
 
-import {Job, Result, JobCache} from "../src/job"
+import {Job, Result, JobCache, JobStorage, acidCachePath, acidStoragePath} from "../src/job"
 
 describe("job", function() {
-  describe("Cache", function() {
+  describe("JobCache", function() {
     describe("#constructor", function() {
       it("correctly sets default values", function(){
         let c = new JobCache()
-        assert.equal(c.path, "/cache", "Dir is /cache")
-        assert.isFalse(c.enable, "disabled by default")
+        assert.equal(c.path, acidCachePath, "Dir is /acid/cache")
+        assert.isFalse(c.enabled, "disabled by default")
         assert.equal(c.size, "5Mi", "size is 5mi")
+      })
+    })
+  })
+  describe("JobStorage", function() {
+    describe("#constructor", function() {
+      it("correctly sets default values", function(){
+        let c = new JobStorage()
+        assert.equal(c.path, acidStoragePath, "Dir is " + acidStoragePath)
+        assert.isTrue(c.enabled, "enabled by default")
       })
     })
   })
@@ -56,7 +65,12 @@ describe("job", function() {
     })
     describe("#cache", function() {
       it("is disabled by default", function() {
-        assert.isFalse(j.cache.enable)
+        assert.isFalse(j.cache.enabled)
+      })
+    })
+    describe("#storage", function() {
+      it("is enabled by default", function() {
+        assert.isTrue(j.storage.enabled)
       })
     })
   })

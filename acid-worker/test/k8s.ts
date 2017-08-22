@@ -4,7 +4,7 @@ import * as mock from "./mock"
 
 import * as k8s from "../src/k8s"
 import {AcidEvent, Project} from "../src/events"
-import {Job, Result} from "../src/job"
+import {Job, Result, acidCachePath, acidStoragePath} from "../src/job"
 
 import * as kubernetes from '@kubernetes/typescript-node'
 
@@ -142,27 +142,39 @@ describe("k8s", function() {
       })
       context("when cache is enabled", function() {
         beforeEach(function() {
-          j.cache.enable = true
+          j.cache.enabled = true
         })
         it("configures volumes", function() {
           let jr = new k8s.JobRunner(j, e, p)
-          let cname = j.name + "Cache"
-          let found = false
+          let cname = `${ p.name.replace(/[.\/]/g, "-")}-${ j.name }`
+          let foundCache = false
+          let storageName = "build-storage"
+          let foundStorage = false
           for (let v of jr.runner.spec.containers[0].volumeMounts) {
+            console.log(v)
             if (v.name == cname) {
-              found = true
-              assert.equal(v.mountPath, "/cache")
+              foundCache = true
+              assert.equal(v.mountPath, acidCachePath)
+            } else if (v.name == storageName) {
+              foundStorage = true
+              assert.equal(v.mountPath, acidStoragePath)
             }
           }
-          assert.isTrue(found)
-          found = false
+          assert.isTrue(foundCache, "expected cache volume mount found")
+          assert.isTrue(foundStorage, "expected storage volume mount found")
+          foundCache = false
+          foundStorage = false
           for (let v of jr.runner.spec.volumes) {
             if (v.name == cname) {
-              found = true
+              foundCache = true
               assert.equal(v.persistentVolumeClaim.claimName, cname)
+            } else if (v.name == storageName) {
+              foundStorage = true
+              assert.equal(v.persistentVolumeClaim.claimName, e.buildID)
             }
           }
-          assert.isTrue(found)
+          assert.isTrue(foundCache, "expected cache volume claim found")
+          assert.isTrue(foundStorage, "expected storage volume claim found")
         })
       })
       context("when job is privileged", function() {

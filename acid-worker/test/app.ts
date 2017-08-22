@@ -5,12 +5,12 @@ import * as app from "../src/app"
 import * as mock from "./mock"
 import * as libacid from "../src/libacid"
 
-app.setLoader((id: string, ns: string): Promise<events.Project> => {
+let loader = (id: string, ns: string): Promise<events.Project> => {
   let proj =  mock.mockProject()
   proj.id = id
   proj.kubernetes.namespace = ns
   return Promise.resolve(proj)
-})
+}
 
 describe("app", function() {
   describe("App", function() {
@@ -19,6 +19,8 @@ describe("app", function() {
     let projectNS: string = "app-test-ns"
     beforeEach(function() {
       a = new app.App(projectID, projectNS)
+      a.loadProject = loader
+      a.buildStorage = new mock.MockBuildStorage()
       // Disable this so we can run tests without panics.
       a.exitOnError = false
     })
