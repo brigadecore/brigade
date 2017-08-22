@@ -1,5 +1,5 @@
 _cache/
-_functional_tests/*-generated.*
+tests/testdata/*-generated.*
 acid-api/rootfs/acid-api
 acid-controller/rootfs/acid-controller
 acid-worker/dist
