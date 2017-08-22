@@ -5,12 +5,10 @@ DOCKER_REGISTRY ?= acidic.azurecr.io
 DOCKER_BUILD_FLAGS :=
 
 # Test Repo is https://github.com/deis/empty-testbed
-TEST_REPO_EVENT="X-GitHub-Event: push"
 TEST_REPO_COMMIT=033f10f0d16cf703710b59269a34b8f4ce8537cb
-TEST_REPO_PATH="deis/empty-testbed"
 
 # The location of the functional tests.
-TEST_DIR=./_functional_tests
+TEST_DIR=./tests
 
 KUBECONFIG ?= ${HOME}/.kube/config
 
@@ -81,21 +79,11 @@ test-unit:
 .PHONY: test-functional
 test-functional: test-functional-prepare
 test-functional:
-	@echo "\n===> PUSH test\n"
-	curl -X POST \
-		-H $(TEST_REPO_EVENT) \
-		-H "X-Hub-Signature: $(shell cat $(TEST_DIR)/test-repo-generated.hash)" \
-		localhost:7744/events/github \
-		-T $(TEST_DIR)/test-repo-generated.json
-	sleep 2
-	@echo "\n===> DockerHub test\n"
-	curl -X POST \
-		localhost:7744/events/dockerhub/$(TEST_REPO_PATH)/$(TEST_REPO_COMMIT) \
-		-T $(TEST_DIR)/dockerhub-push.json
+	go test $(TEST_DIR)
 
 .PHONY: test-functional-prepare
 test-functional-prepare:
-	go run $(TEST_DIR)/generate.go -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
+	go run $(TEST_DIR)/cmd/generate.go -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
 
 # JS test is local only
 .PHONY: test-js
