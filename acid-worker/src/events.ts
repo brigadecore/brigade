@@ -26,11 +26,16 @@
  * - commit set to the Git commit ID (e.g. `c0ff3312345...`)
  * - payload set to a string that contains the JSON document received from
  *   GitHub.
+ * - buildID set to the build ID.
  *
  * Note that the payload is considered "opaque": It is up to the script to parse
  * it.
  */
 export class AcidEvent {
+    /**
+     * buildID is the unique ID for this build.
+     */
+    buildID: string;
     /**
      * type is the event type ("push", "pull_request")
      */

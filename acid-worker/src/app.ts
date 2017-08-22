@@ -82,6 +82,7 @@ export class App {
           libacid.fire(e, p)
         }).then( () => {
           let after: events.AcidEvent = {
+            buildID: e.buildID,
             type: "after",
             provider: "acid",
             commit: e.commit,
@@ -115,6 +116,7 @@ export class App {
     this.errorsHandled = true
 
     let errorEvent: events.AcidEvent = {
+      buildID: this.lastEvent.buildID,
       type: "error",
       provider: "acid",
       commit: this.lastEvent.commit,

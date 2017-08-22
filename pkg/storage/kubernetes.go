@@ -62,6 +62,7 @@ func (s *store) createSecret(b *acid.Build, p *acid.Project) error {
 			"event_type":     b.Type,
 			"event_provider": b.Provider,
 			"commit":         b.Commit,
+			"build_id":       buildName,
 		},
 	}
 
