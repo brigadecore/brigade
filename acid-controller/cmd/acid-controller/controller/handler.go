@@ -68,6 +68,7 @@ func newWorkerPod(secret *v1.Secret) v1.Pod {
 				envvar("project_id"),
 				envvar("event_type"),
 				envvar("event_provider"),
+				envvar("build_id"),
 				envvar("commit"),
 				{
 					Name: "ACID_PROJECT_NAMESPACE",
