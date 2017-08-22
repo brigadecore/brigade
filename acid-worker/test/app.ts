@@ -22,6 +22,11 @@ describe("app", function() {
       // Disable this so we can run tests without panics.
       a.exitOnError = false
     })
+    describe("App.generateBuildID", function() {
+      // acid-worker-01BR5VRVP06Q0BASBVB1WYK7X1-01234567
+      let commit = "01234567890"
+      assert.match(app.App.generateBuildID(commit), /acid-worker-[A-Z0-9]{26}-01234567/)
+    })
     describe("#run", function() {
       it("runs an event handler to completion", function(done) {
         let e = mock.mockEvent()

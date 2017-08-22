@@ -1,6 +1,8 @@
 /**
  * Module app is the main application runner.
  */
+import * as ulid from "ulid"
+
 import * as events from "./events"
 import * as process from "process"
 import * as k8s from "./k8s"
@@ -128,6 +130,13 @@ export class App {
     }
 
     libacid.fire(errorEvent, this.proj)
+  }
+
+  /**
+   * Generate a random build ID.
+   */
+  public static generateBuildID(commit: string): string {
+    return `acid-worker-${ ulid() }-${ commit.substring(0, 8) }`
   }
 }
 

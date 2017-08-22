@@ -22,6 +22,7 @@ export function mockProject(): Project {
 
 export function mockEvent() {
   return {
+    buildID: "test-1234567890abcdef-12345678",
     type: "push",
     provider: "github",
     commit: "c0ffee",
