@@ -8,6 +8,11 @@ import * as process from "process"
 import * as k8s from "./k8s"
 import * as libacid from './libacid'
 
+interface BuildStorage {
+  create(project: events.Project, size?: string): Promise<string>
+  destroy(): Promise<boolean>
+}
+
 /**
  * ProjectLoader describes a function able to load a Project.
  */
@@ -16,6 +21,7 @@ interface ProjectLoader {
 }
 
 let loadProject: ProjectLoader = k8s.loadProject
+let buildStorage: BuildStorage = new k8s.BuildStorage()
 
 /**
  * setLoader sets an alternate project loader.
@@ -24,6 +30,15 @@ let loadProject: ProjectLoader = k8s.loadProject
  */
 export function setLoader(pl: ProjectLoader) {
   loadProject = pl
+}
+
+/**
+ * setBuildStorage sets the storage layer for the build.
+ *
+ * The default build storage is Kubernetes build storage.
+ */
+export function setBuildStorage(bstore: BuildStorage) {
+  buildStorage = bstore
 }
 
 /**
@@ -72,6 +87,15 @@ export class App {
       console.log(`FATAL: ${ reason } (rejection)`)
       this.fireError(reason, "unhandledRejection")
       this.exitOnError && process.exit(3)
+      buildStorage.destroy().then( (destroyed) => {
+        if (!destroyed) {
+          console.log(`storage not destroyed for ${ this.proj.name }`)
+        }
+        this.exitOnError && process.exit(3)
+      }).catch( (reason) => {
+        console.log(`error prevented storage cleanup for ${ this.proj.name }: ${ reason }`)
+        this.exitOnError && process.exit(3)
+      })
     })
 
     // Run at the end.
@@ -100,17 +124,33 @@ export class App {
       // This traps unhandled 'throw' calls, and is considered safer than
       // process.on("unhandledException"). In most cases, the unhandledRejection
       // handler will trigger before this does.
+      // TODO: Can we remove the try/catch block?
       try {
         // Load the project, then fire the event, then fire the "after" event.
-        loadProject(this.projectID, this.projectNS).then( p => {
+        loadProject(this.projectID, this.projectNS).then (p => {
           this.proj = p
+          return buildStorage.create(p, "50mi")
+        }).then( () => {
           libacid.fire(e, p)
+        }).then( () => {
+          // Teardown storage
+          return buildStorage.destroy()
         })
       } catch (e) {
         console.log(`FATAL: ${ e } (exception)`)
         this.fireError(e, "uncaughtException")
-        this.exitOnError && process.exit(3)
-        reject(false)
+
+        buildStorage.destroy().then( (destroyed) => {
+          if (!destroyed) {
+            console.log(`storage not destroyed for ${ this.proj.name }`)
+          }
+          this.exitOnError && process.exit(3)
+          reject(false)
+        }).catch( (reason) => {
+          console.log(`error prevented storage cleanup for ${ this.proj.name }: ${ reason }`)
+          this.exitOnError && process.exit(3)
+          reject(false)
+        })
       }
       resolve(true)
     })
