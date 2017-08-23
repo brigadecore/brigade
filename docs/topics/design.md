@@ -12,7 +12,7 @@ It is designed to:
   - continuous integration
   - continuous delivery
 
-![Block Diagram](kube-helm-draft-stack.png)
+![Block Diagram](img/kube-helm-draft-stack.png)
 
 ## Terminology
 
@@ -47,7 +47,7 @@ Acid is installed using a Helm chart. Acid projects, which hold configuration da
 
 At a high level, Acid can handle different sorts of requests. To provide a simple example, here is a GitHub workflow:
 
-![Acid Webhook Flow](Acid-webhook.png)
+![Acid Webhook Flow](img/Acid-webhook.png)
 
 GitHub hosts a number of projects. Our team has configured two Acid projects (`github.com/technosophos/example` and `github.com/helm/otherexample`). Likewise, GitHub has been configured to trigger an Acid build, via webhook, whenever a pull request is received.
 
@@ -65,13 +65,13 @@ The workflow above can be expressed as a series of events.
 When a GitHub project is configured to send webhooks to Acid, it will send one
 hook request per `push` event.
 
-![Flow Diagram](sequence.png)
+![Flow Diagram](img/sequence.png)
 
 A hook kicks of an Acid build, which in turn will invoke the repository's `acid.js` file. The build is done inside of Kubernetes, with each `Job` being run as a Kubernetes pod.
 
 Finally, the above can be generalized to a broader pattern. Along with doing GitHub CI operations, Acid can be configured to react to other events.
 
-![Acid watchers](acid-watchers.png)
+![Acid watchers](img/acid-watchers.png)
 
 The above shows other examples of event emitters that Acid could listen for:
 
@@ -89,7 +89,7 @@ The Acid server is a _webhook provider_. It listens for webhook requests on port
 
 This section describes how the server responds to a GitHub pull request or push operation.
 
-![Acid CI run](acid-ci.png)
+![Acid CI run](img/acid-ci.png)
 
 When a Webhook `push` event is triggered, Acid will do the following:
 
