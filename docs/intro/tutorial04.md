@@ -31,7 +31,7 @@ class AppTestCase(unittest.TestCase):
 
 Now we can run the test using a minimal basic setup script using setuptools, a built-in Python package that allows developers to more easily build and distribute Python packages.
 
-And finally, open `setup.py` and write this python code in there:
+Open `setup.py` and write this python code in there:
 
 ```python
 from setuptools import setup, find_packages
@@ -83,7 +83,7 @@ Given this, the role of the `acid.js` file is to declare event handlers. And it'
 ```javascript
 events.on("push", function(e, project) {
   console.log("received push for commit " + e.commit)
-}
+})
 ```
 
 The above defines one event: `push`. This event responds to Github `push` requests (like `git push origin master`). If you have configured your Github webhook system correctly (see [part 3][part3]) then each time GitHub receives a push, it will notify Acid.
@@ -123,7 +123,7 @@ events.on("push", function(e, project) {
 
   // We're done configuring, so we run the job
   node.run()
-}
+})
 ```
 
 The example above introduces Acid `Job`s. A Job is a particular build step. Each job can run a Docker container and feed it multiple commands.

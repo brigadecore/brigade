@@ -29,10 +29,13 @@ Make sure to **not** commit this to source control. It contains private data tha
 To use a Github OAuth token so your Pull Request statuses are updated...
 
 1. Go to https://github.com/settings/tokens/new and enter your password if prompted
-3. Give the token a description, such as `acid project: uuid-generator`
-4. Grant the token full *repo* scope so Acid can update Pull Request statuses
-5. Click *Generate token*
-6. Copy the personal access token in the next screen and add it to `uuid-generator.yaml`
+2. Give the token a description, such as `acid project: uuid-generator`
+3. Grant the token full *repo* scope so Acid can update Pull Request statuses
+
+<img src="img/img3.png" style="height: 500px;" />
+
+4. Click *Generate token*
+5. Copy the personal access token in the next screen and add it to `uuid-generator.yaml`
 
 ### Install the project chart
 
@@ -64,6 +67,8 @@ From your project...
     - Select `push` and `pull request`
   - Make sure the `Activate` checkbox is selected
   - Click the `Add Webhook` button
+
+<img src="img/img4.png" style="height: 500px;" />
 
 The next time you push to the repository, the webhook system should trigger a build.
 
