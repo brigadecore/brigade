@@ -81,7 +81,7 @@ Acid uses simple JavaScript files to run tasks. When it comes to task running, A
 Given this, the role of the `acid.js` file is to declare event handlers. And it's easy. Open `acid.js` and write this JavaScript code into it:
 
 ```javascript
-events.push = function(e) {
+events.on("push", function(e, project) {
   console.log("received push for commit " + e.commit)
 }
 ```
@@ -105,7 +105,7 @@ Logging a commit SHA isn't all that helpful. Instead, we would want to test that
 Edit `acid.js` again so it looks like this:
 
 ```javascript
-events.push = function(e) {
+events.on("push", function(e, project) {
   console.log("received push for commit " + e.commit)
 
   // Create a new job
