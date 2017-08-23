@@ -2,4 +2,8 @@
 
     [environments.development]
     name = "acid"
-    set = ["ingress.enabled=true", "ondraft=true"]
+    namespace = "default"
+    set = ["ingress.enabled=true"]
+    wait = false
+    watch = false
+    watch_delay = 2
