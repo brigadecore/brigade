@@ -53,14 +53,13 @@ Your project configuration can now be managed by Helm. Use `helm upgrade` to cha
 
 We want to build our project each time a new commit is pushed to master, and each time we get a new Pull Request.
 
-To do this, log into your project (substituting *bacongobbler* for your own Github username) on https://github.com/bacongobbler/uuid-generator/settings.
+To do this, log into your project (substituting *bacongobbler* for your own Github username) on https://github.com/bacongobbler/uuid-generator/settings/hooks.
 
 From your project...
 
-1. In the left navigation, click on `Webhooks`
-2. On the Webhooks screen, click `Add Webhook`
-3. Complete the form:
-  - Payload URL should be the URL to your ACID server
+1. On the Webhooks screen, click `Add Webhook`
+2. Complete the form:
+  - Payload URL should be the URL to your ACID server, adding the github webhook endpoint (e.g. https://acid.example.com/events/github)
   - Content-Type should be `application/json`
   - Secret should be your secret in the YAML file (`MySuperSecret`)
   - In the radio buttons, choose `Let me select individual events`
