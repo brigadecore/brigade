@@ -31,7 +31,7 @@ class AppTestCase(unittest.TestCase):
 
 Now we can run the test using a minimal basic setup script using setuptools, a built-in Python package that allows developers to more easily build and distribute Python packages.
 
-And finally, open `setup.py` and write this python code in there:
+Open `setup.py` and write this python code in there:
 
 ```python
 from setuptools import setup, find_packages
@@ -66,6 +66,14 @@ Ran 1 test in 0.010s
 OK
 ```
 
+Now is a good time to commit your work.
+
+```
+$ git add tests/ setup.py
+$ git commit -m "add unit tests"
+$ git push origin master
+```
+
 ## Create an acid.js file
 
 Now that we have successfully written tests for our app and configured an Acid project, it's time to make use of them.
@@ -83,7 +91,7 @@ Given this, the role of the `acid.js` file is to declare event handlers. And it'
 ```javascript
 events.on("push", function(e, project) {
   console.log("received push for commit " + e.commit)
-}
+})
 ```
 
 The above defines one event: `push`. This event responds to Github `push` requests (like `git push origin master`). If you have configured your Github webhook system correctly (see [part 3][part3]) then each time GitHub receives a push, it will notify Acid.
@@ -123,10 +131,10 @@ events.on("push", function(e, project) {
 
   // We're done configuring, so we run the job
   node.run()
-}
+})
 ```
 
-The example above introduces Acid `Job`s. A Job is a particular build step. Each job can run a Docker container and feed it multiple commands.
+The example above introduces Acid jobs. A Job is a particular build step. Each job can run a Docker container and feed it multiple commands.
 
 Above, we create the `test-runner` job, have it use the [python:3](https://hub.docker.com/_/python/) image, and then set it up to run the following commands in that container:
 
@@ -135,6 +143,19 @@ Above, we create the `test-runner` job, have it use the [python:3](https://hub.d
 - `python setup.py test`: Run the test suite for our project.
 
 Finally, when we run `node.run()`, the job is built and executed. If it passes, all is good. If it fails, Acid and Github are notified.
+
+At this point, you should commit your work to a new branch and check that it all works:
+
+```
+$ git checkout -b add-acid
+$ git add .
+$ git commit -m "add acid.js"
+$ git push origin add-acid
+```
+
+Open up a new pull request on your repository using the branch. You should see a status icon for your new commit. Assuming all is set up, you should see a shiny green checkmark next to your commit.
+
+<img src="img/img5.png" style="height: 500px;" />
 
 This concludes the basic tutorial. If you are familiar with Acid and are interested in learning how to refactor acid.js into a more efficient test pipeline, check out [Advanced tutorial: Writing efficient pipelines][efficient-pipelines].
 

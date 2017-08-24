@@ -29,10 +29,13 @@ Make sure to **not** commit this to source control. It contains private data tha
 To use a Github OAuth token so your Pull Request statuses are updated...
 
 1. Go to https://github.com/settings/tokens/new and enter your password if prompted
-3. Give the token a description, such as `acid project: uuid-generator`
-4. Grant the token full *repo* scope so Acid can update Pull Request statuses
-5. Click *Generate token*
-6. Copy the personal access token in the next screen and add it to `uuid-generator.yaml`
+2. Give the token a description, such as `acid project: uuid-generator`
+3. Grant the token full *repo* scope so Acid can update Pull Request statuses
+
+<img src="img/img3.png" style="height: 500px;" />
+
+4. Click *Generate token*
+5. Copy the personal access token in the next screen and add it to `uuid-generator.yaml`
 
 ### Install the project chart
 
@@ -50,20 +53,21 @@ Your project configuration can now be managed by Helm. Use `helm upgrade` to cha
 
 We want to build our project each time a new commit is pushed to master, and each time we get a new Pull Request.
 
-To do this, log into your project (substituting *bacongobbler* for your own Github username) on https://github.com/bacongobbler/uuid-generator/settings.
+To do this, log into your project (substituting *bacongobbler* for your own Github username) on https://github.com/bacongobbler/uuid-generator/settings/hooks.
 
 From your project...
 
-1. In the left navigation, click on `Webhooks`
-2. On the Webhooks screen, click `Add Webhook`
-3. Complete the form:
-  - Payload URL should be the URL to your ACID server
+1. On the Webhooks screen, click `Add Webhook`
+2. Complete the form:
+  - Payload URL should be the URL to your ACID server, adding the github webhook endpoint (e.g. https://acid.example.com/events/github)
   - Content-Type should be `application/json`
   - Secret should be your secret in the YAML file (`MySuperSecret`)
   - In the radio buttons, choose `Let me select individual events`
     - Select `push` and `pull request`
   - Make sure the `Activate` checkbox is selected
   - Click the `Add Webhook` button
+
+<img src="img/img4.png" style="height: 500px;" />
 
 The next time you push to the repository, the webhook system should trigger a build.
 

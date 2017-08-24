@@ -7,6 +7,7 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
 ## Table of Contents
 
 - [Acid Design](design.md)
+- [Acid Developers Guide](developers.md)
 - [About the Acid JavaScript engine](javascript.md)
 
 
