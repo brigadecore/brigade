@@ -2,3 +2,4 @@ Dockerfile
 bin
 vendor
 vcs-sidecar
+acid-*
