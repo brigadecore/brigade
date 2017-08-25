@@ -1,5 +1,5 @@
 FROM debian:jessie-slim
 
-COPY rootfs /
+COPY rootfs/acid-controller /usr/bin/acid-controller
 
 CMD /usr/bin/acid-controller
