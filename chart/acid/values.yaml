@@ -2,7 +2,13 @@ image:
   registry: acidic.azurecr.io
   name: acid
   tag: latest
-  pullPolicy: Always
+  #pullPolicy: IfNotPresent
+controller:
+  registry: acidic.azurecr.io
+  name: acid-controller
+  tag: latest
+  #pullPolicy: IfNotPresent
+
 service:
   name: acid-service
   type: LoadBalancer
