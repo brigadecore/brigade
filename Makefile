@@ -18,6 +18,7 @@ build:
 	go build -o bin/acid-controller ./acid-controller/cmd/acid-controller
 	go build -o bin/acid-api ./acid-api/cmd/acid-api
 	go build -o bin/vcs-sidecar ./vcs-sidecar/cmd/vcs-sidecar
+	go build -o bin/lsd ./acid-client/cmd/lsd
 
 # Cross-compile for Docker+Linux
 .PHONY: build-docker-bin

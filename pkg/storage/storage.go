@@ -26,8 +26,8 @@ func New(c kubernetes.Interface, namespace string) Store {
 	return &store{c, namespace}
 }
 
-// projectID will encode a project name.
-func projectID(id string) string {
+// ProjectID will encode a project name.
+func ProjectID(id string) string {
 	if strings.HasPrefix(id, "acid-") {
 		return id
 	}

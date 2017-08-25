@@ -20,7 +20,7 @@ type store struct {
 
 // Get retrieves the project from storage.
 func (s *store) GetProject(id string) (*acid.Project, error) {
-	return s.loadProjectConfig(projectID(id))
+	return s.loadProjectConfig(ProjectID(id))
 }
 
 // Get retrieves the project from storage.
