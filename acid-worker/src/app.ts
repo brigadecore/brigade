@@ -50,6 +50,8 @@ export class App {
   // it is overwritten by an actual project.
   protected proj: events.Project = new events.Project()
 
+  protected afterHasFired: boolean = false
+
   /**
    * Create a new App.
    *
@@ -65,10 +67,31 @@ export class App {
   public run(e: events.AcidEvent): Promise<boolean> {
     this.lastEvent = e
 
+    // Run if an uncaught rejection happens.
     process.on("unhandledRejection", (reason: any, p: Promise<any>) => {
       console.log(`FATAL: ${ reason } (rejection)`)
       this.fireError(reason, "unhandledRejection")
       this.exitOnError && process.exit(3)
+    })
+
+    // Run at the end.
+    process.on("beforeExit", code => {
+      if (this.afterHasFired) {
+        return
+      }
+      this.afterHasFired = true
+
+      let after: events.AcidEvent = {
+        buildID: e.buildID,
+        type: "after",
+        provider: "acid",
+        commit: e.commit,
+        cause: {
+          event: e,
+          trigger: code == 0 ? "success" : "failure"
+        } as events.Cause
+      }
+      libacid.fire(after, this.proj)
     })
 
     // TODO: fire() should also return a promise, and that promise's result
@@ -82,18 +105,6 @@ export class App {
         loadProject(this.projectID, this.projectNS).then( p => {
           this.proj = p
           libacid.fire(e, p)
-        }).then( () => {
-          let after: events.AcidEvent = {
-            buildID: e.buildID,
-            type: "after",
-            provider: "acid",
-            commit: e.commit,
-            cause: {
-              event: e,
-              trigger: "success"
-            } as events.Cause
-          }
-          libacid.fire(after, this.proj)
         })
       } catch (e) {
         console.log(`FATAL: ${ e } (exception)`)

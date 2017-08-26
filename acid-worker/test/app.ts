@@ -42,24 +42,6 @@ describe("app", function() {
           done()
         })
       })
-      context("when 'after' event handler is registered", function() {
-        it("calls after handler", function(done) {
-          let after = 1
-          libacid.events.on("test-after", () => {
-            after++
-          })
-          libacid.events.on("after", () => {
-            after++
-          })
-          let e = mock.mockEvent()
-          e.type = "test-after"
-          a.run(e)
-          setTimeout(() => {
-            assert.equal(3, after)
-            done()
-          }, 10)
-        })
-      })
       context("when an event handler emits an uncaught rejection", function() {
         it("calls error event", function(done) {
           libacid.events.on("test-fail", () => {
