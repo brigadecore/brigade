@@ -48,7 +48,6 @@ func main() {
 		events.Use(gin.Logger())
 
 		events.POST("/github", webhook.NewGithubHook(store).Handle)
-		events.POST("/exec/:org/:project/:commit", webhook.NewExecHook(store).Handle)
 		events.POST("/dockerhub/:org/:project/:commit", webhook.NewDockerPushHook(store).Handle)
 	}
 
