@@ -6,6 +6,8 @@
  * appropriate handler is kicked off.
  */
 
+import {EventEmitter} from "events"
+
 /**
  * AcidEvent describes an event.
  *
@@ -156,28 +158,18 @@ type EventHandler =  (e: AcidEvent, proj?: Project) => void
 /**
  * EventRegistry manages the registration and execution of events.
  */
-export class EventRegistry {
-  events: {[name: string]: EventHandler}
+export class EventRegistry extends EventEmitter {
 
   /**
    * Create a new event registry.
    */
   constructor() {
-      this.events = {"ping": (e: AcidEvent, p: Project) => { console.log("ping") }}
+    super()
+    this.on("ping", (e: AcidEvent, p: Project) => { console.log("ping") })
   }
 
-  /**
-   * Register an event handler.
-   */
-  public on(name: string, fn: EventHandler): void {
-      this.events[name] = fn
-  }
-
-  /**
-   * has returns true if the given name has a registered handler.
-   */
-  public has(name: string): boolean {
-    return this.events[name] !== undefined
+  public has(name: string) {
+    return this.listenerCount(name) > 0 
   }
 
   /**
@@ -185,10 +177,6 @@ export class EventRegistry {
    * This uses AcidEvent.name to fire an event.
    */
   public fire(e: AcidEvent, proj: Project) {
-    if (!this.events[e.type]) {
-        return
-    }
-    let fn = this.events[e.type]
-    fn(e, proj)
+    this.emit(e.type, e, proj)
   }
 }
