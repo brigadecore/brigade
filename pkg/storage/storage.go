@@ -17,6 +17,8 @@ import (
 type Store interface {
 	// GetProject retrieves the project from storage.
 	GetProject(id string) (*acid.Project, error)
+	// GetBuild retrieves the build from storage.
+	GetBuild(id string) (*acid.Build, error)
 	// CreateBuild creates a new job for the work queue.
 	CreateBuild(build *acid.Build) error
 }
