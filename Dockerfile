@@ -6,4 +6,4 @@ COPY rootfs /
 
 ENV GIT_SSH=/gitssh.sh
 
-CMD /usr/bin/acid
+CMD /usr/bin/acid-gateway

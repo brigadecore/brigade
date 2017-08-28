@@ -1,6 +1,6 @@
 image:
   registry: acidic.azurecr.io
-  name: acid
+  name: acid-gateway
   tag: latest
   #pullPolicy: IfNotPresent
 controller:
