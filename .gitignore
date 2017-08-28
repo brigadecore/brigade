@@ -4,7 +4,6 @@ acid-api/rootfs/acid-api
 acid-controller/rootfs/acid-controller
 acid-worker/dist
 acid-worker/doc/
-acid-worker/src/acid.js
 bin/
 node_modules/
 rootfs/acid

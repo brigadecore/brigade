@@ -8,7 +8,7 @@ try {
   let wrapper = "const la = require(\"./libacid\");((events, Job, Group, require) => {" +
     data.toString() +
     "})(la.events, la.Job, la.Group, () => { throw 'require is disabled' })"
-  fs.writeFile("src/acid.js", wrapper, () => {
+  fs.writeFile("dist/src/acid.js", wrapper, () => {
     console.log("prestart: src/acid.js written")
   })
 } catch(e) {
