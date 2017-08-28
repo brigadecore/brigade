@@ -2,9 +2,19 @@ import "mocha"
 import {assert} from "chai"
 import * as mock from "./mock"
 
-import {Job, Result} from "../src/job"
+import {Job, Result, JobCache} from "../src/job"
 
 describe("job", function() {
+  describe("Cache", function() {
+    describe("#constructor", function() {
+      it("correctly sets default values", function(){
+        let c = new JobCache()
+        assert.equal(c.path, "/cache", "Dir is /cache")
+        assert.isFalse(c.enable, "disabled by default")
+        assert.equal(c.size, "5Mi", "size is 5mi")
+      })
+    })
+  })
   describe("Job", function() {
     let j: mock.MockJob
     describe("#constructor", function() {
@@ -42,6 +52,11 @@ describe("job", function() {
             done()
           })
         })
+      })
+    })
+    describe("#cache", function() {
+      it("is disabled by default", function() {
+        assert.isFalse(j.cache.enable)
       })
     })
   })

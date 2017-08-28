@@ -43,6 +43,33 @@ export interface Result {
   toString(): string
 }
 
+/**
+ * Cache controls the job's cache.
+ *
+ * A cache is a small storage space that is shared between different instances
+ * if the same job.
+ *
+ * Cache is just a plain filesystem, and as such comes with no guarantees about
+ * consistency, etc. It should be treated as volatile.
+ */
+export class JobCache {
+  /**
+   * If enable=true, a storage cache will be attached.
+   */
+  public enable: boolean = false
+  /**
+   * size is the amount of storage space assigned to the cache. The default is
+   * 5Mi.
+   * For sizing information, see https://github.com/kubernetes/community/blob/master/contributors/design-proposals/resources.md
+   */
+  public size: string = "5Mi"
+
+  // future-proof Cache.path. For now we will hard-code it, but make it so that
+  // we can modify in the future.
+  private _path: string = "/cache"
+  public get path(): string { return this._path }
+}
+
  /**
   * Job represents a single job, which is composed of several closely related sequential tasks.
   * Jobs must have names. Every job also has an associated image, which references
@@ -74,6 +101,8 @@ export abstract class Job {
    */
   public privileged: boolean = false
 
+  public cache: JobCache
+
   /** _podName is set by the runtime. It is the name of the pod.*/
   protected _podName: string
 
@@ -92,6 +121,7 @@ export abstract class Job {
     this.image = image
     this.tasks = tasks || []
     this.env = {}
+    this.cache = new JobCache()
   }
 
   /** run executes the job and then */

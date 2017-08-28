@@ -44,6 +44,7 @@ export class JobRunner implements jobs.JobRunner {
   name: string
   secret: kubernetes.V1Secret
   runner: kubernetes.V1Pod
+  pvc: kubernetes.V1PersistentVolumeClaim
   project: Project
   event: AcidEvent
   job: jobs.Job
@@ -142,6 +143,27 @@ export class JobRunner implements jobs.JobRunner {
       }
     }
 
+    // If the job requests a cache, set up the cache.
+    if (job.cache.enable) {
+      let labelSelector = new kubernetes.V1LabelSelector()
+      labelSelector.matchLabels = {
+        "heritage": "acid",
+        "purpose": "acid-storage",
+        "jobCache": "enabled"
+      }
+      this.pvc = this.cachePVC(labelSelector)
+
+      // Now add volume mount to pod:
+      let mountName = this.cacheName()
+      this.runner.spec.volumes.push({
+        name: mountName,
+        persistentVolumeClaim: {claimName: mountName}
+      } as kubernetes.V1Volume )
+      let mnt = volumeMount(mountName, job.cache.path)
+      this.runner.spec.containers[0].volumeMounts.push(mnt)
+
+    }
+
     let newCmd = generateScript(job)
     if (!newCmd) {
       this.runner.spec.containers[0].command = null
@@ -157,6 +179,17 @@ export class JobRunner implements jobs.JobRunner {
 
   }
 
+  /**
+   * cacheName returns the name of this job's cache PVC.
+   */
+  protected cacheName(): string {
+    // The Kubernetes rules on pvc names are stupid^b^b^b^b strict. Name must
+    // be DNS-like, and less than 64 chars. This rules out using project ID,
+    // project name, etc. For now, we use project name with slashes replaced,
+    // appended to job name.
+    return `${ this.project.name.replace(/[.\/]/g, "-")}-${ this.job.name }`
+  }
+
   /* run starts a job and then waits until it is running.
    *
    * The Promise it returns will return when the pod is either marked
@@ -169,18 +202,58 @@ export class JobRunner implements jobs.JobRunner {
   /** start begins a job, and returns once it is scheduled to run.*/
   public start(): Promise<jobs.JobRunner> {
     // Now we have pod and a secret defined. Time to create them.
+
     let ns = this.project.kubernetes.namespace
     let k = this.client
+    let pvcPromise = this.checkOrCreateCache()
+
     return new Promise((resolve, reject) => {
-      console.log("Creating secret " + this.secret.metadata.name)
-      k.createNamespacedSecret(ns, this.secret).then((result, newSec) => {
+      pvcPromise.then( () => {
+        console.log("Creating secret " + this.secret.metadata.name)
+        return k.createNamespacedSecret(ns, this.secret)
+      }).then((result) => {
         console.log("Creating pod " + this.runner.metadata.name)
         // Once namespace creation has been accepted, we create the pod.
-        k.createNamespacedPod(ns, this.runner).then((result, newPod) => {
+        return k.createNamespacedPod(ns, this.runner)
+      }).then((result) => {
           resolve(this)
-        }).catch(reason => reject(reason))
+      }).catch(reason => {
+        console.log(reason.body)
+        reject(reason)
+      })
+    })
+  }
 
-      }).catch(reason => reject(reason))
+  /**
+   * checkOrCreateCache handles creating the cache if necessary.
+   *
+   * If no cache is requested by the job, this is a no-op.
+   *
+   * Otherwise, this checks for a cache, and if not found, it creates one.
+   */
+  protected checkOrCreateCache(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      let ns = this.project.kubernetes.namespace
+      let k = this.client
+      if (!this.pvc) {
+        resolve("no cache requested")
+      }
+
+      let cname = this.cacheName()
+      console.log(`looking up ${ ns }/${ cname }`)
+      k.readNamespacedPersistentVolumeClaim(cname, ns).then( result => {
+        resolve("re-using existing cache")
+      }).catch( result => {
+        // TODO: check if cache exists.
+        console.log("Creating Job Cache PVC " + cname)
+        return k.createNamespacedPersistentVolumeClaim(ns, this.pvc).then((result, newPVC) => {
+          console.log("created cache")
+          resolve("created job cache")
+        })
+      }).catch( err => {
+        console.error(err.body)
+        reject(err)
+      })
     })
   }
 
@@ -258,6 +331,32 @@ export class JobRunner implements jobs.JobRunner {
     })
 
     return Promise.race([poll, timer])
+  }
+  /**
+   * cachePVC builds a persistent volume claim for storing a job's cache.
+   *
+   * A cache PVC persists between builds. So this is addressable as a Job on a Project.
+   */
+  protected cachePVC(labels: kubernetes.V1LabelSelector): kubernetes.V1PersistentVolumeClaim {
+    let s = new kubernetes.V1PersistentVolumeClaim()
+    s.metadata = new kubernetes.V1ObjectMeta()
+    s.metadata.name = this.cacheName()
+    s.metadata.labels = {
+      "heritage": "acid",
+      "acidJob": this.job.name,
+      "acidProject": this.project.id
+    }
+
+    s.spec = new kubernetes.V1PersistentVolumeClaimSpec()
+    s.spec.accessModes = ["ReadWriteMany"]
+
+    let res = new kubernetes.V1ResourceRequirements()
+    res.requests = { storage: this.job.cache.size }
+    s.spec.resources = res
+
+    s.spec.selector = labels
+
+    return s
   }
 }
 
@@ -348,6 +447,7 @@ function volumeMount(name: string, mountPath: string): kubernetes.V1VolumeMount 
   return v
 }
 
+
 export function b64enc(original: string): string {
   return Buffer.from(original).toString('base64')
 }
@@ -398,5 +498,3 @@ export function secretToProject(ns: string, secret: kubernetes.V1Secret): Projec
   }
   return p
 }
-
-
