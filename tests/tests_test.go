@@ -29,7 +29,7 @@ func TestFunctional(t *testing.T) {
 		t.Fatal(err)
 	}
 	requests := []*http.Request{
-		&http.Request{
+		{
 			Method: "POST",
 			URL:    &url.URL{Scheme: "http", Host: "localhost:7744", Path: "/events/github"},
 			Body:   githubPushFile,
@@ -38,7 +38,7 @@ func TestFunctional(t *testing.T) {
 				"X-Hub-Signature": []string{string(hubSignature)},
 			},
 		},
-		&http.Request{
+		{
 			Method: "POST",
 			URL:    &url.URL{Scheme: "http", Host: "localhost:7744", Path: "/events/dockerhub/deis/empty-testbed/033f10f0d16cf703710b59269a34b8f4ce8537cb"},
 			Body:   dockerhubFile,
