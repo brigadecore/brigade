@@ -22,25 +22,3 @@ Kubernetes-native. Here's what that means:
     Docker images.
 
 Acid is designed for teams. It is not a SaaS, nor does it require a legion of domain experts to configure and run it. Instead, it should be easy to install, configure, and maintain.
-
-## High-Level Flow
-
-This section provides an overview of how Acid processes requests.
-
-At a high level, Acid can handle different sorts of requests. To provide a simple example, here is a Github workflow:
-
-![Acid Webhook Flow](../Acid-webhook.png)
-
-Github hosts a number of projects. Our team has configured two Acid projects (`github.com/technosophos/example` and `github.com/helm/otherexample`). Likewise, Github has been configured to trigger an Acid build, via webhook, whenever a pull request is received.
-
-1. Event: Github sends a webhook to Acid. Acid authenticates the request.
-2. Load Config: Acid loads the configuration for the given Github repository. This configuration
-   may include credentials, special configuration directives, and settings or properties for the
-   build.
-3. Run: Acid fetches the Github repository, reads the `acid.js` file, and then executes it. In the
-  typical build scenario, this script will invoke one or more jobs (Kubernetes pods) that will build
-  and test the code.
-4. Notify: When the build is complete, Acid will notify Github over the Github status API. It will
-  send Github the state (success, failure, etc) along with a link where the user can fetch the logs
-
-The workflow above can be expressed as a series of events. When a Github project is configured to send webhooks to Acid, it will send one hook request per `push` event.
