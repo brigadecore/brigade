@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 
@@ -23,49 +24,70 @@ func (s *store) GetProject(id string) (*acid.Project, error) {
 	return s.loadProjectConfig(ProjectID(id))
 }
 
-// Get retrieves the project from storage.
+// Get creates a new project and writes it to storage.
 func (s *store) CreateBuild(build *acid.Build) error {
-	return s.createSecret(build)
-}
-
-func (s *store) createSecret(b *acid.Build) error {
-	shortCommit := b.Commit
+	shortCommit := build.Commit
 	if len(shortCommit) > 8 {
 		shortCommit = shortCommit[0:8]
 	}
 
-	if b.ID == "" {
-		b.ID = genID()
+	if build.ID == "" {
+		build.ID = genID()
 	}
 
-	buildName := fmt.Sprintf("acid-worker-%s-%s", b.ID, shortCommit)
+	buildName := fmt.Sprintf("acid-worker-%s-%s", build.ID, shortCommit)
 
 	secret := v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
 			Name: buildName,
 			Labels: map[string]string{
-				"build":     b.ID,
-				"commit":    b.Commit,
+				"build":     build.ID,
+				"commit":    build.Commit,
 				"component": "build",
 				"heritage":  "acid",
-				"project":   b.ProjectID,
+				"project":   build.ProjectID,
 			},
 		},
 		Data: map[string][]byte{
-			"script":  b.Script,
-			"payload": b.Payload,
+			"script":  build.Script,
+			"payload": build.Payload,
 		},
 		StringData: map[string]string{
-			"project_id":     b.ProjectID,
-			"event_type":     b.Type,
-			"event_provider": b.Provider,
-			"commit":         b.Commit,
+			"project_id":     build.ProjectID,
+			"event_type":     build.Type,
+			"event_provider": build.Provider,
+			"commit":         build.Commit,
 			"build_id":       buildName,
 		},
 	}
 
 	_, err := s.client.CoreV1().Secrets(s.namespace).Create(&secret)
 	return err
+}
+
+func (s *store) GetBuild(id string) (*acid.Build, error) {
+	build := &acid.Build{ID: id}
+
+	labels := labels.Set{"heritage": "acid", "component": "build", "build": build.ID}
+	listOption := meta.ListOptions{LabelSelector: labels.AsSelector().String()}
+	secrets, err := s.client.CoreV1().Secrets(s.namespace).List(listOption)
+	if err != nil {
+		return build, err
+	}
+	if len(secrets.Items) < 1 {
+		return nil, fmt.Errorf("could not find build %s: no secrets exist with labels %s", id, labels.AsSelector().String())
+	}
+	// select the first secret as the build IDs are unique
+	buildSecret := secrets.Items[0]
+
+	build.Commit = buildSecret.Labels["commit"]
+	build.ProjectID = buildSecret.Labels["project"]
+	build.Type = buildSecret.StringData["event_type"]
+	build.Provider = buildSecret.StringData["event_provider"]
+	build.Payload = buildSecret.Data["payload"]
+	build.Script = buildSecret.Data["script"]
+
+	return build, nil
 }
 
 // loadProjectConfig loads a project config from inside of Kubernetes.
