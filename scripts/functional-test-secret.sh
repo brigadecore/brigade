@@ -31,19 +31,19 @@ kind: Secret
 metadata:
   name: ${name}
   labels:
-    belongsto: github.com-deis-empty-testbed
-    commit: ${commit}
     heritage: acid
+    belongsto: ${project_id}
+    build: ${uuid}
+    commit: ${commit}
     jobname: ${name}
-    managedBy: acid
-    role: build
-    status: triggered
+    component: build
 type: Opaque
 data:
   commit: $(echo -n "${commit}" | base64)
   event_provider: $(echo -n "${event_provider}" | base64)
   event_type: $(echo -n "${event_type}" | base64)
   project_id: $(echo -n "${project_id}" | base64)
+  build_id: $(echo -n "${uuid}" | base64)
   payload: $(echo -n "${payload}" | base64)
   script: $(base64 < "${script}")
 EOF
