@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +21,7 @@ type store struct {
 	namespace string
 }
 
-// Get retrieves the project from storage.
+// GetProject retrieves the project from storage.
 func (s *store) GetProject(id string) (*acid.Project, error) {
 	return s.loadProjectConfig(ProjectID(id))
 }
@@ -72,22 +74,68 @@ func (s *store) GetBuild(id string) (*acid.Build, error) {
 	listOption := meta.ListOptions{LabelSelector: labels.AsSelector().String()}
 	secrets, err := s.client.CoreV1().Secrets(s.namespace).List(listOption)
 	if err != nil {
-		return build, err
+		return nil, err
 	}
 	if len(secrets.Items) < 1 {
 		return nil, fmt.Errorf("could not find build %s: no secrets exist with labels %s", id, labels.AsSelector().String())
 	}
 	// select the first secret as the build IDs are unique
-	buildSecret := secrets.Items[0]
+	return acid.NewBuildFromSecret(secrets.Items[0]), nil
+}
 
-	build.Commit = buildSecret.Labels["commit"]
-	build.ProjectID = buildSecret.Labels["project"]
-	build.Type = buildSecret.StringData["event_type"]
-	build.Provider = buildSecret.StringData["event_provider"]
-	build.Payload = buildSecret.Data["payload"]
-	build.Script = buildSecret.Data["script"]
+func (s *store) GetJob(id string) (*acid.Job, error) {
+	labels := labels.Set{"heritage": "acid"}
+	listOption := meta.ListOptions{LabelSelector: labels.AsSelector().String()}
+	pods, err := s.client.CoreV1().Pods(s.namespace).List(listOption)
+	if err != nil {
+		return nil, err
+	}
+	if len(pods.Items) < 1 {
+		return nil, fmt.Errorf("could not find job %s: no pod exists with label %s", id, labels.AsSelector().String())
+	}
+	for i := range pods.Items {
+		job := acid.NewJobFromPod(pods.Items[i])
+		if job.ID == id {
+			return job, nil
+		}
+	}
+	return nil, fmt.Errorf("could not find job %s: no pod exists with that ID and label %s", id, labels.AsSelector().String())
+}
 
-	return build, nil
+func (s *store) GetBuildJobs(build *acid.Build) ([]*acid.Job, error) {
+	// Load the pods that ran as part of this build.
+	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("heritage=acid,component=job,commit=%s,project=%s", build.Commit, build.ProjectID)}
+
+	podList, err := s.client.CoreV1().Pods(s.namespace).List(lo)
+	if err != nil {
+		return nil, err
+	}
+	jobList := make([]*acid.Job, len(podList.Items))
+	for i := range podList.Items {
+		jobList[i] = acid.NewJobFromPod(podList.Items[i])
+	}
+	return jobList, nil
+}
+
+func (s *store) GetJobLog(job *acid.Job) (string, error) {
+	buf := new(bytes.Buffer)
+	r, err := s.GetJobLogStream(job)
+	if err != nil {
+		return "", err
+	}
+	defer r.Close()
+	io.Copy(buf, r)
+	return buf.String(), nil
+}
+
+func (s *store) GetJobLogStream(job *acid.Job) (io.ReadCloser, error) {
+	req := s.client.CoreV1().Pods(s.namespace).GetLogs(job.ID, &v1.PodLogOptions{})
+
+	readCloser, err := req.Stream()
+	if err != nil {
+		return nil, err
+	}
+	return readCloser, nil
 }
 
 // loadProjectConfig loads a project config from inside of Kubernetes.
