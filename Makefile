@@ -89,7 +89,7 @@ test-functional-prepare:
 # JS test is local only
 .PHONY: test-js
 test-js:
-	docker run $(DOCKER_REGISTRY)/acid-worker:latest npm run test
+	cd acid-worker && yarn test
 
 .PHONY: test-style
 test-style:
