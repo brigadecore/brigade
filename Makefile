@@ -14,7 +14,7 @@ KUBECONFIG ?= ${HOME}/.kube/config
 
 .PHONY: build
 build:
-	go build -o bin/acid-gateway .
+	go build -o bin/acid-gateway ./acid-gateway/cmd/acid-gateway
 	go build -o bin/acid-controller ./acid-controller/cmd/acid-controller
 	go build -o bin/acid-api ./acid-api/cmd/acid-api
 	go build -o bin/vcs-sidecar ./vcs-sidecar/cmd/vcs-sidecar
@@ -23,7 +23,7 @@ build:
 # Cross-compile for Docker+Linux
 .PHONY: build-docker-bin
 build-docker-bin:
-	GOOS=linux GOARCH=amd64 go build -o rootfs/usr/bin/acid-gateway .
+	GOOS=linux GOARCH=amd64 go build -o rootfs/usr/bin/acid-gateway ./acid-gateway/cmd/acid-gateway
 	GOOS=linux GOARCH=amd64 go build -o ./acid-controller/rootfs/acid-controller ./acid-controller/cmd/acid-controller
 	GOOS=linux GOARCH=amd64 go build -o ./acid-api/rootfs/acid-api ./acid-api/cmd/acid-api
 	GOOS=linux GOARCH=amd64 go build -o ./vcs-sidecar/rootfs/vcs-sidecar ./vcs-sidecar/cmd/vcs-sidecar
@@ -38,7 +38,7 @@ run:
 .PHONY: docker-build
 docker-build: build-docker-bin
 docker-build:
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-gatway:latest .
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-gateway:latest .
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-controller:latest acid-controller
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-api:latest acid-api
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/vcs-sidecar:latest vcs-sidecar
@@ -62,7 +62,7 @@ test: test-js
 # Unit tests. Local only.
 .PHONY: test-unit
 test-unit:
-	go test -v . ./pkg/... ./acid-controller/...
+	go test -v ./pkg/... ./acid-controller/... ./acid-gateway/... ./acid-api/...
 
 # Functional tests assume access to github.com
 # To set this up in your local environment:
