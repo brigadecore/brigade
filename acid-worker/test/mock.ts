@@ -62,3 +62,12 @@ export class MockJob extends Job {
     })
   }
 }
+
+export class MockBuildStorage {
+  public create(id: string, project: Project, size?: string): Promise<string> {
+    return Promise.resolve(id)
+  }
+  public destroy(): Promise<boolean> {
+    return Promise.resolve(true)
+  }
+}

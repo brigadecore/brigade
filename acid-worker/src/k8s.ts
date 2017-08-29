@@ -27,6 +27,69 @@ class K8sResult implements jobs.Result {
 }
 
 /**
+ * BuildStorage manages per-build storage for a build.
+ *
+ * BuildStorage implements the app.BuildStorage interface.
+ *
+ * Storage is implemented as a PVC. The PVC backing it MUST be ReadWriteMany.
+ */
+export class BuildStorage {
+  proj: Project
+  name: string
+
+  /**
+   * create initializes a new PVC for storing data.
+   */
+  public create(buildID: string, project: Project, size: string): Promise<string> {
+    this.proj = project
+    this.name = buildID
+    let pvc = this.buildPVC(size)
+    console.log(`Creating PVC named ${ this.name }`)
+    return defaultClient.createNamespacedPersistentVolumeClaim(this.proj.kubernetes.namespace, pvc)
+      .then( () => {return this.name })
+  }
+  /**
+   * destroy deletes the PVC.
+   */
+  public destroy(): Promise<boolean> {
+    console.log("Destroying PVC named " + this.name)
+    let opts = new kubernetes.V1DeleteOptions()
+    return defaultClient.deleteNamespacedPersistentVolumeClaim(this.name, this.proj.kubernetes.namespace, opts)
+      .then( () => { return true })
+  }
+  /**
+   * Get a PVC for a volume that lives for the duration of a build.
+   */
+  protected buildPVC(size: string): kubernetes.V1PersistentVolumeClaim {
+    let s = new kubernetes.V1PersistentVolumeClaim()
+    s.metadata = new kubernetes.V1ObjectMeta()
+    s.metadata.name = this.name
+    s.metadata.labels = {
+      "heritage": "acid",
+      "component": "buildStorage",
+      "project": this.proj.id
+    }
+
+    s.spec = new kubernetes.V1PersistentVolumeClaimSpec()
+    s.spec.accessModes = ["ReadWriteMany"]
+
+    let res = new kubernetes.V1ResourceRequirements()
+    res.requests = { storage: size }
+    s.spec.resources = res
+
+    let labels = new kubernetes.V1LabelSelector()
+    labels.matchLabels = {
+      "heritage": "acid",
+      "purpose": "acid-storage",
+      "buildStorage": "enabled"
+    }
+    s.spec.selector = labels
+
+    return s
+  }
+}
+
+/**
  * loadProject takes a Secret name and namespace and loads the Project
  * from the secret.
  */
@@ -144,7 +207,7 @@ export class JobRunner implements jobs.JobRunner {
     }
 
     // If the job requests a cache, set up the cache.
-    if (job.cache.enable) {
+    if (job.cache.enabled) {
       let labelSelector = new kubernetes.V1LabelSelector()
       labelSelector.matchLabels = {
         "heritage": "acid",
@@ -161,8 +224,19 @@ export class JobRunner implements jobs.JobRunner {
       } as kubernetes.V1Volume )
       let mnt = volumeMount(mountName, job.cache.path)
       this.runner.spec.containers[0].volumeMounts.push(mnt)
-
     }
+
+    // If the job needs build-wide storage, enable it.
+    if (job.storage.enabled) {
+      const vname = "build-storage"
+      this.runner.spec.volumes.push({
+        name: vname,
+        persistentVolumeClaim: {claimName: e.buildID.toLowerCase()}
+      } as kubernetes.V1Volume )
+      let mnt = volumeMount(vname, job.storage.path)
+      this.runner.spec.containers[0].volumeMounts.push(mnt)
+    }
+
 
     let newCmd = generateScript(job)
     if (!newCmd) {
@@ -246,7 +320,7 @@ export class JobRunner implements jobs.JobRunner {
       }).catch( result => {
         // TODO: check if cache exists.
         console.log("Creating Job Cache PVC " + cname)
-        return k.createNamespacedPersistentVolumeClaim(ns, this.pvc).then((result, newPVC) => {
+        return k.createNamespacedPersistentVolumeClaim(ns,this.pvc).then((result, newPVC) => {
           console.log("created cache")
           resolve("created job cache")
         })
@@ -343,8 +417,9 @@ export class JobRunner implements jobs.JobRunner {
     s.metadata.name = this.cacheName()
     s.metadata.labels = {
       "heritage": "acid",
-      "acidJob": this.job.name,
-      "acidProject": this.project.id
+      "component": "jobCache",
+      "job": this.job.name,
+      "project": this.project.id
     }
 
     s.spec = new kubernetes.V1PersistentVolumeClaimSpec()
@@ -358,6 +433,7 @@ export class JobRunner implements jobs.JobRunner {
 
     return s
   }
+
 }
 
 function sidecarSpec(e: AcidEvent, local: string, image: string, project: Project, secName: string): kubernetes.V1Container {

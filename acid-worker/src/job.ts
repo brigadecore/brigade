@@ -22,6 +22,9 @@ const defaultTimeout: number = 1000 * 60 * 15
  */
 const acidImage: string = 'debian:jessie-slim'
 
+export const acidCachePath = '/acid/cache'
+export const acidStoragePath = '/acid/share'
+
 /**
  * JobRunner is capable of executing a job within a runtime.
  */
@@ -54,9 +57,9 @@ export interface Result {
  */
 export class JobCache {
   /**
-   * If enable=true, a storage cache will be attached.
+   * If enabled=true, a storage cache will be attached.
    */
-  public enable: boolean = false
+  public enabled: boolean = false
   /**
    * size is the amount of storage space assigned to the cache. The default is
    * 5Mi.
@@ -66,7 +69,18 @@ export class JobCache {
 
   // future-proof Cache.path. For now we will hard-code it, but make it so that
   // we can modify in the future.
-  private _path: string = "/cache"
+  private _path: string = acidCachePath
+  public get path(): string { return this._path }
+}
+
+/**
+ * JobStorage configures build-wide storage preferences for this job.
+ *
+ * Changes to this object only impact the job, not the entire build.
+ */
+export class JobStorage {
+  public enabled: boolean = true
+  private _path: string = acidStoragePath
   public get path(): string { return this._path }
 }
 
@@ -101,7 +115,14 @@ export abstract class Job {
    */
   public privileged: boolean = false
 
+  /**
+   * cache controls per-Job caching preferences.
+   */
   public cache: JobCache
+  /**
+   * storage controls this job's preferences on the build-wide storage.
+   */
+  public storage: JobStorage
 
   /** _podName is set by the runtime. It is the name of the pod.*/
   protected _podName: string
@@ -122,6 +143,7 @@ export abstract class Job {
     this.tasks = tasks || []
     this.env = {}
     this.cache = new JobCache()
+    this.storage = new JobStorage()
   }
 
   /** run executes the job and then */

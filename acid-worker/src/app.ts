@@ -8,22 +8,16 @@ import * as process from "process"
 import * as k8s from "./k8s"
 import * as libacid from './libacid'
 
+interface BuildStorage {
+  create(buildID: string, project: events.Project, size?: string): Promise<string>
+  destroy(): Promise<boolean>
+}
+
 /**
  * ProjectLoader describes a function able to load a Project.
  */
 interface ProjectLoader {
   (projectID: string, projectNS: string): Promise<events.Project>
-}
-
-let loadProject: ProjectLoader = k8s.loadProject
-
-/**
- * setLoader sets an alternate project loader.
- *
- * The default loader is the Kubernetes loader.
- */
-export function setLoader(pl: ProjectLoader) {
-  loadProject = pl
 }
 
 /**
@@ -50,7 +44,18 @@ export class App {
   // it is overwritten by an actual project.
   protected proj: events.Project = new events.Project()
 
+  // true if the "after" event has fired.
   protected afterHasFired: boolean = false
+
+  /**
+   * loadProject is a function that loads projects.
+   */
+  public loadProject: ProjectLoader = k8s.loadProject
+  /**
+   * buildStorage controls the per-build storage layer.
+   */
+  public buildStorage: BuildStorage = new k8s.BuildStorage()
+
 
   /**
    * Create a new App.
@@ -69,9 +74,23 @@ export class App {
 
     // Run if an uncaught rejection happens.
     process.on("unhandledRejection", (reason: any, p: Promise<any>) => {
-      console.log(`FATAL: ${ reason } (rejection)`)
+      var msg = reason
+      // Kubernetes objects put error messages here:
+      if (reason.body && reason.body.message) {
+        msg = reason.body.message
+      }
+      console.log(`FATAL: ${ msg } (rejection)`)
       this.fireError(reason, "unhandledRejection")
       this.exitOnError && process.exit(3)
+      this.buildStorage.destroy().then( (destroyed) => {
+        if (!destroyed) {
+          console.log(`storage not destroyed for ${ this.proj.name }`)
+        }
+        this.exitOnError && process.exit(3)
+      }).catch( (reason) => {
+        console.log(`error prevented storage cleanup for ${ this.proj.name }: ${ reason }`)
+        this.exitOnError && process.exit(3)
+      })
     })
 
     // Run at the end.
@@ -92,6 +111,11 @@ export class App {
         } as events.Cause
       }
       libacid.fire(after, this.proj)
+      // Teardown storage.
+      // Note that there is no guarantee here that the storage will be available
+      // inside of the "after" event handler. Because "after" is async, the storage
+      // can be torn down before the "after" handlers are executed.
+      this.buildStorage.destroy()
     })
 
     // TODO: fire() should also return a promise, and that promise's result
@@ -100,17 +124,31 @@ export class App {
       // This traps unhandled 'throw' calls, and is considered safer than
       // process.on("unhandledException"). In most cases, the unhandledRejection
       // handler will trigger before this does.
+      // TODO: Can we remove the try/catch block?
       try {
         // Load the project, then fire the event, then fire the "after" event.
-        loadProject(this.projectID, this.projectNS).then( p => {
+        this.loadProject(this.projectID, this.projectNS).then (p => {
           this.proj = p
-          libacid.fire(e, p)
-        })
+          // Setup storage
+          return this.buildStorage.create(e.buildID.toLowerCase(), p, "50Mi")
+        }).then( () => {
+          libacid.fire(e, this.proj)
+        }) // We want the missing catch() to trigger the main rejection handler.
       } catch (e) {
         console.log(`FATAL: ${ e } (exception)`)
         this.fireError(e, "uncaughtException")
-        this.exitOnError && process.exit(3)
-        reject(false)
+
+        this.buildStorage.destroy().then( (destroyed) => {
+          if (!destroyed) {
+            console.log(`storage not destroyed for ${ this.proj.name }`)
+          }
+          this.exitOnError && process.exit(3)
+          reject(false)
+        }).catch( (reason) => {
+          console.log(`error prevented storage cleanup for ${ this.proj.name }: ${ reason }`)
+          this.exitOnError && process.exit(3)
+          reject(false)
+        })
       }
       resolve(true)
     })
