@@ -83,19 +83,22 @@ The above shows other examples of event emitters that Acid could listen for:
 
 In all cases, the watchers _trigger events_, and Acid determines what to do based on the `acid.js` configuration. To that end, it may be useful to think of Acid as an event watching system or an implementation of a observer pattern.
 
-## The Server
+## Details: The Servers
 
-The Acid server is a _webhook provider_. It listens for webhook requests on port _7744_ (default), and executes scripts as a response.
+Acid has three in-cluster components:
 
-This section describes how the server responds to a GitHub pull request or push operation.
+- `acid-gateway` listens to external events (GitHub webhooks, DockerHub webhooks, etc) and converts them to Kubernetes resources.
+- `acid-controller` is a Kubernetes Controller that watches for certain resources, and starts new builds
+- `acid-worker` runs one (and only one) build. Controllers start new workers, which live for the duration of the build.
 
-![Acid CI run](img/acid-ci.png)
+This section describes how the servers responds to a GitHub pull request or push operation.
 
-When a Webhook `push` event is triggered, Acid will do the following:
+![Acid CI run](img/webhooks.png)
+
+When a Webhook `push` event is triggered, the Acid gateway will do the following:
 
 - Load the data provided by the webhook
 - Load the project configuration.
-  - A configuration is stored in a Kubernetes secret.
   - A configuration has the following:
     - A project name
     - The GitHub URL
@@ -114,6 +117,17 @@ When a Webhook `push` event is triggered, Acid will do the following:
 - Find and load the acid.js file
   - acid.js must be at the repository root
   - if no file is found, Acid returns an error
+- Generate a build ID
+- Store the information in a new Secret
+
+At this point, the Acid controller will observe the new secret, and it will:
+
+- Load the secret
+- Perform some consistency checks
+- Start a new Acid worker
+
+The new Acid worker is responsible for executing the acid.js file:
+
 - Prepare the JavaScript runtime (sandboxed; one per request; never re-used)
 - Run the acid.js file
   - For each Acid `Job`, create a config map and a pod.
@@ -125,7 +139,13 @@ When a Webhook `push` event is triggered, Acid will do the following:
   - On error, report a failure and provide a URL for more info
   - On success, report success
 
-This is the basic operation of the Acid webhook server.
+This is the basic operation of Acid for GitHub webhooks.
+
+It's important to note that new webhook types can be added simply by creating a new
+gateway for your particular webhook mechanism. While many of the services Acid works
+with provide webhook APIs, there is no reason why one could not, for example,
+implement a gateway that accepted email messages or chat messages and sent a new
+request to the controller.
 
 ### Project Configuration
 
@@ -134,10 +154,6 @@ In Acid, each _project_ has a Kubernetes Secret that stores information about th
 The outline of how this project is linked to GitHub is explained above. But that same project could be hooked up to other services. For example, to replicate the older idea of a "nightly build," an in-cluster cron service might trigger a build on a project.
 
 _ALTERNATE DESIGN_: We could eliminate the idea of per-project configuration and instead only have a per-server configuration. In this case, credentials would be shared across multiple GitHub projects (as is the case with CircleCI and TravisCI). However, this might make it harder to retain per-project configurations.
-
-## Acid IC (Integration Containers)
-
-An acid.js file may specify which Docker image to run as part of a build step. These images should have a specific set of traits that mark them as integration containers. Primarily, they must execute the instructions passed by the Acid server.
 
 ## JavaScript and acid.js
 
@@ -154,26 +170,13 @@ The traditional Acid.js JavaScript implements one or more _event handlers_.
 
 ```javascript
 // This handles a Push webhook.
-events..push = function(e) {
+events.on("push",  function(acidEvent, project) {
   // Do some stuff
 }
-// This handles the daily cron run
-events.cron.daily = function(e) {
-  // Respond to the nightly build hook
-}
+events.on("pull_request", function (e, p) {
+  // Do something else
+})
 ```
 
 When the Acid server receives an event, it will fire the corresponding hook in
 the `acid.js` file.
-
-## Kubernetes Objects
-
-Acid defines itself in terms of the following Kubernetes objects:
-
-The Acid server runs (preferably) as a **Deployment** inside of Kubernetes.
-
-Projects map GitHub projects to Acid build tasks. These are stored inside of Kubernetes **secrets** since they contain sensitive information.
-
-When a Job object is created in acid.js, this translates to a **pod** and a **configmap**. The pod is configured to run exactly once. It mounts the configmap as a volume. Optionally, an acid.js author may expose some of the items in the project's secret to the pod. These are supplied as environment variables.
-
-
