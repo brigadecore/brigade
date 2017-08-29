@@ -22,8 +22,8 @@ const defaultTimeout: number = 1000 * 60 * 15
  */
 const acidImage: string = 'debian:jessie-slim'
 
-export const acidCachePath = '/acid/cache'
-export const acidStoragePath = '/acid/share'
+export const acidCachePath = '/mnt/acid/cache'
+export const acidStoragePath = '/mnt/acid/share'
 
 /**
  * JobRunner is capable of executing a job within a runtime.
