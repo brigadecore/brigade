@@ -151,7 +151,6 @@ describe("k8s", function() {
           let storageName = "build-storage"
           let foundStorage = false
           for (let v of jr.runner.spec.containers[0].volumeMounts) {
-            console.log(v)
             if (v.name == cname) {
               foundCache = true
               assert.equal(v.mountPath, acidCachePath)
