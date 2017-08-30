@@ -2,63 +2,30 @@
 
 [![Build Status](http://acid.technosophos.me:7744/log/deis/acid/status.svg)](http://13.85.22.205:7744/log/deis/acid/id/master)
 
-Acid is designed to give you the ease of use of a hosted CI/CD solution, but
-running on your own Kubernetes cluster. And it's flexibile enough to accomodate
-sophisticated multi-step builds.
+Acid is a tool for running scriptable autmated tasks in the cloud. It is ideally
+suited for CI/CD workloads. Acid runs as part of a Kubernetes cluster.
 
-Here's how it works:
+For example, Acid can be used to run CI tasks on a GitHub repository:
 
 - Install Acid into your Kubernetes cluster (if you haven't already)
-- You define an `acid.js` file in the root of your GitHub repository.
+- Define an `acid.js` file in the root of your GitHub repository.
 - Add a GitHub hook pointing to your Acid server
 - On each push event (including tagging), Acid runs your `acid.js` file.
 
-## Acid :heart: JavaScript
+## The Acid Technology Stack
 
-> No More YAML!
-> No More JSON!
-> Give us a real scripting language!
+- Acid :heart: JavaScript: Writing Acid pipelines is as easy as writing a few lines of JavaScript.
+- Acid :heart: Kubernetes: Acid is Kubernetes-native. Your builds are translated into
+  pods, secrets, and services
+- Acid :heart: Docker: No need for special plugins or elaborate extensions. Acid uses
+  off-the-shelf Docker images to run your jobs. And Acid also supports DockerHub
+  webhooks.
+- Acid :heart: GitHub: Acid comes with built-in support for GitHub, DockerHub, and
+  other popular web services. And it can be easily extended to support your own
+  services.
 
-Acid runs each build in an isolated JavaScript runtime. With simple primitives like
-`jobs` and `tasks`, you can organize your Acid scripts to do what you want. Define
-however many stages, jobs, and tasks you want.
 
-A simple `acid.js` file looks like this:
-
-```javascript
-
-// Acid lets you respond to different Github events:
-events.push = function(e) {
-  // Define a build step:
-  j = new Job("run-unit-tests");
-
-  // Use a custom image (this is actually the default)
-  j.image = "acid-ubuntu:latest";
-
-  // Define a couple of tasks:
-  j.tasks = [
-    "echo 'running tests'",
-    "make test"
-  ];
-
-  // Run the build:
-  j.run()
-}
-```
-
-The above creates a new job named `run-unit-tests`. It starts with the AcidIC
-image `acid-ubuntu:latest` (the default image). And then it runs two tasks:
-
-- `echo 'running tests'` to print a log message
-- `make test` to run the project's `Makefile test` target.
-
-Check your `acid.js` file into the root of your project's repository.
-
-## Acid :heart: Kubernetes
-
-Acid is Kubernetes-native. Your Acid jobs are translated into one or more Kubernetes
-pods, configmaps, and secrets. Acid launches these resources into Kubernetes and
-then monitors them for status changes.
+## Quickstart
 
 The easiest way to get started with Acid is to install it using Helm:
 
@@ -67,7 +34,9 @@ $ helm repo add acid https://deis.github.io/acid
 $ helm install acid/acid
 ```
 
-To create new products, use the `acid-project` Helm chart:
+You will now have Acid installed.
+
+To create new projects, use the `acid-project` Helm chart:
 
 ```console
 $ helm fetch acid/acid-project
@@ -76,37 +45,18 @@ $ # edit myvalues.yaml
 $ helm install acid-project-*.tgz -f myvalues.yaml
 ```
 
-_Make sure you change the `secret`_. You will use that secret when setting up GitHub
-hooks.
+And creating your first `acid.js` is as easy as this:
 
-## Acid :heart: GitHub
+```javascript
+const { events } = require('libacid')
 
-To add Acid support to your GitHub project, set up an acid server, and then in
-your GitHub project:
-
-- Go to "Settings"
-- Click "Webhooks"
-- Click the "Add webhook" button
-- For "Payload URL", add the URL: "http://YOUR_HOSTNAME:7744/events/github"
-- For "Content type", choose "application/json"
-- For "Secret", use the secret you configured in your Helm config.
-- Choose "Just the push event"
-
-## Acid :heart: Docker
-
-Acid runs your builds inside of Docker containers. We created some basic IC
-(integration container) images for you. But it's really easy to create your own.
-A basic Ruby AcidID `Dockerfile` might look like this:
-
-```Dockerfile
-FROM ruby:2.1
-
-COPY rootfs/hook.sh /hook.sh
-CMD /hook.sh
+events.on("push", (acidEvent, project) => {
+  console.log("Hello world!")
+})
 ```
 
-(We provide a nice little `hook.sh` script to bootstrap your environment, but you
-can definitely create your own).
+But don't be fooled by its simplicty. Acid can be used to create complex distributed
+pipelines. Check out [the tutorial](/docs/intro/) for more.
 
 ## Acid :heart: Developers
 
