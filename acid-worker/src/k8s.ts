@@ -572,5 +572,8 @@ export function secretToProject(ns: string, secret: kubernetes.V1Secret): Projec
   if (secret.data.secrets) {
     p.secrets = JSON.parse(b64dec(secret.data.secrets))
   }
+  if (secret.data.sshKey) {
+    p.repo.sshKey = b64dec(secret.data.sshKey)
+  }
   return p
 }

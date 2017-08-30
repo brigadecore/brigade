@@ -2,9 +2,9 @@
 // NOTE: This is the actual acid.js file for testing the Acid project.
 // Be careful when editing!
 // ============================================================================
-/* global Job WaitGroup events */
+const { events, Job, Group} = require("libacid")
 
-function build(e) {
+function build(e, project) {
   // This is a Go project, so we want to set it up for Go.
   var gopath = "/go"
 
@@ -13,11 +13,8 @@ function build(e) {
   var localPath = gopath + "/src/github.com/" + project.repo.name;
 
 
-  // Create a new job
-  var goBuild = new Job("acid-test");
-
-  // Since this is Go, we want a go runner.
-  goBuild.image = "golang:1.8";
+  // Create a new job to run Go tests
+  var goBuild = new Job("acid-test", "golang:1.8");
 
   // Set a few environment variables.
   goBuild.env = {
@@ -25,12 +22,9 @@ function build(e) {
       "GOPATH": gopath
   };
 
-  // Run three tasks in order.
+  // Run Go unit tests
   goBuild.tasks = [
-    "date",
-    "echo Begin test-unit",
     "go get github.com/Masterminds/glide",
-    "go get github.com/jteeuwen/go-bindata/...",
     // Need to move the source into GOPATH so vendor/ works as desired.
     "mkdir -p " + localPath,
     "mv /src/* " + localPath,
@@ -39,27 +33,17 @@ function build(e) {
     "make test-unit"
   ];
 
-  var jsLint = new Job("acid-js-build");
-
-  jsLint.image = "technosophos/acid-node:latest";
-  jsLint.tasks = [
-    "date",
-    "echo Begin test-js",
-    "cd /src",
-    "npm install -g --quiet eslint",
-    "make test-js"
+  // Run the acid worker tests
+  var jsTest = new Job("acid-js-build", "node:8");
+  jsTest.tasks = [
+    "cd /src/acid-worker",
+    "yarn install",
+    "yarn test"
   ];
 
-  // Run both jobs in parallel, and wait for then both to finish.
-  var waiter = new WaitGroup()
-
-  waiter.add(jsLint)
-  waiter.add(goBuild)
-  waiter.run()
+  // Run in parallel
+  Group.runAll([jsTest, goBuild])
 }
 
-// Handle Push
-events.push = build
-
-// Handle Pull Request
-events.pullRequest = build
+events.on("push", build)
+events.on("pull_request", build)
