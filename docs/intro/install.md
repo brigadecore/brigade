@@ -25,3 +25,30 @@ maudlin-quokka-acid   10.0.110.59   135.15.52.20   7744:31558/TCP   45d
 The `EXTERNAL-IP` field is the IP address that external services, such as Github, will use to trigger actions.
 
 Note that this is just one way of configuring Acid to receive inbound connections. Acid itself does not care how traffic is routed to it. Those with operational knowledge of Kubernetes may wish to use another method of ingress routing.
+
+## Notes for Minikube
+
+You can run Acid on [Minikube](https://github.com/kubernetes/minikube) for easy testing
+and development. Minikube provides built-in support for caching and sharing files during
+builds. However, there are a few things that are much harder to do when running locally:
+
+- Listening for GitHub webhooks requires you to route inbound traffic from the internet
+  to your Minikube cluster. We do not recommend doing this unless you really understand
+  what you are doing.
+- Other inbound services may also be limited by the same restriction.
+
+## Notes for Azure Container Services (ACS)
+
+Acid is well-tested on ACS Kubernetes. We recommend using at least Kubernetes 1.6.
+
+- It is recommended to use a Service with type LoadBalanacer on ACS, which will generate
+  an Azure load balancer for you.
+- For caching and storage, we recommend creating an Azure Storage instance and
+  creating a Persistent Volume and Storage Class that use the `AzureFile` driver.
+- You can use Azure Container Registry for private images, provided that you
+  add the ACR instance to the same Resource Group that ACS belongs to.
+- ACR's webhooks can be used to trigger events, as they follow the DockerHub
+  webhook format.
+- When configuring webhooks, it is recommended that you map a domain (via Azure's
+  DNS service or another DNS service) to your Load Balancer IP. GitHub and other
+  webhook services seem to work better with DNS names than with IP addresses.
