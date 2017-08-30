@@ -8,6 +8,7 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
 
 - [Acid Design](design.md)
 - [Acid Developers Guide](developers.md)
+- [GitHub Integration](github.md)
 - [About the Acid JavaScript engine](javascript.md)
 
 
