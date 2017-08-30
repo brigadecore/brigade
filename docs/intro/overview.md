@@ -4,7 +4,7 @@ Acid is a serverless continuous integration (CI) and continuous delivery platfor
 Kubernetes-native. Here's what that means:
 
 - Acid is for running scriptable automated tasks in the cloud.
-- Acid does not require you to manager host servers.
+- Acid does not require you to manage host servers.
 - Acid is particularly well suited for CI and CD workloads such as:
   - Automated testing
   - Github hook integration
