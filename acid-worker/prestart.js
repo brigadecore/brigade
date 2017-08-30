@@ -5,9 +5,9 @@ const script = process.env.ACID_SCRIPT || "/etc/acid/script"
 
 try {
   var data = fs.readFileSync(script, 'utf8')
-  let wrapper = "const la = require(\"./libacid\");((events, Job, Group, require) => {" +
+  let wrapper = "const {whitelistRequire} = require('./require');((require) => {" +
     data.toString() +
-    "})(la.events, la.Job, la.Group, () => { throw 'require is disabled' })"
+    "})(whitelistRequire)"
   fs.writeFile("dist/src/acid.js", wrapper, () => {
     console.log("prestart: src/acid.js written")
   })
