@@ -72,6 +72,45 @@ export class App {
   public run(e: events.AcidEvent): Promise<boolean> {
     this.lastEvent = e
 
+
+    // This closure destroys storage for us. It is called by event handlers.
+    let destroyStorage = () => {
+      // Since we catch a destroy error, the outer wrapper will
+      // not get that error. Essentially, we swallow the error to prevent
+      // cleanup from exiting > 0.
+      return this.buildStorage.destroy().then( destroyed => {
+        if (!destroyed) {
+          console.log(`storage not destroyed for ${ e.buildID }`)
+        }
+      }).catch(reason => {
+        var msg = reason
+        // Kubernetes objects put error messages here:
+        if (reason.body && reason.body.message) {
+          msg = reason.body.message
+        }
+        console.log(`failed to destroy storage for ${ e.buildID }: ${ msg }`)
+      })
+    }
+
+    // Register a callback for events that don't trap an error.
+    //
+    // We want this error handler to be registered after the main acid.js is
+    // loaded, since events execute in order. But asynchronous actions in
+    // the acid.js event handler may result in the storage being removed
+    // before the "error" event code is completely run. For that reason,
+    // we advise developers to not count on the presence of /mnt/acid/share in
+    // their error handling code.
+    libacid.events.once("error", () => {
+      console.log(`error handler is cleaning up build storage for ${ e.buildID }`)
+      destroyStorage().then(() => {
+        this.exitOnError && process.exit(1)
+      })
+    })
+    libacid.events.once("after", () => {
+      console.log(`after handler is cleaning up build storage for ${ e.buildID }`)
+      destroyStorage()
+    })
+
     // Run if an uncaught rejection happens.
     process.on("unhandledRejection", (reason: any, p: Promise<any>) => {
       var msg = reason
@@ -81,16 +120,6 @@ export class App {
       }
       console.log(`FATAL: ${ msg } (rejection)`)
       this.fireError(reason, "unhandledRejection")
-      this.exitOnError && process.exit(3)
-      this.buildStorage.destroy().then( (destroyed) => {
-        if (!destroyed) {
-          console.log(`storage not destroyed for ${ this.proj.name }`)
-        }
-        this.exitOnError && process.exit(3)
-      }).catch( (reason) => {
-        console.log(`error prevented storage cleanup for ${ this.proj.name }: ${ reason }`)
-        this.exitOnError && process.exit(3)
-      })
     })
 
     // Run at the end.
@@ -111,47 +140,18 @@ export class App {
         } as events.Cause
       }
       libacid.fire(after, this.proj)
-      // Teardown storage.
-      // Note that there is no guarantee here that the storage will be available
-      // inside of the "after" event handler. Because "after" is async, the storage
-      // can be torn down before the "after" handlers are executed.
-      this.buildStorage.destroy()
     })
 
-    // TODO: fire() should also return a promise, and that promise's result
-    // should be bubbled up.
-    return new Promise( (resolve, reject) => {
-      // This traps unhandled 'throw' calls, and is considered safer than
-      // process.on("unhandledException"). In most cases, the unhandledRejection
-      // handler will trigger before this does.
-      // TODO: Can we remove the try/catch block?
-      try {
-        // Load the project, then fire the event, then fire the "after" event.
-        this.loadProject(this.projectID, this.projectNS).then (p => {
-          this.proj = p
-          // Setup storage
-          return this.buildStorage.create(e.buildID.toLowerCase(), p, "50Mi")
-        }).then( () => {
-          libacid.fire(e, this.proj)
-        }) // We want the missing catch() to trigger the main rejection handler.
-      } catch (e) {
-        console.log(`FATAL: ${ e } (exception)`)
-        this.fireError(e, "uncaughtException")
-
-        this.buildStorage.destroy().then( (destroyed) => {
-          if (!destroyed) {
-            console.log(`storage not destroyed for ${ this.proj.name }`)
-          }
-          this.exitOnError && process.exit(3)
-          reject(false)
-        }).catch( (reason) => {
-          console.log(`error prevented storage cleanup for ${ this.proj.name }: ${ reason }`)
-          this.exitOnError && process.exit(3)
-          reject(false)
-        })
-      }
-      resolve(true)
-    })
+    // Now that we have all the handlers registered, load the project and
+    // execute the event.
+    return this.loadProject(this.projectID, this.projectNS).then (p => {
+      this.proj = p
+      // Setup storage
+      return this.buildStorage.create(e.buildID.toLowerCase(), p, "50Mi")
+    }).then( () => {
+      libacid.fire(e, this.proj)
+      return true
+    }) // We want to trigger the main rejection handler, so we do not catch().
   }
 
   /**
