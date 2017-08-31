@@ -48,6 +48,9 @@ func main() {
 		rest.Use(gin.Logger())
 		rest.GET("/project/:id", api.Project(storage))
 		rest.GET("/build/:id", api.Build(storage))
+		rest.GET("/build/:id/jobs", api.BuildJobs(storage))
+		rest.GET("/job/:id", api.Job(storage))
+		rest.GET("/job/:id/logs", api.JobLogs(storage))
 	}
 
 	router.GET("/healthz", api.Healthz)

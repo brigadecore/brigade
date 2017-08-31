@@ -3,6 +3,7 @@ package storage
 import (
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"math/rand"
 	"strings"
 	"time"
@@ -21,6 +22,14 @@ type Store interface {
 	GetBuild(id string) (*acid.Build, error)
 	// CreateBuild creates a new job for the work queue.
 	CreateBuild(build *acid.Build) error
+	// GetBuildJobs retrieves all build jobs (pods) from storage.
+	GetBuildJobs(build *acid.Build) ([]*acid.Job, error)
+	// GetJob retrieves the job from storage.
+	GetJob(id string) (*acid.Job, error)
+	// GetJobLog retrieves all logs for a job from storage.
+	GetJobLog(job *acid.Job) (string, error)
+	// GetJobLogStream retrieve a stream of all logs for a job from storage.
+	GetJobLogStream(job *acid.Job) (io.ReadCloser, error)
 }
 
 // New initializes a new storage backend.
