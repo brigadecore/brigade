@@ -46,7 +46,9 @@ func main() {
 	rest := router.Group("/v1")
 	{
 		rest.Use(gin.Logger())
+		rest.GET("/projects", api.Projects(storage))
 		rest.GET("/project/:id", api.Project(storage))
+		rest.GET("/project/:id/builds", api.ProjectBuilds(storage))
 		rest.GET("/build/:id", api.Build(storage))
 		rest.GET("/build/:id/jobs", api.BuildJobs(storage))
 		rest.GET("/job/:id", api.Job(storage))

@@ -16,8 +16,12 @@ import (
 
 // Store represents a storage engine for a Project.
 type Store interface {
+	// GetProjects retrieves all projects from storage.
+	GetProjects() ([]*acid.Project, error)
 	// GetProject retrieves the project from storage.
 	GetProject(id string) (*acid.Project, error)
+	// GetProjectBuilds retrieves the project's builds from storage.
+	GetProjectBuilds(proj *acid.Project) ([]*acid.Build, error)
 	// GetBuild retrieves the build from storage.
 	GetBuild(id string) (*acid.Build, error)
 	// CreateBuild creates a new job for the work queue.

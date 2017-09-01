@@ -9,6 +9,18 @@ import (
 	"github.com/deis/acid/pkg/storage"
 )
 
+// Projects creates a new gin handler for the GET /projects endpoint
+func Projects(storage storage.Store) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		projects, err := storage.GetProjects()
+		if err != nil {
+			c.JSON(http.StatusNotFound, struct{}{})
+			return
+		}
+		c.JSON(http.StatusOK, projects)
+	}
+}
+
 // Project creates a new gin handler for the GET /project/:id endpoint
 func Project(storage storage.Store) func(c *gin.Context) {
 	return func(c *gin.Context) {
@@ -19,6 +31,24 @@ func Project(storage storage.Store) func(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusOK, proj)
+	}
+}
+
+// ProjectBuilds creates a new gin handler for the GET /project/:id/builds endpoint
+func ProjectBuilds(storage storage.Store) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		id := c.Params.ByName("id")
+		proj, err := storage.GetProject(id)
+		if err != nil {
+			c.JSON(http.StatusNotFound, struct{}{})
+			return
+		}
+		builds, err := storage.GetProjectBuilds(proj)
+		if err != nil {
+			c.JSON(http.StatusNotFound, struct{}{})
+			return
+		}
+		c.JSON(http.StatusOK, builds)
 	}
 }
 
