@@ -20,6 +20,7 @@ func TestNewJobFromPod(t *testing.T) {
 			Labels: map[string]string{
 				"jobname": "testpod",
 			},
+			CreationTimestamp: podStartTime,
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
@@ -44,13 +45,14 @@ func TestNewJobFromPod(t *testing.T) {
 		},
 	}
 	expectedJob := &Job{
-		ID:        "testpod-abc123",
-		Name:      "testpod",
-		Image:     "foo",
-		StartTime: now,
-		EndTime:   later,
-		ExitCode:  0,
-		Status:    JobSucceeded,
+		ID:           "testpod-abc123",
+		Name:         "testpod",
+		Image:        "foo",
+		CreationTime: now,
+		StartTime:    now,
+		EndTime:      later,
+		ExitCode:     0,
+		Status:       JobSucceeded,
 	}
 
 	job := NewJobFromPod(pod)

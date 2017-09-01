@@ -35,6 +35,9 @@ type Job struct {
 	Name string `json:"name"`
 	// Image is the execution environment running the job
 	Image string `json:"image"`
+	// CreationTime is a timestamp representing the server time when this object was
+	// created. It is not guaranteed to be set in happens-before order across separate operations.
+	CreationTime time.Time `json:"creation_time"`
 	// StartTime is the time the job started.
 	StartTime time.Time `json:"start_time"`
 	// EndTime is the time the job completed. This may not be present
@@ -50,11 +53,12 @@ type Job struct {
 // NewJobFromPod parses the pod object metadata and deserializes it into a Job.
 func NewJobFromPod(pod v1.Pod) *Job {
 	job := &Job{
-		ID:        pod.ObjectMeta.Name,
-		Name:      pod.ObjectMeta.Labels["jobname"],
-		Image:     pod.Spec.Containers[0].Image,
-		StartTime: pod.Status.StartTime.Time,
-		Status:    JobStatus(pod.Status.Phase),
+		ID:           pod.ObjectMeta.Name,
+		Name:         pod.ObjectMeta.Labels["jobname"],
+		CreationTime: pod.ObjectMeta.CreationTimestamp.Time,
+		Image:        pod.Spec.Containers[0].Image,
+		StartTime:    pod.Status.StartTime.Time,
+		Status:       JobStatus(pod.Status.Phase),
 	}
 
 	if pod.Status.ContainerStatuses[0].State.Terminated != nil {
