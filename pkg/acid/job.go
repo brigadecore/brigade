@@ -57,13 +57,18 @@ func NewJobFromPod(pod v1.Pod) *Job {
 		Name:         pod.ObjectMeta.Labels["jobname"],
 		CreationTime: pod.ObjectMeta.CreationTimestamp.Time,
 		Image:        pod.Spec.Containers[0].Image,
-		StartTime:    pod.Status.StartTime.Time,
 		Status:       JobStatus(pod.Status.Phase),
 	}
 
-	if pod.Status.ContainerStatuses[0].State.Terminated != nil {
-		job.EndTime = pod.Status.ContainerStatuses[0].State.Terminated.FinishedAt.Time
-		job.ExitCode = pod.Status.ContainerStatuses[0].State.Terminated.ExitCode
+	if (job.Status != JobPending) && (job.Status != JobUnknown) {
+		job.StartTime = pod.Status.StartTime.Time
+	}
+
+	if len(pod.Status.ContainerStatuses) > 0 {
+		if pod.Status.ContainerStatuses[0].State.Terminated != nil {
+			job.EndTime = pod.Status.ContainerStatuses[0].State.Terminated.FinishedAt.Time
+			job.ExitCode = pod.Status.ContainerStatuses[0].State.Terminated.ExitCode
+		}
 	}
 
 	return job
