@@ -5,7 +5,7 @@ DOCKER_REGISTRY ?= acidic.azurecr.io
 DOCKER_BUILD_FLAGS :=
 
 # Test Repo is https://github.com/deis/empty-testbed
-TEST_REPO_COMMIT=033f10f0d16cf703710b59269a34b8f4ce8537cb
+TEST_REPO_COMMIT=800550b4171b0441fc26fd56925205db81633d88
 
 # The location of the functional tests.
 TEST_DIR=./tests
