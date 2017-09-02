@@ -21,9 +21,42 @@ type store struct {
 	namespace string
 }
 
+// GetProjects retrieves all projects from storage.
+func (s *store) GetProjects() ([]*acid.Project, error) {
+	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("app=acid,component=project")}
+	secretList, err := s.client.CoreV1().Secrets(s.namespace).List(lo)
+	if err != nil {
+		return nil, err
+	}
+	projList := make([]*acid.Project, len(secretList.Items))
+	for i := range secretList.Items {
+		var err error
+		projList[i], err = s.newProjectFromSecret(&secretList.Items[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return projList, nil
+}
+
 // GetProject retrieves the project from storage.
 func (s *store) GetProject(id string) (*acid.Project, error) {
 	return s.loadProjectConfig(ProjectID(id))
+}
+
+func (s *store) GetProjectBuilds(proj *acid.Project) ([]*acid.Build, error) {
+	// Load the pods that ran as part of this build.
+	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("heritage=acid,component=build,project=%s", proj.ID)}
+
+	secretList, err := s.client.CoreV1().Secrets(s.namespace).List(lo)
+	if err != nil {
+		return nil, err
+	}
+	buildList := make([]*acid.Build, len(secretList.Items))
+	for i := range secretList.Items {
+		buildList[i] = acid.NewBuildFromSecret(secretList.Items[i])
+	}
+	return buildList, nil
 }
 
 // Get creates a new project and writes it to storage.
@@ -142,42 +175,41 @@ func (s *store) GetJobLogStream(job *acid.Job) (io.ReadCloser, error) {
 //
 // The namespace is the namespace where the secret is stored.
 func (s *store) loadProjectConfig(id string) (*acid.Project, error) {
-	proj := &acid.Project{ID: id}
-
 	// The project config is stored in a secret.
 	secret, err := s.client.CoreV1().Secrets(s.namespace).Get(id, meta.GetOptions{})
 	if err != nil {
-		return proj, err
+		return nil, err
 	}
 
-	proj.Name = secret.Annotations["projectName"]
-
-	return proj, configureProject(proj, secret.Data, s.namespace)
+	return s.newProjectFromSecret(secret)
 }
 
-func configureProject(proj *acid.Project, data map[string][]byte, namespace string) error {
-	proj.SharedSecret = def(data["sharedSecret"], "")
-	proj.Github.Token = string(data["github.token"])
+func (s *store) newProjectFromSecret(secret *v1.Secret) (*acid.Project, error) {
+	proj := new(acid.Project)
+	proj.ID = secret.ObjectMeta.Name
+	proj.Name = secret.Annotations["projectName"]
+	proj.SharedSecret = def(secret.Data["sharedSecret"], "")
+	proj.Github.Token = string(secret.Data["github.token"])
 
-	proj.Kubernetes.Namespace = def(data["namespace"], namespace)
-	proj.Kubernetes.VCSSidecar = def(data["vcsSidecar"], acid.DefaultVCSSidecar)
+	proj.Kubernetes.Namespace = def(secret.Data["namespace"], s.namespace)
+	proj.Kubernetes.VCSSidecar = def(secret.Data["vcsSidecar"], acid.DefaultVCSSidecar)
 
 	proj.Repo = acid.Repo{
-		Name: def(data["repository"], proj.Name),
+		Name: def(secret.Data["repository"], proj.Name),
 		// Note that we have to undo the key escaping.
-		SSHKey:   strings.Replace(string(data["sshKey"]), "$", "\n", -1),
-		CloneURL: def(data["cloneURL"], ""),
+		SSHKey:   strings.Replace(string(secret.Data["sshKey"]), "$", "\n", -1),
+		CloneURL: def(secret.Data["cloneURL"], ""),
 	}
 
 	envVars := map[string]string{}
-	if d := data["secrets"]; len(d) > 0 {
+	if d := secret.Data["secrets"]; len(d) > 0 {
 		if err := json.Unmarshal(d, &envVars); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	proj.Secrets = envVars
-	return nil
+	return proj, nil
 }
 
 func def(a []byte, b string) string {
