@@ -24,8 +24,11 @@ For example, Acid can be used to run CI tasks on a GitHub repository:
   other popular web services. And it can be easily extended to support your own
   services.
 
-
 ## Quickstart
+
+**WARNING:**
+Until Acid is marked public, the Acid images are only available inside of the Azure resource group ACID.
+Even if you can see this page, you might not be able to install Acid from the charts.
 
 The easiest way to get started with Acid is to install it using Helm:
 
@@ -39,10 +42,9 @@ You will now have Acid installed.
 To create new projects, use the `acid-project` Helm chart:
 
 ```console
-$ helm fetch acid/acid-project
-$ helm inspect values acid-project-*.tgz > myvalues.yaml
+$ helm inspect values acid/acid-project > myvalues.yaml
 $ # edit myvalues.yaml
-$ helm install acid-project-*.tgz -f myvalues.yaml
+$ helm install acid/acid-project -f myvalues.yaml
 ```
 
 And creating your first `acid.js` is as easy as this:
