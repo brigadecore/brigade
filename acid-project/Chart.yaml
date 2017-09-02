@@ -1,4 +1,4 @@
 apiVersion: v1
 description: Create an Acid project
 name: acid-project
-version: 0.1.1
+version: 0.2.0
