@@ -1,7 +1,5 @@
 package acid
 
-const DefaultVCSSidecar = "acidic.azurecr.io/vcs-sidecar:latest"
-
 // Project describes an Acid project
 //
 // This is an internal representation of a project, and contains data that
@@ -41,6 +39,9 @@ type Repo struct {
 	// SSHKey is the auth string for SSH-based cloning
 	SSHKey string `json:"sshKey"`
 }
+
+// DefaultVCSSidecar is the default image that fetches a repo from a VCS.
+const DefaultVCSSidecar = "acidic.azurecr.io/vcs-sidecar:latest"
 
 // Kubernetes describes the Kubernetes configuration for a project.
 type Kubernetes struct {
