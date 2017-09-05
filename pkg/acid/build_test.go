@@ -17,13 +17,11 @@ func TestNewBuildFromSecret(t *testing.T) {
 				"commit":  "abc123",
 			},
 		},
-		StringData: map[string]string{
-			"event_type":     "foo",
-			"event_provider": "bar",
-		},
 		Data: map[string][]byte{
-			"payload": []byte("this is a payload"),
-			"script":  []byte("ohai"),
+			"event_type":     []byte("foo"),
+			"event_provider": []byte("bar"),
+			"payload":        []byte("this is a payload"),
+			"script":         []byte("ohai"),
 		},
 	}
 	expectedBuild := &Build{

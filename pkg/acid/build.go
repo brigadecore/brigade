@@ -23,8 +23,8 @@ func NewBuildFromSecret(secret v1.Secret) *Build {
 	return &Build{
 		ID:        secret.ObjectMeta.Labels["build"],
 		ProjectID: secret.ObjectMeta.Labels["project"],
-		Type:      secret.StringData["event_type"],
-		Provider:  secret.StringData["event_provider"],
+		Type:      string(secret.Data["event_type"]),
+		Provider:  string(secret.Data["event_provider"]),
 		Commit:    secret.ObjectMeta.Labels["commit"],
 		Payload:   secret.Data["payload"],
 		Script:    secret.Data["script"],
