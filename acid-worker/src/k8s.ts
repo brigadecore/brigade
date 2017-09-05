@@ -264,13 +264,21 @@ export class JobRunner implements jobs.JobRunner {
     return `${ this.project.name.replace(/[.\/]/g, "-")}-${ this.job.name }`
   }
 
-  /* run starts a job and then waits until it is running.
+  /**
+   * run starts a job and then waits until it is running.
    *
    * The Promise it returns will return when the pod is either marked
    * Success (resolve) or Failure (reject)
    */
   public run(): Promise<jobs.Result> {
-    return this.start().then(r => r.wait())
+    let podName = this.name
+    let k = this.client
+    let ns = this.project.kubernetes.namespace
+    return this.start().then(r => r.wait()).then( r => {
+      return k.readNamespacedPodLog(podName, ns)
+    }).then(response => {
+      return new K8sResult(response.body)
+    })
   }
 
   /** start begins a job, and returns once it is scheduled to run.*/
