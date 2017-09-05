@@ -3,28 +3,37 @@ package storage
 import (
 	"testing"
 
-	"github.com/deis/acid/pkg/acid"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 func TestConfigureProject(t *testing.T) {
-	data := map[string][]byte{
-		"repository":   []byte("myrepo"),
-		"sharedSecret": []byte("mysecret"),
-		"github.token": []byte("like a fish needs a bicycle"),
-		"sshKey":       []byte("hello$world"),
-		"namespace":    []byte("zooropa"),
-		"secrets":      []byte(`{"bar":"baz","foo":"bar"}`),
-		// Intentionally skip cloneURL, test that this is ""
+	secret := &v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name: "acidTest",
+		},
+		Data: map[string][]byte{
+			"repository":   []byte("myrepo"),
+			"sharedSecret": []byte("mysecret"),
+			"github.token": []byte("like a fish needs a bicycle"),
+			"sshKey":       []byte("hello$world"),
+			"namespace":    []byte("zooropa"),
+			"secrets":      []byte(`{"bar":"baz","foo":"bar"}`),
+			// Intentionally skip cloneURL, test that this is ""
+		},
 	}
-	proj := &acid.Project{Name: "acidTest"}
-	if err := configureProject(proj, data, "defaultNS"); err != nil {
+
+	proj, err := newProjectFromSecret(secret, "defaultNS")
+	if err != nil {
 		t.Fatal(err)
 	}
 
+	if proj.ID != "acidTest" {
+		t.Error("ID is not correct")
+	}
 	if proj.Repo.CloneURL != "" {
 		t.Errorf("Expected empty cloneURL, got %s", proj.Repo.CloneURL)
 	}
-
 	if proj.Repo.Name != "myrepo" {
 		t.Error("Repo is not correct")
 	}

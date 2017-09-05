@@ -31,7 +31,7 @@ func (s *store) GetProjects() ([]*acid.Project, error) {
 	projList := make([]*acid.Project, len(secretList.Items))
 	for i := range secretList.Items {
 		var err error
-		projList[i], err = s.newProjectFromSecret(&secretList.Items[i])
+		projList[i], err = newProjectFromSecret(&secretList.Items[i], s.namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -181,17 +181,17 @@ func (s *store) loadProjectConfig(id string) (*acid.Project, error) {
 		return nil, err
 	}
 
-	return s.newProjectFromSecret(secret)
+	return newProjectFromSecret(secret, s.namespace)
 }
 
-func (s *store) newProjectFromSecret(secret *v1.Secret) (*acid.Project, error) {
+func newProjectFromSecret(secret *v1.Secret, namespace string) (*acid.Project, error) {
 	proj := new(acid.Project)
 	proj.ID = secret.ObjectMeta.Name
 	proj.Name = secret.Annotations["projectName"]
 	proj.SharedSecret = def(secret.Data["sharedSecret"], "")
 	proj.Github.Token = string(secret.Data["github.token"])
 
-	proj.Kubernetes.Namespace = def(secret.Data["namespace"], s.namespace)
+	proj.Kubernetes.Namespace = def(secret.Data["namespace"], namespace)
 	proj.Kubernetes.VCSSidecar = def(secret.Data["vcsSidecar"], acid.DefaultVCSSidecar)
 
 	proj.Repo = acid.Repo{
