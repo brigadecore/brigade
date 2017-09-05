@@ -292,7 +292,9 @@ export class JobRunner implements jobs.JobRunner {
       }).then((result) => {
           resolve(this)
       }).catch(reason => {
-        console.log(reason.body)
+        if (reason.body) {
+          console.log(reason.body)
+        }
         reject(reason)
       })
     })
