@@ -1,4 +1,4 @@
-package acid
+package kube
 
 import (
 	"reflect"
@@ -7,6 +7,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
+
+	"github.com/deis/acid/pkg/acid"
 )
 
 func TestNewJobFromPod(t *testing.T) {
@@ -44,7 +46,7 @@ func TestNewJobFromPod(t *testing.T) {
 			},
 		},
 	}
-	expectedJob := &Job{
+	expectedJob := &acid.Job{
 		ID:           "testpod-abc123",
 		Name:         "testpod",
 		Image:        "foo",
@@ -52,7 +54,7 @@ func TestNewJobFromPod(t *testing.T) {
 		StartTime:    now,
 		EndTime:      later,
 		ExitCode:     0,
-		Status:       JobSucceeded,
+		Status:       acid.JobSucceeded,
 	}
 
 	job := NewJobFromPod(pod)

@@ -12,7 +12,7 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/deis/acid/pkg/storage"
+	"github.com/deis/acid/pkg/storage/kube"
 	"github.com/deis/acid/pkg/webhook"
 )
 
@@ -84,7 +84,7 @@ func main() {
 	if namespace == "" {
 		namespace = v1.NamespaceDefault
 	}
-	proj, err := storage.New(clientset, namespace).GetProject(repo)
+	proj, err := kube.New(clientset, namespace).GetProject(repo)
 	if err != nil {
 		panic(err)
 	}

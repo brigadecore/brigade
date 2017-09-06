@@ -1,4 +1,4 @@
-package acid
+package kube
 
 import (
 	"reflect"
@@ -6,6 +6,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
+
+	"github.com/deis/acid/pkg/acid"
 )
 
 func TestNewBuildFromSecret(t *testing.T) {
@@ -24,7 +26,7 @@ func TestNewBuildFromSecret(t *testing.T) {
 			"script":         []byte("ohai"),
 		},
 	}
-	expectedBuild := &Build{
+	expectedBuild := &acid.Build{
 		ID:        "#1",
 		ProjectID: "myproject",
 		Commit:    "abc123",

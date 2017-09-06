@@ -49,27 +49,3 @@ type Job struct {
 	// Status is a textual representation of the job's running status
 	Status JobStatus `json:"status"`
 }
-
-// NewJobFromPod parses the pod object metadata and deserializes it into a Job.
-func NewJobFromPod(pod v1.Pod) *Job {
-	job := &Job{
-		ID:           pod.ObjectMeta.Name,
-		Name:         pod.ObjectMeta.Labels["jobname"],
-		CreationTime: pod.ObjectMeta.CreationTimestamp.Time,
-		Image:        pod.Spec.Containers[0].Image,
-		Status:       JobStatus(pod.Status.Phase),
-	}
-
-	if (job.Status != JobPending) && (job.Status != JobUnknown) {
-		job.StartTime = pod.Status.StartTime.Time
-	}
-
-	if len(pod.Status.ContainerStatuses) > 0 {
-		if pod.Status.ContainerStatuses[0].State.Terminated != nil {
-			job.EndTime = pod.Status.ContainerStatuses[0].State.Terminated.FinishedAt.Time
-			job.ExitCode = pod.Status.ContainerStatuses[0].State.Terminated.ExitCode
-		}
-	}
-
-	return job
-}

@@ -8,12 +8,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/deis/acid/pkg/acid"
-	"github.com/deis/acid/pkg/kube"
-	"github.com/deis/acid/pkg/storage"
-
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
+
+	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/acid/pkg/storage"
+	"github.com/deis/acid/pkg/storage/kube"
 )
 
 const usage = "lsd [-f FILE] PROJECT_NAME"
@@ -70,7 +70,7 @@ func NewApp() (*App, error) {
 	}
 
 	app := &App{
-		store: storage.New(c, namespace),
+		store: kube.New(c, namespace),
 		kc:    c,
 	}
 	return app, nil
@@ -83,7 +83,7 @@ type App struct {
 
 func (a *App) send(projectName string, data []byte) error {
 	b := &acid.Build{
-		ProjectID: storage.ProjectID(projectName),
+		ProjectID: acid.ProjectID(projectName),
 		Type:      "exec",
 		Provider:  "lsd",
 		Commit:    "master",

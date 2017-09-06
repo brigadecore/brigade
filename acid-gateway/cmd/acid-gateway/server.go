@@ -9,8 +9,7 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 	"k8s.io/client-go/pkg/api/v1"
 
-	"github.com/deis/acid/pkg/kube"
-	"github.com/deis/acid/pkg/storage"
+	"github.com/deis/acid/pkg/storage/kube"
 	"github.com/deis/acid/pkg/webhook"
 )
 
@@ -38,7 +37,7 @@ func main() {
 		namespace = v1.NamespaceDefault
 	}
 
-	store := storage.New(clientset, namespace)
+	store := kube.New(clientset, namespace)
 
 	router := gin.New()
 	router.Use(gin.Recovery())
