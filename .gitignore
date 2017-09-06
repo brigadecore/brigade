@@ -1,12 +1,11 @@
 _cache/
-tests/testdata/*-generated.*
 acid-api/rootfs/acid-api
 acid-controller/rootfs/acid-controller
+acid-gateway/rootfs/acid-gateway
 acid-worker/dist
 acid-worker/doc/
 bin/
 node_modules/
-rootfs/acid
-rootfs/runner.js
+tests/testdata/*-generated.*
 vcs-sidecar/rootfs/vcs-sidecar
 vendor/

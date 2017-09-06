@@ -23,7 +23,7 @@ build:
 # Cross-compile for Docker+Linux
 .PHONY: build-docker-bin
 build-docker-bin:
-	GOOS=linux GOARCH=amd64 go build -o rootfs/usr/bin/acid-gateway ./acid-gateway/cmd/acid-gateway
+	GOOS=linux GOARCH=amd64 go build -o ./acid-gateway/rootfs/usr/bin/acid-gateway ./acid-gateway/cmd/acid-gateway
 	GOOS=linux GOARCH=amd64 go build -o ./acid-controller/rootfs/acid-controller ./acid-controller/cmd/acid-controller
 	GOOS=linux GOARCH=amd64 go build -o ./acid-api/rootfs/acid-api ./acid-api/cmd/acid-api
 	GOOS=linux GOARCH=amd64 go build -o ./vcs-sidecar/rootfs/vcs-sidecar ./vcs-sidecar/cmd/vcs-sidecar
@@ -38,7 +38,7 @@ run:
 .PHONY: docker-build
 docker-build: build-docker-bin
 docker-build:
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-gateway:latest .
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-gateway:latest acid-gateway
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-controller:latest acid-controller
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-api:latest acid-api
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/vcs-sidecar:latest vcs-sidecar
