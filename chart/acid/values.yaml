@@ -8,6 +8,15 @@ controller:
   name: acid-controller
   tag: latest
   #pullPolicy: IfNotPresent
+api:
+  registry: acidic.azurecr.io
+  name: acid-api
+  tag: latest
+  service:
+    name: acid-api
+    type: LoadBalancer
+    externalPort: 7745
+    internalPort: 7745
 
 service:
   name: acid-service
