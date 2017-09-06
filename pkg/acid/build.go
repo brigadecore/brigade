@@ -1,7 +1,5 @@
 package acid
 
-import "k8s.io/client-go/pkg/api/v1"
-
 type Build struct {
 	// ID is the unique ID for a webhook event.
 	ID string `json:"id"`
@@ -17,16 +15,4 @@ type Build struct {
 	Payload []byte `json:"payload"`
 	// Script is the acidJS to be executed.
 	Script []byte `json:"script"`
-}
-
-func NewBuildFromSecret(secret v1.Secret) *Build {
-	return &Build{
-		ID:        secret.ObjectMeta.Labels["build"],
-		ProjectID: secret.ObjectMeta.Labels["project"],
-		Type:      string(secret.Data["event_type"]),
-		Provider:  string(secret.Data["event_provider"]),
-		Commit:    secret.ObjectMeta.Labels["commit"],
-		Payload:   secret.Data["payload"],
-		Script:    secret.Data["script"],
-	}
 }

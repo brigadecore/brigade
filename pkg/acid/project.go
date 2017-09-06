@@ -1,5 +1,11 @@
 package acid
 
+import (
+	"crypto/sha256"
+	"fmt"
+	"strings"
+)
+
 // Project describes an Acid project
 //
 // This is an internal representation of a project, and contains data that
@@ -19,6 +25,20 @@ type Project struct {
 	Github Github `json:"github"`
 	// Secrets is environment variables for acid.js
 	Secrets map[string]string `json:"secrets"`
+}
+
+// ProjectID will encode a project name.
+func ProjectID(id string) string {
+	if strings.HasPrefix(id, "acid-") {
+		return id
+	}
+	return "acid-" + shortSHA(id)
+}
+
+// shortSHA returns a 32-char SHA256 digest as a string.
+func shortSHA(input string) string {
+	sum := sha256.Sum256([]byte(input))
+	return fmt.Sprintf("%x", sum)[0:54]
 }
 
 // Github describes the Github configuration for a project.
