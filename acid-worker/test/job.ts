@@ -43,7 +43,6 @@ describe("job", function() {
           assert.deepEqual(j.tasks, ["a", "b", "c"])
         })
       })
-
     })
     describe("#podName", function() {
       beforeEach(function(){

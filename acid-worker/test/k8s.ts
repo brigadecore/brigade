@@ -185,6 +185,20 @@ describe("k8s", function() {
           }
         })
       })
+      context("when a host os is supplied", function() {
+        it("sets a node selector", function() {
+          j.host.os = "windows"
+          let jr = new k8s.JobRunner(j, e, p)
+          assert.equal("windows", jr.runner.spec.nodeSelector["beta.kubernetes.io/os"])
+        })
+      })
+      context("when a host name is supplied", function() {
+        it("sets a node name", function() {
+          j.host.name = "aciBridge"
+          let jr = new k8s.JobRunner(j, e, p)
+          assert.equal("aciBridge", jr.runner.spec.nodeName)
+        })
+      })
     })
   })
 })

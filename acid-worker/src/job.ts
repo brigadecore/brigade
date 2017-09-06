@@ -84,6 +84,33 @@ export class JobStorage {
   public get path(): string { return this._path }
 }
 
+/**
+ * JobHost expresses expectations about the host a job will run on.
+ */
+export class JobHost {
+  /**
+   * os is the name of the OS upon which the job's container must run.
+   *
+   * This allows users to indicate that the container _must_ run on
+   * "windows" or "linux" hosts. It is primarily useful in a "mixed node"
+   * environment where the acid.js will be run on a cluster that has more than
+   * one OS
+   */
+  public os: string
+
+  /**
+   * name of the host to run on.
+   *
+   * If this is set, a job will ask to be run on this named host. Generally, this
+   * should be used only if it is necessary to run the job on a particular host.
+   * If not set, Acid will let the scheduler decide, which is strongly preferred.
+   *
+   * Example usage: If you use a Kubernetes-ACI bridge, you may want to use this
+   * to run jobs on the bridge.
+   */
+  public name: string
+}
+
  /**
   * Job represents a single job, which is composed of several closely related sequential tasks.
   * Jobs must have names. Every job also has an associated image, which references
@@ -116,6 +143,11 @@ export abstract class Job {
   public privileged: boolean = false
 
   /**
+   * host expresses expectations about the host the job will run on.
+   */
+  public host: JobHost
+
+  /**
    * cache controls per-Job caching preferences.
    */
   public cache: JobCache
@@ -144,6 +176,7 @@ export abstract class Job {
     this.env = {}
     this.cache = new JobCache()
     this.storage = new JobStorage()
+    this.host = new JobHost()
   }
 
   /** run executes the job and then */

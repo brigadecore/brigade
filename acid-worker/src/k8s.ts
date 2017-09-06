@@ -206,6 +206,16 @@ export class JobRunner implements jobs.JobRunner {
       }
     }
 
+    // If host os is set, specify it.
+    if (job.host.os) {
+      this.runner.spec.nodeSelector = {
+        "beta.kubernetes.io/os": job.host.os
+      }
+    }
+    if (job.host.name) {
+      this.runner.spec.nodeName = job.host.name
+    }
+
     // If the job requests a cache, set up the cache.
     if (job.cache.enabled) {
       let labelSelector = new kubernetes.V1LabelSelector()
