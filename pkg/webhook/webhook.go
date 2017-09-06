@@ -95,7 +95,6 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		Path:   path.Join("log", repo, "id", commit),
 	}
 	tURL := targetURL.String()
-	log.Printf("TARGET URL: %s", tURL)
 	status.TargetURL = &tURL
 
 	proj, err := s.store.GetProject(repo)
