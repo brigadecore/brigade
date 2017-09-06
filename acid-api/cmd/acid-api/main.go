@@ -43,17 +43,19 @@ func main() {
 
 	// get an individual project
 	rest := router.Group("/v1")
-	{
-		rest.Use(gin.Logger())
-		rest.GET("/projects", api.Projects(storage))
-		rest.GET("/project/:id", api.Project(storage))
-		rest.GET("/project/:id/builds", api.ProjectBuilds(storage))
-		rest.GET("/build/:id", api.Build(storage))
-		rest.GET("/build/:id/jobs", api.BuildJobs(storage))
-		rest.GET("/job/:id", api.Job(storage))
-		rest.GET("/job/:id/logs", api.JobLogs(storage))
-	}
+	rest.Use(gin.Logger(), cors)
+	rest.GET("/projects", api.Projects(storage))
+	rest.GET("/project/:id", api.Project(storage))
+	rest.GET("/project/:id/builds", api.ProjectBuilds(storage))
+	rest.GET("/build/:id", api.Build(storage))
+	rest.GET("/build/:id/jobs", api.BuildJobs(storage))
+	rest.GET("/job/:id", api.Job(storage))
+	rest.GET("/job/:id/logs", api.JobLogs(storage))
 
 	router.GET("/healthz", api.Healthz)
 	log.Fatal(router.Run(":7745"))
+}
+
+func cors(c *gin.Context) {
+	c.Header("access-control-allow-origin", "*")
 }
