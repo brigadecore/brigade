@@ -1,6 +1,6 @@
 # Acid: Acme Continuous Integration and Deployment
 
-[![Build Status](http://acid.technosophos.me:7744/log/deis/acid/status.svg)](http://13.85.22.205:7744/log/deis/acid/id/master)
+[![Build Status](http://acid.technosophos.me:7744/log/deis/acid/status.svg)](http://acid.technosophos.me:7744/log/deis/acid/id/master)
 
 Acid is a tool for running scriptable autmated tasks in the cloud. It is ideally
 suited for CI/CD workloads. Acid runs as part of a Kubernetes cluster.
