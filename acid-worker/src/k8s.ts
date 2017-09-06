@@ -77,14 +77,6 @@ export class BuildStorage {
     res.requests = { storage: size }
     s.spec.resources = res
 
-    let labels = new kubernetes.V1LabelSelector()
-    labels.matchLabels = {
-      "heritage": "acid",
-      "purpose": "acid-storage",
-      "buildStorage": "enabled"
-    }
-    s.spec.selector = labels
-
     return s
   }
 }
@@ -218,13 +210,7 @@ export class JobRunner implements jobs.JobRunner {
 
     // If the job requests a cache, set up the cache.
     if (job.cache.enabled) {
-      let labelSelector = new kubernetes.V1LabelSelector()
-      labelSelector.matchLabels = {
-        "heritage": "acid",
-        "purpose": "acid-storage",
-        "jobCache": "enabled"
-      }
-      this.pvc = this.cachePVC(labelSelector)
+      this.pvc = this.cachePVC()
 
       // Now add volume mount to pod:
       let mountName = this.cacheName()
@@ -431,7 +417,7 @@ export class JobRunner implements jobs.JobRunner {
    *
    * A cache PVC persists between builds. So this is addressable as a Job on a Project.
    */
-  protected cachePVC(labels: kubernetes.V1LabelSelector): kubernetes.V1PersistentVolumeClaim {
+  protected cachePVC(): kubernetes.V1PersistentVolumeClaim {
     let s = new kubernetes.V1PersistentVolumeClaim()
     s.metadata = new kubernetes.V1ObjectMeta()
     s.metadata.name = this.cacheName()
@@ -448,8 +434,6 @@ export class JobRunner implements jobs.JobRunner {
     let res = new kubernetes.V1ResourceRequirements()
     res.requests = { storage: this.job.cache.size }
     s.spec.resources = res
-
-    s.spec.selector = labels
 
     return s
   }
