@@ -42,7 +42,7 @@ type statusCreator func(commit string, proj *acid.Project, status *github.RepoSt
 func NewGithubHook(s store) *githubHook {
 	return &githubHook{
 		store:        s,
-		getFile:      getFile,
+		getFile:      getFileFromGithub,
 		createStatus: setRepoStatus,
 	}
 }
@@ -201,6 +201,10 @@ func checkPullRequestAction(event *github.PullRequestEvent) error {
 }
 
 var ignoreAction = errors.New("ignored")
+
+func getFileFromGithub(commit, path string, proj *acid.Project) ([]byte, error) {
+	return GetFileContents(proj, commit, path)
+}
 
 // TODO create abstraction for mocking
 func getFile(commit, path string, proj *acid.Project) ([]byte, error) {

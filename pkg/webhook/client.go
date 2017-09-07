@@ -3,12 +3,13 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"strings"
 
+	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 
 	"github.com/deis/acid/pkg/acid"
-	"github.com/google/go-github/github"
 )
 
 // State names for GitHub status
@@ -82,4 +83,21 @@ func GetLastCommit(proj *acid.Project, ref string) (string, error) {
 	}
 	sha, _, err := client.Repositories.GetCommitSHA1(c, parts[1], parts[2], ref, "")
 	return sha, err
+}
+
+func GetFileContents(proj *acid.Project, ref, path string) ([]byte, error) {
+	c := context.Background()
+	client := ghClient(proj.Github.Token)
+	parts := strings.SplitN(proj.Repo.Name, "/", 3)
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("project name %q is malformed", proj.Repo.Name)
+	}
+	opts := &github.RepositoryContentGetOptions{Ref: ref}
+	r, err := client.Repositories.DownloadContents(c, parts[1], parts[2], path, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+	return ioutil.ReadAll(r)
+
 }

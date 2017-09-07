@@ -20,7 +20,7 @@ type dockerPushHook struct {
 func NewDockerPushHook(s store) *dockerPushHook {
 	return &dockerPushHook{
 		store:   s,
-		getFile: getFile,
+		getFile: getFileFromGithub,
 	}
 }
 
