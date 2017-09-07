@@ -203,7 +203,19 @@ var ignoreAction = errors.New("ignored")
 
 // TODO create abstraction for mocking
 func getFile(commit, path string, proj *acid.Project) ([]byte, error) {
-	toDir := filepath.Join("_cache", proj.Repo.Name)
+
+	// TODO: This could be optimized, or perhaps we could just get the commit off of the REST API.
+	tmpdir, err := ioutil.TempDir("", "git-")
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := os.RemoveAll(tmpdir); err != nil {
+			log.Printf("error unlinking tmpdir: %s", err)
+		}
+	}()
+
+	toDir := filepath.Join(tmpdir, proj.Repo.Name)
 	if err := os.MkdirAll(toDir, 0755); err != nil {
 		log.Printf("error making %s: %s", toDir, err)
 		return nil, err
