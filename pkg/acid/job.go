@@ -2,30 +2,29 @@ package acid
 
 import (
 	"time"
-
-	"k8s.io/client-go/pkg/api/v1"
 )
 
-type JobStatus v1.PodPhase
+// JobStatus is a label for the condition of a Job at the current time.
+type JobStatus string
 
 // These are the valid statuses of jobs.
 const (
 	// JobPending means the job has been accepted by the system, but one or more of the containers
 	// has not been started. This includes time before being bound to a node, as well as time spent
 	// pulling images onto the host.
-	JobPending JobStatus = JobStatus(v1.PodPending)
+	JobPending JobStatus = "Pending"
 	// JobRunning means the job has been bound to a node and all of the containers have been started.
 	// At least one container is still running or is in the process of being restarted.
-	JobRunning JobStatus = JobStatus(v1.PodRunning)
+	JobRunning JobStatus = "Running"
 	// JobSucceeded means that all containers in the job have voluntarily terminated
 	// with a container exit code of 0, and the system is not going to restart any of these containers.
-	JobSucceeded JobStatus = JobStatus(v1.PodSucceeded)
+	JobSucceeded JobStatus = "Succeeded"
 	// JobFailed means that all containers in the job have terminated, and at least one container has
 	// terminated in a failure (exited with a non-zero exit code or was stopped by the system).
-	JobFailed JobStatus = JobStatus(v1.PodFailed)
+	JobFailed JobStatus = "Failed"
 	// JobUnknown means that for some reason the state of the job could not be obtained, typically due
 	// to an error in communicating with the host of the job.
-	JobUnknown JobStatus = JobStatus(v1.PodUnknown)
+	JobUnknown JobStatus = "Unknown"
 )
 
 type Job struct {
