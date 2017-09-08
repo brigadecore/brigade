@@ -11,7 +11,7 @@ Acid is composed of numerous parts:
   controller spawns these, though you can run one directly as well.
 - acid-api: The REST API server for user interfaces
 - acid-project: The Helm chart for installing Acid projects
-- vcs-sidecar: The code that runs as a sidecar in cluster to fetch VCS repositories
+- git-sidecar: The code that runs as a sidecar in cluster to fetch Git repositories
 
 This document covers development of `acid-controller`, `acid-server`, and
 `acid-worker`.

@@ -17,7 +17,6 @@ build:
 	go build -o bin/acid-gateway ./acid-gateway/cmd/acid-gateway
 	go build -o bin/acid-controller ./acid-controller/cmd/acid-controller
 	go build -o bin/acid-api ./acid-api/cmd/acid-api
-	go build -o bin/vcs-sidecar ./vcs-sidecar/cmd/vcs-sidecar
 	go build -o bin/lsd ./acid-client/cmd/lsd
 
 # Cross-compile for Docker+Linux
@@ -26,7 +25,6 @@ build-docker-bin:
 	GOOS=linux GOARCH=amd64 go build -o ./acid-gateway/rootfs/usr/bin/acid-gateway ./acid-gateway/cmd/acid-gateway
 	GOOS=linux GOARCH=amd64 go build -o ./acid-controller/rootfs/acid-controller ./acid-controller/cmd/acid-controller
 	GOOS=linux GOARCH=amd64 go build -o ./acid-api/rootfs/acid-api ./acid-api/cmd/acid-api
-	GOOS=linux GOARCH=amd64 go build -o ./vcs-sidecar/rootfs/vcs-sidecar ./vcs-sidecar/cmd/vcs-sidecar
 
 .PHONY: run
 run: build
@@ -41,7 +39,7 @@ docker-build:
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-gateway:latest acid-gateway
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-controller:latest acid-controller
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-api:latest acid-api
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/vcs-sidecar:latest vcs-sidecar
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/git-sidecar:latest git-sidecar
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-worker:latest acid-worker
 
 # You must be logged into DOCKER_REGISTRY before you can push.
@@ -50,7 +48,7 @@ docker-push:
 	docker push $(DOCKER_REGISTRY)/acid-gateway
 	docker push $(DOCKER_REGISTRY)/acid-controller
 	docker push $(DOCKER_REGISTRY)/acid-api
-	docker push $(DOCKER_REGISTRY)/vcs-sidecar
+	docker push $(DOCKER_REGISTRY)/git-sidecar
 	docker push $(DOCKER_REGISTRY)/acid-worker
 
 # All non-functional tests

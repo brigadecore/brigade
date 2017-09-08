@@ -445,7 +445,7 @@ function sidecarSpec(e: AcidEvent, local: string, image: string, project: Projec
   let repoURL = project.repo.cloneURL
 
   if (!imageTag) {
-    imageTag = "acid/vcs-sidecar:latest"
+    imageTag = "acid/git-sidecar:latest"
   }
 
   let spec = new kubernetes.V1Container()
@@ -453,10 +453,10 @@ function sidecarSpec(e: AcidEvent, local: string, image: string, project: Projec
   spec.env = [
     envVar("VCS_REPO", repoURL),
     envVar("VCS_LOCAL_PATH", local),
-    envVar("VCS_REVISION", e.commit)
+    envVar("VCS_REVISION", e.commit),
+    envVar("VCS_AUTH_TOKEN", project.repo.token)
   ]
   spec.image = imageTag
-  spec.command = ["/vcs-sidecar"]
   spec.imagePullPolicy = "IfNotPresent",
   spec.volumeMounts = [
     volumeMount("vcs-sidecar", local)
@@ -569,7 +569,7 @@ export function secretToProject(ns: string, secret: kubernetes.V1Secret): Projec
     },
     repo: {
       name: secret.metadata.annotations["projectName"],
-      cloneURL: b64dec(secret.data.cloneURL)
+      cloneURL: b64dec(secret.data.cloneURL),
     },
     secrets: {}
   }
@@ -578,6 +578,9 @@ export function secretToProject(ns: string, secret: kubernetes.V1Secret): Projec
   }
   if (secret.data.sshKey) {
     p.repo.sshKey = b64dec(secret.data.sshKey)
+  }
+  if (secret.data["github.token"]) {
+    p.repo.token = b64dec(secret.data["github.token"])
   }
   return p
 }

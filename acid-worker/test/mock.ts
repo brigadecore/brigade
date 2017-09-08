@@ -11,11 +11,12 @@ export function mockProject(): Project {
     name: "deis/empty-testbed",
     repo: {
       name: "deis/empty-testbed",
-      cloneURL: "https://github.com/deis/empty-testbed.git"
+      cloneURL: "https://github.com/deis/empty-testbed.git",
+      token: "supersecret"
     },
     kubernetes: {
       namespace: "default",
-      vcsSidecar: "acidic.azurecr.io/vcs-sidecar:latest"
+      vcsSidecar: "acidic.azurecr.io/git-sidecar:latest"
     }
   } as Project
 }

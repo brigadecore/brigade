@@ -93,19 +93,24 @@ export class Cause {
  * Repository describes a source code repository (VCS)
  */
 export interface Repository {
-    /**
-     * name of the repository. For GitHub, this is org/project
-     */
-    name: string;
-    /**
-     * cloneURL is the URL at which the repository can be cloned.
-     * Traditionally this is https, but with sshKey specified, this can be git+ssh or ssh.
-     */
-    cloneURL: string;
-    /**
-     * sshKey the SSH key to use for ssh:// or git+ssh:// protocols
-     */
-    sshKey?: string;
+  /**
+   * name of the repository. For GitHub, this is org/project
+   */
+  name: string;
+  /**
+   * cloneURL is the URL at which the repository can be cloned.
+   * Traditionally this is https, but with sshKey specified, this can be git+ssh or ssh.
+   */
+  cloneURL: string;
+  /**
+   * sshKey the SSH key to use for ssh:// or git+ssh:// protocols
+   */
+  sshKey?: string;
+
+  /**
+   * token is the OAuth2 token for Git interactions over HTTPS
+   */
+  token?: string;
 }
 
 /**
