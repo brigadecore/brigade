@@ -44,13 +44,20 @@ func main() {
 	// get an individual project
 	rest := router.Group("/v1")
 	rest.Use(gin.Logger(), cors)
-	rest.GET("/projects", api.Projects(storage))
-	rest.GET("/project/:id", api.Project(storage))
-	rest.GET("/project/:id/builds", api.ProjectBuilds(storage))
-	rest.GET("/build/:id", api.Build(storage))
-	rest.GET("/build/:id/jobs", api.BuildJobs(storage))
-	rest.GET("/job/:id", api.Job(storage))
-	rest.GET("/job/:id/logs", api.JobLogs(storage))
+	server := api.New(storage)
+
+	p := server.Project()
+	rest.GET("/projects", p.List)
+	rest.GET("/project/:id", p.Get)
+	rest.GET("/project/:id/builds", p.Builds)
+
+	b := server.Build()
+	rest.GET("/build/:id", b.Get)
+	rest.GET("/build/:id/jobs", b.Jobs)
+
+	j := server.Job()
+	rest.GET("/job/:id", j.Get)
+	rest.GET("/job/:id/logs", j.Logs)
 
 	router.GET("/healthz", api.Healthz)
 	log.Fatal(router.Run(":7745"))

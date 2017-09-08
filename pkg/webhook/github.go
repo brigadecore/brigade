@@ -16,6 +16,7 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 
 	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/acid/pkg/storage"
 )
 
 const (
@@ -23,13 +24,8 @@ const (
 	hubSignatureHeader = "X-Hub-Signature"
 )
 
-type store interface {
-	GetProject(id string) (*acid.Project, error)
-	CreateBuild(build *acid.Build) error
-}
-
 type githubHook struct {
-	store        store
+	store        storage.Store
 	getFile      fileGetter
 	createStatus statusCreator
 }
@@ -39,7 +35,7 @@ type fileGetter func(commit, path string, proj *acid.Project) ([]byte, error)
 type statusCreator func(commit string, proj *acid.Project, status *github.RepoStatus) error
 
 // NewGithubHook creates a GitHub webhook handler.
-func NewGithubHook(s store) *githubHook {
+func NewGithubHook(s storage.Store) *githubHook {
 	return &githubHook{
 		store:        s,
 		getFile:      getFileFromGithub,

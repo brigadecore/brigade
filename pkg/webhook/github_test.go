@@ -7,16 +7,18 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/go-github/github"
 	"gopkg.in/gin-gonic/gin.v1"
 
 	"github.com/deis/acid/pkg/acid"
-	"github.com/google/go-github/github"
+	"github.com/deis/acid/pkg/storage"
 )
 
 type testStore struct {
 	proj   *acid.Project
 	builds []*acid.Build
 	err    error
+	storage.Store
 }
 
 func (s *testStore) GetProject(name string) (*acid.Project, error) {
