@@ -9,15 +9,16 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 
 	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/acid/pkg/storage"
 )
 
 type dockerPushHook struct {
-	store   store
+	store   storage.Store
 	getFile fileGetter
 }
 
 // NewDockerPushHook creates a new Docker Push handler for webhooks.
-func NewDockerPushHook(s store) *dockerPushHook {
+func NewDockerPushHook(s storage.Store) *dockerPushHook {
 	return &dockerPushHook{
 		store:   s,
 		getFile: getFileFromGithub,

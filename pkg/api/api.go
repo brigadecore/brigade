@@ -1,125 +1,30 @@
 package api
 
 import (
-	"io"
-	"net/http"
-
-	"gopkg.in/gin-gonic/gin.v1"
-
 	"github.com/deis/acid/pkg/storage"
 )
 
-// Projects creates a new gin handler for the GET /projects endpoint
-func Projects(storage storage.Store) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		projects, err := storage.GetProjects()
-		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
-			return
-		}
-		c.JSON(http.StatusOK, projects)
-	}
+// API represents the rest api handlers.
+type API struct {
+	store storage.Store
 }
 
-// Project creates a new gin handler for the GET /project/:id endpoint
-func Project(storage storage.Store) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		id := c.Params.ByName("id")
-		proj, err := storage.GetProject(id)
-		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
-			return
-		}
-		c.JSON(http.StatusOK, proj)
-	}
+// New creates a new api handler.
+func New(s storage.Store) API {
+	return API{store: s}
 }
 
-// ProjectBuilds creates a new gin handler for the GET /project/:id/builds endpoint
-func ProjectBuilds(storage storage.Store) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		id := c.Params.ByName("id")
-		proj, err := storage.GetProject(id)
-		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
-			return
-		}
-		builds, err := storage.GetProjectBuilds(proj)
-		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
-			return
-		}
-		c.JSON(http.StatusOK, builds)
-	}
+// Project returns a handler for projects.
+func (api API) Project() Project {
+	return Project{store: api.store}
 }
 
-// Build creates a new gin handler for the GET /build/:id endpoint
-func Build(storage storage.Store) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		id := c.Params.ByName("id")
-		build, err := storage.GetBuild(id)
-		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
-			return
-		}
-		c.JSON(http.StatusOK, build)
-	}
+// Build returns a handler for builds.
+func (api API) Build() Build {
+	return Build{store: api.store}
 }
 
-// BuildJobs creates a new gin handler for the GET /build/:id/jobs endpoint
-func BuildJobs(storage storage.Store) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		id := c.Params.ByName("id")
-		build, err := storage.GetBuild(id)
-		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
-			return
-		}
-		jobs, err := storage.GetBuildJobs(build)
-		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
-			return
-		}
-		c.JSON(http.StatusOK, jobs)
-	}
-}
-
-// Job creates a new gin handler for the GET /job/:id endpoint
-func Job(storage storage.Store) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		id := c.Params.ByName("id")
-		job, err := storage.GetJob(id)
-		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
-			return
-		}
-		c.JSON(http.StatusOK, job)
-	}
-}
-
-// JobLogs creates a new gin handler for the GET /job/:id/logs endpoint
-func JobLogs(storage storage.Store) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		id := c.Params.ByName("id")
-		job, err := storage.GetJob(id)
-		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
-			return
-		}
-		if c.Query("stream") == "true" {
-			logReader, err := storage.GetJobLogStream(job)
-			if err != nil {
-				c.JSON(http.StatusNotFound, struct{}{})
-				return
-			}
-			defer logReader.Close()
-			io.Copy(c.Writer, logReader)
-		} else {
-			logs, err := storage.GetJobLog(job)
-			if err != nil {
-				c.JSON(http.StatusNotFound, struct{}{})
-				return
-			}
-			c.JSON(http.StatusOK, logs)
-		}
-	}
+// Job returns a handler for jobs.
+func (api API) Job() Job {
+	return Job{store: api.store}
 }
