@@ -61,7 +61,7 @@ type Repo struct {
 }
 
 // DefaultVCSSidecar is the default image that fetches a repo from a VCS.
-const DefaultVCSSidecar = "acidic.azurecr.io/vcs-sidecar:latest"
+const DefaultVCSSidecar = "acidic.azurecr.io/git-sidecar:latest"
 
 // Kubernetes describes the Kubernetes configuration for a project.
 type Kubernetes struct {

@@ -30,6 +30,7 @@ describe("k8s", function() {
       assert.equal(p.name, "github.com/deis/test-private-testbed")
       assert.equal(p.repo.name, "deis/test-private-testbed")
       assert.equal(p.repo.cloneURL, "https://github.com/deis/empty-testbed.git")
+      assert.equal(p.repo.token, "pretend password\n")
       assert.equal(p.kubernetes.namespace, "default")
       assert.equal(p.kubernetes.vcsSidecar, "acidic.azurecr.io/vcs-sidecar:latest")
       assert.property(p.secrets, "hello")
@@ -208,7 +209,7 @@ function mockSecret(): kubernetes.V1Secret {
   s.metadata = new kubernetes.V1ObjectMeta()
   s.data = {
     "cloneURL": "aHR0cHM6Ly9naXRodWIuY29tL2RlaXMvZW1wdHktdGVzdGJlZC5naXQ=",
-    "githubToken": "cHJldGVuZCBwYXNzd29yZAo=",
+    "github.token": "cHJldGVuZCBwYXNzd29yZAo=",
     "repository": "Z2l0aHViLmNvbS9kZWlzL3Rlc3QtcHJpdmF0ZS10ZXN0YmVk",
     "secrets": "eyJoZWxsbyI6ICJ3b3JsZCJ9Cg==",
     "vcsSidecar": "YWNpZGljLmF6dXJlY3IuaW8vdmNzLXNpZGVjYXI6bGF0ZXN0"
