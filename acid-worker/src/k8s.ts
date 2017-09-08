@@ -198,6 +198,13 @@ export class JobRunner implements jobs.JobRunner {
       }
     }
 
+    if (job.imagePullSecrets) {
+      this.runner.spec.imagePullSecrets = []
+      for (let secret of job.imagePullSecrets) {
+        this.runner.spec.imagePullSecrets.push({name: secret})
+      }
+    }
+
     // If host os is set, specify it.
     if (job.host.os) {
       this.runner.spec.nodeSelector = {

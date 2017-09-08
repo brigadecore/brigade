@@ -186,6 +186,17 @@ describe("k8s", function() {
           }
         })
       })
+      context("when image pull secrets are supplied", function() {
+        it("sets imagePullSecrets", function() {
+          j.imagePullSecrets = ["one", "two"]
+          let jr = new k8s.JobRunner(j, e, p)
+          assert.equal(jr.runner.spec.imagePullSecrets.length, 2)
+          for (let i = 0; i < jr.runner.spec.imagePullSecrets.length; i++) {
+            let secret = jr.runner.spec.imagePullSecrets[i]
+            assert.equal(secret.name, j.imagePullSecrets[i])
+          }
+        })
+      })
       context("when a host os is supplied", function() {
         it("sets a node selector", function() {
           j.host.os = "windows"
