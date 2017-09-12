@@ -6,6 +6,5 @@ RUN apk update && apk add --no-cache \
     && update-ca-certificates
 
 COPY rootfs /
-ENV GIT_SSH=/gitssh.sh
 ENV GIT_ASKPASS=/askpass.sh
 CMD /clone.sh
