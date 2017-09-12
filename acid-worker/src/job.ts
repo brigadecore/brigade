@@ -127,6 +127,11 @@ export abstract class Job {
   public env: {[key: string]:string}
   /** image is the container image to be run*/
   public image: string = acidImage
+  /**
+   * imagePullSecrets names secrets that contain the credentials for pulling this
+   * image or the sidecar image.
+   */
+  public imagePullSecrets: string[]
 
   /** Path to mount as the base path for executable code in the container.*/
   public mountPath: string = "/src"
