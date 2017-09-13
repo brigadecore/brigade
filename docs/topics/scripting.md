@@ -1035,6 +1035,81 @@ There are two final observations to make about job caches:
    That means that if you add lots and lots of jobs with caches enabled, lots of storage
    space will be reserved even if it is unused.
 
+## Jobs and Return Values
+
+We have seen already that when we run a job, it will return a JavaScript Promise.
+Each Promise also wraps a value. And the value is the ouput of the job. So it is possible
+to run a job, capture its output, and use that as input to the next job.
+
+To illustrate this, let's write a script that creates two jobs. The first job will
+simply echo a value. Then we will capture that value and send it to the second job.
+Then we will capture the output of the second job and write it directly out to
+to the console.
+
+```javascript
+const { events, Job } = require("libacid")
+
+events.on("exec", (e, p) => {
+  var one = new Job("one", "alpine:3.4")
+  var two = new Job("two", "alpine:3.4")
+
+  one.tasks = ["echo world"]
+  one.run().then( result => {
+    two.tasks = ["echo hello " + result.toString()]
+    two.run().then( result2 => {
+      console.log(result2.toString())
+    })
+  })
+})
+```
+[acid-17.js](examples/acid-17.js)
+
+Our actual containers (`one` and `two`) are not doing much work here. They're just
+echoing content to their standard output. But that information is captured by Acid
+and sent back as a `Result` object.
+
+- Job `one` returns `world`.
+- Job `two` takes that, and appends it to `echo hello`, which returns `hello world`
+- So `result2` will have a `Result` with `hello world`
+
+```
+Started acid-worker-01bsy7k5h6n65gtt5sfrstte99-master
+yarn start v0.27.5
+$ node prestart.js
+prestart: src/acid.js written
+$ node --no-deprecation ./dist/src/index.js
+Creating PVC named acid-worker-01bsy7k5h6n65gtt5sfrstte99-master
+looking up default/github-com-deis-empty-testbed-one
+Creating secret one-1505326897996-master
+Creating Job Cache PVC github-com-deis-empty-testbed-one
+Creating pod one-1505326897996-master
+Timeout set at 900000
+default/one-1505326897996-master phase Pending
+default/one-1505326897996-master phase Pending
+default/one-1505326897996-master phase Succeeded
+looking up default/github-com-deis-empty-testbed-two
+Creating secret two-1505326904108-master
+Creating pod two-1505326904108-master
+Creating Job Cache PVC github-com-deis-empty-testbed-two
+Timeout set at 900000
+default/two-1505326904108-master phase Pending
+default/two-1505326904108-master phase Succeeded
+hello world
+
+beforeExit 0
+after handler is cleaning up build storage for acid-worker-01bsy7k5h6n65gtt5sfrstte99-master
+exit called
+Done in 11.20s.
+```
+
+It is a good idea to call `toString()` on the `Result` object, since there is otherwise
+no guarantee about the type of data returned.
+
+With carefully constructed containers, you can get sophisticated and send structured
+data like JSON from one job to another. But remember that what is captured is the
+standard output (STDOUT) of the job, which is often where log data will also be sent.
+Sometimes it makes more sense to write structured files to the shared storage instead.
+
 ## Conclusion
 
 This guide covers the basics of working with `acid.js` files. If you are not sure how to
