@@ -14,6 +14,8 @@ type Store interface {
 	GetProject(id string) (*acid.Project, error)
 	// GetProjectBuilds retrieves the project's builds from storage.
 	GetProjectBuilds(proj *acid.Project) ([]*acid.Build, error)
+	// GetBuilds retrieves all active builds from storage.
+	GetBuilds() ([]*acid.Build, error)
 	// GetBuild retrieves the build from storage.
 	GetBuild(id string) (*acid.Build, error)
 	// CreateBuild creates a new job for the work queue.

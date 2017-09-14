@@ -13,11 +13,15 @@ TEST_DIR=./tests
 KUBECONFIG ?= ${HOME}/.kube/config
 
 .PHONY: build
+build: build-client
 build:
 	go build -o bin/acid-gateway ./acid-gateway/cmd/acid-gateway
 	go build -o bin/acid-controller ./acid-controller/cmd/acid-controller
 	go build -o bin/acid-api ./acid-api/cmd/acid-api
-	go build -o bin/lsd ./acid-client/cmd/lsd
+
+.PHONY: build-client
+build-client:
+	go build -o bin/acid ./acid-client/cmd/acid
 
 # Cross-compile for Docker+Linux
 .PHONY: build-docker-bin

@@ -71,6 +71,20 @@ func (s *store) CreateBuild(build *acid.Build) error {
 	return err
 }
 
+func (s *store) GetBuilds() ([]*acid.Build, error) {
+	lo := meta.ListOptions{LabelSelector: "heritage=acid,component=build"}
+
+	secretList, err := s.client.CoreV1().Secrets(s.namespace).List(lo)
+	if err != nil {
+		return nil, err
+	}
+	buildList := make([]*acid.Build, len(secretList.Items))
+	for i := range secretList.Items {
+		buildList[i] = NewBuildFromSecret(secretList.Items[i])
+	}
+	return buildList, nil
+}
+
 func (s *store) GetProjectBuilds(proj *acid.Project) ([]*acid.Build, error) {
 	// Load the pods that ran as part of this build.
 	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("heritage=acid,component=build,project=%s", proj.ID)}
