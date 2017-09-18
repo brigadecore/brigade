@@ -16,7 +16,7 @@ export function mockProject(): Project {
     },
     kubernetes: {
       namespace: "default",
-      vcsSidecar: "acidic.azurecr.io/git-sidecar:latest"
+      vcsSidecar: "deis/git-sidecar:latest"
     }
   } as Project
 }

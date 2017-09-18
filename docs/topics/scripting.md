@@ -820,7 +820,7 @@ secrets (environment variables or credentials) that are available to us.
   "name":"github.com/deis/empty-testbed",
   "kubernetes":{
     "namespace":"default",
-    "vcsSidecar":"acidic.azurecr.io/git-sidecar:latest"
+    "vcsSidecar":"deis/git-sidecar:latest"
   },
   "repo":{
     "name":"deis/empty-testbed",
