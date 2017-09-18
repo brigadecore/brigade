@@ -1,6 +1,9 @@
-FROM debian:jessie-slim
+FROM alpine:3.6
 
-RUN apt-get update && apt-get install -y git
+RUN apk update && apk add --no-cache \
+    ca-certificates \
+    git \
+    && update-ca-certificates
 
 COPY rootfs /
 
