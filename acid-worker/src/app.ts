@@ -46,7 +46,7 @@ export class App {
 
   // true if the "after" event has fired.
   protected afterHasFired: boolean = false
-
+  protected storageIsDestroyed: boolean = false
   /**
    * loadProject is a function that loads projects.
    */
@@ -72,7 +72,6 @@ export class App {
   public run(e: events.AcidEvent): Promise<boolean> {
     this.lastEvent = e
 
-
     // This closure destroys storage for us. It is called by event handlers.
     let destroyStorage = () => {
       // Since we catch a destroy error, the outer wrapper will
@@ -92,23 +91,18 @@ export class App {
       })
     }
 
-    // Register a callback for events that don't trap an error.
-    //
-    // We want this error handler to be registered after the main acid.js is
-    // loaded, since events execute in order. But asynchronous actions in
-    // the acid.js event handler may result in the storage being removed
-    // before the "error" event code is completely run. For that reason,
-    // we advise developers to not count on the presence of /mnt/acid/share in
-    // their error handling code.
+    // We need at least one error trap to avoid losing the error to a new
+    // throw from EventEmitter.
     libacid.events.once("error", () => {
-      console.log(`error handler is cleaning up build storage for ${ e.buildID }`)
-      destroyStorage().then(() => {
-        this.exitOnError && process.exit(1)
-      })
+      console.log("error handler is cleaning up")
+      this.exitOnError && process.exit(1)
     })
+
+    // We need to ensure that after is called exactly once. So we need an
+    // empty after handler.
     libacid.events.once("after", () => {
-      console.log(`after handler is cleaning up build storage for ${ e.buildID }`)
-      destroyStorage()
+      this.afterHasFired = true
+      console.log("after: default event fired")
     })
 
     // Run if an uncaught rejection happens.
@@ -123,11 +117,16 @@ export class App {
     })
 
     // Run at the end.
-    process.on("beforeExit", code => {
+    process.on("beforeExit", (code) => {
       if (this.afterHasFired) {
+        // So at this point, the after event has fired and we can cleanup.
+        console.log("beforeExit(2): destroying storage")
+        if (this.storageIsDestroyed) {
+          this.storageIsDestroyed = true
+          destroyStorage()
+        }
         return
       }
-      this.afterHasFired = true
 
       let after: events.AcidEvent = {
         buildID: e.buildID,
