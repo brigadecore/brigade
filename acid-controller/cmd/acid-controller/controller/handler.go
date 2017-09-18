@@ -32,7 +32,7 @@ func (c *Controller) syncSecret(secret *v1.Secret) error {
 }
 
 const (
-	acidWorkerImage      = "acidic.azurecr.io/acid-worker:latest"
+	acidWorkerImage      = "deis/acid-worker:latest"
 	acidWorkerPullPolicy = v1.PullIfNotPresent
 	volumeName           = "acid-build"
 	volumeMountPath      = "/etc/acid"

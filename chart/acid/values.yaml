@@ -1,15 +1,15 @@
 image:
-  registry: acidic.azurecr.io
+  registry: deis
   name: acid-gateway
   tag: latest
   #pullPolicy: IfNotPresent
 controller:
-  registry: acidic.azurecr.io
+  registry: deis
   name: acid-controller
   tag: latest
   #pullPolicy: IfNotPresent
 api:
-  registry: acidic.azurecr.io
+  registry: deis
   name: acid-api
   tag: latest
   service:

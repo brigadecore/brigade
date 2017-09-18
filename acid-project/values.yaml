@@ -52,5 +52,5 @@ secrets: {}
 # namespace: "default"
 
 # OPTIONAL: vcsSidecar is the image that fetches a repo from a VCS
-# vcsSidecar: "acidic.azurecr.io/git-sidecar:latest"
+# vcsSidecar: "deis/git-sidecar:latest"
 
