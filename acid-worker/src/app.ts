@@ -102,7 +102,11 @@ export class App {
     // empty after handler.
     libacid.events.once("after", () => {
       this.afterHasFired = true
-      console.log("after: default event fired")
+
+      // Delay long enough to cause beforeExit to be emitted again.
+      setImmediate(() => {
+        console.log("after: default event fired")
+      }, 20)
     })
 
     // Run if an uncaught rejection happens.
@@ -120,8 +124,8 @@ export class App {
     process.on("beforeExit", (code) => {
       if (this.afterHasFired) {
         // So at this point, the after event has fired and we can cleanup.
-        console.log("beforeExit(2): destroying storage")
-        if (this.storageIsDestroyed) {
+        if (!this.storageIsDestroyed) {
+          console.log("beforeExit(2): destroying storage")
           this.storageIsDestroyed = true
           destroyStorage()
         }
