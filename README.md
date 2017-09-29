@@ -2,7 +2,7 @@
 
 [![Build Status](http://acid.technosophos.me:7744/log/deis/acid/status.svg)](http://acid.technosophos.me:7744/log/deis/acid/id/master)
 
-Acid is a tool for running scriptable autmated tasks in the cloud. It is ideally
+Acid is a tool for running scriptable automated tasks in the cloud. It is ideally
 suited for CI/CD workloads. Acid runs as part of a Kubernetes cluster.
 
 For example, Acid can be used to run CI tasks on a GitHub repository:
@@ -26,28 +26,30 @@ For example, Acid can be used to run CI tasks on a GitHub repository:
 
 ## Quickstart
 
-**WARNING:**
-Until Acid is marked public, the Acid images are only available inside of the Azure resource group ACID.
-Even if you can see this page, you might not be able to install Acid from the charts.
-
 The easiest way to get started with Acid is to install it using Helm:
 
 ```console
-$ helm repo add acid https://deis.github.io/acid
-$ helm install acid/acid
+$ git clone https://github.com/deis/acid.git
+$ cd acid
+$ helm install --name acid ./chart/acid
 ```
 
 You will now have Acid installed.
 
-To create new projects, use the `acid-project` Helm chart:
+To create new projects, use the `acid-project` Helm chart. While inside the Git
+repository cloned above, run these commands:
 
 ```console
-$ helm inspect values acid/acid-project > myvalues.yaml
+$ helm inspect values ./acid-project > myvalues.yaml
 $ # edit myvalues.yaml
-$ helm install acid/acid-project -f myvalues.yaml
+$ helm install --name my-project ./acid-project -f myvalues.yaml
 ```
 
-And creating your first `acid.js` is as easy as this:
+When editing `myvalues.yaml`, follow the instructions in that file for configuring
+your new project. Once you have customized that file, you can install the project
+based on your new configuration by passing it with `-f myvalues.yaml`.
+
+Now creating your first `acid.js` is as easy as this:
 
 ```javascript
 const { events } = require('libacid')
