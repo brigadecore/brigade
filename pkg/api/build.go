@@ -16,6 +16,7 @@ type Build struct {
 // Build creates a new gin handler for the GET /build/:id endpoint
 func (api Build) Get(c *gin.Context) {
 	id := c.Params.ByName("id")
+	// For now, we always get the worker.
 	build, err := api.store.GetBuild(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, struct{}{})

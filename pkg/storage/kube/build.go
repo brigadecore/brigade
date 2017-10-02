@@ -14,6 +14,7 @@ import (
 	"github.com/deis/acid/pkg/acid"
 )
 
+// GetBuild returns the build.
 func (s *store) GetBuild(id string) (*acid.Build, error) {
 	build := &acid.Build{ID: id}
 
@@ -26,8 +27,10 @@ func (s *store) GetBuild(id string) (*acid.Build, error) {
 	if len(secrets.Items) < 1 {
 		return nil, fmt.Errorf("could not find build %s: no secrets exist with labels %s", id, labels.AsSelector().String())
 	}
-	// select the first secret as the build IDs are unique
-	return NewBuildFromSecret(secrets.Items[0]), nil
+	// Select the first secret as the build IDs are unique
+	b := NewBuildFromSecret(secrets.Items[0])
+	b.Worker, err = s.GetWorker(build.ID)
+	return b, err
 }
 
 // Get creates a new project and writes it to storage.
