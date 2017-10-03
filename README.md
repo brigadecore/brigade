@@ -64,13 +64,14 @@ pipelines. Check out [the tutorial](/docs/intro/) for more.
 
 ## Acid :heart: Developers
 
+These directions assume you are using `minikube` for development. For other environments,
+you must make sure you push the Docker images to the right registry or cluster
+Docker daemon.
+
 To get started:
 
-- Clone this repo
-- Run `glide install` to prepare the environment
-- Run `make build` to build the source
-- Run `bin/acid` to start the server
+- Clone this repo and change directories into it
+- Point to MiniKube's Docker environment with `eval $(minikube docker-env)`
+- Run `make bootstrap build docker-build` to build the source
+- Install the Helm chart: `helm install -n acid chart/acid`
 
-To build the Docker images, use `make docker-build`.
-
-To deploy via [Draft](https://github.com/Azure/draft), use `make build-docker-bin && draft up`.
