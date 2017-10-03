@@ -20,6 +20,8 @@ type Store interface {
 	CreateBuild(build *acid.Build) error
 	// GetBuildJobs retrieves all build jobs (pods) from storage.
 	GetBuildJobs(build *acid.Build) ([]*acid.Job, error)
+	// GetWorker returns the worker for a given build.
+	GetWorker(buildID string) (*acid.Worker, error)
 	// GetJob retrieves the job from storage.
 	GetJob(id string) (*acid.Job, error)
 	// GetJobLog retrieves all logs for a job from storage.
