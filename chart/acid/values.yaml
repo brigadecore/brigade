@@ -18,6 +18,10 @@ api:
     externalPort: 7745
     internalPort: 7745
 
+# If enabled, roles, role bindings will be turned on.
+rbac:
+  enabled: false
+
 service:
   name: acid-service
   type: LoadBalancer

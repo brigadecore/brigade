@@ -1,4 +1,4 @@
-{{ $fullname := include "acid.fullname" . | printf "%s-ctrl" }}
+{{ $fullname := include "acid.ctrl.fullname" . }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -15,6 +15,7 @@ spec:
       labels:
         app: {{ $fullname }}
     spec:
+      serviceAccountName: {{ $fullname }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.controller.registry }}/{{ .Values.controller.name }}:{{ .Values.controller.tag }}"
