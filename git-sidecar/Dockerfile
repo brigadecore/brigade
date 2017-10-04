@@ -1,6 +1,9 @@
-FROM ubuntu:16.04
+FROM alpine:3.6
 
-RUN apt-get update -y && apt-get install -y git
+RUN apk update && apk add --no-cache \
+    ca-certificates \
+    git \
+    && update-ca-certificates
 
 COPY rootfs /
 ENV GIT_SSH=/gitssh.sh
