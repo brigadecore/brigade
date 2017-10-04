@@ -1,5 +1,5 @@
-hash: 4a7edfcee8a3b3e4847d9c52a9feb6273cea71218b5babec883615bd59cbd7b3
-updated: 2017-08-17T22:38:07.352519169-07:00
+hash: e1fc97f7acb345cf7b970b1eec3479065526f3f6dd3ad43b55dd79a88ef91b47
+updated: 2017-09-15T14:36:39.04693767-06:00
 imports:
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
@@ -59,6 +59,11 @@ imports:
   - query
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
+- name: github.com/gosuri/uitable
+  version: 36ee7e946282a3fb1cfecd476ddc9b35d8847e42
+  subpackages:
+  - util/strutil
+  - util/wordwrap
 - name: github.com/hashicorp/golang-lru
   version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
   subpackages:
@@ -67,6 +72,8 @@ imports:
   version: bf9dde6d0d2c004a008c27aaee91170c786f6db8
 - name: github.com/imdario/mergo
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/json-iterator/go
   version: c15b4d116cb805508fd5862d8761a88076b3cc8e
 - name: github.com/juju/ratelimit
@@ -81,12 +88,16 @@ imports:
   version: 3084677c2c188840777bff30054f2b553729d329
 - name: github.com/mattn/go-isatty
   version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+- name: github.com/mattn/go-runewidth
+  version: d6bea18f789704b5f83375793155289da36a3c7f
 - name: github.com/oklog/ulid
-  version: 66bb6560562feca7045b23db1ae85b01260f87c5
+  version: d311cb43c92434ec4072dfbbda3400741d0a6337
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
+- name: github.com/spf13/cobra
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: github.com/ugorji/go
@@ -101,6 +112,7 @@ imports:
   version: f2499483f923065a842d38eb4c7f1927e6fc6e6d
   subpackages:
   - context
+  - context/ctxhttp
   - http2
   - http2/hpack
   - idna
