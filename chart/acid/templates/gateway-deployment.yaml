@@ -1,19 +1,22 @@
+{{ $fullname := include "acid.gw.fullname" . }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ template "acid.fullname" . }}
+  name: {{ $fullname }}
   labels:
     app: {{ template "acid.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+    role: gateway
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ template "acid.fullname" . }}
+        app: {{ $fullname }}
     spec:
+      serviceAccountName: {{ $fullname }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.registry }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"

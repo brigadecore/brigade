@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	"github.com/deis/acid/acid-controller/cmd/acid-controller/controller"
 
@@ -24,7 +25,7 @@ func main() {
 
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
-	flag.StringVar(&namespace, "namespace", v1.NamespaceDefault, "kubernetes namespace")
+	flag.StringVar(&namespace, "namespace", defaultNS(), "kubernetes namespace")
 	flag.Parse()
 
 	// creates the connection
@@ -40,6 +41,7 @@ func main() {
 	}
 
 	controller := controller.NewController(clientset, namespace)
+	log.Printf("Listening in namespace %q for new events", namespace)
 
 	// Now let's start the controller
 	stop := make(chan struct{})
@@ -48,4 +50,12 @@ func main() {
 
 	// Wait forever
 	select {}
+}
+
+func defaultNS() string {
+	ns := os.Getenv("ACID_NAMESPACE")
+	if ns == "" {
+		return v1.NamespaceDefault
+	}
+	return ns
 }

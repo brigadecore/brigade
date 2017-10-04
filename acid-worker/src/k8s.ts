@@ -20,6 +20,8 @@ const expiresInMSec = 1000 * 60 * 60 * 24 * 30
 
 const defaultClient = kubernetes.Config.defaultClient()
 
+const serviceAccount = "acid-worker"
+
 class K8sResult implements jobs.Result {
   data: string
   constructor(msg: string) { this.data = msg }
@@ -503,6 +505,8 @@ function newRunnerPod(podname: string, acidImage: string): kubernetes.V1Pod {
   pod.spec = new kubernetes.V1PodSpec()
   pod.spec.containers = [c1]
   pod.spec.restartPolicy = "Never"
+  pod.spec.serviceAccount = serviceAccount
+  pod.spec.serviceAccountName = serviceAccount
   return pod
 }
 

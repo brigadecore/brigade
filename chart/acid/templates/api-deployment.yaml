@@ -14,6 +14,7 @@ spec:
       labels:
         app: {{ template "acid.fullname" . }}-api
     spec:
+      serviceAccountName: {{ template "acid.api.fullname" . }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.api.registry }}/{{ .Values.api.name }}:{{ .Values.api.tag }}"

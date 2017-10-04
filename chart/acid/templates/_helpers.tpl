@@ -14,3 +14,18 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- $name := default .Chart.Name .Values.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{- define "acid.gw.fullname" -}}
+{{ include "acid.fullname" . | printf "%s-gw" }}
+{{- end -}}
+{{- define "acid.ctrl.fullname" -}}
+{{ include "acid.fullname" . | printf "%s-ctrl" }}
+{{- end -}}
+{{- define "acid.api.fullname" -}}
+{{ include "acid.fullname" . | printf "%s-api" }}
+{{- end -}}
+{{- define "acid.worker.fullname" -}}
+{{ include "acid.fullname" . | printf "%s-wrk" }}
+{{- end -}}
+
+{{- define "acid.rbac.version" }}rbac.authorization.k8s.io/v1beta1{{ end -}}

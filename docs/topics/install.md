@@ -40,6 +40,15 @@ $ helm install acid/acid --set image.name=my-image --set image.tag=1.2.3
 There are a variety of other configuration options for Acid. Run `helm fetch values ./chart/acid`
 to see them all.
 
+### Disabling RBAC
+
+By default, Acid has Role Based Access Control support. To disable this, set
+`rbac.enabled` to `false`:
+
+```console
+$ helm install acid/acid --set rbac.enabled=false
+```
+
 ## Configuring Acid
 
 Once Acid is installed, three deployments will be running:
