@@ -14,6 +14,7 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
   - [GitHub Integration](github.md): A guide for configuring GitHub integration.
   - [Using Secrets](secrets.md): How to pass sensitive data into builds.
 - Configuring and Running Acid
+  - [Securing Acid](security.md): Things to consider when configuring Acid.
 - Contributing to Acid Development
   - [Acid Developers Guide](developers.md): A guide for people who want to modify Acid's
     code.
