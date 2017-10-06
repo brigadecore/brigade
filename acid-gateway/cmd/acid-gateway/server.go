@@ -50,16 +50,6 @@ func main() {
 		events.POST("/dockerhub/:org/:project/:commit", webhook.NewDockerPushHook(store).Handle)
 	}
 
-	// Lame UI
-	ui := router.Group("/log/:org/:project")
-	{
-		ui.Use(gin.Logger())
-
-		ui.GET("/", logHandler(clientset, store))
-		ui.GET("/status.svg", badgeHandler(store))
-		ui.GET("/id/:commit", logHandler(clientset, store))
-	}
-
 	router.GET("/healthz", healthz)
 
 	router.Run(":7744")
