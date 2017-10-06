@@ -36,6 +36,23 @@ describe("k8s", function() {
       assert.property(p.secrets, "hello")
       assert.equal(p.secrets.hello, "world")
     })
+    describe("when cloneURL is missing", function() {
+      it("omits cloneURL", function() {
+        let s = mockSecret()
+        s.data.cloneURL = ""
+        let p = k8s.secretToProject("default", s)
+        assert.equal(p.id, "acid-544b459e6ad7267e7791c4f77bfd1722a15e305a22cf9d3c60c5be")
+        assert.equal(p.name, "github.com/deis/test-private-testbed")
+        assert.equal(p.repo.name, "deis/test-private-testbed")
+        assert.equal(p.repo.token, "pretend password\n")
+        assert.equal(p.kubernetes.namespace, "default")
+        assert.equal(p.kubernetes.vcsSidecar, "acidic.azurecr.io/vcs-sidecar:latest")
+        assert.property(p.secrets, "hello")
+        assert.equal(p.secrets.hello, "world")
+
+        assert.isNull(p.repo.cloneURL)
+      })
+    })
   })
 
   describe("JobRunner", function (){
@@ -102,6 +119,30 @@ describe("k8s", function() {
           let jr = new k8s.JobRunner(j, e, p)
           assert.isNull(jr.runner.spec.containers[0].command)
           assert.notProperty(jr.secret.data, "main.sh")
+        })
+      })
+      context("when useSource is set to false", function() {
+        beforeEach(function() {
+          j.tasks = []
+        })
+        it("omits init container", function() {
+          j.useSource = false
+          let jr = new k8s.JobRunner(j, e, p)
+          // Currently, annotations are only created if the init container
+          // is specified.
+          assert.notProperty(jr.runner.metadata, "annotations")
+        })
+      })
+      context("when no cloneURL is set", function() {
+        beforeEach(function() {
+          j.tasks = []
+        })
+        it("omits init container", function() {
+          p.repo.cloneURL = null
+          let jr = new k8s.JobRunner(j, e, p)
+          // Currently, annotations are only created if the init container
+          // is specified.
+          assert.notProperty(jr.runner.metadata, "annotations")
         })
       })
       context("when SSH key is provided", function() {
