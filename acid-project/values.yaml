@@ -5,6 +5,7 @@ project: "deis/empty-testbed"
 repository: "github.com/deis/empty-testbed"
 
 # The definitive clone URL. This can be any Git-supported URL format.
+# You may set this to "" for no clone URL.
 cloneURL: "https://github.com/deis/empty-testbed.git"
 
 # Used by GitHub and other services to compute hook HMACs.

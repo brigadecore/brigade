@@ -189,7 +189,7 @@ export class JobRunner implements jobs.JobRunner {
       { name: "vcs-sidecar", mountPath: mountPath} as kubernetes.V1VolumeMount
     ];
 
-    if (job.useSource) {
+    if (job.useSource && project.repo.cloneURL) {
       // Add the sidecar.
       let sidecar = sidecarSpec(e, "/src", project.kubernetes.vcsSidecar, project, secName)
 
@@ -580,9 +580,12 @@ export function secretToProject(ns: string, secret: kubernetes.V1Secret): Projec
     },
     repo: {
       name: secret.metadata.annotations["projectName"],
-      cloneURL: b64dec(secret.data.cloneURL),
+      cloneURL: null,
     },
     secrets: {}
+  }
+  if (secret.data.cloneURL) {
+    p.repo.cloneURL = b64dec(secret.data.cloneURL)
   }
   if (secret.data.secrets) {
     p.secrets = JSON.parse(b64dec(secret.data.secrets))
