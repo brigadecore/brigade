@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"log"
 	"strings"
 
@@ -21,7 +22,21 @@ func (c *Controller) syncSecret(secret *v1.Secret) error {
 			return err
 		}
 
-		pod := newWorkerPod(secret)
+		pid := string(secret.Labels["project"])
+		if pid == "" {
+			return errors.New("project ID not found")
+		}
+
+		secretClient := c.clientset.CoreV1().Secrets(secret.Namespace)
+		project, err := secretClient.Get(pid, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		pod, err := newWorkerPod(secret, project)
+		if err != nil {
+			return err
+		}
 		if _, err := podClient.Create(&pod); err != nil {
 			return err
 		}
@@ -32,25 +47,19 @@ func (c *Controller) syncSecret(secret *v1.Secret) error {
 }
 
 const (
-	brigadeWorkerImage      = "deis/brigade-worker:latest"
+	brigadeWorkerImage      = "deis/brgiade-worker:latest"
 	brigadeWorkerPullPolicy = v1.PullIfNotPresent
 	volumeName              = "brigade-build"
 	volumeMountPath         = "/etc/brigade"
+	sidecarVolumeName       = "vcs-sidecar"
+	sidecarVolumePath       = "/vcs"
+	vcsSidecarKey           = "vcsSidecar"
 )
 
-func newWorkerPod(secret *v1.Secret) v1.Pod {
+func newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 	envvar := func(key string) v1.EnvVar {
-		return v1.EnvVar{
-			Name: "BRIGADE_" + strings.ToUpper(key),
-			ValueFrom: &v1.EnvVarSource{
-				SecretKeyRef: &v1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{
-						Name: secret.Name,
-					},
-					Key: key,
-				},
-			},
-		}
+		name := "BRIGADE_" + strings.ToUpper(key)
+		return secretRef(name, key, secret)
 	}
 
 	podSpec := v1.PodSpec{
@@ -59,11 +68,18 @@ func newWorkerPod(secret *v1.Secret) v1.Pod {
 			Image:           brigadeWorkerImage,
 			ImagePullPolicy: brigadeWorkerPullPolicy,
 			Command:         []string{"yarn", "start"},
-			VolumeMounts: []v1.VolumeMount{{
-				Name:      volumeName,
-				MountPath: volumeMountPath,
-				ReadOnly:  true,
-			}},
+			VolumeMounts: []v1.VolumeMount{
+				{
+					Name:      volumeName,
+					MountPath: volumeMountPath,
+					ReadOnly:  true,
+				},
+				{
+					Name:      sidecarVolumeName,
+					MountPath: sidecarVolumePath,
+					ReadOnly:  true,
+				},
+			},
 			Env: []v1.EnvVar{
 				envvar("project_id"),
 				envvar("event_type"),
@@ -78,11 +94,19 @@ func newWorkerPod(secret *v1.Secret) v1.Pod {
 				},
 			},
 		}},
-		Volumes: []v1.Volume{{
-			Name: volumeName,
-			VolumeSource: v1.VolumeSource{
-				Secret: &v1.SecretVolumeSource{SecretName: secret.Name},
-			}},
+		Volumes: []v1.Volume{
+			{
+				Name: volumeName,
+				VolumeSource: v1.VolumeSource{
+					Secret: &v1.SecretVolumeSource{SecretName: secret.Name},
+				},
+			},
+			{
+				Name: sidecarVolumeName,
+				VolumeSource: v1.VolumeSource{
+					EmptyDir: &v1.EmptyDirVolumeSource{},
+				},
+			},
 		},
 		RestartPolicy: v1.RestartPolicyNever,
 	}
@@ -94,5 +118,54 @@ func newWorkerPod(secret *v1.Secret) v1.Pod {
 		},
 		Spec: podSpec,
 	}
-	return pod
+
+	// Skip adding the sidecar pod if it's not necessary.
+	if s, ok := secret.Data["script"]; ok && len(s) > 0 {
+		return pod, nil
+	}
+
+	if image, ok := project.Data[vcsSidecarKey]; ok && len(image) > 0 {
+		pod.Spec.InitContainers = []v1.Container{{
+			Name:            "brigade-vcs-sidecar",
+			Image:           string(image),
+			ImagePullPolicy: brigadeWorkerPullPolicy,
+			VolumeMounts: []v1.VolumeMount{{
+				Name:      sidecarVolumeName,
+				MountPath: sidecarVolumePath,
+			}},
+			Env: []v1.EnvVar{
+				{
+					Name:  "VCS_LOCAL_PATH",
+					Value: sidecarVolumePath,
+				},
+				secretRef("VCS_REPO", "cloneURL", project),
+				secretRef("VCS_REVISION", "commit", secret),
+				secretRef("VCS_AUTH_TOKEN", "github.token", project),
+				secretRef("BRIGADE_REPO_KEY", "sshKey", project),
+			},
+		}}
+	}
+	return pod, nil
+}
+
+// secretRef generate a SeccretKeyRef env var entry if `kye` is present in `secret`.
+// If the key does not exist a name/value pair is returned with an empty value
+func secretRef(name, key string, secret *v1.Secret) v1.EnvVar {
+	if _, ok := secret.Data[key]; !ok {
+		return v1.EnvVar{
+			Name:  name,
+			Value: "",
+		}
+	}
+	return v1.EnvVar{
+		Name: name,
+		ValueFrom: &v1.EnvVarSource{
+			SecretKeyRef: &v1.SecretKeySelector{
+				Key: key,
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: secret.Name,
+				},
+			},
+		},
+	}
 }
