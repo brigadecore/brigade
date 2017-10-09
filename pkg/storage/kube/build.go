@@ -83,7 +83,12 @@ func (s *store) GetBuilds() ([]*acid.Build, error) {
 	}
 	buildList := make([]*acid.Build, len(secretList.Items))
 	for i := range secretList.Items {
-		buildList[i] = NewBuildFromSecret(secretList.Items[i])
+		b := NewBuildFromSecret(secretList.Items[i])
+		b.Worker, err = s.GetWorker(b.ID)
+		if err != nil {
+			return buildList, err
+		}
+		buildList[i] = b
 	}
 	return buildList, nil
 }
@@ -98,7 +103,12 @@ func (s *store) GetProjectBuilds(proj *acid.Project) ([]*acid.Build, error) {
 	}
 	buildList := make([]*acid.Build, len(secretList.Items))
 	for i := range secretList.Items {
-		buildList[i] = NewBuildFromSecret(secretList.Items[i])
+		b := NewBuildFromSecret(secretList.Items[i])
+		b.Worker, err = s.GetWorker(b.ID)
+		if err != nil {
+			return buildList, err
+		}
+		buildList[i] = b
 	}
 	return buildList, nil
 }
