@@ -1,9 +1,9 @@
 _cache/
-acid-api/rootfs/acid-api
-acid-controller/rootfs/acid-controller
-acid-gateway/rootfs/acid-gateway
-acid-worker/dist
-acid-worker/doc/
+brigade-api/rootfs/brigade-api
+brigade-controller/rootfs/brigade-controller
+brigade-gateway/rootfs/brigade-gateway
+brigade-worker/dist
+brigade-worker/doc/
 bin/
 node_modules/
 tests/testdata/*-generated.*

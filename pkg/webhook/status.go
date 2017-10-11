@@ -35,7 +35,7 @@ type StatusSetter interface {
 	// SetStatus indicates the status.
 	//
 	// ctx is a context string that the remote system uses to distinguish multiple
-	// status messages. A sane default is "acid"
+	// status messages. A sane default is "brigade"
 	//
 	// desc is a human-oriented string that explains the status code
 	//

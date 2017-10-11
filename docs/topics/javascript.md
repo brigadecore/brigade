@@ -1,16 +1,16 @@
-# The Acid.js API
+# The Brigade.js API
 
-This document describes the public APIs typically used for writing Acid.js. It does not
+This document describes the public APIs typically used for writing Brigade.js. It does not
 describe internal libraries, nor does it list non-public methods and properties on
 these objects.
 
-An Acid JavaScript file is executed inside of a cluster. It runs inside of a
+An Brigade JavaScript file is executed inside of a cluster. It runs inside of a
 Node.js-like environment (with a few libraries blocked for security reasons). It
 uses Node 8.
 
 ## High-level Concepts
 
-An Acid JS file is always associated with a _project_. A project defines contextual
+An Brigade JS file is always associated with a _project_. A project defines contextual
 information, and also dictates the security parameters under which the script will
 execute.
 
@@ -18,39 +18,39 @@ A project may associate the script to a _repository_, where a repository is typi
 a VCS reference (e.g. a git repository). Each job will, by default, have access
 to the project's repository.
 
-Acid files respond to _events_. That is, Acid scripts are typically composed of one or
-more _event handlers_. When the Acid environment triggers an event, the associated
+Brigade files respond to _events_. That is, Brigade scripts are typically composed of one or
+more _event handlers_. When the Brigade environment triggers an event, the associated
 event handler will be called.
 
 
-## The `libacid` Library
+## The `brigadier` Library
 
-The main library for Acid is called `libacid`. The Acid runtime grants access to
+The main library for Brigade is called `brigadier`. The Brigade runtime grants access to
 this library.
 
 ```
-const libacid = require('libacid')
+const brigadier = require('brigadier')
 ```
 
 It is considered idiomatic to destructure the library on import:
 
 ```
-const { events, Job, Group } = require('libacid')
+const { events, Job, Group } = require('brigadier')
 ```
 
-Some objects described in this document are not declared in `libacid`, but are
-exposed via `libacid`.
+Some objects described in this document are not declared in `brigadier`, but are
+exposed via `brigadier`.
 
-### The `AcidEvent` class
+### The `BrigadeEvent` class
 
-The `AcidEvent` class describes an event. Typically, it is exposed to the script
+The `BrigadeEvent` class describes an event. Typically, it is exposed to the script
 via a callback handler.
 
 ```
-events.on("pull", (acidEvent, project) => {})
+events.on("pull", (brigadeEvent, project) => {})
 ```
 
-An instance of an `AcidEvent` has the following properties:
+An instance of an `BrigadeEvent` has the following properties:
 
 - `buildID: string`: The unique ID for the build. This will change for each build.
 - `type: string`: The event type (`push`, `exec`, `pull_request`).
@@ -66,20 +66,20 @@ An instance of an `AcidEvent` has the following properties:
 
 #### The `Cause` class
 
-A `Cause` is attached to an `AcidEvent`, and describes the event that caused this
+A `Cause` is attached to an `BrigadeEvent`, and describes the event that caused this
 event. It has the following properties:
 
-- `event: AcidEvent`: The causing event
+- `event: BrigadeEvent`: The causing event
 - `reason: any`: The reason this event was caused. Typically this is an error object.
 - `trigger: string`: The mechanism that triggered this event (e.g. "unhandled exception")
 
-The `after` and `error` built-in events will set a `Cause` on their `AcidEvent` objects.
+The `after` and `error` built-in events will set a `Cause` on their `BrigadeEvent` objects.
 
 ### The `events` Object
 
-Within `libacid`, the `events` object provides access to the main event handler.
+Within `brigadier`, the `events` object provides access to the main event handler.
 
-#### `events.on(eventName: string, callback: (e: AcidEvent, p: Project) => {})`
+#### `events.on(eventName: string, callback: (e: BrigadeEvent, p: Project) => {})`
 
 The `events.on()` function is the way event handlers are registered. An `on()` method
 takes two arguments: the name of the event and the callback that will be executed
@@ -248,9 +248,9 @@ Properties:
   - `secrets: {[key: string]: string}`: Key/value pairs of secret name and secret value.
     The security model _may_ limit access to this property or its values.
 
-Secrets (`project.secrets`) are passed from the project configuration into a Kubernetes Secret, then injected into Acid.
+Secrets (`project.secrets`) are passed from the project configuration into a Kubernetes Secret, then injected into Brigade.
 
-So `helm install acid-project --set secrets.foo=bar` will add `foo: bar` to
+So `helm install brigade-project --set secrets.foo=bar` will add `foo: bar` to
 `project.secrets`.
 
 ### The Event object

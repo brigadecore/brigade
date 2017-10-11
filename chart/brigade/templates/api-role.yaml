@@ -1,0 +1,44 @@
+{{ $fname := include "brigade.api.fullname" . }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $fname }}
+  labels:
+    app: {{ template "brigade.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+{{ if .Values.rbac.enabled }}
+---
+kind: Role
+apiVersion: {{ template "brigade.rbac.version" }}
+metadata:
+  name: {{ $fname }}
+  labels:
+    app: {{ template "brigade.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["pods", "secrets"]
+  verbs: ["get", "list", "watch"]
+---
+kind: RoleBinding
+apiVersion: {{ template "brigade.rbac.version" }}
+metadata:
+  name: {{ $fname }}
+  labels:
+    app: {{ template "brigade.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+subjects:
+- kind: ServiceAccount
+  name: {{ $fname }}
+roleRef:
+  kind: Role
+  name: {{ $fname }}
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}

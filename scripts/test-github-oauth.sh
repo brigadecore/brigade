@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # This is a quick test you can use to make sure your GitHub Personal Access
-# Token is correctly configured for talking to deis/acid.
+# Token is correctly configured for talking to deis/brigade.
 # Usage: TOKEN=YOURTOKEN ./test-github-oauth.sh
 
-PROJECT=https://api.github.com/repos/deis/acid
+PROJECT=https://api.github.com/repos/deis/brigade
 
 curl -i -H "Authorization: token ${TOKEN}" $PROJECT

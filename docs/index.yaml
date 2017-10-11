@@ -1,37 +1,37 @@
 apiVersion: v1
 entries:
-  acid:
+  brigade:
   - apiVersion: v1
     created: 2017-09-01T16:08:30.179389571-06:00
     description: A Helm chart for Kubernetes
     digest: c041d09e8ce413ba76e86293aeeeaf26af984cf60c01da56ec751776f4ec8eb5
-    name: acid
+    name: brigade
     urls:
-    - acid-0.2.0.tgz
+    - brigade-0.2.0.tgz
     version: 0.2.0
   - apiVersion: v1
     created: 2017-09-01T16:08:30.179151746-06:00
     description: A Helm chart for Kubernetes
     digest: 3540fc1d9a4805314fec138a878bb2a59bad09d93badc677bc1f70380dd3d617
-    name: acid
+    name: brigade
     urls:
-    - acid-0.1.0.tgz
+    - brigade-0.1.0.tgz
     version: 0.1.0
-  acid-project:
+  brigade-project:
   - apiVersion: v1
     created: 2017-09-01T16:08:30.180134968-06:00
-    description: Create an Acid project
+    description: Create an Brigade project
     digest: 676d39b2cef4f9ddd10dce295d6c9b49b5c7e602704eeedb1b4c1697ce981b2e
-    name: acid-project
+    name: brigade-project
     urls:
-    - acid-project-0.2.0.tgz
+    - brigade-project-0.2.0.tgz
     version: 0.2.0
   - apiVersion: v1
     created: 2017-09-01T16:08:30.179869163-06:00
     description: A Helm chart for Kubernetes
     digest: fa01e1cae7445b2092b3e21d6e401a8aca0162b2948bb6ff6309f75821b9251a
-    name: acid-project
+    name: brigade-project
     urls:
-    - acid-project-0.1.0.tgz
+    - brigade-project-0.1.0.tgz
     version: 0.1.0
 generated: 2017-09-01T16:08:30.178503618-06:00

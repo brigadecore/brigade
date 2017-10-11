@@ -3,31 +3,31 @@ package storage
 import (
 	"io"
 
-	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/brigade/pkg/brigade"
 )
 
 // Store represents a storage engine for a Project.
 type Store interface {
 	// GetProjects retrieves all projects from storage.
-	GetProjects() ([]*acid.Project, error)
+	GetProjects() ([]*brigade.Project, error)
 	// GetProject retrieves the project from storage.
-	GetProject(id string) (*acid.Project, error)
+	GetProject(id string) (*brigade.Project, error)
 	// GetProjectBuilds retrieves the project's builds from storage.
-	GetProjectBuilds(proj *acid.Project) ([]*acid.Build, error)
+	GetProjectBuilds(proj *brigade.Project) ([]*brigade.Build, error)
 	// GetBuilds retrieves all active builds from storage.
-	GetBuilds() ([]*acid.Build, error)
+	GetBuilds() ([]*brigade.Build, error)
 	// GetBuild retrieves the build from storage.
-	GetBuild(id string) (*acid.Build, error)
+	GetBuild(id string) (*brigade.Build, error)
 	// CreateBuild creates a new job for the work queue.
-	CreateBuild(build *acid.Build) error
+	CreateBuild(build *brigade.Build) error
 	// GetBuildJobs retrieves all build jobs (pods) from storage.
-	GetBuildJobs(build *acid.Build) ([]*acid.Job, error)
+	GetBuildJobs(build *brigade.Build) ([]*brigade.Job, error)
 	// GetWorker returns the worker for a given build.
-	GetWorker(buildID string) (*acid.Worker, error)
+	GetWorker(buildID string) (*brigade.Worker, error)
 	// GetJob retrieves the job from storage.
-	GetJob(id string) (*acid.Job, error)
+	GetJob(id string) (*brigade.Job, error)
 	// GetJobLog retrieves all logs for a job from storage.
-	GetJobLog(job *acid.Job) (string, error)
+	GetJobLog(job *brigade.Job) (string, error)
 	// GetJobLogStream retrieve a stream of all logs for a job from storage.
-	GetJobLogStream(job *acid.Job) (io.ReadCloser, error)
+	GetJobLogStream(job *brigade.Job) (io.ReadCloser, error)
 }

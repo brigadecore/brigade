@@ -8,8 +8,8 @@ import (
 
 	"gopkg.in/gin-gonic/gin.v1"
 
-	"github.com/deis/acid/pkg/acid"
-	"github.com/deis/acid/pkg/storage"
+	"github.com/deis/brigade/pkg/brigade"
+	"github.com/deis/brigade/pkg/storage"
 )
 
 type dockerPushHook struct {
@@ -49,32 +49,32 @@ func (s *dockerPushHook) Handle(c *gin.Context) {
 
 	// This will clone the repo before responding to the webhook. We need
 	// to make sure that this doesn't cause the hook to hang up.
-	acidJS, err := s.getFile(commit, "./acid.js", proj)
+	brigadeJS, err := s.getFile(commit, "./brigade.js", proj)
 	if err != nil {
 		log.Printf("aborting DockerImagePush event due to error: %s", err)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "acidjs not found"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "brigadejs not found"})
 		return
 	}
 
-	go s.notifyDockerImagePush(proj, commit, body, acidJS)
+	go s.notifyDockerImagePush(proj, commit, body, brigadeJS)
 	c.JSON(200, gin.H{"status": "Success"})
 }
 
-func (s *dockerPushHook) notifyDockerImagePush(proj *acid.Project, commit string, payload, acidJS []byte) {
-	if err := s.doDockerImagePush(proj, commit, payload, acidJS); err != nil {
+func (s *dockerPushHook) notifyDockerImagePush(proj *brigade.Project, commit string, payload, brigadeJS []byte) {
+	if err := s.doDockerImagePush(proj, commit, payload, brigadeJS); err != nil {
 		log.Printf("failed dockerimagepush event: %s", err)
 	}
 
 }
 
-func (s *dockerPushHook) doDockerImagePush(proj *acid.Project, commit string, payload, acidJS []byte) error {
-	b := &acid.Build{
+func (s *dockerPushHook) doDockerImagePush(proj *brigade.Project, commit string, payload, brigadeJS []byte) error {
+	b := &brigade.Build{
 		ProjectID: proj.ID,
 		Type:      "imagePush",
 		Provider:  "dockerhub",
 		Commit:    commit,
 		Payload:   payload,
-		Script:    acidJS,
+		Script:    brigadeJS,
 	}
 	return s.store.CreateBuild(b)
 }

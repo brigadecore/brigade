@@ -2,24 +2,24 @@
 
 Let’s learn by example.
 
-Throughout this tutorial, we’ll walk you through the creation of a basic web application with an Acid CI pipeline for testing the application.
+Throughout this tutorial, we’ll walk you through the creation of a basic web application with an Brigade CI pipeline for testing the application.
 
 It’ll consist of two parts:
 
 - A public site that lets people generate UUIDs.
-- An acid.js that tests the site
+- An brigade.js that tests the site
 
-We’ll assume you have Acid, git (a version control system), and pip (a package management system for Python) installed already.
+We’ll assume you have Brigade, git (a version control system), and pip (a package management system for Python) installed already.
 
-You can tell Acid is installed and which version by running the following command in a shell prompt (indicated by the $ prefix):
+You can tell Brigade is installed and which version by running the following command in a shell prompt (indicated by the $ prefix):
 
 ```
-$ helm status acid-server
+$ helm status brigade-server
 ```
 
-If Acid is installed, you should see the deployment status of your installation. If it isn’t, you’ll get an error telling "Error: getting deployed release "acid-server": release: "acid-server" not found".
+If Brigade is installed, you should see the deployment status of your installation. If it isn’t, you’ll get an error telling "Error: getting deployed release "brigade-server": release: "brigade-server" not found".
 
-See [Installing Acid][install] for advice on how to install Acid.
+See [Installing Brigade][install] for advice on how to install Brigade.
 
 For pip, it is already installed if you're using Python 2 >=2.7.9 or Python 3 >=3.4 binaries downloaded from python.org.
 
@@ -31,7 +31,7 @@ $ pip --version
 
 If you see "command not found", see [how to install pip][install-pip] for advice on how to install pip.
 
-If you're having trouble going through this tutorial, please post an issue to [deis/acid][github] to chat with other Acid users who might be able to help.
+If you're having trouble going through this tutorial, please post an issue to [deis/brigade][github] to chat with other Brigade users who might be able to help.
 
 ## Creating your first application
 
@@ -104,6 +104,6 @@ Keep refreshing the page. You should see new UUIDs being generated every time yo
 When you’re comfortable with the application, read [part 2 of this tutorial][part2] to learn about pushing our application to Github.
 
 
-[github]: https://github.com/deis/acid
+[github]: https://github.com/deis/brigade
 [install]: install.md
 [part2]: tutorial02.md

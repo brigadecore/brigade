@@ -4,7 +4,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// store represents a storage engine for a acid.Project.
+// store represents a storage engine for a brigade.Project.
 type store struct {
 	client    kubernetes.Interface
 	namespace string

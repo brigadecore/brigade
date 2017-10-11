@@ -11,14 +11,14 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/pkg/api/v1"
 
-	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/brigade/pkg/brigade"
 )
 
 // GetBuild returns the build.
-func (s *store) GetBuild(id string) (*acid.Build, error) {
-	build := &acid.Build{ID: id}
+func (s *store) GetBuild(id string) (*brigade.Build, error) {
+	build := &brigade.Build{ID: id}
 
-	labels := labels.Set{"heritage": "acid", "component": "build", "build": build.ID}
+	labels := labels.Set{"heritage": "brigade", "component": "build", "build": build.ID}
 	listOption := meta.ListOptions{LabelSelector: labels.AsSelector().String()}
 	secrets, err := s.client.CoreV1().Secrets(s.namespace).List(listOption)
 	if err != nil {
@@ -34,7 +34,7 @@ func (s *store) GetBuild(id string) (*acid.Build, error) {
 }
 
 // Get creates a new project and writes it to storage.
-func (s *store) CreateBuild(build *acid.Build) error {
+func (s *store) CreateBuild(build *brigade.Build) error {
 	shortCommit := build.Commit
 	if len(shortCommit) > 8 {
 		shortCommit = shortCommit[0:8]
@@ -44,7 +44,7 @@ func (s *store) CreateBuild(build *acid.Build) error {
 		build.ID = genID()
 	}
 
-	buildName := fmt.Sprintf("acid-worker-%s-%s", build.ID, shortCommit)
+	buildName := fmt.Sprintf("brigade-worker-%s-%s", build.ID, shortCommit)
 
 	secret := v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
@@ -53,7 +53,7 @@ func (s *store) CreateBuild(build *acid.Build) error {
 				"build":     build.ID,
 				"commit":    build.Commit,
 				"component": "build",
-				"heritage":  "acid",
+				"heritage":  "brigade",
 				"project":   build.ProjectID,
 			},
 		},
@@ -74,14 +74,14 @@ func (s *store) CreateBuild(build *acid.Build) error {
 	return err
 }
 
-func (s *store) GetBuilds() ([]*acid.Build, error) {
-	lo := meta.ListOptions{LabelSelector: "heritage=acid,component=build"}
+func (s *store) GetBuilds() ([]*brigade.Build, error) {
+	lo := meta.ListOptions{LabelSelector: "heritage=brigade,component=build"}
 
 	secretList, err := s.client.CoreV1().Secrets(s.namespace).List(lo)
 	if err != nil {
 		return nil, err
 	}
-	buildList := make([]*acid.Build, len(secretList.Items))
+	buildList := make([]*brigade.Build, len(secretList.Items))
 	for i := range secretList.Items {
 		b := NewBuildFromSecret(secretList.Items[i])
 		b.Worker, err = s.GetWorker(b.ID)
@@ -93,15 +93,15 @@ func (s *store) GetBuilds() ([]*acid.Build, error) {
 	return buildList, nil
 }
 
-func (s *store) GetProjectBuilds(proj *acid.Project) ([]*acid.Build, error) {
+func (s *store) GetProjectBuilds(proj *brigade.Project) ([]*brigade.Build, error) {
 	// Load the pods that ran as part of this build.
-	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("heritage=acid,component=build,project=%s", proj.ID)}
+	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("heritage=brigade,component=build,project=%s", proj.ID)}
 
 	secretList, err := s.client.CoreV1().Secrets(s.namespace).List(lo)
 	if err != nil {
 		return nil, err
 	}
-	buildList := make([]*acid.Build, len(secretList.Items))
+	buildList := make([]*brigade.Build, len(secretList.Items))
 	for i := range secretList.Items {
 		b := NewBuildFromSecret(secretList.Items[i])
 		b.Worker, err = s.GetWorker(b.ID)
@@ -113,8 +113,8 @@ func (s *store) GetProjectBuilds(proj *acid.Project) ([]*acid.Build, error) {
 	return buildList, nil
 }
 
-func NewBuildFromSecret(secret v1.Secret) *acid.Build {
-	return &acid.Build{
+func NewBuildFromSecret(secret v1.Secret) *brigade.Build {
+	return &brigade.Build{
 		ID:        secret.ObjectMeta.Labels["build"],
 		ProjectID: secret.ObjectMeta.Labels["project"],
 		Type:      string(secret.Data["event_type"]),

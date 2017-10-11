@@ -15,12 +15,12 @@ import (
 	"github.com/google/go-github/github"
 	"gopkg.in/gin-gonic/gin.v1"
 
-	"github.com/deis/acid/pkg/acid"
-	"github.com/deis/acid/pkg/storage"
+	"github.com/deis/brigade/pkg/brigade"
+	"github.com/deis/brigade/pkg/storage"
 )
 
 const (
-	acidJSFile         = "acid.js"
+	brigadeJSFile      = "brigade.js"
 	hubSignatureHeader = "X-Hub-Signature"
 )
 
@@ -30,9 +30,9 @@ type githubHook struct {
 	createStatus statusCreator
 }
 
-type fileGetter func(commit, path string, proj *acid.Project) ([]byte, error)
+type fileGetter func(commit, path string, proj *brigade.Project) ([]byte, error)
 
-type statusCreator func(commit string, proj *acid.Project, status *github.RepoStatus) error
+type statusCreator func(commit string, proj *brigade.Project, status *github.RepoStatus) error
 
 // NewGithubHook creates a GitHub webhook handler.
 func NewGithubHook(s storage.Store) *githubHook {
@@ -122,7 +122,7 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 }
 
 // buildStatus runs a build, and sets upstream status accordingly.
-func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj *acid.Project, status *github.RepoStatus) {
+func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj *brigade.Project, status *github.RepoStatus) {
 	// If we need an SSH key, set it here
 	if proj.Repo.SSHKey != "" {
 		key, err := ioutil.TempFile("", "")
@@ -136,8 +136,8 @@ func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj 
 			log.Printf("error writing ssh key cache: %s", err)
 			return
 		}
-		os.Setenv("ACID_REPO_KEY", keyfile)
-		defer os.Unsetenv("ACID_REPO_KEY") // purely defensive... not really necessary
+		os.Setenv("BRIGADE_REPO_KEY", keyfile)
+		defer os.Unsetenv("BRIGADE_REPO_KEY") // purely defensive... not really necessary
 	}
 
 	msg := "Building"
@@ -155,7 +155,7 @@ func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj 
 		status.State = &StateFailure
 		status.Description = &msg
 	} else {
-		msg = "Acid build passed"
+		msg = "Brigade build passed"
 		status.State = &StateSuccess
 		status.Description = &msg
 	}
@@ -197,12 +197,12 @@ func checkPullRequestAction(event *github.PullRequestEvent) error {
 
 var ignoreAction = errors.New("ignored")
 
-func getFileFromGithub(commit, path string, proj *acid.Project) ([]byte, error) {
+func getFileFromGithub(commit, path string, proj *brigade.Project) ([]byte, error) {
 	return GetFileContents(proj, commit, path)
 }
 
 // TODO create abstraction for mocking
-func getFile(commit, path string, proj *acid.Project) ([]byte, error) {
+func getFile(commit, path string, proj *brigade.Project) ([]byte, error) {
 
 	// TODO: This could be optimized, or perhaps we could just get the commit off of the REST API.
 	tmpdir, err := ioutil.TempDir("", "git-")
@@ -233,24 +233,24 @@ func getFile(commit, path string, proj *acid.Project) ([]byte, error) {
 		return nil, err
 	}
 
-	// Path to acid file:
-	acidPath := filepath.Join(toDir, path)
-	return ioutil.ReadFile(acidPath)
+	// Path to brigade file:
+	brigadePath := filepath.Join(toDir, path)
+	return ioutil.ReadFile(brigadePath)
 }
 
-func (s *githubHook) build(eventType, commit string, payload []byte, proj *acid.Project) error {
-	acidScript, err := s.getFile(commit, acidJSFile, proj)
+func (s *githubHook) build(eventType, commit string, payload []byte, proj *brigade.Project) error {
+	brigadeScript, err := s.getFile(commit, brigadeJSFile, proj)
 	if err != nil {
 		return err
 	}
 
-	b := &acid.Build{
+	b := &brigade.Build{
 		ProjectID: proj.ID,
 		Type:      eventType,
 		Provider:  "github",
 		Commit:    commit,
 		Payload:   payload,
-		Script:    acidScript,
+		Script:    brigadeScript,
 	}
 
 	return s.store.CreateBuild(b)

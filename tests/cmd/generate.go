@@ -12,8 +12,8 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/deis/acid/pkg/storage/kube"
-	"github.com/deis/acid/pkg/webhook"
+	"github.com/deis/brigade/pkg/storage/kube"
+	"github.com/deis/brigade/pkg/webhook"
 )
 
 var (
@@ -25,7 +25,7 @@ var (
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
-	flag.StringVar(&namespace, "namespace", os.Getenv("ACID_NAMESPACE"), "kubernetes namespace")
+	flag.StringVar(&namespace, "namespace", os.Getenv("BRIGADE_NAMESPACE"), "kubernetes namespace")
 }
 
 func getKubeClient() (*kubernetes.Clientset, error) {

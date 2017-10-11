@@ -1,6 +1,6 @@
 # Writing your first CI pipeline, Part 4
 
-This tutorial begins where [Tutorial 3][part3] left off. We’ll walk through the process for writing your first feature for our UUID generator app, then test the feature on Github using Acid.
+This tutorial begins where [Tutorial 3][part3] left off. We’ll walk through the process for writing your first feature for our UUID generator app, then test the feature on Github using Brigade.
 
 ## Test the application
 
@@ -74,19 +74,19 @@ $ git commit -m "add unit tests"
 $ git push origin master
 ```
 
-## Create an acid.js file
+## Create an brigade.js file
 
-Now that we have successfully written tests for our app and configured an Acid project, it's time to make use of them.
+Now that we have successfully written tests for our app and configured an Brigade project, it's time to make use of them.
 
-An `acid.js` file must be placed in the root of your git repo and committed.
+An `brigade.js` file must be placed in the root of your git repo and committed.
 
-Acid uses simple JavaScript files to run tasks. When it comes to task running, Acid follows this process:
+Brigade uses simple JavaScript files to run tasks. When it comes to task running, Brigade follows this process:
 
 - Listen for an event
-- When the event is fired, execute the event handler (if found) in `acid.js`
+- When the event is fired, execute the event handler (if found) in `brigade.js`
 - Wait until the event is handled, then report the result
 
-Given this, the role of the `acid.js` file is to declare event handlers. And it's easy. Open `acid.js` and write this JavaScript code into it:
+Given this, the role of the `brigade.js` file is to declare event handlers. And it's easy. Open `brigade.js` and write this JavaScript code into it:
 
 ```javascript
 events.on("push", function(e, project) {
@@ -94,9 +94,9 @@ events.on("push", function(e, project) {
 })
 ```
 
-The above defines one event: `push`. This event responds to Github `push` requests (like `git push origin master`). If you have configured your Github webhook system correctly (see [part 3][part3]) then each time GitHub receives a push, it will notify Acid.
+The above defines one event: `push`. This event responds to Github `push` requests (like `git push origin master`). If you have configured your Github webhook system correctly (see [part 3][part3]) then each time GitHub receives a push, it will notify Brigade.
 
-Acid will run the `events.push` event handler, and it will give that event handler a single parameter (`e`), which is a record of the event that was just triggered.
+Brigade will run the `events.push` event handler, and it will give that event handler a single parameter (`e`), which is a record of the event that was just triggered.
 
 In our script above, we just log the comment:
 
@@ -110,7 +110,7 @@ Note that `e.commit` holds the git commit SHA for the commit that was just pushe
 
 Logging a commit SHA isn't all that helpful. Instead, we would want to test that our UUID generator project is actually generating UUIDs, wouldn't we?
 
-Edit `acid.js` again so it looks like this:
+Edit `brigade.js` again so it looks like this:
 
 ```javascript
 events.on("push", function(e, project) {
@@ -134,7 +134,7 @@ events.on("push", function(e, project) {
 })
 ```
 
-The example above introduces Acid jobs. A Job is a particular build step. Each job can run a Docker container and feed it multiple commands.
+The example above introduces Brigade jobs. A Job is a particular build step. Each job can run a Docker container and feed it multiple commands.
 
 Above, we create the `test-runner` job, have it use the [python:3](https://hub.docker.com/_/python/) image, and then set it up to run the following commands in that container:
 
@@ -142,22 +142,22 @@ Above, we create the `test-runner` job, have it use the [python:3](https://hub.d
 - `pip install -r requirements.txt`: Use pip to install Flask like we did in [part 1][part1].
 - `python setup.py test`: Run the test suite for our project.
 
-Finally, when we run `node.run()`, the job is built and executed. If it passes, all is good. If it fails, Acid and Github are notified.
+Finally, when we run `node.run()`, the job is built and executed. If it passes, all is good. If it fails, Brigade and Github are notified.
 
 At this point, you should commit your work to a new branch and check that it all works:
 
 ```
-$ git checkout -b add-acid
+$ git checkout -b add-brigade
 $ git add .
-$ git commit -m "add acid.js"
-$ git push origin add-acid
+$ git commit -m "add brigade.js"
+$ git push origin add-brigade
 ```
 
 Open up a new pull request on your repository using the branch. You should see a status icon for your new commit. Assuming all is set up, you should see a shiny green checkmark next to your commit.
 
 <img src="img/img5.png" style="height: 500px;" />
 
-This concludes the basic tutorial. If you are familiar with Acid and are interested in learning how to refactor acid.js into a more efficient test pipeline, check out [Advanced tutorial: Writing efficient pipelines][efficient-pipelines].
+This concludes the basic tutorial. If you are familiar with Brigade and are interested in learning how to refactor brigade.js into a more efficient test pipeline, check out [Advanced tutorial: Writing efficient pipelines][efficient-pipelines].
 
 You might also be scratching your head on what to [read next][readnext].
 

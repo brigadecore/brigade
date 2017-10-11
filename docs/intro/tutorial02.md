@@ -57,7 +57,7 @@ Github automatically displays the contents of a file named README if it exists i
 
 There you have it! Your first Github repository, linked to your local git repository.
 
-When you’re comfortable with the git workflow, read [part 3 of this tutorial][part3] to learn about configuring our Github repository to test new features using Acid.
+When you’re comfortable with the git workflow, read [part 3 of this tutorial][part3] to learn about configuring our Github repository to test new features using Brigade.
 
 
 [part1]: tutorial01.md

@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/deis/acid/pkg/storage"
+	"github.com/deis/brigade/pkg/storage"
 )
 
 // API represents the rest api handlers.

@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
 
-	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/brigade/pkg/brigade"
 )
 
 func TestNewBuildFromSecret(t *testing.T) {
@@ -26,7 +26,7 @@ func TestNewBuildFromSecret(t *testing.T) {
 			"script":         []byte("ohai"),
 		},
 	}
-	expectedBuild := &acid.Build{
+	expectedBuild := &brigade.Build{
 		ID:        "#1",
 		ProjectID: "myproject",
 		Commit:    "abc123",

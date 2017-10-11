@@ -1,9 +1,0 @@
-Your new Acid project has been created.
-
-This is an acid project for {{ .Values.repository }}
-
-{{ if .Values.sshKey }}It is configured to use SSH{{ else }}It will clone the public repo{{ end }}
-
-To check it's state, run:
-
-  helm status {{.Release.Name}}

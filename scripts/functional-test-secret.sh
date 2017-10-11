@@ -5,15 +5,15 @@ root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root_dir"
 
 uuid="$(uuidgen)"
-name="acid-worker-${uuid,,}"
+name="brigade-worker-${uuid,,}"
 
 namespace="default"
 commit="9c75584920f1297008118915024927cc099d5dcc"
 event_provider="github"
 event_type="push"
-project_id="acid-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac"
+project_id="brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac"
 payload="{}"
-script="_cache/github.com/deis/empty-testbed/acid.js"
+script="_cache/github.com/deis/empty-testbed/brigade.js"
 
 while (( "$#" > 0 )); do
   case "$1" in
@@ -31,7 +31,7 @@ kind: Secret
 metadata:
   name: ${name}
   labels:
-    heritage: acid
+    heritage: brigade
     belongsto: ${project_id}
     build: ${uuid}
     commit: ${commit}

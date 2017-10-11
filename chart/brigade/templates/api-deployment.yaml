@@ -1,0 +1,38 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "brigade.fullname" . }}-api
+  labels:
+    app: {{ template "brigade.fullname" . }}-api
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ template "brigade.fullname" . }}-api
+    spec:
+      serviceAccountName: {{ template "brigade.api.fullname" . }}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.api.registry }}/{{ .Values.api.name }}:{{ .Values.api.tag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.api.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.api.service.internalPort }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.api.service.internalPort }}
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.api.service.internalPort }}
+        env:
+          - name: BRIGADE_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+      {{ if .Values.privateRegistry }}imagePullSecrets:
+        - name: {{.Values.privateRegistry}}{{ end }}

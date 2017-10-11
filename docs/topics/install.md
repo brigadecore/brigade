@@ -1,10 +1,10 @@
 # Installation Guide
 
-This guide provides detailed information about installing and configuring the Acid services.
+This guide provides detailed information about installing and configuring the Brigade services.
 
 ## Installing the Kubernetes Services
 
-Acid runs inside of a Kubernetes cluster. This section explains how to install
+Brigade runs inside of a Kubernetes cluster. This section explains how to install
 into an existing Kubernetes cluster.
 
 ### Option 1: Install from GitHub Repository
@@ -12,9 +12,9 @@ into an existing Kubernetes cluster.
 To install from the GitHub repository, follow these steps:
 
 ```console
-$ git clone https://github.com/deis/acid.git
-$ cd acid
-$ helm install ./chart/acid
+$ git clone https://github.com/deis/brigade.git
+$ cd brigade
+$ helm install ./chart/brigade
 ```
 
 ### Option 2: Install from the Chart Repository
@@ -24,47 +24,47 @@ updated when a new version is released, and will likely not be as up-to-date as
 the GitHub repository.
 
 ```console
-$ helm repo add acid https://deis.github.io/acid
-$ helm install acid/acid
+$ helm repo add brigade https://deis.github.io/brigade
+$ helm install brigade/brigade
 ```
 
 ### Customizing Installations
 
-Both of these options use the Acid binaries stored in DockerHub. But you can override
+Both of these options use the Brigade binaries stored in DockerHub. But you can override
 this behavior by supplying an alternative image during install:
 
 ```console
-$ helm install acid/acid --set image.name=my-image --set image.tag=1.2.3
+$ helm install brigade/brigade --set image.name=my-image --set image.tag=1.2.3
 ```
 
-There are a variety of other configuration options for Acid. Run `helm fetch values ./chart/acid`
+There are a variety of other configuration options for Brigade. Run `helm fetch values ./chart/brigade`
 to see them all.
 
 ### Disabling RBAC
 
-By default, Acid has Role Based Access Control support. To disable this, set
+By default, Brigade has Role Based Access Control support. To disable this, set
 `rbac.enabled` to `false`:
 
 ```console
-$ helm install acid/acid --set rbac.enabled=false
+$ helm install brigade/brigade --set rbac.enabled=false
 ```
 
-## Configuring Acid
+## Configuring Brigade
 
-Once Acid is installed, three deployments will be running:
+Once Brigade is installed, three deployments will be running:
 
-- deployments/acid-core-acid
-- deployments/acid-core-acid-api
-- deployments/acid-core-acid-ctrl
+- deployments/brigade-core-brigade
+- deployments/brigade-core-brigade-api
+- deployments/brigade-core-brigade-ctrl
 
-The controller (acid-core-acid-ctrl) is the primary piece of Acid. It listens for
-new Acid events and triggers new builds.
+The controller (brigade-core-brigade-ctrl) is the primary piece of Brigade. It listens for
+new Brigade events and triggers new builds.
 
 ### Configuring Persistent Volumes
 
-Acid creates Persistent Volume Claims on the fly. By default it will create
+Brigade creates Persistent Volume Claims on the fly. By default it will create
 PVCs using the default persistent volume class. Changing your cluster's default
-storage class will change what Acid creates.
+storage class will change what Brigade creates.
 
 We recommend the following file system types for these distributions or platforms:
 

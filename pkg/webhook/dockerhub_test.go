@@ -3,7 +3,7 @@ package webhook
 import (
 	"testing"
 
-	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/brigade/pkg/brigade"
 )
 
 func TestDoDockerImagePush(t *testing.T) {
@@ -12,14 +12,14 @@ func TestDoDockerImagePush(t *testing.T) {
 			throw "Unexpected test: " + e.payload.push_data.tag
 		}
 	}`
-	proj := &acid.Project{
-		ID:   "acid-1234",
+	proj := &brigade.Project{
+		ID:   "brigade-1234",
 		Name: "org/proj",
-		Repo: acid.Repo{
+		Repo: brigade.Repo{
 			Name:     "example.com/org/proj",
 			CloneURL: "http://example.com/org/project.git",
 		},
-		Kubernetes: acid.Kubernetes{
+		Kubernetes: brigade.Kubernetes{
 			Namespace:  "namespace",
 			VCSSidecar: "sidecar:latest",
 		},

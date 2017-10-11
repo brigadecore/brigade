@@ -1,14 +1,14 @@
 # GitHub Integration
 
-Acid provides GitHub integration for triggering Acid builds from GitHub events.
+Brigade provides GitHub integration for triggering Brigade builds from GitHub events.
 
-Acid integrates with GitHub by providing GitHub webhook implementations for the `push`
-and `pull_request` events. You must be running `acid-gateway` in a way that makes
+Brigade integrates with GitHub by providing GitHub webhook implementations for the `push`
+and `pull_request` events. You must be running `brigade-gateway` in a way that makes
 it available to GitHub. (For example, assign it a publicly routable IP and domain name.)
 
 ## Configuring
 
-To add an Acid project to GitHub:
+To add an Brigade project to GitHub:
 
 1. Go to "Settings"
 2. Click "Webhooks"
@@ -21,11 +21,11 @@ To add an Acid project to GitHub:
 ![GitHub Webhook Config](../intro/img/img4.png)
 
 You may use GitHub's testing page to verify that GitHub can successfully send an event to
-the Acid gateway.
+the Brigade gateway.
 
 ## Connecting to Private GitHub Repositories (or Using SSH)
 
-Sometimes it is better to configure Acid to interact with GitHub via SSH. For example, if
+Sometimes it is better to configure Brigade to interact with GitHub via SSH. For example, if
 your repository is private and you don't want to allow anonymous Git clones, you may need
 to use an SSH GitHub URL. To use GitHub with SSH, you will also need to create a
 Deployment Key.
@@ -45,22 +45,22 @@ Your public key has been saved in ./github_deployment_key.pub.
 In GitHub, navigate to your project, choose *Settings* (the gear icon), then choose
 *Depoyment Keys* from the left-hand navigation. Click the *Add deploy key* button.
 
-The *Title* field should be something like `acid-checkout`, though the intent of this
-field is just to help you remember that this key was used by Acid.
+The *Title* field should be something like `brigade-checkout`, though the intent of this
+field is just to help you remember that this key was used by Brigade.
 
 The *Key* field should be the content of the `./github_deployment_key.pub` file generated
 by `ssh-keygen` above.
 
 Save that key.
 
-Inside of your project configuration for your `acid-project`, make sure to add your key:
+Inside of your project configuration for your `brigade-project`, make sure to add your key:
 
 myvalues.yaml:
 ```
-project: "my/acid-project"
-repository: "github.com/my/acid-project"
+project: "my/brigade-project"
+repository: "github.com/my/brigade-project"
 # This is an SSH clone URL
-cloneURL: "git@github.com:my/acid-project.git"
+cloneURL: "git@github.com:my/brigade-project.git"
 # paste your entire key here:
 sshKey: |-
   -----BEGIN RSA PRIVATE KEY-----
@@ -76,7 +76,7 @@ sshKey: |-
 Then you can install (or upgrade) your project:
 
 ```
-$ helm install -n my-project acid/acid-project -f myvalues.yaml
+$ helm install -n my-project brigade/brigade-project -f myvalues.yaml
 ```
 
 Now your project is configured to clone via SSH using the deployment key we generated.

@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/gin-gonic/gin.v1"
 
-	"github.com/deis/acid/pkg/storage"
+	"github.com/deis/brigade/pkg/storage"
 )
 
 // Project represents the project api handlers.

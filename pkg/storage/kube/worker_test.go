@@ -8,13 +8,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
 
-	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/brigade/pkg/brigade"
 )
 
 func TestNewWorkerFromPod(t *testing.T) {
 	now := time.Now()
 	later := now.Add(time.Minute)
-	expect := &acid.Worker{
+	expect := &brigade.Worker{
 		ID:        "pod-name",
 		BuildID:   "build-id",
 		ProjectID: "project-id",
@@ -22,7 +22,7 @@ func TestNewWorkerFromPod(t *testing.T) {
 		StartTime: now,
 		EndTime:   later,
 		ExitCode:  0,
-		Status:    acid.JobSucceeded,
+		Status:    brigade.JobSucceeded,
 	}
 
 	podStartTime := metav1.NewTime(now)

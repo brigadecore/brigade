@@ -2,19 +2,19 @@
 
 @startuml
 participant GitHub
-participant Acid
-participant AcidJS
+participant Brigade
+participant BrigadeJS
 participant Kubernetes
 
-GitHub->Acid: push webhook
-Acid<->GitHub: git clone repo
-Acid->Kubernetes: Get configuration for this project
-Acid->Acid: Load acid.js
-Acid->AcidJS: Run
-AcidJS->Kubernetes: Create settings configmap
-AcidJS->Kubernetes: Run job in pod
-AcidJS->Kubernetes: Run other job...
-Kubernetes->AcidJS: Success
-AcidJS->Acid: All done
-Acid->GitHub: Success
+GitHub->Brigade: push webhook
+Brigade<->GitHub: git clone repo
+Brigade->Kubernetes: Get configuration for this project
+Brigade->Brigade: Load brigade.js
+Brigade->BrigadeJS: Run
+BrigadeJS->Kubernetes: Create settings configmap
+BrigadeJS->Kubernetes: Run job in pod
+BrigadeJS->Kubernetes: Run other job...
+Kubernetes->BrigadeJS: Success
+BrigadeJS->Brigade: All done
+Brigade->GitHub: Success
 @enduml

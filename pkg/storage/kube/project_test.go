@@ -10,7 +10,7 @@ import (
 func TestConfigureProject(t *testing.T) {
 	secret := &v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
-			Name: "acidTest",
+			Name: "brigadeTest",
 		},
 		Data: map[string][]byte{
 			"repository":   []byte("myrepo"),
@@ -28,7 +28,7 @@ func TestConfigureProject(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if proj.ID != "acidTest" {
+	if proj.ID != "brigadeTest" {
 		t.Error("ID is not correct")
 	}
 	if proj.Repo.CloneURL != "" {

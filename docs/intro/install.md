@@ -1,34 +1,34 @@
 # Quick install guide
 
-_This part is a work-in-progress because Acid is still developer-oriented_
+_This part is a work-in-progress because Brigade is still developer-oriented_
 
-Acid is deployed via Helm. Here are the steps:
+Brigade is deployed via Helm. Here are the steps:
 
 1. Make sure `helm` is installed, and `helm version` returns the correct server.
-2. Add the Acid repo: `helm repo add acid https://deis.github.io/acid`
-3. Install Acid: `helm install acid/acid --name acid-server`
+2. Add the Brigade repo: `helm repo add brigade https://deis.github.io/brigade`
+3. Install Brigade: `helm install brigade/brigade --name brigade-server`
 
-At this point, you have a running Acid service. You can use `helm get acid-server` and other Helm tools to examine your running Acid server.
+At this point, you have a running Brigade service. You can use `helm get brigade-server` and other Helm tools to examine your running Brigade server.
 
 ## Cluster Ingress
 
-By default, Acid is configured to set up a service as a load balancer for your Acid build system. To find out your IP address, run:
+By default, Brigade is configured to set up a service as a load balancer for your Brigade build system. To find out your IP address, run:
 
 ```console
-$ kubectl get svc acid-server-acid
+$ kubectl get svc brigade-server-brigade
 NAME                  CLUSTER-IP    EXTERNAL-IP    PORT(S)          AGE
-maudlin-quokka-acid   10.0.110.59   135.15.52.20   7744:31558/TCP   45d
+maudlin-quokka-brigade   10.0.110.59   135.15.52.20   7744:31558/TCP   45d
 ```
 
-(Note that `acid-server-acid` is just the name of the Helm release (`acid-server`) with `-acid` appended)
+(Note that `brigade-server-brigade` is just the name of the Helm release (`brigade-server`) with `-brigade` appended)
 
 The `EXTERNAL-IP` field is the IP address that external services, such as Github, will use to trigger actions.
 
-Note that this is just one way of configuring Acid to receive inbound connections. Acid itself does not care how traffic is routed to it. Those with operational knowledge of Kubernetes may wish to use another method of ingress routing.
+Note that this is just one way of configuring Brigade to receive inbound connections. Brigade itself does not care how traffic is routed to it. Those with operational knowledge of Kubernetes may wish to use another method of ingress routing.
 
 ## Notes for Minikube
 
-You can run Acid on [Minikube](https://github.com/kubernetes/minikube) for easy testing
+You can run Brigade on [Minikube](https://github.com/kubernetes/minikube) for easy testing
 and development. Minikube provides built-in support for caching and sharing files during
 builds. However, there are a few things that are much harder to do when running locally:
 
@@ -39,7 +39,7 @@ builds. However, there are a few things that are much harder to do when running 
 
 ## Notes for Azure Container Services (ACS)
 
-Acid is well-tested on ACS Kubernetes. We recommend using at least Kubernetes 1.6.
+Brigade is well-tested on ACS Kubernetes. We recommend using at least Kubernetes 1.6.
 
 - It is recommended to use a Service with type LoadBalanacer on ACS, which will generate
   an Azure load balancer for you.

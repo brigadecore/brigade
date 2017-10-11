@@ -1,7 +1,7 @@
 [environments]
 
     [environments.development]
-    name = "acid"
+    name = "brigade"
     namespace = "default"
     set = ["ingress.enabled=true"]
     wait = false

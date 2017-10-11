@@ -1,0 +1,43 @@
+image:
+  registry: deis
+  name: brigade-gateway
+  tag: latest
+  #pullPolicy: IfNotPresent
+controller:
+  registry: deis
+  name: brigade-controller
+  tag: latest
+  #pullPolicy: IfNotPresent
+api:
+  registry: deis
+  name: brigade-api
+  tag: latest
+  service:
+    name: brigade-api
+    type: LoadBalancer
+    externalPort: 7745
+    internalPort: 7745
+
+# If enabled, roles, role bindings will be turned on.
+rbac:
+  enabled: false
+
+service:
+  name: brigade-service
+  type: LoadBalancer
+  externalPort: 7744
+  internalPort: 7744
+# By default, this is off. If you enable it, you might want to change the
+# service.type to ClusterIP
+ingress:
+  enabled: false
+  hosts: []
+  # Add TLS configuration
+  # tls: <TLS_CONFIG>
+  # Add custom annotations
+  # annotations:
+  #   name: value
+# DEVELOPMENT ONLY: Use this for off-ACS development
+# Before enabling this, log into the acr registry with Docker and then
+# run `scripts/generate-acr-secret.sh`
+#privateRegistry: brigade-registry

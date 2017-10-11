@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 
-	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/brigade/pkg/brigade"
 )
 
 // State names for GitHub status
@@ -20,7 +20,7 @@ var (
 	StateSuccess = "success"
 )
 
-const StatusContext = "acid"
+const StatusContext = "brigade"
 
 // ghClient gets a new GitHub client object.
 //
@@ -33,7 +33,7 @@ func ghClient(token string) *github.Client {
 }
 
 // setRepoStatus sets the status on a particular commit in a repo.
-func setRepoStatus(commit string, proj *acid.Project, status *github.RepoStatus) error {
+func setRepoStatus(commit string, proj *brigade.Project, status *github.RepoStatus) error {
 	if proj.Github.Token == "" {
 		return fmt.Errorf("status update skipped because no GitHubToken exists on %s", proj.Name)
 	}
@@ -52,9 +52,9 @@ func setRepoStatus(commit string, proj *acid.Project, status *github.RepoStatus)
 	return err
 }
 
-// GetRepoStatus gets the Acid repository status.
+// GetRepoStatus gets the Brigade repository status.
 // The ref can be a SHA or a branch or tag.
-func GetRepoStatus(proj *acid.Project, ref string) (*github.RepoStatus, error) {
+func GetRepoStatus(proj *brigade.Project, ref string) (*github.RepoStatus, error) {
 	c := context.Background()
 	client := ghClient(proj.Github.Token)
 	parts := strings.SplitN(proj.Repo.Name, "/", 3) // github.com/ORG/REPO
@@ -70,11 +70,11 @@ func GetRepoStatus(proj *acid.Project, ref string) (*github.RepoStatus, error) {
 			return status, nil
 		}
 	}
-	return nil, fmt.Errorf("no acid status found")
+	return nil, fmt.Errorf("no brigade status found")
 }
 
 // GetLastCommit gets the last commit on the give reference (branch name or tag).
-func GetLastCommit(proj *acid.Project, ref string) (string, error) {
+func GetLastCommit(proj *brigade.Project, ref string) (string, error) {
 	c := context.Background()
 	client := ghClient(proj.Github.Token)
 	parts := strings.SplitN(proj.Repo.Name, "/", 3)
@@ -85,7 +85,7 @@ func GetLastCommit(proj *acid.Project, ref string) (string, error) {
 	return sha, err
 }
 
-func GetFileContents(proj *acid.Project, ref, path string) ([]byte, error) {
+func GetFileContents(proj *brigade.Project, ref, path string) ([]byte, error) {
 	c := context.Background()
 	client := ghClient(proj.Github.Token)
 	parts := strings.SplitN(proj.Repo.Name, "/", 3)

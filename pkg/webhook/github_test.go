@@ -10,40 +10,40 @@ import (
 	"github.com/google/go-github/github"
 	"gopkg.in/gin-gonic/gin.v1"
 
-	"github.com/deis/acid/pkg/acid"
-	"github.com/deis/acid/pkg/storage"
+	"github.com/deis/brigade/pkg/brigade"
+	"github.com/deis/brigade/pkg/storage"
 )
 
 type testStore struct {
-	proj   *acid.Project
-	builds []*acid.Build
+	proj   *brigade.Project
+	builds []*brigade.Build
 	err    error
 	storage.Store
 }
 
-func (s *testStore) GetProject(name string) (*acid.Project, error) {
+func (s *testStore) GetProject(name string) (*brigade.Project, error) {
 	return s.proj, s.err
 }
 
-func (s *testStore) CreateBuild(build *acid.Build) error {
+func (s *testStore) CreateBuild(build *brigade.Build) error {
 	s.builds = append(s.builds, build)
 	return s.err
 }
 
 func TestGithubHandler(t *testing.T) {
 	store := &testStore{
-		proj: &acid.Project{
+		proj: &brigade.Project{
 			Name:         "baxterthehacker/public-repo",
 			SharedSecret: "asdf",
 		},
 	}
 
 	s := NewGithubHook(store)
-	s.getFile = func(commit, path string, proj *acid.Project) ([]byte, error) {
+	s.getFile = func(commit, path string, proj *brigade.Project) ([]byte, error) {
 		t.Logf("Getting file %s, for commit %s", path, commit)
 		return []byte(""), nil
 	}
-	s.createStatus = func(commit string, proj *acid.Project, status *github.RepoStatus) error {
+	s.createStatus = func(commit string, proj *brigade.Project, status *github.RepoStatus) error {
 		t.Logf("Creating status %v, for commit %s", status, commit)
 		return nil
 	}

@@ -12,8 +12,8 @@ if [[ "${1:-}" == "--watch" ]]; then
     exit 1
   fi
 
-  echo bin/acid | entr -cr bin/acid "$@"
+  echo bin/brigade | entr -cr bin/brigade "$@"
 else
-  bin/acid "$@"
+  bin/brigade "$@"
 fi
 

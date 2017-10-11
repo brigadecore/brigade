@@ -1,13 +1,13 @@
 # Secret Management
 
-Acid provides tools for storing sensitive data outside of your `acid.js` scripts,
-and then passing that information into the jobs that need them. Acid accomplishes
+Brigade provides tools for storing sensitive data outside of your `brigade.js` scripts,
+and then passing that information into the jobs that need them. Brigade accomplishes
 this by making use of Kubernetes secrets.
 
 ## Adding a Secret to Your Project
 
 Imagine a case where we need to pass a sensitive piece of information to one of the jobs
-in our `acid.js`. For example, we might need to pass an authentication token to a job that
+in our `brigade.js`. For example, we might need to pass an authentication token to a job that
 must authenticate to a remote service.
 
 We do this by storing the secret inside of the project definition.
@@ -16,7 +16,7 @@ Project definitions are typically managed by Helm. As you may recall from the in
 manual, a new project is created like this:
 
 ```console
-$ helm install acid/acid-project -n my-project -f my-values.yaml
+$ helm install brigade/brigade-project -n my-project -f my-values.yaml
 ```
 
 The `my-values.yaml` file looks something like this:
@@ -49,16 +49,16 @@ As usual, you can use `helm upgrade` to update the values. Everything in the `se
 section will be stored inside of your project's Kubernetes Secret.
 
 ```console
-$ helm upgrade my-project acid/acid-project -f my-values.yaml
+$ helm upgrade my-project brigade/brigade-project -f my-values.yaml
 ```
 
-## Accessing a Secret within `acid.js`
+## Accessing a Secret within `brigade.js`
 
-Within the `acid.js` file, we can access any of the secrets defined on our project.
+Within the `brigade.js` file, we can access any of the secrets defined on our project.
 
 ```javascript
 // THIS IS NOT SAFE! IT LEAKS YOUR SECRET INTO THE LOGS.
-const {events, Job, Group} = require("libacid")
+const {events, Job, Group} = require("brigadier")
 
 events.on("push", function(e, project) {
   console.log("My DB password is " + project.secrets.dbPassword)
@@ -69,7 +69,7 @@ Secrets can be selectively passed to jobs by setting environment variables.
 
 ```javascript
 // THIS IS NOT SAFE! IT LEAKS YOUR SECRET INTO THE LOGS.
-const {events, Job, Group} = require("libacid")
+const {events, Job, Group} = require("brigadier")
 
 events.on("push", function(e, project) {
   var j1 = new Job("secrets", "alpine:3.4")
@@ -92,7 +92,7 @@ In this case, we retrieve the secret from the project, and we pass it into the n
 Job as an environment variable. When the job executes, it can access the `dbPassword`
 as `$DB_PASSWORD`.
 
-Note that behind the scenes, Acid is storing the environment variables in another
+Note that behind the scenes, Brigade is storing the environment variables in another
 Job-specific secret.
 
 ## FAQ
@@ -100,7 +100,7 @@ Job-specific secret.
 **Why don't all jobs get access to all of the secrets? Why do I have to pass them
 to the `Job.env`?**
 
-Acid is designed to use off-the-shelf Docker images. In the examples above, we used the
+Brigade is designed to use off-the-shelf Docker images. In the examples above, we used the
 `alpine:3.4` image straight from DockerHub. We wouldn't want to just automatically pass
 all of our information straight into that container. For starters, doing so might
 inadvertantly override an existing environment variable of the same name. More
@@ -114,7 +114,7 @@ We use Kubernetes Secrets for holding sensitive data. As encrypted Secrets are
 adopted into Kubernetes, we plan to support them. However, the present stable
 version of Kubernetes Secrets only Base64-encodes data.
 
-Our present recomendation is for Acid developers to fetch the secret directly from a
+Our present recomendation is for Brigade developers to fetch the secret directly from a
 trusted key store such as Vault.
 
 **I don't want to use Helm to manage my project/secrets. Can I do it manually?**

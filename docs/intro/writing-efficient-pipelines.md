@@ -2,7 +2,7 @@
 
 _FIXME: This tutorial could use some love_
 
-This advanced tutorial begins where [Tutorial 4][part4] left off. We’ll be parallelizing a few operations in acid.js into separate jobs so the job can fail faster and run as fast as possible.
+This advanced tutorial begins where [Tutorial 4][part4] left off. We’ll be parallelizing a few operations in brigade.js into separate jobs so the job can fail faster and run as fast as possible.
 
 If you haven’t recently completed Tutorials 1–4, we strongly encourage you to review these so that your example project matches the one described below.
 

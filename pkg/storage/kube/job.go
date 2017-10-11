@@ -9,11 +9,11 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/pkg/api/v1"
 
-	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/brigade/pkg/brigade"
 )
 
-func (s *store) GetJob(id string) (*acid.Job, error) {
-	labels := labels.Set{"heritage": "acid"}
+func (s *store) GetJob(id string) (*brigade.Job, error) {
+	labels := labels.Set{"heritage": "brigade"}
 	listOption := meta.ListOptions{LabelSelector: labels.AsSelector().String()}
 	pods, err := s.client.CoreV1().Pods(s.namespace).List(listOption)
 	if err != nil {
@@ -31,21 +31,21 @@ func (s *store) GetJob(id string) (*acid.Job, error) {
 	return nil, fmt.Errorf("could not find job %s: no pod exists with that ID and label %s", id, labels.AsSelector().String())
 }
 
-func (s *store) GetBuildJobs(build *acid.Build) ([]*acid.Job, error) {
+func (s *store) GetBuildJobs(build *brigade.Build) ([]*brigade.Job, error) {
 	// Load the pods that ran as part of this build.
-	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("heritage=acid,component=job,commit=%s,project=%s", build.Commit, build.ProjectID)}
+	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("heritage=brigade,component=job,commit=%s,project=%s", build.Commit, build.ProjectID)}
 
 	podList, err := s.client.CoreV1().Pods(s.namespace).List(lo)
 	if err != nil {
 		return nil, err
 	}
-	jobList := make([]*acid.Job, len(podList.Items))
+	jobList := make([]*brigade.Job, len(podList.Items))
 	for i := range podList.Items {
 		jobList[i] = NewJobFromPod(podList.Items[i])
 	}
 	return jobList, nil
 }
-func (s *store) GetJobLogStream(job *acid.Job) (io.ReadCloser, error) {
+func (s *store) GetJobLogStream(job *brigade.Job) (io.ReadCloser, error) {
 	req := s.client.CoreV1().Pods(s.namespace).GetLogs(job.ID, &v1.PodLogOptions{})
 
 	readCloser, err := req.Stream()
@@ -54,7 +54,7 @@ func (s *store) GetJobLogStream(job *acid.Job) (io.ReadCloser, error) {
 	}
 	return readCloser, nil
 }
-func (s *store) GetJobLog(job *acid.Job) (string, error) {
+func (s *store) GetJobLog(job *brigade.Job) (string, error) {
 	buf := new(bytes.Buffer)
 	r, err := s.GetJobLogStream(job)
 	if err != nil {
@@ -66,16 +66,16 @@ func (s *store) GetJobLog(job *acid.Job) (string, error) {
 }
 
 // NewJobFromPod parses the pod object metadata and deserializes it into a Job.
-func NewJobFromPod(pod v1.Pod) *acid.Job {
-	job := &acid.Job{
+func NewJobFromPod(pod v1.Pod) *brigade.Job {
+	job := &brigade.Job{
 		ID:           pod.ObjectMeta.Name,
 		Name:         pod.ObjectMeta.Labels["jobname"],
 		CreationTime: pod.ObjectMeta.CreationTimestamp.Time,
 		Image:        pod.Spec.Containers[0].Image,
-		Status:       acid.JobStatus(pod.Status.Phase),
+		Status:       brigade.JobStatus(pod.Status.Phase),
 	}
 
-	if (job.Status != acid.JobPending) && (job.Status != acid.JobUnknown) {
+	if (job.Status != brigade.JobPending) && (job.Status != brigade.JobUnknown) {
 		job.StartTime = pod.Status.StartTime.Time
 	}
 

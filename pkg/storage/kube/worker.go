@@ -7,15 +7,15 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/pkg/api/v1"
 
-	"github.com/deis/acid/pkg/acid"
+	"github.com/deis/brigade/pkg/brigade"
 )
 
 // GetWorker returns the worker description.
 //
 // This will return an error if no worker is found for the build, which can
 // happen when a build is scheduled, but not yet started.
-func (s *store) GetWorker(buildID string) (*acid.Worker, error) {
-	labels := labels.Set{"heritage": "acid", "build": buildID}
+func (s *store) GetWorker(buildID string) (*brigade.Worker, error) {
+	labels := labels.Set{"heritage": "brigade", "build": buildID}
 	listOption := meta.ListOptions{LabelSelector: labels.AsSelector().String()}
 	pods, err := s.client.CoreV1().Pods(s.namespace).List(listOption)
 	if err != nil {
@@ -28,17 +28,17 @@ func (s *store) GetWorker(buildID string) (*acid.Worker, error) {
 }
 
 // NewWorkerFromPod creates a new *Worker from a pod definition.
-func NewWorkerFromPod(pod v1.Pod) *acid.Worker {
+func NewWorkerFromPod(pod v1.Pod) *brigade.Worker {
 	l := pod.Labels
-	worker := &acid.Worker{
+	worker := &brigade.Worker{
 		ID:        pod.Name,
 		BuildID:   l["build"],
 		ProjectID: l["project"],
 		Commit:    l["commit"],
-		Status:    acid.JobStatus(pod.Status.Phase),
+		Status:    brigade.JobStatus(pod.Status.Phase),
 	}
 
-	if (worker.Status != acid.JobPending) && (worker.Status != acid.JobUnknown) {
+	if (worker.Status != brigade.JobPending) && (worker.Status != brigade.JobUnknown) {
 		worker.StartTime = pod.Status.StartTime.Time
 	}
 

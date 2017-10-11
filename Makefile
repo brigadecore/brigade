@@ -15,45 +15,45 @@ KUBECONFIG ?= ${HOME}/.kube/config
 .PHONY: build
 build: build-client
 build:
-	go build -o bin/acid-gateway ./acid-gateway/cmd/acid-gateway
-	go build -o bin/acid-controller ./acid-controller/cmd/acid-controller
-	go build -o bin/acid-api ./acid-api/cmd/acid-api
+	go build -o bin/brigade-gateway ./brigade-gateway/cmd/brigade-gateway
+	go build -o bin/brigade-controller ./brigade-controller/cmd/brigade-controller
+	go build -o bin/brigade-api ./brigade-api/cmd/brigade-api
 
 .PHONY: build-client
 build-client:
-	go build -o bin/acid ./acid-client/cmd/acid
+	go build -o bin/brig ./brigade-client/cmd/brig
 
 # Cross-compile for Docker+Linux
 .PHONY: build-docker-bin
 build-docker-bin:
-	GOOS=linux GOARCH=amd64 go build -o ./acid-gateway/rootfs/usr/bin/acid-gateway ./acid-gateway/cmd/acid-gateway
-	GOOS=linux GOARCH=amd64 go build -o ./acid-controller/rootfs/acid-controller ./acid-controller/cmd/acid-controller
-	GOOS=linux GOARCH=amd64 go build -o ./acid-api/rootfs/acid-api ./acid-api/cmd/acid-api
+	GOOS=linux GOARCH=amd64 go build -o ./brigade-gateway/rootfs/usr/bin/brigade-gateway ./brigade-gateway/cmd/brigade-gateway
+	GOOS=linux GOARCH=amd64 go build -o ./brigade-controller/rootfs/brigade-controller ./brigade-controller/cmd/brigade-controller
+	GOOS=linux GOARCH=amd64 go build -o ./brigade-api/rootfs/brigade-api ./brigade-api/cmd/brigade-api
 
 .PHONY: run
 run: build
 run:
-	bin/acid -kubeconfig $(KUBECONFIG)
+	bin/brigade -kubeconfig $(KUBECONFIG)
 
 # To use docker-build, you need to have Docker installed and configured. You should also set
 # DOCKER_REGISTRY to your own personal registry if you are not pushing to the official upstream.
 .PHONY: docker-build
 docker-build: build-docker-bin
 docker-build:
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-gateway:latest acid-gateway
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-controller:latest acid-controller
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-api:latest acid-api
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-gateway:latest brigade-gateway
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-controller:latest brigade-controller
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-api:latest brigade-api
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/git-sidecar:latest git-sidecar
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/acid-worker:latest acid-worker
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-worker:latest brigade-worker
 
 # You must be logged into DOCKER_REGISTRY before you can push.
 .PHONY: docker-push
 docker-push:
-	docker push $(DOCKER_REGISTRY)/acid-gateway
-	docker push $(DOCKER_REGISTRY)/acid-controller
-	docker push $(DOCKER_REGISTRY)/acid-api
+	docker push $(DOCKER_REGISTRY)/brigade-gateway
+	docker push $(DOCKER_REGISTRY)/brigade-controller
+	docker push $(DOCKER_REGISTRY)/brigade-api
 	docker push $(DOCKER_REGISTRY)/git-sidecar
-	docker push $(DOCKER_REGISTRY)/acid-worker
+	docker push $(DOCKER_REGISTRY)/brigade-worker
 
 # All non-functional tests
 .PHONY: test
@@ -64,7 +64,7 @@ test: test-js
 # Unit tests. Local only.
 .PHONY: test-unit
 test-unit:
-	go test -v ./pkg/... ./acid-controller/... ./acid-gateway/... ./acid-api/...
+	go test -v ./pkg/... ./brigade-controller/... ./brigade-gateway/... ./brigade-api/...
 
 # Functional tests assume access to github.com
 # To set this up in your local environment:
@@ -73,11 +73,11 @@ test-unit:
 #   project: "deis/empty-testbed"
 #   repository: "github.com/deis/empty-testbed"
 #   secret: "MySecret"
-# - Run "helm install ./chart/acid-project -f myvals.yaml
+# - Run "helm install ./chart/brigade-project -f myvals.yaml
 # - Run "make run" in one terminal
 # - Run "make test-functional" in another terminal
 #
-# This will clone the github.com/deis/empty-testbed repo and run the acid.js
+# This will clone the github.com/deis/empty-testbed repo and run the brigade.js
 # file found there.
 .PHONY: test-functional
 test-functional: test-functional-prepare
@@ -91,7 +91,7 @@ test-functional-prepare:
 # JS test is local only
 .PHONY: test-js
 test-js:
-	cd acid-worker && yarn test
+	cd brigade-worker && yarn test
 
 .PHONY: test-style
 test-style:
