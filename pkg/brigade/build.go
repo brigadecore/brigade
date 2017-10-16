@@ -1,5 +1,8 @@
 package brigade
 
+// Build represents an invocation of an event in Brigade.
+//
+// Each build has a unique ID, and is tied to a project, as well as an event type.
 type Build struct {
 	// ID is the unique ID for a webhook event.
 	ID string `json:"id"`

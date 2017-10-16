@@ -13,7 +13,7 @@ type Build struct {
 	store storage.Store
 }
 
-// Build creates a new gin handler for the GET /build/:id endpoint
+// Get creates a new gin handler for the GET /build/:id endpoint
 func (api Build) Get(c *gin.Context) {
 	id := c.Params.ByName("id")
 	// For now, we always get the worker.
@@ -25,7 +25,7 @@ func (api Build) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, build)
 }
 
-// BuildJobs creates a new gin handler for the GET /build/:id/jobs endpoint
+// Jobs creates a new gin handler for the GET /build/:id/jobs endpoint
 func (api Build) Jobs(c *gin.Context) {
 	id := c.Params.ByName("id")
 	build, err := api.store.GetBuild(id)

@@ -74,6 +74,7 @@ func (s *store) CreateBuild(build *brigade.Build) error {
 	return err
 }
 
+// GetBuilds returns all the builds in storage.
 func (s *store) GetBuilds() ([]*brigade.Build, error) {
 	lo := meta.ListOptions{LabelSelector: "heritage=brigade,component=build"}
 
@@ -93,6 +94,7 @@ func (s *store) GetBuilds() ([]*brigade.Build, error) {
 	return buildList, nil
 }
 
+// GetProjectBuilds returns all the builds for the given project.
 func (s *store) GetProjectBuilds(proj *brigade.Project) ([]*brigade.Build, error) {
 	// Load the pods that ran as part of this build.
 	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("heritage=brigade,component=build,project=%s", proj.ID)}
@@ -113,6 +115,7 @@ func (s *store) GetProjectBuilds(proj *brigade.Project) ([]*brigade.Build, error
 	return buildList, nil
 }
 
+// NewBuildFromSecret creates a Build object from a secret.
 func NewBuildFromSecret(secret v1.Secret) *brigade.Build {
 	return &brigade.Build{
 		ID:        secret.ObjectMeta.Labels["build"],

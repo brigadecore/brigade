@@ -47,6 +47,7 @@ func (s *store) loadProjectConfig(id string) (*brigade.Project, error) {
 	return NewProjectFromSecret(secret, s.namespace)
 }
 
+// NewProjectFromSecret creates a new project from a secret.
 func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project, error) {
 	proj := new(brigade.Project)
 	proj.ID = secret.ObjectMeta.Name

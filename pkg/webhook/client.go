@@ -20,6 +20,7 @@ var (
 	StateSuccess = "success"
 )
 
+// StatusContext names the context for a particular status message.
 const StatusContext = "brigade"
 
 // ghClient gets a new GitHub client object.
@@ -85,6 +86,7 @@ func GetLastCommit(proj *brigade.Project, ref string) (string, error) {
 	return sha, err
 }
 
+// GetFileContents returns the contents for a particular file in the project.
 func GetFileContents(proj *brigade.Project, ref, path string) ([]byte, error) {
 	c := context.Background()
 	client := ghClient(proj.Github.Token)

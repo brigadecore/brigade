@@ -62,6 +62,7 @@ func (c *Controller) processNextItem() bool {
 	return true
 }
 
+// HasSynced returns true if the controller has synced.
 func (c *Controller) HasSynced() bool {
 	return c.informer.HasSynced()
 }
@@ -112,6 +113,7 @@ func (c *Controller) handleErr(err error, key interface{}) {
 	log.Printf("Dropping secret %q out of the queue: %v", key, err)
 }
 
+// Run executes the controller.
 func (c *Controller) Run(threadiness int, stopCh chan struct{}) {
 	defer utilruntime.HandleCrash()
 

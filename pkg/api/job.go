@@ -14,7 +14,7 @@ type Job struct {
 	store storage.Store
 }
 
-// Job creates a new gin handler for the GET /job/:id endpoint
+// Get creates a new gin handler for the GET /job/:id endpoint
 func (api Job) Get(c *gin.Context) {
 	id := c.Params.ByName("id")
 	job, err := api.store.GetJob(id)
@@ -25,7 +25,7 @@ func (api Job) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, job)
 }
 
-// JobLogs creates a new gin handler for the GET /job/:id/logs endpoint
+// Logs creates a new gin handler for the GET /job/:id/logs endpoint
 func (api Job) Logs(c *gin.Context) {
 	id := c.Params.ByName("id")
 	job, err := api.store.GetJob(id)

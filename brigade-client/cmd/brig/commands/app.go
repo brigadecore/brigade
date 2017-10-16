@@ -31,6 +31,7 @@ func init() {
 	f.BoolVarP(&globalVerbose, "verbose", "v", false, "Turn on verbose output")
 }
 
+// Root is the root command
 var Root = &cobra.Command{
 	Use:   "brig",
 	Short: "The Brigade client",

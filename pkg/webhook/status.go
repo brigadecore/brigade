@@ -67,6 +67,7 @@ type GitHubNotifier struct {
 	sha         string
 }
 
+// SetTarget sets the target of a GitHub notification.
 func (g *GitHubNotifier) SetTarget(owner, repo, sha string) error {
 	g.owner, g.repo, g.sha = owner, repo, sha
 	return nil
@@ -94,6 +95,7 @@ func (g *GitHubNotifier) body(status GitHubStatus) (io.Reader, error) {
 	return b, err
 }
 
+// SetStatus sets the status code for a request.
 func (g *GitHubNotifier) SetStatus(status StatusCode, ctx, desc, target string) error {
 	s := GitHubStatus{
 		State:       status,

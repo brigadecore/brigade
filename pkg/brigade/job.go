@@ -27,6 +27,7 @@ const (
 	JobUnknown JobStatus = "Unknown"
 )
 
+// Job is a single job that is executed when a build is triggered for an event.
 type Job struct {
 	// ID is the name for the pod running this job
 	ID string `json:"id"`
