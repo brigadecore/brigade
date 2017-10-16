@@ -14,7 +14,8 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ $fullname }}
+        app: {{ template "brigade.fullname" . }}
+        role: gateway
     spec:
       serviceAccountName: {{ $fullname }}
       containers:
