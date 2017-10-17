@@ -16,8 +16,8 @@ By default, Brigade is configured to set up a service as a load balancer for you
 
 ```console
 $ kubectl get svc brigade-server-brigade
-NAME                  CLUSTER-IP    EXTERNAL-IP    PORT(S)          AGE
-maudlin-quokka-brigade   10.0.110.59   135.15.52.20   7744:31558/TCP   45d
+NAME                     CLUSTER-IP    EXTERNAL-IP    PORT(S)          AGE
+brigade-server-brigade   10.0.110.59   135.15.52.20   7744:31558/TCP   45d
 ```
 
 (Note that `brigade-server-brigade` is just the name of the Helm release (`brigade-server`) with `-brigade` appended)
