@@ -1,8 +1,11 @@
 # Brigade Design
 
+_This document reflects an earlier state of Brigade, and needs updating._
+
 This is a high-level explanation of the design of Brigade.
 
-Brigade is an in-cluster runtime environment. It is the basis for systems like CI or CD as well as systems that need in-cluster event handling.
+Brigade is an in-cluster runtime environment. It is the basis for systems like
+CI or CD as well as systems that need in-cluster event handling.
 
 It is designed to:
 
@@ -17,8 +20,7 @@ It is designed to:
 ## Terminology
 
 - **Brigade** is the main server. It is designed to run in-cluster as a deployment.
-- **BrigadeIC**: Brigade _integration container_ is a container for running a job.
-- **Brigade.js**: A JavaScript file that contains an Brigade configuration. Pronounced
+- **brigade.js**: A JavaScript file that contains an Brigade configuration. Pronounced
   "Brigade Jay Es" or "Brigade Jazz".
 - **Job**: A build unit, comprised of one or more build steps called "tasks"
 - **Webhook**: An incoming request from an external SCM that provides a JSON
@@ -32,7 +34,6 @@ It is designed to:
 Brigade is composed of the following pieces:
 
 - The Brigade server
-- BrigadeIC images (brigade-ubuntu, brigade-go,...)
 - The Brigade.js supporting libraries (runner.js, quokka)
 - The Brigade Helm chart (installs Brigade into Kubernetes)
 - The Brigade Project Helm Chart (add or manage a project in an Brigade server)
