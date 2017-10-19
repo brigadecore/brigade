@@ -12,6 +12,7 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
   - [Scripting Guide](scripting.md): How to write JavaScript for `brigade.js` files.
   - [Brigade.js Reference](javascript.md): The API for brigade.js files.
   - [GitHub Integration](github.md): A guide for configuring GitHub integration.
+  - [Docker Registry Integration](dockerhub.md): A guide for configuring integration with DockerHub or Azure Container Registry.
   - [Using Secrets](secrets.md): How to pass sensitive data into builds.
 - Configuring and Running Brigade
   - [Securing Brigade](security.md): Things to consider when configuring Brigade.
