@@ -1,8 +1,10 @@
 # The Docker registry where images are pushed.
 # Note that if you use an org (like on Quay and DockerHub), you should
 # include that: quay.io/foo
-DOCKER_REGISTRY ?= deis
+DOCKER_REGISTRY    ?= deis
 DOCKER_BUILD_FLAGS :=
+VERSION            := $(shell git describe --tags --abbrev=0 --exact-match 2>/dev/null)
+LDFLAGS            :=
 
 # Test Repo is https://github.com/deis/empty-testbed
 TEST_REPO_COMMIT=800550b4171b0441fc26fd56925205db81633d88
@@ -12,23 +14,25 @@ TEST_DIR=./tests
 
 KUBECONFIG ?= ${HOME}/.kube/config
 
+LDFLAGS += -X github.com/deis/brigade/pkg/version.Version=${VERSION}
+
 .PHONY: build
 build: build-client
 build:
-	go build -o bin/brigade-gateway ./brigade-gateway/cmd/brigade-gateway
-	go build -o bin/brigade-controller ./brigade-controller/cmd/brigade-controller
-	go build -o bin/brigade-api ./brigade-api/cmd/brigade-api
+	go build -ldflags '$(LDFLAGS)' -o bin/brigade-gateway ./brigade-gateway/cmd/brigade-gateway
+	go build -ldflags '$(LDFLAGS)' -o bin/brigade-controller ./brigade-controller/cmd/brigade-controller
+	go build -ldflags '$(LDFLAGS)' -o bin/brigade-api ./brigade-api/cmd/brigade-api
 
 .PHONY: build-client
 build-client:
-	go build -o bin/brig ./brigade-client/cmd/brig
+	go build -ldflags '$(LDFLAGS)' -o bin/brig ./brigade-client/cmd/brig
 
 # Cross-compile for Docker+Linux
 .PHONY: build-docker-bin
 build-docker-bin:
-	GOOS=linux GOARCH=amd64 go build -o ./brigade-gateway/rootfs/usr/bin/brigade-gateway ./brigade-gateway/cmd/brigade-gateway
-	GOOS=linux GOARCH=amd64 go build -o ./brigade-controller/rootfs/brigade-controller ./brigade-controller/cmd/brigade-controller
-	GOOS=linux GOARCH=amd64 go build -o ./brigade-api/rootfs/brigade-api ./brigade-api/cmd/brigade-api
+	GOOS=linux GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o ./brigade-gateway/rootfs/usr/bin/brigade-gateway ./brigade-gateway/cmd/brigade-gateway
+	GOOS=linux GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o ./brigade-controller/rootfs/brigade-controller ./brigade-controller/cmd/brigade-controller
+	GOOS=linux GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o ./brigade-api/rootfs/brigade-api ./brigade-api/cmd/brigade-api
 
 .PHONY: run
 run: build
@@ -40,11 +44,11 @@ run:
 .PHONY: docker-build
 docker-build: build-docker-bin
 docker-build:
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-gateway:latest brigade-gateway
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-controller:latest brigade-controller
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-api:latest brigade-api
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/git-sidecar:latest git-sidecar
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-worker:latest brigade-worker
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-gateway:$(VERSION) brigade-gateway
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-controller:$(VERSION) brigade-controller
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-api:$(VERSION) brigade-api
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/git-sidecar:$(VERSION) git-sidecar
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-worker:$(VERSION) brigade-worker
 
 # You must be logged into DOCKER_REGISTRY before you can push.
 .PHONY: docker-push

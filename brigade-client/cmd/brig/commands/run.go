@@ -8,14 +8,13 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 
 	"github.com/deis/brigade/pkg/brigade"
 	"github.com/deis/brigade/pkg/storage"
 	"github.com/deis/brigade/pkg/storage/kube"
-
-	"github.com/spf13/cobra"
 )
 
 var (
