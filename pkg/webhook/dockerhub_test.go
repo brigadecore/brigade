@@ -3,7 +3,7 @@ package webhook
 import (
 	"testing"
 
-	"github.com/deis/brigade/pkg/brigade"
+	"github.com/Azure/brigade/pkg/brigade"
 )
 
 func TestDoDockerImagePush(t *testing.T) {

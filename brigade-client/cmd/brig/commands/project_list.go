@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/deis/brigade/pkg/storage/kube"
+	"github.com/Azure/brigade/pkg/storage/kube"
 	"github.com/gosuri/uitable"
 	"github.com/spf13/cobra"
 )

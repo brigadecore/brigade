@@ -14,7 +14,7 @@ TEST_DIR=./tests
 
 KUBECONFIG ?= ${HOME}/.kube/config
 
-LDFLAGS += -X github.com/deis/brigade/pkg/version.Version=${VERSION}
+LDFLAGS += -X github.com/Azure/brigade/pkg/version.Version=${VERSION}
 
 .PHONY: build
 build: build-client

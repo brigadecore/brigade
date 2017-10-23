@@ -1,4 +1,4 @@
-package: github.com/deis/brigade
+package: github.com/Azure/brigade
 import:
 - package: k8s.io/client-go
   version: 4.0.0

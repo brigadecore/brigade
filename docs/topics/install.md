@@ -12,7 +12,7 @@ into an existing Kubernetes cluster.
 To install from the GitHub repository, follow these steps:
 
 ```console
-$ git clone https://github.com/deis/brigade.git
+$ git clone https://github.com/azure/brigade.git
 $ cd brigade
 $ helm install ./chart/brigade
 ```
@@ -24,7 +24,7 @@ updated when a new version is released, and will likely not be as up-to-date as
 the GitHub repository.
 
 ```console
-$ helm repo add brigade https://deis.github.io/brigade
+$ helm repo add brigade https://azure.github.io/brigade
 $ helm install brigade/brigade
 ```
 

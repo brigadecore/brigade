@@ -5,7 +5,7 @@ _This part is a work-in-progress because Brigade is still developer-oriented_
 Brigade is deployed via Helm. Here are the steps:
 
 1. Make sure `helm` is installed, and `helm version` returns the correct server.
-2. Add the Brigade repo: `helm repo add brigade https://deis.github.io/brigade`
+2. Add the Brigade repo: `helm repo add brigade https://azure.github.io/brigade`
 3. Install Brigade: `helm install brigade/brigade --name brigade-server`
 
 At this point, you have a running Brigade service. You can use `helm get brigade-server` and other Helm tools to examine your running Brigade server.

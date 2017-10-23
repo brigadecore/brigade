@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/deis/brigade/brigade-controller/cmd/brigade-controller/controller"
+	"github.com/Azure/brigade/brigade-controller/cmd/brigade-controller/controller"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"

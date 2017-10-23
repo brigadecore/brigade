@@ -14,7 +14,7 @@
   },
   "author": "The Steel Thread Team",
   "license": "MIT",
-  "repository": "https://github.com/deis/brigade",
+  "repository": "https://github.com/Azure/brigade",
   "devDependencies": {
     "@kubernetes/typescript-node": "^0.1.1",
     "@types/chai": "^4.0.1",

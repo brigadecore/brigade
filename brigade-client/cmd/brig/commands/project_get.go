@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/deis/brigade/pkg/storage/kube"
+	"github.com/Azure/brigade/pkg/storage/kube"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
