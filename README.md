@@ -55,7 +55,7 @@ Now creating your first `brigade.js` is as easy as this:
 ```javascript
 const { events } = require('brigadier')
 
-events.on("exec (brigadeEvent, project) => {
+events.on("exec", (brigadeEvent, project) => {
   console.log("Hello world!")
 })
 ```
