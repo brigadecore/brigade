@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/pkg/api/v1"
 
-	"github.com/deis/brigade/pkg/brigade"
+	"github.com/Azure/brigade/pkg/brigade"
 )
 
 // GetWorker returns the worker description.

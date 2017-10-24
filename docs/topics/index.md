@@ -22,4 +22,4 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
 
 
 
-[write]: https://github.com/deis/brigade/new/master/docs/topics
+[write]: https://github.com/Azure/brigade/new/master/docs/topics

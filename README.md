@@ -1,6 +1,6 @@
 # Brigade: Event-based Scripting for Kubernetes
 
-[![Build Status](http://brigade.technosophos.me:7744/log/deis/brigade/status.svg)](http://brigade.technosophos.me:7744/log/deis/brigade/id/master)
+[![Build Status](http://brigade.technosophos.me:7744/log/Azure/brigade/status.svg)](http://brigade.technosophos.me:7744/log/Azure/brigade/id/master)
 
 Script simple and complex workflows using JavaScript. Chain together containers,
 running them in parallel or serially. Fire scripts based on times, GitHub events,
@@ -32,7 +32,7 @@ for Kubernetes.
 The easiest way to get started with Brigade is to install it using Helm:
 
 ```console
-$ git clone https://github.com/deis/brigade.git
+$ git clone https://github.com/Azure/brigade.git
 $ cd brigade
 $ helm install --name brigade ./chart/brigade
 ```

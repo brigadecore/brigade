@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/deis/brigade/pkg/storage"
+	"github.com/Azure/brigade/pkg/storage"
 )
 
 // API represents the rest api handlers.

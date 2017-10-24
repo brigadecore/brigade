@@ -31,7 +31,7 @@ $ pip --version
 
 If you see "command not found", see [how to install pip][install-pip] for advice on how to install pip.
 
-If you're having trouble going through this tutorial, please post an issue to [deis/brigade][github] to chat with other Brigade users who might be able to help.
+If you're having trouble going through this tutorial, please post an issue to [Azure/brigade][github] to chat with other Brigade users who might be able to help.
 
 ## Creating your first application
 
@@ -104,6 +104,6 @@ Keep refreshing the page. You should see new UUIDs being generated every time yo
 When you’re comfortable with the application, read [part 2 of this tutorial][part2] to learn about pushing our application to Github.
 
 
-[github]: https://github.com/deis/brigade
+[github]: https://github.com/Azure/brigade
 [install]: install.md
 [part2]: tutorial02.md

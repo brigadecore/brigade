@@ -8,8 +8,8 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 	"k8s.io/client-go/pkg/api/v1"
 
-	"github.com/deis/brigade/pkg/api"
-	"github.com/deis/brigade/pkg/storage/kube"
+	"github.com/Azure/brigade/pkg/api"
+	"github.com/Azure/brigade/pkg/storage/kube"
 )
 
 var (

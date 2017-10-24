@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/gin-gonic/gin.v1"
 
-	"github.com/deis/brigade/pkg/storage"
+	"github.com/Azure/brigade/pkg/storage"
 )
 
 // Job represents the job api handlers.

@@ -3,7 +3,7 @@ package storage
 import (
 	"io"
 
-	"github.com/deis/brigade/pkg/brigade"
+	"github.com/Azure/brigade/pkg/brigade"
 )
 
 // Store represents a storage engine for a Project.
