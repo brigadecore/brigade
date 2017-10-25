@@ -1,7 +1,6 @@
 # Brigade at a glance
 
-Brigade is a serverless continuous integration (CI) and continuous delivery platform that is
-Kubernetes-native. Here's what that means:
+Brigade is a Kubernetes-native tool for doing event-driven scripting. Here's what that means:
 
 - Brigade is for running scriptable automated tasks in the cloud.
 - Brigade does not require you to manage host servers.
