@@ -1,15 +1,16 @@
 package commands
 
 import (
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 const mainUsage = `Interact with the Brigade cluster service.
 
 Brigade is a tool for scripting cluster workflows.
 
-The most common use for thi tool is to send an Brigade JavaScript file to the
+The most common use for this tool is to send a Brigade JavaScript file to the
 cluster for execution. This is done with the 'brigade run' command.
 
 	$ brig run -f my.js my-project

@@ -8,7 +8,7 @@ it available to GitHub. (For example, assign it a publicly routable IP and domai
 
 ## Configuring
 
-To add an Brigade project to GitHub:
+To add a Brigade project to GitHub:
 
 1. Go to "Settings"
 2. Click "Webhooks"

@@ -128,7 +128,7 @@ export interface KubernetesConfig {
 }
 
 /**
- * Project represents an Brigade project.
+ * Project represents a Brigade project.
  */
 export class Project {
     /**

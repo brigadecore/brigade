@@ -4,14 +4,14 @@ This guide explains the basics of how to create and structure `brigade.js` files
 
 # Brigade Scripts, Projects, and Repositories
 
-Brigade scripts are stored in an `brigade.js` file. They are designed to contain short scripts
+Brigade scripts are stored in a `brigade.js` file. They are designed to contain short scripts
 that coordinate running multiple related tasks. We like to think of these as
 cluster-oriented shell scripts: The script just ties together a bunch of other programs.
 
-At the very core, an Brigade script is simply a JavaScript file that is executed within a
+At the very core, a Brigade script is simply a JavaScript file that is executed within a
 special cluster environment. An environment is composed of the following things:
 
-- An Brigade server running in your cluster
+- A Brigade server running in your cluster
 - A project in which the script will run
 - (Optionally) A source code repository (e.g. git) that contains data our
 - (Optionally) Other configuration data, like [secrets](secrets.yaml)
@@ -75,7 +75,7 @@ Done in 1.44s.
 > In this tutorial we run scripts with `lsd --file brigade.js $PROJECT`, where `$PROJECT` is a
 > project ID like `brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac`.
 
-In essence, all we have done is started an brigade session, logged "hello world", and exited.
+In essence, all we have done is started a brigade session, logged "hello world", and exited.
 
 This example executes the log in the _global scope_. While it's fine to work in the
 global scope, most of the time what we want to do with Brigade is write _event handlers_.
@@ -172,7 +172,7 @@ several components in its runtime. The _worker_ runs the JavaScript that we are 
 here. The _controller_ starts and manages the _worker_. But there are also Brigade
 _gateways_.
 
-An Brigade gateway is a piece of code that executes in your cluster and generates events.
+A Brigade gateway is a piece of code that executes in your cluster and generates events.
 Brigade comes with a built-in gateway called `brigade-gateway`. This gateway provides the
 following:
 

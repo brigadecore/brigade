@@ -27,14 +27,14 @@ const (
 	kubeConfig = "KUBECONFIG"
 )
 
-const runUsage = `Send an Brigade JS file to the server.
+const runUsage = `Send a Brigade JS file to the server.
 
 This sends a file into the cluster and waits for it to complete. It accepts
 a project name or project ID.
 
 	$ brigade run deis/empty-testbed
 
-When no JS file is supplied, the project will be checked for an brigade.js file
+When no JS file is supplied, the project will be checked for a brigade.js file
 in the associated repository.
 
 Be careful when setting an event, as many events expect a particular payload.
@@ -50,7 +50,7 @@ func init() {
 
 var run = &cobra.Command{
 	Use:   "run PROJECT",
-	Short: "Run an brigade.js file",
+	Short: "Run a brigade.js file",
 	Long:  runUsage,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {

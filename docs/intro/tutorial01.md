@@ -2,12 +2,12 @@
 
 Let’s learn by example.
 
-Throughout this tutorial, we’ll walk you through the creation of a basic web application with an Brigade CI pipeline for testing the application.
+Throughout this tutorial, we’ll walk you through the creation of a basic web application with a Brigade CI pipeline for testing the application.
 
 It’ll consist of two parts:
 
 - A public site that lets people generate UUIDs.
-- An brigade.js that tests the site
+- A brigade.js that tests the site
 
 We’ll assume you have Brigade, git (a version control system), and pip (a package management system for Python) installed already.
 
