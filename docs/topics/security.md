@@ -59,7 +59,7 @@ to inject secrets into a container without first auditing the container.
 ## Gateway Security
 
 In Brigade, a gateway is any service that translates some external prompt (webhook,
-3rd party API, cron trigger, etc.) into an Brigade event.
+3rd party API, cron trigger, etc.) into a Brigade event.
 
 Gateways are the most likely service to have an external network connection. We
 suggest the following features of a gateway:

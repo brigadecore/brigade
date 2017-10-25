@@ -74,9 +74,9 @@ $ git commit -m "add unit tests"
 $ git push origin master
 ```
 
-## Create an brigade.js file
+## Create a brigade.js file
 
-Now that we have successfully written tests for our app and configured an Brigade project, it's time to make use of them.
+Now that we have successfully written tests for our app and configured a Brigade project, it's time to make use of them.
 
 An `brigade.js` file must be placed in the root of your git repo and committed.
 

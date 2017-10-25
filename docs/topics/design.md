@@ -20,7 +20,7 @@ It is designed to:
 ## Terminology
 
 - **Brigade** is the main server. It is designed to run in-cluster as a deployment.
-- **brigade.js**: A JavaScript file that contains an Brigade configuration. Pronounced
+- **brigade.js**: A JavaScript file that contains a Brigade configuration. Pronounced
   "Brigade Jay Es" or "Brigade Jazz".
 - **Job**: A build unit, comprised of one or more build steps called "tasks"
 - **Webhook**: An incoming request from an external SCM that provides a JSON
@@ -36,11 +36,11 @@ Brigade is composed of the following pieces:
 - The Brigade server
 - The Brigade.js supporting libraries (runner.js, quokka)
 - The Brigade Helm chart (installs Brigade into Kubernetes)
-- The Brigade Project Helm Chart (add or manage a project in an Brigade server)
+- The Brigade Project Helm Chart (add or manage a project in a Brigade server)
 
 The Brigade server is the main server that exposes webhook and other web APIs and triggers script runs.
 
-Brigade scripts (brigade.js + supporting) run cluster-wide scripts. Just as the constituent parts of a shell script are the UNIX commands, the constituent parts of an Brigade script are containers (running in pods). And BrigadeIC image is just a docker container image that understands how to interoperate with specific Brigade components. However, regular container images work just fine.
+Brigade scripts (brigade.js + supporting) run cluster-wide scripts. Just as the constituent parts of a shell script are the UNIX commands, the constituent parts of a Brigade script are containers (running in pods). And BrigadeIC image is just a docker container image that understands how to interoperate with specific Brigade components. However, regular container images work just fine.
 
 Brigade is installed using a Helm chart. Brigade projects, which hold configuration data for Brigade, are also installed as charts (though they are just configmaps).
 
@@ -50,7 +50,7 @@ At a high level, Brigade can handle different sorts of requests. To provide a si
 
 ![Brigade Webhook Flow](img/Brigade-webhook.png)
 
-GitHub hosts a number of projects. Our team has configured two Brigade projects (`github.com/technosophos/example` and `github.com/helm/otherexample`). Likewise, GitHub has been configured to trigger an Brigade build, via webhook, whenever a pull request is received.
+GitHub hosts a number of projects. Our team has configured two Brigade projects (`github.com/technosophos/example` and `github.com/helm/otherexample`). Likewise, GitHub has been configured to trigger a Brigade build, via webhook, whenever a pull request is received.
 
 1. Event: Github sends a webhook to Brigade. Brigade authenticates the request.
 2. Load Config: Brigade loads the configuration for the given GitHub repository. This configuration
@@ -68,7 +68,7 @@ hook request per `push` event.
 
 ![Flow Diagram](img/sequence.png)
 
-A hook kicks of an Brigade build, which in turn will invoke the repository's `brigade.js` file. The build is done inside of Kubernetes, with each `Job` being run as a Kubernetes pod.
+A hook kicks off a Brigade build, which in turn will invoke the repository's `brigade.js` file. The build is done inside of Kubernetes, with each `Job` being run as a Kubernetes pod.
 
 Finally, the above can be generalized to a broader pattern. Along with doing GitHub CI operations, Brigade can be configured to react to other events.
 
@@ -79,8 +79,8 @@ The above shows other examples of event emitters that Brigade could listen for:
 - VS Teams: Much the same as Github. And services such as BitBucket could be supported as well.
 - Repository Watcher: Watch a Helm chart repository for a change in the chart version, and notify Brigade.
   A given `brigade.js` may then react by doing a rolling deployment, a stage deployment, etc.
-- Docker Registry Watcher: Trigger an Brigade event when a docker image version changes.
-- Cron Watcher: Trigger an Brigade event periodically.
+- Docker Registry Watcher: Trigger a Brigade event when a docker image version changes.
+- Cron Watcher: Trigger a Brigade event periodically.
 
 In all cases, the watchers _trigger events_, and Brigade determines what to do based on the `brigade.js` configuration. To that end, it may be useful to think of Brigade as an event watching system or an implementation of a observer pattern.
 

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Project describes an Brigade project
+// Project describes a Brigade project
 //
 // This is an internal representation of a project, and contains data that
 // should not be made available to the JavaScript runtime.

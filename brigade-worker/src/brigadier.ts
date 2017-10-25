@@ -27,7 +27,7 @@ export let events = new eventsImpl.EventRegistry()
 /**
  * fire triggers an event.
  *
- * The fire() function takes an BrigadeEvent (the event to be triggered) and a
+ * The fire() function takes a BrigadeEvent (the event to be triggered) and a
  * Project (the owner project). If an event handler is found, it is executed.
  * If no event handler is found, nothing happens.
  */
@@ -72,7 +72,7 @@ export class Group extends groupImpl.Group {
 }
 
 /**
- * ErrorReport describes an error in the runtie handling of an Brigade script.
+ * ErrorReport describes an error in the runtime handling of a Brigade script.
  */
 export class ErrorReport {
   /**

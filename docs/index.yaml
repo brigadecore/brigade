@@ -20,7 +20,7 @@ entries:
   brigade-project:
   - apiVersion: v1
     created: 2017-10-23T23:05:06.955707049Z
-    description: Create an Brigade project
+    description: Create a Brigade project
     digest: 637d46ff4f147f8490806a49251a851aa8db3c2c181056f91191dd06d94d4f78
     name: brigade-project
     urls:

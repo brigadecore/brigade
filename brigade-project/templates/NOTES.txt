@@ -1,6 +1,6 @@
 Your new Brigade project has been created.
 
-This is an brigade project for {{ .Values.repository }}
+This is a brigade project for {{ .Values.repository }}
 
 {{ if .Values.sshKey }}It is configured to use SSH{{ else }}It will clone the public repo{{ end }}
 

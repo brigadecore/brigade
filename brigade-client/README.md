@@ -1,6 +1,6 @@
 # Lightweight Script Deployer
 
-This example program sends an Brigade JavaScript file to an brigade server.
+This example program sends a Brigade JavaScript file to a brigade server.
 
 Example usage:
 

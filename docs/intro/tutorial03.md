@@ -2,7 +2,7 @@
 
 This tutorial begins where [Tutorial 2][part2] left off. We’ll walk through the process for configuring your newly created Github repository with Brigade for testing new features. We'll configure a new Brigade project, and have Github push events to trigger Brigade builds.
 
-## Create an Brigade project
+## Create a Brigade project
 
 The Brigade server tracks separate configuration for each project you set up. And to create and manage these configurations, we use a simple YAML file and a Helm chart.
 
