@@ -1,6 +1,6 @@
 # Brigade Documentation
 
-Everything you need to know about Brigade: The CI/CD System for Kubernetes.
+Everything you need to know about Brigade.
 
 ## First Steps
 
