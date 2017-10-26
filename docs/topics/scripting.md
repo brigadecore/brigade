@@ -14,7 +14,7 @@ special cluster environment. An environment is composed of the following things:
 - A Brigade server running in your cluster
 - A project in which the script will run
 - (Optionally) A source code repository (e.g. git) that contains data our
-- (Optionally) Other configuration data, like [secrets](secrets.yaml)
+- (Optionally) Other configuration data, like [secrets](secrets.md)
 
 For the examples in this document, we have created a project with these values:
 
@@ -842,7 +842,7 @@ secrets (environment variables or credentials) that are available to us.
   - `name` is the name of the repo. GitHub projects are named as org/project.
   - `cloneURL` is the URL Brigade will use to clone or fetch the repository.
 - `secrets` is where you can store environment variables or secretes. These are set using
-  `helm` (see the [Secrets Guide](secrets.yaml).
+  `helm` (see the [Secrets Guide](secrets.md).
 
 ### Using Event and Project Objects
 
