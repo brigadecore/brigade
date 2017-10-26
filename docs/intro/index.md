@@ -10,5 +10,5 @@ New to Brigade or to CI systems in general? Well, you came to the right place: r
 - [Writing your first CI pipeline, part 2](tutorial02.md)
 - [Writing your first CI pipeline, part 3](tutorial03.md)
 - [Writing your first CI pipeline, part 4](tutorial04.md)
-- [Advanced tutorial: Writing efficient pipelines](reusable-pipelines.md)
+- [Advanced tutorial: Writing efficient pipelines](writing-efficient-pipelines.md)
 - [What to read next](readnext.md)
