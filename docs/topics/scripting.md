@@ -938,7 +938,7 @@ built-in shared directories.
 Each build gets its own shared storage. This is a file path that can be accessed by every
 job during the build, but which does not survive after the build has completed.
 
-Storage is always mounted to `/mnt/brigade/share` on each job's container.
+When enabled, storage is mounted to `/mnt/brigade/share` on each job's container.
 
 ```javascript
 const { events, Job, Group } = require("brigadier")
@@ -949,9 +949,14 @@ events.on("exec", (e, p) => {
   var two = new Job("two", "alpine:3.4", ["echo world >> " + dest])
   var three = new Job("three", "alpine:3.4", ["cat " + dest])
 
+  one.storage.enabled = true
+  two.storage.enabled = true
+  three.storage.enabled = true
+
   Group.runEach([one, two, three])
 })
 ```
+[brigade-16.js](examples/brigade-16.js)
 
 In the script above, jobs `one` and `two` should each write a line to the file
 `hello.txt`, which is stored in the shared `/mnt/brigade/share` directory. Since this
@@ -968,7 +973,7 @@ world
 
 That is exactly what we would expect to see.
 
-Importantly, shared storage space is listed to 50 megabytes of storage per build. This can
+Importantly, shared storage space is limited to 50 megabytes of storage per build. This can
 be overridden in the project configuration.
 
 > Note: Shared storage is dependent on the underlying Kubernetes cluster. Some Kubernetes

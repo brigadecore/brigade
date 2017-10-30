@@ -216,9 +216,9 @@ A `JobHost` object provides preferences for the host upon which the job is execu
 
 ### The `JobStorage` class
 
-- `enabled: boolean`: If set to `false`, the Job will not mount the build storage.
-  (Unlike job caches, setting this to false will not alter whether or not the storage
-  is allocated)
+- `enabled: boolean`: If set to `true `, the Job will mount the build storage.
+   Build storage exposes a mounted volume at `/mnt/brigade/share` with storage that
+   can be shared across jobs.
 - `path: string`: The read-only path to the shared storage from within the container.
 
 ### The `KubernetesConfig` class
