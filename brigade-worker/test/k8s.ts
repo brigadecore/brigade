@@ -185,6 +185,7 @@ describe("k8s", function() {
       context("when cache is enabled", function() {
         beforeEach(function() {
           j.cache.enabled = true
+          j.storage.enabled = true
         })
         it("configures volumes", function() {
           let jr = new k8s.JobRunner(j, e, p)

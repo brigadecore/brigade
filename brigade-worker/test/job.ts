@@ -20,7 +20,7 @@ describe("job", function() {
       it("correctly sets default values", function(){
         let c = new JobStorage()
         assert.equal(c.path, brigadeStoragePath, "Dir is " + brigadeStoragePath)
-        assert.isTrue(c.enabled, "enabled by default")
+        assert.isFalse(c.enabled, "disabled by default")
       })
     })
   })
@@ -68,8 +68,8 @@ describe("job", function() {
       })
     })
     describe("#storage", function() {
-      it("is enabled by default", function() {
-        assert.isTrue(j.storage.enabled)
+      it("is disabled by default", function() {
+        assert.isFalse(j.storage.enabled)
       })
     })
   })

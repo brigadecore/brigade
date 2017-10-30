@@ -6,5 +6,9 @@ events.on("exec", (e, p) => {
   var two = new Job("two", "alpine:3.4", ["echo world >> " + dest])
   var three = new Job("three", "alpine:3.4", ["cat " + dest])
 
+  one.storage.enabled = true
+  two.storage.enabled = true
+  three.storage.enabled = true
+
   Group.runEach([one, two, three])
 })

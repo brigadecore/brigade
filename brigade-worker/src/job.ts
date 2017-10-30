@@ -79,7 +79,7 @@ export class JobCache {
  * Changes to this object only impact the job, not the entire build.
  */
 export class JobStorage {
-  public enabled: boolean = true
+  public enabled: boolean = false
   private _path: string = brigadeStoragePath
   public get path(): string { return this._path }
 }
