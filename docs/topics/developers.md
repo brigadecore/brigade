@@ -24,6 +24,13 @@ This document covers development of `brigade-controller`, `brigade-server`, and
 - make
 - Node.js and NPM
 
+## Clone the Repository In GOPATH
+
+Follow these steps when cloning the brigade repository to use an existing `GOPATH` for your system:
+
+- `$ mkdir -p $(go env GOPATH)/src/github.com/Azure # GOPATH is set to $HOME/go by default`
+- `$ git clone https://github.com/Azure/brigade $(go env GOPATH)/src/github.com/Azure/brigade`
+- `$ cd $(go env GOPATH)/src/github.com/Azure/brigade`
 
 ## Building Source
 
@@ -150,4 +157,3 @@ yarn start
 ```
 
 You may change the variables above to point to the desired project.
-
