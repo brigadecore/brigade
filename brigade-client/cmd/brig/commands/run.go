@@ -32,12 +32,17 @@ const runUsage = `Send a Brigade JS file to the server.
 This sends a file into the cluster and waits for it to complete. It accepts
 a project name or project ID.
 
-	$ brigade run deis/empty-testbed
+	$ brig run deis/empty-testbed
 
 When no JS file is supplied, the project will be checked for a brigade.js file
 in the associated repository.
 
-Be careful when setting an event, as many events expect a particular payload.
+To send a local JS file to the server, use the '-f' flag:
+
+	$ brig run -f my.js deis/empty-testbed
+
+While specifying an event is possible, use caution. Mny events expect a
+particular payload.
 `
 
 func init() {
@@ -58,10 +63,8 @@ var run = &cobra.Command{
 		}
 		proj := args[0]
 
-		script, err := ioutil.ReadFile(runFile)
-		if err != nil {
-			return err
-		}
+		var script []byte
+		var err error
 
 		a, err := newScriptRunner()
 		if err != nil {
