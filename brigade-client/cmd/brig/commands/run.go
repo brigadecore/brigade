@@ -24,7 +24,9 @@ var (
 )
 
 const (
-	kubeConfig = "KUBECONFIG"
+	kubeConfig   = "KUBECONFIG"
+	waitTimeout  = 5 * time.Minute
+	initialDelay = 5 * time.Second
 )
 
 const runUsage = `Send a Brigade JS file to the server.
@@ -117,7 +119,7 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 	podName := "brigade-worker-" + b.ID + "-master"
 
 	// This is a hack to give the scheduler time to create the resource.
-	time.Sleep(3 * time.Second)
+	time.Sleep(initialDelay)
 
 	fmt.Printf("Started %s\n", podName)
 	if err := a.podLog(podName, os.Stdout); err != nil {
@@ -130,7 +132,7 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 func (a *scriptRunner) podLog(name string, w io.Writer) error {
 	req := a.kc.CoreV1().Pods(globalNamespace).GetLogs(name, &v1.PodLogOptions{Follow: true})
 
-	readCloser, err := req.Stream()
+	readCloser, err := req.Timeout(waitTimeout).Stream()
 	if err != nil {
 		return err
 	}
