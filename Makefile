@@ -3,7 +3,7 @@
 # include that: quay.io/foo
 DOCKER_REGISTRY    ?= deis
 DOCKER_BUILD_FLAGS :=
-VERSION            := $(shell git describe --tags --abbrev=0 --exact-match 2>/dev/null)
+VERSION            := $(shell git describe --tags --abbrev=0 2>/dev/null)
 LDFLAGS            :=
 
 # Test Repo is https://github.com/deis/empty-testbed
