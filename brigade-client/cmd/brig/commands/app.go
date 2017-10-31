@@ -4,6 +4,10 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
+	// Kube client doesn't support all auth providers by default.
+	// this ensures we include all backends supported by the client.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 const mainUsage = `Interact with the Brigade cluster service.
