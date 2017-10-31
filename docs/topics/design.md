@@ -1,183 +1,236 @@
 # Brigade Design
 
-_This document reflects an earlier state of Brigade, and needs updating._
+_This is a living document, and is kept up to date with the current state of
+Brigade. It is a high-level explanation of the Brigade design._
 
-This is a high-level explanation of the design of Brigade.
+Brigade is an in-cluster runtime environment. It interprets scripts, and executes
+them often by invoking resources inside of the cluster. Brigade is event-based
+scripting of Kubernetes pipelines.
 
-Brigade is an in-cluster runtime environment. It is the basis for systems like
-CI or CD as well as systems that need in-cluster event handling.
+![Event-based scripting of pipelines](img/design-01.png)
 
-It is designed to:
-
-- run on top of Kubernetes
-- be complimentary to Helm
-- open an avenue for advanced Kubernetes workflows
-  - continuous integration
-  - continuous delivery
-
-![Block Diagram](img/kube-helm-draft-stack.png)
+- Event-based: A script execution is triggered by a Brigade event.
+- Scripting: Programs are expressed as JavaScript files that declare one or more event handlers.
+- Pipelines: A script expresses a series of related jobs that run in parallel or serially.
 
 ## Terminology
 
-- **Brigade** is the main server. It is designed to run in-cluster as a deployment.
-- **brigade.js**: A JavaScript file that contains a Brigade configuration. Pronounced
-  "Brigade Jay Es" or "Brigade Jazz".
-- **Job**: A build unit, comprised of one or more build steps called "tasks"
-- **Webhook**: An incoming request from an external SCM that provides a JSON
-  payload indicating that a new contribution has been made. This triggers an
-  Brigade run.
-- **Project**: A named collection of data that Brigade operates on, e.g. a GitHub
-  repository with source code in it.
+![Brigade Run](img/design-02.png)
 
-## Components
+- **Brigade** is the name of the project. Often, the term is used generically to
+  refer to the in-cluster Brigade components.
+  - **Brigade Controller** is the name of the central controller.
+  - **Brigade Gateway** is the default gateway that ships with Brigade. It provides
+    GitHub hook implementations.
+  - **Brigade API** is an API server used to access information about Brigade's
+    current and past workloads.
+- **Brig** is a command line client for Brigade.
+- **Event** is a Brigade-issued indicator that something happened.
+- **Gateways** transform outside triggers (a Git pull request, a Trello card move) into
+  events.
+- **brigade.js** is the standard name for a JavaScript file that contains one or more Brigade event handlers.
+- **Job** is a build unit, comprised of one or more build steps called "tasks"
+  - **Task** is a step within a job.
+- **Webhook** is an incoming HTTP/HTTPS request from an external source. Some gateways
+  uses webhooks as triggers for events.
+- **Project** is a named collection of data that Brigade operates on. Often, though
+  not always, a Project is linked to a Git project. All scripts are executed within
+  the context of a project.
+  - **Secrets** are bits of configuration considered "non-public". They are stored
+  in projects, and may be accessed within scripts.
+  - **VCS Sidecar** is a special Docker image that knows how to load a project's
+  related VCS repository into a build or job. The default VCS sidecar only knows
+  about Git.
+- **Build** is a run (an instance) of a script. When a script is executed, the
+  data about that execution is conceptually referenced as a _build_. A build
+  must handle at least one event, and may handle multiple events.
 
-Brigade is composed of the following pieces:
+## The Developer's View
 
-- The Brigade server
-- The Brigade.js supporting libraries (runner.js, quokka)
-- The Brigade Helm chart (installs Brigade into Kubernetes)
-- The Brigade Project Helm Chart (add or manage a project in a Brigade server)
+From the developer's view, Brigade works like this:
 
-The Brigade server is the main server that exposes webhook and other web APIs and triggers script runs.
+A _project_ describes the context in which a Brigade script will run. It may define
+the following:
 
-Brigade scripts (brigade.js + supporting) run cluster-wide scripts. Just as the constituent parts of a shell script are the UNIX commands, the constituent parts of a Brigade script are containers (running in pods). And BrigadeIC image is just a docker container image that understands how to interoperate with specific Brigade components. However, regular container images work just fine.
+- Project name
+- Related files, stored in a VCS repository (Git is supported out of the box, others
+  require a different VCS sidecar)
+- Configuration, such as tokens, SSH keys, and other items necessary to wire up
+  a script run.
+- Secrets, which are opaque configuration items that are presumed to be non-public.
+  While configuration information is not guaranteed to be available inside of a
+  script, secrets are.
+- The VCS sidecar to use. (Default is the Git sidecar)
 
-Brigade is installed using a Helm chart. Brigade projects, which hold configuration data for Brigade, are also installed as charts (though they are just configmaps).
+One or more scripts may be executed within the context of a project. Brigade
+assumes that a default script will reside in the project's VCS repository at the
+relative path `./brigade.js`. Gateways may provide other ways of sending
+scripts into Brigade.
 
-## High-Level Flow
+A Brigade script should have at least one event handler defined. Event handlers
+are triggered when a gateway emits an event. Events are bound to projects, so
+an event will only be triggered for the explicitly declared project. (In other
+words, there are no _global_ events, only project-bound events.)
 
-At a high level, Brigade can handle different sorts of requests. To provide a simple example, here is a GitHub workflow:
+An event specifies the following things:
 
-![Brigade Webhook Flow](img/Brigade-webhook.png)
+- Which project it is attached to (e.g. `my/project`)
+- The name of the event that fired (e.g. `pull_request`)
+- The entity that triggered the event (e.g. `github`)
+- The script to run (defaults to `./brigade.js` in the VCS)
+- A payload containing event data.
 
-GitHub hosts a number of projects. Our team has configured two Brigade projects (`github.com/technosophos/example` and `github.com/helm/otherexample`). Likewise, GitHub has been configured to trigger a Brigade build, via webhook, whenever a pull request is received.
+(The list above is not exhaustive.)
 
-1. Event: Github sends a webhook to Brigade. Brigade authenticates the request.
-2. Load Config: Brigade loads the configuration for the given GitHub repository. This configuration
-   may include credentials, special configuration directives, and settings or properties for the
-   build.
-3. Run: Brigade fetches the github repository, reads the `brigade.js` file, and then executes it. In the
-  typical build scenario, this script will invoke one or more jobs (Kubernetes pods) that will build
-  and test the code.
-4. Notify: When the build is complete, Brigade will notify GitHub over the GitHub status API. It will
-  send GitHub the state (success, failure, etc) along with a link where the user can fetch the logs
+When Brigade receives an event, it loads the referenced project, then starts a
+new worker. The worker executes the Brigade script, using as its entry point the
+event handler for the triggered event (e.g. `events.on('pull_request')`. The worker
+processes the script until one of the following occurs:
 
-The workflow above can be expressed as a series of events.
-When a GitHub project is configured to send webhooks to Brigade, it will send one
-hook request per `push` event.
+- The script exits successfully
+- The script terminates because of an error
+- The worker times out
 
-![Flow Diagram](img/sequence.png)
+The fundamental units of a script are event handlers, jobs, and tasks.
 
-A hook kicks off a Brigade build, which in turn will invoke the repository's `brigade.js` file. The build is done inside of Kubernetes, with each `Job` being run as a Kubernetes pod.
-
-Finally, the above can be generalized to a broader pattern. Along with doing GitHub CI operations, Brigade can be configured to react to other events.
-
-![Brigade watchers](img/brigade-watchers.png)
-
-The above shows other examples of event emitters that Brigade could listen for:
-
-- VS Teams: Much the same as Github. And services such as BitBucket could be supported as well.
-- Repository Watcher: Watch a Helm chart repository for a change in the chart version, and notify Brigade.
-  A given `brigade.js` may then react by doing a rolling deployment, a stage deployment, etc.
-- Docker Registry Watcher: Trigger a Brigade event when a docker image version changes.
-- Cron Watcher: Trigger a Brigade event periodically.
-
-In all cases, the watchers _trigger events_, and Brigade determines what to do based on the `brigade.js` configuration. To that end, it may be useful to think of Brigade as an event watching system or an implementation of a observer pattern.
-
-## Details: The Servers
-
-Brigade has three in-cluster components:
-
-- `brigade-gateway` listens to external events (GitHub webhooks, DockerHub webhooks, etc) and converts them to Kubernetes resources.
-- `brigade-controller` is a Kubernetes Controller that watches for certain resources, and starts new builds
-- `brigade-worker` runs one (and only one) build. Controllers start new workers, which live for the duration of the build.
-
-This section describes how the servers responds to a GitHub pull request or push operation.
-
-![Brigade CI run](img/webhooks.png)
-
-When a Webhook `push` event is triggered, the Brigade gateway will do the following:
-
-- Load the data provided by the webhook
-- Load the project configuration.
-  - A configuration has the following:
-    - A project name
-    - The GitHub URL
-    - A GitHub shared secret used for authenticating a webhook request
-    - (Optional) An SSH key that Brigade can use to securely fetch code from a private GitHub repo
-    - (Optional) An OAuth2 token that Brigade can use to send upstream status messages to GitHub
-  - If a request comes in for a project that does not match any of the configurations,
-    Brigade returns an error.
-- Perform auth against the original payload
-  - AuthN is done using GitHub's hook auth mechanism -- a cryptographic hash with
-    an agreed-upon secret salt.
-  - If auth fails, Brigade returns an error
-- Clone the GitHub repo (or update if the repo is cached)
-  - By default, clone over HTTPS
-  - Private repos clone over SSH with an SSH key
-- Find and load the brigade.js file
-  - brigade.js must be at the repository root
-  - if no file is found, Brigade returns an error
-- Generate a build ID
-- Store the information in a new Secret
-
-At this point, the Brigade controller will observe the new secret, and it will:
-
-- Load the secret
-- Perform some consistency checks
-- Start a new Brigade worker
-
-The new Brigade worker is responsible for executing the brigade.js file:
-
-- Prepare the JavaScript runtime (sandboxed; one per request; never re-used)
-- Run the brigade.js file
-  - For each Brigade `Job`, create a config map and a pod.
-  - The config map stores instructions on what to execute.
-  - The pod mounts the config map as a volume
-  - Run until the script is complete. Most jobs are blocking, but jobs can be
-    run in the background.
-- Update the GitHub status for the commit or pull request
-  - On error, report a failure and provide a URL for more info
-  - On success, report success
-
-This is the basic operation of Brigade for GitHub webhooks.
-
-It's important to note that new webhook types can be added simply by creating a new
-gateway for your particular webhook mechanism. While many of the services Brigade works
-with provide webhook APIs, there is no reason why one could not, for example,
-implement a gateway that accepted email messages or chat messages and sent a new
-request to the controller.
-
-### Project Configuration
-
-In Brigade, each _project_ has a Kubernetes Secret that stores information about that project. An _brigade project_ corresponds roughly with the more common notion of a project in software development: a buildable unit of code (usually tracked in an SCM)
-
-The outline of how this project is linked to GitHub is explained above. But that same project could be hooked up to other services. For example, to replicate the older idea of a "nightly build," an in-cluster cron service might trigger a build on a project.
-
-_ALTERNATE DESIGN_: We could eliminate the idea of per-project configuration and instead only have a per-server configuration. In this case, credentials would be shared across multiple GitHub projects (as is the case with CircleCI and TravisCI). However, this might make it harder to retain per-project configurations.
-
-## JavaScript and brigade.js
-
-Brigade has [a full JavaScript engine](javascript.md) inside. This engine provides some supporting libraries to provide primitives for:
-
-- Creating and managing jobs
-- Accessing configuration
-- Querying Kubernetes
-- Performing basic concurrency tasks
-
-It does _not_ allow loading of external JS via NPM or other JavaScript loaders.
-
-The traditional Brigade.js JavaScript implements one or more _event handlers_.
+An _event handler_ associates a named event with a function that can process the
+event:
 
 ```javascript
-// This handles a Push webhook.
-events.on("push",  function(brigadeEvent, project) {
-  // Do some stuff
-}
-events.on("pull_request", function (e, p) {
-  // Do something else
-})
+events.on('event name', () => { /* handler */ })
 ```
 
-When the Brigade server receives an event, it will fire the corresponding hook in
-the `brigade.js` file.
+An event handler is explicitly given two pieces of information: the `event` record
+and the `project` record.
+
+- The `event` record provides information about the event.
+- The `project` record provides some (but not all) information about the project,
+  notably names, secrets, and VCS information
+
+A typical event handler declares and runs one or more _jobs_. A job is a discrete
+unit of work that is associated with a _container image_.
+
+```javascript
+const myJob = new Job("job-name", "image:tag")
+```
+
+When a job is executed, the container image is _pulled_ from an origin (such as DockerHub),
+and is executed in the cluster. A job specifies configuration and input to that
+container. And the output of that container is returned from the job.
+
+A job may declare zero or more _tasks_. A task is an individual step executed inside
+of a container. For example, if a container is just a simple Linux container with
+a shell, multiple shell commands can be run as tasks:
+
+```
+myJob.tasks = [
+  "echo hello",
+  "echo world"
+]
+```
+
+In addition to jobs, scripts may declare _groups_, where groups are merely organizing
+units that can execute multiple jobs according to predefined patterns (e.g. all
+in parallel, each serially).
+
+When a script is executed, cluster resources are allocated to execute each job as
+an independent cluster resource (a Pod). Various storage configurations may provide
+shared space between jobs in a build, or between multiple instances of the same
+job in different builds.
+
+## The Operator's View
+
+Operationally speaking, Brigade is a tool for chaining together Kubernetes pods
+in order to accomplish high level goals. It is analogous to the way UNIX shell scripts
+work.
+
+A UNIX shell script defines the workflow around executing one or more lower-level
+system executables. Similarly, a Brigade script defines a workflow for executing
+multiple containers within a cluster.
+
+Brigade has several functional concepts.
+
+![Design Overview](img/design-overview.png)
+
+A Gateway is a workload, typically a Kubernetes Deployment fronted by a Service
+or Ingress, that transforms a trigger (inbound webhook, item on queue) into a
+Brigade event. The default `brigade-gw` gateway provides HTTP(S) endpoints that
+GitHub webhooks can target.
+
+![Service, Trigger, Gateway, Event](img/design-trigger-gateway.png)
+
+The illustration above shows how GitHub translates a Git event into a webhook, which
+the Brigade Gateway translates into an event to be consumed by the Brigade controller.
+
+In Brigade, all scripts are executed in the context of a _project_. Projects are
+represented as Kubernetes Secrets.
+
+The Controller is a Kubernetes controller that listens for Brigade event objects,
+and handles these objects by starting workers.
+
+Brigade events are currently specified as Kubernetes Secrets with particular
+labels. We use secrets because at the time of development, Third Party Resources
+were deprecated and Custom Resource Descriptions are not final. This aspect of the
+system _may_ change between the 0.1.0 release of Brigade and the 1.0.0 release.
+
+Brigade Workers are pods that execute brigade scripts. Each worker handles exactly
+one brigade script. Workers are never pooled. A worker runs to completion, to failure,
+or to timeout. Prior to the 1.0.0 release of Brigade, the simple pods may be
+replaced by Kubernetes Job objects instead.
+
+Brigade workers handle an event by starting a _build_, where a build executes a
+script. A build will create a PVC for shared storage (job-to-job shared filesystem),
+and will create one or more pods (one per job). The worker will attempt to destroy
+all destroyable resources once the build has completed. Note that jobs are left in
+the Complete state (not deleted) so that their logs may be accessed. Cache PVCs
+are left unattached, and prepared for re-use.
+
+A Brigade Job is started by a worker, and is executed as a pod. A job is run
+to completion, to error, or to timeout. Its status and results are made available
+to the calling worker, which in turn provides access to the script.
+
+Along with the execution of an event-build pipeline, Brigade also provides an
+API server that provides access to information about current and past builds, projects,
+and jobs. The API server is typically fronted by a Service or Ingress.
+
+## Reasoning for Certain Design Decisions
+
+- Go was selected because it provides the most mature Kubernetes APIs.
+- At various points, we explored using TPRs and later CRDs. But the feature sets
+  and stability of these two facilities never reached a satisfactorily stable
+  point. So we use secrets for configuration data.
+- JavaScript was selected because of it's high score on just about all language
+  usage analyses.
+- Node.js was selected because of its robust ecosystem
+- TypeScript was selected because its type system resembled Go's.
+- The Controller model was selected because it gave us the advantages of a queueing
+  system, but without requiring a stand-alone service.
+- GitHub and Git were selected because they appear to be the leading tools used
+  by developers.
+- Docker containers were selected because they are the clear market leader.
+- PVCs are used for shared storage because they are the closest Kubernetes comes
+  to providing a shareable filesystem. We explored, and ultimately rejected, multiple
+  userland alternatives.
+- The Job/Task terminology comes from ETL
+- The Event terminology comes from JavaScript's event model
+- The Build terminology comes from CI/CD systems
+
+## History of Brigade
+
+Brigade was designed in March 2016 by the Deis Helm Team (now part of Microsoft).
+
+The first design used Lua instead of JavaScript, and relied on very few Kubernetes resources.
+Instead, it used a Redis queue for message passing and key/value storage. Other
+than some proof-of-concept work, the Lua engine never materialized. JavaScript's
+popularity made it a better choice.
+
+An original Kuberentes-oriented JavaScript engine was developed several months later.
+This was intended to be both a stand-alone component and a foundational piece for
+Brigade. Work was abandoned in favor of the Node.js worker pattern.
+
+In April of 2017, Brigade was designated as the third part of the Helm/Draft/Brigade
+ecosystem. At this point, it was renamed "Acid" (Acme Continuous Integration & Deployment).
+
+Brigade reached a stability point in September 2017, and was re-renamed back from
+Acid to Brigade. Brigade was released publicly under the MIT license in October
+2017, as release 0.1.0.
