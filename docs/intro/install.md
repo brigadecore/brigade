@@ -22,7 +22,7 @@ brigade-server-brigade   10.0.110.59   135.15.52.20   7744:31558/TCP   45d
 
 (Note that `brigade-server-brigade` is just the name of the Helm release (`brigade-server`) with `-brigade` appended)
 
-The `EXTERNAL-IP` field is the IP address that external services, such as Github, will use to trigger actions.
+The `EXTERNAL-IP` field is the IP address that external services, such as GitHub, will use to trigger actions.
 
 Note that this is just one way of configuring Brigade to receive inbound connections. Brigade itself does not care how traffic is routed to it. Those with operational knowledge of Kubernetes may wish to use another method of ingress routing.
 
