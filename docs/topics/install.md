@@ -28,6 +28,9 @@ $ helm repo add brigade https://azure.github.io/brigade
 $ helm install brigade/brigade
 ```
 
+Once you have Brigade installed, you can proceed to [creating a project](projects.md).
+The remainder of this guide covers special configurations of Brigade.
+
 ### Customizing Installations
 
 Both of these options use the Brigade binaries stored in DockerHub. But you can override
@@ -40,14 +43,16 @@ $ helm install brigade/brigade --set image.name=my-image --set image.tag=1.2.3
 There are a variety of other configuration options for Brigade. Run `helm fetch values ./chart/brigade`
 to see them all.
 
-### Disabling RBAC
+### Enabling RBAC (optional)
 
-By default, Brigade has Role Based Access Control support. To disable this, set
-`rbac.enabled` to `false`:
+By default, Brigade has Role Based Access Control support turned off. To enable this, set
+`rbac.enabled` to `true`:
 
 ```console
 $ helm install brigade/brigade --set rbac.enabled=false
 ```
+
+> RBAC is disabled by default because many clusters to not enable RBAC by default.
 
 ## Configuring Brigade
 

@@ -15,6 +15,7 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
   - [Docker Registry Integration](dockerhub.md): A guide for configuring integration with DockerHub or Azure Container Registry.
   - [Using Secrets](secrets.md): How to pass sensitive data into builds.
 - Configuring and Running Brigade
+  - [Projects](projects.md): Install, upgrade, and use Brigade Projects.
   - [Securing Brigade](security.md): Things to consider when configuring Brigade.
 - Contributing to Brigade Development
   - [Brigade Developers Guide](developers.md): A guide for people who want to modify Brigade's
