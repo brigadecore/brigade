@@ -101,7 +101,7 @@ Re-run the web server and open the browser back to http://127.0.0.1:5000/. You s
 
 Keep refreshing the page. You should see new UUIDs being generated every time you refresh the page.
 
-When you’re comfortable with the application, read [part 2 of this tutorial][part2] to learn about pushing our application to Github.
+When you’re comfortable with the application, read [part 2 of this tutorial][part2] to learn about pushing our application to GitHub.
 
 
 [github]: https://github.com/Azure/brigade
