@@ -14,7 +14,7 @@ api:
   tag: latest
   service:
     name: brigade-api
-    type: LoadBalancer
+    type: ClusterIP
     externalPort: 7745
     internalPort: 7745
 
