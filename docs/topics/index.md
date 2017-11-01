@@ -1,6 +1,6 @@
 # Topic Guides
 
-This section of the documentation dives deep into individual parts of Brigade. This is where= complete guides to Brigade's controller, sandbox engine, and much more live. This is probably where you’ll want to spend most of your time; if you work your way through these guides you should come out knowing pretty much everything there is to know about Brigade.
+This section of the documentation dives deep into individual parts of Brigade. This is where complete guides to Brigade's controller, sandbox engine, and much more live. This is probably where you’ll want to spend most of your time; if you work your way through these guides you should come out knowing pretty much everything there is to know about Brigade.
 
 If you don't see a topic guide here and have a reasonable level of knowledge on the subject, why not [write one up][write]?
 
