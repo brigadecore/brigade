@@ -6,7 +6,7 @@ Brigade is a Kubernetes-native tool for doing event-driven scripting. Here's wha
 - Brigade does not require you to manage host servers.
 - Brigade is particularly well suited for CI and CD workloads such as:
   - Automated testing
-  - Github hook integration
+  - GitHub hook integration
   - Building artifacts and releases
   - Managing deployments
 - Brigade is built directly on Kubernetes APIs, which means...
