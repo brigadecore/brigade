@@ -192,12 +192,7 @@ export class JobRunner implements jobs.JobRunner {
     if (job.useSource && project.repo.cloneURL) {
       // Add the sidecar.
       let sidecar = sidecarSpec(e, "/src", project.kubernetes.vcsSidecar, project, secName)
-
-      // TODO: convert this to an init container with Kube 1.6
-      // runner.spec.initContainers = [sidecar]
-      this.runner.metadata.annotations = {
-        "pod.beta.kubernetes.io/init-containers": "[" + JSON.stringify(sidecar) + "]"
-      }
+      this.runner.spec.initContainers = [sidecar]
     }
 
     if (job.imagePullSecrets) {
