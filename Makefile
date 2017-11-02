@@ -124,7 +124,7 @@ test-style:
 HAS_NPM := $(shell command -v npm;)
 HAS_ESLINT := $(shell command -v eslint;)
 HAS_GOMETALINTER := $(shell command -v gometalinter;)
-HAS_GLIDE := $(shell command -v glide;)
+HAS_DEP := $(shell command -v dep;)
 HAS_GOX := $(shell command -v gox;)
 HAS_GIT := $(shell command -v git;)
 HAS_BINDATA := $(shell command -v go-bindata;)
@@ -144,10 +144,10 @@ ifndef HAS_GOMETALINTER
 	go get -u github.com/alecthomas/gometalinter
 	gometalinter --install
 endif
-ifndef HAS_GLIDE
-	go get -u github.com/Masterminds/glide
+ifndef HAS_DEP
+	go get -u github.com/golang/dep/cmd/dep
 endif
 ifndef HAS_BINDATA
 	go get github.com/jteeuwen/go-bindata/...
 endif
-	glide install --strip-vendor
+	dep ensure
