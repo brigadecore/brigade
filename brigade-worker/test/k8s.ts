@@ -163,10 +163,9 @@ describe("k8s", function() {
 
           // We also have to check this for the sidecar pod. But right now this is
           // embedded in a string.
-          let an = "pod.beta.kubernetes.io/init-containers"
-          let sidecar = jr.runner.metadata.annotations[an]
-          assert.include(sidecar, "BRIGADE_REPO_KEY")
-          assert.notInclude(sidecar, "SUPER SECRET", "secret is not be included")
+          let sidecar = jr.runner.spec.initContainers[0]
+          assert.equal(sidecar.env.length, 5)
+          assert.equal(sidecar.env[4].name,"BRIGADE_REPO_KEY", "Has BRIGADE REPO KEY as param")
         })
       })
       context("when mount path is supplied", function() {
