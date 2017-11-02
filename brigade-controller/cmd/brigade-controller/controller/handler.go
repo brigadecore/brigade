@@ -47,7 +47,7 @@ func (c *Controller) syncSecret(secret *v1.Secret) error {
 }
 
 const (
-	brigadeWorkerImage      = "deis/brgiade-worker:latest"
+	brigadeWorkerImage      = "deis/brigade-worker:latest"
 	brigadeWorkerPullPolicy = v1.PullIfNotPresent
 	volumeName              = "brigade-build"
 	volumeMountPath         = "/etc/brigade"
