@@ -7,7 +7,7 @@ VERSION            := $(shell git describe --tags --abbrev=0 2>/dev/null)
 LDFLAGS            :=
 
 # Test Repo is https://github.com/deis/empty-testbed
-TEST_REPO_COMMIT=800550b4171b0441fc26fd56925205db81633d88
+TEST_REPO_COMMIT=589e15029e1e44dee48de4800daf1f78e64287c0
 
 # The location of the functional tests.
 TEST_DIR=./tests

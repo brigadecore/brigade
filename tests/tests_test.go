@@ -40,7 +40,7 @@ func TestFunctional(t *testing.T) {
 		},
 		{
 			Method: "POST",
-			URL:    &url.URL{Scheme: "http", Host: "localhost:7744", Path: "/events/dockerhub/deis/empty-testbed/800550b4171b0441fc26fd56925205db81633d88"},
+			URL:    &url.URL{Scheme: "http", Host: "localhost:7744", Path: "/events/dockerhub/deis/empty-testbed/589e15029e1e44dee48de4800daf1f78e64287c0"},
 			Body:   dockerhubFile,
 		},
 	}
