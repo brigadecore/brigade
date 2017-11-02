@@ -21,11 +21,11 @@ func (c *Controller) createIndexerInformer() {
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				options.LabelSelector = labelSelector.String()
-				return c.clientset.CoreV1().Secrets(c.namespace).List(options)
+				return c.clientset.CoreV1().Secrets(c.Namespace).List(options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				options.LabelSelector = labelSelector.String()
-				return c.clientset.CoreV1().Secrets(c.namespace).Watch(options)
+				return c.clientset.CoreV1().Secrets(c.Namespace).Watch(options)
 			},
 		},
 		&v1.Secret{},

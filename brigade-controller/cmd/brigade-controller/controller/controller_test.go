@@ -21,8 +21,12 @@ func TestController(t *testing.T) {
 		t.Log("creating pod")
 		return false, nil, nil
 	})
-
-	controller := NewController(client, v1.NamespaceDefault)
+	config := &Config{
+		Namespace:        v1.NamespaceDefault,
+		WorkerImage:      "deis/brgiade-worker:latest",
+		WorkerPullPolicy: string(v1.PullIfNotPresent),
+	}
+	controller := NewController(client, config)
 
 	secret := v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
@@ -85,7 +89,7 @@ func TestController(t *testing.T) {
 	if envlen := len(c.Env); envlen != 6 {
 		t.Errorf("expected 6 items in Container.Env, got %d", envlen)
 	}
-	if c.Image != brigadeWorkerImage {
+	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
 	}
 	if c.VolumeMounts[0].Name != volumeName {
@@ -120,7 +124,12 @@ func TestController_WithScript(t *testing.T) {
 		return false, nil, nil
 	})
 
-	controller := NewController(client, v1.NamespaceDefault)
+	config := &Config{
+		Namespace:        v1.NamespaceDefault,
+		WorkerImage:      "deis/brgiade-worker:latest",
+		WorkerPullPolicy: string(v1.PullIfNotPresent),
+	}
+	controller := NewController(client, config)
 
 	secret := v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
@@ -186,7 +195,7 @@ func TestController_WithScript(t *testing.T) {
 	if envlen := len(c.Env); envlen != 6 {
 		t.Errorf("expected 6 items in Container.Env, got %d", envlen)
 	}
-	if c.Image != brigadeWorkerImage {
+	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
 	}
 	if c.VolumeMounts[0].Name != volumeName {
@@ -207,7 +216,12 @@ func TestController_NoSidecar(t *testing.T) {
 		return false, nil, nil
 	})
 
-	controller := NewController(client, v1.NamespaceDefault)
+	config := &Config{
+		Namespace:        v1.NamespaceDefault,
+		WorkerImage:      "deis/brgiade-worker:latest",
+		WorkerPullPolicy: string(v1.PullIfNotPresent),
+	}
+	controller := NewController(client, config)
 
 	secret := v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
@@ -254,7 +268,7 @@ func TestController_NoSidecar(t *testing.T) {
 	if envlen := len(c.Env); envlen != 6 {
 		t.Errorf("expected 6 items in Container.Env, got %d", envlen)
 	}
-	if c.Image != brigadeWorkerImage {
+	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
 	}
 	if l := len(pod.Spec.InitContainers); l != 0 {
