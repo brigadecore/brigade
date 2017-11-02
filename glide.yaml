@@ -1,9 +1,10 @@
 package: github.com/Azure/brigade
 import:
 - package: k8s.io/client-go
-  version: 4.0.0
+  version: ^5.0.1
   subpackages:
   - plugin/pkg/client/auth
+- package: k8s.io/api
 - package: k8s.io/apimachinery
   subpackages:
   - pkg/apis/meta/v1
