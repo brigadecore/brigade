@@ -16,11 +16,6 @@ func TestFunctional(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer githubPushFile.Close()
-	dockerhubFile, err := os.Open("testdata/dockerhub-push.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer dockerhubFile.Close()
 	hubSignature, err := ioutil.ReadFile("testdata/test-repo-generated.hash")
 	if err != nil {
 		t.Fatal(err)
@@ -34,11 +29,6 @@ func TestFunctional(t *testing.T) {
 				"X-Github-Event":  []string{"push"},
 				"X-Hub-Signature": []string{string(hubSignature)},
 			},
-		},
-		{
-			Method: "POST",
-			URL:    &url.URL{Scheme: "http", Host: "localhost:7744", Path: "/events/dockerhub/deis/empty-testbed/589e15029e1e44dee48de4800daf1f78e64287c0"},
-			Body:   dockerhubFile,
 		},
 	}
 

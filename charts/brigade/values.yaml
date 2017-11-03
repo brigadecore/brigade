@@ -18,9 +18,21 @@
 # the image name. If unspecified, the Chart.yaml's appVersion field will be
 # used to pull the tag. If you override the `tag` value, that version will
 # be used instead.
+#
+# Note that if `rbac.enabled` is turned on, the chart will install a set of
+# RBAC objects that are designed to give a moderate set of permissions to the
+# Brigade core components. However, even if RBACs are not enabled, this chart
+# will create service accounts for each entity that we install.Security experts
+# may prefer to apply their own RBACs instead of the ones supplied by the chart.
+# Provided that the service accounts remain the same, this chart should provide
+# compatibility with custom rules.
 
 
 # If enabled, roles, role bindings will be turned on.
+# IMPORTANT: The RBAC system is complex, and if you are using RBACs in your
+# cluster, you may need to evaluate existing rules and accounts in addition
+# to the rules created here. We recommend that you understand RBACs
+# before enabling this.
 rbac:
   enabled: false
 
@@ -65,6 +77,24 @@ gw:
   #tag:
   #pullPolicy: IfNotPresent
 
+# These values are for the Container Registry (CR) gateway.
+# Enabling this will start a service that handles webhooks from container
+# registries like DockerHub and ACR. Note that these registries do not have
+# strong auth built in, so enabling this gateway could result in repeated
+# bogus requests from an unauthenticated source. This could pose a security
+# risk for poorly written scripts, and could be an opening for DOS-style
+# attacks on your cluster.
+cr:
+  enabled: false
+  registry: deis
+  name: brigade-cr-gateway
+  #tag: latest
+  service:
+    name: brigade-cr-service
+    type: ClusterIP  # Change to LoadBalancer if you want this externally available.
+    externalPort: 80
+    internalPort: 8000
+
 # The service is for the Brigade gateway. If you do not want to have Brigade
 # listening for incomming GitHub requests, disable this.
 service:
@@ -82,6 +112,8 @@ ingress:
   # Add custom annotations
   # annotations:
   #   name: value
+
+
 # DEVELOPMENT ONLY: Use this for off-ACS development
 # Before enabling this, log into the acr registry with Docker and then
 # run `scripts/generate-acr-secret.sh`

@@ -9,6 +9,7 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 	"k8s.io/api/core/v1"
 
+	"github.com/Azure/brigade/pkg/storage"
 	"github.com/Azure/brigade/pkg/storage/kube"
 	"github.com/Azure/brigade/pkg/webhook"
 )
@@ -39,6 +40,11 @@ func main() {
 
 	store := kube.New(clientset, namespace)
 
+	router := newRouter(store)
+	router.Run(":8000")
+}
+
+func newRouter(store storage.Store) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Recovery())
 
@@ -46,12 +52,12 @@ func main() {
 	{
 		events.Use(gin.Logger())
 
-		events.POST("/github", webhook.NewGithubHook(store).Handle)
+		events.POST("/webhook/:org/:project/:commit", webhook.NewDockerPushHook(store).Handle)
 	}
 
 	router.GET("/healthz", healthz)
 
-	router.Run(":7744")
+	return router
 }
 
 func healthz(c *gin.Context) {
