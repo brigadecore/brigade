@@ -48,10 +48,9 @@ particular payload.
 `
 
 func init() {
-	run.Flags().StringVarP(&runFile, "file", "f", "./brigade.js", "The JavaScript file to execute")
+	run.Flags().StringVarP(&runFile, "file", "f", "", "The JavaScript file to execute")
 	run.Flags().StringVarP(&runEvent, "event", "e", "exec", "The name of the event to fire")
 	run.Flags().StringVarP(&runPayload, "payload", "p", "", "The path to a payload file")
-	// TODO: add support for specifying payload and event type
 	Root.AddCommand(run)
 }
 
