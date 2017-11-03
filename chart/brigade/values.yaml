@@ -17,6 +17,11 @@ api:
     type: ClusterIP
     externalPort: 7745
     internalPort: 7745
+worker:
+  registry: deis
+  name: brigade-worker
+  tag: latest
+  #pullPolicy: IfNotPresent
 
 # If enabled, roles, role bindings will be turned on.
 rbac:

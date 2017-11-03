@@ -20,12 +20,14 @@ func main() {
 	var (
 		kubeconfig string
 		master     string
-		namespace  string
+		ctrConfig  controller.Config
 	)
 
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
-	flag.StringVar(&namespace, "namespace", defaultNS(), "kubernetes namespace")
+	flag.StringVar(&ctrConfig.Namespace, "namespace", defaultNS(), "kubernetes namespace")
+	flag.StringVar(&ctrConfig.WorkerImage, "worker-image", os.Getenv("BRIGADE_WORKER_IMAGE"), "kubernetes namespace")
+	flag.StringVar(&ctrConfig.WorkerPullPolicy, "worker-pull-policy", os.Getenv("BRIGADE_WORKER_PULL_POLICY"), "kubernetes namespace")
 	flag.Parse()
 
 	// creates the connection
@@ -40,8 +42,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	controller := controller.NewController(clientset, namespace)
-	log.Printf("Listening in namespace %q for new events", namespace)
+	controller := controller.NewController(clientset, &ctrConfig)
+	log.Printf("Listening in namespace %q for new events", ctrConfig.Namespace)
 
 	// Now let's start the controller
 	stop := make(chan struct{})

@@ -13,21 +13,28 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
+// Config is config for setting Controller
+type Config struct {
+	Namespace        string
+	WorkerImage      string
+	WorkerPullPolicy string
+}
+
 // Controller listens for new brigade builds and starts the worker pods.
 type Controller struct {
+	*Config
 	indexer  cache.Indexer
 	queue    workqueue.RateLimitingInterface
 	informer cache.Controller
 
-	namespace string
 	clientset kubernetes.Interface
 }
 
 // NewController creates a new Controller.
-func NewController(clientset kubernetes.Interface, namespace string) *Controller {
+func NewController(clientset kubernetes.Interface, config *Config) *Controller {
 	c := &Controller{
 		clientset: clientset,
-		namespace: namespace,
+		Config:    config,
 		queue:     workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
 	}
 	c.createIndexerInformer()

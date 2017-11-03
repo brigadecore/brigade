@@ -33,7 +33,7 @@ func (c *Controller) syncSecret(secret *v1.Secret) error {
 			return err
 		}
 
-		pod, err := newWorkerPod(secret, project)
+		pod, err := c.newWorkerPod(secret, project)
 		if err != nil {
 			return err
 		}
@@ -47,16 +47,14 @@ func (c *Controller) syncSecret(secret *v1.Secret) error {
 }
 
 const (
-	brigadeWorkerImage      = "deis/brigade-worker:latest"
-	brigadeWorkerPullPolicy = v1.PullIfNotPresent
-	volumeName              = "brigade-build"
-	volumeMountPath         = "/etc/brigade"
-	sidecarVolumeName       = "vcs-sidecar"
-	sidecarVolumePath       = "/vcs"
-	vcsSidecarKey           = "vcsSidecar"
+	volumeName        = "brigade-build"
+	volumeMountPath   = "/etc/brigade"
+	sidecarVolumeName = "vcs-sidecar"
+	sidecarVolumePath = "/vcs"
+	vcsSidecarKey     = "vcsSidecar"
 )
 
-func newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
+func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 	envvar := func(key string) v1.EnvVar {
 		name := "BRIGADE_" + strings.ToUpper(key)
 		return secretRef(name, key, secret)
@@ -65,8 +63,8 @@ func newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 	podSpec := v1.PodSpec{
 		Containers: []v1.Container{{
 			Name:            "brigade-runner",
-			Image:           brigadeWorkerImage,
-			ImagePullPolicy: brigadeWorkerPullPolicy,
+			Image:           c.WorkerImage,
+			ImagePullPolicy: v1.PullPolicy(c.WorkerPullPolicy),
 			Command:         []string{"yarn", "start"},
 			VolumeMounts: []v1.VolumeMount{
 				{
@@ -128,7 +126,7 @@ func newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 		pod.Spec.InitContainers = []v1.Container{{
 			Name:            "brigade-vcs-sidecar",
 			Image:           string(image),
-			ImagePullPolicy: brigadeWorkerPullPolicy,
+			ImagePullPolicy: v1.PullPolicy(c.WorkerPullPolicy),
 			VolumeMounts: []v1.VolumeMount{{
 				Name:      sidecarVolumeName,
 				MountPath: sidecarVolumePath,
