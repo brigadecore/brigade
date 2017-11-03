@@ -66,7 +66,12 @@ var run = &cobra.Command{
 		proj := args[0]
 
 		var script []byte
-		var err error
+		if len(runFile) > 0 {
+			var err error
+			if script, err = ioutil.ReadFile(runFile); err != nil {
+				return err
+			}
+		}
 
 		a, err := newScriptRunner()
 		if err != nil {
