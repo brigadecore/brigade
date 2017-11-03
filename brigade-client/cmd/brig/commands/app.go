@@ -12,7 +12,8 @@ import (
 
 const mainUsage = `Interact with the Brigade cluster service.
 
-Brigade is a tool for scripting cluster workflows.
+Brigade is a tool for scripting cluster workflows, and 'brig' is the command
+line client for intearcting with Brigade.
 
 The most common use for this tool is to send a Brigade JavaScript file to the
 cluster for execution. This is done with the 'brigade run' command.
@@ -20,7 +21,10 @@ cluster for execution. This is done with the 'brigade run' command.
 	$ brig run -f my.js my-project
 
 But the 'brig' command can also be used for learning about projects and
-capabilities of a cluster.
+builds as well.
+
+By default, Brigade learns about your Kubernetes cluster by inspect the $KUBECONFIG
+environment variable.
 `
 
 var (
