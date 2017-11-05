@@ -18,7 +18,7 @@ spec:
       serviceAccountName: {{ $fullname }}
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.controller.registry }}/{{ .Values.controller.name }}:{{ .Values.controller.tag }}"
+        image: "{{ .Values.controller.registry }}/{{ .Values.controller.name }}:{{ default .Chart.AppVersion .Values.controller.tag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.controller.pullPolicy }}
         ports:
         - containerPort: {{ .Values.service.internalPort }}
@@ -28,7 +28,7 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
           - name: BRIGADE_WORKER_IMAGE
-            value: "{{ .Values.worker.registry }}/{{ .Values.worker.name }}:{{ .Values.worker.tag }}"
+            value: "{{ .Values.worker.registry }}/{{ .Values.worker.name }}:{{ default .Chart.AppVersion .Values.worker.tag }}"
           - name: BRIGADE_WORKER_PULL_POLICY
             value: {{ default "IfNotPresent" .Values.worker.pullPolicy }}
       {{ if .Values.privateRegistry }}imagePullSecrets:

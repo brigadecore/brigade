@@ -1,3 +1,4 @@
+{{ if .Values.api.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -13,3 +14,4 @@ spec:
     name: {{ .Values.api.service.name }}
   selector:
     app: {{ template "brigade.api.fullname" . }}
+{{ end }}

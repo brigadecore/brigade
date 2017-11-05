@@ -1,32 +1,72 @@
-image:
-  registry: deis
-  name: brigade-gateway
-  tag: latest
-  #pullPolicy: IfNotPresent
-controller:
-  registry: deis
-  name: brigade-controller
-  tag: latest
-  #pullPolicy: IfNotPresent
-api:
-  registry: deis
-  name: brigade-api
-  tag: latest
-  service:
-    name: brigade-api
-    type: ClusterIP
-    externalPort: 7745
-    internalPort: 7745
-worker:
-  registry: deis
-  name: brigade-worker
-  tag: latest
-  #pullPolicy: IfNotPresent
+# This is the main configuration file for the Brigade chart.
+# To override values here, specify them in your own YAML file, and override
+# during install or upgrade:
+#
+#    $ helm install -n brigade -f myValues.yaml brigade/brigade
+#
+# By default, the chart will install without RBAC. To install with
+# RBAC, set `rbac.enabled` to `true`.
+#
+# To disable the GitHub gateway, set `gw.enabled` to `false`. This will mean
+# that no GitHub hooks will work, though scripts will still be able to mount
+# GitHub projects based on the Project configuration.
+#
+# Advanced Configuration
+#
+# Developers may wish to override the location of Docker images. For each
+# deployment, `registry` controls the image registry, and `name` controls
+# the image name. If unspecified, the Chart.yaml's appVersion field will be
+# used to pull the tag. If you override the `tag` value, that version will
+# be used instead.
+
 
 # If enabled, roles, role bindings will be turned on.
 rbac:
   enabled: false
 
+# controller is the main event processor in Brigade.
+controller:
+  registry: deis
+  name: brigade-controller
+  # tag should only be specified if you want to override Chart.appVersion
+  # The default tag is the value of .Chart.AppVersion
+  #tag:
+  #pullPolicy: IfNotPresent
+
+# api is the API server. It is technically not needed for the operation of the
+# Brigade controller, but it is used by tools to learn about the state of the
+# cluster.
+#
+# If you disable it, Brigade will still process events, but extra tooling (like
+# brig) may not be able to learn about it.
+api:
+  enabled: true
+  registry: deis
+  name: brigade-api
+  # tag:
+  service:
+    name: brigade-api
+    type: ClusterIP
+    externalPort: 7745
+    internalPort: 7745
+
+# worker is the JavaScript worker. These are created on demand by the controller.
+worker:
+  registry: deis
+  name: brigade-worker
+  #tag:
+  #pullPolicy: IfNotPresent
+
+# gw is the GitHub gateway.
+gw:
+  enabled: true
+  registry: deis
+  name: brigade-gateway
+  #tag:
+  #pullPolicy: IfNotPresent
+
+# The service is for the Brigade gateway. If you do not want to have Brigade
+# listening for incomming GitHub requests, disable this.
 service:
   name: brigade-service
   type: LoadBalancer
