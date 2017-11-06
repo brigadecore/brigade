@@ -29,11 +29,11 @@ var projectGet = &cobra.Command{
 		if len(args) == 0 {
 			return errors.New("project name is a required argument")
 		}
-		return getProject(cmd.OutOrStdout(), globalNamespace, args[0])
+		return getProject(cmd.OutOrStdout(), args[0])
 	},
 }
 
-func getProject(out io.Writer, ns, name string) error {
+func getProject(out io.Writer, name string) error {
 	c, err := kube.GetClient("", kubeConfigPath())
 	if err != nil {
 		return err

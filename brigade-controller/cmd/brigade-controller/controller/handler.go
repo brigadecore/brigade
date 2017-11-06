@@ -22,7 +22,7 @@ func (c *Controller) syncSecret(secret *v1.Secret) error {
 			return err
 		}
 
-		pid := string(secret.Labels["project"])
+		pid := secret.Labels["project"]
 		if pid == "" {
 			return errors.New("project ID not found")
 		}

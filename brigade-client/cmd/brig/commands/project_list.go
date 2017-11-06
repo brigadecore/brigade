@@ -23,11 +23,11 @@ var projectList = &cobra.Command{
 	Short: "list projects",
 	Long:  projectListUsage,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return listProjects(cmd.OutOrStdout(), globalNamespace)
+		return listProjects(cmd.OutOrStdout())
 	},
 }
 
-func listProjects(out io.Writer, ns string) error {
+func listProjects(out io.Writer) error {
 	c, err := kube.GetClient("", kubeConfigPath())
 	if err != nil {
 		return err

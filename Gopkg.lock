@@ -14,12 +14,6 @@
   version = "v8.0.0"
 
 [[projects]]
-  name = "github.com/Masterminds/vcs"
-  packages = ["."]
-  revision = "3084677c2c188840777bff30054f2b553729d329"
-  version = "v1.11.1"
-
-[[projects]]
   name = "github.com/PuerkitoBio/purell"
   packages = ["."]
   revision = "8a290539e2e8629dbc4e6bad948158f790ec31f4"
@@ -306,6 +300,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3c8907ab7e26b822e2c96f9baf75ed5ef33e286e9ebfdfade276a6b113b8ea10"
+  inputs-digest = "2debcd5845ab2c762d8aee7d23951d2aee461d2337e8b87c3e274e7e0ab93f71"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -9,9 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"path/filepath"
 
-	"github.com/Masterminds/vcs"
 	"github.com/google/go-github/github"
 	"gopkg.in/gin-gonic/gin.v1"
 
@@ -201,43 +199,6 @@ func getFileFromGithub(commit, path string, proj *brigade.Project) ([]byte, erro
 	return GetFileContents(proj, commit, path)
 }
 
-// TODO create abstraction for mocking
-func getFile(commit, path string, proj *brigade.Project) ([]byte, error) {
-
-	// TODO: This could be optimized, or perhaps we could just get the commit off of the REST API.
-	tmpdir, err := ioutil.TempDir("", "git-")
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := os.RemoveAll(tmpdir); err != nil {
-			log.Printf("error unlinking tmpdir: %s", err)
-		}
-	}()
-
-	toDir := filepath.Join(tmpdir, proj.Repo.Name)
-	if err := os.MkdirAll(toDir, 0755); err != nil {
-		log.Printf("error making %s: %s", toDir, err)
-		return nil, err
-	}
-
-	// URL is the definitive location of the Git repo we are fetching. We always
-	// take it from the project, which may choose to set the URL to use any
-	// supported Git scheme.
-	url := proj.Repo.CloneURL
-
-	// TODO:
-	// - [ ] Remove the cached directory at the end of the build?
-	if err := cloneRepo(url, commit, toDir); err != nil {
-		log.Printf("error cloning %s to %s: %s", url, toDir, err)
-		return nil, err
-	}
-
-	// Path to brigade file:
-	brigadePath := filepath.Join(toDir, path)
-	return ioutil.ReadFile(brigadePath)
-}
-
 func (s *githubHook) build(eventType, commit string, payload []byte, proj *brigade.Project) error {
 	brigadeScript, err := s.getFile(commit, brigadeJSFile, proj)
 	if err != nil {
@@ -263,41 +224,5 @@ func validateSignature(signature, secretKey string, payload []byte) error {
 		log.Printf("Expected signature %q (sum), got %q (hub-signature)", sum, signature)
 		return errors.New("payload signature check failed")
 	}
-	return nil
-}
-
-type originalError interface {
-	Original() error
-	Out() string
-}
-
-func logOriginalError(err error) {
-	oerr, ok := err.(originalError)
-	if ok {
-		log.Println(oerr.Original().Error())
-		log.Println(oerr.Out())
-	}
-}
-
-func cloneRepo(url, version, toDir string) error {
-
-	// TODO: If the URL is 'file://', do we want to symlink or otherwise copy?
-	repo, err := vcs.NewRepo(url, toDir)
-	if err != nil {
-		return err
-	}
-	if err := repo.Get(); err != nil {
-		logOriginalError(err) // FIXME: Audit this in case this might dump sensitive info.
-		if err2 := repo.Update(); err2 != nil {
-			logOriginalError(err2)
-			log.Printf("WARNING: Could neither clone nor update repo %q. Clone: %s Update: %s", url, err, err2)
-		}
-	}
-
-	if err := repo.UpdateVersion(version); err != nil {
-		log.Printf("Failed to checkout %q: %s", version, err)
-		return err
-	}
-
 	return nil
 }

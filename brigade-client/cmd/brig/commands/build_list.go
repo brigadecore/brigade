@@ -23,11 +23,11 @@ var buildList = &cobra.Command{
 	Short: "list builds",
 	Long:  buildListUsage,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return listBuilds(cmd.OutOrStdout(), globalNamespace)
+		return listBuilds(cmd.OutOrStdout())
 	},
 }
 
-func listBuilds(out io.Writer, ns string) error {
+func listBuilds(out io.Writer) error {
 	c, err := kube.GetClient("", kubeConfigPath())
 	if err != nil {
 		return err

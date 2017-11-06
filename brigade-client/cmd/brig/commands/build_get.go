@@ -27,11 +27,11 @@ var buildGet = &cobra.Command{
 		if len(args) == 0 {
 			return errors.New("build ID is a required argument")
 		}
-		return getBuild(cmd.OutOrStdout(), globalNamespace, args[0])
+		return getBuild(cmd.OutOrStdout(), args[0])
 	},
 }
 
-func getBuild(out io.Writer, ns, bid string) error {
+func getBuild(out io.Writer, bid string) error {
 	c, err := kube.GetClient("", kubeConfigPath())
 	if err != nil {
 		return err
