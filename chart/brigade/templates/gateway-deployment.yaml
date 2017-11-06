@@ -1,3 +1,4 @@
+{{ if .Values.gw.enabled }}
 {{ $fullname := include "brigade.gw.fullname" . }}
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -20,8 +21,8 @@ spec:
       serviceAccountName: {{ $fullname }}
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.registry }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
+        image: "{{ .Values.gw.registry }}/{{ .Values.gw.name }}:{{ default .Chart.AppVersion .Values.gw.tag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.gw.pullPolicy }}
         ports:
         - containerPort: {{ .Values.service.internalPort }}
         livenessProbe:
@@ -39,3 +40,4 @@ spec:
                 fieldPath: metadata.namespace
       {{ if .Values.privateRegistry }}imagePullSecrets:
         - name: {{.Values.privateRegistry}}{{ end }}
+{{ end }}
