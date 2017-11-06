@@ -41,9 +41,9 @@ To create new projects, use the `brigade-project` Helm chart. While inside the G
 repository cloned above, run these commands:
 
 ```console
-$ helm inspect values ./brigade-project > myvalues.yaml
+$ helm inspect values ./chart/brigade-project > myvalues.yaml
 $ # edit myvalues.yaml
-$ helm install --name my-project ./brigade-project -f myvalues.yaml
+$ helm install --name my-project ./chart/brigade-project -f myvalues.yaml
 ```
 
 When editing `myvalues.yaml`, follow the instructions in that file for configuring
