@@ -25,9 +25,17 @@ for Kubernetes.
   other popular web services. And it can be easily extended to support your own
   services.
 
+The [design introduction](docs/topics/design.md) introduces Brigade concepts and
+architecture.
+
 ## Quickstart
 
-The easiest way to get started with Brigade is to install it using Helm:
+1. Install Brigade
+2. Create a Brigade project
+3. Write a Brigade script
+4. Execute the script
+
+The easiest way to install Brigade into your Kubernetes cluster is to install it using Helm.
 
 ```console
 $ git clone https://github.com/Azure/brigade.git
@@ -60,50 +68,27 @@ events.on("exec", (brigadeEvent, project) => {
 })
 ```
 
-But don't be fooled by its simplicty. Brigade can be used to create complex distributed
-pipelines. Check out [the tutorial](/docs/intro/) for more.
+Check out [the tutorial](/docs/intro/) for more on creating scripts.
 
-## `brig`: The Brigade client
+> In the future, Brigade will provide prebuilt `brig` binaries. But currently you
+need to build your own. Take a look at the [Developer's Guide](/docs/topics/developers.md)
+to learn more.
 
-Brigade is an event-driven system. Brigade projects live inside of your cluster.
-But it's easy to load and run brigade scripts with the `brig` client.
-
-### Building Brig
-
-Tip: you may need to [review the Developer Guide](/docs/topics/developers.md) for setting up the build [prerequisites](/docs/topics/developers.md#prerequisites) and [GOPATH](/docs/topics/developers.md#clone-the-repository-in-gopath) properly.
-
-```
-$ make bootstrap build-client
-$ bin/brig --help
-```
-
-### Running a simple Brig script
-
-Assuming you have a project named `my/project`, you can run a `brigade.js` file like this:
+Assuming you named your project `deis/empty-testbed`, you can run a `brigade.js`
+file like this:
 
 ```console
-$ brig run -f brigade.js my/project
+$ brig run -f brigade.js deis/empty-testbed
 ```
 
-This will show you the detailed output of running your project.
+This will show you the detailed output of running your `brigade.js` script's
+`exec` hook.
 
-> We suggest starting with the simple `brigade.js` script above, then heading over
-to the [docs](/docs/) to learn more.
-
-To see the names of your projects, run `brig project list`.
+(To see the names of your projects, run `brig project list`.)
 
 ## Brigade :heart: Developers
 
-These directions assume you are using `minikube` for development. For other environments,
-you must make sure you push the Docker images to the right registry or cluster
-Docker daemon.
-
-To get started:
-
-- Clone this repo and change directories into it
-- Point to MiniKube's Docker environment with `eval $(minikube docker-env)`
-- Run `make bootstrap build docker-build` to build the source
-- Install the Helm chart: `helm install -n brigade chart/brigade`
+To get started head to the [developer's guide](docs/topics/developers.md)
 
 Brigade is well-tested on Minikube and Azure Container Services.
 
