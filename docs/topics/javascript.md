@@ -253,7 +253,7 @@ Secrets (`project.secrets`) are passed from the project configuration into a Kub
 So `helm install brigade-project --set secrets.foo=bar` will add `foo: bar` to
 `project.secrets`.
 
-### The Event object
+### The `Event` object
 
 The Event object describes an event.
 
@@ -266,7 +266,7 @@ Properties:
   the data we get from GitHub.
 
 
-### The Job object
+### The `Job` object
 
 To create a new job:
 
