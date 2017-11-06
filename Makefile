@@ -59,10 +59,11 @@ docker-push:
 	docker push $(DOCKER_REGISTRY)/git-sidecar
 	docker push $(DOCKER_REGISTRY)/brigade-worker
 
+.PRECIOUS: build-chart
 .PHONY: build-chart
 build-chart:
 	helm package -d docs/ ./chart/brigade
-	helm package -d docs/ ./brigade-project
+	helm package -d docs/ ./chart/brigade-project
 	helm repo index docs/
 
 # All non-functional tests
