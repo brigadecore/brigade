@@ -56,7 +56,7 @@ An instance of an `BrigadeEvent` has the following properties:
 - `type: string`: The event type (`push`, `exec`, `pull_request`).
 - `provider: string`: The name of the thing that triggered this event.
 - `commit: string`: The commit ID, if supplied, for the underlying VCS system. When this is
-  supplied, each Job will have acecss to the VCS _at this revision_.
+  supplied, each Job will have access to the VCS _at this revision_.
 - `payload: string`: Arbitrary data supplied by an event emitter. Each event emitter
   will describe its own payload. For example, the GitHub gateway emits events that
   contain GitHub's webhook objects.
