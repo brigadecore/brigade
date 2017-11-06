@@ -129,11 +129,7 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 	time.Sleep(initialDelay)
 
 	fmt.Printf("Started %s\n", podName)
-	if err := a.podLog(podName, os.Stdout); err != nil {
-		return err
-	}
-
-	return nil
+	return a.podLog(podName, os.Stdout)
 }
 
 func (a *scriptRunner) podLog(name string, w io.Writer) error {

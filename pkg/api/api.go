@@ -15,16 +15,10 @@ func New(s storage.Store) API {
 }
 
 // Project returns a handler for projects.
-func (api API) Project() Project {
-	return Project{store: api.store}
-}
+func (api API) Project() Project { return Project(api) }
 
 // Build returns a handler for builds.
-func (api API) Build() Build {
-	return Build{store: api.store}
-}
+func (api API) Build() Build { return Build(api) }
 
 // Job returns a handler for jobs.
-func (api API) Job() Job {
-	return Job{store: api.store}
-}
+func (api API) Job() Job { return Job(api) }

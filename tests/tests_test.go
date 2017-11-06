@@ -8,11 +8,6 @@ import (
 	"testing"
 )
 
-type requestTest struct {
-	testType string
-	req      *http.Request
-}
-
 func TestFunctional(t *testing.T) {
 	githubPushFile, err := os.Open("testdata/test-repo-generated.json")
 	if err != nil {
