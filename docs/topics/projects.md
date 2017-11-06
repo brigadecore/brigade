@@ -55,7 +55,7 @@ $ cd brigade-projects/myproject
 ```
 
 > You can store project configs in Git repos, but we don't recommend GitHub for
-> this. Keybase has free encryoted private Git repos, which are great for this
+> this. Keybase has free encrypted private Git repos, which are great for this
 > sort of thing.
 
 ### 2. Create a `values.yaml` file for your project
