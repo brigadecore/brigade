@@ -24,12 +24,12 @@ function build(e, project) {
 
   // Run Go unit tests
   goBuild.tasks = [
-    "go get github.com/Masterminds/glide",
+    "go get github.com/golang/dep/cmd/dep",
     // Need to move the source into GOPATH so vendor/ works as desired.
     "mkdir -p " + localPath,
     "mv /src/* " + localPath,
     "cd " + localPath,
-    "glide install --strip-vendor",
+    "dep ensure",
     "make test-unit"
   ];
 
