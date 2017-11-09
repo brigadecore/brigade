@@ -55,8 +55,10 @@ describe("brigadier", function() {
         // 1 and 2 would finish before 3.
         j3.delay = 50
         g.add(j1, j2, j3)
-        g.runEach().then((rez: jobImpl.Result) => {
-          assert.equal(rez.toString(), j3.name)
+        g.runEach().then((rez: jobImpl.Result[]) => {
+          assert.equal(rez[0], j1.name)
+          assert.equal(rez[1], j2.name)
+          assert.equal(rez[2], j3.name)
           done()
         })
       })

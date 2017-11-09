@@ -31,8 +31,10 @@ describe("group", function() {
         // 1 and 2 would finish before 3.
         j3.delay = 50
         g.add(j1, j2, j3)
-        g.runEach().then((rez: jobImpl.Result) => {
-          assert.equal(rez.toString(), j3.name)
+        g.runEach().then((rez: jobImpl.Result[]) => {
+          assert.equal(rez[0], j1.name)
+          assert.equal(rez[1], j2.name)
+          assert.equal(rez[2], j3.name)
           done()
         })
       })
@@ -43,7 +45,7 @@ describe("group", function() {
           j2.fail = true
           let j3 = new mock.MockJob("third")
           g.add(j1, j2, j3)
-          g.runEach().then((rez: jobImpl.Result) => {
+          g.runEach().then((rez: jobImpl.Result[]) => {
             done("expected error on job 2")
           }).catch((msg) => {
             assert.equal(msg, "Failed")
@@ -87,8 +89,10 @@ describe("group", function() {
         // This ensures that if the jobs were not executed in sequence,
         // 1 and 2 would finish before 3.
         j3.delay = 5
-        group.Group.runEach([j1, j2, j3]).then((rez: jobImpl.Result) => {
-          assert.equal(rez.toString(), j3.name)
+        group.Group.runEach([j1, j2, j3]).then((rez: jobImpl.Result[]) => {
+          assert.equal(rez[0], j1.name)
+          assert.equal(rez[1], j2.name)
+          assert.equal(rez[2], j3.name)
           done()
         })
       })

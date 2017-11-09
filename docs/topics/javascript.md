@@ -108,10 +108,10 @@ all jobs are done and then returns the collected results.
 This is useful for running a batch of jobs in parallel, but waiting until they are
 complete before continuing with another operation.
 
-#### The static `runEach(Job[]): Promise<Result>` method
+#### The static `runEach(Job[]): Promise<Result[]>` method
 
 This runs each of the given jobs in sequence, blocking on each job until it
-is complete. The Promise will return the output of the last job in the sequence.
+is complete. The Promise will return the collected results.
 
 #### The `new Group(Job[]): Group` constructor
 
@@ -134,8 +134,8 @@ Functionally, this is equivalent to the static `runAll` method.
 
 #### The `runEach` method
 
-Runs each of the jobs in sequence (synchronously). When the Promise resolves, it
-will contain the last Job's result.
+Runs each of the jobs in sequence (synchronously). When the Promise resolves, it will
+wrap all of the results.
 
 Functionally, this is equivalent to the static `runEach` method.
 
