@@ -224,7 +224,23 @@ describe("k8s", function() {
           let jr = new k8s.JobRunner(j, e, p)
           for (let c of jr.runner.spec.containers) {
             assert.isTrue(c.securityContext.privileged)
+            let foundMnt = false
+            for (let vm of c.volumeMounts) {
+              if (vm.name == "docker-socket") {
+                foundMnt = true
+                assert.equal(vm.mountPath, "/var/run/docker.sock")
+              }
+            }
+            assert.isTrue(foundMnt, "volume mount for docker socket is set")
           }
+          let foundVol = false
+          for (let vol of jr.runner.spec.volumes) {
+            if (vol.name == "docker-socket") {
+              foundVol = true
+              assert.equal(vol.hostPath.path, "/var/run/docker.sock")
+            }
+          }
+          assert.isTrue(foundVol, "found volume")
         })
       })
       context("when image pull secrets are supplied", function() {
