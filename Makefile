@@ -30,9 +30,9 @@ build-client:
 # Cross-compile for Docker+Linux
 .PHONY: build-docker-bin
 build-docker-bin:
-	GOOS=linux GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o ./brigade-gateway/rootfs/usr/bin/brigade-gateway ./brigade-gateway/cmd/brigade-gateway
-	GOOS=linux GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o ./brigade-controller/rootfs/brigade-controller ./brigade-controller/cmd/brigade-controller
-	GOOS=linux GOARCH=amd64 go build -ldflags '$(LDFLAGS)' -o ./brigade-api/rootfs/brigade-api ./brigade-api/cmd/brigade-api
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./brigade-gateway/rootfs/usr/bin/brigade-gateway ./brigade-gateway/cmd/brigade-gateway
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./brigade-controller/rootfs/brigade-controller ./brigade-controller/cmd/brigade-controller
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./brigade-api/rootfs/brigade-api ./brigade-api/cmd/brigade-api
 
 .PHONY: run
 run: build
