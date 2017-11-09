@@ -27,7 +27,7 @@ export class Group {
    * This runs a series of jobs in order, blocking on each until it completes.
    * It is equivalent to `(new Group(jobs)).runEach()`
    */
-  public static runEach(jobs: jobImpl.Job[]): Promise<jobImpl.Result> {
+  public static runEach(jobs: jobImpl.Job[]): Promise<jobImpl.Result[]> {
     let g = new Group(jobs)
     return g.runEach()
   }
@@ -53,10 +53,15 @@ export class Group {
   /**
    * runEach runs each job in order and waits for every one to finish.
    */
-  public runEach(): Promise<jobImpl.Result> {
-    return this.jobs.reduce((p: Promise<jobImpl.Result>, j: jobImpl.Job) => {
-      return p.then(() => j.run())
-    }, Promise.resolve(new EmptyResult()))
+  public runEach(): Promise<jobImpl.Result[]> {
+    return this.jobs.reduce((promise: Promise<jobImpl.Result[]>, job: jobImpl.Job) => {
+      return promise.then((results: jobImpl.Result[]) => {
+        return job.run().then(jobResult => {
+          results.push(jobResult);
+          return results;
+        })
+      });
+    }, Promise.resolve([]));
   }
   /**
    * runAll runs all jobs in parallel and waits for them all to finish.
