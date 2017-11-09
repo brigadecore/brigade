@@ -20,11 +20,11 @@ type Project struct {
 	// Kubernetes holds information about Kubernetes
 	Kubernetes Kubernetes `json:"kubernetes"`
 	// SharedSecret is the GitHub shared key
-	SharedSecret string `json:"shared_secret"`
+	SharedSecret string `json:"-"`
 	// Github holds information about Github.
 	Github Github `json:"github"`
 	// Secrets is environment variables for brigade.js
-	Secrets map[string]string `json:"secrets"`
+	Secrets map[string]string `json:"-"`
 }
 
 // ProjectID will encode a project name.
@@ -44,7 +44,7 @@ func shortSHA(input string) string {
 // Github describes the Github configuration for a project.
 type Github struct {
 	// Token is used for oauth2 for client interactions.
-	Token string `json:"token"`
+	Token string `json:"-"`
 }
 
 // Repo describes a Git repository.
@@ -57,7 +57,7 @@ type Repo struct {
 	// Traditionally, this is an HTTPS URL.
 	CloneURL string `json:"cloneURL"`
 	// SSHKey is the auth string for SSH-based cloning
-	SSHKey string `json:"sshKey"`
+	SSHKey string `json:"-"`
 }
 
 // DefaultVCSSidecar is the default image that fetches a repo from a VCS.
