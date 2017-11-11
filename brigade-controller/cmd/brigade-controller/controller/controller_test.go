@@ -23,7 +23,7 @@ func TestController(t *testing.T) {
 	})
 	config := &Config{
 		Namespace:        v1.NamespaceDefault,
-		WorkerImage:      "deis/brgiade-worker:latest",
+		WorkerImage:      "deis/brigade-worker:latest",
 		WorkerPullPolicy: string(v1.PullIfNotPresent),
 	}
 	controller := NewController(client, config)
@@ -36,6 +36,7 @@ func TestController(t *testing.T) {
 				"heritage":  "brigade",
 				"component": "build",
 				"project":   "ahab",
+				"build":     "queequeg",
 			},
 		},
 	}
@@ -86,8 +87,8 @@ func TestController(t *testing.T) {
 	if c.Name != "brigade-runner" {
 		t.Error("Container.Name is not correct")
 	}
-	if envlen := len(c.Env); envlen != 6 {
-		t.Errorf("expected 6 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 7 {
+		t.Errorf("expected 7 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
@@ -139,6 +140,7 @@ func TestController_WithScript(t *testing.T) {
 				"heritage":  "brigade",
 				"component": "build",
 				"project":   "ahab",
+				"build":     "queequeg",
 			},
 		},
 		Data: map[string][]byte{
@@ -192,8 +194,8 @@ func TestController_WithScript(t *testing.T) {
 	if c.Name != "brigade-runner" {
 		t.Error("Container.Name is not correct")
 	}
-	if envlen := len(c.Env); envlen != 6 {
-		t.Errorf("expected 6 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 7 {
+		t.Errorf("expected 7 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
@@ -231,6 +233,7 @@ func TestController_NoSidecar(t *testing.T) {
 				"heritage":  "brigade",
 				"component": "build",
 				"project":   "ahab",
+				"build":     "queequeg",
 			},
 		},
 	}
@@ -265,8 +268,8 @@ func TestController_NoSidecar(t *testing.T) {
 	}
 
 	c := pod.Spec.Containers[0]
-	if envlen := len(c.Env); envlen != 6 {
-		t.Errorf("expected 6 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 7 {
+		t.Errorf("expected 7 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")

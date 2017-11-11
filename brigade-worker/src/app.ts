@@ -9,7 +9,7 @@ import * as k8s from "./k8s"
 import * as brigadier from './brigadier'
 
 interface BuildStorage {
-  create(buildID: string, project: events.Project, size?: string): Promise<string>
+  create(e:events.BrigadeEvent, project: events.Project, size?: string): Promise<string>
   destroy(): Promise<boolean>
 }
 
@@ -79,7 +79,7 @@ export class App {
       // cleanup from exiting > 0.
       return this.buildStorage.destroy().then( destroyed => {
         if (!destroyed) {
-          console.log(`storage not destroyed for ${ e.buildID }`)
+          console.log(`storage not destroyed for ${ e.workerID }`)
         }
       }).catch(reason => {
         var msg = reason
@@ -87,7 +87,7 @@ export class App {
         if (reason.body && reason.body.message) {
           msg = reason.body.message
         }
-        console.log(`failed to destroy storage for ${ e.buildID }: ${ msg }`)
+        console.log(`failed to destroy storage for ${ e.workerID }: ${ msg }`)
       })
     }
 
@@ -134,6 +134,7 @@ export class App {
 
       let after: events.BrigadeEvent = {
         buildID: e.buildID,
+        workerID: e.workerID,
         type: "after",
         provider: "brigade",
         commit: e.commit,
@@ -150,7 +151,7 @@ export class App {
     return this.loadProject(this.projectID, this.projectNS).then (p => {
       this.proj = p
       // Setup storage
-      return this.buildStorage.create(e.buildID.toLowerCase(), p, "50Mi")
+      return this.buildStorage.create(e, p, "50Mi")
     }).then( () => {
       brigadier.fire(e, this.proj)
       return true
@@ -171,6 +172,7 @@ export class App {
 
     let errorEvent: events.BrigadeEvent = {
       buildID: this.lastEvent.buildID,
+      workerID: this.lastEvent.workerID,
       type: "error",
       provider: "brigade",
       commit: this.lastEvent.commit,
@@ -186,6 +188,9 @@ export class App {
 
   /**
    * Generate a random build ID.
+   *
+   * DEPRECATED: Use a ULID for unique ID, and worker ID to identify the parent
+   * worker.
    */
   public static generateBuildID(commit: string): string {
     return `brigade-worker-${ ulid() }-${ commit.substring(0, 8) }`

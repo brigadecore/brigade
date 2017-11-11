@@ -39,6 +39,10 @@ export class BrigadeEvent {
      */
     buildID: string;
     /**
+     * workerID is the ID of the worker responsible for handling this event.
+     */
+    workerID: string;
+    /**
      * type is the event type ("push", "pull_request")
      */
     type: string;

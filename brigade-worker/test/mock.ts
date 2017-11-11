@@ -23,7 +23,8 @@ export function mockProject(): Project {
 
 export function mockEvent() {
   return {
-    buildID: "test-1234567890abcdef-12345678",
+    buildID: "1234567890abcdef",
+    workerID: "test-1234567890abcdef-12345678",
     type: "push",
     provider: "github",
     commit: "c0ffee",
@@ -65,8 +66,8 @@ export class MockJob extends Job {
 }
 
 export class MockBuildStorage {
-  public create(id: string, project: Project, size?: string): Promise<string> {
-    return Promise.resolve(id)
+  public create(e: BrigadeEvent, project: Project, size?: string): Promise<string> {
+    return Promise.resolve(e.workerID)
   }
   public destroy(): Promise<boolean> {
     return Promise.resolve(true)
