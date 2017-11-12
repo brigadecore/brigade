@@ -5,7 +5,8 @@ RUN apk update && apk add --no-cache \
     git \
     && update-ca-certificates
 
-COPY rootfs /
+COPY rootfs/brigade-gateway /usr/bin/brigade-gateway
+COPY rootfs/gitssh.sh /gitssh.sh
 
 ENV GIT_SSH=/gitssh.sh
 

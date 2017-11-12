@@ -56,7 +56,7 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 	proj.Github.Token = string(secret.Data["github.token"])
 
 	proj.Kubernetes.Namespace = def(secret.Data["namespace"], namespace)
-	proj.Kubernetes.VCSSidecar = def(secret.Data["vcsSidecar"], brigade.DefaultVCSSidecar)
+	proj.Kubernetes.VCSSidecar = def(secret.Data["vcsSidecar"], "")
 
 	proj.Repo = brigade.Repo{
 		Name: def(secret.Data["repository"], proj.Name),
