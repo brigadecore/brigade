@@ -185,15 +185,5 @@ export class App {
 
     brigadier.fire(errorEvent, this.proj)
   }
-
-  /**
-   * Generate a random build ID.
-   *
-   * DEPRECATED: Use a ULID for unique ID, and worker ID to identify the parent
-   * worker.
-   */
-  public static generateBuildID(commit: string): string {
-    return `brigade-worker-${ ulid() }-${ commit.substring(0, 8) }`
-  }
 }
 
