@@ -3,61 +3,46 @@
 # include that: quay.io/foo
 DOCKER_REGISTRY    ?= deis
 DOCKER_BUILD_FLAGS :=
-VERSION            := $(shell git describe --tags --abbrev=0 2>/dev/null)
 LDFLAGS            :=
 
-# Test Repo is https://github.com/deis/empty-testbed
-TEST_REPO_COMMIT=589e15029e1e44dee48de4800daf1f78e64287c0
+BINS        = brigade-api brigade-controller brigade-gateway brig
+IMAGES      = brigade-api brigade-controller brigade-gateway brigade-worker git-sidecar
+DOCKER_BINS = brigade-api brigade-controller brigade-gateway
 
-# The location of the functional tests.
-TEST_DIR=./tests
+GIT_TAG   = $(shell git describe --tags --always 2>/dev/null)
+LDFLAGS   += -X github.com/Azure/brigade/pkg/version.Version=$(VERSION)
+VERSION   ?= ${GIT_TAG}
+IMAGE_TAG ?= ${VERSION}
 
-KUBECONFIG ?= ${HOME}/.kube/config
-
-LDFLAGS += -X github.com/Azure/brigade/pkg/version.Version=${VERSION}
-
+# Build native binaries
 .PHONY: build
-build: build-client
-build:
-	go build -ldflags '$(LDFLAGS)' -o bin/brigade-gateway ./brigade-gateway/cmd/brigade-gateway
-	go build -ldflags '$(LDFLAGS)' -o bin/brigade-controller ./brigade-controller/cmd/brigade-controller
-	go build -ldflags '$(LDFLAGS)' -o bin/brigade-api ./brigade-api/cmd/brigade-api
+build: $(BINS)
 
-.PHONY: build-client
-build-client:
-	go build -ldflags '$(LDFLAGS)' -o bin/brig ./brigade-client/cmd/brig
+.PHONY: $(BINS)
+$(BINS):
+	go build -ldflags '$(LDFLAGS)' -o bin/$@ ./$@/cmd/$@
 
 # Cross-compile for Docker+Linux
-.PHONY: build-docker-bin
-build-docker-bin:
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./brigade-gateway/rootfs/usr/bin/brigade-gateway ./brigade-gateway/cmd/brigade-gateway
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./brigade-controller/rootfs/brigade-controller ./brigade-controller/cmd/brigade-controller
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./brigade-api/rootfs/brigade-api ./brigade-api/cmd/brigade-api
+build-docker-bins: $(addsuffix -docker-bin,$(DOCKER_BINS))
 
-.PHONY: run
-run: build
-run:
-	bin/brigade -kubeconfig $(KUBECONFIG)
+%-docker-bin:
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$*/rootfs/$* ./$*/cmd/$*
 
 # To use docker-build, you need to have Docker installed and configured. You should also set
 # DOCKER_REGISTRY to your own personal registry if you are not pushing to the official upstream.
 .PHONY: docker-build
-docker-build: build-docker-bin
-docker-build:
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-gateway:$(VERSION) brigade-gateway
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-controller:$(VERSION) brigade-controller
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-api:$(VERSION) brigade-api
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/git-sidecar:$(VERSION) git-sidecar
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/brigade-worker:$(VERSION) brigade-worker
+docker-build: build-docker-bins
+docker-build: $(addsuffix -image,$(IMAGES))
+
+%-image:
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG) $*
 
 # You must be logged into DOCKER_REGISTRY before you can push.
 .PHONY: docker-push
-docker-push:
-	docker push $(DOCKER_REGISTRY)/brigade-gateway
-	docker push $(DOCKER_REGISTRY)/brigade-controller
-	docker push $(DOCKER_REGISTRY)/brigade-api
-	docker push $(DOCKER_REGISTRY)/git-sidecar
-	docker push $(DOCKER_REGISTRY)/brigade-worker
+docker-push: $(addsuffix -push,$(IMAGES))
+
+%-push:
+	docker push $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG)
 
 .PRECIOUS: build-chart
 .PHONY: build-chart
@@ -75,7 +60,7 @@ test: test-js
 # Unit tests. Local only.
 .PHONY: test-unit
 test-unit:
-	go test -v ./pkg/... ./brigade-controller/... ./brigade-gateway/... ./brigade-api/...
+	go test -v ./pkg/... ./brigade-controller/... ./brigade-gateway/... ./brigade-api/... ./brig/...
 
 # Functional tests assume access to github.com
 # To set this up in your local environment:
@@ -93,11 +78,14 @@ test-unit:
 .PHONY: test-functional
 test-functional: test-functional-prepare
 test-functional:
-	go test $(TEST_DIR)
+	go test ./tests
 
+# Test Repo is https://github.com/deis/empty-testbed
+TEST_REPO_COMMIT =  589e15029e1e44dee48de4800daf1f78e64287c0
+KUBECONFIG       ?= ${HOME}/.kube/config
 .PHONY: test-functional-prepare
 test-functional-prepare:
-	go run $(TEST_DIR)/cmd/generate.go -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
+	go run ./tests/cmd/generate.go -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
 
 # JS test is local only
 .PHONY: test-js

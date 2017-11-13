@@ -60,9 +60,6 @@ type Repo struct {
 	SSHKey string `json:"-"`
 }
 
-// DefaultVCSSidecar is the default image that fetches a repo from a VCS.
-const DefaultVCSSidecar = "deis/git-sidecar:latest"
-
 // Kubernetes describes the Kubernetes configuration for a project.
 type Kubernetes struct {
 	// Namespace is the namespace of this project.
