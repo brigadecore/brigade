@@ -92,7 +92,7 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 				envvar("project_id"),
 				envvar("event_type"),
 				envvar("event_provider"),
-				envvar("build_id"),
+				envvar("build_name"),
 				envvar("commit"),
 				{
 					Name: "BRIGADE_PROJECT_NAMESPACE",

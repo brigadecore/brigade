@@ -14,7 +14,7 @@
  *   which new jobs should be created. The Brigade worker must have write access to
  *   this namespace.
  * - `BRIGADE_BUILD`: The ULID for the build. This is unique.
- * - `BRIGADE_BUILD_ID`: This is actually the ID of the worker.
+ * - `BRIGADE_BUILD_NAME`: This is actually the ID of the worker.
  *
  * Also, the Brigade script must be written to `brigade.js`.
  */
@@ -41,7 +41,7 @@ let commit = process.env.BRIGADE_COMMIT || "master"
 let defaultULID = ulid()
 let e: events.BrigadeEvent = {
     buildID: process.env.BRIGADE_BUILD || defaultULID,
-    workerID: process.env.BRIGADE_BUILD_ID || `unknown-${ defaultULID }`,
+    workerID: process.env.BRIGADE_BUILD_NAME || `unknown-${ defaultULID }`,
     type: process.env.BRIGADE_EVENT_TYPE || "ping",
     provider: process.env.BRIGADE_EVENT_PROVIDER || "unknown",
     commit: commit
