@@ -49,7 +49,7 @@ By default, Brigade has Role Based Access Control support turned off. To enable 
 `rbac.enabled` to `true`:
 
 ```console
-$ helm install brigade/brigade --set rbac.enabled=false
+$ helm install brigade/brigade --set rbac.enabled=true
 ```
 
 > RBAC is disabled by default because many clusters to not enable RBAC by default.
