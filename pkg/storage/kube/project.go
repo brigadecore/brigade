@@ -2,7 +2,6 @@ package kube
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"k8s.io/api/core/v1"
@@ -13,7 +12,7 @@ import (
 
 // GetProjects retrieves all projects from storage.
 func (s *store) GetProjects() ([]*brigade.Project, error) {
-	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("app=brigade,component=project")}
+	lo := meta.ListOptions{LabelSelector: "app=brigade,component=project"}
 	secretList, err := s.client.CoreV1().Secrets(s.namespace).List(lo)
 	if err != nil {
 		return nil, err

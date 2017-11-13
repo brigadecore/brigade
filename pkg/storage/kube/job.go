@@ -33,7 +33,7 @@ func (s *store) GetJob(id string) (*brigade.Job, error) {
 
 func (s *store) GetBuildJobs(build *brigade.Build) ([]*brigade.Job, error) {
 	// Load the pods that ran as part of this build.
-	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("heritage=brigade,component=job,commit=%s,project=%s", build.Commit, build.ProjectID)}
+	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("heritage=brigade,component=job,build=%s,project=%s", build.ID, build.ProjectID)}
 
 	podList, err := s.client.CoreV1().Pods(s.namespace).List(lo)
 	if err != nil {

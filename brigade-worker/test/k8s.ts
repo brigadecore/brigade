@@ -76,6 +76,12 @@ describe("k8s", function() {
         assert.equal(jr.runner.metadata.labels.commit, e.commit)
         assert.equal(jr.secret.metadata.labels.commit, e.commit)
 
+        assert.equal(jr.runner.metadata.labels.worker, e.workerID)
+        assert.equal(jr.secret.metadata.labels.worker, e.workerID)
+
+        assert.equal(jr.runner.metadata.labels.build, e.buildID)
+        assert.equal(jr.secret.metadata.labels.build, e.buildID)
+
         assert.isNotNull(jr.runner.spec.containers[0].command)
         assert.property(jr.secret.data, "main.sh")
       })

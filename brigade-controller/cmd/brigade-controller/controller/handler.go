@@ -10,7 +10,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ErrNoBuildID indicates that a secret does not have a build ID attached.
+var ErrNoBuildID = errors.New("no build ID on secret")
+
 func (c *Controller) syncSecret(secret *v1.Secret) error {
+	// If a secret does not have a build ID then it cannot be tracked through
+	// the system. A build ID should be a ULID.
+	if bid, ok := secret.Labels["build"]; !ok || len(bid) == 0 {
+		// Alternately, we could add a build ID and then re-save the secret.
+		log.Printf("syncSecret: secret %s/%s has no build ID. Discarding.", secret.Namespace, secret.Name)
+		return ErrNoBuildID
+	}
 	data := secret.Data
 
 	log.Printf("EventHandler: type=%s provider=%s commit=%s", data["event_type"], data["event_provider"], data["commit"])
@@ -82,13 +92,17 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 				envvar("project_id"),
 				envvar("event_type"),
 				envvar("event_provider"),
-				envvar("build_id"),
+				envvar("build_name"),
 				envvar("commit"),
 				{
 					Name: "BRIGADE_PROJECT_NAMESPACE",
 					ValueFrom: &v1.EnvVarSource{
 						FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"},
 					},
+				},
+				{
+					Name:  "BRIGADE_BUILD",
+					Value: secret.Labels["build"],
 				},
 			},
 		}},

@@ -13,6 +13,8 @@
  * - `BRIGADE_PROJECT_NAMESPACE`: For Kubernetes, this is the Kubernetes namespace in
  *   which new jobs should be created. The Brigade worker must have write access to
  *   this namespace.
+ * - `BRIGADE_BUILD`: The ULID for the build. This is unique.
+ * - `BRIGADE_BUILD_NAME`: This is actually the ID of the worker.
  *
  * Also, the Brigade script must be written to `brigade.js`.
  */
@@ -22,6 +24,8 @@
 
 import * as fs from "fs"
 import * as process from "process"
+
+import * as ulid from "ulid"
 
 import * as events from "./events"
 import * as k8s from "./k8s"
@@ -34,8 +38,10 @@ import "./brigade"
 let projectID: string = process.env.BRIGADE_PROJECT_ID
 let projectNamespace: string = process.env.BRIGADE_PROJECT_NAMESPACE
 let commit = process.env.BRIGADE_COMMIT || "master"
+let defaultULID = ulid()
 let e: events.BrigadeEvent = {
-    buildID: process.env.BRIGADE_BUILD_ID || App.generateBuildID(commit),
+    buildID: process.env.BRIGADE_BUILD || defaultULID,
+    workerID: process.env.BRIGADE_BUILD_NAME || `unknown-${ defaultULID }`,
     type: process.env.BRIGADE_EVENT_TYPE || "ping",
     provider: process.env.BRIGADE_EVENT_PROVIDER || "unknown",
     commit: commit
