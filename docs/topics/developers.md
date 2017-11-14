@@ -112,12 +112,12 @@ Once you have Brigade running in Minikube or a comparable alternative, you shoul
 able to run the functional tests.
 
 First, create a project that points to the `deis/empty-testbed` project. The most
-flexible way of doing this is via the `./brigade-project` Helm chart:
+flexible way of doing this is via the `./chart/brigade-project` Helm chart:
 
 ```console
-$ helm inspect ./brigade-project > functional-test-project.yaml
+$ helm inspect ./chart/brigade-project > functional-test-project.yaml
 $ # edit the functional-test-project.yaml file
-$ helm install -f functional-test-project.yaml -n brigade-functional-tests ./brigade-project
+$ helm install -f functional-test-project.yaml -n brigade-functional-tests ./chart/brigade-project
 ```
 
 At the very least, you will want a config that looks like this:
