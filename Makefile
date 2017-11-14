@@ -10,9 +10,9 @@ IMAGES      = brigade-api brigade-controller brigade-gateway brigade-worker git-
 DOCKER_BINS = brigade-api brigade-controller brigade-gateway
 
 GIT_TAG   = $(shell git describe --tags --always 2>/dev/null)
-LDFLAGS   += -X github.com/Azure/brigade/pkg/version.Version=$(VERSION)
 VERSION   ?= ${GIT_TAG}
 IMAGE_TAG ?= ${VERSION}
+LDFLAGS   += -X github.com/Azure/brigade/pkg/version.Version=$(VERSION)
 
 # Build native binaries
 .PHONY: build
