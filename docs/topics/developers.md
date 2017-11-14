@@ -40,6 +40,12 @@ To build all of the source, run this:
 $ make bootstrap build
 ```
 
+To build just the client binaries, run this:
+
+```
+$ make bootstrap brig
+```
+
 To build Docker images, run:
 
 ```
