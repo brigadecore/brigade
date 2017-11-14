@@ -2,6 +2,7 @@ package brigade
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -24,7 +25,19 @@ type Project struct {
 	// Github holds information about Github.
 	Github Github `json:"github"`
 	// Secrets is environment variables for brigade.js
-	Secrets map[string]string `json:"-"`
+	Secrets SecretsMap `json:"secrets"`
+}
+
+type SecretsMap map[string]string
+
+const redacted = "REDACTED"
+
+func (s SecretsMap) MarshalJSON() ([]byte, error) {
+	dest := make(map[string]string, len(s))
+	for k := range s {
+		dest[k] = redacted
+	}
+	return json.Marshal(dest)
 }
 
 // ProjectID will encode a project name.

@@ -36,8 +36,8 @@ func TestProjectSecrets(t *testing.T) {
 	if got.SharedSecret != "" {
 		t.Error("Project.SharedSecret should not be exported")
 	}
-	if got.Secrets != nil {
-		t.Error("Project.Secrets should not be exported")
+	if val, ok := got.Secrets["foo"]; !ok || val != redacted {
+		t.Error("Project.Secrets should not be " + redacted)
 	}
 	if got.Repo.SSHKey != "" {
 		t.Error("Project.Repo.SSHKey should not be exported")
