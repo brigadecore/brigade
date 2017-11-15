@@ -14,7 +14,7 @@ To install from the GitHub repository, follow these steps:
 ```console
 $ git clone https://github.com/azure/brigade.git
 $ cd brigade
-$ helm install ./chart/brigade
+$ helm install ./charts/brigade
 ```
 
 ### Option 2: Install from the Chart Repository
@@ -40,7 +40,7 @@ this behavior by supplying an alternative image during install:
 $ helm install brigade/brigade --set image.name=my-image --set image.tag=1.2.3
 ```
 
-There are a variety of other configuration options for Brigade. Run `helm fetch values ./chart/brigade`
+There are a variety of other configuration options for Brigade. Run `helm fetch values ./charts/brigade`
 to see them all.
 
 ### Enabling RBAC (optional)
