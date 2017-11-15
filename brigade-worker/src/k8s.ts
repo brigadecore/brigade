@@ -579,13 +579,16 @@ export function secretToProject(ns: string, secret: kubernetes.V1Secret): Projec
     name: b64dec(secret.data.repository),
     kubernetes: {
       namespace: secret.metadata.namespace || ns,
-      vcsSidecar: b64dec(secret.data.vcsSidecar)
+      vcsSidecar: ""
     },
     repo: {
       name: secret.metadata.annotations["projectName"],
       cloneURL: null,
     },
     secrets: {}
+  }
+  if (secret.data.vcsSidecar) {
+    p.kubernetes.vcsSidecar = b64dec(secret.data.vcsSidecar)
   }
   if (secret.data.cloneURL) {
     p.repo.cloneURL = b64dec(secret.data.cloneURL)
