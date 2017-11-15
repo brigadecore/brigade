@@ -47,8 +47,8 @@ docker-push: $(addsuffix -push,$(IMAGES))
 .PRECIOUS: build-chart
 .PHONY: build-chart
 build-chart:
-	helm package -d docs/ ./chart/brigade
-	helm package -d docs/ ./chart/brigade-project
+	helm package -d docs/ ./charts/brigade
+	helm package -d docs/ ./charts/brigade-project
 	helm repo index docs/
 
 # All non-functional tests
@@ -69,7 +69,7 @@ test-unit:
 #   project: "deis/empty-testbed"
 #   repository: "github.com/deis/empty-testbed"
 #   secret: "MySecret"
-# - Run "helm install ./chart/brigade-project -f myvals.yaml
+# - Run "helm install ./charts/brigade-project -f myvals.yaml
 # - Run "make run" in one terminal
 # - Run "make test-functional" in another terminal
 #
