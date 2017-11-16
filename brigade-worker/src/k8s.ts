@@ -457,7 +457,7 @@ function sidecarSpec(e: BrigadeEvent, local: string, image: string, project: Pro
   let repoURL = project.repo.cloneURL
 
   if (!imageTag) {
-    imageTag = "brigade/git-sidecar:latest"
+    imageTag = "deis/git-sidecar:latest"
   }
 
   let spec = new kubernetes.V1Container()
