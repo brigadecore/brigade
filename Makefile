@@ -60,7 +60,7 @@ test: test-js
 # Unit tests. Local only.
 .PHONY: test-unit
 test-unit:
-	go test -v ./pkg/... ./brigade-controller/... ./brigade-gateway/... ./brigade-api/... ./brig/...
+	go test -v ./...
 
 # Functional tests assume access to github.com
 # To set this up in your local environment:
@@ -78,7 +78,7 @@ test-unit:
 .PHONY: test-functional
 test-functional: test-functional-prepare
 test-functional:
-	go test ./tests
+	go test --tags integration ./tests
 
 # Test Repo is https://github.com/deis/empty-testbed
 TEST_REPO_COMMIT =  589e15029e1e44dee48de4800daf1f78e64287c0
@@ -94,7 +94,7 @@ test-js:
 
 .PHONY: test-style
 test-style:
-	gometalinter.v1 \
+	gometalinter \
 		--disable-all \
 		--enable deadcode \
 		--severity deadcode:error \
@@ -107,22 +107,20 @@ test-style:
 		--deadline 60s \
 		./...
 	@echo "Recommended style checks ===>"
-	gometalinter.v1 \
+	gometalinter \
 		--disable-all \
 		--enable golint \
 		--vendor \
-		--skip proto \
 		--deadline 60s \
 		./... || :
 
 
-HAS_NPM := $(shell command -v npm;)
-HAS_ESLINT := $(shell command -v eslint;)
+HAS_NPM          := $(shell command -v npm;)
+HAS_ESLINT       := $(shell command -v eslint;)
 HAS_GOMETALINTER := $(shell command -v gometalinter;)
-HAS_DEP := $(shell command -v dep;)
-HAS_GOX := $(shell command -v gox;)
-HAS_GIT := $(shell command -v git;)
-HAS_BINDATA := $(shell command -v go-bindata;)
+HAS_DEP          := $(shell command -v dep;)
+HAS_GIT          := $(shell command -v git;)
+HAS_BINDATA      := $(shell command -v go-bindata;)
 
 .PHONY: bootstrap
 bootstrap:
