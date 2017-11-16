@@ -15,12 +15,12 @@ At this point, you have a running Brigade service. You can use `helm get brigade
 By default, Brigade is configured to set up a service as a load balancer for your Brigade build system. To find out your IP address, run:
 
 ```console
-$ kubectl get svc brigade-server-brigade
-NAME                     CLUSTER-IP    EXTERNAL-IP    PORT(S)          AGE
-brigade-server-brigade   10.0.110.59   135.15.52.20   7744:31558/TCP   45d
+$ kubectl get svc brigade-server-brigade-gw
+NAME                        TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)          AGE
+brigade-server-brigade-gw   LoadBalancer   10.0.110.59   135.15.52.20   7744:32394/TCP   45d
 ```
 
-(Note that `brigade-server-brigade` is just the name of the Helm release (`brigade-server`) with `-brigade` appended)
+(Note that `brigade-server-brigade-gw` is just the name of the Helm release (`brigade-server`) with `-brigade-gw` appended)
 
 The `EXTERNAL-IP` field is the IP address that external services, such as GitHub, will use to trigger actions.
 
