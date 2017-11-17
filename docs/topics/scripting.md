@@ -69,10 +69,10 @@ hello world
 Done in 1.44s.
 ```
 
-> Tip: You can use the `lsd` (Lightweight Script Deployer) command to send brigade.js
+> Tip: You can use the `brig`  command to send brigade.js
 > files to Brigade.
 >
-> In this tutorial we run scripts with `lsd --file brigade.js $PROJECT`, where `$PROJECT` is a
+> In this tutorial we run scripts with `brig --file brigade.js $PROJECT`, where `$PROJECT` is a
 > project ID like `brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac`.
 
 In essence, all we have done is started a brigade session, logged "hello world", and exited.
@@ -89,9 +89,9 @@ project).
 When Brigade observes such an event, it will load the `brigade.js` file and see if there
 is an _event handler_ that matches the _event_.
 
-Using the `lsd` tool introduced above, we can see how this works.
+Using the `brig` tool introduced above, we can see how this works.
 
-The `lsd` tool triggers an `exec` event (short for _execute_) on Brigade. So our
+The `brig` tool triggers an `exec` event (short for _execute_) on Brigade. So our
 `brigade.js` file can intercept this event and respond to it:
 
 ```javascript
@@ -145,7 +145,7 @@ events.on("push", () => {
 ```
 [brigade-03.js](examples/brigade-03.js)
 
-Now if we re-run our `lsd` command, we will see the same output as before:
+Now if we re-run our `brig` command, we will see the same output as before:
 
 ```
 Started brigade-worker-01brx5m1yppb0dxn4emk76jqtv-master
@@ -160,7 +160,7 @@ Done in 1.21s.
 ```
 
 Since Brigade did not see a `push` event, it did not execute the `push` event handler.
-It only executed the `exec` handler that `lsd` causes.
+It only executed the `exec` handler that `brig` causes.
 
 ### Where Do Events Come From?
 
@@ -186,7 +186,7 @@ following:
 - DockerHub/ACR hooks:
   - imagePush
 
-The `lsd` client declares its own hook (`exec`).
+The `brig` client declares its own hook (`exec`).
 
 You can create your own gateways which generate their own events, or use gateways created
 by others.
@@ -214,7 +214,7 @@ events.on("after", () => {
 ```
 [brigade-04.js](examples/brigade-04.js)
 
-The `lsd` client will trigger the `exec` event. But then when that event has been
+The `brig` client will trigger the `exec` event. But then when that event has been
 processed, Brigade will trigger an `after` event before returning:
 
 ```console
@@ -441,7 +441,7 @@ hello.run()
 goodbye.run()
 ```
 
-Now the output of running this command with `lsd` might be a little surprising:
+Now the output of running this command with `brig` might be a little surprising:
 
 ```
 Started brigade-worker-01brx9n20bsjxeweggtzb7fpka-master
@@ -786,8 +786,8 @@ An event looks like this:
 ```javascriot
 var e = {
   buildID: "brigade-worker-01brwzs64rve2jvky87hxy1wsp-master",
-  type: "lsd",
-  provider: "lsd",
+  type: "brig",
+  provider: "brig",
   commit: "master",
   payload: ""
 }
@@ -869,7 +869,7 @@ $ node prestart.js
 prestart: src/brigade.js written
 $ node --no-deprecation ./dist/src/index.js
 Creating PVC named brigade-worker-01brz271ma5h06na0bb5j7d2rm-master
->>> event exec caused by lsd
+>>> event exec caused by brig
 >>> project github.com/deis/empty-testbed clones the repo at https://github.com/deis/empty-testbed.git
 Destroying PVC named brigade-worker-01brz271ma5h06na0bb5j7d2rm-master
 Done in 1.04s.
