@@ -18,7 +18,6 @@ func TestNewWorkerFromPod(t *testing.T) {
 		ID:        "pod-name",
 		BuildID:   "build-id",
 		ProjectID: "project-id",
-		Commit:    "commit-sha",
 		StartTime: now,
 		EndTime:   later,
 		ExitCode:  0,
@@ -33,7 +32,6 @@ func TestNewWorkerFromPod(t *testing.T) {
 			Labels: map[string]string{
 				"build":   expect.BuildID,
 				"project": expect.ProjectID,
-				"commit":  expect.Commit,
 			},
 			CreationTimestamp: podStartTime,
 		},

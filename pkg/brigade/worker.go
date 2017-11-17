@@ -11,8 +11,6 @@ type Worker struct {
 	BuildID string `json:"build_id"`
 	// ProjectID is the computed name of the project (brigade-aeff2343a3234ff)
 	ProjectID string `json:"project_id"`
-	// Commit is the ID of the VCS version, such as the Git commit SHA.
-	Commit string `json:"commit"`
 	// StartTime is the time the worker started.
 	StartTime time.Time `json:"start_time"`
 	// EndTime is the time the worker completed. This may not be present

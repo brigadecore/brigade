@@ -62,10 +62,9 @@ type Github struct {
 
 // Repo describes a Git repository.
 type Repo struct {
-	// Name of the repository. For GitHub, this is of the form `org/name` or `user/name`
+	// Name of the repository. For GitHub, this is of the form
+	// `github.com/org/name` or `github.com/user/name`
 	Name string `json:"name"`
-	// Owner of the repositoy. For Github this is `org` or `user`
-	Owner string `json:"owner"`
 	// CloneURL is the URL at which the repository can be cloned
 	// Traditionally, this is an HTTPS URL.
 	CloneURL string `json:"cloneURL"`

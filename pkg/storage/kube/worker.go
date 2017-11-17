@@ -34,7 +34,6 @@ func NewWorkerFromPod(pod v1.Pod) *brigade.Worker {
 		ID:        pod.Name,
 		BuildID:   l["build"],
 		ProjectID: l["project"],
-		Commit:    l["commit"],
 		Status:    brigade.JobStatus(pod.Status.Phase),
 	}
 
