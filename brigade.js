@@ -14,7 +14,7 @@ function build(e, project) {
 
 
   // Create a new job to run Go tests
-  var goBuild = new Job("brigade-test", "golang:1.8");
+  var goBuild = new Job("brigade-test", "golang:1.9");
 
   // Set a few environment variables.
   goBuild.env = {
