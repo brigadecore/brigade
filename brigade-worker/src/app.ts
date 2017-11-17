@@ -143,7 +143,16 @@ export class App {
           trigger: code == 0 ? "success" : "failure"
         } as events.Cause
       }
-      brigadier.fire(after, this.proj)
+
+      // Only fire an event if the top-level had a match.
+      if (brigadier.events.has(e.type)) {
+        brigadier.fire(after, this.proj)
+      } else {
+        this.afterHasFired = true
+        setImmediate(() => {
+          console.log("no-after: fired")
+        }, 20)
+      }
     })
 
     // Now that we have all the handlers registered, load the project and
