@@ -245,6 +245,20 @@ export class JobRunner implements jobs.JobRunner {
       this.runner.spec.containers[0].volumeMounts.push(mnt)
     }
 
+    // If the job needs access to a docker daemon, mount in the host's docker socket
+    if (job.docker.enabled) {
+      var dockerVol = new kubernetes.V1Volume()
+      var dockerMount = new kubernetes.V1VolumeMount()
+      dockerVol.name = jobs.dockerSocketMountName
+      dockerVol.hostPath = jobs.dockerSocketMountPath
+      dockerMount.name = jobs.dockerSocketMountName
+      dockerMount.mountPath = jobs.dockerSocketMountPath
+      this.runner.spec.volumes.push(dockerVol)
+      for (let i = 0; i < this.runner.spec.containers.length; i++) {
+        this.runner.spec.containers[i].volumeMounts.push(dockerMount)
+      }
+    }
+
 
     let newCmd = generateScript(job)
     if (!newCmd) {

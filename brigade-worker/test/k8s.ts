@@ -224,6 +224,20 @@ describe("k8s", function() {
           assert.isTrue(foundStorage, "expected storage volume claim found")
         })
       })
+      context("when job has enabled docker", function() {
+        it("mounts the host's docker socket"), function() {
+          j.docker.enabled = true
+          let jr = new k8s.JobRunner(j, e, p)
+          for (let c of jr.runner.spec.containers) {
+            assert.equal(c.volumeMounts.length, 1)
+            assert.equal(c.volumeMounts[0].name, 'docker-socket')
+            assert.equal(c.volumeMounts[0].mountPath, '/var/run/docker.sock')
+          }
+          assert.equal(jr.runner.spec.volumes.length, 1)
+          assert.equal(jr.runner.spec.volumes[0].name, 'docker-socket')
+          assert.equal(jr.runner.spec.volumes[0].hostPath, '/var/run/docker.sock')
+        }
+      })
       context("when job is privileged", function() {
         it("privileges containers", function() {
           j.privileged = true
