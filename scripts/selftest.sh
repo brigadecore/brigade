@@ -11,12 +11,12 @@
 #   secret with the BRIGADE_PROJECT_ID shown below
 # - run this script
 
-export BRIGADE_EVENT_TYPE=push
-export BRIGADE_EVENT_PROVIDER=selftest
-export BRIGADE_COMMIT=master
-export BRIGADE_PAYLOAD='{}'
-export BRIGADE_PROJECT_ID=brigade-c0670fe8e03fddf8455c0049eecca2457750291be807712ae9b84d
-export BRIGADE_PROJECT_NAMESPACE=default
+export BRIGADE_EVENT_TYPE="${BRIGADE_EVENT_TYPE:-push}"
+export BRIGADE_EVENT_PROVIDER="${BRIGADE_EVENT_PROVIDER:-selftest}"
+export BRIGADE_COMMIT="${BRIGADE_COMMIT:-master}"
+export BRIGADE_PAYLOAD="${BRIGADE_PAYLOAD:-'{}'}"
+export BRIGADE_PROJECT_ID="${BRIGADE_PROJECT_ID:-brigade-f1ccf2ad3495a1c68b82c78789061036240a9eb5ea2f0b0c4c20f9}"
+export BRIGADE_PROJECT_NAMESPACE="${BRIGADE_PROJECT_NAMESPACE:-default}"
 
 cd ../brigade-worker
 
