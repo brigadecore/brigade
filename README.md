@@ -38,9 +38,8 @@ architecture.
 The easiest way to install Brigade into your Kubernetes cluster is to install it using Helm.
 
 ```console
-$ git clone https://github.com/Azure/brigade.git
-$ cd brigade
-$ helm install --name brigade ./charts/brigade
+$ helm repo add brigade https://azure.github.io/brigade
+$ helm install -n brigade brigade/brigade
 ```
 
 You will now have Brigade installed.
@@ -49,14 +48,17 @@ To create new projects, use the `brigade-project` Helm chart. While inside the G
 repository cloned above, run these commands:
 
 ```console
-$ helm inspect values ./charts/brigade-project > myvalues.yaml
+$ helm inspect values brigade/brigade-project > myvalues.yaml
 $ # edit myvalues.yaml
-$ helm install --name my-project ./charts/brigade-project -f myvalues.yaml
 ```
 
 When editing `myvalues.yaml`, follow the instructions in that file for configuring
 your new project. Once you have customized that file, you can install the project
 based on your new configuration by passing it with `-f myvalues.yaml`.
+
+```console
+$ helm install --name my-project brigade/brigade-project -f myvalues.yaml
+```
 
 Now creating your first `brigade.js` is as easy as this:
 
