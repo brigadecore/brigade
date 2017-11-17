@@ -62,6 +62,7 @@ const (
 	sidecarVolumeName = "vcs-sidecar"
 	sidecarVolumePath = "/vcs"
 	vcsSidecarKey     = "vcsSidecar"
+	serviceAccount    = "brigade-worker"
 )
 
 func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
@@ -71,6 +72,7 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 	}
 
 	podSpec := v1.PodSpec{
+		ServiceAccountName: serviceAccount,
 		Containers: []v1.Container{{
 			Name:            "brigade-runner",
 			Image:           c.WorkerImage,
