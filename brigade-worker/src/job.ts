@@ -87,15 +87,6 @@ export class JobStorage {
 }
 
 /**
- * DockerConfig configures preferences on mounting the host's docker daemon for this job.
- *
- * Changes to this object only impact the job, not the entire build.
- */
-export class DockerConfig {
-  public enabled: boolean = false
-}
-
-/**
  * JobHost expresses expectations about the host a job will run on.
  */
 export class JobHost {
@@ -120,6 +111,16 @@ export class JobHost {
    * to run jobs on the bridge.
    */
   public name: string
+}
+
+/**
+ * JobDockerMount enables or disables mounting the host's docker socket for a job.
+ */
+export class JobDockerMount {
+  /**
+   * enabled configues whether or not the job will mount the host's docker socket.
+   */
+  public enabled: boolean = false
 }
 
  /**
@@ -175,7 +176,7 @@ export abstract class Job {
   /**
    * docker controls the job's preferences on mounting the host's docker daemon.
    */
-  public docker: DockerConfig
+  public docker: JobDockerMount
 
   /** _podName is set by the runtime. It is the name of the pod.*/
   protected _podName: string
@@ -197,6 +198,7 @@ export abstract class Job {
     this.env = {}
     this.cache = new JobCache()
     this.storage = new JobStorage()
+    this.docker = new JobDockerMount()
     this.host = new JobHost()
   }
 

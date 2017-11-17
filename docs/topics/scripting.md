@@ -1040,6 +1040,34 @@ There are two final observations to make about job caches:
    That means that if you add lots and lots of jobs with caches enabled, lots of storage
    space will be reserved even if it is unused.
 
+### Docker Runtime
+
+Each job has the option to mount in a docker socket. When enabled, a docker socket is mounted to
+`/var/run/docker.sock` in the job's container.
+
+This is a toggle-able option for all jobs, but is not enabled by default. A job must declare that it
+needs a docker socket.
+
+```javascript
+const { events, Job } = require("brigadier")
+
+events.on("exec", (e, p) => {
+  var one = new Job("one", "docker:17.06.0-ce", ["docker images"])
+
+  one.docker.enabled = true
+
+  one.run()
+})
+```
+
+This script creates a new job and then enables docker. It runs a `docker` command to demonstrate
+what containers are available in this engine.
+
+> Note: The Docker Runtime mounts in the host's Docker socket. Kubernetes administrators may not
+> want to give users direct access to the kubelet's Docker daemon. If you're one of these people,
+> you can disable jobs from being able to mount this by disabling it in the project's settings.
+> If you're using the default project settings, this feature is disabled.
+
 ## Jobs and Return Values
 
 We have seen already that when we run a job, it will return a JavaScript Promise.

@@ -224,19 +224,37 @@ describe("k8s", function() {
           assert.isTrue(foundStorage, "expected storage volume claim found")
         })
       })
-      context("when job has enabled docker", function() {
-        it("mounts the host's docker socket"), function() {
+      context("when the project has enabled host mounts", function() {
+        beforeEach(function() {
+          p.allowHostMounts = true
+        })
+        it("allows jobs to mount the host's docker socket", function() {
           j.docker.enabled = true
           let jr = new k8s.JobRunner(j, e, p)
           for (let c of jr.runner.spec.containers) {
-            assert.equal(c.volumeMounts.length, 1)
-            assert.equal(c.volumeMounts[0].name, 'docker-socket')
-            assert.equal(c.volumeMounts[0].mountPath, '/var/run/docker.sock')
+            assert.equal(c.volumeMounts.length, 3)
+            var volMount = c.volumeMounts[c.volumeMounts.length-1]
+            assert.equal(volMount.name, 'docker-socket')
+            assert.equal(volMount.mountPath, '/var/run/docker.sock')
           }
-          assert.equal(jr.runner.spec.volumes.length, 1)
-          assert.equal(jr.runner.spec.volumes[0].name, 'docker-socket')
-          assert.equal(jr.runner.spec.volumes[0].hostPath, '/var/run/docker.sock')
-        }
+          assert.equal(jr.runner.spec.volumes.length, 3)
+          var vol = jr.runner.spec.volumes[jr.runner.spec.volumes.length-1]
+          assert.equal(vol.name, 'docker-socket')
+          assert.equal(vol.hostPath.path, '/var/run/docker.sock')
+        })
+      })
+      context("when the project has disabled host mounts", function() {
+        beforeEach(function() {
+          p.allowHostMounts = false
+        })
+        it("does not allow jobs to mount the host's docker socket", function() {
+          j.docker.enabled = true
+          let jr = new k8s.JobRunner(j, e, p)
+          for (let c of jr.runner.spec.containers) {
+            assert.equal(c.volumeMounts.length, 2)
+          }
+          assert.equal(jr.runner.spec.volumes.length, 2)
+        })
       })
       context("when job is privileged", function() {
         it("privileges containers", function() {

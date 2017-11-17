@@ -155,6 +155,11 @@ export class Project {
      * secrets is a map of secret names to secret values.
      */
     secrets: {[key:string]: string};
+
+    /*
+     * allowHostMounts enables whether or not builds can mount in host volumes.
+     */
+    allowHostMounts: boolean;
 }
 
 /**
