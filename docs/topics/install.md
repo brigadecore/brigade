@@ -2,34 +2,47 @@
 
 This guide provides detailed information about installing and configuring the Brigade services.
 
+> Brigade is under highly active development. Day to day, the `master` branch is
+> changing. If you choose to build from source, you may prefer to build off of
+> a tagged release rather than master.
+
 ## Installing the Kubernetes Services
 
 Brigade runs inside of a Kubernetes cluster. This section explains how to install
 into an existing Kubernetes cluster.
 
-### Option 1: Install from GitHub Repository
+### Option 1: Install from the Chart Repository
 
-To install from the GitHub repository, follow these steps:
-
-```console
-$ git clone https://github.com/azure/brigade.git
-$ cd brigade
-$ helm install ./charts/brigade
-```
-
-### Option 2: Install from the Chart Repository
-
-It is also possible to build from the Chart Repository. The repository is only
-updated when a new version is released, and will likely not be as up-to-date as
-the GitHub repository.
+Each time the Brigade team cuts a new release, we update the Helm charts. Installing
+with Helm is the best way to get a working release of Brigade.
 
 ```console
 $ helm repo add brigade https://azure.github.io/brigade
 $ helm install brigade/brigade
 ```
 
+### Option 2: Install from GitHub Repository
+
+If you are developing Brigade, or are interested in testing the latest features
+(at the cost of additional time and energy), you can build Brigade from source.
+
+The `master` branch typically contains newer code than the last release. However,
+the charts will install the last released version.
+
+```console
+$ git clone https://github.com/azure/brigade.git
+$ cd brigade
+$ # optionally check out a tagged release: git checkout v0.5.0
+$ helm install ./charts/brigade
+```
+
 Once you have Brigade installed, you can proceed to [creating a project](projects.md).
 The remainder of this guide covers special configurations of Brigade.
+
+> If you are not working off of a tagged release, you may also have to build
+> custom images. The [Developers Guide](developers.md) explains this in more
+> detail. Otherwise, the images referenced by the chart will be from the last
+> release, and may not have the latest changes.
 
 ### Customizing Installations
 

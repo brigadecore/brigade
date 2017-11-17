@@ -81,6 +81,14 @@ $ eval $(minikube docker-env)
 Running `make docker-build docker-push` will push the Brigade images to the Minikube Docker
 daemon.
 
+From here, you can install Brigade into Minikube using the Helm chart:
+
+```
+$ helm install -n brigade ./charts/brigade
+```
+
+Don't forget to also create a project (`$ helm install -n empty-testbed charts/brigade-project`).
+
 ## Running Brigade inside remote Kubernetes
 
 Some developers use a remote Kubernetes instead of minikube.
