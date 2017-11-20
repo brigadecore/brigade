@@ -253,9 +253,22 @@ export class JobRunner implements jobs.JobRunner {
       this.secret.data["main.sh"] = b64enc(newCmd)
     }
 
+    // If job is privileged, add docker socket and mark pod privileged.
     if (job.privileged) {
+      const sockPath = "/var/run/docker.sock"
+      const sockName = "docker-socket"
+
+      var dockerVol = new kubernetes.V1Volume()
+      dockerVol.name = sockName
+      dockerVol.hostPath = { path: sockPath }
+      this.runner.spec.volumes.push(dockerVol)
+
       for (let i = 0; i < this.runner.spec.containers.length; i++) {
+        var dockerMnt = new kubernetes.V1VolumeMount()
+        dockerMnt.mountPath = sockPath
+        dockerMnt.name = sockName
         this.runner.spec.containers[i].securityContext.privileged = true
+        this.runner.spec.containers[i].volumeMounts.push(dockerMnt)
       }
     }
 
