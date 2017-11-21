@@ -7,6 +7,7 @@
 import * as kubernetes from '@kubernetes/typescript-node'
 import * as jobs from './job'
 import {BrigadeEvent, Project} from './events'
+import { hostname } from 'os';
 
 // The internals for running tasks. This must be loaded before any of the
 // objects that use run().
@@ -243,6 +244,22 @@ export class JobRunner implements jobs.JobRunner {
       } as kubernetes.V1Volume )
       let mnt = volumeMount(vname, job.storage.path)
       this.runner.spec.containers[0].volumeMounts.push(mnt)
+    }
+
+    // If the job needs access to a docker daemon, mount in the host's docker socket
+    if (job.docker.enabled && project.allowHostMounts) {
+      var dockerVol = new kubernetes.V1Volume()
+      var dockerMount = new kubernetes.V1VolumeMount()
+      var hostPath = new kubernetes.V1HostPathVolumeSource()
+      hostPath.path = jobs.dockerSocketMountPath
+      dockerVol.name = jobs.dockerSocketMountName
+      dockerVol.hostPath = hostPath
+      dockerMount.name = jobs.dockerSocketMountName
+      dockerMount.mountPath = jobs.dockerSocketMountPath
+      this.runner.spec.volumes.push(dockerVol)
+      for (let i = 0; i < this.runner.spec.containers.length; i++) {
+        this.runner.spec.containers[i].volumeMounts.push(dockerMount)
+      }
     }
 
 
@@ -585,7 +602,8 @@ export function secretToProject(ns: string, secret: kubernetes.V1Secret): Projec
       name: secret.metadata.annotations["projectName"],
       cloneURL: null,
     },
-    secrets: {}
+    secrets: {},
+    allowHostMounts: false
   }
   if (secret.data.vcsSidecar) {
     p.kubernetes.vcsSidecar = b64dec(secret.data.vcsSidecar)
@@ -595,6 +613,9 @@ export function secretToProject(ns: string, secret: kubernetes.V1Secret): Projec
   }
   if (secret.data.secrets) {
     p.secrets = JSON.parse(b64dec(secret.data.secrets))
+  }
+  if (secret.data.allowHostMounts) {
+    p.allowHostMounts = (b64dec(secret.data.allowHostMounts) == 'true')
   }
   if (secret.data.sshKey) {
     p.repo.sshKey = b64dec(secret.data.sshKey)

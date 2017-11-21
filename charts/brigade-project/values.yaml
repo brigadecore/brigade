@@ -55,3 +55,6 @@ secrets: {}
 # OPTIONAL: vcsSidecar is the image that fetches a repo from a VCS
 # vcsSidecar: "deis/git-sidecar:latest"
 
+# OPTIONAL: Use this to allow host mounted docker sockets in your jobs.
+# This is a big security risk if your project is public-facing; enable at your own risk.
+# allowHostMounts: "true"

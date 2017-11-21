@@ -24,6 +24,8 @@ const brigadeImage: string = 'debian:jessie-slim'
 
 export const brigadeCachePath = '/mnt/brigade/cache'
 export const brigadeStoragePath = '/mnt/brigade/share'
+export const dockerSocketMountPath = '/var/run/docker.sock'
+export const dockerSocketMountName = 'docker-socket'
 
 /**
  * JobRunner is capable of executing a job within a runtime.
@@ -111,6 +113,16 @@ export class JobHost {
   public name: string
 }
 
+/**
+ * JobDockerMount enables or disables mounting the host's docker socket for a job.
+ */
+export class JobDockerMount {
+  /**
+   * enabled configues whether or not the job will mount the host's docker socket.
+   */
+  public enabled: boolean = false
+}
+
  /**
   * Job represents a single job, which is composed of several closely related sequential tasks.
   * Jobs must have names. Every job also has an associated image, which references
@@ -143,7 +155,7 @@ export abstract class Job {
   public useSource: boolean = true
 
   /** If true, the job will be run in privileged mode.
-   * This is necessary for Docker builds.
+   * This is necessary for Docker engines running inside the Job, for example.
    */
   public privileged: boolean = false
 
@@ -160,6 +172,11 @@ export abstract class Job {
    * storage controls this job's preferences on the build-wide storage.
    */
   public storage: JobStorage
+
+  /**
+   * docker controls the job's preferences on mounting the host's docker daemon.
+   */
+  public docker: JobDockerMount
 
   /** _podName is set by the runtime. It is the name of the pod.*/
   protected _podName: string
@@ -181,6 +198,7 @@ export abstract class Job {
     this.env = {}
     this.cache = new JobCache()
     this.storage = new JobStorage()
+    this.docker = new JobDockerMount()
     this.host = new JobHost()
   }
 
