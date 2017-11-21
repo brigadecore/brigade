@@ -143,23 +143,15 @@ func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj 
 	status.State = &StatePending
 	status.Description = &msg
 	status.Context = &svc
-	if err := s.createStatus(commit, proj, status); err != nil {
-		// For this one, we just log an error and continue.
-		log.Printf("Error setting status to %s: %s", *status.State, err)
-	}
 	if err := s.build(eventType, commit, payload, proj); err != nil {
-		log.Printf("Build failed: %s", err)
+		log.Printf("Creating Build failed: %s", err)
 		msg = truncAt(err.Error(), 140)
 		status.State = &StateFailure
 		status.Description = &msg
-	} else {
-		msg = "Brigade build passed"
-		status.State = &StateSuccess
-		status.Description = &msg
 	}
 	if err := s.createStatus(commit, proj, status); err != nil {
 		// For this one, we just log an error and continue.
-		log.Printf("After build, error setting status to %s: %s", *status.State, err)
+		log.Printf("Error setting status to %s: %s", *status.State, err)
 	}
 }
 
