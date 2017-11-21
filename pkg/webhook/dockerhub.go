@@ -77,7 +77,7 @@ func (s *dockerPushHook) notifyDockerImagePush(proj *brigade.Project, commit str
 func (s *dockerPushHook) doDockerImagePush(proj *brigade.Project, commit string, payload, brigadeJS []byte) error {
 	b := &brigade.Build{
 		ProjectID: proj.ID,
-		Type:      "imagePush",
+		Type:      "image_push",
 		Provider:  "dockerhub",
 		Commit:    commit,
 		Payload:   payload,

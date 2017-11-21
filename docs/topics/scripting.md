@@ -184,7 +184,7 @@ following:
   - push
   - pull_request
 - DockerHub/ACR hooks:
-  - imagePush
+  - image_push
 
 The `brig` client declares its own hook (`exec`).
 
