@@ -5,6 +5,7 @@ import (
 
 	"gopkg.in/gin-gonic/gin.v1"
 
+	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage"
 )
 
@@ -21,6 +22,31 @@ func (api Project) List(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, projects)
+}
+
+// ProjectBuildSummary is a project plus the latest build data
+type ProjectBuildSummary struct {
+	Project   *brigade.Project `json:"project"`
+	LastBuild *brigade.Build   `json:"lastBuild"`
+}
+
+func (api Project) ListWithLatestBuild(c *gin.Context) {
+	projects, err := api.store.GetProjects()
+	if err != nil {
+		c.JSON(http.StatusNotFound, struct{}{})
+		return
+	}
+
+	res := []*ProjectBuildSummary{}
+	for _, p := range projects {
+		pbs := &ProjectBuildSummary{Project: p}
+		builds, err := api.store.GetProjectBuilds(p)
+		if err == nil && len(builds) > 0 {
+			pbs.LastBuild = builds[len(builds)-1]
+		}
+		res = append(res, pbs)
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 // Get creates a new gin handler for the GET /project/:id endpoint

@@ -50,6 +50,7 @@ func main() {
 	rest.GET("/projects", p.List)
 	rest.GET("/project/:id", p.Get)
 	rest.GET("/project/:id/builds", p.Builds)
+	rest.GET("/projects-build", p.ListWithLatestBuild)
 
 	b := server.Build()
 	rest.GET("/build/:id", b.Get)
