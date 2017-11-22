@@ -198,7 +198,10 @@ and jobs. The API server is typically fronted by a Service or Ingress.
 - Go was selected because it provides the most mature Kubernetes APIs.
 - At various points, we explored using TPRs and later CRDs. But the feature sets
   and stability of these two facilities never reached a satisfactorily stable
-  point. So we use secrets for configuration data.
+  point. So we use secrets for configuration data. Secrets have the following benefits:
+  - They are mountable via the volume system, a feature we use frequently
+  - They can be injected as environment variables
+  - They benefit from Kubernetes improvements to secret storage
 - JavaScript was selected because of it's high score on just about all language
   usage analyses.
 - Node.js was selected because of its robust ecosystem
