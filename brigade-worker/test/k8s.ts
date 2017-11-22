@@ -265,6 +265,18 @@ describe("k8s", function() {
           }
         })
       })
+      context("when the project has privileged mode disabled", function(){
+        beforeEach(function() {
+          p.allowPrivilegedJobs = false
+        })
+        it("does not allow privileged jobs", function(){
+          j.privileged = true
+          let jr = new k8s.JobRunner(j, e, p)
+          for (let c of jr.runner.spec.containers) {
+            assert.notExists(c.securityContext.privileged)
+          }
+        })
+      })
       context("when image pull secrets are supplied", function() {
         it("sets imagePullSecrets", function() {
           j.imagePullSecrets = ["one", "two"]

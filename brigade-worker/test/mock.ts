@@ -17,7 +17,9 @@ export function mockProject(): Project {
     kubernetes: {
       namespace: "default",
       vcsSidecar: "deis/git-sidecar:latest"
-    }
+    },
+    allowPrivilegedJobs: true,
+    allowHostMounts: false,
   } as Project
 }
 

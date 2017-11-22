@@ -55,6 +55,12 @@ secrets: {}
 # OPTIONAL: vcsSidecar is the image that fetches a repo from a VCS
 # vcsSidecar: "deis/git-sidecar:latest"
 
+
+# Allow Jobs to run in privileged mode. This will allow features like
+# Docker-in-Docker. This must be set to true before turning allowHostMounts
+# on.
+allowPrivilegedJobs: "true"
+
 # OPTIONAL: Use this to allow host mounted docker sockets in your jobs.
 # This is a big security risk if your project is public-facing; enable at your own risk.
 # allowHostMounts: "true"
