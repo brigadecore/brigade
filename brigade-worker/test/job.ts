@@ -37,6 +37,12 @@ describe("job", function() {
           assert.equal(j.image, "alpine:3.4")
         })
       })
+      context("when imageForcePull is supplied", function() {
+        it("sets imageForcePull property", function() {
+          j = new mock.MockJob("myName", "alpine:3.4", [], true)
+          assert.isTrue(j.imageForcePull)
+        })
+      })
       context("when tasks are supplied", function() {
         it("sets task list", function() {
           j = new mock.MockJob("my", "img", ["a", "b", "c"])

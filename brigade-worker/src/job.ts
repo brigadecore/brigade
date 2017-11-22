@@ -139,6 +139,8 @@ export abstract class Job {
   public env: {[key: string]:string}
   /** image is the container image to be run*/
   public image: string = brigadeImage
+  /** imageForcePull defines the container image pull policy: Always if true or IfNotPresent if false */
+  public imageForcePull: boolean = false
   /**
    * imagePullSecrets names secrets that contain the credentials for pulling this
    * image or the sidecar image.
@@ -191,9 +193,10 @@ export abstract class Job {
    * image is the container image to use
    * tasks is a list of commands to run.
    */
-  constructor(name: string, image?: string, tasks?: string[]) {
+  constructor(name: string, image?: string, tasks?: string[], imageForcePull?: boolean) {
     this.name = name
     this.image = image
+    this.imageForcePull = imageForcePull
     this.tasks = tasks || []
     this.env = {}
     this.cache = new JobCache()
