@@ -270,7 +270,8 @@ export class JobRunner implements jobs.JobRunner {
       this.secret.data["main.sh"] = b64enc(newCmd)
     }
 
-    if (job.privileged) {
+    // If the job askes for privileged mode and the project allows this, enable it.
+    if (job.privileged && project.allowPrivilegedJobs) {
       for (let i = 0; i < this.runner.spec.containers.length; i++) {
         this.runner.spec.containers[i].securityContext.privileged = true
       }
@@ -603,6 +604,7 @@ export function secretToProject(ns: string, secret: kubernetes.V1Secret): Projec
       cloneURL: null,
     },
     secrets: {},
+    allowPrivilegedJobs: true,
     allowHostMounts: false
   }
   if (secret.data.vcsSidecar) {
@@ -613,6 +615,9 @@ export function secretToProject(ns: string, secret: kubernetes.V1Secret): Projec
   }
   if (secret.data.secrets) {
     p.secrets = JSON.parse(b64dec(secret.data.secrets))
+  }
+  if (secret.data.allowPrivilegedJobs) {
+    p.allowPrivilegedJobs = (b64dec(secret.data.allowPrivilegedJobs) == 'true')
   }
   if (secret.data.allowHostMounts) {
     p.allowHostMounts = (b64dec(secret.data.allowHostMounts) == 'true')

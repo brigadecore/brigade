@@ -156,6 +156,11 @@ export class Project {
      */
     secrets: {[key:string]: string};
 
+    /**
+     * allowPrivilegedJobs enables privileged mode.
+     */
+    allowPrivilegedJobs: boolean;
+
     /*
      * allowHostMounts enables whether or not builds can mount in host volumes.
      */
