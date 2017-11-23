@@ -125,7 +125,7 @@ export class JobRunner implements jobs.JobRunner {
     let runnerName = this.name
 
     this.secret = newSecret(secName)
-    this.runner = newRunnerPod(runnerName, job.image)
+    this.runner = newRunnerPod(runnerName, job.image, job.imageForcePull)
 
     // Experimenting with setting a deadline field after which something
     // can clean up existing builds.
@@ -507,7 +507,7 @@ function sidecarSpec(e: BrigadeEvent, local: string, image: string, project: Pro
   return spec
 }
 
-function newRunnerPod(podname: string, brigadeImage: string): kubernetes.V1Pod {
+function newRunnerPod(podname: string, brigadeImage: string, imageForcePull: boolean): kubernetes.V1Pod {
   let pod = new kubernetes.V1Pod()
   pod.metadata = new kubernetes.V1ObjectMeta()
   pod.metadata.name = podname
@@ -520,7 +520,7 @@ function newRunnerPod(podname: string, brigadeImage: string): kubernetes.V1Pod {
   c1.name = "brigaderun"
   c1.image = brigadeImage
   c1.command = ["/bin/sh", "/hook/main.sh"]
-  c1.imagePullPolicy = "IfNotPresent"
+  c1.imagePullPolicy = imageForcePull ? "Always" : "IfNotPresent"
   c1.securityContext = new kubernetes.V1SecurityContext()
 
   pod.spec = new kubernetes.V1PodSpec()
