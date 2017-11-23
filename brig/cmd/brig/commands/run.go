@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/Azure/brigade/pkg/brigade"
@@ -125,11 +127,58 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 
 	podName := "brigade-worker-" + b.ID + "-master"
 
-	// This is a hack to give the scheduler time to create the resource.
-	time.Sleep(initialDelay)
+	if err := a.waitForWorker(b.ID); err != nil {
+		return err
+	}
 
-	fmt.Printf("Started %s\n", podName)
+	fmt.Printf("Started build %s as %q\n", b.ID, podName)
 	return a.podLog(podName, os.Stdout)
+}
+
+// waitForWorker waits until the worker has started.
+func (a *scriptRunner) waitForWorker(buildID string) error {
+	opts := metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("heritage=brigade,component=build,build=%s", buildID),
+	}
+	req, err := a.kc.CoreV1().Pods(globalNamespace).Watch(opts)
+	if err != nil {
+		return err
+	}
+	res := req.ResultChan()
+
+	// Now we block until the Pod is ready
+	timeout := time.After(2 * time.Minute)
+	for {
+		select {
+		case e := <-res:
+			if globalVerbose {
+				d, _ := json.MarshalIndent(e.Object, "", "  ")
+				fmt.Printf("Event: %s\n %s\n", e.Type, d)
+			}
+			// If the pod is added or modified, check the phase and see if it is
+			// running or complete.
+			switch e.Type {
+			case "DELETED":
+				// This happens if a user directly kills the pod with kubectl.
+				return fmt.Errorf("Worker %s was just deleted unexpectedly.", buildID)
+			case "ADDED", "MODIFIED":
+				pod := e.Object.(*v1.Pod)
+				switch pod.Status.Phase {
+				// Unhandled cases are Unknown and Pending, both of which should
+				// cause the loop to spin.
+				case "Running", "Succeeded":
+					req.Stop()
+					return nil
+				case "Failed":
+					req.Stop()
+					return fmt.Errorf("Pod failed to schedule: %s", pod.Status.Reason)
+				}
+			}
+		case <-timeout:
+			req.Stop()
+			return fmt.Errorf("Timeout waiting for build %s to start", buildID)
+		}
+	}
 }
 
 func (a *scriptRunner) podLog(name string, w io.Writer) error {
