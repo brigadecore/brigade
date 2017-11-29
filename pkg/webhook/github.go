@@ -23,9 +23,10 @@ const (
 )
 
 type githubHook struct {
-	store        storage.Store
-	getFile      fileGetter
-	createStatus statusCreator
+	store                   storage.Store
+	getFile                 fileGetter
+	createStatus            statusCreator
+	buildForkedPullRequests bool
 }
 
 type fileGetter func(commit, path string, proj *brigade.Project) ([]byte, error)
@@ -33,11 +34,12 @@ type fileGetter func(commit, path string, proj *brigade.Project) ([]byte, error)
 type statusCreator func(commit string, proj *brigade.Project, status *github.RepoStatus) error
 
 // NewGithubHook creates a GitHub webhook handler.
-func NewGithubHook(s storage.Store) *githubHook {
+func NewGithubHook(s storage.Store, buildForkedPullRequests bool) *githubHook {
 	return &githubHook{
-		store:        s,
-		getFile:      getFileFromGithub,
-		createStatus: setRepoStatus,
+		store: s,
+		buildForkedPullRequests: buildForkedPullRequests,
+		getFile:                 getFileFromGithub,
+		createStatus:            setRepoStatus,
 	}
 }
 
@@ -72,13 +74,33 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 	}
 	defer c.Request.Body.Close()
 
-	repo, commit, err := parsePayload(eventType, body)
+	e, err := github.ParseWebHook(eventType, body)
 	if err != nil {
-		if err == ignoreAction {
+		log.Printf("Failed to parse body: %s", err)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Malformed body"})
+		return
+	}
+
+	var repo, commit string
+
+	switch e := e.(type) {
+	case *github.PushEvent:
+		repo = e.Repo.GetFullName()
+		commit = e.HeadCommit.GetID()
+	case *github.PullRequestEvent:
+		if isIgnoredPullRequestAction(e) {
 			c.JSON(http.StatusOK, gin.H{"status": "Action skipped"})
 			return
 		}
-		log.Printf("Failed to parse payload: %s", err.Error())
+		if !s.buildForkedPullRequests && e.PullRequest.Head.Repo.GetFork() {
+			log.Println("skipping forked pull request")
+			c.JSON(http.StatusOK, gin.H{"status": "Skipped forked pull request"})
+			return
+		}
+		repo = e.Repo.GetFullName()
+		commit = e.PullRequest.Head.GetSHA()
+	default:
+		log.Printf("Failed to parse payload")
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Received data is not valid JSON"})
 		return
 	}
@@ -163,29 +185,13 @@ func truncAt(str string, max int) string {
 	return str
 }
 
-func parsePayload(eventType string, payload []byte) (repo string, commit string, err error) {
-	e, err := github.ParseWebHook(eventType, payload)
-	if err != nil {
-		return "", "", err
-	}
-	switch e := e.(type) {
-	case *github.PushEvent:
-		return e.Repo.GetFullName(), e.HeadCommit.GetID(), nil
-	case *github.PullRequestEvent:
-		return e.Repo.GetFullName(), e.PullRequest.Head.GetSHA(), checkPullRequestAction(e)
-	}
-	return "", "", errors.New("failed parsing event")
-}
-
-func checkPullRequestAction(event *github.PullRequestEvent) error {
+func isIgnoredPullRequestAction(event *github.PullRequestEvent) bool {
 	switch event.GetAction() {
 	case "opened", "synchronize", "reopened":
-		return nil
+		return false
 	}
-	return ignoreAction
+	return true
 }
-
-var ignoreAction = errors.New("ignored")
 
 func getFileFromGithub(commit, path string, proj *brigade.Project) ([]byte, error) {
 	return GetFileContents(proj, commit, path)

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"gopkg.in/gin-gonic/gin.v1"
 	"k8s.io/api/core/v1"
@@ -14,15 +15,17 @@ import (
 )
 
 var (
-	kubeconfig string
-	master     string
-	namespace  string
+	kubeconfig              string
+	master                  string
+	namespace               string
+	buildForkedPullRequests bool
 )
 
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
 	flag.StringVar(&namespace, "namespace", defaultNamespace(), "kubernetes namespace")
+	flag.BoolVar(&buildForkedPullRequests, "build-forked-pull-requests", false, "build forked pull requests")
 }
 
 func main() {
@@ -33,10 +36,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if namespace == "" {
-		namespace = v1.NamespaceDefault
-	}
-
 	store := kube.New(clientset, namespace)
 
 	router := gin.New()
@@ -45,8 +44,7 @@ func main() {
 	events := router.Group("/events")
 	{
 		events.Use(gin.Logger())
-
-		events.POST("/github", webhook.NewGithubHook(store).Handle)
+		events.POST("/github", webhook.NewGithubHook(store, buildForkedPullRequests).Handle)
 	}
 
 	router.GET("/healthz", healthz)
@@ -59,6 +57,15 @@ func defaultNamespace() string {
 		return ns
 	}
 	return v1.NamespaceDefault
+}
+
+func defaultBuildForkedPRs() bool {
+	if v, ok := os.LookupEnv("BRIGADE_BUILD_FORKED_PULL_REQUESTS"); ok {
+		if v == "1" || strings.EqualFold(v, "true") {
+			return true
+		}
+	}
+	return false
 }
 
 func healthz(c *gin.Context) {
