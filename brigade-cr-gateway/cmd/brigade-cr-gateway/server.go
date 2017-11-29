@@ -9,6 +9,7 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 	"k8s.io/api/core/v1"
 
+	"github.com/Azure/brigade/pkg/storage"
 	"github.com/Azure/brigade/pkg/storage/kube"
 	"github.com/Azure/brigade/pkg/webhook"
 )
@@ -22,7 +23,7 @@ var (
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
-	flag.StringVar(&namespace, "namespace", defaultNamespace(), "kubernetes namespace")
+	flag.StringVar(&namespace, "namespace", os.Getenv("BRIGADE_NAMESPACE"), "kubernetes namespace")
 }
 
 func main() {
@@ -39,6 +40,11 @@ func main() {
 
 	store := kube.New(clientset, namespace)
 
+	router := newRouter(store)
+	router.Run(":8000")
+}
+
+func newRouter(store storage.Store) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Recovery())
 
@@ -46,19 +52,12 @@ func main() {
 	{
 		events.Use(gin.Logger())
 
-		events.POST("/github", webhook.NewGithubHook(store).Handle)
+		events.POST("/webhook/:org/:project/:commit", webhook.NewDockerPushHook(store).Handle)
 	}
 
 	router.GET("/healthz", healthz)
 
-	router.Run(":7744")
-}
-
-func defaultNamespace() string {
-	if ns, ok := os.LookupEnv("BRIGADE_NAMESPACE"); ok {
-		return ns
-	}
-	return v1.NamespaceDefault
+	return router
 }
 
 func healthz(c *gin.Context) {

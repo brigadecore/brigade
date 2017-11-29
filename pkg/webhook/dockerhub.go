@@ -47,6 +47,13 @@ func (s *dockerPushHook) Handle(c *gin.Context) {
 		return
 	}
 
+	// Guard to make sure empty URL isn't sent to GitHub
+	if proj.Repo.Name == "" {
+		log.Printf("No Repo.Name on project")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "brigadejs not found"})
+		return
+	}
+
 	// This will clone the repo before responding to the webhook. We need
 	// to make sure that this doesn't cause the hook to hang up.
 	brigadeJS, err := s.getFile(commit, "./brigade.js", proj)
@@ -70,7 +77,7 @@ func (s *dockerPushHook) notifyDockerImagePush(proj *brigade.Project, commit str
 func (s *dockerPushHook) doDockerImagePush(proj *brigade.Project, commit string, payload, brigadeJS []byte) error {
 	b := &brigade.Build{
 		ProjectID: proj.ID,
-		Type:      "imagePush",
+		Type:      "image_push",
 		Provider:  "dockerhub",
 		Commit:    commit,
 		Payload:   payload,

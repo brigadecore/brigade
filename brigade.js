@@ -47,7 +47,7 @@ function build(e, project) {
 
 events.on("push", build)
 events.on("pull_request", build)
-events.on("imagePush", (e, p) => {
+events.on("image_push", (e, p) => {
   console.log(e.payload)
   var m = "New image pushed"
 

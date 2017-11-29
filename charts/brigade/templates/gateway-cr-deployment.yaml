@@ -1,0 +1,43 @@
+{{ if .Values.cr.enabled }}
+{{ $fullname := include "brigade.cr.fullname" . }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}
+  labels:
+    app: {{ template "brigade.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    role: gateway
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ template "brigade.fullname" . }}
+        role: gateway
+    spec:
+      serviceAccountName: {{ $fullname }}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.cr.registry }}/{{ .Values.cr.name }}:{{ default .Chart.AppVersion .Values.cr.tag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.cr.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.cr.service.internalPort }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.cr.service.internalPort }}
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.cr.service.internalPort }}
+        env:
+          - name: BRIGADE_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+      {{ if .Values.privateRegistry }}imagePullSecrets:
+        - name: {{.Values.privateRegistry}}{{ end }}
+{{ end }}
