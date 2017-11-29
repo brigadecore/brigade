@@ -25,9 +25,9 @@ func main() {
 
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
-	flag.StringVar(&ctrConfig.Namespace, "namespace", defaultNS(), "kubernetes namespace")
-	flag.StringVar(&ctrConfig.WorkerImage, "worker-image", os.Getenv("BRIGADE_WORKER_IMAGE"), "kubernetes namespace")
-	flag.StringVar(&ctrConfig.WorkerPullPolicy, "worker-pull-policy", os.Getenv("BRIGADE_WORKER_PULL_POLICY"), "kubernetes namespace")
+	flag.StringVar(&ctrConfig.Namespace, "namespace", defaultNamespace(), "kubernetes namespace")
+	flag.StringVar(&ctrConfig.WorkerImage, "worker-image", defaultWorkerImage(), "kubernetes worker image")
+	flag.StringVar(&ctrConfig.WorkerPullPolicy, "worker-pull-policy", defaultWorkerPullPolicy(), "kubernetes worker image pull policy")
 	flag.Parse()
 
 	// creates the connection
@@ -54,10 +54,23 @@ func main() {
 	select {}
 }
 
-func defaultNS() string {
-	ns := os.Getenv("BRIGADE_NAMESPACE")
-	if ns == "" {
-		return v1.NamespaceDefault
+func defaultWorkerImage() string {
+	if image, ok := os.LookupEnv("BRIGADE_WORKER_IMAGE"); ok {
+		return image
 	}
-	return ns
+	return "deis/brigade-worker:latest"
+}
+
+func defaultWorkerPullPolicy() string {
+	if pp, ok := os.LookupEnv("BRIGADE_WORKER_PULL_POLICY"); ok {
+		return pp
+	}
+	return string(v1.PullIfNotPresent)
+}
+
+func defaultNamespace() string {
+	if ns, ok := os.LookupEnv("BRIGADE_NAMESPACE"); ok {
+		return ns
+	}
+	return v1.NamespaceDefault
 }
