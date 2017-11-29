@@ -26,9 +26,8 @@ var (
 )
 
 const (
-	kubeConfig   = "KUBECONFIG"
-	waitTimeout  = 5 * time.Minute
-	initialDelay = 5 * time.Second
+	kubeConfig  = "KUBECONFIG"
+	waitTimeout = 5 * time.Minute
 )
 
 const runUsage = `Send a Brigade JS file to the server.
