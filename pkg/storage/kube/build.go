@@ -82,13 +82,18 @@ func (s *store) GetBuilds() ([]*brigade.Build, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	podList, err := s.client.CoreV1().Pods(s.namespace).List(lo)
+	if err != nil {
+		return nil, err
+	}
+
 	buildList := make([]*brigade.Build, len(secretList.Items))
 	for i := range secretList.Items {
 		b := NewBuildFromSecret(secretList.Items[i])
-		b.Worker, err = s.GetWorker(b.ID)
-		if err != nil {
-			return buildList, err
-		}
+		// The error is ErrWorkerNotFound, and in that case, we just ignore
+		// it and assign nil to the worker.
+		b.Worker, _ = findWorker(b.ID, podList)
 		buildList[i] = b
 	}
 	return buildList, nil
@@ -103,16 +108,37 @@ func (s *store) GetProjectBuilds(proj *brigade.Project) ([]*brigade.Build, error
 	if err != nil {
 		return nil, err
 	}
+
+	// The theory here is that the secrets and pods are close to 1:1, so we can
+	// preload the pods and take a local hit in walking the list rather than take
+	// a network hit to load each pod per secret.
+	podList, err := s.client.CoreV1().Pods(s.namespace).List(lo)
+	if err != nil {
+		return nil, err
+	}
+
 	buildList := make([]*brigade.Build, len(secretList.Items))
 	for i := range secretList.Items {
 		b := NewBuildFromSecret(secretList.Items[i])
-		b.Worker, err = s.GetWorker(b.ID)
-		if err != nil {
-			return buildList, err
-		}
+		// The error is ErrWorkerNotFound, and in that case, we just ignore
+		// it and assign nil to the worker.
+		b.Worker, _ = findWorker(b.ID, podList)
 		buildList[i] = b
 	}
 	return buildList, nil
+}
+
+func findWorker(id string, pods *v1.PodList) (*brigade.Worker, bool) {
+	for _, i := range pods.Items {
+		buildID, ok := i.Labels["build"]
+		if !ok {
+			continue
+		}
+		if id == buildID {
+			return NewWorkerFromPod(i), true
+		}
+	}
+	return nil, false
 }
 
 // NewBuildFromSecret creates a Build object from a secret.
