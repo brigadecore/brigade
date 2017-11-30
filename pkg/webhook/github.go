@@ -6,9 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
-	"path"
 
 	"github.com/google/go-github/github"
 	"gopkg.in/gin-gonic/gin.v1"
@@ -64,8 +62,6 @@ func (s *githubHook) Handle(c *gin.Context) {
 }
 
 func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
-	var status = new(github.RepoStatus)
-
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		log.Printf("Failed to read body: %s", err)
@@ -105,14 +101,6 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		return
 	}
 
-	targetURL := &url.URL{
-		Scheme: "http",
-		Host:   c.Request.Host,
-		Path:   path.Join("log", repo, "id", commit),
-	}
-	tURL := targetURL.String()
-	status.TargetURL = &tURL
-
 	proj, err := s.store.GetProject(repo)
 	if err != nil {
 		log.Printf("Project %q not found. No secret loaded. %s", repo, err)
@@ -136,13 +124,13 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		log.Printf("!!!WARNING!!! Expected project secret to have name %q, got %q", repo, proj.Name)
 	}
 
-	go s.buildStatus(eventType, commit, body, proj, status)
+	go s.buildStatus(eventType, commit, body, proj)
 
 	c.JSON(http.StatusOK, gin.H{"status": "Complete"})
 }
 
 // buildStatus runs a build, and sets upstream status accordingly.
-func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj *brigade.Project, status *github.RepoStatus) {
+func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj *brigade.Project) {
 	// If we need an SSH key, set it here
 	if proj.Repo.SSHKey != "" {
 		key, err := ioutil.TempFile("", "")
@@ -162,6 +150,7 @@ func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj 
 
 	msg := "Building"
 	svc := StatusContext
+	status := new(github.RepoStatus)
 	status.State = &StatePending
 	status.Description = &msg
 	status.Context = &svc
