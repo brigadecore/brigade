@@ -25,7 +25,7 @@ func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
 	flag.StringVar(&namespace, "namespace", defaultNamespace(), "kubernetes namespace")
-	flag.BoolVar(&buildForkedPullRequests, "build-forked-pull-requests", false, "build forked pull requests")
+	flag.BoolVar(&buildForkedPullRequests, "build-forked-pull-requests", defaultBuildForkedPRs(), "build forked pull requests")
 }
 
 func main() {
