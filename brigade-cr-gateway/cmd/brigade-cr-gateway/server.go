@@ -23,7 +23,7 @@ var (
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
-	flag.StringVar(&namespace, "namespace", os.Getenv("BRIGADE_NAMESPACE"), "kubernetes namespace")
+	flag.StringVar(&namespace, "namespace", defaultNamespace(), "kubernetes namespace")
 }
 
 func main() {
@@ -62,4 +62,11 @@ func newRouter(store storage.Store) *gin.Engine {
 
 func healthz(c *gin.Context) {
 	c.String(http.StatusOK, http.StatusText(http.StatusOK))
+}
+
+func defaultNamespace() string {
+	if ns, ok := os.LookupEnv("BRIGADE_NAMESPACE"); ok {
+		return ns
+	}
+	return v1.NamespaceDefault
 }
