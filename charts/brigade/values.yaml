@@ -76,6 +76,7 @@ gw:
   name: brigade-gateway
   #tag:
   #pullPolicy: IfNotPresent
+  #buildForkedPullRequests: true
 
 # These values are for the Container Registry (CR) gateway.
 # Enabling this will start a service that handles webhooks from container

@@ -38,7 +38,7 @@ func TestGithubHandler(t *testing.T) {
 		},
 	}
 
-	s := NewGithubHook(store)
+	s := NewGithubHook(store, false)
 	s.getFile = func(commit, path string, proj *brigade.Project) ([]byte, error) {
 		t.Logf("Getting file %s, for commit %s", path, commit)
 		return []byte(""), nil

@@ -38,6 +38,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          - name: BRIGADE_BUILD_FORKED_PULL_REQUESTS
+            value: {{ default "" .Values.gw.buildForkedPullRequests }}
       {{ if .Values.privateRegistry }}imagePullSecrets:
         - name: {{.Values.privateRegistry}}{{ end }}
 {{ end }}

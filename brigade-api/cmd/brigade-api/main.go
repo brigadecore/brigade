@@ -32,10 +32,6 @@ func main() {
 		return
 	}
 
-	if namespace == "" {
-		namespace = v1.NamespaceDefault
-	}
-
 	storage := kube.New(clientset, namespace)
 
 	router := gin.New()
