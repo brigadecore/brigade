@@ -35,6 +35,9 @@ import {App} from "./app"
 // This is a side-effect import.
 import "./brigade"
 
+const pkg = require('../../package.json')
+console.log(`brigade-worker version: ${pkg.version}`)
+
 let projectID: string = process.env.BRIGADE_PROJECT_ID
 let projectNamespace: string = process.env.BRIGADE_PROJECT_NAMESPACE
 let commit = process.env.BRIGADE_COMMIT || "master"
