@@ -479,7 +479,7 @@ function sidecarSpec(e: BrigadeEvent, local: string, image: string, project: Pro
   }
 
   let spec = new kubernetes.V1Container()
-  spec.name = "brigade-vcs-sidecar",
+  spec.name = "vcs-sidecar",
   spec.env = [
     envVar("VCS_REPO", repoURL),
     envVar("VCS_LOCAL_PATH", local),

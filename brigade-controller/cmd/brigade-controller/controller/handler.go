@@ -140,7 +140,7 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 
 	if image, ok := project.Data[vcsSidecarKey]; ok && len(image) > 0 {
 		pod.Spec.InitContainers = []v1.Container{{
-			Name:            "brigade-vcs-sidecar",
+			Name:            "vcs-sidecar",
 			Image:           string(image),
 			ImagePullPolicy: v1.PullPolicy(c.WorkerPullPolicy),
 			VolumeMounts: []v1.VolumeMount{{
