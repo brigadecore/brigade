@@ -194,6 +194,9 @@ export abstract class Job {
    * tasks is a list of commands to run.
    */
   constructor(name: string, image?: string, tasks?: string[], imageForcePull?: boolean) {
+    if (!jobNameIsValid(name)) {
+      throw "job name must be letters, numbers, and '-', and must not start or end with '-'"
+    }
     this.name = name
     this.image = image
     this.imageForcePull = imageForcePull
@@ -207,4 +210,11 @@ export abstract class Job {
 
   /** run executes the job and then */
   public abstract run(): Promise<Result>
+}
+
+/**
+ * jobNameIsValid checks the validity of a job's name.
+ */
+export function jobNameIsValid(name: string): boolean {
+  return /^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])+$/.test(name)
 }
