@@ -8,12 +8,14 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+    role: api
 spec:
   replicas: 1
   template:
     metadata:
       labels:
         app: {{ template "brigade.fullname" . }}-api
+        role: api
     spec:
       serviceAccountName: {{ template "brigade.api.fullname" . }}
       containers:
