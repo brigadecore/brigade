@@ -123,7 +123,7 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		log.Printf("!!!WARNING!!! Expected project secret to have name %q, got %q", repo, proj.Name)
 	}
 
-	go s.buildStatus(eventType, commit, body, proj)
+	s.buildStatus(eventType, commit, body, proj)
 
 	c.JSON(http.StatusOK, gin.H{"status": "Complete"})
 }
