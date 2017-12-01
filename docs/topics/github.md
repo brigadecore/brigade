@@ -23,6 +23,33 @@ To add a Brigade project to GitHub:
 You may use GitHub's testing page to verify that GitHub can successfully send an event to
 the Brigade gateway.
 
+## Finding Your Gateway's URL
+
+To find your "Payload URL" IP address, you can run this command on your Kubernetes
+cluster:
+
+```console
+$ kubectl get service
+NAME                  TYPE           CLUSTER-IP   EXTERNAL-IP   PORT(S)          AGE
+brigade-brigade-api   ClusterIP      10.0.0.57    <none>        7745/TCP         8h
+brigade-brigade-gw    LoadBalancer   10.0.0.157   10.21.77.9    7744:31946/TCP   8h
+```
+
+The `EXTERNAL-IP` for the `brigade-gw` service is the one you will use. You can
+map this to a DNS name if you wish.
+
+The gateway listens on port `7744`, so the URL for the above will be 
+`http://10.21.77.9:7744/events/github`
+
+### Protectecting Your Gateway with SSL/TLS
+
+You may optionally use the [Kube LEGO](https://github.com/kubernetes/charts/tree/master/stable/kube-lego)
+Helm chart and set up an NGINX SSL proxy in front of your Brigade Gateway (`brigade-gw`)
+service.
+
+In this case, once the NGINX proxy is set up with SSL, you can point your
+GitHub "Payload URL" to the proxy instead of directly at the `brigade-gw` service.
+
 ## Connecting to Private GitHub Repositories (or Using SSH)
 
 Sometimes it is better to configure Brigade to interact with GitHub via SSH. For example, if
