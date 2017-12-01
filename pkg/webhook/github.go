@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/google/go-github/github"
 	"gopkg.in/gin-gonic/gin.v1"
@@ -131,23 +130,6 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 
 // buildStatus runs a build, and sets upstream status accordingly.
 func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj *brigade.Project) {
-	// If we need an SSH key, set it here
-	if proj.Repo.SSHKey != "" {
-		key, err := ioutil.TempFile("", "")
-		if err != nil {
-			log.Printf("error creating ssh key cache: %s", err)
-			return
-		}
-		keyfile := key.Name()
-		defer os.Remove(keyfile)
-		if _, err := key.WriteString(proj.Repo.SSHKey); err != nil {
-			log.Printf("error writing ssh key cache: %s", err)
-			return
-		}
-		os.Setenv("BRIGADE_REPO_KEY", keyfile)
-		defer os.Unsetenv("BRIGADE_REPO_KEY") // purely defensive... not really necessary
-	}
-
 	msg := "Building"
 	svc := StatusContext
 	status := new(github.RepoStatus)
