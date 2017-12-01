@@ -2,9 +2,34 @@ import "mocha"
 import {assert} from "chai"
 import * as mock from "./mock"
 
-import {Job, Result, JobCache, JobStorage, brigadeCachePath, brigadeStoragePath} from "../src/job"
+import {Job, Result, JobCache, JobStorage, brigadeCachePath, brigadeStoragePath, jobNameIsValid} from "../src/job"
 
 describe("job", function() {
+  describe("jobNameIsValid", () => {
+    it('allows DNS-like names', function() {
+      let legal = [
+        "abcdef",
+        "ab",
+        "a-b",
+        "a-9",
+        "a12345678b",
+        "A-B"
+      ]
+      for (let n of legal) {
+        assert.isTrue(jobNameIsValid(n), n)
+      }
+    })
+    it('disallows non-DNS-like names', function() {
+      let illegal = [
+        "ab-", // no trailing -
+        "-ab", // no leading dash
+      ]
+      for (let n of illegal) {
+        assert.isFalse(jobNameIsValid(n), "tested " + n)
+      }
+    })
+  })
+
   describe("JobCache", function() {
     describe("#constructor", function() {
       it("correctly sets default values", function(){

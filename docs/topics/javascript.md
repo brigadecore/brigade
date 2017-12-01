@@ -146,7 +146,9 @@ The `Job` class describes a job that can be run.
 #### constructor `new Job(name: string, image?: string, tasks?: string[]): Job`
 
 The constructor requires a `name` parameter, and this must be unique within your
-script.
+script. It must be composed of the characters a-z, A-Z, 0-9, and `-`. Additionally,
+the `-` cannot be the first or last character, and the name must be at least two
+characters.
 
 Optionally, you may specify the container image (e.g. `node:8`, `alpine:3.4`). The
 container image must be fetchable by the runtime (Kubernetes). If no container is
