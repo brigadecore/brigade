@@ -183,6 +183,7 @@ Properties of `Job`
 - `host: JobHost`: Preferences for the host that runs the job.
 - `cache: JobCache`: Preferences for the job's cache
 - `storage: JobStorage`: Preferences for the way this job attaches to the build storage
+- `docker: JobDockerMount`: Preferences for mounting a Docker socket
 
 #### The `job.podName()` method
 
@@ -201,11 +202,22 @@ Caches are disabled by default.
 
 Properties:
 
-- `enabled: bool`: If `true`, the cache is turned on for this job.
+- `enabled: boolean`: If `true`, the cache is turned on for this job.
 - `size: string`: The size, defaults to `5Mi`. This value is only evaluated the first
   time a job is cached. To resize, the cache must be destroyed manually.
 - `path: string`: A read-only attribute returning path (in the container) in which the cache
   is available.
+
+### The `JobDockerMount` class
+
+The `JobDockerMount` controls whether, and how, a Docker socket is mounted to
+the job. Docker sockets are used for building Docker images. Because they mount
+to the host, using a Docker socket is considered dangerous. Thus, to use the
+Docker mount, the job must be put into `privileged` mode.
+
+Properties:
+
+- `enabled: boolean`: If `true`, the Docker socket will be mounted to the pod
 
 ### The `JobHost` class
 
