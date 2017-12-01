@@ -5,6 +5,9 @@ metadata:
   name: {{ template "brigade.api.fullname" . }}
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    role: api
 spec:
   type: {{ .Values.api.service.type }}
   ports:
