@@ -3,6 +3,7 @@ FROM alpine:edge
 RUN apk update && apk add --no-cache \
     ca-certificates \
     git \
+    openssh-client \
     && update-ca-certificates
 
 COPY rootfs /
