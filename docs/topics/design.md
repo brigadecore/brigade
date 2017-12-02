@@ -227,7 +227,7 @@ Instead, it used a Redis queue for message passing and key/value storage. Other
 than some proof-of-concept work, the Lua engine never materialized. JavaScript's
 popularity made it a better choice.
 
-An original Kuberentes-oriented JavaScript engine was developed several months later.
+An original Kubernetes-oriented JavaScript engine was developed several months later.
 This was intended to be both a stand-alone component and a foundational piece for
 Brigade. Work was abandoned in favor of the Node.js worker pattern.
 
