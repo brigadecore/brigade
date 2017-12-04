@@ -39,7 +39,7 @@ A more secure route is to install an SSL proxy (like `kube-lego`) and directing
 that to the internal container registry service.
 
 For more installation configuration options, run `helm inspect values brigade/brigade`
-an read the `cr:` section.
+and read the `cr:` section.
 
 ## Configuring the Repository
 
