@@ -16,6 +16,7 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
   - [Using Secrets](secrets.md): How to pass sensitive data into builds.
 - Configuring and Running Brigade
   - [Projects](projects.md): Install, upgrade, and use Brigade Projects.
+  - [Project Values](values.md): Understand each of the project settings in `values.yaml`.
   - [Securing Brigade](security.md): Things to consider when configuring Brigade.
 - Contributing to Brigade Development
   - [Brigade Developers Guide](developers.md): A guide for people who want to modify Brigade's
