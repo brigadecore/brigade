@@ -18,4 +18,4 @@ spec:
   selector:
     app: {{ template "brigade.fullname" . }}
     role: gateway
-    type: github
+    type: dockerhub
