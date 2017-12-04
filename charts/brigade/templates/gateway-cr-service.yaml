@@ -7,6 +7,7 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     role: gateway
+    type: dockerhub
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -17,3 +18,4 @@ spec:
   selector:
     app: {{ template "brigade.fullname" . }}
     role: gateway
+    type: github
