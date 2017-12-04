@@ -10,6 +10,7 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     role: gateway
+    type: github
 spec:
   replicas: 1
   template:
@@ -17,6 +18,7 @@ spec:
       labels:
         app: {{ template "brigade.fullname" . }}
         role: gateway
+        type: github
     spec:
       serviceAccountName: {{ $fullname }}
       containers:
