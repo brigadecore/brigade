@@ -9,15 +9,10 @@ following events:
 - `pull_request`: Fired whenever a pull request's state is changed. See the `action`
   value in the payload, which will be one of the following:
   - opened
-  - closed
-  - assigned
-  - unassigned
-  - review_requested
-  - review_request_removed
-  - labeled
-  - unlabled
-  - edited
   - reopened
+  - synchronize
+- `pull_request:labeled`: Fired whenever a label is added to a pull request.
+- `pull_request:unlabeled`: Fired whenever a label is removed from a pull request.
 - `create`: Fired when a tag, branch, or repo is created.
 - `release`: Fired when a new release is created.
 - `status`: Fired when a status change happens on a commit.
@@ -26,7 +21,43 @@ following events:
 You must be running `brigade-gateway` in a way that makes
 it available to GitHub. (For example, assign it a publicly routable IP and domain name.)
 
-## Configuring
+## Configuring Your Project
+
+Brigade uses projects to tie repositories to builds. You may want to check out
+the [project documentation](projects.md) if you haven't already. This section
+explains what parts of your project are required for GitHub integration to function.
+
+In your project's `values.yaml` file, you should make sure the following are set for
+GitHub integration to work:
+
+```yaml
+# Set to your github user/project or org/project
+project: "technosophos/coffeesnob"
+
+# The full name of the repository
+repository: "github.com/technosophos/coffeesnob"
+
+# The URL to use to clone. You can use any supported GitHub URL scheme
+cloneURL: "https://github.com/technosophos/coffeesnob.git"
+
+# A long shared secret. In the "Configuring GitHub" section, this is simply called
+# Secret.
+# You get to make this up. It should be a long string of arbitrary alphanumeric
+# characters.
+sharedSecret: 09879879879879879879879871
+
+# Your GitHub OAuth2 token.
+github:
+   token: "1111111111111111111112222222222222111111"
+```
+
+You can learn more about generating OAuth2 tokens from the
+[official GitHub documentation](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/).
+
+Make sure you run `helm upgrade` if you changed any parameters above (or `helm install`
+if you are creating a new project).
+
+## Configuring GitHub
 
 To add a Brigade project to GitHub:
 
@@ -74,6 +105,32 @@ service.
 
 In this case, once the NGINX proxy is set up with SSL, you can point your
 GitHub "Payload URL" to the proxy instead of directly at the `brigade-gw` service.
+
+## Configuring the GitHub Gateway
+
+By default, when you install Brigade, the GitHub gateway is configured to ignore
+pull requests that come from forks. More specifically:
+
+If the `pull_request` action is set to `opened`, `reopened`, or `synchronize`, it
+is ignored by default.
+
+However, `pull_request:labeled` and `pull_request:unlabeled` are _not_ ignored.
+
+The reasoning behind this is that a public repo can be forked by an untrusted third
+party, so we don't want to allow that third party to run Brigade events on our
+cluster. However, labels can only be added and removed to PRs by people with write
+permissions to the repo. So those actions can be trusted.
+
+If you know what you are doing, and you want to allow any pull requests to build,
+even if coming from a forked repository, you may set the following configuration
+in your _brigade_ `values.yaml` (NOT the project YAML).
+
+```console
+$ helm upgrade brigade brigade/brigade --set gw.buildForkedPullRequests=true --reuse-values
+```
+
+Note that this will introduce security risks if you allow public forks of your
+repository.
 
 ## Connecting to Private GitHub Repositories (or Using SSH)
 
