@@ -50,12 +50,13 @@ func (s *githubHook) Handle(c *gin.Context) {
 		log.Print("Received ping from GitHub")
 		c.JSON(200, gin.H{"message": "OK"})
 		return
-	case "push", "pull_request":
+	case "push", "pull_request", "create", "release", "status", "commit_comment":
 		s.handleEvent(c, event)
 		return
 	default:
-		log.Printf("Expected event push, got %s", event)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "Invalid X-GitHub-Event Header"})
+		// Issue #127: Don't return an error for unimplemented events.
+		log.Printf("Unsupported event %q", event)
+		c.JSON(200, gin.H{"message": "Ignored"})
 		return
 	}
 }
@@ -94,6 +95,20 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		}
 		repo = e.Repo.GetFullName()
 		commit = e.PullRequest.Head.GetSHA()
+	case *github.CommitCommentEvent:
+		repo = e.Repo.GetFullName()
+		commit = *e.Comment.CommitID
+	case *github.CreateEvent:
+		// TODO: There are three ref_type values: tag, branch, and repo. Do we
+		// want to be opinionated about how we handle these?
+		repo = e.Repo.GetFullName()
+		commit = *e.Ref // Note that this is a ref, not a commit.
+	case *github.ReleaseEvent:
+		repo = e.Repo.GetFullName()
+		commit = *e.Release.TagName // Note this is a tag name, not a commit
+	case *github.StatusEvent:
+		repo = e.Repo.GetFullName()
+		commit = *e.Commit.SHA
 	default:
 		log.Printf("Failed to parse payload")
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Received data is not valid JSON"})

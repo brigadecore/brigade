@@ -2,8 +2,28 @@
 
 Brigade provides GitHub integration for triggering Brigade builds from GitHub events.
 
-Brigade integrates with GitHub by providing GitHub webhook implementations for the `push`
-and `pull_request` events. You must be running `brigade-gateway` in a way that makes
+Brigade integrates with GitHub by providing GitHub webhook implementations for the
+following events:
+
+- `push`: Fired whenever something is pushed
+- `pull_request`: Fired whenever a pull request's state is changed. See the `action`
+  value in the payload, which will be one of the following:
+  - opened
+  - closed
+  - assigned
+  - unassigned
+  - review_requested
+  - review_request_removed
+  - labeled
+  - unlabled
+  - edited
+  - reopened
+- `create`: Fired when a tag, branch, or repo is created.
+- `release`: Fired when a new release is created.
+- `status`: Fired when a status change happens on a commit.
+- `commit_comment`: Fired when a comment is added to a commit.
+
+You must be running `brigade-gateway` in a way that makes
 it available to GitHub. (For example, assign it a publicly routable IP and domain name.)
 
 ## Configuring
@@ -16,7 +36,12 @@ To add a Brigade project to GitHub:
 4. For "Payload URL", add the URL: "http://YOUR_HOSTNAME:7744/events/github"
 5. For "Content type", choose "application/json"
 6. For "Secret", use the secret you configured in your Helm config.
-7. Choose "Just the push event" or choose "push" and "pull_request".
+7. Choose "Just the push event" or choose  specific events you want to receive,
+  such as "push" and "pull_request".
+
+> Each event you select here will increase the number of events that fire within
+> the Brigade system. We recommend only enabling the events that you are using,
+> as enabling unused events will merely result in extra load on your system.
 
 ![GitHub Webhook Config](../intro/img/img4.png)
 
