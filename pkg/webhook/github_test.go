@@ -52,53 +52,102 @@ func newTestGithubHandler(store storage.Store, t *testing.T) *githubHook {
 }
 
 func TestGithubHandler(t *testing.T) {
-	store := newTestStore()
-	s := newTestGithubHandler(store, t)
-	s.createStatus = func(commit string, proj *brigade.Project, status *github.RepoStatus) error {
-		if status.GetState() != "pending" {
-			t.Error("RepoStatus.State is not correct")
+
+	tests := []struct {
+		event       string
+		commit      string
+		payloadFile string
+		checkStatus bool
+	}{
+		{
+			event:       "push",
+			commit:      "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
+			payloadFile: "testdata/github-push-payload.json",
+			checkStatus: true,
+		},
+		{
+			event:       "pull_request",
+			commit:      "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
+			payloadFile: "testdata/github-pull_request-payload.json",
+			checkStatus: true,
+		},
+		{
+			event:       "status",
+			commit:      "9049f1265b7d61be4a8904a9a27120d2064dab3b",
+			payloadFile: "testdata/github-status-payload.json",
+			checkStatus: false,
+		},
+		{
+			event:       "release",
+			commit:      "0.0.1",
+			payloadFile: "testdata/github-release-payload.json",
+			checkStatus: false,
+		},
+		{
+			event:       "create",
+			commit:      "0.0.1",
+			payloadFile: "testdata/github-create-payload.json",
+			checkStatus: false,
+		},
+		{
+			event:       "commit_comment",
+			commit:      "9049f1265b7d61be4a8904a9a27120d2064dab3b",
+			payloadFile: "testdata/github-commit_comment-payload.json",
+			checkStatus: false,
+		},
+	}
+
+	for _, tt := range tests {
+		store := newTestStore()
+		s := newTestGithubHandler(store, t)
+
+		// TODO: do we want to test this?
+		s.createStatus = func(commit string, proj *brigade.Project, status *github.RepoStatus) error {
+			if status.GetState() != "pending" {
+				t.Error("RepoStatus.State is not correct")
+			}
+			if status.GetDescription() != "Building" {
+				t.Error("RepoStatus.Building is not correct")
+			}
+			if commit != tt.commit {
+				t.Error("commit is not correct")
+			}
+			return nil
 		}
-		if status.GetDescription() != "Building" {
-			t.Error("RepoStatus.Building is not correct")
+
+		payload, err := ioutil.ReadFile(tt.payloadFile)
+		if err != nil {
+			t.Fatalf("failed to read testdata: %s", err)
 		}
-		if commit != "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c" {
-			t.Error("commit is not correct")
+
+		w := httptest.NewRecorder()
+		r, err := http.NewRequest("POST", "", bytes.NewReader(payload))
+		if err != nil {
+			t.Fatalf("failed to create request: %s", err)
 		}
-		return nil
-	}
+		r.Header.Add("X-GitHub-Event", tt.event)
+		r.Header.Add("X-Hub-Signature", SHA1HMAC([]byte("asdf"), payload))
 
-	payload, err := ioutil.ReadFile("testdata/github-push-payload.json")
-	if err != nil {
-		t.Fatalf("failed to read testdata: %s", err)
-	}
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = r
 
-	w := httptest.NewRecorder()
-	r, err := http.NewRequest("POST", "", bytes.NewReader(payload))
-	if err != nil {
-		t.Fatalf("failed to create request: %s", err)
-	}
-	r.Header.Add("X-GitHub-Event", "push")
-	r.Header.Add("X-Hub-Signature", SHA1HMAC([]byte("asdf"), payload))
+		s.Handle(ctx)
 
-	ctx, _ := gin.CreateTestContext(w)
-	ctx.Request = r
-
-	s.Handle(ctx)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("unexpected error: %d\n%s", w.Code, w.Body.String())
-	}
-	if len(store.builds) != 1 {
-		t.Fatal("expected a build created")
-	}
-	if store.builds[0].Type != "push" {
-		t.Error("Build.Type is not correct")
-	}
-	if store.builds[0].Provider != "github" {
-		t.Error("Build.Provider is not correct")
-	}
-	if store.builds[0].Commit != "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c" {
-		t.Error("Build.Commit is not correct")
+		if w.Code != http.StatusOK {
+			t.Fatalf("unexpected error: %d\n%s", w.Code, w.Body.String())
+		}
+		if len(store.builds) != 1 {
+			t.Fatal("expected a build created")
+		}
+		if store.builds[0].Type != tt.event {
+			t.Error("Build.Type is not correct")
+		}
+		if store.builds[0].Provider != "github" {
+			t.Error("Build.Provider is not correct")
+		}
+		if store.builds[0].Commit != tt.commit {
+			t.Error("Build.Commit is not correct")
+		}
 	}
 }
 
@@ -139,10 +188,10 @@ func TestGithubHandler_badevent(t *testing.T) {
 
 	s.Handle(ctx)
 
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("unexpected status code: %d", w.Code)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected unsupported verb to return a 200, got %d", w.Code)
 	}
-	if !strings.Contains(w.Body.String(), "Invalid X-GitHub-Event Header") {
+	if !strings.Contains(w.Body.String(), "Ignored") {
 		t.Fatalf("unexpected body: %d\n%s", w.Code, w.Body.String())
 	}
 }
