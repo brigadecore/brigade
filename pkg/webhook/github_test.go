@@ -54,10 +54,11 @@ func newTestGithubHandler(store storage.Store, t *testing.T) *githubHook {
 func TestGithubHandler(t *testing.T) {
 
 	tests := []struct {
-		event       string
-		commit      string
-		payloadFile string
-		checkStatus bool
+		event        string
+		commit       string
+		payloadFile  string
+		checkStatus  bool
+		renamedEvent string
 	}{
 		{
 			event:       "push",
@@ -76,6 +77,13 @@ func TestGithubHandler(t *testing.T) {
 			commit:      "b7a1f9c27caa4e03c14a88feb56e2d4f7500aa63",
 			payloadFile: "testdata/github-pull_request_review-payload.json",
 			checkStatus: false,
+		},
+		{
+			event:        "pull_request",
+			commit:       "ad0703ac08e80448764b34dc089d0f73a1242ae9",
+			payloadFile:  "testdata/github-pull_request-labeled-payload.json",
+			checkStatus:  true,
+			renamedEvent: "pull_request:labeled",
 		},
 		{
 			event:       "status",
@@ -145,8 +153,12 @@ func TestGithubHandler(t *testing.T) {
 		if len(store.builds) != 1 {
 			t.Fatal("expected a build created")
 		}
-		if store.builds[0].Type != tt.event {
-			t.Error("Build.Type is not correct")
+		if ee := store.builds[0].Type; tt.renamedEvent != "" {
+			if ee != tt.renamedEvent {
+				t.Errorf("Build.Type is not correct. Expected renamed event %q, got %q", tt.renamedEvent, ee)
+			}
+		} else if ee != tt.event {
+			t.Errorf("Build.Type is not correct. Expected event %q, got %q", tt.event, ee)
 		}
 		if store.builds[0].Provider != "github" {
 			t.Error("Build.Provider is not correct")

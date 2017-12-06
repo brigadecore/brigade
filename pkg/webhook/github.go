@@ -84,15 +84,19 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		repo = e.Repo.GetFullName()
 		commit = e.HeadCommit.GetID()
 	case *github.PullRequestEvent:
-		if isIgnoredPullRequestAction(e) {
-			c.JSON(http.StatusOK, gin.H{"status": "Action skipped"})
+		if !s.isAllowedPullRequest(e) {
+			c.JSON(http.StatusOK, gin.H{"status": "build skipped"})
 			return
 		}
-		if !s.buildForkedPullRequests && e.PullRequest.Head.Repo.GetFork() {
-			log.Println("skipping forked pull request")
-			c.JSON(http.StatusOK, gin.H{"status": "Skipped forked pull request"})
-			return
+
+		// EXPERIMENTAL: Since labeling and unlabeling PRs doesn't really have a
+		// code impact, we don't really want to fire off the same event (or require
+		// the user to know the event details). So we add a pseudo-event for labeling
+		// actions.
+		if a := e.GetAction(); a == "labeled" || a == "unlabeled" {
+			eventType = "pull_request:" + a
 		}
+
 		repo = e.Repo.GetFullName()
 		commit = e.PullRequest.Head.GetSHA()
 	case *github.CommitCommentEvent:
@@ -166,20 +170,32 @@ func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj 
 	}
 }
 
+// isAllowedPullRequest returns true if this particular pull request is allowed
+// to produce an event.
+func (s *githubHook) isAllowedPullRequest(e *github.PullRequestEvent) bool {
+	switch e.GetAction() {
+	case "opened", "synchronize", "reopened":
+		if !s.buildForkedPullRequests && e.PullRequest.Head.Repo.GetFork() {
+			// Log this case for debugging.
+			log.Println("skipping forked pull request")
+			return false
+		}
+		return true
+	case "labeled", "unlabeled":
+		// We let these through because they have project write/admin perms as
+		// a precondition.
+		return true
+	}
+	log.Println("unsupported pull_request action:", e.GetAction())
+	return false
+}
+
 func truncAt(str string, max int) string {
 	if len(str) > max {
 		short := str[0 : max-3]
 		return short + "..."
 	}
 	return str
-}
-
-func isIgnoredPullRequestAction(event *github.PullRequestEvent) bool {
-	switch event.GetAction() {
-	case "opened", "synchronize", "reopened":
-		return false
-	}
-	return true
 }
 
 func getFileFromGithub(commit, path string, proj *brigade.Project) ([]byte, error) {
