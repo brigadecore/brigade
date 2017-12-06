@@ -72,6 +72,12 @@ func TestGithubHandler(t *testing.T) {
 			checkStatus: true,
 		},
 		{
+			event:       "pull_request_review",
+			commit:      "b7a1f9c27caa4e03c14a88feb56e2d4f7500aa63",
+			payloadFile: "testdata/github-pull_request_review-payload.json",
+			checkStatus: false,
+		},
+		{
 			event:       "status",
 			commit:      "9049f1265b7d61be4a8904a9a27120d2064dab3b",
 			payloadFile: "testdata/github-status-payload.json",
