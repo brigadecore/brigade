@@ -50,7 +50,7 @@ func (s *githubHook) Handle(c *gin.Context) {
 		log.Print("Received ping from GitHub")
 		c.JSON(200, gin.H{"message": "OK"})
 		return
-	case "push", "pull_request", "create", "release", "status", "commit_comment":
+	case "push", "pull_request", "create", "release", "status", "commit_comment", "pull_request_review":
 		s.handleEvent(c, event)
 		return
 	default:
@@ -97,18 +97,21 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		commit = e.PullRequest.Head.GetSHA()
 	case *github.CommitCommentEvent:
 		repo = e.Repo.GetFullName()
-		commit = *e.Comment.CommitID
+		commit = e.Comment.GetCommitID()
 	case *github.CreateEvent:
 		// TODO: There are three ref_type values: tag, branch, and repo. Do we
 		// want to be opinionated about how we handle these?
 		repo = e.Repo.GetFullName()
-		commit = *e.Ref // Note that this is a ref, not a commit.
+		commit = e.GetRef() // Note that this is a ref, not a commit.
 	case *github.ReleaseEvent:
 		repo = e.Repo.GetFullName()
-		commit = *e.Release.TagName // Note this is a tag name, not a commit
+		commit = e.Release.GetTagName() // Note this is a tag name, not a commit
 	case *github.StatusEvent:
 		repo = e.Repo.GetFullName()
-		commit = *e.Commit.SHA
+		commit = e.Commit.GetSHA()
+	case *github.PullRequestReviewEvent:
+		repo = e.Repo.GetFullName()
+		commit = e.PullRequest.Head.GetSHA()
 	default:
 		log.Printf("Failed to parse payload")
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Received data is not valid JSON"})
