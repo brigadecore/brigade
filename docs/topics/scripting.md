@@ -72,7 +72,7 @@ Done in 1.44s.
 > Tip: You can use the `brig`  command to send brigade.js
 > files to Brigade.
 >
-> In this tutorial we run scripts with `brig --file brigade.js $PROJECT`, where `$PROJECT` is a
+> In this tutorial we run scripts with `brig run --file brigade.js $PROJECT`, where `$PROJECT` is a
 > project ID like `brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac`.
 
 In essence, all we have done is started a brigade session, logged "hello world", and exited.
