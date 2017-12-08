@@ -39,7 +39,7 @@ The easiest way to install Brigade into your Kubernetes cluster is to install it
 
 ```console
 $ helm repo add brigade https://azure.github.io/brigade
-$ helm install -n brigade brigade/brigade
+$ helm install -n brigade brigade/brigade/
 ```
 
 You will now have Brigade installed.
