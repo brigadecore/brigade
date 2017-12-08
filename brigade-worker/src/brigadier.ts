@@ -6,14 +6,14 @@
 
 /** */
 
-import * as jobImpl from "./job"
-import * as groupImpl from "./group"
-import * as eventsImpl from "./events"
-import {JobRunner} from "./k8s"
+import * as jobImpl from "./job";
+import * as groupImpl from "./group";
+import * as eventsImpl from "./events";
+import { JobRunner } from "./k8s";
 
 // These are filled by the 'fire' event handler.
-let currentEvent = null
-let currentProject = null
+let currentEvent = null;
+let currentProject = null;
 
 /**
  * events is the main event registry.
@@ -22,7 +22,7 @@ let currentProject = null
  * where the `name` is the event name, and the callback is the function to be
  * executed when the event is triggered.
  */
-export let events = new eventsImpl.EventRegistry()
+export let events = new eventsImpl.EventRegistry();
 
 /**
  * fire triggers an event.
@@ -32,9 +32,9 @@ export let events = new eventsImpl.EventRegistry()
  * If no event handler is found, nothing happens.
  */
 export function fire(e: eventsImpl.BrigadeEvent, p: eventsImpl.Project) {
-  currentEvent = e
-  currentProject = p
-  events.fire(e, p)
+  currentEvent = e;
+  currentProject = p;
+  events.fire(e, p);
 }
 
 /**
@@ -48,15 +48,15 @@ export function fire(e: eventsImpl.BrigadeEvent, p: eventsImpl.Project) {
  * (in order) inside of the image. When no tasks are supplied, the image is
  * executed as-is.
  */
-export class Job extends jobImpl.Job{
+export class Job extends jobImpl.Job {
   run(): Promise<jobImpl.Result> {
-    let jr = new JobRunner(this, currentEvent, currentProject)
-    this._podName = jr.name
+    let jr = new JobRunner(this, currentEvent, currentProject);
+    this._podName = jr.name;
     return jr.run().catch(err => {
       // Wrap the message to give clear context.
-      let msg = `job ${ this.name }(${ jr.name }): ${ err }`
-      return Promise.reject(msg)
-    })
+      let msg = `job ${this.name}(${jr.name}): ${err}`;
+      return Promise.reject(msg);
+    });
   }
 }
 
@@ -78,12 +78,11 @@ export class ErrorReport {
   /**
    * cause is the BrigadeEvent that caused the error.
    */
-  public cause: eventsImpl.BrigadeEvent
+  public cause: eventsImpl.BrigadeEvent;
   /**
    * reason is the message that the error reporter received that describes the error.
    *
    * It may be empty if no error description was provided.
    */
-  public reason?: any
-
+  public reason?: any;
 }
