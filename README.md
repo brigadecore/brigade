@@ -11,6 +11,9 @@ for Kubernetes.
 - Easy construction of pipelines
 - Check out the [docs](/docs/) to get started.
 
+
+[Kashti](https://github.com/Azure/kashti] is a dashboard for your Brigade pipelines.
+
 [![asciicast](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG.png)](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG)
 
 ## The Brigade Technology Stack
