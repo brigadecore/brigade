@@ -5,27 +5,32 @@
   "main": "dist/index",
   "types": "dist/index",
   "scripts": {
+    "clean": "rimraf dist",
+    "format": "prettier --write \"src/**/*.ts\"",
     "prestart": "node prestart.js",
-    "start": "node --no-deprecation ./dist/src/index.js",
-    "test": "tsc && mocha ./dist/test",
+    "start": "yarn build && node --no-deprecation ./dist/index.js",
+    "test": "mocha --compilers ts:ts-node/register --recursive \"test/**/*.ts\"",
     "build": "tsc",
-    "brigade": "tsc && yarn start",
+    "brigade": "yarn start",
     "docs": "typedoc --out ./doc --excludePrivate --excludeExternals --exclude test/*.ts --exclude doc/** ./src"
   },
   "author": "The Steel Thread Team",
   "license": "MIT",
   "repository": "https://github.com/Azure/brigade",
   "devDependencies": {
-    "@kubernetes/typescript-node": "^0.1.1",
     "@types/chai": "^4.0.1",
     "@types/mocha": "^2.2.41",
     "@types/node": "^8.0.14",
     "chai": "^4.1.0",
     "mocha": "^3.4.2",
+    "prettier": "^1.9.1",
+    "rimraf": "^2.6.2",
+    "ts-node": "^3.3.0",
     "typedoc": "^0.8.0",
     "typescript": "^2.4.2"
   },
   "dependencies": {
+    "@kubernetes/typescript-node": "^0.1.1",
     "ulid": "^0.2.0"
   }
 }

@@ -9,7 +9,7 @@ try {
   let wrapper = "const {whitelistRequire} = require('./require');((require) => {" +
     data.toString() +
     "})(whitelistRequire)"
-  fs.writeFile("dist/src/brigade.js", wrapper, () => {
+  fs.writeFile("dist/brigade.js", wrapper, () => {
     console.log("prestart: src/brigade.js written")
   })
 } catch(e) {
