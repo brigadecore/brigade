@@ -9,7 +9,7 @@ for Kubernetes.
 - Project-based management
 - Configurable event hooks
 - Easy construction of pipelines
-- Check out the [docs](/docs/) to get started.
+- Check out the [docs](/docs/index.md) to get started.
 
 [![asciicast](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG.png)](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG)
 
