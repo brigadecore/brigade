@@ -173,17 +173,13 @@ func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj 
 // isAllowedPullRequest returns true if this particular pull request is allowed
 // to produce an event.
 func (s *githubHook) isAllowedPullRequest(e *github.PullRequestEvent) bool {
+	if !s.buildForkedPullRequests && e.PullRequest.Head.Repo.GetFork() {
+		// Log this case for debugging.
+		log.Println("skipping forked pull request")
+		return false
+	}
 	switch e.GetAction() {
-	case "opened", "synchronize", "reopened":
-		if !s.buildForkedPullRequests && e.PullRequest.Head.Repo.GetFork() {
-			// Log this case for debugging.
-			log.Println("skipping forked pull request")
-			return false
-		}
-		return true
-	case "labeled", "unlabeled":
-		// We let these through because they have project write/admin perms as
-		// a precondition.
+	case "opened", "synchronize", "reopened", "labeled", "unlabeled":
 		return true
 	}
 	log.Println("unsupported pull_request action:", e.GetAction())

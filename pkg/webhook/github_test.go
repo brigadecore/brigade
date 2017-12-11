@@ -57,115 +57,108 @@ func TestGithubHandler(t *testing.T) {
 		event        string
 		commit       string
 		payloadFile  string
-		checkStatus  bool
 		renamedEvent string
 	}{
 		{
 			event:       "push",
 			commit:      "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
 			payloadFile: "testdata/github-push-payload.json",
-			checkStatus: true,
 		},
 		{
 			event:       "pull_request",
 			commit:      "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
 			payloadFile: "testdata/github-pull_request-payload.json",
-			checkStatus: true,
 		},
 		{
 			event:       "pull_request_review",
 			commit:      "b7a1f9c27caa4e03c14a88feb56e2d4f7500aa63",
 			payloadFile: "testdata/github-pull_request_review-payload.json",
-			checkStatus: false,
 		},
 		{
 			event:        "pull_request",
 			commit:       "ad0703ac08e80448764b34dc089d0f73a1242ae9",
 			payloadFile:  "testdata/github-pull_request-labeled-payload.json",
-			checkStatus:  true,
 			renamedEvent: "pull_request:labeled",
 		},
 		{
 			event:       "status",
 			commit:      "9049f1265b7d61be4a8904a9a27120d2064dab3b",
 			payloadFile: "testdata/github-status-payload.json",
-			checkStatus: false,
 		},
 		{
 			event:       "release",
 			commit:      "0.0.1",
 			payloadFile: "testdata/github-release-payload.json",
-			checkStatus: false,
 		},
 		{
 			event:       "create",
 			commit:      "0.0.1",
 			payloadFile: "testdata/github-create-payload.json",
-			checkStatus: false,
 		},
 		{
 			event:       "commit_comment",
 			commit:      "9049f1265b7d61be4a8904a9a27120d2064dab3b",
 			payloadFile: "testdata/github-commit_comment-payload.json",
-			checkStatus: false,
 		},
 	}
 
 	for _, tt := range tests {
-		store := newTestStore()
-		s := newTestGithubHandler(store, t)
+		t.Run(tt.payloadFile, func(t *testing.T) {
+			store := newTestStore()
+			s := newTestGithubHandler(store, t)
 
-		// TODO: do we want to test this?
-		s.createStatus = func(commit string, proj *brigade.Project, status *github.RepoStatus) error {
-			if status.GetState() != "pending" {
-				t.Error("RepoStatus.State is not correct")
+			// TODO: do we want to test this?
+			s.createStatus = func(commit string, proj *brigade.Project, status *github.RepoStatus) error {
+				if status.GetState() != "pending" {
+					t.Error("RepoStatus.State is not correct")
+				}
+				if status.GetDescription() != "Building" {
+					t.Error("RepoStatus.Building is not correct")
+				}
+				if commit != tt.commit {
+					t.Error("commit is not correct")
+				}
+				return nil
 			}
-			if status.GetDescription() != "Building" {
-				t.Error("RepoStatus.Building is not correct")
+
+			payload, err := ioutil.ReadFile(tt.payloadFile)
+			if err != nil {
+				t.Fatalf("failed to read testdata: %s", err)
 			}
-			if commit != tt.commit {
-				t.Error("commit is not correct")
+
+			w := httptest.NewRecorder()
+			r, err := http.NewRequest("POST", "", bytes.NewReader(payload))
+			if err != nil {
+				t.Fatalf("failed to create request: %s", err)
 			}
-			return nil
-		}
+			r.Header.Add("X-GitHub-Event", tt.event)
+			r.Header.Add("X-Hub-Signature", SHA1HMAC([]byte("asdf"), payload))
 
-		payload, err := ioutil.ReadFile(tt.payloadFile)
-		if err != nil {
-			t.Fatalf("failed to read testdata: %s", err)
-		}
+			ctx, _ := gin.CreateTestContext(w)
+			ctx.Request = r
 
-		w := httptest.NewRecorder()
-		r, err := http.NewRequest("POST", "", bytes.NewReader(payload))
-		if err != nil {
-			t.Fatalf("failed to create request: %s", err)
-		}
-		r.Header.Add("X-GitHub-Event", tt.event)
-		r.Header.Add("X-Hub-Signature", SHA1HMAC([]byte("asdf"), payload))
+			s.Handle(ctx)
 
-		ctx, _ := gin.CreateTestContext(w)
-		ctx.Request = r
-
-		s.Handle(ctx)
-
-		if w.Code != http.StatusOK {
-			t.Fatalf("unexpected error: %d\n%s", w.Code, w.Body.String())
-		}
-		if len(store.builds) != 1 {
-			t.Fatal("expected a build created")
-		}
-		if ee := store.builds[0].Type; tt.renamedEvent != "" {
-			if ee != tt.renamedEvent {
-				t.Errorf("Build.Type is not correct. Expected renamed event %q, got %q", tt.renamedEvent, ee)
+			if w.Code != http.StatusOK {
+				t.Fatalf("unexpected error: %d\n%s", w.Code, w.Body.String())
 			}
-		} else if ee != tt.event {
-			t.Errorf("Build.Type is not correct. Expected event %q, got %q", tt.event, ee)
-		}
-		if store.builds[0].Provider != "github" {
-			t.Error("Build.Provider is not correct")
-		}
-		if store.builds[0].Commit != tt.commit {
-			t.Error("Build.Commit is not correct")
-		}
+			if len(store.builds) != 1 {
+				t.Fatal("expected a build created")
+			}
+			if ee := store.builds[0].Type; tt.renamedEvent != "" {
+				if ee != tt.renamedEvent {
+					t.Errorf("Build.Type is not correct. Expected renamed event %q, got %q", tt.renamedEvent, ee)
+				}
+			} else if ee != tt.event {
+				t.Errorf("Build.Type is not correct. Expected event %q, got %q", tt.event, ee)
+			}
+			if store.builds[0].Provider != "github" {
+				t.Error("Build.Provider is not correct")
+			}
+			if store.builds[0].Commit != tt.commit {
+				t.Error("Build.Commit is not correct")
+			}
+		})
 	}
 }
 
