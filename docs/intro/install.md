@@ -41,7 +41,7 @@ builds. However, there are a few things that are much harder to do when running 
 
 Brigade is well-tested on ACS Kubernetes. We recommend using at least Kubernetes 1.6.
 
-- It is recommended to use a Service with type LoadBalanacer on ACS, which will generate
+- It is recommended to use a Service with type LoadBalancer on ACS, which will generate
   an Azure load balancer for you.
 - For caching and storage, we recommend creating an Azure Storage instance and
   creating a Persistent Volume and Storage Class that use the `AzureFile` driver.
