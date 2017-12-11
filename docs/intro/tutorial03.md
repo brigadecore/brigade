@@ -64,7 +64,7 @@ From your project...
   - Secret should be your secret in the YAML file (`MySuperSecret`)
   - In the radio buttons, choose `Let me select individual events`
     - Select `push` and `pull request`
-  - Make sure the `Activate` checkbox is selected
+  - Make sure the `Active` checkbox is selected
   - Click the `Add Webhook` button
 
 <img src="img/img4.png" style="height: 500px;" />
