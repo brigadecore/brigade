@@ -9,7 +9,7 @@ for Kubernetes.
 - Project-based management
 - Configurable event hooks
 - Easy construction of pipelines
-- Check out the [docs](/docs/) to get started.
+- Check out the [docs](/docs/index.md) to get started.
 
 
 [Kashti](https://github.com/Azure/kashti] is a dashboard for your Brigade pipelines.
