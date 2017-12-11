@@ -47,6 +47,9 @@ Based on the above, we have:
 We'll use this project throughout the tutorial as we create some `brigade.js` files and test
 them out.
 
+We will be using the `brig` binary to execute our brigade scripts.  Usage
+and installation instructions for `brig` are [here](/brig/).
+
 ## A Basic Brigade Script
 
 Here is a basic `brigade.js` file that just sends a single
