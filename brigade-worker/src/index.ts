@@ -24,30 +24,45 @@
 
 import * as fs from "fs";
 import * as process from "process";
+import * as path from "path";
 
+import * as PrettyError from "pretty-error";
 import * as ulid from "ulid";
 
 import * as events from "./events";
-import * as k8s from "./k8s";
-import * as brigadier from "./brigadier";
 import { App } from "./app";
 
 // This is a side-effect import.
 import "./brigade";
 
-const pkg = require("../package.json");
-console.log(`brigade-worker version: ${pkg.version}`);
+const rootPath = path.join(__dirname, "..");
+const pe = new PrettyError()
+  .skipNodeFiles()
+  .skipPackage("ts-node")
+  .skipPackage("bluebird")
+  .alias(rootPath, ".");
+pe.start();
 
-let projectID: string = process.env.BRIGADE_PROJECT_ID;
-let projectNamespace: string = process.env.BRIGADE_PROJECT_NAMESPACE;
-let commit = process.env.BRIGADE_COMMIT || "master";
-let defaultULID = ulid();
+const version = require("../package.json").version;
+console.log(`brigade-worker version: ${version}`);
+
+const requiredEnvVar = (name: string): string => {
+  if (!process.env[name]) {
+    console.log(`Missing required env ${name}`);
+    process.exit(1);
+  }
+  return process.env[name];
+};
+
+const projectID: string = requiredEnvVar("BRIGADE_PROJECT_ID");
+const projectNamespace: string = requiredEnvVar("BRIGADE_PROJECT_NAMESPACE");
+const defaultULID = ulid();
 let e: events.BrigadeEvent = {
   buildID: process.env.BRIGADE_BUILD || defaultULID,
   workerID: process.env.BRIGADE_BUILD_NAME || `unknown-${defaultULID}`,
   type: process.env.BRIGADE_EVENT_TYPE || "ping",
   provider: process.env.BRIGADE_EVENT_PROVIDER || "unknown",
-  commit: commit
+  commit: process.env.BRIGADE_COMMIT || "master"
 };
 
 try {

@@ -7,7 +7,6 @@
 import * as kubernetes from "@kubernetes/typescript-node";
 import * as jobs from "./job";
 import { BrigadeEvent, Project } from "./events";
-import { hostname } from "os";
 
 // The internals for running tasks. This must be loaded before any of the
 // objects that use run().
@@ -71,7 +70,7 @@ export class BuildStorage {
    * destroy deletes the PVC.
    */
   public destroy(): Promise<boolean> {
-    console.log("Destroying PVC named " + this.name);
+    console.log(`Destroying PVC named ${this.name}`);
     let opts = new kubernetes.V1DeleteOptions();
     return defaultClient
       .deleteNamespacedPersistentVolumeClaim(
@@ -114,9 +113,15 @@ export class BuildStorage {
  * from the secret.
  */
 export function loadProject(name: string, ns: string): Promise<Project> {
-  return defaultClient.readNamespacedSecret(name, ns).then(result => {
-    return secretToProject(ns, result.body);
-  });
+  return defaultClient
+    .readNamespacedSecret(name, ns)
+    .catch(reason => {
+      const msg = reason.body ? reason.body.message : reason;
+      return Promise.reject(new Error(`Project not found: ${msg}`));
+    })
+    .then(result => {
+      return secretToProject(ns, result.body);
+    });
 }
 
 /**
@@ -356,9 +361,7 @@ export class JobRunner implements jobs.JobRunner {
           resolve(this);
         })
         .catch(reason => {
-          if (reason.body) {
-            console.log(reason.body);
-          }
+          console.error(reason);
           reject(reason);
         });
     });
@@ -388,7 +391,7 @@ export class JobRunner implements jobs.JobRunner {
         })
         .catch(result => {
           // TODO: check if cache exists.
-          console.log("Creating Job Cache PVC " + cname);
+          console.log(`Creating Job Cache PVC ${cname}`);
           return k
             .createNamespacedPersistentVolumeClaim(ns, this.pvc)
             .then((result, newPVC) => {
@@ -397,7 +400,7 @@ export class JobRunner implements jobs.JobRunner {
             });
         })
         .catch(err => {
-          console.error(err.body);
+          console.error(err);
           reject(err);
         });
     });
@@ -415,7 +418,7 @@ export class JobRunner implements jobs.JobRunner {
     // This is a handle to clear the setTimeout when the promise is fulfilled.
     let waiter;
 
-    console.log("Timeout set at " + timeout);
+    console.log(`Timeout set at ${timeout}`);
 
     // At intervals, poll the Kubernetes server and get the pod phase. If the
     // phase is Succeeded or Failed, bail out. Otherwise, keep polling.
@@ -445,19 +448,18 @@ export class JobRunner implements jobs.JobRunner {
               resolve(result);
             } else if (phase == "Failed") {
               clearTimers();
-              reject("Pod " + name + " failed to run to completion");
+              reject(new Error(`Pod ${name} failed to run to completion`));
             }
             console.log(
-              pod.metadata.namespace +
-                "/" +
-                pod.metadata.name +
-                " phase " +
+              `${pod.metadata.namespace}/${pod.metadata.name} phase ${
                 pod.status.phase
+              }`
             );
             // In all other cases we fall through and let the fn be run again.
           })
           .catch(reason => {
-            console.log("failed pod lookup");
+            console.error("failed pod lookup");
+            console.error(reason);
             clearTimers();
             reject(reason);
           });

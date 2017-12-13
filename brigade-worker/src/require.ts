@@ -1,4 +1,4 @@
-let whitelist: Pkg[] = [
+const whitelist: Pkg[] = [
   { name: "brigade", override: "./brigadier" },
   { name: "brigadier", override: "./brigadier" },
   // Libraries that do not allow file or network I/O
@@ -41,5 +41,5 @@ export function whitelistRequire(pkg: string): any {
       return require(p.name);
     }
   }
-  throw "package not allowed: " + pkg;
+  throw new Error(`package not allowed: ${pkg}`);
 }

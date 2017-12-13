@@ -7,8 +7,6 @@
 
 /** */
 
-import { BrigadeEvent, Project } from "./events";
-
 /**
  * The default shell for the job.
  */
@@ -204,7 +202,9 @@ export abstract class Job {
     imageForcePull?: boolean
   ) {
     if (!jobNameIsValid(name)) {
-      throw "job name must be letters, numbers, and '-', and must not start or end with '-'";
+      throw new Error(
+        "job name must be letters, numbers, and '-', and must not start or end with '-'"
+      );
     }
     this.name = name;
     this.image = image;
