@@ -1,8 +1,6 @@
 /**
  * Module app is the main application runner.
  */
-import * as ulid from "ulid";
-
 import * as events from "./events";
 import * as process from "process";
 import * as k8s from "./k8s";
@@ -88,11 +86,8 @@ export class App {
           }
         })
         .catch(reason => {
-          var msg = reason;
           // Kubernetes objects put error messages here:
-          if (reason.body && reason.body.message) {
-            msg = reason.body.message;
-          }
+          const msg = reason.body ? reason.body.message : reason;
           console.log(`failed to destroy storage for ${e.workerID}: ${msg}`);
         });
     };
@@ -117,12 +112,7 @@ export class App {
 
     // Run if an uncaught rejection happens.
     process.on("unhandledRejection", (reason: any, p: Promise<any>) => {
-      var msg = reason;
-      // Kubernetes objects put error messages here:
-      if (reason.body && reason.body.message) {
-        msg = reason.body.message;
-      }
-      console.log(`FATAL: ${msg} (rejection)`);
+      console.error(reason);
       this.fireError(reason, "unhandledRejection");
     });
 
