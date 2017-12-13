@@ -5,6 +5,7 @@ import * as events from "./events";
 import * as process from "process";
 import * as k8s from "./k8s";
 import * as brigadier from "./brigadier";
+import { Logger, ContextLogger } from "./logger";
 
 interface BuildStorage {
   create(
@@ -18,9 +19,10 @@ interface BuildStorage {
 /**
  * ProjectLoader describes a function able to load a Project.
  */
-interface ProjectLoader {
-  (projectID: string, projectNS: string): Promise<events.Project>;
-}
+type ProjectLoader = (
+  projectID: string,
+  projectNS: string
+) => Promise<events.Project>;
 
 /**
  * App is the main application.
@@ -39,6 +41,7 @@ export class App {
    */
   public exitOnError: boolean = true;
   protected errorsHandled: boolean = false;
+  protected logger: Logger = new ContextLogger("app");
   protected lastEvent: events.BrigadeEvent;
   protected projectID: string;
   protected projectNS: string;
@@ -82,20 +85,22 @@ export class App {
         .destroy()
         .then(destroyed => {
           if (!destroyed) {
-            console.log(`storage not destroyed for ${e.workerID}`);
+            this.logger.log(`storage not destroyed for ${e.workerID}`);
           }
         })
         .catch(reason => {
           // Kubernetes objects put error messages here:
           const msg = reason.body ? reason.body.message : reason;
-          console.log(`failed to destroy storage for ${e.workerID}: ${msg}`);
+          this.logger.log(
+            `failed to destroy storage for ${e.workerID}: ${msg}`
+          );
         });
     };
 
     // We need at least one error trap to avoid losing the error to a new
     // throw from EventEmitter.
     brigadier.events.once("error", () => {
-      console.log("error handler is cleaning up");
+      this.logger.log("error handler is cleaning up");
       this.exitOnError && process.exit(1);
     });
 
@@ -106,13 +111,13 @@ export class App {
 
       // Delay long enough to cause beforeExit to be emitted again.
       setImmediate(() => {
-        console.log("after: default event fired");
+        this.logger.log("after: default event fired");
       }, 20);
     });
 
     // Run if an uncaught rejection happens.
     process.on("unhandledRejection", (reason: any, p: Promise<any>) => {
-      console.error(reason);
+      this.logger.error(reason);
       this.fireError(reason, "unhandledRejection");
     });
 
@@ -121,7 +126,7 @@ export class App {
       if (this.afterHasFired) {
         // So at this point, the after event has fired and we can cleanup.
         if (!this.storageIsDestroyed) {
-          console.log("beforeExit(2): destroying storage");
+          this.logger.log("beforeExit(2): destroying storage");
           this.storageIsDestroyed = true;
           destroyStorage();
         }
@@ -146,7 +151,7 @@ export class App {
       } else {
         this.afterHasFired = true;
         setImmediate(() => {
-          console.log("no-after: fired");
+          this.logger.log("no-after: fired");
         }, 20);
       }
     });
