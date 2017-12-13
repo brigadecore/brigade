@@ -24,31 +24,23 @@
 
 import * as fs from "fs";
 import * as process from "process";
-import * as path from "path";
-
-import * as PrettyError from "pretty-error";
 import * as ulid from "ulid";
 
 import * as events from "./events";
 import { App } from "./app";
+import { Logger, ContextLogger } from "./logger";
 
 // This is a side-effect import.
 import "./brigade";
 
-const rootPath = path.join(__dirname, "..");
-const pe = new PrettyError()
-  .skipNodeFiles()
-  .skipPackage("ts-node")
-  .skipPackage("bluebird")
-  .alias(rootPath, ".");
-pe.start();
+const logger = new ContextLogger();
 
 const version = require("../package.json").version;
-console.log(`brigade-worker version: ${version}`);
+logger.log(`brigade-worker version: ${version}`);
 
 const requiredEnvVar = (name: string): string => {
   if (!process.env[name]) {
-    console.log(`Missing required env ${name}`);
+    logger.log(`Missing required env ${name}`);
     process.exit(1);
   }
   return process.env[name];
@@ -68,7 +60,7 @@ let e: events.BrigadeEvent = {
 try {
   e.payload = fs.readFileSync("/etc/brigade/payload", "utf8");
 } catch (e) {
-  console.log("no payload loaded");
+  logger.log("no payload loaded");
 }
 
 // Run the app.
