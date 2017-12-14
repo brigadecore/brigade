@@ -89,6 +89,8 @@ Brigade uses simple JavaScript files to run tasks. When it comes to task running
 Given this, the role of the `brigade.js` file is to declare event handlers. And it's easy. Open `brigade.js` and write this JavaScript code into it:
 
 ```javascript
+const { events } = require("brigadier");
+
 events.on("push", function(e, project) {
   console.log("received push for commit " + e.commit)
 })
@@ -113,6 +115,8 @@ Logging a commit SHA isn't all that helpful. Instead, we would want to test that
 Edit `brigade.js` again so it looks like this:
 
 ```javascript
+const { events, Job } = require("brigadier");
+
 events.on("push", function(e, project) {
   console.log("received push for commit " + e.commit)
 
