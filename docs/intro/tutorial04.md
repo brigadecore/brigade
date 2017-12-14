@@ -89,7 +89,7 @@ Brigade uses simple JavaScript files to run tasks. When it comes to task running
 Given this, the role of the `brigade.js` file is to declare event handlers. And it's easy. Open `brigade.js` and write this JavaScript code into it:
 
 ```javascript
-const { events, Job } = require("brigadier");
+const { events } = require("brigadier");
 
 events.on("push", function(e, project) {
   console.log("received push for commit " + e.commit)
