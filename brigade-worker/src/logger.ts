@@ -20,9 +20,9 @@ export class ContextLogger implements Logger {
     this.context = `[${new Array("brigade", ...ctx).join(":")}]`;
   }
   error(message?: any, ...optionalParams: any[]): void {
-    console.error(this.context, message, optionalParams);
+    console.error(this.context, message, ...optionalParams);
   }
   log(message?: any, ...optionalParams: any[]): void {
-    console.log(this.context, message, optionalParams);
+    console.log(this.context, message, ...optionalParams);
   }
 }
