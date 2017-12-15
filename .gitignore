@@ -3,6 +3,7 @@ brigade-api/rootfs/brigade-api
 brigade-controller/rootfs/brigade-controller
 brigade-gateway/rootfs/brigade-gateway
 brigade-cr-gateway/rootfs/brigade-cr-gateway
+brigade-vacuum/rootfs/brigade-vacuum
 brigade-worker/dist
 brigade-worker/doc/
 bin/
