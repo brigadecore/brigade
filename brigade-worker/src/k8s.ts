@@ -383,29 +383,29 @@ export class JobRunner implements jobs.JobRunner {
       let k = this.client;
       if (!this.pvc) {
         resolve("no cache requested");
+      } else {
+        let cname = this.cacheName();
+        logger.log(`looking up ${ns}/${cname}`);
+        k
+          .readNamespacedPersistentVolumeClaim(cname, ns)
+          .then(result => {
+            resolve("re-using existing cache");
+          })
+          .catch(result => {
+            // TODO: check if cache exists.
+            logger.log(`Creating Job Cache PVC ${cname}`);
+            return k
+              .createNamespacedPersistentVolumeClaim(ns, this.pvc)
+              .then((result, newPVC) => {
+                logger.log("created cache");
+                resolve("created job cache");
+              });
+          })
+          .catch(err => {
+            logger.error(err);
+            reject(err);
+          });
       }
-
-      let cname = this.cacheName();
-      logger.log(`looking up ${ns}/${cname}`);
-      k
-        .readNamespacedPersistentVolumeClaim(cname, ns)
-        .then(result => {
-          resolve("re-using existing cache");
-        })
-        .catch(result => {
-          // TODO: check if cache exists.
-          logger.log(`Creating Job Cache PVC ${cname}`);
-          return k
-            .createNamespacedPersistentVolumeClaim(ns, this.pvc)
-            .then((result, newPVC) => {
-              logger.log("created cache");
-              resolve("created job cache");
-            });
-        })
-        .catch(err => {
-          logger.error(err);
-          reject(err);
-        });
     });
   }
 
