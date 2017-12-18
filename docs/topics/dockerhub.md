@@ -48,14 +48,14 @@ The repository _must_ support web hooks.
 The URL pattern for calling a webhook is this:
 
 ```
-http://<YOUR GATEWAY>:7744/events/dockerhub/<YOUR  PROJECT NAME>/<COMMIT>
+http://<YOUR GATEWAY>:8000/events/webhook/<YOUR PROJECT NAME>/<COMMIT>
 ```
 
 For example, to connect to the project `technosophos/example-hook` and use the head
 commit, we would use:
 
 ```
-http://technosophos.brigade.sh:7744/events/dockerhub/technosophos/example-hook/master
+http://technosophos.brigade.sh:8000/events/webhook/technosophos/example-hook/master
 ```
 
 For DockerHub, this URL is added in the `webhooks` tab of the Docker repository for
