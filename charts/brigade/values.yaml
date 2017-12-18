@@ -86,7 +86,19 @@ gw:
   name: brigade-github-gateway
   #tag:
   #pullPolicy: IfNotPresent
+  # The author associations who are allowed to have PRs built
+  # Classes are: COLLABORATOR, CONTRIBUTOR, OWNER, NONE, MEMBER, FIRST_TIMER, FIRST_TME_CONTRIBUTOR
+  # See https://developer.github.com/v4/reference/enum/commentauthorassociation/
+  # To completely disable pull request builds, leave this list blank.
+  allowedAuthorRoles:
+    - OWNER
+    - MEMBER
+    - COLLABORATOR
+
+  # DEPRECATED: As of Brigade v0.10.0, this is a no-op. Use allowedAuthorRoles
+  # isntead.
   #buildForkedPullRequests: true
+
 
 # These values are for the Container Registry (CR) gateway.
 # Enabling this will start a service that handles webhooks from container

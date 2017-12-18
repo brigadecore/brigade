@@ -1,10 +1,17 @@
-# The Min Helm Starter
+# Brigade Project
 
-This is a minimal starter for Helm. To install it, clone this repository
-into `$(helm home)/starters/min`.
+This is the Brigade Project chart. Use it to create a new Brigade project.
 
-```console
-$ git clone https://github.com/technosophos/helm-min-starter.git $(helm home)/starters/min2
+Usage:
+
+```
+$ helm inspect values brigade/brigade-project > myvalues.yaml
+$ # Edit myvalues.yaml
+$ helm install brigade/brigade-project -n myProject -f myValues.yaml
 ```
 
-To use this, run `helm create --starter min myChart`.
+To read documentation on the configurable parameters, run:
+
+```
+$ helm inspect values brigade/brigade-project
+```
