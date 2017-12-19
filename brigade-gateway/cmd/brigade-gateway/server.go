@@ -2,12 +2,13 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 
-	"gopkg.in/gin-gonic/gin.v1"
+	gin "gopkg.in/gin-gonic/gin.v1"
 	"k8s.io/api/core/v1"
 
 	"github.com/Azure/brigade/pkg/storage/kube"
@@ -18,6 +19,7 @@ var (
 	kubeconfig              string
 	master                  string
 	namespace               string
+	gatewayPort             string
 	buildForkedPullRequests bool
 )
 
@@ -25,6 +27,7 @@ func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
 	flag.StringVar(&namespace, "namespace", defaultNamespace(), "kubernetes namespace")
+	flag.StringVar(&gatewayPort, "gateway-port", defaultGatewayPort(), "TCP port to use for brigade-gateway")
 	flag.BoolVar(&buildForkedPullRequests, "build-forked-pull-requests", defaultBuildForkedPRs(), "build forked pull requests")
 }
 
@@ -49,7 +52,8 @@ func main() {
 
 	router.GET("/healthz", healthz)
 
-	router.Run(":7744")
+	formattedGatewayPort := fmt.Sprintf(":%v", gatewayPort)
+	router.Run(formattedGatewayPort)
 }
 
 func defaultNamespace() string {
@@ -57,6 +61,13 @@ func defaultNamespace() string {
 		return ns
 	}
 	return v1.NamespaceDefault
+}
+
+func defaultGatewayPort() string {
+	if port, ok := os.LookupEnv("BRIGADE_GATEWAY_PORT"); ok {
+		return port
+	}
+	return "7745"
 }
 
 func defaultBuildForkedPRs() bool {
