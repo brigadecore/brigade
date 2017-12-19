@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
-	"gopkg.in/gin-gonic/gin.v1"
+	gin "gopkg.in/gin-gonic/gin.v1"
 	"k8s.io/api/core/v1"
 
 	"github.com/Azure/brigade/pkg/api"
@@ -16,12 +17,14 @@ var (
 	kubeconfig string
 	master     string
 	namespace  string
+	apiPort    string
 )
 
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
 	flag.StringVar(&namespace, "namespace", defaultNamespace(), "kubernetes namespace")
+	flag.StringVar(&apiPort, "api-port", defaultAPIPort(), "TCP port to use for brigade-api")
 }
 
 func main() {
@@ -57,7 +60,9 @@ func main() {
 	rest.GET("/job/:id/logs", j.Logs)
 
 	router.GET("/healthz", api.Healthz)
-	log.Fatal(router.Run(":7745"))
+
+	formattedAPIPort := fmt.Sprintf(":%v", apiPort)
+	log.Fatal(router.Run(formattedAPIPort))
 }
 
 func defaultNamespace() string {
@@ -65,6 +70,13 @@ func defaultNamespace() string {
 		return ns
 	}
 	return v1.NamespaceDefault
+}
+
+func defaultAPIPort() string {
+	if port, ok := os.LookupEnv("BRIGADE_API_PORT"); ok {
+		return port
+	}
+	return "7744"
 }
 
 func cors(c *gin.Context) {
