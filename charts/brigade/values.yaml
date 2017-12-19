@@ -59,8 +59,8 @@ api:
   service:
     name: brigade-api
     type: ClusterIP
-    externalPort: 7744
-    internalPort: 7744
+    externalPort: 7745
+    internalPort: 7745
 
 # worker is the JavaScript worker. These are created on demand by the controller.
 worker:
@@ -130,8 +130,8 @@ vacuum:
 service:
   name: brigade-service
   type: LoadBalancer
-  externalPort: 7745
-  internalPort: 7745
+  externalPort: 7744
+  internalPort: 7744
 # By default, this is off. If you enable it, you might want to change the
 # service.type to ClusterIP
 ingress:

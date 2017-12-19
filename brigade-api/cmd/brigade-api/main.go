@@ -76,7 +76,7 @@ func defaultAPIPort() string {
 	if port, ok := os.LookupEnv("BRIGADE_API_PORT"); ok {
 		return port
 	}
-	return "7744"
+	return "7745"
 }
 
 func cors(c *gin.Context) {

@@ -67,7 +67,7 @@ func defaultGatewayPort() string {
 	if port, ok := os.LookupEnv("BRIGADE_GATEWAY_PORT"); ok {
 		return port
 	}
-	return "7745"
+	return "7744"
 }
 
 func defaultBuildForkedPRs() bool {
