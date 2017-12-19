@@ -32,7 +32,7 @@ metadata:
   name: ${name}
   labels:
     heritage: brigade
-    belongsto: ${project_id}
+    project: ${project_id}
     build: ${uuid}
     commit: ${commit}
     jobname: ${name}
