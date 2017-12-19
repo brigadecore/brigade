@@ -1,0 +1,31 @@
+{{ if .Values.vacuum.enabled }}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ template "brigade.fullname" . }}-vacuum
+  labels:
+    app: {{ template "brigade.fullname" . }}-vacuum
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    role: vacuum
+spec:
+  schedule: "{{ default "@hourly" .Values.vacuum.schedule }}"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: {{ .Chart.Name }}-vacuum
+            image: "{{ .Values.vacuum.registry }}/{{ .Values.vacuum.name }}:{{ default .Chart.AppVersion .Values.vacuum.tag }}"
+            env:
+            - name: VACUUM_AGE
+              value: {{ default "" .Values.vacuum.age | quote }}
+            - name: VACUUM_MAX_BUILDS
+              value: {{ default "0" .Values.vacuum.maxBuilds | quote }}
+            - name: BRIGADE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          restartPolicy: OnFailure
+{{ end }}

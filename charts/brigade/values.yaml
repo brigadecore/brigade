@@ -96,6 +96,35 @@ cr:
     externalPort: 80
     internalPort: 8000
 
+# The vacuum periodically cleans up old builds.
+# Brigade does not delete builds on completion. Instead, it leaves builds around
+# for a period of time, providing you with an opportunity to inspect builds for
+# data.
+# The vacuum will sweep the system at intervals and clear out old builds.
+#
+# To globally turn of the vacuum, set enabled=false
+vacuum:
+  enabled: true
+  # Set a schedule for how frequently this check is run.
+  # Note that a run of the vacuum typically takes at least a minute. Finer-level
+  # granularity than that may result in multiple vacuums running at once.
+  # Format follows accepted Cron formats: https://en.wikipedia.org/wiki/Cron
+  schedule: "@hourly"
+  registry: "deis"
+  name: "brigade-vacuum"
+  # tag: latest
+  # Age tells the vacuum how old a thing may be before it is considered ready to
+  # be vacuumed. The format is an integer followed by the suffix h (hours), m (minutes)
+  # or s (seconds).
+  # The default is 30 days (720 hours)
+  age: "720h"
+  # maxBuilds tells the vacuum what the absolute maximum number of builds may be stored
+  # at a time. Where possible, we recommend using age rather than builds.
+  # 0 means no limit is imposed.
+  #
+  # If both age and maxBuilds are provided, age is applied first, then maxBuilds.
+  maxBuilds: 0
+
 # The service is for the Brigade gateway. If you do not want to have Brigade
 # listening for incomming GitHub requests, disable this.
 service:
