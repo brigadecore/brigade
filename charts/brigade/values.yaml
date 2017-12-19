@@ -59,8 +59,8 @@ api:
   service:
     name: brigade-api
     type: ClusterIP
-    externalPort: 7745
-    internalPort: 7745
+    externalPort: 7744
+    internalPort: 7744
 
 # worker is the JavaScript worker. These are created on demand by the controller.
 worker:
