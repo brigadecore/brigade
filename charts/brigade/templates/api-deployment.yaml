@@ -38,7 +38,7 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
           - name: BRIGADE_API_PORT
-            value: {{ default "7744" .Values.api.service.internalPort }}
+            value: {{ .Values.api.service.internalPort | quote }}
       {{ if .Values.privateRegistry }}imagePullSecrets:
         - name: {{.Values.privateRegistry}}{{ end }}
 {{ end }}

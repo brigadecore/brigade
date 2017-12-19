@@ -43,7 +43,7 @@ spec:
           - name: BRIGADE_BUILD_FORKED_PULL_REQUESTS
             value: {{ default "" .Values.gw.buildForkedPullRequests }}
           - name: BRIGADE_GATEWAY_PORT
-            value: {{ default "7745" .Values.service.internalPort }}
+            value: {{ .Values.service.internalPort | quote }}
       {{ if .Values.privateRegistry }}imagePullSecrets:
         - name: {{.Values.privateRegistry}}{{ end }}
 {{ end }}
