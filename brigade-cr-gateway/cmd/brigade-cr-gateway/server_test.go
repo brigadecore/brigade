@@ -41,14 +41,20 @@ func TestNewRouter(t *testing.T) {
 
 	// Basically, we're testing to make sure the route exists, but having it bail
 	// before it hits the GitHub API.
-	res, err = http.Post(ts.URL+"/events/webhook/deis/empty-testbed/master", "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		t.Fatal(err)
+	routes := []string{
+		"/events/webhook/brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac",
+		"/events/webhook/deis/empty-testbed",
+		"/events/webhook/deis/empty-testbed/master",
 	}
-	if res.StatusCode != 400 {
-		t.Fatalf("Expected bad status, got: %s", res.Status)
+	for _, r := range routes {
+		res, err = http.Post(ts.URL+r, "application/json", bytes.NewBuffer(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res.StatusCode != 400 {
+			t.Fatalf("Expected bad status, got: %s", res.Status)
+		}
 	}
-
 }
 
 type mockStore struct {

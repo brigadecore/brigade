@@ -48,11 +48,26 @@ func newRouter(store storage.Store) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Recovery())
 
+	handler := webhook.NewDockerPushHook(store)
+
 	events := router.Group("/events")
 	{
 		events.Use(gin.Logger())
 
-		events.POST("/webhook/:org/:project/:commit", webhook.NewDockerPushHook(store).Handle)
+		// We need to handle the full project name (brigade-00000), the org/project
+		// format of the name (for backward compatibility), and variants where the
+		// commitish has to be supplied as a param.
+
+		// Of the form /webhook/brigade-123456789?commit=master
+		// Here, :org is actually a full project name, but due to Gin's naming rules
+		// we have to keep it named :org.
+		// This is the recommended form.
+		events.POST("/webhook/:org", handler.Handle)
+
+		// Of the form /webhook/deis/empty-testbed?commit=master
+		events.POST("/webhook/:org/:repo", handler.Handle)
+		// Of the form /webhook/deis/empty-testbed/master
+		events.POST("/webhook/:org/:repo/:commit", handler.Handle)
 	}
 
 	router.GET("/healthz", healthz)
