@@ -12,7 +12,7 @@ for Kubernetes.
 - Check out the [docs](/docs/index.md) to get started.
 
 
-[Kashti](https://github.com/Azure/kashti] is a dashboard for your Brigade pipelines.
+[Kashti](https://github.com/Azure/kashti) is a dashboard for your Brigade pipelines.
 
 [![asciicast](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG.png)](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG)
 
