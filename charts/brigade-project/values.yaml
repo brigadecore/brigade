@@ -34,9 +34,9 @@ github: {}
 #
 # In JS, do this:
 #
-#   events.push = function(e) {
+#   events.push = function(e, p) {
 #     j = new Job("example")
-#     j.env= {"MY_ENV_VAR", e.secrets.myVar}
+#     j.env= {"MY_ENV_VAR", p.secrets.myVar}
 #   }
 #
 # And here, add this:
