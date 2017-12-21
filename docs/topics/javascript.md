@@ -176,7 +176,7 @@ Properties of `Job`
 - `env: {[key: string]:string}`: Name/value pairs of environment variables.
 - `image: string`: The container image to run
 - `imagePullSecrets: string`: The names of the pull secrets (for pulling images from a secure remote repository)
-- `mountPath: string`: The path where any resources should be mounted (e.g. where a Git repository will be cloned)
+- `mountPath: string`: The path where any resources should be mounted (e.g. where a Git repository will be cloned) (defaults to `/src`)
 - `timeout: number`: Time to wait, in seconds, before the job is marked "failed"
 - `useSource: bool`: If false, no external resource will be loaded (e.g. no git clone will be performed)
 - `privileged: bool`: If this is true, the job will be executed in privileged mode, which allows it to do things like access a Docker socket. EXPERTS ONLY.
