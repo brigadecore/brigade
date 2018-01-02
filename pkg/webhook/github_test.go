@@ -58,11 +58,18 @@ func TestGithubHandler(t *testing.T) {
 		commit       string
 		payloadFile  string
 		renamedEvent string
+		mustFail     bool
 	}{
 		{
 			event:       "push",
 			commit:      "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
 			payloadFile: "testdata/github-push-payload.json",
+		},
+		{
+			event:       "push",
+			commit:      "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
+			payloadFile: "testdata/github-push-delete-branch.json",
+			mustFail:    true,
 		},
 		{
 			event:       "pull_request",
@@ -141,6 +148,13 @@ func TestGithubHandler(t *testing.T) {
 
 			if w.Code != http.StatusOK {
 				t.Fatalf("unexpected error: %d\n%s", w.Code, w.Body.String())
+			}
+
+			if tt.mustFail {
+				if len(store.builds) > 0 {
+					t.Fatal("expected failed hook.")
+				}
+				return
 			}
 			if len(store.builds) != 1 {
 				t.Fatal("expected a build created")

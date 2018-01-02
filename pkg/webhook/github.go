@@ -81,6 +81,12 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 
 	switch e := e.(type) {
 	case *github.PushEvent:
+		// If this is a branch deletion, skip the build.
+		if e.GetDeleted() {
+			c.JSON(http.StatusOK, gin.H{"status": "build skipped on branch deletion"})
+			return
+		}
+
 		repo = e.Repo.GetFullName()
 		commit = e.HeadCommit.GetID()
 	case *github.PullRequestEvent:
