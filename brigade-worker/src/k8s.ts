@@ -318,7 +318,7 @@ export class JobRunner implements jobs.JobRunner {
     // be DNS-like, and less than 64 chars. This rules out using project ID,
     // project name, etc. For now, we use project name with slashes replaced,
     // appended to job name.
-    return `${this.project.name.replace(/[.\/]/g, "-")}-${this.job.name}`;
+    return `${this.project.name.replace(/[.\/]/g, "-")}-${this.job.name}`.toLowerCase();
   }
 
   /**

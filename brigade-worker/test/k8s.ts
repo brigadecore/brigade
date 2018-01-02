@@ -193,8 +193,10 @@ describe("k8s", function() {
           j.storage.enabled = true
         })
         it("configures volumes", function() {
+          // We uppercase to test that names are correctly downcased. Issue #224
+          j.name =  j.name.toUpperCase()
           let jr = new k8s.JobRunner(j, e, p)
-          let cname = `${ p.name.replace(/[.\/]/g, "-")}-${ j.name }`
+          let cname = `${ p.name.replace(/[.\/]/g, "-")}-${ j.name.toLowerCase() }`
           let foundCache = false
           let storageName = "build-storage"
           let foundStorage = false
