@@ -273,7 +273,7 @@ export class JobRunner implements jobs.JobRunner {
       const vname = "build-storage";
       this.runner.spec.volumes.push({
         name: vname,
-        persistentVolumeClaim: { claimName: e.buildID.toLowerCase() }
+        persistentVolumeClaim: { claimName: e.workerID.toLowerCase() }
       } as kubernetes.V1Volume);
       let mnt = volumeMount(vname, job.storage.path);
       this.runner.spec.containers[0].volumeMounts.push(mnt);
