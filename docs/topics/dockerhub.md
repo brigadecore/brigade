@@ -64,6 +64,26 @@ your image.
 For Azure Container Registry, this URL is added on the `webhooks` tab of your
 ACR repository's blade.
 
+### Alternative Webhook Paths
+
+In addition to the format above, you may use either of these paths as alternatives.
+These may be useful in cases where your project name or commit ID do not
+match the path-like assumptions of the above:
+
+```
+http://<YOUR GATEWAY>:8000/events/webhook/<YOUR PROJECT Name>?commit=<COMMIT>
+http://<YOUR GATEWAY>:8000/events/webhook/<YOUR PROJECT ID>?commit=<COMMIT>
+```
+
+So the following URLs are also valid:
+
+
+```
+http://technosophos.brigade.sh:8000/events/webhook/technosophos/example-hook?commit=master
+http://technosophos.brigade.sh:8000/events/webhook/brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac?commit=master
+```
+
+
 ## Configuring your `brigade.js`
 
 To answer hooks in your `brigade.sh`, you will need to do something like this:

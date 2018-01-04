@@ -27,10 +27,19 @@ func NewDockerPushHook(s storage.Store) *dockerPushHook {
 
 // Handle handles a Push webhook event from DockerHub or a compatible agent.
 func (s *dockerPushHook) Handle(c *gin.Context) {
+	var pname, commit string
 	orgName := c.Param("org")
-	projName := c.Param("project")
-	commit := c.Param("commit")
-	pname := fmt.Sprintf("%s/%s", orgName, projName)
+	projName := c.Param("repo")
+	log.Println(projName)
+	if projName != "" {
+		pname = fmt.Sprintf("%s/%s", orgName, projName)
+	} else {
+		pname = orgName
+	}
+	if commit = c.Query("commit"); commit == "" {
+		commit = c.Param("commit")
+	}
+	log.Printf("Fetching commit %s for %s", commit, pname)
 
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
