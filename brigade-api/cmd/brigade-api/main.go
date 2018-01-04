@@ -54,6 +54,7 @@ func main() {
 	b := server.Build()
 	rest.GET("/build/:id", b.Get)
 	rest.GET("/build/:id/jobs", b.Jobs)
+	rest.GET("/build/:id/logs", b.Logs)
 
 	j := server.Job()
 	rest.GET("/job/:id", j.Get)

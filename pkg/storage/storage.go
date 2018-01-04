@@ -30,4 +30,8 @@ type Store interface {
 	GetJobLog(job *brigade.Job) (string, error)
 	// GetJobLogStream retrieve a stream of all logs for a job from storage.
 	GetJobLogStream(job *brigade.Job) (io.ReadCloser, error)
+	// GetWorkerLog retrieves all logs for a worker from storage.
+	GetWorkerLog(job *brigade.Worker) (string, error)
+	// GetWorkerLogStream retrieve a stream of all logs for a worker from storage.
+	GetWorkerLogStream(job *brigade.Worker) (io.ReadCloser, error)
 }

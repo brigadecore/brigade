@@ -47,6 +47,9 @@ func (api Job) Logs(c *gin.Context) {
 			c.JSON(http.StatusNotFound, struct{}{})
 			return
 		}
+		if len(logs) == 0 {
+			c.JSON(http.StatusNoContent, nil)
+		}
 		c.JSON(http.StatusOK, logs)
 	}
 }

@@ -1,7 +1,9 @@
 package kube
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,4 +52,25 @@ func NewWorkerFromPod(pod v1.Pod) *brigade.Worker {
 	}
 
 	return worker
+}
+
+func (s *store) GetWorkerLogStream(worker *brigade.Worker) (io.ReadCloser, error) {
+	req := s.client.CoreV1().Pods(s.namespace).GetLogs(worker.ID, &v1.PodLogOptions{})
+
+	readCloser, err := req.Stream()
+	if err != nil {
+		return nil, err
+	}
+	return readCloser, nil
+}
+
+func (s *store) GetWorkerLog(worker *brigade.Worker) (string, error) {
+	buf := new(bytes.Buffer)
+	r, err := s.GetWorkerLogStream(worker)
+	if err != nil {
+		return "", err
+	}
+	defer r.Close()
+	io.Copy(buf, r)
+	return buf.String(), nil
 }
