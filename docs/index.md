@@ -36,3 +36,5 @@ Brigade-related projects and tools.
   Trello webhooks to Brigade.
 - The [Twitter-T](https://hub.docker.com/r/technosophos/twitter-t/) and [Slack Notify](https://hub.docker.com/r/technosophos/slack-notify/)
   Docker images provide easy tools for sending messages from Brigade scripts.
+- [bit-brigade](https://bitbucket.org/lukepatrick/bit-brigade) provides an example project using 
+  BitBucket as a source repository
