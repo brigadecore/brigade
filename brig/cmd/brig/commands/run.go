@@ -20,14 +20,16 @@ import (
 )
 
 var (
-	runFile    string
-	runEvent   string
-	runPayload string
+	runFile      string
+	runEvent     string
+	runPayload   string
+	runCommitish string
 )
 
 const (
-	kubeConfig  = "KUBECONFIG"
-	waitTimeout = 5 * time.Minute
+	defaultCommit = "master"
+	kubeConfig    = "KUBECONFIG"
+	waitTimeout   = 5 * time.Minute
 )
 
 const runUsage = `Send a Brigade JS file to the server.
@@ -52,6 +54,7 @@ func init() {
 	run.Flags().StringVarP(&runFile, "file", "f", "", "The JavaScript file to execute")
 	run.Flags().StringVarP(&runEvent, "event", "e", "exec", "The name of the event to fire")
 	run.Flags().StringVarP(&runPayload, "payload", "p", "", "The path to a payload file")
+	run.Flags().StringVarP(&runCommitish, "commit", "c", defaultCommit, "A VCS (git) commit version, tag, or branch")
 	Root.AddCommand(run)
 }
 
@@ -89,9 +92,10 @@ func newScriptRunner() (*scriptRunner, error) {
 	}
 
 	app := &scriptRunner{
-		store: kube.New(c, globalNamespace),
-		kc:    c,
-		event: runEvent,
+		store:  kube.New(c, globalNamespace),
+		kc:     c,
+		event:  runEvent,
+		commit: runCommitish,
 	}
 	if len(runPayload) > 0 {
 		data, err := ioutil.ReadFile(runPayload)
@@ -108,6 +112,7 @@ type scriptRunner struct {
 	kc      kubernetes.Interface
 	payload []byte
 	event   string
+	commit  string
 }
 
 func (a *scriptRunner) send(projectName string, data []byte) error {
@@ -115,7 +120,7 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 		ProjectID: brigade.ProjectID(projectName),
 		Type:      a.event,
 		Provider:  "brigade-cli",
-		Commit:    "master",
+		Commit:    a.commit,
 		Payload:   a.payload,
 		Script:    data,
 	}
@@ -124,7 +129,7 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 		return err
 	}
 
-	podName := "brigade-worker-" + b.ID + "-master"
+	podName := fmt.Sprintf("brigade-worker-%s-%s", b.ID, b.Commit[0:8])
 
 	if err := a.waitForWorker(b.ID); err != nil {
 		return err
