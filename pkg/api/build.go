@@ -1,6 +1,7 @@
 package api
 
 import (
+	"io"
 	"net/http"
 
 	"gopkg.in/gin-gonic/gin.v1"
@@ -39,4 +40,33 @@ func (api Build) Jobs(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, jobs)
+}
+
+// Logs creates a new gin handler for the GET /job/:id/logs endpoint
+func (api Build) Logs(c *gin.Context) {
+	id := c.Params.ByName("id")
+	build, err := api.store.GetBuild(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, struct{}{})
+		return
+	}
+	if c.Query("stream") == "true" {
+		logReader, err := api.store.GetWorkerLogStream(build.Worker)
+		if err != nil {
+			c.JSON(http.StatusNotFound, struct{}{})
+			return
+		}
+		defer logReader.Close()
+		io.Copy(c.Writer, logReader)
+	} else {
+		logs, err := api.store.GetWorkerLog(build.Worker)
+		if err != nil {
+			c.JSON(http.StatusNotFound, struct{}{})
+			return
+		}
+		if len(logs) == 0 {
+			c.JSON(http.StatusNoContent, nil)
+		}
+		c.JSON(http.StatusOK, logs)
+	}
 }
