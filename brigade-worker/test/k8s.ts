@@ -219,7 +219,7 @@ describe("k8s", function() {
               assert.equal(v.persistentVolumeClaim.claimName, cname)
             } else if (v.name == storageName) {
               foundStorage = true
-              assert.equal(v.persistentVolumeClaim.claimName, e.buildID)
+              assert.equal(v.persistentVolumeClaim.claimName, e.workerID.toLowerCase())
             }
           }
           assert.isTrue(foundCache, "expected cache volume claim found")
