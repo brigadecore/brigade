@@ -10,6 +10,7 @@ import * as jobImpl from "./job";
 import * as groupImpl from "./group";
 import * as eventsImpl from "./events";
 import { JobRunner } from "./k8s";
+import { extractEnv } from "./github";
 
 // These are filled by the 'fire' event handler.
 let currentEvent = null;
@@ -52,6 +53,11 @@ export class Job extends jobImpl.Job {
   run(): Promise<jobImpl.Result> {
     let jr = new JobRunner(this, currentEvent, currentProject);
     this._podName = jr.name;
+
+    if ("github" === currentEvent.provider) {
+      Object.assign(this.env, extractEnv(currentEvent));
+    }
+
     return jr.run().catch(err => {
       // Wrap the message to give clear context.
       console.error(err)
