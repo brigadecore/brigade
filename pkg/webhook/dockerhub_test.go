@@ -7,11 +7,6 @@ import (
 )
 
 func TestDoDockerImagePush(t *testing.T) {
-	script := `events.dockerhub = function(e) {
-		if (e.payload.push_data.tag == "latest") {
-			throw "Unexpected test: " + e.payload.push_data.tag
-		}
-	}`
 	proj := &brigade.Project{
 		ID:   "brigade-1234",
 		Name: "org/proj",
@@ -32,7 +27,7 @@ func TestDoDockerImagePush(t *testing.T) {
 
 	hook := NewDockerPushHook(&testStore{})
 
-	if err := hook.doDockerImagePush(proj, commit, []byte(exampleWebhook), []byte(script)); err != nil {
+	if err := hook.doDockerImagePush(proj, commit, []byte(exampleWebhook)); err != nil {
 		t.Errorf("failed docker image push: %s", err)
 	}
 }

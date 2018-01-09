@@ -12,8 +12,7 @@ cloneURL: "https://github.com/deis/empty-testbed.git"
 sharedSecret: "IBrakeForSeaBeasts"
 
 # OPTIONAL: Use this to have Brigade update your project about the build.
-# You probably want this if you want pull requests or commits to show
-# the build status.
+# This is REQUIRED for the GitHub gateway, but optional otherwise.
 github: {}
 #   token: "github oauth token"
 

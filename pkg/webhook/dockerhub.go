@@ -63,34 +63,24 @@ func (s *dockerPushHook) Handle(c *gin.Context) {
 		return
 	}
 
-	// This will clone the repo before responding to the webhook. We need
-	// to make sure that this doesn't cause the hook to hang up.
-	brigadeJS, err := s.getFile(commit, "./brigade.js", proj)
-	if err != nil {
-		log.Printf("aborting DockerImagePush event due to error: %s", err)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "brigadejs not found"})
-		return
-	}
-
-	go s.notifyDockerImagePush(proj, commit, body, brigadeJS)
+	go s.notifyDockerImagePush(proj, commit, body)
 	c.JSON(200, gin.H{"status": "Success"})
 }
 
-func (s *dockerPushHook) notifyDockerImagePush(proj *brigade.Project, commit string, payload, brigadeJS []byte) {
-	if err := s.doDockerImagePush(proj, commit, payload, brigadeJS); err != nil {
+func (s *dockerPushHook) notifyDockerImagePush(proj *brigade.Project, commit string, payload []byte) {
+	if err := s.doDockerImagePush(proj, commit, payload); err != nil {
 		log.Printf("failed dockerimagepush event: %s", err)
 	}
 
 }
 
-func (s *dockerPushHook) doDockerImagePush(proj *brigade.Project, commit string, payload, brigadeJS []byte) error {
+func (s *dockerPushHook) doDockerImagePush(proj *brigade.Project, commit string, payload []byte) error {
 	b := &brigade.Build{
 		ProjectID: proj.ID,
 		Type:      "image_push",
 		Provider:  "dockerhub",
 		Commit:    commit,
 		Payload:   payload,
-		Script:    brigadeJS,
 	}
 	return s.store.CreateBuild(b)
 }
