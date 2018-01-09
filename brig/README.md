@@ -15,7 +15,7 @@ This example program sends a Brigade JavaScript file to a brigade server.
 Example usage:
 
 ```console
-$ brig my-org/my-project
+$ brig run my-org/my-project
 ```
 
 The above will load the local `./brigade.js` to Brigade and execute it within the project
@@ -35,7 +35,7 @@ events.on("exec", () => {
 A more complete example:
 
 ```console
-$ brig --file my/brigade.js --ns my-builds technosophos/myproject
+$ brig run --file my/brigade.js --namespace my-builds technosophos/myproject
 ```
 
 The above looks for `./my/brigade.js` and sends it to the Brigade server inside of
