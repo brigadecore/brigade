@@ -6,7 +6,7 @@ set -x
 : "${VCS_REPO:?}"
 : "${VCS_REVISION:?}"
 
-git clone --depth=50 "${VCS_REPO}" "${VCS_LOCAL_PATH}"
+git clone "${VCS_REPO}" "${VCS_LOCAL_PATH}"
 cd "${VCS_LOCAL_PATH}"
 
 git fetch origin "${VCS_REVISION}"
