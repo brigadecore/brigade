@@ -6,6 +6,10 @@ set -x
 : "${VCS_REPO:?}"
 : "${VCS_REVISION:?}"
 
+if sha=$(git ls-remote --exit-code "${VCS_REPO}" "${VCS_REVISION}" | cut -f1); then
+  VCS_REVISION="${sha}"
+fi
+
 git clone --depth=50 "${VCS_REPO}" "${VCS_LOCAL_PATH}"
 cd "${VCS_LOCAL_PATH}"
 
