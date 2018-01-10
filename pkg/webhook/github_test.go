@@ -107,6 +107,16 @@ func TestGithubHandler(t *testing.T) {
 			commit:      "9049f1265b7d61be4a8904a9a27120d2064dab3b",
 			payloadFile: "testdata/github-commit_comment-payload.json",
 		},
+		{
+			event:       "deployment",
+			commit:      "9049f1265b7d61be4a8904a9a27120d2064dab3b",
+			payloadFile: "testdata/github-deployment-payload.json",
+		},
+		{
+			event:       "deployment_status",
+			commit:      "9049f1265b7d61be4a8904a9a27120d2064dab3b",
+			payloadFile: "testdata/github-deployment_status-payload.json",
+		},
 	}
 
 	for _, tt := range tests {
