@@ -129,7 +129,11 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 		return err
 	}
 
-	podName := fmt.Sprintf("brigade-worker-%s-%s", b.ID, b.Commit[0:8])
+	shortRef := b.Commit
+	if len(shortRef) > 8 {
+		shortRef = shortRef[0:8]
+	}
+	podName := fmt.Sprintf("brigade-worker-%s-%s", b.ID, shortRef)
 
 	if err := a.waitForWorker(b.ID); err != nil {
 		return err
