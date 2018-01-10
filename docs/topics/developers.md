@@ -33,9 +33,9 @@ Follow these steps when cloning the brigade repository to use an existing `GOPAT
 - `$ cd $(go env GOPATH)/src/github.com/Azure/brigade`
 
 **Note**: this leaves you at the tip of **master** in the repository where active development
-is happening. Likely you want to checkout the most recent stable tag:
+is happening. You might prefer to checkout the most recent stable tag:
 
-- `$ git checkout v0.7.0`
+- `$ git checkout v0.8.0`
 
 ## Building Source
 
