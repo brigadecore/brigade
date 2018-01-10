@@ -1071,6 +1071,72 @@ what containers are available in this engine.
 > you can disable jobs from being able to mount this by disabling it in the project's settings.
 > If you're using the default project settings, this feature is disabled.
 
+#### Docker-in-Docker
+
+For security reasons, it is recommended that you use Docker-in-Docker (DinD) instead of using
+the Docker socket directly.
+
+Here is an example job definition that uses the official Docker image to do a Docker
+build:
+
+```javascript
+var driver = project.secrets.DOCKER_DRIVER || "overlay"
+
+// Build and push a Docker image.
+const docker = new Job("dind", "docker:stable-dind")
+docker.privileged = true;
+docker.env = {
+  DOCKER_DRIVER: driver
+}
+docker.tasks = [
+  "dockerd-entrypoint.sh &",
+  "sleep 20",
+  "cd /src",
+  "docker pull deis/kashti:canary || true",
+  "docker build -t deis/kashti:canary ."
+];
+
+docker.run()
+```
+
+This method is slower than using the Docker socket directly, but it is safer.
+
+The Kashti `brigade.js` does a Docker build, and then (if configured) a push to the
+upstream Docker registry:
+
+```javascript
+var driver = project.secrets.DOCKER_DRIVER || "overlay"
+
+// Build and push a Docker image.
+const docker = new Job("dind", "docker:stable-dind")
+docker.privileged = true;
+docker.env = {
+  DOCKER_DRIVER: driver
+}
+docker.tasks = [
+  "dockerd-entrypoint.sh &",
+  "sleep 20",
+  "cd /src",
+  "docker pull deis/kashti:canary || true",
+  "docker build -t deis/kashti:canary ."
+];
+
+// If a Docker user is specified, we push.
+if (project.secrets.DOCKER_USER) {
+  docker.env.DOCKER_USER = project.secrets.DOCKER_USER
+  docker.env.DOCKER_PASS = project.secrets.DOCKER_PASS
+  docker.env.DOCKER_REGISTRY = project.secrets.DOCKER_REGISTRY
+  docker.tasks.push("docker login -u $DOCKER_USER -p $DOCKER_PASS $DOCKER_REGISTRY")
+  docker.tasks.push("docker push deis/kashti:canary")
+} else {
+  console.log("skipping push. DOCKER_USER is not set.");
+}
+docker.run()
+```
+
+In the above, if the docker credentials are set for the project, a `docker push`
+is performed on the image just built.
+
 ## Jobs and Return Values
 
 We have seen already that when we run a job, it will return a JavaScript Promise.
@@ -1145,6 +1211,108 @@ With carefully constructed containers, you can get sophisticated and send struct
 data like JSON from one job to another. But remember that what is captured is the
 standard output (STDOUT) of the job, which is often where log data will also be sent.
 Sometimes it makes more sense to write structured files to the shared storage instead.
+
+## Advanced Event Handling
+
+We have looked at ways of declaring simple event handlers, but it is possible to
+chain together events. One event handler can trigger another event:
+
+```javascript
+const {events} = require("brigadier")
+
+events.on("exec", function(e, project) {
+  events.emit("next", e, project)
+})
+
+events.on("next", () => {
+  console.log("fired 'next' event")
+})
+```
+[brigade-18.js](examples/brigade-18.js)
+
+The example above uses `events.emit` to fire a new event. In that example, we
+re-use an existing event, which is not necessarily the best practice. A more
+reliable way of triggering an event is to create a new `BrigadeEvent` and fire
+that event:
+
+```javascript
+const {events} = require("brigadier")
+
+events.on("exec", function(e, project) {
+  const e2 = {
+    type: "next",
+    provider: "exec-handler",
+    buildID: e.buildID,
+    workerID: e.workerID,
+    cause: {event: e}
+  }
+  events.fire(e2, project)
+})
+
+events.on("next", (e) => {
+  console.log(`fired ${e.type} caused by ${e.cause.event.type}`)
+})
+```
+[brigade-19.js](examples/brigade-19.js)
+
+In this example, `e2` is a new event. Any new event _must_ have the following fields:
+
+- `type`: The name of teh event to fire
+- `provider`: A name to indicate what fired the event
+- `buildID`: The Build ID
+- `workerID`: The Worker ID
+
+When chaining events, it is considered good practice to also include the original
+event as `cause: {event: e}`.
+
+It is also possible to register more than one event handler for a single event.
+In such cases, _all_ of the matching event handlers will be called.
+
+```javascript
+const {events} = require("brigadier")
+
+events.on("exec", () => {
+  console.log("first")
+})
+
+events.on("exec", () => {
+  console.log("second")
+})
+```
+[brigade-20.js](examples/brigade-20.js)
+
+In this case, when the `exec` event is run, _both handlers will execute in the
+order they are defined_.
+
+Finally, it is also possible to nest event handlers so that one handler is only
+registered when another event is called.
+
+```javascript
+const {events} = require("brigadier")
+
+events.on("exec", (e, project) => {
+  // This is only registered when 'exec' is called.
+  events.on("next", () => {
+    console.log("fired 'next' event")
+  })
+  events.emit("next", e, project)
+})
+
+events.on("exec2", (e, project) => {
+  events.emit("next", e, project)
+})
+```
+[brigade-21.js](examples/brigade-21.js)
+
+In the example above, the `next` event handler is _only registered_ if the
+`exec` event is run. Triggering the event `exec` will also trigger the wrapped
+`next` handler. But triggering `exec2` will NOT trigger the defined `next` handler.
+
+> Note that `events.on("next"...)` must be specified before `events.emit("next"...)`
+> is called.
+
+This particular feature can be useful when writing `after` and `error` handlers
+(neither of which need direct invocations with `emit` or `fire`).
 
 ## Conclusion
 
