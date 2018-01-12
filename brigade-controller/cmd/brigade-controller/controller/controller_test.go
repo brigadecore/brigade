@@ -112,6 +112,12 @@ func TestController(t *testing.T) {
 	if ic.VolumeMounts[0].Name != sidecarVolumeName {
 		t.Errorf("expected sidecar volume %q, got %q", sidecarVolumeName, ic.VolumeMounts[0].Name)
 	}
+
+	if os, ok := pod.Spec.NodeSelector["beta.kubernetes.io/os"]; !ok {
+		t.Error("No OS node selector found")
+	} else if os != "linux" {
+		t.Errorf("Unexpected node selector: %s", os)
+	}
 }
 
 func TestController_WithScript(t *testing.T) {

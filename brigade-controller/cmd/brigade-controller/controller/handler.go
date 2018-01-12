@@ -73,6 +73,9 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 
 	podSpec := v1.PodSpec{
 		ServiceAccountName: serviceAccount,
+		NodeSelector: map[string]string{
+			"beta.kubernetes.io/os": "linux",
+		},
 		Containers: []v1.Container{{
 			Name:            "brigade-runner",
 			Image:           c.WorkerImage,
