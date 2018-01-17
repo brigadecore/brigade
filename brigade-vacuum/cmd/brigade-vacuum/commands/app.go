@@ -102,7 +102,14 @@ func kubeConfigPath() string {
 	if v, ok := os.LookupEnv(envKubeConfig); ok {
 		return v
 	}
-	return os.ExpandEnv("$HOME/.kube/config")
+	defConfig := os.ExpandEnv("$HOME/.kube/config")
+	if _, err := os.Stat(defConfig); err == nil {
+		fmt.Printf("Using config from %s\n", defConfig)
+		return defConfig
+	}
+
+	// If we get here, we might be in-Pod.
+	return ""
 }
 
 func ns() string {

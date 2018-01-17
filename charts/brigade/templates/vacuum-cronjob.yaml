@@ -14,10 +14,15 @@ spec:
   jobTemplate:
     spec:
       template:
+        metadata:
+          labels:
+            app: {{ template "brigade.fullname" . }}
+            role: vacuum
         spec:
           containers:
           - name: {{ .Chart.Name }}-vacuum
             image: "{{ .Values.vacuum.registry }}/{{ .Values.vacuum.name }}:{{ default .Chart.AppVersion .Values.vacuum.tag }}"
+            imagePullPolicy: {{ default "IfNotPresent" .Values.vacuum.pullPolicy }}
             env:
             - name: VACUUM_AGE
               value: {{ default "" .Values.vacuum.age | quote }}
