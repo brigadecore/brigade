@@ -1,6 +1,7 @@
 const process = require("process")
 const fs = require("fs")
 
+// Worker should always set both env vars. The defaults are for local testing.
 const script = process.env.BRIGADE_SCRIPT || "/etc/brigade/script"
 const vcsScript = process.env.BRIGADE_VCS_SCRIPT || "/vcs/brigade.js"
 
