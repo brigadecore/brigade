@@ -74,6 +74,13 @@ describe("job", function() {
           assert.deepEqual(j.tasks, ["a", "b", "c"])
         })
       })
+      context("when serviceAccount is supplied", function() {
+        it("sets serviceAccount property", function() {
+          j = new mock.MockJob("myName", "alpine:3.4", [], true)
+          j.serviceAccount = "svcAccount"
+          assert.equal(j.serviceAccount, "svcAccount")
+        })
+      })
     })
     describe("#podName", function() {
       beforeEach(function(){

@@ -184,6 +184,7 @@ Properties of `Job`
 - `cache: JobCache`: Preferences for the job's cache
 - `storage: JobStorage`: Preferences for the way this job attaches to the build storage
 - `docker: JobDockerMount`: Preferences for mounting a Docker socket
+- `serviceAccount: string`: The name of the service account to use (if you need to override the default).
 
 #### The `job.podName()` method
 
