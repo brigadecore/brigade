@@ -22,7 +22,7 @@ metadata:
     heritage: "{{ .Release.Service }}"
 rules:
 - apiGroups: [""] # "" indicates the core API group
-  resources: ["pods", "secrets", "persistentvolumeclaims"]
+  resources: ["pods", "secrets", "persistentvolumeclaims", "pods/log"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---
 kind: RoleBinding
