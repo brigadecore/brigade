@@ -21,7 +21,7 @@ const expiresInMSec = 1000 * 60 * 60 * 24 * 30;
 
 const defaultClient = kubernetes.Config.defaultClient();
 
-const serviceAccount = "brigade-worker";
+const defaultServiceAccount = "brigade-worker";
 
 const logger = new ContextLogger("k8s");
 
@@ -139,12 +139,15 @@ export class JobRunner implements jobs.JobRunner {
   event: BrigadeEvent;
   job: jobs.Job;
   client: kubernetes.Core_v1Api;
+  serviceAccount: string;
 
   constructor(job: jobs.Job, e: BrigadeEvent, project: Project) {
     this.event = e;
     this.job = job;
     this.project = project;
     this.client = defaultClient;
+
+    this.serviceAccount = job.serviceAccount || defaultServiceAccount
 
     // $JOB-$TIME-$GITSHA
     let commit = e.commit || "master";
@@ -153,7 +156,7 @@ export class JobRunner implements jobs.JobRunner {
     let runnerName = this.name;
 
     this.secret = newSecret(secName);
-    this.runner = newRunnerPod(runnerName, job.image, job.imageForcePull);
+    this.runner = newRunnerPod(runnerName, job.image, job.imageForcePull, this.serviceAccount);
 
     // Experimenting with setting a deadline field after which something
     // can clean up existing builds.
@@ -562,7 +565,8 @@ function sidecarSpec(
 function newRunnerPod(
   podname: string,
   brigadeImage: string,
-  imageForcePull: boolean
+  imageForcePull: boolean,
+  serviceAccount: string,
 ): kubernetes.V1Pod {
   let pod = new kubernetes.V1Pod();
   pod.metadata = new kubernetes.V1ObjectMeta();

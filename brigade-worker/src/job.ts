@@ -163,6 +163,17 @@ export abstract class Job {
    */
   public privileged: boolean = false;
 
+  /** The account identity to be used when running this job.
+   * This is an optional way to override the build-wide service account. If it is
+   * not specified, the main worker service account will be used.
+   *
+   * Different Brigade worker implementations may choose to honor or ignore this
+   * for security or configurability reasons.
+   *
+   * See https://github.com/Azure/brigade/issues/251
+   */
+  public serviceAccount: string;
+
   /**
    * host expresses expectations about the host the job will run on.
    */

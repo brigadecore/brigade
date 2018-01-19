@@ -117,6 +117,21 @@ describe("k8s", function() {
           assert.equal(jr.secret.metadata.labels.commit, "master")
         })
       })
+      context("when service account is specified", function() {
+        beforeEach(function() {
+          j.serviceAccount = "svcAccount"
+        })
+        it("sets a service account name for the pod", function() {
+          let jr= new k8s.JobRunner(j, e, p)
+          assert.equal(jr.runner.spec.serviceAccountName, "svcAccount")
+        })
+      })
+      context("when no service account is specified", function() {
+        it("sets a service account name to 'brigade-worker'", function() {
+          let jr= new k8s.JobRunner(j, e, p)
+          assert.equal(jr.runner.spec.serviceAccountName, "brigade-worker")
+        })
+      })
       context("when no tasks are supplied", function() {
         beforeEach(function() {
           j.tasks = []
