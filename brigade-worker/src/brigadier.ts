@@ -54,6 +54,7 @@ export class Job extends jobImpl.Job {
     this._podName = jr.name;
     return jr.run().catch(err => {
       // Wrap the message to give clear context.
+      console.error(err)
       let msg = `job ${this.name}(${jr.name}): ${err}`;
       return Promise.reject(new Error(msg));
     });
