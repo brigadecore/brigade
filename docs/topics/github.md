@@ -18,7 +18,7 @@ following events:
 - `status`: Fired when a status change happens on a commit.
 - `commit_comment`: Fired when a comment is added to a commit.
 
-You must be running `brigade-gateway` in a way that makes
+You must be running `brigade-github-gateway` in a way that makes
 it available to GitHub. (For example, assign it a publicly routable IP and domain name.)
 
 ## Configuring Your Project

@@ -5,9 +5,9 @@ DOCKER_REGISTRY    ?= deis
 DOCKER_BUILD_FLAGS :=
 LDFLAGS            :=
 
-BINS        = brigade-api brigade-controller brigade-gateway brig brigade-cr-gateway brigade-vacuum
-IMAGES      = brigade-api brigade-controller brigade-gateway brigade-worker git-sidecar brigade-cr-gateway brigade-vacuum
-DOCKER_BINS = brigade-api brigade-controller brigade-gateway brigade-cr-gateway brigade-vacuum
+BINS        = brigade-api brigade-controller brigade-github-gateway brig brigade-cr-gateway brigade-vacuum
+IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-worker git-sidecar brigade-cr-gateway brigade-vacuum
+DOCKER_BINS = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum
 
 GIT_TAG   = $(shell git describe --tags --always 2>/dev/null)
 VERSION   ?= ${GIT_TAG}
