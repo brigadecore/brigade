@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"fmt"
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,12 +58,16 @@ func (c *Controller) syncSecret(secret *v1.Secret) error {
 }
 
 const (
-	volumeName        = "brigade-build"
-	volumeMountPath   = "/etc/brigade"
-	sidecarVolumeName = "vcs-sidecar"
-	sidecarVolumePath = "/vcs"
-	vcsSidecarKey     = "vcsSidecar"
-	serviceAccount    = "brigade-worker"
+	volumeName               = "brigade-build"
+	volumeMountPath          = "/etc/brigade"
+	sidecarVolumeName        = "vcs-sidecar"
+	sidecarVolumePath        = "/vcs"
+	vcsSidecarKey            = "vcsSidecar"
+	serviceAccount           = "brigade-worker"
+	workerImageRegistryKey   = "worker.registry"
+	workerImageNameKey       = "worker.name"
+	workerImageTagKey        = "worker.tag"
+	workerImagePullPolicyKey = "worker.pullPolicy"
 )
 
 func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
@@ -71,6 +76,8 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 		return secretRef(name, key, secret)
 	}
 
+	image, pullPolicy := c.workerImageConfig(project)
+
 	podSpec := v1.PodSpec{
 		ServiceAccountName: serviceAccount,
 		NodeSelector: map[string]string{
@@ -78,8 +85,8 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 		},
 		Containers: []v1.Container{{
 			Name:            "brigade-runner",
-			Image:           c.WorkerImage,
-			ImagePullPolicy: v1.PullPolicy(c.WorkerPullPolicy),
+			Image:           image,
+			ImagePullPolicy: v1.PullPolicy(pullPolicy),
 			Command:         []string{"yarn", "start"},
 			VolumeMounts: []v1.VolumeMount{
 				{
@@ -145,7 +152,7 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 		pod.Spec.InitContainers = []v1.Container{{
 			Name:            "vcs-sidecar",
 			Image:           string(image),
-			ImagePullPolicy: v1.PullPolicy(c.WorkerPullPolicy),
+			ImagePullPolicy: v1.PullPolicy(pullPolicy),
 			VolumeMounts: []v1.VolumeMount{{
 				Name:      sidecarVolumeName,
 				MountPath: sidecarVolumePath,
@@ -163,6 +170,34 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 		}}
 	}
 	return pod, nil
+}
+
+func (c *Controller) workerImageConfig(project *v1.Secret) (string, string) {
+	splits := strings.Split(c.WorkerImage, ":")
+	tag := splits[1]
+	splits = strings.Split(splits[0], "/")
+	last := len(splits) - 1
+	name := splits[last]
+	splits = splits[:last]
+	registry := strings.Join(splits, "/")
+	if n, ok := project.Data[workerImageNameKey]; ok && len(n) > 0 {
+		name = string(n)
+	}
+	if t, ok := project.Data[workerImageTagKey]; ok && len(t) > 0 {
+		tag = string(t)
+	}
+	if r, ok := project.Data[workerImageRegistryKey]; ok && len(r) > 0 {
+		registry = string(r)
+	}
+
+	image := fmt.Sprintf("%s/%s:%s", registry, name, tag)
+
+	pullPolicy := c.WorkerPullPolicy
+	if p, ok := project.Data[workerImagePullPolicyKey]; ok && len(p) > 0 {
+		pullPolicy = string(p)
+	}
+
+	return image, pullPolicy
 }
 
 // secretRef generate a SeccretKeyRef env var entry if `kye` is present in `secret`.

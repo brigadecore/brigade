@@ -43,3 +43,37 @@ func TestProjectSecrets(t *testing.T) {
 		t.Error("Project.Repo.SSHKey should not be exported")
 	}
 }
+
+func TestProjectWorkerConfig(t *testing.T) {
+	proj := Project{
+		Worker: WorkerConfig{
+			Registry:   "deis",
+			Name:       "brigade-worker",
+			Tag:        "canary",
+			PullPolicy: "Always",
+		},
+	}
+
+	data, err := json.Marshal(&proj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var got Project
+	if err := json.Unmarshal(data, &got); err != nil {
+		t.Fatal(err)
+	}
+
+	if got.Worker.Registry != "deis" {
+		t.Errorf("unexpected Project.Worker.Registry: %s != deis", got.Worker.Registry)
+	}
+	if got.Worker.Name != "brigade-worker" {
+		t.Errorf("unexpected Project.Worker.Name: %s != brigade-worker", got.Worker.Name)
+	}
+	if got.Worker.Tag != "canary" {
+		t.Errorf("unexpected Project.Worker.Tag: %s != canary", got.Worker.Tag)
+	}
+	if got.Worker.PullPolicy != "Always" {
+		t.Errorf("unexpected Project.Worker.PullPolicy: %s != Always", got.Worker.PullPolicy)
+	}
+}

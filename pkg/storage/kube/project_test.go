@@ -13,12 +13,16 @@ func TestConfigureProject(t *testing.T) {
 			Name: "brigadeTest",
 		},
 		Data: map[string][]byte{
-			"repository":   []byte("myrepo"),
-			"sharedSecret": []byte("mysecret"),
-			"github.token": []byte("like a fish needs a bicycle"),
-			"sshKey":       []byte("hello$world"),
-			"namespace":    []byte("zooropa"),
-			"secrets":      []byte(`{"bar":"baz","foo":"bar"}`),
+			"repository":        []byte("myrepo"),
+			"sharedSecret":      []byte("mysecret"),
+			"github.token":      []byte("like a fish needs a bicycle"),
+			"sshKey":            []byte("hello$world"),
+			"namespace":         []byte("zooropa"),
+			"secrets":           []byte(`{"bar":"baz","foo":"bar"}`),
+			"worker.registry":   []byte("deis"),
+			"worker.name":       []byte("brigade-worker"),
+			"worker.tag":        []byte("canary"),
+			"worker.pullPolicy": []byte("Always"),
 			// Intentionally skip cloneURL, test that this is ""
 		},
 	}
@@ -55,6 +59,18 @@ func TestConfigureProject(t *testing.T) {
 		t.Fatal("unexpected key")
 	} else if v != "" {
 		t.Fatal("Expected empty string for non-existent key")
+	}
+	if proj.Worker.Registry != "deis" {
+		t.Fatalf("unexpected Worker.Registry: %s != deis", proj.Worker.Registry)
+	}
+	if proj.Worker.Name != "brigade-worker" {
+		t.Fatalf("unexpected Worker.Name: %s != brigade-worker", proj.Worker.Name)
+	}
+	if proj.Worker.Tag != "canary" {
+		t.Fatalf("unexpected Worker.Tag: %s != canary", proj.Worker.Tag)
+	}
+	if proj.Worker.PullPolicy != "Always" {
+		t.Fatalf("unexpected Worker.PullPolicy: %s != Always", proj.Worker.PullPolicy)
 	}
 }
 
