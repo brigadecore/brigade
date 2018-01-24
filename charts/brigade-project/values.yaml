@@ -68,3 +68,12 @@ allowPrivilegedJobs: "true"
 # OPTIONAL: Use this to allow host mounted docker sockets in your jobs.
 # This is a big security risk if your project is public-facing; enable at your own risk.
 # allowHostMounts: "true"
+
+# Kubernetes-specific configuration options.
+kubernetes:
+  # OPTIONAL: Override the storage class used for storing job caches. This must
+  # point to a readWriteMany volume provisioner.
+  #cacheStorageClass: default
+  # OPTIONAL: Override the storage class used for build storage. This must
+  # point to a readWriteMany volume provisioner.
+  #buildStorageClass: default
