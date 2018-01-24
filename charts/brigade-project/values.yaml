@@ -54,6 +54,8 @@ secrets: {}
 # OPTIONAL: vcsSidecar is the image that fetches a repo from a VCS
 # vcsSidecar: "deis/git-sidecar:latest"
 
+# OPTIONAL: buildStorageSize is the size of the shared storage space used by the jobs
+# buildStorageSize: "50Mi"
 
 # Allow Jobs to run in privileged mode. This will allow features like
 # Docker-in-Docker. This must be set to true before turning allowHostMounts

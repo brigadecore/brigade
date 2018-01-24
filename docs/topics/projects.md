@@ -131,6 +131,7 @@ repo:
 kubernetes:
   namespace: default
   vcssidecar: Azure/git-sidecar:latest
+  buildStorageSize: "50Mi"
 sharedsecret: FakeSharedSecret
 github:
   token: 76faketoken789

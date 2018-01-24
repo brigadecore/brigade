@@ -661,6 +661,7 @@ export function secretToProject(
     name: b64dec(secret.data.repository),
     kubernetes: {
       namespace: secret.metadata.namespace || ns,
+      buildStorageSize: "50Mi",
       vcsSidecar: ""
     },
     repo: {
@@ -673,6 +674,9 @@ export function secretToProject(
   };
   if (secret.data.vcsSidecar) {
     p.kubernetes.vcsSidecar = b64dec(secret.data.vcsSidecar);
+  }
+  if (secret.data.buildStorageSize) {
+    p.kubernetes.buildStorageSize = b64dec(secret.data.buildStorageSize);
   }
   if (secret.data.cloneURL) {
     p.repo.cloneURL = b64dec(secret.data.cloneURL);

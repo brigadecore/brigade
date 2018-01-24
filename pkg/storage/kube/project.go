@@ -56,6 +56,7 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 
 	proj.Kubernetes.Namespace = def(secret.Data["namespace"], namespace)
 	proj.Kubernetes.VCSSidecar = def(secret.Data["vcsSidecar"], "")
+	proj.Kubernetes.BuildStorageSize = def(secret.Data["buildStorageSize"], "50Mi")
 
 	proj.Repo = brigade.Repo{
 		Name: def(secret.Data["repository"], proj.Name),

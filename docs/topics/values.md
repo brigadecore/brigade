@@ -175,6 +175,10 @@ sidecar. A sidecar image is given access to a few specific variables, including
 `cloneURL` and `sshKey`. It is expected to make the data at the `cloneURL`'s source
 available locally.
 
+### `buildStorageSize` (OPTIONAL)
+
+This allows one to set the size of the build shared storage space used by the jobs.
+
 ### `allowPrivilegedJobs` (REQUIRED)
 
 Determine whether the jobs in this project are allowed to go into privileged mode.

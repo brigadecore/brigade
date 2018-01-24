@@ -16,7 +16,8 @@ export function mockProject(): Project {
     },
     kubernetes: {
       namespace: "default",
-      vcsSidecar: "deis/git-sidecar:latest"
+      vcsSidecar: "deis/git-sidecar:latest",
+      buildStorageSize: "50Mi"
     },
     allowPrivilegedJobs: true,
     allowHostMounts: false,

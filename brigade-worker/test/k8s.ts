@@ -331,7 +331,8 @@ function mockSecret(): kubernetes.V1Secret {
     "github.token": "cHJldGVuZCBwYXNzd29yZAo=",
     "repository": "Z2l0aHViLmNvbS9kZWlzL3Rlc3QtcHJpdmF0ZS10ZXN0YmVk",
     "secrets": "eyJoZWxsbyI6ICJ3b3JsZCJ9Cg==",
-    "vcsSidecar": "dmNzLWltYWdlOmxhdGVzdA=="
+    "vcsSidecar": "dmNzLWltYWdlOmxhdGVzdA==",
+    "buildStorageSize": "NTBNaQ=="
   }
   s.metadata.annotations = {
     "projectName": "deis/test-private-testbed"

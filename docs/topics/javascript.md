@@ -243,6 +243,7 @@ A KubernetesConfig object has the following properties:
 - `namespace: string`: The namespace in which Kubernetes objects are created.
 - `vcsSidecar: string`: The name of the sidecar image that fetches the repository.
   By default, this is the Git sidecar that fetches git repositories.
+- `buildStorageSize: string`: The size of the build shared storage space used by the build jobs.
 
 ### The `Result` class
 

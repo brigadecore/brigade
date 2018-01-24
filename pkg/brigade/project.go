@@ -78,4 +78,6 @@ type Kubernetes struct {
 	Namespace string `json:"namespace"`
 	// VCSSidecar is the image name/tag for the sidecar that pulls VCS data
 	VCSSidecar string `json:"vcsSidecar"`
+	// BuildStorageSize is the size of the build shared storage used by the jobs
+	BuildStorageSize string `json:"buildStorageSize"`
 }
