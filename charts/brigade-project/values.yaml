@@ -8,6 +8,9 @@ repository: "github.com/deis/empty-testbed"
 # You may set this to "" for no clone URL.
 cloneURL: "https://github.com/deis/empty-testbed.git"
 
+# OPTIONAL: initGitSubmodules will recursively initialize all submodules in the repository. Default: false
+# initGitSubmodules: "false"
+
 # Used by GitHub and other services to compute hook HMACs.
 sharedSecret: "IBrakeForSeaBeasts"
 

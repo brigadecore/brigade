@@ -89,6 +89,10 @@ a copy of the repository for each job in the build. For example, the default
 VCS sidecar, `git-sidecar`, will use the `cloneURL` to fetch a shallow clone
 of the git repository.
 
+### `initGitSubmodules` (OPTIONAL)
+
+Determine if git will initialize all submodules in the repository. Default: false
+
 ### `sharedSecret` (OPTIONAL)
 
 

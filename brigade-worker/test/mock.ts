@@ -12,7 +12,8 @@ export function mockProject(): Project {
     repo: {
       name: "deis/empty-testbed",
       cloneURL: "https://github.com/deis/empty-testbed.git",
-      token: "supersecret"
+      token: "supersecret",
+      initGitSubmodules: false
     },
     kubernetes: {
       namespace: "default",
