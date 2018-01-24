@@ -19,14 +19,20 @@ import uuid
 
 import app
 
+# Helper
+
+def bytes_to_str(b):
+    return ''.join(chr(x) for x in (b))
+    
 class AppTestCase(unittest.TestCase):
 
     def setUp(self):
         self.client = app.app.test_client()
 
-    def test_uuid_generated(self):
+
+    def test_brigade_ci_meetup(self):
         resp = self.client.get('/')
-        assert uuid.UUID(resp.data)
+        assert uuid.UUID(bytes_to_str(resp.data))
 ```
 
 Now we can run the test using a minimal basic setup script using setuptools, a built-in Python package that allows developers to more easily build and distribute Python packages.
@@ -128,8 +134,9 @@ events.on("push", function(e, project) {
 
   // Now we want it to run these commands in order:
   node.tasks = [
-    "cd /src/",
+    "cd /src/app",
     "pip install -r requirements.txt",
+    "cd /src/",
     "python setup.py test"
   ]
 
