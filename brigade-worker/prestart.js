@@ -7,9 +7,9 @@ const vcsScript = process.env.BRIGADE_VCS_SCRIPT || "/vcs/brigade.js"
 
 try {
   var data = loadScript(script)
-  let wrapper = "const {whitelistRequire} = require('./require');((require) => {" +
+  let wrapper = "const {overridingRequire} = require('./require');((require) => {" +
     data.toString() +
-    "})(whitelistRequire)"
+    "})(overridingRequire)"
   fs.writeFile("dist/brigade.js", wrapper, () => {
     console.log("prestart: src/brigade.js written")
   })
