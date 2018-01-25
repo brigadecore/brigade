@@ -12,11 +12,13 @@ export function mockProject(): Project {
     repo: {
       name: "deis/empty-testbed",
       cloneURL: "https://github.com/deis/empty-testbed.git",
-      token: "supersecret"
+      token: "supersecret",
+      initGitSubmodules: false
     },
     kubernetes: {
       namespace: "default",
-      vcsSidecar: "deis/git-sidecar:latest"
+      vcsSidecar: "deis/git-sidecar:latest",
+      buildStorageSize: "50Mi"
     },
     allowPrivilegedJobs: true,
     allowHostMounts: false,

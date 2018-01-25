@@ -823,7 +823,8 @@ secrets (environment variables or credentials) that are available to us.
   "name":"github.com/deis/empty-testbed",
   "kubernetes":{
     "namespace":"default",
-    "vcsSidecar":"deis/git-sidecar:latest"
+    "vcsSidecar":"deis/git-sidecar:latest",
+    "buildStorageSize": "50Mi"
   },
   "repo":{
     "name":"deis/empty-testbed",
@@ -841,6 +842,7 @@ secrets (environment variables or credentials) that are available to us.
   - `namespace` is the namespace in which Brigade runs
   - `vcsSidecar` is the container image that Brigade uses internally to check out your VCS
     repository.
+  - `buildStorageSize` is the size of the build shared storage space used by the jobs.
 - `repo` stores information about your VCS repository.
   - `name` is the name of the repo. GitHub projects are named as org/project.
   - `cloneURL` is the URL Brigade will use to clone or fetch the repository.

@@ -530,6 +530,7 @@ function sidecarSpec(
 ): kubernetes.V1Container {
   var imageTag = image;
   let repoURL = project.repo.cloneURL;
+  let initGitSubmodules = project.repo.initGitSubmodules;
 
   if (!imageTag) {
     imageTag = "deis/git-sidecar:latest";
@@ -538,6 +539,7 @@ function sidecarSpec(
   let spec = new kubernetes.V1Container();
   (spec.name = "vcs-sidecar"),
     (spec.env = [
+      envVar("INIT_GIT_SUBMODULES", initGitSubmodules.toString()),
       envVar("VCS_REPO", repoURL),
       envVar("VCS_LOCAL_PATH", local),
       envVar("VCS_REVISION", e.commit),
@@ -661,11 +663,13 @@ export function secretToProject(
     name: b64dec(secret.data.repository),
     kubernetes: {
       namespace: secret.metadata.namespace || ns,
+      buildStorageSize: "50Mi",
       vcsSidecar: ""
     },
     repo: {
       name: secret.metadata.annotations["projectName"],
-      cloneURL: null
+      cloneURL: null,
+      initGitSubmodules: false
     },
     secrets: {},
     allowPrivilegedJobs: true,
@@ -674,8 +678,14 @@ export function secretToProject(
   if (secret.data.vcsSidecar) {
     p.kubernetes.vcsSidecar = b64dec(secret.data.vcsSidecar);
   }
+  if (secret.data.buildStorageSize) {
+    p.kubernetes.buildStorageSize = b64dec(secret.data.buildStorageSize);
+  }
   if (secret.data.cloneURL) {
     p.repo.cloneURL = b64dec(secret.data.cloneURL);
+  }
+  if (secret.data.initGitSubmodules) {
+    p.repo.initGitSubmodules = b64dec(secret.data.initGitSubmodules) == "true";
   }
   if (secret.data.secrets) {
     p.secrets = JSON.parse(b64dec(secret.data.secrets));

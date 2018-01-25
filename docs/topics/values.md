@@ -89,6 +89,10 @@ a copy of the repository for each job in the build. For example, the default
 VCS sidecar, `git-sidecar`, will use the `cloneURL` to fetch a shallow clone
 of the git repository.
 
+### `initGitSubmodules` (OPTIONAL)
+
+Determine if git will initialize all submodules in the repository. Default: false
+
 ### `sharedSecret` (OPTIONAL)
 
 
@@ -174,6 +178,10 @@ This allows you to replace the default `git-sidecar` with your own custom VCS
 sidecar. A sidecar image is given access to a few specific variables, including
 `cloneURL` and `sshKey`. It is expected to make the data at the `cloneURL`'s source
 available locally.
+
+### `buildStorageSize` (OPTIONAL)
+
+This allows one to set the size of the build shared storage space used by the jobs.
 
 ### `allowPrivilegedJobs` (REQUIRED)
 

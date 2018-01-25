@@ -115,6 +115,11 @@ export interface Repository {
    * token is the OAuth2 token for Git interactions over HTTPS
    */
   token?: string;
+
+  /**
+   * initGitSubmodules is a flag that controls if the cloned repository should also have it's submodules initialized (if any).
+   */
+  initGitSubmodules: boolean
 }
 
 /**
@@ -129,6 +134,10 @@ export interface KubernetesConfig {
    * vcsSidecare is the image name for the sidecar container that resolves VCS operations.
    */
   vcsSidecar: string;
+  /**
+   *  buildStorageSize is the size of the build shared storage space used by the jobs
+   */
+  buildStorageSize: string;
 }
 
 /**

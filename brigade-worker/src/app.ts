@@ -162,7 +162,7 @@ export class App {
       .then(p => {
         this.proj = p;
         // Setup storage
-        return this.buildStorage.create(e, p, "50Mi");
+        return this.buildStorage.create(e, p, p.kubernetes.buildStorageSize);
       })
       .then(() => {
         brigadier.fire(e, this.proj);

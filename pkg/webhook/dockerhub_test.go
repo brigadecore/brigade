@@ -17,6 +17,7 @@ func TestDoDockerImagePush(t *testing.T) {
 		Kubernetes: brigade.Kubernetes{
 			Namespace:  "namespace",
 			VCSSidecar: "sidecar:latest",
+            BuildStorageSize: "50Mi",
 		},
 		Secrets: map[string]string{
 			"mysecret": "value",
