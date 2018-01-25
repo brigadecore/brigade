@@ -61,6 +61,12 @@ api:
     type: ClusterIP
     externalPort: 7745
     internalPort: 7745
+  # Configure liveness probes except `httpGet` and the belongings
+  #livenessProbe:
+  #  initialDelaySeconds: 20
+  # Configure readiness probes except `httpGet` and the belongings
+  #readinessProbe:
+  #  initialDelaySeconds: 20
 
 # worker is the JavaScript worker. These are created on demand by the controller.
 worker:
