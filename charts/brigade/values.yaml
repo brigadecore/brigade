@@ -73,7 +73,7 @@ worker:
 gw:
   enabled: true
   registry: deis
-  name: brigade-gateway
+  name: brigade-github-gateway
   #tag:
   #pullPolicy: IfNotPresent
   #buildForkedPullRequests: true

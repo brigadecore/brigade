@@ -27,7 +27,7 @@ func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
 	flag.StringVar(&namespace, "namespace", defaultNamespace(), "kubernetes namespace")
-	flag.StringVar(&gatewayPort, "gateway-port", defaultGatewayPort(), "TCP port to use for brigade-gateway")
+	flag.StringVar(&gatewayPort, "gateway-port", defaultGatewayPort(), "TCP port to use for brigade-github-gateway")
 	flag.BoolVar(&buildForkedPullRequests, "build-forked-pull-requests", defaultBuildForkedPRs(), "build forked pull requests")
 }
 

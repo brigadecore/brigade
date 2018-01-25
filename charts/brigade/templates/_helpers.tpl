@@ -16,7 +16,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "brigade.gw.fullname" -}}
-{{ include "brigade.fullname" . | printf "%s-gw" }}
+{{ include "brigade.fullname" . | printf "%s-github-gw" }}
 {{- end -}}
 {{- define "brigade.ctrl.fullname" -}}
 {{ include "brigade.fullname" . | printf "%s-ctrl" }}
@@ -28,7 +28,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{ include "brigade.fullname" . | printf "%s-wrk" }}
 {{- end -}}
 {{- define "brigade.cr.fullname" -}}
-{{ include "brigade.fullname" . | printf "%s-cr" }}
+{{ include "brigade.fullname" . | printf "%s-cr-gw" }}
 {{- end -}}
 
 {{- define "brigade.rbac.version" }}rbac.authorization.k8s.io/v1beta1{{ end -}}
