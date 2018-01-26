@@ -11,6 +11,12 @@ import (
 )
 
 func TestFunctional(t *testing.T) {
+
+	host := os.Getenv("BRIGADE_BRIGADE_GITHUB_GW_SERVICE_HOST")
+	if host == "" {
+		host = "localhost"
+	}
+
 	githubPushFile, err := os.Open("testdata/test-repo-generated.json")
 	if err != nil {
 		t.Fatal(err)
@@ -23,7 +29,7 @@ func TestFunctional(t *testing.T) {
 	requests := []*http.Request{
 		{
 			Method: "POST",
-			URL:    &url.URL{Scheme: "http", Host: "localhost:7744", Path: "/events/github"},
+			URL:    &url.URL{Scheme: "http", Host: host + ":7744", Path: "/events/github"},
 			Body:   githubPushFile,
 			Header: http.Header{
 				"X-Github-Event":  []string{"push"},

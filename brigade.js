@@ -69,3 +69,38 @@ events.on("image_push", (e, p) => {
     console.log(m)
   }
 })
+
+events.on("functional_test", (e, p) => {
+  var gopath = "/go"
+
+  // To set GOPATH correctly, we have to override the default
+  // path that Brigade sets.
+  var localPath = gopath + "/src/github.com/" + p.repo.name;
+
+
+  // Create a new job to run Go tests
+  var goBuild = new Job("brigade-test", "golang:1.9");
+
+  const j = new Job("functional-test", "golang:1.9")
+  j.env = {
+    GOPATH: "/src"
+  }
+
+  // Set a few environment variables.
+  j.env = {
+      "DEST_PATH": localPath,
+      "GOPATH": gopath
+  };
+
+  // Run Go unit tests
+  j.tasks = [
+    "go get github.com/golang/dep/cmd/dep",
+    "mkdir -p " + localPath,
+    "mv /src/* " + localPath,
+    "cd " + localPath,
+    "dep ensure",
+	  "go run ./tests/cmd/generate.go " + e.commit,
+    "go test --tags integration ./tests"
+  ]
+  j.run()
+})
