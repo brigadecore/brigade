@@ -168,7 +168,7 @@ func (a *scriptRunner) waitForWorker(buildID string) error {
 			switch e.Type {
 			case "DELETED":
 				// This happens if a user directly kills the pod with kubectl.
-				return fmt.Errorf("Worker %s was just deleted unexpectedly.", buildID)
+				return fmt.Errorf("worker %s was just deleted unexpectedly", buildID)
 			case "ADDED", "MODIFIED":
 				pod := e.Object.(*v1.Pod)
 				switch pod.Status.Phase {
@@ -179,12 +179,12 @@ func (a *scriptRunner) waitForWorker(buildID string) error {
 					return nil
 				case "Failed":
 					req.Stop()
-					return fmt.Errorf("Pod failed to schedule: %s", pod.Status.Reason)
+					return fmt.Errorf("pod failed to schedule: %s", pod.Status.Reason)
 				}
 			}
 		case <-timeout:
 			req.Stop()
-			return fmt.Errorf("Timeout waiting for build %s to start", buildID)
+			return fmt.Errorf("timeout waiting for build %s to start", buildID)
 		}
 	}
 }

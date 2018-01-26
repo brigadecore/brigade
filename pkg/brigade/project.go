@@ -28,10 +28,14 @@ type Project struct {
 	Secrets SecretsMap `json:"secrets"`
 }
 
+// SecretsMap is a map[string]string for storing secrets.
+//
+// When secrets are marshaled, values will be redacted.
 type SecretsMap map[string]string
 
 const redacted = "REDACTED"
 
+// MarshalJSON redacts secret values when encoding to JSON.
 func (s SecretsMap) MarshalJSON() ([]byte, error) {
 	dest := make(map[string]string, len(s))
 	for k := range s {

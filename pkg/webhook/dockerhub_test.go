@@ -15,9 +15,9 @@ func TestDoDockerImagePush(t *testing.T) {
 			CloneURL: "http://example.com/org/project.git",
 		},
 		Kubernetes: brigade.Kubernetes{
-			Namespace:  "namespace",
-			VCSSidecar: "sidecar:latest",
-            BuildStorageSize: "50Mi",
+			Namespace:        "namespace",
+			VCSSidecar:       "sidecar:latest",
+			BuildStorageSize: "50Mi",
 		},
 		Secrets: map[string]string{
 			"mysecret": "value",

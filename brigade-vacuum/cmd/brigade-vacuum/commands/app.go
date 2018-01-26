@@ -64,6 +64,7 @@ func init() {
 	f.StringVar(&globalKubeConfig, "kubeconfig", "", "The path to a KUBECONFIG file, overrides $KUBECONFIG.")
 }
 
+// Root is the top-level command, which just prints help text.
 var Root = &cobra.Command{
 	Use:   "brigade-vacuum",
 	Short: "Clean up old Brigade builds",
