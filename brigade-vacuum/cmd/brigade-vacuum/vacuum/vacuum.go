@@ -16,6 +16,7 @@ const (
 	jobFilter   = "component in (build, job), heritage = brigade, build = %s"
 )
 
+// Vacuum describes a vacuum for cleaning up expired builds and jobs.
 type Vacuum struct {
 	age       time.Time
 	max       int
@@ -23,6 +24,7 @@ type Vacuum struct {
 	client    kubernetes.Interface
 }
 
+// New creates a new *Vacuum.
 func New(age time.Time, max int, client kubernetes.Interface, ns string) *Vacuum {
 	return &Vacuum{
 		age:       age,
@@ -32,6 +34,9 @@ func New(age time.Time, max int, client kubernetes.Interface, ns string) *Vacuum
 	}
 }
 
+// Run executes the vacuum, destroying resources that are expired.
+//
+// It returns the number of builds deleted.
 func (v *Vacuum) Run() (int, error) {
 	opts := metav1.ListOptions{
 		LabelSelector: buildFilter,
@@ -128,14 +133,17 @@ func (v *Vacuum) deleteBuild(bid string) error {
 // ByCreation sorts secrets by their creation timestamp.
 type ByCreation []v1.Secret
 
+// Len returns the length of the secrets slice.
 func (b ByCreation) Len() int {
 	return len(b)
 }
 
+// Swap swaps the position of two indices.
 func (b ByCreation) Swap(i, j int) {
 	b[i], b[j] = b[j], b[i]
 }
 
+// Less tests that i is less than j.
 func (b ByCreation) Less(i, j int) bool {
 	jj := b[j].ObjectMeta.CreationTimestamp.Time
 	ii := b[i].ObjectMeta.CreationTimestamp.Time

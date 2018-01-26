@@ -30,6 +30,7 @@ type ProjectBuildSummary struct {
 	LastBuild *brigade.Build   `json:"lastBuild"`
 }
 
+// ListWithLatestBuild lists the projects with the latest builds attached.
 func (api Project) ListWithLatestBuild(c *gin.Context) {
 	projects, err := api.store.GetProjects()
 	if err != nil {
