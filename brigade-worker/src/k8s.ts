@@ -106,6 +106,7 @@ export class BuildStorage {
     let res = new kubernetes.V1ResourceRequirements();
     res.requests = { storage: size };
     s.spec.resources = res;
+    s.spec.storageClassName = this.proj.kubernetes.buildStorageClass;
 
     return s;
   }
@@ -512,6 +513,7 @@ export class JobRunner implements jobs.JobRunner {
 
     s.spec = new kubernetes.V1PersistentVolumeClaimSpec();
     s.spec.accessModes = ["ReadWriteMany"];
+    s.spec.storageClassName = this.project.kubernetes.cacheStorageClass
 
     let res = new kubernetes.V1ResourceRequirements();
     res.requests = { storage: this.job.cache.size };
@@ -664,7 +666,9 @@ export function secretToProject(
     kubernetes: {
       namespace: secret.metadata.namespace || ns,
       buildStorageSize: "50Mi",
-      vcsSidecar: ""
+      vcsSidecar: "",
+      cacheStorageClass: "default",
+      buildStorageClass: "default"
     },
     repo: {
       name: secret.metadata.annotations["projectName"],
@@ -701,6 +705,12 @@ export function secretToProject(
   }
   if (secret.data["github.token"]) {
     p.repo.token = b64dec(secret.data["github.token"]);
+  }
+  if (secret.data["kubernetes.cacheStorageClass"]) {
+    p.kubernetes.cacheStorageClass = b64dec(secret.data["kubernetes.cacheStorageClass"]);
+  }
+  if (secret.data["kubernetes.buildStorageClass"]) {
+    p.kubernetes.buildStorageClass = b64dec(secret.data["kubernetes.buildStorageClass"]);
   }
   return p;
 }

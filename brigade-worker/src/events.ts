@@ -134,10 +134,21 @@ export interface KubernetesConfig {
    * vcsSidecare is the image name for the sidecar container that resolves VCS operations.
    */
   vcsSidecar: string;
+
   /**
    *  buildStorageSize is the size of the build shared storage space used by the jobs
    */
   buildStorageSize: string;
+
+  /**
+   * cacheStorageClass is the storage class for job caches.
+   */
+  cacheStorageClass: string;
+
+  /**
+   * buildStorageClass is the storage class for build storage.
+   */
+  buildStorageClass: string;
 }
 
 /**

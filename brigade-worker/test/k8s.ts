@@ -30,12 +30,14 @@ describe("k8s", function() {
       assert.equal(p.name, "github.com/deis/test-private-testbed")
       assert.equal(p.repo.name, "deis/test-private-testbed")
       assert.equal(p.repo.cloneURL, "https://github.com/deis/empty-testbed.git")
-      assert.equal(p.repo.initGitSubmodules, "true");
+      assert.isTrue(p.repo.initGitSubmodules);
       assert.equal(p.repo.token, "pretend password\n")
       assert.equal(p.kubernetes.namespace, "default")
       assert.equal(p.kubernetes.vcsSidecar, "vcs-image:latest")
       assert.property(p.secrets, "hello")
       assert.equal(p.secrets.hello, "world")
+      assert.equal(p.kubernetes.cacheStorageClass, "tashtego")
+      assert.equal(p.kubernetes.buildStorageClass, "tashtego")
     })
     describe("when cloneURL is missing", function() {
       it("omits cloneURL", function() {
@@ -186,8 +188,8 @@ describe("k8s", function() {
           // We also have to check this for the sidecar pod. But right now this is
           // embedded in a string.
           let sidecar = jr.runner.spec.initContainers[0]
-          assert.equal(sidecar.env.length, 5)
-          assert.equal(sidecar.env[4].name,"BRIGADE_REPO_KEY", "Has BRIGADE REPO KEY as param")
+          assert.equal(sidecar.env.length, 6)
+          assert.equal(sidecar.env[5].name,"BRIGADE_REPO_KEY", "Has BRIGADE REPO KEY as param")
         })
       })
       context("when mount path is supplied", function() {
@@ -329,12 +331,14 @@ function mockSecret(): kubernetes.V1Secret {
   s.metadata = new kubernetes.V1ObjectMeta()
   s.data = {
     "cloneURL": "aHR0cHM6Ly9naXRodWIuY29tL2RlaXMvZW1wdHktdGVzdGJlZC5naXQ=",
-    "initGitSubmodules": "dHJ1ZQ=="
+    "initGitSubmodules": "dHJ1ZQ==",
     "github.token": "cHJldGVuZCBwYXNzd29yZAo=",
     "repository": "Z2l0aHViLmNvbS9kZWlzL3Rlc3QtcHJpdmF0ZS10ZXN0YmVk",
     "secrets": "eyJoZWxsbyI6ICJ3b3JsZCJ9Cg==",
     "vcsSidecar": "dmNzLWltYWdlOmxhdGVzdA==",
-    "buildStorageSize": "NTBNaQ=="
+    "buildStorageSize": "NTBNaQ==",
+    "kubernetes.cacheStorageClass": "dGFzaHRlZ28=",
+    "kubernetes.buildStorageClass": "dGFzaHRlZ28="
   }
   s.metadata.annotations = {
     "projectName": "deis/test-private-testbed"
