@@ -16,7 +16,7 @@ sharedSecret: "IBrakeForSeaBeasts"
 
 # OPTIONAL: Use this to have Brigade update your project about the build.
 # This is REQUIRED for the GitHub gateway, but optional otherwise.
-github: {}
+github:
 #   token: "github oauth token"
 
 # OPTIONAL: Use this for private repositories
@@ -47,7 +47,9 @@ github: {}
 #     myVar: "super awesome"
 #
 # Inside of the job's pod, $MY_ENV_VAR = "super awesome"
-secrets: {}
+secrets:
+  # Example:
+  # username: hello
 
 # OPTIONAL: Namespace into which builds will be deployed.
 # Using this has implications for what you can access, so don't set this unless
