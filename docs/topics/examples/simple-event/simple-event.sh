@@ -52,7 +52,7 @@ while : ; do
       build: ${uuid}
       commit: ${commit}
       component: build
-  type: Opaque
+  type: "brigade.sh/build"
   data:
     commit: $(echo -n "${commit}" | base64 $b64flags)
     event_provider: $(echo -n "${event_provider}" | base64 $b64flags)

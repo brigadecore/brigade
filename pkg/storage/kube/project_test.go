@@ -12,6 +12,7 @@ func TestConfigureProject(t *testing.T) {
 		ObjectMeta: meta.ObjectMeta{
 			Name: "brigadeTest",
 		},
+		Type: secretTypeBuild,
 		Data: map[string][]byte{
 			"repository":   []byte("myrepo"),
 			"sharedSecret": []byte("mysecret"),

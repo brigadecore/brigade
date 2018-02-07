@@ -597,6 +597,7 @@ function newRunnerPod(
 
 function newSecret(name: string): kubernetes.V1Secret {
   let s = new kubernetes.V1Secret();
+  s.type = "brigade.sh/job"
   s.metadata = new kubernetes.V1ObjectMeta();
   s.metadata.name = name;
   s.metadata.labels = {

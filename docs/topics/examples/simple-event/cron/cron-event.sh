@@ -32,7 +32,7 @@ metadata:
     build: ${uuid}
     commit: ${commit}
     component: build
-type: Opaque
+type: "brigade.sh/build"
 data:
   commit: $(echo -n "${commit}" | base64 -w 0)
   event_provider: $(echo -n "${event_provider}" | base64 -w 0)

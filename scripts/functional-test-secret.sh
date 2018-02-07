@@ -37,7 +37,7 @@ metadata:
     commit: ${commit}
     jobname: ${name}
     component: build
-type: Opaque
+type: "brigade.sh/build"
 data:
   commit: $(echo -n "${commit}" | base64)
   event_provider: $(echo -n "${event_provider}" | base64)
