@@ -82,5 +82,8 @@ func (s *dockerPushHook) doDockerImagePush(proj *brigade.Project, commit string,
 		Commit:    commit,
 		Payload:   payload,
 	}
+	if proj.DefaultScript != "" {
+		b.Script = []byte(proj.DefaultScript)
+	}
 	return s.store.CreateBuild(b)
 }
