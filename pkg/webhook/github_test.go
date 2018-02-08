@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -231,6 +232,46 @@ func TestGithubHandler_badevent(t *testing.T) {
 	}
 }
 
+func TestGithubHandler_WithDefaultScript(t *testing.T) {
+	store := newTestStore()
+	store.proj.DefaultScript = `console.log("hello default script")'`
+	s := newTestGithubHandler(store, t)
+	// Treat the repo to have no file, to eventually trigger the fall-back to the default script
+	s.getFile = failingFileGet
+
+	payloadFile := "testdata/github-push-payload.json"
+	event := "push"
+
+	payload, err := ioutil.ReadFile(payloadFile)
+	if err != nil {
+		t.Fatalf("failed to read testdata: %s", err)
+	}
+
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("POST", "", bytes.NewReader(payload))
+	if err != nil {
+		t.Fatalf("failed to create request: %s", err)
+	}
+	r.Header.Add("X-GitHub-Event", event)
+	r.Header.Add("X-Hub-Signature", SHA1HMAC([]byte("asdf"), payload))
+
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = r
+
+	s.Handle(ctx)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("unexpected error: %d\n%s", w.Code, w.Body.String())
+	}
+	if len(store.builds) != 1 {
+		t.Fatalf("expected exactly one build to be created, but there are %d", len(store.builds))
+	}
+	script := string(store.builds[0].Script)
+	if script != store.proj.DefaultScript {
+		t.Errorf("unexpected build script: %s", script)
+	}
+}
+
 func TestTruncAt(t *testing.T) {
 	if "foo" != truncAt("foo", 100) {
 		t.Fatal("modified string that was fine.")
@@ -243,4 +284,9 @@ func TestTruncAt(t *testing.T) {
 	if got := truncAt("foobar1", 6); got != "foo..." {
 		t.Errorf("Unexpected truncation of foobar1: %s", got)
 	}
+}
+
+// failingFileGet is a `fileGetter` which is useful for simulating a situation that the project repository to contain no file
+func failingFileGet(commit, path string, proj *brigade.Project) ([]byte, error) {
+	return []byte{}, fmt.Errorf("simulated \"missing file\" error for commit=%s, path=%s, proj.name=%s", commit, path, proj.Name)
 }
