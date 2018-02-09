@@ -30,5 +30,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- define "brigade.cr.fullname" -}}
 {{ include "brigade.fullname" . | printf "%s-cr-gw" }}
 {{- end -}}
+{{- define "brigade.vacuum.fullname" -}}
+{{ include "brigade.fullname" . | printf "%s-vacuum" }}
+{{- end -}}
 
 {{- define "brigade.rbac.version" }}rbac.authorization.k8s.io/v1beta1{{ end -}}
