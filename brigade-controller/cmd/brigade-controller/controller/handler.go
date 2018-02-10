@@ -136,11 +136,12 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 		Spec: podSpec,
 	}
 
-	// Skip adding the sidecar pod if it's not necessary.
+	// Skip adding the sidecar pod if the script is provided already.
 	if s, ok := secret.Data["script"]; ok && len(s) > 0 {
 		return pod, nil
 	}
 
+	// Skip adding the sidecar pod if no sidecar pod image is supplied.
 	if image, ok := project.Data[vcsSidecarKey]; ok && len(image) > 0 {
 		pod.Spec.InitContainers = []v1.Container{{
 			Name:            "vcs-sidecar",
