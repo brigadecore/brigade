@@ -515,7 +515,7 @@ export class JobRunner implements jobs.JobRunner {
 
     s.spec = new kubernetes.V1PersistentVolumeClaimSpec();
     s.spec.accessModes = ["ReadWriteMany"];
-    if (this.project.kubernetes.cacheStorageClass.length > 0){
+    if (this.project.kubernetes.cacheStorageClass && this.project.kubernetes.cacheStorageClass.length > 0){
       s.spec.storageClassName = this.project.kubernetes.cacheStorageClass
     }
     let res = new kubernetes.V1ResourceRequirements();
