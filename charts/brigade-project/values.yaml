@@ -65,8 +65,12 @@ secrets:
 # you know what you are doing.
 # namespace: "default"
 
-# OPTIONAL: vcsSidecar is the image that fetches a repo from a VCS
-# vcsSidecar: "deis/git-sidecar:latest"
+# RECOMMENDED: vcsSidecar is the image that fetches a repo from a VCS
+# The default sidecar uses Git to fetch a copy of the project. Commenting this
+# out will prevent the worker from using a sidecar. This may improve performance
+# very slightly, but will break some gateways or cause the default script to
+# be used.
+vcsSidecar: "deis/git-sidecar:latest"
 
 # OPTIONAL: buildStorageSize is the size of the shared storage space used by the jobs
 # buildStorageSize: "50Mi"
