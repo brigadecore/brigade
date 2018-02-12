@@ -11,6 +11,15 @@ cloneURL: "https://github.com/deis/empty-testbed.git"
 # OPTIONAL: initGitSubmodules will recursively initialize all submodules in the repository. Default: false
 # initGitSubmodules: "false"
 
+# OPTIONAL: defaultScript is the brigade.js used by default when your VCS repo misses a brigade.js
+# in it.
+# defaultScript: |
+#   const { events, Job } = require("brigadier")
+#   function run(e, project) {
+#     console.log("hello default script")
+#   }
+#   events.on("run", run)
+
 # Used by GitHub and other services to compute hook HMACs.
 sharedSecret: "IBrakeForSeaBeasts"
 

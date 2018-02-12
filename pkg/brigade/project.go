@@ -18,6 +18,8 @@ type Project struct {
 	Name string `json:"name"`
 	// Repo describes the repository where the source code is stored.
 	Repo Repo `json:"repo"`
+	// DefaultScript is a snippet of js used by default when the Repo misses brigade.js in it
+	DefaultScript string `json:"defaultScript"`
 	// Kubernetes holds information about Kubernetes
 	Kubernetes Kubernetes `json:"kubernetes"`
 	// SharedSecret is the GitHub shared key

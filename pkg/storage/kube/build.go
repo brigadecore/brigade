@@ -14,6 +14,8 @@ import (
 	"github.com/Azure/brigade/pkg/brigade"
 )
 
+const secretTypeBuild = "brigade.sh/build"
+
 // GetBuild returns the build.
 func (s *store) GetBuild(id string) (*brigade.Build, error) {
 	build := &brigade.Build{ID: id}
@@ -57,6 +59,7 @@ func (s *store) CreateBuild(build *brigade.Build) error {
 				"project":   build.ProjectID,
 			},
 		},
+		Type: secretTypeBuild,
 		Data: map[string][]byte{
 			"script":  build.Script,
 			"payload": build.Payload,

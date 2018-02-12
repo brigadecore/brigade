@@ -6,8 +6,8 @@ import (
 	"github.com/Azure/brigade/pkg/brigade"
 )
 
-func TestDoDockerImagePush(t *testing.T) {
-	proj := &brigade.Project{
+func newProject() *brigade.Project {
+	return &brigade.Project{
 		ID:   "brigade-1234",
 		Name: "org/proj",
 		Repo: brigade.Repo{
@@ -23,13 +23,38 @@ func TestDoDockerImagePush(t *testing.T) {
 			"mysecret": "value",
 		},
 	}
+}
+
+func TestDoDockerImagePush(t *testing.T) {
+	proj := newProject()
 
 	commit := "e1e10"
-
-	hook := NewDockerPushHook(&testStore{})
+	store := &testStore{}
+	hook := NewDockerPushHook(store)
 
 	if err := hook.doDockerImagePush(proj, commit, []byte(exampleWebhook)); err != nil {
 		t.Errorf("failed docker image push: %s", err)
+	}
+	script := string(store.builds[0].Script)
+	if script != "" {
+		t.Errorf("unexpected build script: %s", script)
+	}
+}
+
+func TestDoDockerImagePush_WithDefaultScript(t *testing.T) {
+	proj := newProject()
+	proj.DefaultScript = `console.log("hello default script")`
+
+	commit := "e1e10"
+	store := &testStore{}
+	hook := NewDockerPushHook(store)
+
+	if err := hook.doDockerImagePush(proj, commit, []byte(exampleWebhook)); err != nil {
+		t.Errorf("failed docker image push: %s", err)
+	}
+	script := string(store.builds[0].Script)
+	if script != proj.DefaultScript {
+		t.Errorf("unexpected build script: %s", script)
 	}
 }
 

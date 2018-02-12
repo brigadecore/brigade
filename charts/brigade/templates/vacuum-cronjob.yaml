@@ -1,10 +1,10 @@
-{{ if .Values.vacuum.enabled }}
+{{ if .Values.vacuum.enabled }}{{ $fullname := include "brigade.vacuum.fullname" .}}
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: {{ template "brigade.fullname" . }}-vacuum
+  name: {{ $fullname }}
   labels:
-    app: {{ template "brigade.fullname" . }}-vacuum
+    app: {{ template "brigade.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -19,6 +19,7 @@ spec:
             app: {{ template "brigade.fullname" . }}
             role: vacuum
         spec:
+          serviceAccountName: {{ $fullname }}
           containers:
           - name: {{ .Chart.Name }}-vacuum
             image: "{{ .Values.vacuum.registry }}/{{ .Values.vacuum.name }}:{{ default .Chart.AppVersion .Values.vacuum.tag }}"

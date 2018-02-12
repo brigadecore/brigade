@@ -5,26 +5,21 @@ import (
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 )
 
 func (c *Controller) createIndexerInformer() {
-	labelSelector := labels.Set{
-		"heritage":  "brigade",
-		"component": "build",
-	}
-
+	selector := "type=brigade.sh/build"
 	c.indexer, c.informer = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				options.LabelSelector = labelSelector.String()
+				options.FieldSelector = selector
 				return c.clientset.CoreV1().Secrets(c.Namespace).List(options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				options.LabelSelector = labelSelector.String()
+				options.FieldSelector = selector
 				return c.clientset.CoreV1().Secrets(c.Namespace).Watch(options)
 			},
 		},

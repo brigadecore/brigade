@@ -85,7 +85,7 @@ metadata:
     component: build
 
     # Any other labels you add will be ignored by Brigade.
-type: Opaque
+type: brigade.sh/build
 data:
   # IMPORTANT: We show these fields as clear text, but they MUST be base-64
   # encoded.
@@ -183,7 +183,7 @@ while : ; do
       build: ${uuid}
       commit: ${commit}
       component: build
-  type: Opaque
+  type: "brigade.sh/build"
   data:
     commit: $(echo -n "${commit}" | base64)
     event_provider: $(echo -n "${event_provider}" | base64)
@@ -247,7 +247,7 @@ metadata:
     build: ${uuid}
     commit: ${commit}
     component: build
-type: Opaque
+type: "brigade.sh/build"
 data:
   commit: $(echo -n "${commit}" | base64 -w 0)
   event_provider: $(echo -n "${event_provider}" | base64 -w 0)

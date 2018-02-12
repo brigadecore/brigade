@@ -12,8 +12,10 @@ func TestConfigureProject(t *testing.T) {
 		ObjectMeta: meta.ObjectMeta{
 			Name: "brigadeTest",
 		},
+		Type: secretTypeBuild,
 		Data: map[string][]byte{
 			"repository":        []byte("myrepo"),
+			"defaultScript": []byte(`console.log("hello default script")`),
 			"sharedSecret":      []byte("mysecret"),
 			"github.token":      []byte("like a fish needs a bicycle"),
 			"sshKey":            []byte("hello$world"),
@@ -40,6 +42,9 @@ func TestConfigureProject(t *testing.T) {
 	}
 	if proj.Repo.Name != "myrepo" {
 		t.Error("Repo is not correct")
+	}
+	if proj.DefaultScript != `console.log("hello default script")` {
+		t.Errorf("Unexpected DefaultScript: %q", proj.DefaultScript)
 	}
 	if proj.SharedSecret != "mysecret" {
 		t.Error("SharedSecret is not correct")
