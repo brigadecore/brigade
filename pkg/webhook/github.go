@@ -3,6 +3,7 @@ package webhook
 import (
 	"crypto/subtle"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -213,7 +214,10 @@ func getFileFromGithub(commit, path string, proj *brigade.Project) ([]byte, erro
 func (s *githubHook) build(eventType, commit string, payload []byte, proj *brigade.Project) error {
 	brigadeScript, err := s.getFile(commit, brigadeJSFile, proj)
 	if err != nil {
-		return err
+		if proj.DefaultScript == "" {
+			return fmt.Errorf("no brigade.js found in either project's defaultScript or the git repository: %v", err)
+		}
+		brigadeScript = []byte(proj.DefaultScript)
 	}
 
 	b := &brigade.Build{

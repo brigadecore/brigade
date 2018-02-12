@@ -65,6 +65,8 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 		CloneURL: def(secret.Data["cloneURL"], ""),
 	}
 
+	proj.DefaultScript = def(secret.Data["defaultScript"], "")
+
 	envVars := map[string]string{}
 	if d := secret.Data["secrets"]; len(d) > 0 {
 		if err := json.Unmarshal(d, &envVars); err != nil {

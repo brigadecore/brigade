@@ -14,12 +14,13 @@ func TestConfigureProject(t *testing.T) {
 		},
 		Type: secretTypeBuild,
 		Data: map[string][]byte{
-			"repository":   []byte("myrepo"),
-			"sharedSecret": []byte("mysecret"),
-			"github.token": []byte("like a fish needs a bicycle"),
-			"sshKey":       []byte("hello$world"),
-			"namespace":    []byte("zooropa"),
-			"secrets":      []byte(`{"bar":"baz","foo":"bar"}`),
+			"repository":    []byte("myrepo"),
+			"defaultScript": []byte(`console.log("hello default script")`),
+			"sharedSecret":  []byte("mysecret"),
+			"github.token":  []byte("like a fish needs a bicycle"),
+			"sshKey":        []byte("hello$world"),
+			"namespace":     []byte("zooropa"),
+			"secrets":       []byte(`{"bar":"baz","foo":"bar"}`),
 			// Intentionally skip cloneURL, test that this is ""
 		},
 	}
@@ -37,6 +38,9 @@ func TestConfigureProject(t *testing.T) {
 	}
 	if proj.Repo.Name != "myrepo" {
 		t.Error("Repo is not correct")
+	}
+	if proj.DefaultScript != `console.log("hello default script")` {
+		t.Errorf("Unexpected DefaultScript: %q", proj.DefaultScript)
 	}
 	if proj.SharedSecret != "mysecret" {
 		t.Error("SharedSecret is not correct")
