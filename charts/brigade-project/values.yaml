@@ -92,3 +92,13 @@ kubernetes:
   # OPTIONAL: Override the storage class used for build storage. This must
   # point to a readWriteMany volume provisioner.
   #buildStorageClass: default
+
+###
+# ADAVANCED
+###
+
+# OPTIONAL: specify an alternative command that the worker pod should run on startup.
+# For example, if you want the typescript compiler to re-run, replace this with
+# 'yarn build-start'. The default is 'yarn -s start' (-s is for silent).
+# Uncomment the line below to increase logging verbosity.
+# workerCommand: "yarn start"
