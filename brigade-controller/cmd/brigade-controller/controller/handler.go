@@ -64,11 +64,10 @@ const (
 	sidecarVolumePath        = "/vcs"
 	vcsSidecarKey            = "vcsSidecar"
 	workerCommandKey         = "workerCommand"
-  workerImageRegistryKey   = "worker.registry"
+	workerImageRegistryKey   = "worker.registry"
 	workerImageNameKey       = "worker.name"
 	workerImageTagKey        = "worker.tag"
 	workerImagePullPolicyKey = "worker.pullPolicy"
-	serviceAccount    = "brigade-worker"
 )
 
 func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
@@ -85,7 +84,7 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 	image, pullPolicy := c.workerImageConfig(project)
 
 	podSpec := v1.PodSpec{
-		ServiceAccountName: serviceAccount,
+		ServiceAccountName: c.Config.WorkerServiceAccount,
 		NodeSelector: map[string]string{
 			"beta.kubernetes.io/os": "linux",
 		},

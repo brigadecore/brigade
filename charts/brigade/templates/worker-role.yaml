@@ -1,9 +1,10 @@
 {{ $fname := include "brigade.worker.fullname" . }}
+{{ $serviceAccount := default "brigade-worker" .Values.worker.serviceAccount }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: brigade-worker
+  name: {{ $serviceAccount }}
   labels:
     app: {{ template "brigade.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -36,7 +37,7 @@ metadata:
     heritage: "{{ .Release.Service }}"
 subjects:
 - kind: ServiceAccount
-  name: brigade-worker
+  name: {{ $serviceAccount }}
 roleRef:
   kind: Role
   name: {{ $fname }}
