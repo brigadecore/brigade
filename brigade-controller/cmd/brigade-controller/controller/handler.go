@@ -62,6 +62,7 @@ const (
 	sidecarVolumeName = "vcs-sidecar"
 	sidecarVolumePath = "/vcs"
 	vcsSidecarKey     = "vcsSidecar"
+	workerCommandKey  = "workerCommand"
 	serviceAccount    = "brigade-worker"
 )
 
@@ -69,6 +70,11 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 	envvar := func(key string) v1.EnvVar {
 		name := "BRIGADE_" + strings.ToUpper(key)
 		return secretRef(name, key, secret)
+	}
+
+	cmd := []string{"yarn", "-s", "start"}
+	if cmdString, ok := project.Data[workerCommandKey]; ok {
+		cmd = strings.Split(string(cmdString), " ")
 	}
 
 	podSpec := v1.PodSpec{
@@ -80,7 +86,7 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 			Name:            "brigade-runner",
 			Image:           c.WorkerImage,
 			ImagePullPolicy: v1.PullPolicy(c.WorkerPullPolicy),
-			Command:         []string{"yarn", "start"},
+			Command:         cmd,
 			VolumeMounts: []v1.VolumeMount{
 				{
 					Name:      volumeName,
@@ -166,7 +172,7 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 	return pod, nil
 }
 
-// secretRef generate a SeccretKeyRef env var entry if `kye` is present in `secret`.
+// secretRef generate a SeccretKeyRef env var entry if `key` is present in `secret`.
 // If the key does not exist a name/value pair is returned with an empty value
 func secretRef(name, key string, secret *v1.Secret) v1.EnvVar {
 	if _, ok := secret.Data[key]; !ok {

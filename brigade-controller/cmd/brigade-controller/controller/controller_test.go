@@ -93,6 +93,13 @@ func TestController(t *testing.T) {
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
 	}
+
+	for i, term := range []string{"yarn", "-s", "start"} {
+		if c.Command[i] != term {
+			t.Errorf("Expected command %d to be %q, got %q", i, term, c.Command[i])
+		}
+	}
+
 	if c.VolumeMounts[0].Name != volumeName {
 		t.Error("Container.VolumeMounts is not correct")
 	}
@@ -133,7 +140,7 @@ func TestController_WithScript(t *testing.T) {
 
 	config := &Config{
 		Namespace:        v1.NamespaceDefault,
-		WorkerImage:      "deis/brgiade-worker:latest",
+		WorkerImage:      "deis/brigade-worker:latest",
 		WorkerPullPolicy: string(v1.PullIfNotPresent),
 	}
 	controller := NewController(client, config)
@@ -226,7 +233,7 @@ func TestController_NoSidecar(t *testing.T) {
 
 	config := &Config{
 		Namespace:        v1.NamespaceDefault,
-		WorkerImage:      "deis/brgiade-worker:latest",
+		WorkerImage:      "deis/brigade-worker:latest",
 		WorkerPullPolicy: string(v1.PullIfNotPresent),
 	}
 	controller := NewController(client, config)
@@ -282,5 +289,83 @@ func TestController_NoSidecar(t *testing.T) {
 	}
 	if l := len(pod.Spec.InitContainers); l != 0 {
 		t.Fatalf("Expected no init container, got %d", l)
+	}
+}
+
+func TestController_WithWorkerCommand(t *testing.T) {
+	createdPod := false
+	client := fake.NewSimpleClientset()
+	client.PrependReactor("create", "pods", func(action core.Action) (bool, runtime.Object, error) {
+		createdPod = true
+		t.Log("creating pod")
+		return false, nil, nil
+	})
+
+	config := &Config{
+		Namespace:        v1.NamespaceDefault,
+		WorkerImage:      "deis/brigade-worker:latest",
+		WorkerPullPolicy: string(v1.PullIfNotPresent),
+	}
+	controller := NewController(client, config)
+
+	secret := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "moby",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "build",
+				"project":   "ahab",
+				"build":     "queequeg",
+			},
+		},
+		Data: map[string][]byte{
+			"script": []byte("hello"),
+		},
+	}
+
+	sidecarImage := "fake/sidecar:latest"
+	project := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "ahab",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "project",
+			},
+		},
+		// This and the missing 'script' will trigger an initContainer
+		Data: map[string][]byte{
+			"vcsSidecar":    []byte(sidecarImage),
+			"workerCommand": []byte("worker command"),
+		},
+	}
+
+	// Now let's start the controller
+	stop := make(chan struct{})
+	defer close(stop)
+	go controller.Run(1, stop)
+
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+
+	// Let's wait for the controller to create the pod
+	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
+		return createdPod, nil
+	})
+
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	c := pod.Spec.Containers[0]
+	if c.Name != "brigade-runner" {
+		t.Error("Container.Name is not correct")
+	}
+	for i, term := range []string{"worker", "command"} {
+		if c.Command[i] != term {
+			t.Errorf("Expected command %d to be %q, got %q", i, term, c.Command[i])
+		}
 	}
 }
