@@ -91,9 +91,7 @@ export class App {
         .catch(reason => {
           // Kubernetes objects put error messages here:
           const msg = reason.body ? reason.body.message : reason;
-          this.logger.log(
-            `failed to destroy storage for ${e.workerID}: ${msg}`
-          );
+          this.logger.log(`failed to destroy storage for ${e.workerID}: ${msg}`);
         });
     };
 
@@ -101,7 +99,12 @@ export class App {
     // throw from EventEmitter.
     brigadier.events.once("error", () => {
       this.logger.log("error handler is cleaning up");
-      this.exitOnError && process.exit(1);
+      if (this.exitOnError){
+        destroyStorage()
+        .then(()=>{
+          process.exit(1);
+        });
+      }
     });
 
     // We need to ensure that after is called exactly once. So we need an

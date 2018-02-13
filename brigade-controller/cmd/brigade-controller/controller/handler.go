@@ -63,17 +63,23 @@ const (
 	sidecarVolumeName        = "vcs-sidecar"
 	sidecarVolumePath        = "/vcs"
 	vcsSidecarKey            = "vcsSidecar"
-	serviceAccount           = "brigade-worker"
-	workerImageRegistryKey   = "worker.registry"
+	workerCommandKey         = "workerCommand"
+  workerImageRegistryKey   = "worker.registry"
 	workerImageNameKey       = "worker.name"
 	workerImageTagKey        = "worker.tag"
 	workerImagePullPolicyKey = "worker.pullPolicy"
+	serviceAccount    = "brigade-worker"
 )
 
 func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 	envvar := func(key string) v1.EnvVar {
 		name := "BRIGADE_" + strings.ToUpper(key)
 		return secretRef(name, key, secret)
+	}
+
+	cmd := []string{"yarn", "-s", "start"}
+	if cmdString, ok := project.Data[workerCommandKey]; ok {
+		cmd = strings.Split(string(cmdString), " ")
 	}
 
 	image, pullPolicy := c.workerImageConfig(project)
@@ -87,7 +93,7 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 			Name:            "brigade-runner",
 			Image:           image,
 			ImagePullPolicy: v1.PullPolicy(pullPolicy),
-			Command:         []string{"yarn", "start"},
+			Command:         cmd,
 			VolumeMounts: []v1.VolumeMount{
 				{
 					Name:      volumeName,
@@ -143,11 +149,12 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 		Spec: podSpec,
 	}
 
-	// Skip adding the sidecar pod if it's not necessary.
+	// Skip adding the sidecar pod if the script is provided already.
 	if s, ok := secret.Data["script"]; ok && len(s) > 0 {
 		return pod, nil
 	}
 
+	// Skip adding the sidecar pod if no sidecar pod image is supplied.
 	if image, ok := project.Data[vcsSidecarKey]; ok && len(image) > 0 {
 		pod.Spec.InitContainers = []v1.Container{{
 			Name:            "vcs-sidecar",
@@ -200,7 +207,7 @@ func (c *Controller) workerImageConfig(project *v1.Secret) (string, string) {
 	return image, pullPolicy
 }
 
-// secretRef generate a SeccretKeyRef env var entry if `kye` is present in `secret`.
+// secretRef generate a SeccretKeyRef env var entry if `key` is present in `secret`.
 // If the key does not exist a name/value pair is returned with an empty value
 func secretRef(name, key string, secret *v1.Secret) v1.EnvVar {
 	if _, ok := secret.Data[key]; !ok {
