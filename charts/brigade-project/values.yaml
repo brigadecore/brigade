@@ -27,6 +27,9 @@ sharedSecret: "IBrakeForSeaBeasts"
 # This is REQUIRED for the GitHub gateway, but optional otherwise.
 github:
 #   token: "github oauth token"
+#   ENTERPRISE: For enterprise GitHub customers, set both of these as well.
+#   baseURL: "https://internal.github.url/foo"
+#   uploadURL: "https://internal.github.url/foo"
 
 # OPTIONAL: Use this for private repositories
 # This is the PRIVATE key that Brigade will use to clone a private repo.

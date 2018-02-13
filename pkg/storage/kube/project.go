@@ -53,6 +53,8 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 	proj.Name = secret.Annotations["projectName"]
 	proj.SharedSecret = def(secret.Data["sharedSecret"], "")
 	proj.Github.Token = string(secret.Data["github.token"])
+	proj.Github.BaseURL = string(secret.Data["github.baseURL"])
+	proj.Github.UploadURL = string(secret.Data["github.uploadURL"])
 
 	proj.Kubernetes.Namespace = def(secret.Data["namespace"], namespace)
 	proj.Kubernetes.VCSSidecar = def(secret.Data["vcsSidecar"], "")
