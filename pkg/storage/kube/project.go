@@ -75,6 +75,13 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 	}
 
 	proj.Secrets = envVars
+
+	proj.Worker = brigade.WorkerConfig{
+		Registry:   def(secret.Data["worker.registry"], ""),
+		Name:       def(secret.Data["worker.name"], ""),
+		Tag:        def(secret.Data["worker.tag"], ""),
+		PullPolicy: def(secret.Data["worker.pullPolicy"], ""),
+	}
 	return proj, nil
 }
 

@@ -102,3 +102,11 @@ kubernetes:
 # 'yarn build-start'. The default is 'yarn -s start' (-s is for silent).
 # Uncomment the line below to increase logging verbosity.
 # workerCommand: "yarn start"
+
+# OPTIONAL: Project-specific worker settings which takes precedence over brigade-wide settings
+# Useful when you want a specific brigade-worker image for running brigade.js of this project.
+worker:
+  #registry: deis
+  #name: brigade-worker
+  #tag:
+  #pullPolicy: IfNotPresent

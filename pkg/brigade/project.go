@@ -28,6 +28,8 @@ type Project struct {
 	Github Github `json:"github"`
 	// Secrets is environment variables for brigade.js
 	Secrets SecretsMap `json:"secrets"`
+	// Worker holds a set of project-specific worker settings which takes precedence over brigade-wide settings
+	Worker WorkerConfig `json:"worker"`
 }
 
 // SecretsMap is a map[string]string for storing secrets.
