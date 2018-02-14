@@ -83,13 +83,21 @@ Docker daemon:
 $ eval $(minikube docker-env)
 ```
 
-Running `make docker-build docker-push` will push the Brigade images to the Minikube Docker
+Running `VERSION=latest make docker-build docker-push` will push the Brigade images to the Minikube Docker
 daemon.
+
+Now create a custom `values.yaml` file for the chart, and set the images to all
+pull the `latest` image:
+
+```
+$ helm inspect values ./charts/brigade > myvalues.yaml
+$ open myvalues.yaml    # Change all `tag:` fields to be `tag: latest`
+```
 
 From here, you can install Brigade into Minikube using the Helm chart:
 
 ```
-$ helm install -n brigade ./charts/brigade
+$ helm install -n brigade ./charts/brigade -f myvalues.yaml
 ```
 
 Don't forget to also create a project (`$ helm install -n empty-testbed charts/brigade-project`).
@@ -107,11 +115,11 @@ you will need to do two things:
 ## Running Brigade (brigade-server) Locally (against Minikube)
 
 Assuing you have Brigade installed (either on minikube or another cluster) and
-your `$KUBECONFIG` is pointing to that cluster, you can run `brigade` (brigade-server)
+your `$KUBECONFIG` is pointing to that cluster, you can run `brigade-controller`
 locally.
 
 ```
-$ ./bin/brigade --kubeconfig $KUBECONFIG
+$ ./bin/brigade-controller --kubeconfig $KUBECONFIG
 ```
 
 (The default location for `$KUBECONFIG` on UNIX-like systems is `$HOME/.kube`.)
