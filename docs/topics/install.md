@@ -26,15 +26,16 @@ $ helm install brigade/brigade
 If you are developing Brigade, or are interested in testing the latest features
 (at the cost of additional time and energy), you can build Brigade from source.
 
-The `master` branch typically contains newer code than the last release. However,
-the charts will install the last released version.
+This example shows how to check out the latest Brigade release:
 
 ```console
 $ git clone https://github.com/azure/brigade.git
 $ cd brigade
-$ # optionally check out a tagged release: git checkout v0.5.0
+$ git checkout $(git tag -l | tail -n 1)
 $ helm install ./charts/brigade
 ```
+
+(If you are interested in building from `master`, see the [developer docs](developer.md).)
 
 Once you have Brigade installed, you can proceed to [creating a project](projects.md).
 The remainder of this guide covers special configurations of Brigade.
@@ -46,11 +47,13 @@ The remainder of this guide covers special configurations of Brigade.
 
 ### Customizing Installations
 
-Both of these options use the Brigade binaries stored in DockerHub. But you can override
-this behavior by supplying an alternative image during install:
+Both of these options use the latest Brigade release from DockerHub. But you can override
+this behavior by supplying alternate images during installation.
+
+For each component of Brigade, you can set it's image and tag separately:
 
 ```console
-$ helm install brigade/brigade --set image.name=my-image --set image.tag=1.2.3
+$ helm install brigade/brigade --set controller.name=my-image --set controller.tag=1.2.3
 ```
 
 There are a variety of other configuration options for Brigade. Run `helm fetch values ./charts/brigade`
