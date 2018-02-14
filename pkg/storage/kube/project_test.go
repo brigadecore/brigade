@@ -15,7 +15,7 @@ func TestConfigureProject(t *testing.T) {
 		Type: secretTypeBuild,
 		Data: map[string][]byte{
 			"repository":        []byte("myrepo"),
-			"defaultScript": []byte(`console.log("hello default script")`),
+			"defaultScript":     []byte(`console.log("hello default script")`),
 			"sharedSecret":      []byte("mysecret"),
 			"github.token":      []byte("like a fish needs a bicycle"),
 			"sshKey":            []byte("hello$world"),

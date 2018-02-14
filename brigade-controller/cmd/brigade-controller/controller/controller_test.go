@@ -22,10 +22,12 @@ func TestController(t *testing.T) {
 		t.Log("creating pod")
 		return false, nil, nil
 	})
+	svcAccountName := "my-service-account"
 	config := &Config{
-		Namespace:        v1.NamespaceDefault,
-		WorkerImage:      "deis/brigade-worker:latest",
-		WorkerPullPolicy: string(v1.PullIfNotPresent),
+		Namespace:            v1.NamespaceDefault,
+		WorkerImage:          "deis/brigade-worker:latest",
+		WorkerPullPolicy:     string(v1.PullIfNotPresent),
+		WorkerServiceAccount: svcAccountName,
 	}
 	controller := NewController(client, config)
 
@@ -78,6 +80,10 @@ func TestController(t *testing.T) {
 
 	if !labels.Equals(pod.GetLabels(), secret.GetLabels()) {
 		t.Error("Pod.Lables do not match")
+	}
+
+	if pod.Spec.ServiceAccountName != svcAccountName {
+		t.Errorf("expected service account %s, got %s", svcAccountName, pod.Spec.ServiceAccountName)
 	}
 
 	if pod.Spec.Volumes[0].Name != volumeName {
@@ -203,7 +209,6 @@ func TestController_WithScript(t *testing.T) {
 	if pod.Spec.Volumes[0].Name != volumeName {
 		t.Error("Spec.Volumes are not correct")
 	}
-
 	c := pod.Spec.Containers[0]
 	if c.Name != "brigade-runner" {
 		t.Error("Container.Name is not correct")
