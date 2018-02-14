@@ -36,7 +36,7 @@ The most important thing to understand about a Brigade event is that it is simpl
 a [Kuberetes Secret](https://kubernetes.io/docs/concepts/configuration/secret/)
 with special labels and data.
 
-When a new and appropriately labeled secret is creates in Kubernetes, the Brigade
+When a new and appropriately labeled secret is created in Kubernetes, the Brigade
 controller will read that secret and start a new Brigade worker to handle the event.
 Secrets have several characteristics that make them a great fit for this role:
 
