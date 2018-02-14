@@ -458,6 +458,15 @@ export class JobRunner implements jobs.JobRunner {
             } else if (phase == "Failed") {
               clearTimers();
               reject(new Error(`Pod ${name} failed to run to completion`));
+            } else if (phase == "Pending") {
+              // Trap image pull errors and consider them fatal.
+              let cs = pod.status.containerStatuses;
+              if (cs && cs.length > 0 && cs[0].state.waiting && cs[0].state.waiting.reason == "ErrImagePull") {
+                k.deleteNamespacedPod(name, ns, new kubernetes.V1DeleteOptions())
+                  .catch(e => logger.error(e))
+                clearTimers()
+                reject(new Error(cs[0].state.waiting.message));
+              }
             }
             logger.log(
               `${pod.metadata.namespace}/${pod.metadata.name} phase ${
@@ -479,7 +488,7 @@ export class JobRunner implements jobs.JobRunner {
           clearTimeout(waiter);
           return;
         }
-        pollOnce(name, ns, interval);
+        pollOnce(name, ns, interval)
       }, 2000);
       let clearTimers = () => {
         clearInterval(interval);
