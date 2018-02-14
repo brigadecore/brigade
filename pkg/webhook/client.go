@@ -26,11 +26,17 @@ const StatusContext = "brigade"
 // ghClient gets a new GitHub client object.
 //
 // It authenticates with an OAUTH2 token.
-func ghClient(token string) *github.Client {
-	t := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+//
+// If an enterpriseHost base URL is provided, this will attempt to connect to
+// that instead of the hosted GitHub API server.
+func ghClient(gh brigade.Github) (*github.Client, error) {
+	t := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: gh.Token})
 	c := context.Background()
 	tc := oauth2.NewClient(c, t)
-	return github.NewClient(tc)
+	if gh.BaseURL != "" {
+		return github.NewEnterpriseClient(gh.BaseURL, gh.UploadURL, tc)
+	}
+	return github.NewClient(tc), nil
 }
 
 // setRepoStatus sets the status on a particular commit in a repo.
@@ -43,8 +49,11 @@ func setRepoStatus(commit string, proj *brigade.Project, status *github.RepoStat
 		return fmt.Errorf("project name %q is malformed", proj.Repo.Name)
 	}
 	c := context.Background()
-	client := ghClient(proj.Github.Token)
-	_, _, err := client.Repositories.CreateStatus(
+	client, err := ghClient(proj.Github)
+	if err != nil {
+		return err
+	}
+	_, _, err = client.Repositories.CreateStatus(
 		c,
 		parts[1],
 		parts[2],
@@ -57,7 +66,10 @@ func setRepoStatus(commit string, proj *brigade.Project, status *github.RepoStat
 // The ref can be a SHA or a branch or tag.
 func GetRepoStatus(proj *brigade.Project, ref string) (*github.RepoStatus, error) {
 	c := context.Background()
-	client := ghClient(proj.Github.Token)
+	client, err := ghClient(proj.Github)
+	if err != nil {
+		return nil, err
+	}
 	parts := strings.SplitN(proj.Repo.Name, "/", 3) // github.com/ORG/REPO
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("project name %q is malformed", proj.Repo.Name)
@@ -77,7 +89,10 @@ func GetRepoStatus(proj *brigade.Project, ref string) (*github.RepoStatus, error
 // GetLastCommit gets the last commit on the give reference (branch name or tag).
 func GetLastCommit(proj *brigade.Project, ref string) (string, error) {
 	c := context.Background()
-	client := ghClient(proj.Github.Token)
+	client, err := ghClient(proj.Github)
+	if err != nil {
+		return "", err
+	}
 	parts := strings.SplitN(proj.Repo.Name, "/", 3)
 	if len(parts) != 3 {
 		return "", fmt.Errorf("project name %q is malformed", proj.Repo.Name)
@@ -89,7 +104,10 @@ func GetLastCommit(proj *brigade.Project, ref string) (string, error) {
 // GetFileContents returns the contents for a particular file in the project.
 func GetFileContents(proj *brigade.Project, ref, path string) ([]byte, error) {
 	c := context.Background()
-	client := ghClient(proj.Github.Token)
+	client, err := ghClient(proj.Github)
+	if err != nil {
+		return []byte{}, err
+	}
 	parts := strings.SplitN(proj.Repo.Name, "/", 3)
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("project name %q is malformed", proj.Repo.Name)

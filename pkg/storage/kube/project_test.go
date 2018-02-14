@@ -18,6 +18,8 @@ func TestConfigureProject(t *testing.T) {
 			"defaultScript":     []byte(`console.log("hello default script")`),
 			"sharedSecret":      []byte("mysecret"),
 			"github.token":      []byte("like a fish needs a bicycle"),
+			"github.baseURL":    []byte("https://example.com/base"),
+			"github.uploadURL":  []byte("https://example.com/upload"),
 			"sshKey":            []byte("hello$world"),
 			"namespace":         []byte("zooropa"),
 			"secrets":           []byte(`{"bar":"baz","foo":"bar"}`),
@@ -51,6 +53,12 @@ func TestConfigureProject(t *testing.T) {
 	}
 	if proj.Github.Token != "like a fish needs a bicycle" {
 		t.Error("Fish cannot find its bicycle")
+	}
+	if proj.Github.BaseURL != "https://example.com/base" {
+		t.Errorf("Unexpected base URL: %s", proj.Github.BaseURL)
+	}
+	if proj.Github.UploadURL != "https://example.com/upload" {
+		t.Errorf("Unexpected upload URL: %s", proj.Github.UploadURL)
 	}
 	if proj.Repo.SSHKey != "hello\nworld" {
 		t.Errorf("Unexpected SSHKey: %q", proj.Repo.SSHKey)

@@ -66,6 +66,13 @@ func shortSHA(input string) string {
 type Github struct {
 	// Token is used for oauth2 for client interactions.
 	Token string `json:"-"`
+	// BaseURL is used to construct an Enterprise GitHub client.
+	// If not supplied, the assumption is that we are connecting to
+	// github.com.
+	BaseURL string `json:"baseURL"`
+	// UploadURL is the upload URL to be used for GitHub enterprise.
+	// Typically, it is the same as the BaseURL.
+	UploadURL string `json:"uploadURL"`
 }
 
 // Repo describes a Git repository.
