@@ -88,10 +88,10 @@ func TestConfigureProject(t *testing.T) {
 }
 
 func TestDef(t *testing.T) {
-	if got := def([]byte{}, "default"); got != "default" {
+	if got := def("", "default"); got != "default" {
 		t.Error("Expected default value")
 	}
-	if got := def([]byte("hello"), "world"); got != "hello" {
+	if got := def("hello", "world"); got != "hello" {
 		t.Error("Expected non-default value")
 	}
 }

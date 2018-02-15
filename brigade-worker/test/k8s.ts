@@ -71,13 +71,13 @@ describe("k8s", function() {
       it("creates Kubernetes objects from a job, event, and project", function() {
         let jr = new k8s.JobRunner(j, e, p)
 
-        assert.match(jr.name, /^pequod-[0-9a-f]+-c0ffee$/)
+        assert.equal(jr.name, `pequod-${e.buildID}`)
         assert.equal(jr.runner.metadata.name, jr.name)
         assert.equal(jr.secret.metadata.name, jr.name)
         assert.equal(jr.runner.spec.containers[0].image, "whaler")
 
-        assert.equal(jr.runner.metadata.labels.commit, e.commit)
-        assert.equal(jr.secret.metadata.labels.commit, e.commit)
+        assert.equal(jr.runner.metadata.labels.commit, e.revision.commit)
+        assert.equal(jr.secret.metadata.labels.commit, e.revision.commit)
 
         assert.equal(jr.runner.metadata.labels.worker, e.workerID)
         assert.equal(jr.secret.metadata.labels.worker, e.workerID)
@@ -111,7 +111,7 @@ describe("k8s", function() {
       })
       context("when event is missing commit", function() {
         beforeEach(function() {
-          e.commit = null
+          e.revision.commit = null
         })
         it("sets 'master' as the commit", function() {
           let jr= new k8s.JobRunner(j, e, p)
@@ -175,21 +175,9 @@ describe("k8s", function() {
         })
         it("attaches key to pod", function() {
           let jr = new k8s.JobRunner(j, e, p)
-          let found = false
-          assert.equal(jr.secret.data.brigadeSSHKey, k8s.b64enc("SUPER SECRET"))
-          for (let env of jr.runner.spec.containers[0].env) {
-            if (env.name == "BRIGADE_REPO_KEY") {
-              found = true
-              assert.equal(env.valueFrom.secretKeyRef.key, "brigadeSSHKey")
-            }
-          }
-          assert.isTrue(found)
-
-          // We also have to check this for the sidecar pod. But right now this is
-          // embedded in a string.
           let sidecar = jr.runner.spec.initContainers[0]
-          assert.equal(sidecar.env.length, 6)
-          assert.equal(sidecar.env[5].name,"BRIGADE_REPO_KEY", "Has BRIGADE REPO KEY as param")
+          assert.equal(sidecar.env.length, 13)
+          assert.equal(sidecar.env[11].name,"BRIGADE_REPO_KEY", "Has BRIGADE REPO KEY as param")
         })
       })
       context("when mount path is supplied", function() {

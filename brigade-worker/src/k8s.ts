@@ -106,7 +106,7 @@ export class BuildStorage {
     let res = new kubernetes.V1ResourceRequirements();
     res.requests = { storage: size };
     s.spec.resources = res;
-    if (this.proj.kubernetes.buildStorageClass.length > 0){
+    if (this.proj.kubernetes.buildStorageClass.length > 0) {
       s.spec.storageClassName = this.proj.kubernetes.buildStorageClass;
     }
 
@@ -150,16 +150,21 @@ export class JobRunner implements jobs.JobRunner {
     this.project = project;
     this.client = defaultClient;
 
-    this.serviceAccount = job.serviceAccount || defaultServiceAccount
+    this.serviceAccount = job.serviceAccount || defaultServiceAccount;
 
-    // $JOB-$TIME-$GITSHA
-    let commit = e.commit || "master";
-    this.name = job.name + "-" + Date.now() + "-" + commit.substring(0, 8);
+    // $JOB-$BUILD
+    this.name = `${job.name}-${this.event.buildID}`;
+    let commit = e.revision.commit || "master";
     let secName = this.name;
     let runnerName = this.name;
 
     this.secret = newSecret(secName);
-    this.runner = newRunnerPod(runnerName, job.image, job.imageForcePull, this.serviceAccount);
+    this.runner = newRunnerPod(
+      runnerName,
+      job.image,
+      job.imageForcePull,
+      this.serviceAccount
+    );
 
     // Experimenting with setting a deadline field after which something
     // can clean up existing builds.
@@ -195,28 +200,6 @@ export class JobRunner implements jobs.JobRunner {
       } as kubernetes.V1EnvVar);
     }
 
-    // Do we still want to add this to the image directly? While it is a security
-    // thing, not adding it would result in users not being able to push anything
-    // upstream into the pod.
-    if (project.repo.sshKey) {
-      this.secret.data.brigadeSSHKey = b64enc(project.repo.sshKey);
-      envVars.push({
-        name: "BRIGADE_REPO_KEY",
-        valueFrom: {
-          secretKeyRef: {
-            key: "brigadeSSHKey",
-            name: secName
-          }
-        }
-      } as kubernetes.V1EnvVar);
-    }
-
-    // Add top-level env vars. These must override any attempt to set the values
-    // to something else.
-    envVars.push(envVar("CLONE_URL", project.repo.cloneURL));
-    envVars.push(envVar("HEAD_COMMIT_ID", e.commit));
-    envVars.push(envVar("CI", "true"));
-
     this.runner.spec.containers[0].env = envVars;
 
     let mountPath = job.mountPath || "/src";
@@ -237,8 +220,7 @@ export class JobRunner implements jobs.JobRunner {
         e,
         "/src",
         project.kubernetes.vcsSidecar,
-        project,
-        secName
+        project
       );
       this.runner.spec.initContainers = [sidecar];
     }
@@ -324,7 +306,9 @@ export class JobRunner implements jobs.JobRunner {
     // be DNS-like, and less than 64 chars. This rules out using project ID,
     // project name, etc. For now, we use project name with slashes replaced,
     // appended to job name.
-    return `${this.project.name.replace(/[.\/]/g, "-")}-${this.job.name}`.toLowerCase();
+    return `${this.project.name.replace(/[.\/]/g, "-")}-${
+      this.job.name
+    }`.toLowerCase();
   }
 
   /**
@@ -461,10 +445,20 @@ export class JobRunner implements jobs.JobRunner {
             } else if (phase == "Pending") {
               // Trap image pull errors and consider them fatal.
               let cs = pod.status.containerStatuses;
-              if (cs && cs.length > 0 && cs[0].state.waiting && cs[0].state.waiting.reason == "ErrImagePull") {
-                k.deleteNamespacedPod(name, ns, new kubernetes.V1DeleteOptions())
-                  .catch(e => logger.error(e))
-                clearTimers()
+              if (
+                cs &&
+                cs.length > 0 &&
+                cs[0].state.waiting &&
+                cs[0].state.waiting.reason == "ErrImagePull"
+              ) {
+                k
+                  .deleteNamespacedPod(
+                    name,
+                    ns,
+                    new kubernetes.V1DeleteOptions()
+                  )
+                  .catch(e => logger.error(e));
+                clearTimers();
                 reject(new Error(cs[0].state.waiting.message));
               }
             }
@@ -488,7 +482,7 @@ export class JobRunner implements jobs.JobRunner {
           clearTimeout(waiter);
           return;
         }
-        pollOnce(name, ns, interval)
+        pollOnce(name, ns, interval);
       }, 2000);
       let clearTimers = () => {
         clearInterval(interval);
@@ -524,8 +518,11 @@ export class JobRunner implements jobs.JobRunner {
 
     s.spec = new kubernetes.V1PersistentVolumeClaimSpec();
     s.spec.accessModes = ["ReadWriteMany"];
-    if (this.project.kubernetes.cacheStorageClass && this.project.kubernetes.cacheStorageClass.length > 0){
-      s.spec.storageClassName = this.project.kubernetes.cacheStorageClass
+    if (
+      this.project.kubernetes.cacheStorageClass &&
+      this.project.kubernetes.cacheStorageClass.length > 0
+    ) {
+      s.spec.storageClassName = this.project.kubernetes.cacheStorageClass;
     }
     let res = new kubernetes.V1ResourceRequirements();
     res.requests = { storage: this.job.cache.size };
@@ -539,11 +536,9 @@ function sidecarSpec(
   e: BrigadeEvent,
   local: string,
   image: string,
-  project: Project,
-  secName: string
+  project: Project
 ): kubernetes.V1Container {
   var imageTag = image;
-  let repoURL = project.repo.cloneURL;
   let initGitSubmodules = project.repo.initGitSubmodules;
 
   if (!imageTag) {
@@ -553,11 +548,17 @@ function sidecarSpec(
   let spec = new kubernetes.V1Container();
   (spec.name = "vcs-sidecar"),
     (spec.env = [
-      envVar("INIT_GIT_SUBMODULES", initGitSubmodules.toString()),
-      envVar("VCS_REPO", repoURL),
-      envVar("VCS_LOCAL_PATH", local),
-      envVar("VCS_REVISION", e.commit),
-      envVar("VCS_AUTH_TOKEN", project.repo.token)
+      envVar("CI", "true"),
+      envVar("BRIGADE_BUILD_ID", e.buildID),
+      envVar("BRIGADE_COMMIT_ID", e.revision.commit),
+      envVar("BRIGADE_COMMIT_REF", e.revision.ref),
+      envVar("BRIGADE_EVENT_PROVIDER", e.provider),
+      envVar("BRIGADE_EVENT_TYPE", e.type),
+      envVar("BRIGADE_PROJECT_ID", project.id),
+      envVar("BRIGADE_REMOTE_URL", project.repo.cloneURL),
+      envVar("BRIGADE_WORKSPACE", local),
+      envVar("BRIGADE_PROJECT_NAMESPACE", project.kubernetes.namespace),
+      envVar("BRIGADE_SUBMODULES", initGitSubmodules.toString())
     ]);
   spec.image = imageTag;
   (spec.imagePullPolicy = "IfNotPresent"),
@@ -569,7 +570,19 @@ function sidecarSpec(
       valueFrom: {
         secretKeyRef: {
           key: "brigadeSSHKey",
-          name: secName
+          name: project.id
+        }
+      }
+    } as kubernetes.V1EnvVar);
+  }
+
+  if (project.repo.token) {
+    spec.env.push({
+      name: "BRIGADE_REPO_AUTH_TOKEN",
+      valueFrom: {
+        secretKeyRef: {
+          key: "github.token",
+          name: project.id
         }
       }
     } as kubernetes.V1EnvVar);
@@ -582,7 +595,7 @@ function newRunnerPod(
   podname: string,
   brigadeImage: string,
   imageForcePull: boolean,
-  serviceAccount: string,
+  serviceAccount: string
 ): kubernetes.V1Pod {
   let pod = new kubernetes.V1Pod();
   pod.metadata = new kubernetes.V1ObjectMeta();
@@ -609,7 +622,7 @@ function newRunnerPod(
 
 function newSecret(name: string): kubernetes.V1Secret {
   let s = new kubernetes.V1Secret();
-  s.type = "brigade.sh/job"
+  s.type = "brigade.sh/job";
   s.metadata = new kubernetes.V1ObjectMeta();
   s.metadata.name = name;
   s.metadata.labels = {
@@ -720,10 +733,14 @@ export function secretToProject(
     p.repo.token = b64dec(secret.data["github.token"]);
   }
   if (secret.data["kubernetes.cacheStorageClass"]) {
-    p.kubernetes.cacheStorageClass = b64dec(secret.data["kubernetes.cacheStorageClass"]);
+    p.kubernetes.cacheStorageClass = b64dec(
+      secret.data["kubernetes.cacheStorageClass"]
+    );
   }
   if (secret.data["kubernetes.buildStorageClass"]) {
-    p.kubernetes.buildStorageClass = b64dec(secret.data["kubernetes.buildStorageClass"]);
+    p.kubernetes.buildStorageClass = b64dec(
+      secret.data["kubernetes.buildStorageClass"]
+    );
   }
   return p;
 }

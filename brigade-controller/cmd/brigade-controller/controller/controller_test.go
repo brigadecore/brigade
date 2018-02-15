@@ -1,10 +1,10 @@
 package controller
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
-	"fmt"
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -94,8 +94,8 @@ func TestController(t *testing.T) {
 	if c.Name != "brigade-runner" {
 		t.Error("Container.Name is not correct")
 	}
-	if envlen := len(c.Env); envlen != 7 {
-		t.Errorf("expected 7 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 13 {
+		t.Errorf("expected 13 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
@@ -115,8 +115,8 @@ func TestController(t *testing.T) {
 		t.Fatalf("Expected 1 init container, got %d", l)
 	}
 	ic := pod.Spec.InitContainers[0]
-	if envlen := len(ic.Env); envlen != 5 {
-		t.Errorf("expected 5 env vars, got %d", envlen)
+	if envlen := len(ic.Env); envlen != 13 {
+		t.Errorf("expected 13 env vars, got %d", envlen)
 	}
 
 	if ic.Image != sidecarImage {
@@ -135,8 +135,6 @@ func TestController(t *testing.T) {
 }
 
 func TestController_WithScript(t *testing.T) {
-	// t.Skip("make better")
-
 	createdPod := false
 	client := fake.NewSimpleClientset()
 	client.PrependReactor("create", "pods", func(action core.Action) (bool, runtime.Object, error) {
@@ -213,8 +211,8 @@ func TestController_WithScript(t *testing.T) {
 	if c.Name != "brigade-runner" {
 		t.Error("Container.Name is not correct")
 	}
-	if envlen := len(c.Env); envlen != 7 {
-		t.Errorf("expected 7 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 13 {
+		t.Errorf("expected 13 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
@@ -287,8 +285,8 @@ func TestController_NoSidecar(t *testing.T) {
 	}
 
 	c := pod.Spec.Containers[0]
-	if envlen := len(c.Env); envlen != 7 {
-		t.Errorf("expected 7 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 13 {
+		t.Errorf("expected 13 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
@@ -459,8 +457,8 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 	if c.Name != "brigade-runner" {
 		t.Error("Container.Name is not correct")
 	}
-	if envlen := len(c.Env); envlen != 7 {
-		t.Errorf("expected 7 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 13 {
+		t.Errorf("expected 13 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != workerImage {
 		t.Error("Container.Image is not correct")
@@ -476,8 +474,8 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 		t.Fatalf("Expected 1 init container, got %d", l)
 	}
 	ic := pod.Spec.InitContainers[0]
-	if envlen := len(ic.Env); envlen != 5 {
-		t.Errorf("expected 5 env vars, got %d", envlen)
+	if envlen := len(ic.Env); envlen != 13 {
+		t.Errorf("expected 13 env vars, got %d", envlen)
 	}
 
 	if ic.Image != sidecarImage {

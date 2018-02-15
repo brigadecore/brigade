@@ -172,7 +172,7 @@ Here is an example script for running a quick test against a locally running bri
 
 export BRIGADE_EVENT_TYPE=quicktest
 export BRIGADE_EVENT_PROVIDER=script
-export BRIGADE_COMMIT=9c75584920f1297008118915024927cc099d5dcc
+export BRIGADE_COMMIT_REF=master
 export BRIGADE_PAYLOAD='{}'
 export BRIGADE_PROJECT_ID=brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
 export BRIGADE_PROJECT_NAMESPACE=default

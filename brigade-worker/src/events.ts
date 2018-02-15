@@ -51,14 +51,9 @@ export class BrigadeEvent {
    */
   provider: string;
   /**
-   * commit is the upstream VCS commit ID (revision).
-   *
-   * If it is not provided, it may be interpreted as `master`, or the head
-   * of the main branch.
-   *
-   * The default value is not guaranteed to be `master` in future versions.
+   * revision describes a vcs revision.
    */
-  commit?: string;
+  revision?: Revision;
   /**
    * payload is the event body.
    * This is the original source from upstream. If upstream returned a string,
@@ -68,6 +63,25 @@ export class BrigadeEvent {
    */
   payload?: any;
   cause?: Cause;
+}
+
+/**
+ * Revision describes a vcs revision.
+ */
+export class Revision {
+  /**
+   * commit is the upstream VCS commit ID (revision).
+   *
+   * If it is not provided, it may be interpreted as `master`, or the head
+   * of the main branch.
+   *
+   * The default value is not guaranteed to be `master` in future versions.
+   */
+  commit?: string;
+  /*
+   * Ref is the symbolic ref name. (refs/heads/master, refs/pull/12/head, refs/tags/v0.1.0)
+   */
+  ref?: string;
 }
 
 /**
@@ -119,7 +133,7 @@ export interface Repository {
   /**
    * initGitSubmodules is a flag that controls if the cloned repository should also have it's submodules initialized (if any).
    */
-  initGitSubmodules: boolean
+  initGitSubmodules: boolean;
 }
 
 /**

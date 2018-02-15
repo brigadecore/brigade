@@ -1,2 +1,2 @@
 #!/bin/sh
-echo $VCS_AUTH_TOKEN
+echo $BRIGADE_REPO_AUTH_TOKEN

@@ -31,7 +31,9 @@ export function mockEvent() {
     workerID: "test-1234567890abcdef-12345678",
     type: "push",
     provider: "github",
-    commit: "c0ffee",
+    revision: {
+      commit: "c0ffee",
+    },
     payload: "{}"
   } as BrigadeEvent
 }

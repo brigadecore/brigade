@@ -120,20 +120,18 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 		ProjectID: brigade.ProjectID(projectName),
 		Type:      a.event,
 		Provider:  "brigade-cli",
-		Commit:    a.commit,
-		Payload:   a.payload,
-		Script:    data,
+		Revision: &brigade.Revision{
+			Ref: a.commit,
+		},
+		Payload: a.payload,
+		Script:  data,
 	}
 
 	if err := a.store.CreateBuild(b); err != nil {
 		return err
 	}
 
-	shortRef := b.Commit
-	if len(shortRef) > 8 {
-		shortRef = shortRef[0:8]
-	}
-	podName := fmt.Sprintf("brigade-worker-%s-%s", b.ID, shortRef)
+	podName := fmt.Sprintf("brigade-worker-%s", b.ID)
 
 	if err := a.waitForWorker(b.ID); err != nil {
 		return err

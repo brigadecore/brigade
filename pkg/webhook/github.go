@@ -78,7 +78,8 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		return
 	}
 
-	var repo, commit string
+	var repo string
+	var rev brigade.Revision
 
 	switch e := e.(type) {
 	case *github.PushEvent:
@@ -89,7 +90,8 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		}
 
 		repo = e.Repo.GetFullName()
-		commit = e.HeadCommit.GetID()
+		rev.Commit = e.HeadCommit.GetID()
+		rev.Ref = e.GetRef()
 	case *github.PullRequestEvent:
 		if !s.isAllowedPullRequest(e) {
 			c.JSON(http.StatusOK, gin.H{"status": "build skipped"})
@@ -105,30 +107,32 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		}
 
 		repo = e.Repo.GetFullName()
-		commit = e.PullRequest.Head.GetSHA()
+		rev.Commit = e.PullRequest.Head.GetSHA()
+		rev.Ref = fmt.Sprintf("refs/pull/%d/head", e.PullRequest.GetNumber())
 	case *github.CommitCommentEvent:
 		repo = e.Repo.GetFullName()
-		commit = e.Comment.GetCommitID()
+		rev.Commit = e.Comment.GetCommitID()
 	case *github.CreateEvent:
 		// TODO: There are three ref_type values: tag, branch, and repo. Do we
 		// want to be opinionated about how we handle these?
 		repo = e.Repo.GetFullName()
-		commit = e.GetRef() // Note that this is a ref, not a commit.
+		rev.Ref = e.GetRef()
 	case *github.ReleaseEvent:
 		repo = e.Repo.GetFullName()
-		commit = e.Release.GetTagName() // Note this is a tag name, not a commit
+		rev.Ref = e.Release.GetTagName()
 	case *github.StatusEvent:
 		repo = e.Repo.GetFullName()
-		commit = e.Commit.GetSHA()
+		rev.Commit = e.Commit.GetSHA()
 	case *github.PullRequestReviewEvent:
 		repo = e.Repo.GetFullName()
-		commit = e.PullRequest.Head.GetSHA()
+		rev.Commit = e.PullRequest.Head.GetSHA()
+		rev.Ref = fmt.Sprintf("refs/pull/%d/head", e.PullRequest.GetNumber())
 	case *github.DeploymentEvent:
 		repo = e.Repo.GetFullName()
-		commit = e.Deployment.GetSHA()
+		rev.Commit = e.Deployment.GetSHA()
 	case *github.DeploymentStatusEvent:
 		repo = e.Repo.GetFullName()
-		commit = e.Deployment.GetSHA()
+		rev.Commit = e.Deployment.GetSHA()
 	default:
 		log.Printf("Failed to parse payload")
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Received data is not valid JSON"})
@@ -158,26 +162,26 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		log.Printf("!!!WARNING!!! Expected project secret to have name %q, got %q", repo, proj.Name)
 	}
 
-	s.buildStatus(eventType, commit, body, proj)
+	s.buildStatus(eventType, rev, body, proj)
 
 	c.JSON(http.StatusOK, gin.H{"status": "Complete"})
 }
 
 // buildStatus runs a build, and sets upstream status accordingly.
-func (s *githubHook) buildStatus(eventType, commit string, payload []byte, proj *brigade.Project) {
+func (s *githubHook) buildStatus(eventType string, rev brigade.Revision, payload []byte, proj *brigade.Project) {
 	msg := "Building"
 	svc := StatusContext
 	status := new(github.RepoStatus)
 	status.State = &StatePending
 	status.Description = &msg
 	status.Context = &svc
-	if err := s.build(eventType, commit, payload, proj); err != nil {
+	if err := s.build(eventType, rev, payload, proj); err != nil {
 		log.Printf("Creating Build failed: %s", err)
 		msg = truncAt(err.Error(), 140)
 		status.State = &StateFailure
 		status.Description = &msg
 	}
-	if err := s.createStatus(commit, proj, status); err != nil {
+	if err := s.createStatus(rev.Commit, proj, status); err != nil {
 		// For this one, we just log an error and continue.
 		log.Printf("Error setting status to %s: %s", *status.State, err)
 	}
@@ -211,8 +215,8 @@ func getFileFromGithub(commit, path string, proj *brigade.Project) ([]byte, erro
 	return GetFileContents(proj, commit, path)
 }
 
-func (s *githubHook) build(eventType, commit string, payload []byte, proj *brigade.Project) error {
-	brigadeScript, err := s.getFile(commit, brigadeJSFile, proj)
+func (s *githubHook) build(eventType string, rev brigade.Revision, payload []byte, proj *brigade.Project) error {
+	brigadeScript, err := s.getFile(rev.Commit, brigadeJSFile, proj)
 	if err != nil {
 		if proj.DefaultScript == "" {
 			return fmt.Errorf("no brigade.js found in either project's defaultScript or the git repository: %v", err)
@@ -224,7 +228,7 @@ func (s *githubHook) build(eventType, commit string, payload []byte, proj *briga
 		ProjectID: proj.ID,
 		Type:      eventType,
 		Provider:  "github",
-		Commit:    commit,
+		Revision:  &rev,
 		Payload:   payload,
 		Script:    brigadeScript,
 	}

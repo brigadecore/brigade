@@ -9,7 +9,6 @@ import (
 	"github.com/oklog/ulid"
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/Azure/brigade/pkg/brigade"
 )
@@ -20,14 +19,14 @@ const secretTypeBuild = "brigade.sh/build"
 func (s *store) GetBuild(id string) (*brigade.Build, error) {
 	build := &brigade.Build{ID: id}
 
-	labels := labels.Set{"heritage": "brigade", "component": "build", "build": build.ID}
-	listOption := meta.ListOptions{LabelSelector: labels.AsSelector().String()}
+	labels := fmt.Sprint("heritage=brigade,component=build,build=", build.ID)
+	listOption := meta.ListOptions{LabelSelector: labels}
 	secrets, err := s.client.CoreV1().Secrets(s.namespace).List(listOption)
 	if err != nil {
 		return nil, err
 	}
 	if len(secrets.Items) < 1 {
-		return nil, fmt.Errorf("could not find build %s: no secrets exist with labels %s", id, labels.AsSelector().String())
+		return nil, fmt.Errorf("could not find build %s: no secrets exist with labels %s", id, labels)
 	}
 	// Select the first secret as the build IDs are unique
 	b := NewBuildFromSecret(secrets.Items[0])
@@ -37,23 +36,18 @@ func (s *store) GetBuild(id string) (*brigade.Build, error) {
 
 // Get creates a new project and writes it to storage.
 func (s *store) CreateBuild(build *brigade.Build) error {
-	shortCommit := build.Commit
-	if len(shortCommit) > 8 {
-		shortCommit = shortCommit[0:8]
-	}
-
 	if build.ID == "" {
 		build.ID = genID()
 	}
 
-	buildName := fmt.Sprintf("brigade-worker-%s-%s", build.ID, shortCommit)
+	buildName := fmt.Sprintf("brigade-worker-%s", build.ID)
 
 	secret := v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
 			Name: buildName,
 			Labels: map[string]string{
 				"build":     build.ID,
-				"commit":    build.Commit,
+				"commit_id": build.Revision.Commit,
 				"component": "build",
 				"heritage":  "brigade",
 				"project":   build.ProjectID,
@@ -65,11 +59,13 @@ func (s *store) CreateBuild(build *brigade.Build) error {
 			"payload": build.Payload,
 		},
 		StringData: map[string]string{
-			"project_id":     build.ProjectID,
-			"event_type":     build.Type,
-			"event_provider": build.Provider,
-			"commit":         build.Commit,
+			"build_id":       buildName,
 			"build_name":     buildName,
+			"commit_id":      build.Revision.Commit,
+			"commit_ref":     build.Revision.Ref,
+			"event_provider": build.Provider,
+			"event_type":     build.Type,
+			"project_id":     build.ProjectID,
 		},
 	}
 
@@ -146,14 +142,19 @@ func findWorker(id string, pods *v1.PodList) (*brigade.Worker, bool) {
 
 // NewBuildFromSecret creates a Build object from a secret.
 func NewBuildFromSecret(secret v1.Secret) *brigade.Build {
+	lbs := secret.ObjectMeta.Labels
+	sv := SecretValues(secret.Data)
 	return &brigade.Build{
-		ID:        secret.ObjectMeta.Labels["build"],
-		ProjectID: secret.ObjectMeta.Labels["project"],
-		Type:      string(secret.Data["event_type"]),
-		Provider:  string(secret.Data["event_provider"]),
-		Commit:    secret.ObjectMeta.Labels["commit"],
-		Payload:   secret.Data["payload"],
-		Script:    secret.Data["script"],
+		ID:        lbs["build"],
+		ProjectID: lbs["project"],
+		Type:      sv.String("event_type"),
+		Provider:  sv.String("event_provider"),
+		Revision: &brigade.Revision{
+			Commit: sv.String("commit_id"),
+			Ref:    sv.String("commit_ref"),
+		},
+		Payload: sv.Bytes("payload"),
+		Script:  sv.Bytes("script"),
 	}
 }
 

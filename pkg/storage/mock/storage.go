@@ -33,12 +33,14 @@ var (
 	StubBuild = &brigade.Build{
 		ID:        "build-id",
 		ProjectID: "project-id",
-		Commit:    "commit",
-		Type:      "type",
-		Provider:  "provider",
-		Payload:   []byte("payload"),
-		Script:    []byte("script"),
-		Worker:    StubWorker,
+		Revision: &brigade.Revision{
+			Commit: "commit",
+		},
+		Type:     "type",
+		Provider: "provider",
+		Payload:  []byte("payload"),
+		Script:   []byte("script"),
+		Worker:   StubWorker,
 	}
 	// StubJob is a stub Job.
 	StubJob = &brigade.Job{

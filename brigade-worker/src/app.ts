@@ -91,7 +91,9 @@ export class App {
         .catch(reason => {
           // Kubernetes objects put error messages here:
           const msg = reason.body ? reason.body.message : reason;
-          this.logger.log(`failed to destroy storage for ${e.workerID}: ${msg}`);
+          this.logger.log(
+            `failed to destroy storage for ${e.workerID}: ${msg}`
+          );
         });
     };
 
@@ -99,9 +101,8 @@ export class App {
     // throw from EventEmitter.
     brigadier.events.once("error", () => {
       this.logger.log("error handler is cleaning up");
-      if (this.exitOnError){
-        destroyStorage()
-        .then(()=>{
+      if (this.exitOnError) {
+        destroyStorage().then(() => {
           process.exit(1);
         });
       }
@@ -141,7 +142,7 @@ export class App {
         workerID: e.workerID,
         type: "after",
         provider: "brigade",
-        commit: e.commit,
+        revision: e.revision,
         cause: {
           event: e,
           trigger: code == 0 ? "success" : "failure"
@@ -190,7 +191,7 @@ export class App {
       workerID: this.lastEvent.workerID,
       type: "error",
       provider: "brigade",
-      commit: this.lastEvent.commit,
+      revision: this.lastEvent.revision,
       cause: {
         event: this.lastEvent,
         reason: reason,
