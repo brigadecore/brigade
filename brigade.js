@@ -111,7 +111,7 @@ function release(e, p) {
 }
 
 function ghNotify(state, msg, e, project) {
-  const gh := new Job("notify-github", "technosophos/github-notify:latest")
+  const gh = new Job("notify-github", "technosophos/github-notify:latest")
   gh.env = {
     GH_REPO: project.repo.name,
     GH_STATE: state,
