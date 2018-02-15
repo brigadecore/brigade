@@ -14,6 +14,9 @@ VERSION   ?= ${GIT_TAG}
 IMAGE_TAG ?= ${VERSION}
 LDFLAGS   += -X github.com/Azure/brigade/pkg/version.Version=$(VERSION)
 
+CX_OSES = linux windows darwin
+CX_ARCHS = amd64
+
 # Build native binaries
 .PHONY: build
 build: $(BINS)
@@ -43,6 +46,19 @@ docker-push: $(addsuffix -push,$(IMAGES))
 
 %-push:
 	docker push $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG)
+
+# Cross-compile binaries for our CX targets.
+# Mainly, this is for brig-cross-compile
+%-cross-compile:
+	@for os in $(CX_OSES); do \
+		echo "building $$os"; \
+		for arch in $(CX_ARCHS); do \
+			GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./bin/$*-$$os-$$arch ./$*/cmd/$*; \
+		done;\
+	done
+
+.PHONY: build-release
+build-release: brig-cross-compile
 
 .PRECIOUS: build-chart
 .PHONY: build-chart
