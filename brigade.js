@@ -49,7 +49,7 @@ function build(e, project) {
   // Then send GitHub a notification on the status.
   Group.runAll([start, jsTest, goBuild])
   .then(() => {
-      ghNotify("success", "Passed", e, project)
+      return ghNotify("success", "Passed", e, project).run()
    }).then( () => {
     const gh = JSON.parse(e.payload)
     var runRelease = false
@@ -60,7 +60,7 @@ function build(e, project) {
     }
     return Promise.resolve(runRelease)
   }).catch(e => {
-    ghNotify("failure", `failed build ${ e.toString() }`, e, project)
+    return ghNotify("failure", `failed build ${ e.toString() }`, e, project).run()
   });
 }
 
@@ -119,7 +119,7 @@ function ghNotify(state, msg, e, project) {
     GH_REPO: project.repo.name,
     GH_STATE: state,
     GH_DESCRIPTION: msg,
-    GH_CONTEXT: "brigade-ci",
+    GH_CONTEXT: "brigade",
     GH_TOKEN: project.secrets.ghToken,
     GH_COMMIT: e.commit
   }
