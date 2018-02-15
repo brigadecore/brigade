@@ -117,7 +117,7 @@ function ghNotify(state, msg, e, project) {
     GH_STATE: state,
     GH_DESCRIPTION: msg,
     GH_CONTEXT: "brigade-ci",
-    GH_TOKEN: p.secrets.ghToken,
+    GH_TOKEN: project.secrets.ghToken,
     GH_COMMIT: e.commit
   }
   return gh
