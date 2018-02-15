@@ -43,13 +43,22 @@ function build(e, project) {
     "yarn test"
   ];
 
-  // Run in parallel
+  // Run tests in parallel. Then if it's a release, push binaries.
+  // Then send GitHub a notification on the status.
   Group.runAll([jsTest, goBuild]).then( () => {
     const gh = JSON.parse(e.payload)
+    var runRelease = false
     if (e.event == "push" && gh.ref.startsWith("refs/tags/")) {
+      // Run the release in the background.
+      runRelease = true
       release(e, p)
     }
-  })
+    return Promise.resolve(runRelease)
+  }).then(isReleasing => {
+    ghNotify("success", "Passed", e, project)
+  }).catch(e => {
+    ghNotify("failure", `failed build ${ e.toString() }`, e, project)
+  });
 }
 
 function release(e, p) {
@@ -99,6 +108,19 @@ function release(e, p) {
   cx.run().then( res => {
     console.log(`releases at https://github.com/${p.repo.name}/releases/tag/${tag}`);
   })
+}
+
+function ghNotify(state, msg, e, project) {
+  const gh := new Job("notify-github", "technosophos/github-notify:latest")
+  gh.env = {
+    GH_REPO: project.repo.name,
+    GH_STATE: state,
+    GH_DESCRIPTION: msg,
+    GH_CONTEXT: "brigade-ci",
+    GH_TOKEN: p.secrets.ghToken,
+    GH_COMMIT: e.commit
+  }
+  return gh
 }
 
 events.on("push", build)
