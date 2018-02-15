@@ -8,12 +8,14 @@
  * - `BRIGADE_EVENT_PROVIDER`: The name of the event provider, such as `github` or `dockerhub`
  * - `BRIGADE_PROJECT_ID`: The project ID. This is used to load the Project
  *   object from configuration.
- * - `BRIGADE_COMMIT`: The VCS commit ID (e.g. the Git commit)
+ * - `BRIGADE_COMMIT_ID`: The VCS commit ID (e.g. the Git commit)
+ * - `BRIGADE_COMMIT_REF`: The VCS full reference, defaults to
+ *   `refs/heads/master`
  * - `BRIGADE_PAYLOAD`: The payload from the original event trigger.
  * - `BRIGADE_PROJECT_NAMESPACE`: For Kubernetes, this is the Kubernetes namespace in
  *   which new jobs should be created. The Brigade worker must have write access to
  *   this namespace.
- * - `BRIGADE_BUILD`: The ULID for the build. This is unique.
+ * - `BRIGADE_BUILD_ID`: The ULID for the build. This is unique.
  * - `BRIGADE_BUILD_NAME`: This is actually the ID of the worker.
  *
  * Also, the Brigade script must be written to `brigade.js`.
@@ -50,11 +52,14 @@ const projectID: string = requiredEnvVar("BRIGADE_PROJECT_ID");
 const projectNamespace: string = requiredEnvVar("BRIGADE_PROJECT_NAMESPACE");
 const defaultULID = ulid();
 let e: events.BrigadeEvent = {
-  buildID: process.env.BRIGADE_BUILD || defaultULID,
+  buildID: process.env.BRIGADE_BUILD_ID || defaultULID,
   workerID: process.env.BRIGADE_BUILD_NAME || `unknown-${defaultULID}`,
   type: process.env.BRIGADE_EVENT_TYPE || "ping",
   provider: process.env.BRIGADE_EVENT_PROVIDER || "unknown",
-  commit: process.env.BRIGADE_COMMIT || "master"
+  revision: {
+    commit: process.env.BRIGADE_COMMIT_ID,
+    ref: process.env.BRIGADE_COMMIT_REF || "refs/heads/master"
+  }
 };
 
 try {

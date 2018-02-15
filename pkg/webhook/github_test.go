@@ -57,6 +57,7 @@ func TestGithubHandler(t *testing.T) {
 	tests := []struct {
 		event        string
 		commit       string
+		ref          string
 		payloadFile  string
 		renamedEvent string
 		mustFail     bool
@@ -64,6 +65,7 @@ func TestGithubHandler(t *testing.T) {
 		{
 			event:       "push",
 			commit:      "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
+			ref:         "refs/heads/changes",
 			payloadFile: "testdata/github-push-payload.json",
 		},
 		{
@@ -75,16 +77,19 @@ func TestGithubHandler(t *testing.T) {
 		{
 			event:       "pull_request",
 			commit:      "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
+			ref:         "refs/pull/1/head",
 			payloadFile: "testdata/github-pull_request-payload.json",
 		},
 		{
 			event:       "pull_request_review",
 			commit:      "b7a1f9c27caa4e03c14a88feb56e2d4f7500aa63",
+			ref:         "refs/pull/8/head",
 			payloadFile: "testdata/github-pull_request_review-payload.json",
 		},
 		{
 			event:        "pull_request",
 			commit:       "ad0703ac08e80448764b34dc089d0f73a1242ae9",
+			ref:          "refs/pull/1/head",
 			payloadFile:  "testdata/github-pull_request-labeled-payload.json",
 			renamedEvent: "pull_request:labeled",
 		},
@@ -95,12 +100,12 @@ func TestGithubHandler(t *testing.T) {
 		},
 		{
 			event:       "release",
-			commit:      "0.0.1",
+			ref:         "0.0.1",
 			payloadFile: "testdata/github-release-payload.json",
 		},
 		{
 			event:       "create",
-			commit:      "0.0.1",
+			ref:         "0.0.1",
 			payloadFile: "testdata/github-create-payload.json",
 		},
 		{
@@ -134,7 +139,7 @@ func TestGithubHandler(t *testing.T) {
 					t.Error("RepoStatus.Building is not correct")
 				}
 				if commit != tt.commit {
-					t.Error("commit is not correct")
+					t.Errorf("expected commit %q, got %q", tt.commit, commit)
 				}
 				return nil
 			}
@@ -177,11 +182,15 @@ func TestGithubHandler(t *testing.T) {
 			} else if ee != tt.event {
 				t.Errorf("Build.Type is not correct. Expected event %q, got %q", tt.event, ee)
 			}
-			if store.builds[0].Provider != "github" {
+			b := store.builds[0]
+			if b.Provider != "github" {
 				t.Error("Build.Provider is not correct")
 			}
-			if store.builds[0].Commit != tt.commit {
+			if b.Revision.Commit != tt.commit {
 				t.Error("Build.Commit is not correct")
+			}
+			if b.Revision.Ref != tt.ref {
+				t.Errorf("Build.Commit is not correct. Expected ref %q, got %q", tt.ref, b.Revision.Ref)
 			}
 		})
 	}

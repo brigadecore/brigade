@@ -6,7 +6,7 @@ cd "$root_dir"
 
 tempdir=$(mktemp -d -t "repos")
 
-export VCS_LOCAL_PATH="${tempdir}/repo"
+export BRIGADE_WORKSPACE="${tempdir}/repo"
 
 check_equal() {
   [[ "$1" == "$2" ]] || {
@@ -16,25 +16,22 @@ check_equal() {
 }
 
 setup_git_server() {
-  git daemon --base-path="${tempdir}" --export-all --reuseaddr "${tempdir}" >/dev/null 2>&1 &
+  local srvroot="${root_dir}/tmp"
+
+  git ls-remote git://localhost/test.git >/dev/null 2>&1 || git daemon --base-path="${srvroot}" --export-all --reuseaddr "${srvroot}" >/dev/null 2>&1 &
+
+  sleep 5
+
+  [[ -d  "${srvroot}" ]] && return
 
   (
   unset XDG_CONFIG_HOME
   export HOME=/dev/null
   export GIT_CONFIG_NOSYSTEM=1
 
-  mkdir -p "${tempdir}/test.git"
-  cd "${tempdir}/test.git"
+  repo_root="${root_dir}/tmp/test.git"
 
-  git init --bare
-  git remote add origin git@github.com:Azure/brigade.git
-  git config --add remote.origin.fetch '+refs/heads/*:refs/heads/*'
-  git config --add remote.origin.fetch '+refs/pull/1/head:refs/pull/1/head'
-  git config --add remote.origin.fetch '+refs/tags/v0.7.0:refs/tags/v0.7.0'
-  git fetch -q origin
-
-  # create a branch
-  echo "f6c8b7aa3166d390852f0d34638424ca90e8ed6b" > ./refs/heads/hotfix
+  git clone --mirror https://github.com/deis/empty-testbed.git "${repo_root}"
   )
 }
 
@@ -45,31 +42,33 @@ cleanup() {
 trap 'cleanup' EXIT
 
 test_clone() {
-  local revision="$1" sha="$2"
+  local revision="$1" want="$2"
 
-  VCS_REPO="git://127.0.0.1/test.git" VCS_REVISION="${revision}" ./rootfs/clone.sh
+  BRIGADE_REMOTE_URL="git://127.0.0.1/test.git" BRIGADE_COMMIT_REF="${revision}" ./rootfs/clone.sh
 
-  check_equal "${sha}" "$(git -C ${VCS_LOCAL_PATH} rev-parse FETCH_HEAD)"
+  got="$(git -C ${BRIGADE_WORKSPACE} rev-parse --short FETCH_HEAD)"
 
-  rm -rf "${VCS_LOCAL_PATH}"
+  check_equal "${want}" "${got}"
+
+  rm -rf "${BRIGADE_WORKSPACE}"
 }
 
 setup_git_server
 
 echo ":: Checkout tag"
-test_clone "v0.7.0" "f16f26c22a2057dad44749a6b279e9d6453df9a5"
-echo
-
-echo ":: Checkout sha"
-test_clone "f16f26c22a2057dad44749a6b279e9d6453df9a5" "f16f26c22a2057dad44749a6b279e9d6453df9a5"
+test_clone "v0.1.0" "ddff78a"
 echo
 
 echo ":: Checkout branch"
-test_clone "hotfix" "f6c8b7aa3166d390852f0d34638424ca90e8ed6b"
+test_clone "hotfix" "589e150"
 echo
 
-echo ":: Checkout pull request by sha"
-test_clone "e397f07262a7027aa2f6083c4883aba197c57196" "e397f07262a7027aa2f6083c4883aba197c57196"
-
+echo ":: Checkout pull request by reference"
+test_clone "refs/pull/1/head" "5c4bc10"
 echo
+
+echo ":: Checkout sha"
+test_clone "589e15029e1e44dee48de4800daf1f78e64287c0" "589e150"
+echo
+
 echo "All tests passing"

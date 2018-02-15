@@ -6,9 +6,12 @@ import (
 	"strings"
 
 	"fmt"
+
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/Azure/brigade/pkg/storage/kube"
 )
 
 // ErrNoBuildID indicates that a secret does not have a build ID attached.
@@ -24,7 +27,7 @@ func (c *Controller) syncSecret(secret *v1.Secret) error {
 	}
 	data := secret.Data
 
-	log.Printf("EventHandler: type=%s provider=%s commit=%s", data["event_type"], data["event_provider"], data["commit"])
+	log.Printf("EventHandler: type=%s provider=%s commit=%s", data["event_type"], data["event_provider"], data["commit_id"])
 
 	podClient := c.clientset.CoreV1().Pods(secret.Namespace)
 
@@ -51,33 +54,24 @@ func (c *Controller) syncSecret(secret *v1.Secret) error {
 		if _, err := podClient.Create(&pod); err != nil {
 			return err
 		}
-		log.Printf("Started %s for %q [%s] at %d", pod.Name, data["event_type"], data["commit"], pod.CreationTimestamp.Unix())
+		log.Printf("Started %s for %q [%s] at %d", pod.Name, data["event_type"], data["commit_id"], pod.CreationTimestamp.Unix())
 	}
 
 	return nil
 }
 
 const (
-	volumeName               = "brigade-build"
-	volumeMountPath          = "/etc/brigade"
-	sidecarVolumeName        = "vcs-sidecar"
-	sidecarVolumePath        = "/vcs"
-	vcsSidecarKey            = "vcsSidecar"
-	workerCommandKey         = "workerCommand"
-	workerImageRegistryKey   = "worker.registry"
-	workerImageNameKey       = "worker.name"
-	workerImageTagKey        = "worker.tag"
-	workerImagePullPolicyKey = "worker.pullPolicy"
+	volumeName        = "brigade-build"
+	volumeMountPath   = "/etc/brigade"
+	sidecarVolumeName = "vcs-sidecar"
+	sidecarVolumePath = "/vcs"
 )
 
-func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
-	envvar := func(key string) v1.EnvVar {
-		name := "BRIGADE_" + strings.ToUpper(key)
-		return secretRef(name, key, secret)
-	}
+func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
+	env := workerEnv(project, build)
 
 	cmd := []string{"yarn", "-s", "start"}
-	if cmdString, ok := project.Data[workerCommandKey]; ok {
+	if cmdString, ok := project.Data["workerCommand"]; ok {
 		cmd = strings.Split(string(cmdString), " ")
 	}
 
@@ -105,29 +99,13 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 					ReadOnly:  true,
 				},
 			},
-			Env: []v1.EnvVar{
-				envvar("project_id"),
-				envvar("event_type"),
-				envvar("event_provider"),
-				envvar("build_name"),
-				envvar("commit"),
-				{
-					Name: "BRIGADE_PROJECT_NAMESPACE",
-					ValueFrom: &v1.EnvVarSource{
-						FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"},
-					},
-				},
-				{
-					Name:  "BRIGADE_BUILD",
-					Value: secret.Labels["build"],
-				},
-			},
+			Env: env,
 		}},
 		Volumes: []v1.Volume{
 			{
 				Name: volumeName,
 				VolumeSource: v1.VolumeSource{
-					Secret: &v1.SecretVolumeSource{SecretName: secret.Name},
+					Secret: &v1.SecretVolumeSource{SecretName: build.Name},
 				},
 			},
 			{
@@ -142,19 +120,21 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 
 	pod := v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   secret.Name,
-			Labels: secret.Labels,
+			Name:   build.Name,
+			Labels: build.Labels,
 		},
 		Spec: podSpec,
 	}
 
+	sv := kube.SecretValues(build.Data)
+
 	// Skip adding the sidecar pod if the script is provided already.
-	if s, ok := secret.Data["script"]; ok && len(s) > 0 {
+	if len(sv.Bytes("script")) > 0 {
 		return pod, nil
 	}
 
 	// Skip adding the sidecar pod if no sidecar pod image is supplied.
-	if image, ok := project.Data[vcsSidecarKey]; ok && len(image) > 0 {
+	if image := project.Data["vcsSidecar"]; len(image) > 0 {
 		pod.Spec.InitContainers = []v1.Container{{
 			Name:            "vcs-sidecar",
 			Image:           string(image),
@@ -163,16 +143,7 @@ func (c *Controller) newWorkerPod(secret, project *v1.Secret) (v1.Pod, error) {
 				Name:      sidecarVolumeName,
 				MountPath: sidecarVolumePath,
 			}},
-			Env: []v1.EnvVar{
-				{
-					Name:  "VCS_LOCAL_PATH",
-					Value: sidecarVolumePath,
-				},
-				secretRef("VCS_REPO", "cloneURL", project),
-				secretRef("VCS_REVISION", "commit", secret),
-				secretRef("VCS_AUTH_TOKEN", "github.token", project),
-				secretRef("BRIGADE_REPO_KEY", "sshKey", project),
-			},
+			Env: env,
 		}}
 	}
 	return pod, nil
@@ -186,44 +157,67 @@ func (c *Controller) workerImageConfig(project *v1.Secret) (string, string) {
 	name := splits[last]
 	splits = splits[:last]
 	registry := strings.Join(splits, "/")
-	if n, ok := project.Data[workerImageNameKey]; ok && len(n) > 0 {
-		name = string(n)
+	sv := kube.SecretValues(project.Data)
+	if n := sv.String("worker.name"); len(n) > 0 {
+		name = n
 	}
-	if t, ok := project.Data[workerImageTagKey]; ok && len(t) > 0 {
-		tag = string(t)
+	if t := sv.String("worker.tag"); len(t) > 0 {
+		tag = t
 	}
-	if r, ok := project.Data[workerImageRegistryKey]; ok && len(r) > 0 {
-		registry = string(r)
+	if r := sv.String("worker.registry"); len(r) > 0 {
+		registry = r
 	}
-
 	image := fmt.Sprintf("%s/%s:%s", registry, name, tag)
 
 	pullPolicy := c.WorkerPullPolicy
-	if p, ok := project.Data[workerImagePullPolicyKey]; ok && len(p) > 0 {
-		pullPolicy = string(p)
+	if p := sv.String("worker.pullPolicy"); len(p) > 0 {
+		pullPolicy = p
 	}
-
 	return image, pullPolicy
+}
+
+func workerEnv(project, build *v1.Secret) []v1.EnvVar {
+	sv := kube.SecretValues(build.Data)
+	env := []v1.EnvVar{
+		{Name: "CI", Value: "true"},
+		{Name: "BRIGADE_BUILD_ID", Value: build.Labels["build"]},
+		{Name: "BRIGADE_BUILD_NAME", Value: sv.String("build_name")},
+		{Name: "BRIGADE_COMMIT_ID", Value: sv.String("commit_id")},
+		{Name: "BRIGADE_COMMIT_REF", Value: sv.String("commit_ref")},
+		{Name: "BRIGADE_EVENT_PROVIDER", Value: sv.String("event_provider")},
+		{Name: "BRIGADE_EVENT_TYPE", Value: sv.String("event_type")},
+		{Name: "BRIGADE_PROJECT_ID", Value: sv.String("project_id")},
+		{Name: "BRIGADE_REMOTE_URL", Value: string(project.Data["cloneURL"])},
+		{Name: "BRIGADE_WORKSPACE", Value: sidecarVolumePath},
+		{
+			Name: "BRIGADE_PROJECT_NAMESPACE",
+			ValueFrom: &v1.EnvVarSource{
+				FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"},
+			},
+		},
+		{
+			Name:      "BRIGADE_REPO_KEY",
+			ValueFrom: secretRef("sshKey", project),
+		},
+		{
+			Name:      "BRIGADE_REPO_AUTH_TOKEN",
+			ValueFrom: secretRef("github.token", project),
+		},
+	}
+	return env
 }
 
 // secretRef generate a SeccretKeyRef env var entry if `key` is present in `secret`.
 // If the key does not exist a name/value pair is returned with an empty value
-func secretRef(name, key string, secret *v1.Secret) v1.EnvVar {
-	if _, ok := secret.Data[key]; !ok {
-		return v1.EnvVar{
-			Name:  name,
-			Value: "",
-		}
-	}
-	return v1.EnvVar{
-		Name: name,
-		ValueFrom: &v1.EnvVarSource{
-			SecretKeyRef: &v1.SecretKeySelector{
-				Key: key,
-				LocalObjectReference: v1.LocalObjectReference{
-					Name: secret.Name,
-				},
+func secretRef(key string, secret *v1.Secret) *v1.EnvVarSource {
+	trueVal := true
+	return &v1.EnvVarSource{
+		SecretKeyRef: &v1.SecretKeySelector{
+			Key: key,
+			LocalObjectReference: v1.LocalObjectReference{
+				Name: secret.Name,
 			},
+			Optional: &trueVal,
 		},
 	}
 }

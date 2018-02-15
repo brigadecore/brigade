@@ -14,9 +14,9 @@ func TestNewBuildFromSecret(t *testing.T) {
 	secret := v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"build":   "#1",
-				"project": "myproject",
-				"commit":  "abc123",
+				"build":     "#1",
+				"project":   "myproject",
+				"commit_id": "abc123",
 			},
 		},
 		Data: map[string][]byte{
@@ -24,16 +24,21 @@ func TestNewBuildFromSecret(t *testing.T) {
 			"event_provider": []byte("bar"),
 			"payload":        []byte("this is a payload"),
 			"script":         []byte("ohai"),
+			"commit_id":      []byte("abc123"),
+			"commit_ref":     []byte("refs/heads/master"),
 		},
 	}
 	expectedBuild := &brigade.Build{
 		ID:        "#1",
 		ProjectID: "myproject",
-		Commit:    "abc123",
-		Type:      "foo",
-		Provider:  "bar",
-		Payload:   []byte("this is a payload"),
-		Script:    []byte("ohai"),
+		Revision: &brigade.Revision{
+			Commit: "abc123",
+			Ref:    "refs/heads/master",
+		},
+		Type:     "foo",
+		Provider: "bar",
+		Payload:  []byte("this is a payload"),
+		Script:   []byte("ohai"),
 	}
 	build := NewBuildFromSecret(secret)
 	if !reflect.DeepEqual(build, expectedBuild) {
