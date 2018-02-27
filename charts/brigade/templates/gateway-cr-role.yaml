@@ -1,3 +1,4 @@
+{{ if .Values.cr.enabled }}
 {{ $fname := include "brigade.cr.fullname" . }}
 ---
 apiVersion: v1
@@ -41,4 +42,5 @@ roleRef:
   kind: Role
   name: {{ $fname }}
   apiGroup: rbac.authorization.k8s.io
+{{ end }}
 {{ end }}
