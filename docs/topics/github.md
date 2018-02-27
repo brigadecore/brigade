@@ -108,29 +108,42 @@ GitHub "Payload URL" to the proxy instead of directly at the `brigade-gw` servic
 
 ## Configuring the GitHub Gateway
 
-By default, when you install Brigade, the GitHub gateway is configured to ignore
-pull requests that come from forks. More specifically:
+Running Pull Requests from untrusted parties is dangerous. It can consume your
+Brigade resources, or even (in some cases) allow access to private information
+like your `project.secrets`.
 
-If the `pull_request` action is set to `opened`, `reopened`, or `synchronize`, it
-is ignored by default.
+For that reason, the Brigade GitHub gateway tries to protect your repo by default.
 
-However, `pull_request:labeled` and `pull_request:unlabeled` are _not_ ignored.
+1. By default, when you install Brigade, the GitHub gateway is configured to ignore
+pull requests that come from forks.
 
-The reasoning behind this is that a public repo can be forked by an untrusted third
-party, so we don't want to allow that third party to run Brigade events on our
-cluster. However, labels can only be added and removed to PRs by people with write
-permissions to the repo. So those actions can be trusted.
+2. By default, your Brigade GitHub gateway is configured to ONLY build PRs that were
+submitted by authors with trusted roles:
+  - OWNER: The repo owner
+  - COLLABORATOR: Someone who is an invited collaborator on the project
+  - MEMBER: Someone who is a member of the organization that this repo belongs to
 
-If you know what you are doing, and you want to allow any pull requests to build,
-even if coming from a forked repository, you may set the following configuration
-in your _brigade_ `values.yaml` (NOT the project YAML).
+There are two configuration options that can alter these defaults:
+
+- `gw.buildForkedPullRequests`: This can be set to `true` to allow forked pull
+  requests to build. *If this is true, the author check is applied to these users.*
+- `gw.allowedAuthorRoles`: This is a list of author roles that are allowed to build
+  PRs. This list is _always_ applied, whether the PR is from forked repository or not.
+
+Here is an example that upgrades Brigade to allow forked builds, but only from
+the OWNER and COLLABORATOR author roles:
 
 ```console
-$ helm upgrade brigade brigade/brigade --set gw.buildForkedPullRequests=true --reuse-values
+$ helm upgrade brigade brigade/brigade \
+  --set gw.buildForkedPullRequests=true \
+  --set gw.allowedAuthorRoles=COLLABORATOR\,OWNER \
+  --reuse-values
 ```
 
-Note that this will introduce security risks if you allow public forks of your
-repository.
+Note that this configuration will not eliminate all possibilities of mis-use (a
+comprimized GitHub account is still a vector of attack). But it will restrict PRs
+to only accounts that are owners or collaborators (invited contributors) on the
+main repository.
 
 ## Connecting to Private GitHub Repositories (or Using SSH)
 

@@ -2,6 +2,7 @@
   "action": "opened",
   "number": 1,
   "pull_request": {
+    "author_association": "OWNER",
     "url": "https://api.github.com/repos/baxterthehacker/public-repo/pulls/1",
     "id": 34778301,
     "html_url": "https://github.com/baxterthehacker/public-repo/pull/1",

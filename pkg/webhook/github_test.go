@@ -42,7 +42,7 @@ func newTestStore() *testStore {
 }
 
 func newTestGithubHandler(store storage.Store, t *testing.T) *githubHook {
-	s := NewGithubHook(store, false)
+	s := NewGithubHook(store, []string{"OWNER"})
 	s.getFile = func(commit, path string, proj *brigade.Project) ([]byte, error) {
 		return []byte(""), nil
 	}
@@ -78,6 +78,13 @@ func TestGithubHandler(t *testing.T) {
 			event:       "pull_request",
 			commit:      "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
 			ref:         "refs/pull/1/head",
+			payloadFile: "testdata/github-pull_request-payload-failed-perms.json",
+			mustFail:    true,
+		},
+		{
+			event:       "pull_request",
+			ref:         "refs/pull/1/head",
+			commit:      "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
 			payloadFile: "testdata/github-pull_request-payload.json",
 		},
 		{
@@ -166,12 +173,14 @@ func TestGithubHandler(t *testing.T) {
 				t.Fatalf("unexpected error: %d\n%s", w.Code, w.Body.String())
 			}
 
+			// The build should not store anything if mustFail is true.
 			if tt.mustFail {
 				if len(store.builds) > 0 {
-					t.Fatal("expected failed hook.")
+					t.Fatalf("expected failed hook for %s.", tt.payloadFile)
 				}
 				return
 			}
+
 			if len(store.builds) != 1 {
 				t.Fatal("expected a build created")
 			}

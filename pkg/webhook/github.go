@@ -21,10 +21,10 @@ const (
 )
 
 type githubHook struct {
-	store                   storage.Store
-	getFile                 fileGetter
-	createStatus            statusCreator
-	buildForkedPullRequests bool
+	store          storage.Store
+	getFile        fileGetter
+	createStatus   statusCreator
+	allowedAuthors []string
 }
 
 type fileGetter func(commit, path string, proj *brigade.Project) ([]byte, error)
@@ -32,12 +32,12 @@ type fileGetter func(commit, path string, proj *brigade.Project) ([]byte, error)
 type statusCreator func(commit string, proj *brigade.Project, status *github.RepoStatus) error
 
 // NewGithubHook creates a GitHub webhook handler.
-func NewGithubHook(s storage.Store, buildForkedPullRequests bool) *githubHook {
+func NewGithubHook(s storage.Store, authors []string) *githubHook {
 	return &githubHook{
-		store: s,
-		buildForkedPullRequests: buildForkedPullRequests,
-		getFile:                 getFileFromGithub,
-		createStatus:            setRepoStatus,
+		store:          s,
+		getFile:        getFileFromGithub,
+		createStatus:   setRepoStatus,
+		allowedAuthors: authors,
 	}
 }
 
@@ -190,9 +190,14 @@ func (s *githubHook) buildStatus(eventType string, rev brigade.Revision, payload
 // isAllowedPullRequest returns true if this particular pull request is allowed
 // to produce an event.
 func (s *githubHook) isAllowedPullRequest(e *github.PullRequestEvent) bool {
-	if !s.buildForkedPullRequests && e.PullRequest.Head.Repo.GetFork() {
-		// Log this case for debugging.
-		log.Println("skipping forked pull request")
+
+	isFork := e.PullRequest.Head.Repo.GetFork()
+
+	// This applies the author association to forked PRs.
+	// PRs sent against origin will be accepted without a check.
+	// See https://developer.github.com/v4/reference/enum/commentauthorassociation/
+	if assoc := e.PullRequest.GetAuthorAssociation(); isFork && !s.isAllowedAuthor(assoc) {
+		log.Printf("skipping pull request for disallowed author %s", assoc)
 		return false
 	}
 	switch e.GetAction() {
@@ -200,6 +205,15 @@ func (s *githubHook) isAllowedPullRequest(e *github.PullRequestEvent) bool {
 		return true
 	}
 	log.Println("unsupported pull_request action:", e.GetAction())
+	return false
+}
+
+func (s *githubHook) isAllowedAuthor(author string) bool {
+	for _, a := range s.allowedAuthors {
+		if a == author {
+			return true
+		}
+	}
 	return false
 }
 
