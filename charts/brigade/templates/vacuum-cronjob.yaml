@@ -11,6 +11,8 @@ metadata:
     role: vacuum
 spec:
   schedule: "{{ default "@hourly" .Values.vacuum.schedule }}"
+  successfulJobsHistoryLimit: {{ default 10 .Values.vacuum.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ default 10 .Values.vacuum.failedJobsHistoryLimit }}
   jobTemplate:
     spec:
       template:
