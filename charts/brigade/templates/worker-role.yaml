@@ -23,8 +23,11 @@ metadata:
     heritage: "{{ .Release.Service }}"
 rules:
 - apiGroups: [""] # "" indicates the core API group
-  resources: ["pods", "secrets", "persistentvolumeclaims", "pods/log"]
+  resources: ["pods", "secrets", "persistentvolumeclaims"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["pods/log"]
+  verbs: ["get", "list", "watch"]
 ---
 kind: RoleBinding
 apiVersion: {{ template "brigade.rbac.version" }}
