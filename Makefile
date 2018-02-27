@@ -22,13 +22,13 @@ CX_ARCHS = amd64
 build: $(BINS)
 
 .PHONY: $(BINS)
-$(BINS):
+$(BINS): vendor
 	go build -ldflags '$(LDFLAGS)' -o bin/$@ ./$@/cmd/$@
 
 # Cross-compile for Docker+Linux
 build-docker-bins: $(addsuffix -docker-bin,$(DOCKER_BINS))
 
-%-docker-bin:
+%-docker-bin: vendor
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$*/rootfs/$* ./$*/cmd/$*
 
 # To use docker-build, you need to have Docker installed and configured. You should also set
@@ -49,7 +49,7 @@ docker-push: $(addsuffix -push,$(IMAGES))
 
 # Cross-compile binaries for our CX targets.
 # Mainly, this is for brig-cross-compile
-%-cross-compile:
+%-cross-compile: vendor
 	@for os in $(CX_OSES); do \
 		echo "building $$os"; \
 		for arch in $(CX_ARCHS); do \
@@ -75,7 +75,7 @@ test: test-js
 
 # Unit tests. Local only.
 .PHONY: test-unit
-test-unit:
+test-unit: vendor
 	go test -v ./...
 
 # Functional tests assume access to github.com
@@ -92,7 +92,7 @@ test-unit:
 # This will clone the github.com/deis/empty-testbed repo and run the brigade.js
 # file found there.
 .PHONY: test-functional
-test-functional: test-functional-prepare
+test-functional: vendor test-functional-prepare
 test-functional:
 	go test --tags integration ./tests
 
@@ -135,32 +135,22 @@ format:
 	test -z "$$(find . -path ./vendor -prune -type f -o -name '*.go' -exec gofmt -d {} + | tee /dev/stderr)" || \
 	test -z "$$(find . -path ./vendor -prune -type f -o -name '*.go' -exec gofmt -w {} + | tee /dev/stderr)"
 
-HAS_NPM          := $(shell command -v npm;)
-HAS_ESLINT       := $(shell command -v eslint;)
 HAS_GOMETALINTER := $(shell command -v gometalinter;)
 HAS_DEP          := $(shell command -v dep;)
 HAS_GIT          := $(shell command -v git;)
-HAS_BINDATA      := $(shell command -v go-bindata;)
 
-.PHONY: bootstrap
-bootstrap:
-ifndef HAS_NPM
-	$(error You must install npm)
-endif
+vendor:
 ifndef HAS_GIT
 	$(error You must install git)
 endif
-ifndef HAS_ESLINT
-	npm install -g eslint
+ifndef HAS_DEP
+	go get -u github.com/golang/dep/cmd/dep
 endif
 ifndef HAS_GOMETALINTER
 	go get -u github.com/alecthomas/gometalinter
 	gometalinter --install
 endif
-ifndef HAS_DEP
-	go get -u github.com/golang/dep/cmd/dep
-endif
-ifndef HAS_BINDATA
-	go get github.com/jteeuwen/go-bindata/...
-endif
 	dep ensure
+
+.PHONY: bootstrap
+bootstrap: vendor
