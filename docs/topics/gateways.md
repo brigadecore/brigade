@@ -78,7 +78,7 @@ metadata:
 
     # Commit is the commitish/reference for any associated VCS repository. By
     # default, this should be `master` for Git.
-    commit: master
+    commit: 6913b2703df943fed7a135b671f3efdafd92dbf3
 
     # 'component: build' is REQUIRED and tells brigade to create a new build
     # record (and trigger a new worker run).
@@ -97,8 +97,14 @@ data:
   # pre-approved event names. Thus, you can define your own event_type
   event_type: push
 
-  # This should be the same as the `commit` label.
-  commit: master
+  # Revision describes a vcs revision.
+  revision:
+
+    # This should be the same as the `commit` label.
+    commit: 6913b2703df943fed7a135b671f3efdafd92dbf3
+
+    # Ref is the symbolic ref name. (refs/heads/master, refs/pull/12/head, refs/tags/v0.1.0)
+    ref: master
 
   # This should be the same as the `name` field on the secret
   build_name: example
@@ -148,7 +154,8 @@ event_type="my_event"
 
 # This is github.com/deis/empty-testbed
 project_id="brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac"
-commit="master"
+commit_id="6913b2703df943fed7a135b671f3efdafd92dbf3"
+commit_ref="master"
 
 
 # This is the brigade script to execute
@@ -181,17 +188,19 @@ while : ; do
       heritage: brigade
       project: ${project_id}
       build: ${uuid}
-      commit: ${commit}
+      commit: ${commit_id}
       component: build
   type: "brigade.sh/build"
   data:
-    commit: $(echo -n "${commit}" | base64)
-    event_provider: $(echo -n "${event_provider}" | base64)
-    event_type: $(echo -n "${event_type}" | base64)
-    project_id: $(echo -n "${project_id}" | base64)
-    build_id: $(echo -n "${uuid}" | base64)
-    payload: $(echo -n "${payload}" | base64)
-    script: $(echo -n "${script}" | base64)
+    revision:
+      commit: $(base64 -w 0 <<< "$commit_id")
+      ref: $(base64 -w 0 <<< "${commit_ref}")
+    event_provider: $(base64 -w 0 <<< "${event_provider}")
+    event_type: $(base64 -w 0 <<< "${event_type}")
+    project_id: $(base64 -w 0 <<< "${project_id}")
+    build_id: $(base64 -w 0 <<< "${uuid}")
+    payload: $(base64 -w 0 <<< "${payload}")
+    script: $(base64 -w 0 <<< "${script}")
 EOF
   sleep 60
 done
@@ -222,7 +231,8 @@ namespace=${NAMESPACE:-default}
 event_provider="simple-event"
 event_type="my_event"
 project_id="brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac"
-commit="master"
+commit_id="6913b2703df943fed7a135b671f3efdafd92dbf3"
+commit_ref="master"
 uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
 name="simple-event-$uuid"
 
@@ -249,13 +259,15 @@ metadata:
     component: build
 type: "brigade.sh/build"
 data:
-  commit: $(echo -n "${commit}" | base64 -w 0)
-  event_provider: $(echo -n "${event_provider}" | base64 -w 0)
-  event_type: $(echo -n "${event_type}" | base64 -w 0)
-  project_id: $(echo -n "${project_id}" | base64 -w 0)
-  build_id: $(echo -n "${uuid}" | base64 -w 0)
-  payload: $(echo -n "${payload}" | base64 -w 0)
-  script: $(echo -n "${script}" | base64 -w 0)
+  revision:
+    commit: $(base64 -w 0 <<< "$commit_id")
+    ref: $(base64 -w 0 <<< "${commit_ref}")
+  event_provider: $(base64 -w 0 <<< "${event_provider}")
+  event_type: $(base64 -w 0 <<< "${event_type}")
+  project_id: $(base64 -w 0 <<< "${project_id}")
+  build_id: $(base64 -w 0 <<< "${uuid}")
+  payload: $(base64 -w 0 <<< "${payload}")
+  script: $(base64 -w 0 <<< "${script}")
 EOF
 ```
 
