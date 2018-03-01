@@ -9,16 +9,15 @@ event_type="my_event"
 
 # This is github.com/deis/empty-testbed
 project_id="brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac"
-commit="master"
+commit_ref="master"
+commit_id="589e15029e1e44dee48de4800daf1f78e64287c0"
 
-b64flags=""
-uuidflags=""
-system=$(uname)
-if [[ $system != "Darwin" ]]; then
-  b64flags="-w 0" # Turn off line wrapping
-  uuidflags="-t"  # generate UUID v1 for sortability
+base64=(base64)
+uuidgen=(uuidgen)
+if [[ "$(uname)" != "Darwin" ]]; then
+  base64+=(-w 0)
+  uuidgen+=(-t) # generate UUID v1 for sortability
 fi
-
 
 # This is the brigade script to execute
 script=$(cat <<EOF
@@ -29,11 +28,11 @@ events.on("my_event", (e) => {
 EOF
 )
 
-# Now we will generate a new event evrey 60 seconds.
-while : ; do
+# Now we will generate a new event every 60 seconds.
+while :; do
   # We'll use a UUID instead of a ULID. But if you want a ULID generator, you
   # can grab one here: https://github.com/technosophos/ulid
-  uuid="$(uuidgen $uuidflags | tr '[:upper:]' '[:lower:]')"
+  uuid="$("${uuidgen[@]}" | tr '[:upper:]' '[:lower:]')"
 
   # We can use the UUID to make sure we get a unique name
   name="simple-event-$uuid"
@@ -50,18 +49,18 @@ while : ; do
       heritage: brigade
       project: ${project_id}
       build: ${uuid}
-      commit: ${commit}
       component: build
   type: "brigade.sh/build"
   data:
-    commit: $(echo -n "${commit}" | base64 $b64flags)
-    event_provider: $(echo -n "${event_provider}" | base64 $b64flags)
-    event_type: $(echo -n "${event_type}" | base64 $b64flags)
-    project_id: $(echo -n "${project_id}" | base64 $b64flags)
-    build_id: $(echo -n "${uuid}" | base64 $b64flags)
-    payload: $(echo -n "${payload}" | base64 $b64flags)
-    script: $(echo -n "${script}" | base64 $b64flags)
+    revision:
+      commit: $("${base64[@]}" <<<"${commit_id}")
+      ref: $("${base64[@]}" <<<"${commit_ref}")
+    event_provider: $("${base64[@]}" <<<"${event_provider}")
+    event_type: $("${base64[@]}" <<<"${event_type}")
+    project_id: $("${base64[@]}" <<<"${project_id}")
+    build_id: $("${base64[@]}" <<<"${uuid}")
+    payload: $("${base64[@]}" <<<"${payload}")
+    script: $("${base64[@]}" <<<"${script}")
 EOF
   sleep 60
 done
-
