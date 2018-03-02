@@ -2,7 +2,8 @@ workspace:
   base: /go
   path: src/github.com/uswitch/brigade
 
-  docker-api:
+pipeline:
+  docker:
     when:
       event: push
     image: plugins/docker
