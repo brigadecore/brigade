@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 
-	"gopkg.in/gin-gonic/gin.v1"
+	"github.com/gin-gonic/gin"
 
 	"github.com/Azure/brigade/pkg/storage"
 )

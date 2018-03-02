@@ -6,7 +6,8 @@ import (
 	"log"
 	"os"
 
-	gin "gopkg.in/gin-gonic/gin.v1"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"k8s.io/api/core/v1"
 
 	"github.com/Azure/brigade/pkg/api"
@@ -39,26 +40,26 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Recovery())
+	router.Use(cors.Default())
 
 	// get an individual project
 	rest := router.Group("/v1")
-	rest.Use(gin.Logger(), cors)
 	server := api.New(storage)
 
 	p := server.Project()
-	rest.GET("/projects", p.List)
-	rest.GET("/project/:id", p.Get)
-	rest.GET("/project/:id/builds", p.Builds)
-	rest.GET("/projects-build", p.ListWithLatestBuild)
+	rest.GET("/projects", gin.HandlerFunc(p.List))
+	rest.GET("/project/:id", gin.HandlerFunc(p.Get))
+	rest.GET("/project/:id/builds", gin.HandlerFunc(p.Builds))
+	rest.GET("/projects-build", gin.HandlerFunc(p.ListWithLatestBuild))
 
 	b := server.Build()
-	rest.GET("/build/:id", b.Get)
-	rest.GET("/build/:id/jobs", b.Jobs)
-	rest.GET("/build/:id/logs", b.Logs)
+	rest.GET("/build/:id", gin.HandlerFunc(b.Get))
+	rest.GET("/build/:id/jobs", gin.HandlerFunc(b.Jobs))
+	rest.GET("/build/:id/logs", gin.HandlerFunc(b.Logs))
 
 	j := server.Job()
-	rest.GET("/job/:id", j.Get)
-	rest.GET("/job/:id/logs", j.Logs)
+	rest.GET("/job/:id", gin.HandlerFunc(j.Get))
+	rest.GET("/job/:id/logs", gin.HandlerFunc(j.Logs))
 
 	router.GET("/healthz", api.Healthz)
 
@@ -78,8 +79,4 @@ func defaultAPIPort() string {
 		return port
 	}
 	return "7745"
-}
-
-func cors(c *gin.Context) {
-	c.Header("access-control-allow-origin", "*")
 }
