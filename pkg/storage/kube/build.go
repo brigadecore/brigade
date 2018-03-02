@@ -47,7 +47,6 @@ func (s *store) CreateBuild(build *brigade.Build) error {
 			Name: buildName,
 			Labels: map[string]string{
 				"build":     build.ID,
-				"commit_id": build.Revision.Commit,
 				"component": "build",
 				"heritage":  "brigade",
 				"project":   build.ProjectID,

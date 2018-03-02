@@ -13,7 +13,7 @@ into a Brigade event.
 Brigade ships with two gateways that translate webhook requests into Brigade
 events: The [GitHub gateway](github.md) and the
 [container registry gateway](dockerhub.md).
-These both provide HTTP-based listeners that receive incomming requests
+These both provide HTTP-based listeners that receive incoming requests
 and generate Brigade events as a result.
 
 But the gateway system works with more than just webhooks.
@@ -33,7 +33,7 @@ gateways.
 ## An Event Is A Secret
 
 The most important thing to understand about a Brigade event is that it is simply
-a [Kuberetes Secret](https://kubernetes.io/docs/concepts/configuration/secret/)
+a [Kubernetes Secret](https://kubernetes.io/docs/concepts/configuration/secret/)
 with special labels and data.
 
 When a new and appropriately labeled secret is created in Kubernetes, the Brigade
@@ -76,10 +76,6 @@ metadata:
     # expected. (A UUID v1 will be sortable like ULIDs, but longer).
     build: 01C1R2SYTYAR2WQ2DKNTW8SH08
 
-    # Commit is the commitish/reference for any associated VCS repository. By
-    # default, this should be `master` for Git.
-    commit: 6913b2703df943fed7a135b671f3efdafd92dbf3
-
     # 'component: build' is REQUIRED and tells brigade to create a new build
     # record (and trigger a new worker run).
     component: build
@@ -100,7 +96,8 @@ data:
   # Revision describes a vcs revision.
   revision:
 
-    # This should be the same as the `commit` label.
+    # Commit is the commitish/reference for any associated VCS repository. By
+    # default, this should be `master` for Git.
     commit: 6913b2703df943fed7a135b671f3efdafd92dbf3
 
     # Ref is the symbolic ref name. (refs/heads/master, refs/pull/12/head, refs/tags/v0.1.0)
@@ -154,9 +151,15 @@ event_type="my_event"
 
 # This is github.com/deis/empty-testbed
 project_id="brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac"
-commit_id="6913b2703df943fed7a135b671f3efdafd92dbf3"
 commit_ref="master"
+commit_id="589e15029e1e44dee48de4800daf1f78e64287c0"
 
+base64=(base64)
+uuidgen=(uuidgen)
+if [[ "$(uname)" != "Darwin" ]]; then
+  base64+=(-w 0)
+  uuidgen+=(-t) # generate UUID v1 for sortability
+fi
 
 # This is the brigade script to execute
 script=$(cat <<EOF
@@ -167,11 +170,11 @@ events.on("my_event", (e) => {
 EOF
 )
 
-# Now we will generate a new event evrey 60 seconds.
-while : ; do
+# Now we will generate a new event every 60 seconds.
+while :; do
   # We'll use a UUID instead of a ULID. But if you want a ULID generator, you
   # can grab one here: https://github.com/technosophos/ulid
-  uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+  uuid="$("${uuidgen[@]}" | tr '[:upper:]' '[:lower:]')"
 
   # We can use the UUID to make sure we get a unique name
   name="simple-event-$uuid"
@@ -188,19 +191,18 @@ while : ; do
       heritage: brigade
       project: ${project_id}
       build: ${uuid}
-      commit: ${commit_id}
       component: build
   type: "brigade.sh/build"
   data:
     revision:
-      commit: $(base64 -w 0 <<< "$commit_id")
-      ref: $(base64 -w 0 <<< "${commit_ref}")
-    event_provider: $(base64 -w 0 <<< "${event_provider}")
-    event_type: $(base64 -w 0 <<< "${event_type}")
-    project_id: $(base64 -w 0 <<< "${project_id}")
-    build_id: $(base64 -w 0 <<< "${uuid}")
-    payload: $(base64 -w 0 <<< "${payload}")
-    script: $(base64 -w 0 <<< "${script}")
+      commit: $("${base64[@]}" <<<"${commit_id}")
+      ref: $("${base64[@]}" <<<"${commit_ref}")
+    event_provider: $("${base64[@]}" <<<"${event_provider}")
+    event_type: $("${base64[@]}" <<<"${event_type}")
+    project_id: $("${base64[@]}" <<<"${project_id}")
+    build_id: $("${base64[@]}" <<<"${uuid}")
+    payload: $("${base64[@]}" <<<"${payload}")
+    script: $("${base64[@]}" <<<"${script}")
 EOF
   sleep 60
 done
@@ -231,8 +233,8 @@ namespace=${NAMESPACE:-default}
 event_provider="simple-event"
 event_type="my_event"
 project_id="brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac"
-commit_id="6913b2703df943fed7a135b671f3efdafd92dbf3"
 commit_ref="master"
+commit_id="589e15029e1e44dee48de4800daf1f78e64287c0"
 uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
 name="simple-event-$uuid"
 
@@ -245,7 +247,6 @@ events.on("my_event", (e) => {
 EOF
 )
 
-
 cat <<EOF | kubectl --namespace ${namespace} create -f -
 apiVersion: v1
 kind: Secret
@@ -255,19 +256,18 @@ metadata:
     heritage: brigade
     project: ${project_id}
     build: ${uuid}
-    commit: ${commit}
     component: build
 type: "brigade.sh/build"
 data:
   revision:
-    commit: $(base64 -w 0 <<< "$commit_id")
-    ref: $(base64 -w 0 <<< "${commit_ref}")
-  event_provider: $(base64 -w 0 <<< "${event_provider}")
-  event_type: $(base64 -w 0 <<< "${event_type}")
-  project_id: $(base64 -w 0 <<< "${project_id}")
-  build_id: $(base64 -w 0 <<< "${uuid}")
-  payload: $(base64 -w 0 <<< "${payload}")
-  script: $(base64 -w 0 <<< "${script}")
+    commit: $(base64 -w 0 <<<"${commit_id}")
+    ref: $(base64 -w 0 <<<"${commit_ref}")
+  event_provider: $(base64 -w 0 <<<"${event_provider}")
+  event_type: $(base64 -w 0 <<<"${event_type}")
+  project_id: $(base64 -w 0 <<<"${project_id}")
+  build_id: $(base64 -w 0 <<<"${uuid}")
+  payload: $(base64 -w 0 <<<"${payload}")
+  script: $(base64 -w 0 <<<"${script}")
 EOF
 ```
 
