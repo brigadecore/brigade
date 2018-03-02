@@ -14,12 +14,22 @@ pipeline:
       - dep ensure
       - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o brigade-api/rootfs/brigade-api brigade-api/cmd/brigade-api/main.go
 
-  docker:
+  docker-api:
     when:
       event: push
     image: plugins/docker
     dockerfile: brigade-api/Dockerfile
     repo: registry.usw.co/uswitch/ldn/brigade-api
+    tag:
+      - latest
+      - "${DRONE_COMMIT_SHA}"
+
+  docker-git-sidecar:
+    when:
+      event: push
+    image: plugins/docker
+    dockerfile: git-sidecar/Dockerfile
+    repo: registry.usw.co/uswitch/ldn/git-sidecar
     tag:
       - latest
       - "${DRONE_COMMIT_SHA}"
