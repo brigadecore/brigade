@@ -1,0 +1,13 @@
+workspace:
+  base: /go
+  path: src/github.com/uswitch/brigade
+
+  docker-api:
+    when:
+      event: push
+    image: plugins/docker
+    dockerfile: brigade-api/Dockerfile
+    repo: registry.usw.co/uswitch/ldn/brigade-api
+    tag:
+      - latest
+      - "${DRONE_COMMIT_SHA}"
