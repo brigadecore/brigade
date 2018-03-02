@@ -10,8 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"k8s.io/api/core/v1"
 
-	"github.com/Azure/brigade/pkg/api"
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/uswitch/brigade/pkg/api"
+	"github.com/uswitch/brigade/pkg/storage/kube"
 )
 
 var (
