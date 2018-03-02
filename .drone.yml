@@ -3,6 +3,16 @@ workspace:
   path: src/github.com/uswitch/brigade
 
 pipeline:
+  build:
+    when:
+      event: push
+    image: golang:1.9
+    environment:
+      - GOPATH=/go
+    commands:
+      - dep ensure
+      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o brigade-api/rootfs/brigade-api brigade-api/cmd/brigade-api/main.go
+
   docker:
     when:
       event: push
