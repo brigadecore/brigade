@@ -76,9 +76,6 @@ describe("k8s", function() {
         assert.equal(jr.secret.metadata.name, jr.name)
         assert.equal(jr.runner.spec.containers[0].image, "whaler")
 
-        assert.equal(jr.runner.metadata.labels.commit, e.revision.commit)
-        assert.equal(jr.secret.metadata.labels.commit, e.revision.commit)
-
         assert.equal(jr.runner.metadata.labels.worker, e.workerID)
         assert.equal(jr.secret.metadata.labels.worker, e.workerID)
 
@@ -107,17 +104,6 @@ describe("k8s", function() {
           }
 
           assert.equal(found, 2)
-        })
-      })
-      context("when event is missing commit", function() {
-        beforeEach(function() {
-          e.revision.commit = null
-        })
-        it("sets 'master' as the commit", function() {
-          let jr= new k8s.JobRunner(j, e, p)
-
-          assert.equal(jr.runner.metadata.labels.commit, "master")
-          assert.equal(jr.secret.metadata.labels.commit, "master")
         })
       })
       context("when service account is specified", function() {

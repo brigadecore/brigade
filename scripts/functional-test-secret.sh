@@ -8,14 +8,15 @@ uuid="$(uuidgen)"
 name="brigade-worker-${uuid,,}"
 
 namespace="default"
-commit="9c75584920f1297008118915024927cc099d5dcc"
+commit_ref="master"
+commit_id="9c75584920f1297008118915024927cc099d5dcc"
 event_provider="github"
 event_type="push"
 project_id="brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac"
 payload="{}"
 script="_cache/github.com/deis/empty-testbed/brigade.js"
 
-while (( "$#" > 0 )); do
+while (($# > 0)); do
   case "$1" in
     --namespace) namespace="$2";  shift ;;
     --script)    script="$2";     shift ;;
@@ -24,6 +25,11 @@ while (( "$#" > 0 )); do
   esac
   shift
 done
+
+base64=(base64)
+if [[ "$(uname)" != "Darwin" ]]; then
+  base64+=(-w 0)
+fi
 
 cat <<EOF | kubectl --namespace ${namespace} create -f -
 apiVersion: v1
@@ -34,16 +40,16 @@ metadata:
     heritage: brigade
     project: ${project_id}
     build: ${uuid}
-    commit: ${commit}
-    jobname: ${name}
     component: build
 type: "brigade.sh/build"
 data:
-  commit: $(echo -n "${commit}" | base64)
-  event_provider: $(echo -n "${event_provider}" | base64)
-  event_type: $(echo -n "${event_type}" | base64)
-  project_id: $(echo -n "${project_id}" | base64)
-  build_id: $(echo -n "${uuid}" | base64)
-  payload: $(echo -n "${payload}" | base64)
-  script: $(base64 < "${script}")
+  revision:
+    commit: $("${base64[@]}" <<<"${commit_id}")
+    ref: $("${base64[@]}" <<<"${commit_ref}")
+  event_provider: $("${base64[@]}" <<<"${event_provider}")
+  event_type: $("${base64[@]}" <<<"${event_type}")
+  project_id: $("${base64[@]}" <<<"${project_id}")
+  build_id: $("${base64[@]}" <<<"${uuid}")
+  payload: $("${base64[@]}" <<<"${payload}")
+  script: $("${base64[@]}" <"${script}")
 EOF

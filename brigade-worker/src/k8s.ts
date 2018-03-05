@@ -172,13 +172,11 @@ export class JobRunner implements jobs.JobRunner {
 
     this.runner.metadata.labels.jobname = job.name;
     this.runner.metadata.labels.project = project.id;
-    this.runner.metadata.labels.commit = commit;
     this.runner.metadata.labels.worker = e.workerID;
     this.runner.metadata.labels.build = e.buildID;
 
     this.secret.metadata.labels.jobname = job.name;
     this.secret.metadata.labels.project = project.id;
-    this.secret.metadata.labels.commit = commit;
     this.secret.metadata.labels.expires = String(expiresAt);
     this.secret.metadata.labels.worker = e.workerID;
     this.secret.metadata.labels.build = e.buildID;

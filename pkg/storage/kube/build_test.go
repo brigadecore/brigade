@@ -14,9 +14,8 @@ func TestNewBuildFromSecret(t *testing.T) {
 	secret := v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"build":     "#1",
-				"project":   "myproject",
-				"commit_id": "abc123",
+				"build":   "#1",
+				"project": "myproject",
 			},
 		},
 		Data: map[string][]byte{
