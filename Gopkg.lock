@@ -8,6 +8,12 @@
   version = "v0.16.0"
 
 [[projects]]
+  name = "github.com/Azure/brigade"
+  packages = ["brig/cmd/brig/commands","brigade-controller/cmd/brigade-controller/controller","brigade-vacuum/cmd/brigade-vacuum/commands","brigade-vacuum/cmd/brigade-vacuum/vacuum","pkg/brigade","pkg/storage","pkg/storage/kube","pkg/storage/mock","pkg/version","pkg/webhook"]
+  revision = "6913b2703df943fed7a135b671f3efdafd92dbf3"
+  version = "v0.10.0"
+
+[[projects]]
   name = "github.com/Azure/go-autorest"
   packages = ["autorest","autorest/adal","autorest/azure","autorest/date"]
   revision = "58f6f26e200fa5dfb40c9cd1c83f3e2c860d779d"
@@ -307,6 +313,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4cb4e7204ea6764247158d7c5d475eb4cfd7dc13394d818876948a0fae79a30e"
+  inputs-digest = "1811dee5d68414b1fe6057eb562b003ff3660ce1b249c6610abd509efca715da"
   solver-name = "gps-cdcl"
   solver-version = 1

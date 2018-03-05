@@ -125,6 +125,22 @@ export class JobDockerMount {
   public enabled: boolean = false;
 }
 
+export class Item {
+  public key: string;
+  public path: string;
+}
+
+export class Secret {
+  public secretName: string;
+  items: Item[];
+}
+
+export class Volume {
+  public name: string;
+  public mountPath: string;
+  public secret: Secret;
+}
+
 /**
  * Job represents a single job, which is composed of several closely related sequential tasks.
  * Jobs must have names. Every job also has an associated image, which references
@@ -192,6 +208,9 @@ export abstract class Job {
    * docker controls the job's preferences on mounting the host's docker daemon.
    */
   public docker: JobDockerMount;
+
+  /** _podName is set by the runtime. It is the name of the pod.*/
+  public volumes: Volume[];
 
   /** _podName is set by the runtime. It is the name of the pod.*/
   protected _podName: string;

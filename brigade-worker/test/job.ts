@@ -81,6 +81,23 @@ describe("job", function() {
           assert.equal(j.serviceAccount, "svcAccount")
         })
       })
+      context("when volumes are supplied", function() {
+        it("sets volume list", function() {
+          j = new mock.MockJob("myName", "alpine:3.4", [], true)
+          j.volumes = [{
+            "name": "secret-config",
+            "mountPath": "/etc/secret-volume",
+            "secret": {
+              "secretName": "my-secret",
+              "items": [{
+                "key": "secret-key",
+                "path": "secret-path"
+              }]
+            }
+          }]
+          assert.equal(j.volumes[0].name, "secret-config")
+        })
+      })
     })
     describe("#podName", function() {
       beforeEach(function(){

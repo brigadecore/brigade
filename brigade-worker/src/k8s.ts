@@ -212,6 +212,11 @@ export class JobRunner implements jobs.JobRunner {
       { name: "vcs-sidecar", mountPath: mountPath } as kubernetes.V1VolumeMount
     ];
 
+    job.volumes && job.volumes.forEach(function(volume) {
+      this.runner.spec.volumes.push({ name: volume.name, secret: volume.secret } as kubernetes.V1Volume)
+      this.runner.spec.containers[0].volumeMounts.push({ name: volume.name, mountPath: volume.mountPath } as kubernetes.V1VolumeMount)
+    });
+
     if (job.useSource && project.repo.cloneURL) {
       // Add the sidecar.
       let sidecar = sidecarSpec(
