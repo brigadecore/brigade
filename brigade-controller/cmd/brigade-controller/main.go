@@ -61,7 +61,7 @@ func defaultWorkerImage() string {
 	if image, ok := os.LookupEnv("BRIGADE_WORKER_IMAGE"); ok {
 		return image
 	}
-	return "deis/brigade-worker:latest"
+	return "registry.usw.co/uswitch/ldn/brigade-worker:test"
 }
 
 func defaultWorkerPullPolicy() string {
