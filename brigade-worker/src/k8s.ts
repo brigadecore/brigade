@@ -567,7 +567,7 @@ function sidecarSpec(
       name: "BRIGADE_REPO_KEY",
       valueFrom: {
         secretKeyRef: {
-          key: "brigadeSSHKey",
+          key: "sshKey",
           name: project.id
         }
       }
