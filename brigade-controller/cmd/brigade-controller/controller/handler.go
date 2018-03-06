@@ -118,7 +118,7 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
 			{
 				Name: secretVolumeName,
 				VolumeSource: v1.VolumeSource{
-					Secret: &v1.SecretVolumeSource{SecretName: string(build.Data["script"])},
+					Secret: &v1.SecretVolumeSource{SecretName: string(build.Data["source_secret"])},
 				},
 			},
 			{
