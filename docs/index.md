@@ -16,7 +16,7 @@ writing advanced Brigade scripts.
 ## Related Resources
 
 If you'd like to add links to this list, open a pull request on 
-[Brigade's GitHub project](https://github.com/Azure/brigade)
+[Brigade's GitHub project](https://github.com/uswitch/brigade)
 
 ### Articles and Videos
 

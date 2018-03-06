@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/Azure/brigade/pkg/storage/mock"
+	"github.com/uswitch/brigade/pkg/storage/mock"
 )
 
 func TestBuildLogs(t *testing.T) {

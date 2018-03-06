@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Azure/brigade/pkg/brigade"
-	"github.com/Azure/brigade/pkg/storage"
+	"github.com/uswitch/brigade/pkg/brigade"
+	"github.com/uswitch/brigade/pkg/storage"
 )
 
 func TestStore(t *testing.T) {

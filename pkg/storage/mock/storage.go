@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/Azure/brigade/pkg/brigade"
+	"github.com/uswitch/brigade/pkg/brigade"
 )
 
 var (

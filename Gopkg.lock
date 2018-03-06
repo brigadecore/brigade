@@ -8,7 +8,7 @@
   version = "v0.16.0"
 
 [[projects]]
-  name = "github.com/Azure/brigade"
+  name = "github.com/uswitch/brigade"
   packages = ["brig/cmd/brig/commands","brigade-controller/cmd/brigade-controller/controller","brigade-vacuum/cmd/brigade-vacuum/commands","brigade-vacuum/cmd/brigade-vacuum/vacuum","pkg/brigade","pkg/storage","pkg/storage/kube","pkg/storage/mock","pkg/version","pkg/webhook"]
   revision = "6913b2703df943fed7a135b671f3efdafd92dbf3"
   version = "v0.10.0"

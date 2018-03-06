@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Azure/brigade/pkg/version"
+	"github.com/uswitch/brigade/pkg/version"
 )
 
 func init() {

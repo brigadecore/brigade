@@ -29,7 +29,7 @@ If you are developing Brigade, or are interested in testing the latest features
 This example shows how to check out the latest Brigade release:
 
 ```console
-$ git clone https://github.com/azure/brigade.git
+$ git clone https://github.com/uswitch/brigade.git
 $ cd brigade
 $ git checkout $(git tag -l | tail -n 1)
 $ helm install ./charts/brigade
