@@ -135,15 +135,11 @@ export class Secret {
   items: Item[];
 }
 
-export class HostPath {
-  public path: string;
-}
-
 export class Volume {
   public name: string;
   public mountPath: string;
   public secret: Secret;
-  public hostPath: HostPath;
+
 }
 
 /**
@@ -214,7 +210,9 @@ export abstract class Job {
    */
   public docker: JobDockerMount;
 
-  /** _podName is set by the runtime. It is the name of the pod.*/
+  /**
+   * volumes holds the configuration for volumes to be mounted onto the job's container.
+   */
   public volumes: Volume[];
 
   /** _podName is set by the runtime. It is the name of the pod.*/
