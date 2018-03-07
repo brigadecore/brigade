@@ -15,18 +15,23 @@ import (
 )
 
 const (
-	proxyUsage = `Creates a tunnel to the Kashti component.`
-	apiPort    = 7745
-	remotePort = 80
+	proxyUsage    = `Creates a tunnel to the Kashti component.`
+	remoteAPIPort = 7745
+	remotePort    = 80
 )
 
-var port int
+var (
+	port    int
+	apiPort int
+)
 
 func init() {
 	Root.AddCommand(proxy)
 
 	flags := proxy.PersistentFlags()
 	flags.IntVar(&port, "port", 8081, "local port for the Kashti dashboard")
+	flags.IntVar(&apiPort, "api-port", 7745, "local port for the Brigade API server")
+
 }
 
 var proxy = &cobra.Command{
@@ -52,7 +57,7 @@ func startProxy(kashtiPort int) error {
 	}
 
 	apiSelector := labels.Set{"role": "api"}.AsSelector()
-	_, err = portforwarder.New(c, config, "default", apiSelector, apiPort, apiPort)
+	_, err = portforwarder.New(c, config, "default", apiSelector, remoteAPIPort, apiPort)
 	if err != nil {
 		return fmt.Errorf("cannot start port forward for brigade api: %v", err)
 	}
@@ -71,7 +76,7 @@ func startProxy(kashtiPort int) error {
 	}()
 
 	for {
-		fmt.Printf("connect to kashti on localhost:%d...\n", port)
+		fmt.Printf("connect to kashti on http://localhost:%d\n", port)
 		time.Sleep(10 * time.Second)
 	}
 }
