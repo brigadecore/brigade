@@ -27,7 +27,7 @@ func NewDockerPushHook(s storage.Store) *dockerPushHook {
 
 // Handle handles a Push webhook event from DockerHub or a compatible agent.
 func (s *dockerPushHook) Handle(c *gin.Context) {
-	var pname, commit string
+	var pname, commitish string
 	orgName := c.Param("org")
 	projName := c.Param("repo")
 	log.Println(projName)
@@ -36,10 +36,10 @@ func (s *dockerPushHook) Handle(c *gin.Context) {
 	} else {
 		pname = orgName
 	}
-	if commit = c.Query("commit"); commit == "" {
-		commit = c.Param("commit")
+	if commitish = c.Query("commit"); commitish == "" {
+		commitish = c.Param("commit")
 	}
-	log.Printf("Fetching commit %s for %s", commit, pname)
+	log.Printf("Fetching commit %s for %s", commitish, pname)
 
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -63,25 +63,25 @@ func (s *dockerPushHook) Handle(c *gin.Context) {
 		return
 	}
 
-	go s.notifyDockerImagePush(proj, commit, body)
+	go s.notifyDockerImagePush(proj, commitish, body)
 	c.JSON(200, gin.H{"status": "Success"})
 }
 
-func (s *dockerPushHook) notifyDockerImagePush(proj *brigade.Project, commit string, payload []byte) {
-	if err := s.doDockerImagePush(proj, commit, payload); err != nil {
+func (s *dockerPushHook) notifyDockerImagePush(proj *brigade.Project, commitish string, payload []byte) {
+	if err := s.doDockerImagePush(proj, commitish, payload); err != nil {
 		log.Printf("failed dockerimagepush event: %s", err)
 	}
 
 }
 
-func (s *dockerPushHook) doDockerImagePush(proj *brigade.Project, commit string, payload []byte) error {
+func (s *dockerPushHook) doDockerImagePush(proj *brigade.Project, commitish string, payload []byte) error {
 	b := &brigade.Build{
 		ProjectID: proj.ID,
 		Type:      "image_push",
 		Provider:  "dockerhub",
 		Payload:   payload,
 		Revision: &brigade.Revision{
-			Commit: commit,
+			Ref: commitish,
 		},
 	}
 	if proj.DefaultScript != "" {
