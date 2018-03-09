@@ -125,21 +125,61 @@ export class JobDockerMount {
   public enabled: boolean = false;
 }
 
-export class Item {
-  public key: string;
-  public path: string;
-}
-
-export class Secret {
+export class VolumeSecret {
   public secretName: string;
-  items: Item[];
+  items: {};
+
+  public constructor(
+    name: string,
+    items: {}[]
+  ) {
+    this.secretName = name;
+    items = items;
+  }
 }
 
 export class Volume {
   public name: string;
-  public mountPath: string;
-  public secret: Secret;
+  public mountPath?: string;
+  public secret?: VolumeSecret;
+  public hostPath?: {
+    path: string;
+  };
+  public emptyDir?: {};
+  public configMap?: {
+    name: string;
+  };
 
+  public constructor(
+    name: string,
+    mountPath?: string
+  ) {
+    this.name = name;
+    this.mountPath = mountPath;
+  }
+}
+
+export class Database {
+  public name: string;
+  public role: string;
+  public serviceAccountName: string;
+  public secret: {
+    templateVolume: {
+      name: string;
+      path: string;
+    }
+    outputVolume: {
+      name: string;
+      path: string;
+    }
+  }
+}
+
+export class Vault {
+  public cluster: string;
+  public databases: Database[];
+  public loginPath: string;
+  public vaultAddr: string;
 }
 
 /**
@@ -214,6 +254,11 @@ export abstract class Job {
    * volumes holds the configuration for volumes to be mounted onto the job's container.
    */
   public volumes: Volume[];
+
+  /**
+   * vault holds the configuration for vaulted database connections
+   */
+  public vault?: Vault;
 
   /** _podName is set by the runtime. It is the name of the pod.*/
   protected _podName: string;

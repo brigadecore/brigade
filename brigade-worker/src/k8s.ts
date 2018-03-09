@@ -166,6 +166,11 @@ export class JobRunner implements jobs.JobRunner {
       this.serviceAccount
     );
 
+    // Attach vaulted sidecars
+    job.vault && job.vault.databases.forEach(function(db) {
+      this.runner.spec.containers.push(newVaultCredsContainer(db, job.vault, this.project))
+    })
+
     // Experimenting with setting a deadline field after which something
     // can clean up existing builds.
     let expiresAt = Date.now() + expiresInMSec;
@@ -213,8 +218,23 @@ export class JobRunner implements jobs.JobRunner {
     ];
 
     job.volumes && job.volumes.forEach(function(volume) {
-      this.runner.spec.volumes.push({ name: volume.name, secret: volume.secret, hostPath: volume.hostPath } as kubernetes.V1Volume)
-      this.runner.spec.containers[0].volumeMounts.push({ name: volume.name, mountPath: volume.mountPath } as kubernetes.V1VolumeMount)
+      let copy = Object.assign({}, volume);
+      delete copy["name"];
+      delete copy["mountPath"];
+
+      const k = Object.getOwnPropertyNames(copy)[0];
+
+      let v = {name: volume.name};
+      v[k] = volume[k];
+
+      this.runner.spec.volumes.push(v as kubernetes.V1Volume);
+
+      if (volume.mountPath != undefined && volume.mountPath != "") {
+        this.runner.spec.containers[0].volumeMounts.push({
+          name: volume.name,
+          mountPath: volume.mountPath
+        } as kubernetes.V1VolumeMount);
+      }
     }, this);
 
     if (job.useSource && project.repo.cloneURL) {
@@ -621,6 +641,59 @@ function newRunnerPod(
   pod.spec.serviceAccount = serviceAccount;
   pod.spec.serviceAccountName = serviceAccount;
   return pod;
+}
+
+function newVaultCredsContainer(
+  db: jobs.Database,
+  vault: jobs.Vault,
+  project: Project
+): kubernetes.V1Container {
+  const vaultAddr = vault.vaultAddr;
+  const secretPath = `database/creds/${db.name}_${db.role}`;
+  const loginPath = vault.loginPath;
+  const authRole = `${db.name}_${project.kubernetes.namespace}_${db.serviceAccountName}`;
+  const templatePath = `/creds/template/${db.secret.templateVolume.path}`;
+  const outputPath = `/creds/output/${db.secret.outputVolume.path}`;
+
+  const requests = {
+		"cpu":    "10m",
+		"memory": "20Mi",
+	};
+
+	const limits = {
+		"cpu":    "30m",
+		"memory": "50Mi",
+	};
+
+  let c = new kubernetes.V1Container();
+  c.name = `vault-creds-${db.name.replace(/_/gi, "-")}-${db.role}`;
+  c.image = "registry.usw.co/cloud/vault-creds";
+  c.args = [
+		"--vault-addr=" + vaultAddr,
+		"--ca-cert=/vault.ca",
+		"--secret-path=" + secretPath,
+		"--login-path=" + loginPath,
+		"--auth-role=" + authRole,
+		"--template=" + templatePath,
+		"--out=" + outputPath,
+		"--renew-interval=15m",
+		"--lease-duration=1h",
+		"--json-log",
+	];
+
+  c.volumeMounts = [
+		{ name: db.secret.templateVolume.name, mountPath: "/creds/template" } as kubernetes.V1VolumeMount,
+		{ name: db.secret.outputVolume.name, mountPath: "/creds/output" } as kubernetes.V1VolumeMount
+	];
+
+  c.resources = {
+		requests: requests,
+		limits:   limits,
+	} as kubernetes.V1ResourceRequirements;
+
+  c.imagePullPolicy = "Always";
+  c.securityContext = new kubernetes.V1SecurityContext();
+  return c;
 }
 
 function newSecret(name: string): kubernetes.V1Secret {
