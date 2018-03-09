@@ -166,11 +166,6 @@ export class JobRunner implements jobs.JobRunner {
       this.serviceAccount
     );
 
-    // Attach vaulted sidecars
-    job.vault && job.vault.databases.forEach(function(db) {
-      this.runner.spec.containers.push(newVaultCredsContainer(db, job.vault, this.project))
-    })
-
     // Experimenting with setting a deadline field after which something
     // can clean up existing builds.
     let expiresAt = Date.now() + expiresInMSec;
@@ -236,6 +231,17 @@ export class JobRunner implements jobs.JobRunner {
         } as kubernetes.V1VolumeMount);
       }
     }, this);
+
+    // Attach vaulted sidecars
+    if (job.vault) {
+      this.runner.spec.volumes.push({ name: "database-secrets", emptyDir: {} } as kubernetes.V1Volume)
+      this.runner.spec.volumes.push({ name: "database-template", configMap: { name: job.vault.templateName } } as kubernetes.V1Volume)
+      this.runner.spec.containers[0].volumeMounts.push({ name: "database-secrets", mountPath: "/etc/database-secrets" } as kubernetes.V1VolumeMount)
+
+      job.vault.databases.forEach(function(db) {
+        this.runner.spec.containers.push(newVaultCredsContainer(db, job.vault, this.project))
+      }, this)
+    }
 
     if (job.useSource && project.repo.cloneURL) {
       // Add the sidecar.
@@ -347,7 +353,7 @@ export class JobRunner implements jobs.JobRunner {
     return this.start()
       .then(r => r.wait())
       .then(r => {
-        return k.readNamespacedPodLog(podName, ns);
+        return k.readNamespacedPodLog(podName, ns, "brigaderun");
       })
       .then(response => {
         return new K8sResult(response.body);
@@ -651,6 +657,7 @@ function newVaultCredsContainer(
   const vaultAddr = vault.vaultAddr;
   const secretPath = `database/creds/${db.name}_${db.role}`;
   const loginPath = vault.loginPath;
+  const completedPath = `/etc/database-secrets/${vault.completedPath}`;
   const authRole = `${db.name}_${project.kubernetes.namespace}_${db.serviceAccountName}`;
   const templatePath = `/creds/template/${db.secret.templateVolume.path}`;
   const outputPath = `/creds/output/${db.secret.outputVolume.path}`;
@@ -673,6 +680,7 @@ function newVaultCredsContainer(
 		"--ca-cert=/vault.ca",
 		"--secret-path=" + secretPath,
 		"--login-path=" + loginPath,
+    "--completed-path=" + completedPath,
 		"--auth-role=" + authRole,
 		"--template=" + templatePath,
 		"--out=" + outputPath,
@@ -683,7 +691,8 @@ function newVaultCredsContainer(
 
   c.volumeMounts = [
 		{ name: db.secret.templateVolume.name, mountPath: "/creds/template" } as kubernetes.V1VolumeMount,
-		{ name: db.secret.outputVolume.name, mountPath: "/creds/output" } as kubernetes.V1VolumeMount
+		{ name: db.secret.outputVolume.name, mountPath: "/creds/output" } as kubernetes.V1VolumeMount,
+		{ name: "database-secrets", mountPath: completedPath } as kubernetes.V1VolumeMount
 	];
 
   c.resources = {
