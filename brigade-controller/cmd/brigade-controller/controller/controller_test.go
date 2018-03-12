@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -375,124 +374,183 @@ func TestController_WithWorkerCommand(t *testing.T) {
 }
 
 func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
-	createdPod := false
-	client := fake.NewSimpleClientset()
-	client.PrependReactor("create", "pods", func(action core.Action) (bool, runtime.Object, error) {
-		createdPod = true
-		t.Log("creating pod")
-		return false, nil, nil
-	})
-	config := &Config{
-		Namespace:        v1.NamespaceDefault,
-		WorkerImage:      "deis/brigade-worker:latest",
-		WorkerPullPolicy: string(v1.PullIfNotPresent),
-	}
-	controller := NewController(client, config)
-
-	secret := v1.Secret{
-		ObjectMeta: meta.ObjectMeta{
-			Name:      "moby",
-			Namespace: v1.NamespaceDefault,
-			Labels: map[string]string{
-				"heritage":  "brigade",
-				"component": "build",
-				"project":   "ahab",
-				"build":     "queequeg",
-			},
+	tests := []struct {
+		defaultWorkerImage     string
+		projectWorkerImageReg  string
+		projectWorkerImageName string
+		projectWorkerImageTag  string
+		expWorkerImage         string
+	}{
+		{
+			defaultWorkerImage: "deis/brigade-worker:latest",
+			expWorkerImage:     "deis/brigade-worker:latest",
+		},
+		{
+			defaultWorkerImage: "dist.custom.registry.io:5000/brigade/worker:d454e0a8cfd92deaad893a39c2ad5243d97dc7fd",
+			expWorkerImage:     "dist.custom.registry.io:5000/brigade/worker:d454e0a8cfd92deaad893a39c2ad5243d97dc7fd",
+		},
+		{
+			defaultWorkerImage:     "dist.custom.registry.io:5000/brigade/worker:d454e0a8cfd92deaad893a39c2ad5243d97dc7fd",
+			projectWorkerImageReg:  "deis",
+			projectWorkerImageName: "brigade-worker",
+			projectWorkerImageTag:  "latest",
+			expWorkerImage:         "deis/brigade-worker:latest",
+		},
+		{
+			defaultWorkerImage:     "deis/brigade-worker:latest",
+			projectWorkerImageReg:  "myrepo",
+			projectWorkerImageName: "brigade-worker-with-deps",
+			projectWorkerImageTag:  "canary",
+			expWorkerImage:         "myrepo/brigade-worker-with-deps:canary",
+		},
+		{
+			defaultWorkerImage:    "deis/brigade-worker:latest",
+			projectWorkerImageTag: "d454e0a8cfd92deaad893a39c2ad5243d97dc7fd",
+			expWorkerImage:        "deis/brigade-worker:d454e0a8cfd92deaad893a39c2ad5243d97dc7fd",
+		},
+		{
+			defaultWorkerImage:     "deis/brigade-worker:latest",
+			projectWorkerImageReg:  "dist.custom.registry.io:5000",
+			projectWorkerImageName: "brigade/worker",
+			expWorkerImage:         "dist.custom.registry.io:5000/brigade/worker:latest",
+		},
+		{
+			defaultWorkerImage:     "deis/brigade-worker:latest",
+			projectWorkerImageReg:  "customregsitry",
+			projectWorkerImageName: "brigade-worker",
+			projectWorkerImageTag:  "1234567890",
+			expWorkerImage:         "customregsitry/brigade-worker:1234567890",
+		},
+		{
+			defaultWorkerImage:     "deis/brigade-worker:latest",
+			projectWorkerImageName: "azure/brigade-worker",
+			projectWorkerImageTag:  "1234567890",
+			expWorkerImage:         "azure/brigade-worker:1234567890",
+		},
+		{
+			defaultWorkerImage: "deis/brigade-worker",
+			expWorkerImage:     "deis/brigade-worker:latest",
 		},
 	}
 
-	sidecarImage := "fake/sidecar:latest"
-	workerRegistry := "myrepo"
-	workerName := "brigade-worker-with-deps"
-	workerTag := "canary"
-	workerPullPolicy := v1.PullPolicy("Always")
-	workerImage := fmt.Sprintf("%s/%s:%s", workerRegistry, workerName, workerTag)
-	project := v1.Secret{
-		ObjectMeta: meta.ObjectMeta{
-			Name:      "ahab",
-			Namespace: v1.NamespaceDefault,
-			Labels: map[string]string{
-				"heritage":  "brigade",
-				"component": "project",
-			},
-		},
-		// This and the missing 'script' will trigger an initContainer
-		Data: map[string][]byte{
-			"vcsSidecar":        []byte(sidecarImage),
-			"worker.registry":   []byte(workerRegistry),
-			"worker.name":       []byte(workerName),
-			"worker.tag":        []byte(workerTag),
-			"worker.pullPolicy": []byte(workerPullPolicy),
-		},
-	}
+	for _, test := range tests {
+		t.Run(test.expWorkerImage, func(t *testing.T) {
+			createdPod := false
+			client := fake.NewSimpleClientset()
+			client.PrependReactor("create", "pods", func(action core.Action) (bool, runtime.Object, error) {
+				createdPod = true
+				t.Log("creating pod")
+				return false, nil, nil
+			})
+			config := &Config{
+				Namespace:        v1.NamespaceDefault,
+				WorkerImage:      test.defaultWorkerImage,
+				WorkerPullPolicy: string(v1.PullIfNotPresent),
+			}
+			controller := NewController(client, config)
 
-	// Now let's start the controller
-	stop := make(chan struct{})
-	defer close(stop)
-	go controller.Run(1, stop)
+			secret := v1.Secret{
+				ObjectMeta: meta.ObjectMeta{
+					Name:      "moby",
+					Namespace: v1.NamespaceDefault,
+					Labels: map[string]string{
+						"heritage":  "brigade",
+						"component": "build",
+						"project":   "ahab",
+						"build":     "queequeg",
+					},
+				},
+			}
 
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+			sidecarImage := "fake/sidecar:latest"
+			workerPullPolicy := v1.PullPolicy("Always")
+			project := v1.Secret{
+				ObjectMeta: meta.ObjectMeta{
+					Name:      "ahab",
+					Namespace: v1.NamespaceDefault,
+					Labels: map[string]string{
+						"heritage":  "brigade",
+						"component": "project",
+					},
+				},
+				// This and the missing 'script' will trigger an initContainer
+				Data: map[string][]byte{
+					"vcsSidecar":        []byte(sidecarImage),
+					"worker.registry":   []byte(test.projectWorkerImageReg),
+					"worker.name":       []byte(test.projectWorkerImageName),
+					"worker.tag":        []byte(test.projectWorkerImageTag),
+					"worker.pullPolicy": []byte(workerPullPolicy),
+				},
+			}
 
-	// Let's wait for the controller to create the pod
-	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
-		return createdPod, nil
-	})
+			// Now let's start the controller
+			stop := make(chan struct{})
+			defer close(stop)
+			go controller.Run(1, stop)
 
-	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+			client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
+			client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
 
-	if !labels.Equals(pod.GetLabels(), secret.GetLabels()) {
-		t.Error("Pod.Lables do not match")
-	}
+			// Let's wait for the controller to create the pod
+			wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
+				return createdPod, nil
+			})
 
-	if pod.Spec.Volumes[0].Name != volumeName {
-		t.Error("Spec.Volumes are not correct")
-	}
+			pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
 
-	c := pod.Spec.Containers[0]
-	if c.Name != "brigade-runner" {
-		t.Error("Container.Name is not correct")
-	}
-	if envlen := len(c.Env); envlen != 13 {
-		t.Errorf("expected 13 items in Container.Env, got %d", envlen)
-	}
-	if c.Image != workerImage {
-		t.Error("Container.Image is not correct")
-	}
-	if c.ImagePullPolicy != workerPullPolicy {
-		t.Error("Container.ImagePullPolicy is not correct")
-	}
-	if c.VolumeMounts[0].Name != volumeName {
-		t.Error("Container.VolumeMounts is not correct")
-	}
+			if !labels.Equals(pod.GetLabels(), secret.GetLabels()) {
+				t.Error("Pod.Lables do not match")
+			}
 
-	if l := len(pod.Spec.InitContainers); l != 1 {
-		t.Fatalf("Expected 1 init container, got %d", l)
-	}
-	ic := pod.Spec.InitContainers[0]
-	if envlen := len(ic.Env); envlen != 13 {
-		t.Errorf("expected 13 env vars, got %d", envlen)
-	}
+			if pod.Spec.Volumes[0].Name != volumeName {
+				t.Error("Spec.Volumes are not correct")
+			}
 
-	if ic.Image != sidecarImage {
-		t.Errorf("expected sidecar %q, got %q", sidecarImage, ic.Image)
-	}
+			c := pod.Spec.Containers[0]
+			if c.Name != "brigade-runner" {
+				t.Error("Container.Name is not correct")
+			}
+			if envlen := len(c.Env); envlen != 13 {
+				t.Errorf("expected 13 items in Container.Env, got %d", envlen)
+			}
+			if c.Image != test.expWorkerImage {
+				t.Errorf("Container.Image is not correct, got %s; want %s", c.Image, test.expWorkerImage)
+			}
+			if c.ImagePullPolicy != workerPullPolicy {
+				t.Error("Container.ImagePullPolicy is not correct")
+			}
+			if c.VolumeMounts[0].Name != volumeName {
+				t.Error("Container.VolumeMounts is not correct")
+			}
 
-	if ic.ImagePullPolicy != workerPullPolicy {
-		t.Errorf("expected sidecar %q, got %q", workerPullPolicy, ic.ImagePullPolicy)
-	}
+			if l := len(pod.Spec.InitContainers); l != 1 {
+				t.Fatalf("Expected 1 init container, got %d", l)
+			}
+			ic := pod.Spec.InitContainers[0]
+			if envlen := len(ic.Env); envlen != 13 {
+				t.Errorf("expected 13 env vars, got %d", envlen)
+			}
 
-	if ic.VolumeMounts[0].Name != sidecarVolumeName {
-		t.Errorf("expected sidecar volume %q, got %q", sidecarVolumeName, ic.VolumeMounts[0].Name)
-	}
+			if ic.Image != sidecarImage {
+				t.Errorf("expected sidecar %q, got %q", sidecarImage, ic.Image)
+			}
 
-	if os, ok := pod.Spec.NodeSelector["beta.kubernetes.io/os"]; !ok {
-		t.Error("No OS node selector found")
-	} else if os != "linux" {
-		t.Errorf("Unexpected node selector: %s", os)
+			if ic.ImagePullPolicy != workerPullPolicy {
+				t.Errorf("expected sidecar %q, got %q", workerPullPolicy, ic.ImagePullPolicy)
+			}
+
+			if ic.VolumeMounts[0].Name != sidecarVolumeName {
+				t.Errorf("expected sidecar volume %q, got %q", sidecarVolumeName, ic.VolumeMounts[0].Name)
+			}
+
+			if os, ok := pod.Spec.NodeSelector["beta.kubernetes.io/os"]; !ok {
+				t.Error("No OS node selector found")
+			} else if os != "linux" {
+				t.Errorf("Unexpected node selector: %s", os)
+			}
+		})
 	}
 }

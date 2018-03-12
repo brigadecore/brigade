@@ -2,10 +2,10 @@ package controller
 
 import (
 	"errors"
-	"log"
-	"strings"
-
 	"fmt"
+	"log"
+	"regexp"
+	"strings"
 
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -14,8 +14,12 @@ import (
 	"github.com/uswitch/brigade/pkg/storage/kube"
 )
 
-// ErrNoBuildID indicates that a secret does not have a build ID attached.
-var ErrNoBuildID = errors.New("no build ID on secret")
+var (
+	// ErrNoBuildID indicates that a secret does not have a build ID attached.
+	ErrNoBuildID = errors.New("no build ID on secret")
+
+	containerImageRegex = regexp.MustCompile("(.*):([^:]+)$")
+)
 
 func (c *Controller) syncSecret(secret *v1.Secret) error {
 	// If a secret does not have a build ID then it cannot be tracked through
@@ -163,24 +167,35 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
 }
 
 func (c *Controller) workerImageConfig(project *v1.Secret) (string, string) {
-	splits := strings.Split(c.WorkerImage, ":")
-	tag := splits[1]
-	splits = strings.Split(splits[0], "/")
-	last := len(splits) - 1
-	name := splits[last]
-	splits = splits[:last]
-	registry := strings.Join(splits, "/")
+	// There isn't a correct way of making a proper distinction between registry,
+	// registry+name or name, examples:
+	//	* azure/brigade-worker:1234
+	//	* myregisitry.com/azure/brigade-worker:1234
+	// 	* myregistry/brigade-worker:1234
+	// In order to tackle this, registry+name will be the name of the image.
+
+	var name, tag string
+	matches := containerImageRegex.FindStringSubmatch(c.WorkerImage)
+	if len(matches) == 3 {
+		name = matches[1]
+		tag = matches[2]
+	} else { // If no tag then name to default and tag to latest.
+		name = c.WorkerImage
+		tag = "latest"
+	}
+
 	sv := kube.SecretValues(project.Data)
 	if n := sv.String("worker.name"); len(n) > 0 {
 		name = n
 	}
+	if r := sv.String("worker.registry"); len(r) > 0 {
+		// registry + name will work as name.
+		name = fmt.Sprintf("%s/%s", r, name)
+	}
 	if t := sv.String("worker.tag"); len(t) > 0 {
 		tag = t
 	}
-	if r := sv.String("worker.registry"); len(r) > 0 {
-		registry = r
-	}
-	image := fmt.Sprintf("%s/%s:%s", registry, name, tag)
+	image := fmt.Sprintf("%s:%s", name, tag)
 
 	pullPolicy := c.WorkerPullPolicy
 	if p := sv.String("worker.pullPolicy"); len(p) > 0 {

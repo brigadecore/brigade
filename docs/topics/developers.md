@@ -35,7 +35,7 @@ Follow these steps when cloning the brigade repository to use an existing `GOPAT
 **Note**: this leaves you at the tip of **master** in the repository where active development
 is happening. You might prefer to checkout the most recent stable tag:
 
-- `$ git checkout v0.10.0`
+- `$ git checkout v0.11.0`
 
 ## Building Source
 
