@@ -72,7 +72,7 @@ const (
 )
 
 func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
-	env := workerEnv(project, build)
+	env := c.workerEnv(project, build)
 
 	cmd := []string{"yarn", "-s", "start"}
 	if cmdString, ok := project.Data["workerCommand"]; ok {
@@ -191,7 +191,7 @@ func (c *Controller) workerImageConfig(project *v1.Secret) (string, string) {
 	return image, pullPolicy
 }
 
-func workerEnv(project, build *v1.Secret) []v1.EnvVar {
+func (c *Controller) workerEnv(project, build *v1.Secret) []v1.EnvVar {
 	sv := kube.SecretValues(build.Data)
 	env := []v1.EnvVar{
 		{Name: "CI", Value: "true"},
@@ -218,6 +218,7 @@ func workerEnv(project, build *v1.Secret) []v1.EnvVar {
 			Name:      "BRIGADE_REPO_AUTH_TOKEN",
 			ValueFrom: secretRef("github.token", project),
 		},
+		{Name: "BRIGADE_SERVICE_ACCOUNT", Value: c.Config.WorkerServiceAccount},
 	}
 	return env
 }
