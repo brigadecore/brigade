@@ -70,13 +70,13 @@ From your project...
 <img src="img/img4.png" style="height: 500px;" />
 
 To get the IP for your "Payload URL", run this command on your Kubernetes cluster,
-and look for the `brigade-gw` line:
+and look for the `brigade-github-gw` line:
 
 ```console
 $ kubectl get service
-NAME                  TYPE           CLUSTER-IP   EXTERNAL-IP   PORT(S)          AGE
-brigade-brigade-api   ClusterIP      10.0.0.57    <none>        7745/TCP         8h
-brigade-brigade-gw    LoadBalancer   10.0.0.157   10.21.77.9    7744:31946/TCP   8h
+NAME                        TYPE           CLUSTER-IP   EXTERNAL-IP   PORT(S)          AGE
+brigade-brigade-api         ClusterIP      10.0.0.57    <none>        7745/TCP         8h
+brigade-brigade-github-gw   LoadBalancer   10.0.0.157   10.21.77.9    7744:31946/TCP   8h
 ```
 
 You will use the `EXTERNAL-IP` address (feel free to map it to a DNS name if you wish):
