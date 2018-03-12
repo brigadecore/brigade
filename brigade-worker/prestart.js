@@ -12,19 +12,9 @@ try {
   fs.readdir(scriptDir, (err, files) => {
     files.forEach(file => {
       if (file == script) {
-        var data = loadScript(path.join(scriptDir, script))
-        let wrapper = "const {overridingRequire} = require('./require');((require) => {" +
-          data.toString() +
-          "})(overridingRequire)";
-        fs.writeFile(path.join(outputDir, script), wrapper, () => {
-          console.log("prestart: dist/brigade.js written");
-        });
+        writeBrigadeScript();
       } else {
-        copyFile(path.join(scriptDir, file), path.join(outputDir, file), function(err) {
-          if (err != null) {
-            console.log("prestart:", err);
-          }
-        });
+        copyFile(path.join(scriptDir, file), path.join(outputDir, file));
       }
     });
   });
@@ -33,8 +23,17 @@ try {
   process.exit(1)
 }
 
-function copyFile(source, target, cb) {
-  var cbCalled = false;
+function writeBrigadeScript() {
+  var data = loadScript(path.join(scriptDir, script))
+  let wrapper = "const {overridingRequire} = require('./require');((require) => {" +
+    data.toString() +
+    "})(overridingRequire)";
+  fs.writeFile(path.join(outputDir, script), wrapper, () => {
+    console.log("prestart: dist/brigade.js written");
+  });
+}
+
+function copyFile(source, target) {
   var rd = fs.createReadStream(source);
   rd.on("error", function(err) {
     done(err);
@@ -51,9 +50,8 @@ function copyFile(source, target, cb) {
   rd.pipe(wr);
 
   function done(err) {
-    if (!cbCalled) {
-      cb(err);
-      cbCalled = true;
+    if (err != null && !err.message.startsWith("EISDIR")) {
+      console.log(err);
     }
   }
 }
