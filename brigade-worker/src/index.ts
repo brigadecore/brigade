@@ -17,6 +17,7 @@
  *   this namespace.
  * - `BRIGADE_BUILD_ID`: The ULID for the build. This is unique.
  * - `BRIGADE_BUILD_NAME`: This is actually the ID of the worker.
+ * - `BRIGADE_SERVICE_ACCOUNT`: The service account to use.
  *
  * Also, the Brigade script must be written to `brigade.js`.
  */
@@ -31,6 +32,8 @@ import * as ulid from "ulid";
 import * as events from "./events";
 import { App } from "./app";
 import { Logger, ContextLogger } from "./logger";
+
+import { options } from "./k8s";
 
 // This is a side-effect import.
 import "./brigade";
@@ -66,6 +69,10 @@ try {
   e.payload = fs.readFileSync("/etc/brigade/payload", "utf8");
 } catch (e) {
   logger.log("no payload loaded");
+}
+
+if (process.env.BRIGADE_SERVICE_ACCOUNT) {
+  options.serviceAccount = process.env.BRIGADE_SERVICE_ACCOUNT;
 }
 
 // Run the app.

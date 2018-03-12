@@ -21,9 +21,33 @@ const expiresInMSec = 1000 * 60 * 60 * 24 * 30;
 
 const defaultClient = kubernetes.Config.defaultClient();
 
-const defaultServiceAccount = "brigade-worker";
-
 const logger = new ContextLogger("k8s");
+
+/**
+ * options is the set of configuration options for the library.
+ *
+ * The k8s library provides a backend for the brigade.js objects. But it needs
+ * some configuration that is to be passed directly to the library, not via the
+ * brigade.js. To allow for this plus overrides (e.g. by Project or Job objects),
+ * we maintain a top-level singleton object that holds configuration.
+ *
+ * It is initially populated with defaults. The defaults can be overridden first
+ * by the app (app.ts), then by the project (where allowed). Certain jobs may be
+ * allowed to override (or ignore) 'options', though they should never modify
+ * it.
+ */
+export var options: KubernetesOptions = {
+  serviceAccount: "brigade-worker",
+  mountPath: "/src"
+};
+
+/**
+ * KubernetesOptions exposes options for Kubernetes configuration.
+ */
+export class KubernetesOptions {
+  serviceAccount: string;
+  mountPath: string;
+}
 
 class K8sResult implements jobs.Result {
   data: string;
@@ -142,18 +166,17 @@ export class JobRunner implements jobs.JobRunner {
   event: BrigadeEvent;
   job: jobs.Job;
   client: kubernetes.Core_v1Api;
+  options: KubernetesOptions;
   serviceAccount: string;
 
   constructor(job: jobs.Job, e: BrigadeEvent, project: Project) {
+    this.options = Object.assign({}, options);
+
     this.event = e;
     this.job = job;
     this.project = project;
     this.client = defaultClient;
-
-    this.serviceAccount =
-      job.serviceAccount ||
-      process.env.BRIGADE_SERVICE_ACCOUNT ||
-      defaultServiceAccount;
+    this.serviceAccount = job.serviceAccount || this.options.serviceAccount;
 
     // $JOB-$BUILD
     this.name = `${job.name}-${this.event.buildID}`;
@@ -203,7 +226,7 @@ export class JobRunner implements jobs.JobRunner {
 
     this.runner.spec.containers[0].env = envVars;
 
-    let mountPath = job.mountPath || "/src";
+    let mountPath = job.mountPath || this.options.mountPath;
 
     // Add secret volume
     this.runner.spec.volumes = [
@@ -492,10 +515,10 @@ export class JobRunner implements jobs.JobRunner {
     });
 
     // This will fail if the timelimit is reached.
-    let timer = new Promise((solve, ject) => {
+    let timer = new Promise((solve, reject) => {
       waiter = setTimeout(() => {
         cancel = true;
-        ject("time limit exceeded");
+        reject("time limit exceeded");
       }, timeout);
     });
 
