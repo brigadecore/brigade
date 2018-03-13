@@ -12,9 +12,9 @@
  */
 const defaultShell: string = "/bin/sh";
 /**
- * defaultTimeout is the default timeout for a job (15 minutes)
+ * defaultTimeout is the default timeout for a job (5 minutes)
  */
-const defaultTimeout: number = 1000 * 60 * 15;
+const defaultTimeout: number = 1000 * 60 * 5;
 /**
  * The default image if `Job.image` is not set
  */
