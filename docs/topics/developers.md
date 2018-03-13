@@ -28,9 +28,11 @@ This document covers development of `brigade-controller`, `brigade-server`, and
 
 Follow these steps when cloning the brigade repository to use an existing `GOPATH` for your system:
 
-- `$ mkdir -p $(go env GOPATH)/src/github.com/Azure # GOPATH is set to $HOME/go by default`
-- `$ git clone https://github.com/Azure/brigade $(go env GOPATH)/src/github.com/Azure/brigade`
-- `$ cd $(go env GOPATH)/src/github.com/Azure/brigade`
+- `$ export GOPATH=$(go env GOPATH) # GOPATH is set to $HOME/go by default`
+- `$ export PATH=$GOPATH/bin:$PATH # 'make bootstrap brig' will try to execute binnaries in $GOPATH/bin`
+- `$ mkdir -p $GOPATH/src/github.com/Azure `
+- `$ git clone https://github.com/Azure/brigade $GOPATH/src/github.com/Azure/brigade`
+- `$ cd $GOPATH/src/github.com/Azure/brigade`
 
 **Note**: this leaves you at the tip of **master** in the repository where active development
 is happening. You might prefer to checkout the most recent stable tag:
