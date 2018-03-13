@@ -351,7 +351,7 @@ export class JobRunner implements jobs.JobRunner {
     let k = this.client;
     let ns = this.project.kubernetes.namespace;
     return this.start()
-      .then(r => r.wait())
+      .then(r => r.runWithRetries())
       .then(r => {
         return k.readNamespacedPodLog(podName, ns, "brigaderun");
       })
@@ -373,11 +373,6 @@ export class JobRunner implements jobs.JobRunner {
         .then(() => {
           logger.log("Creating secret " + this.secret.metadata.name);
           return k.createNamespacedSecret(ns, this.secret);
-        })
-        .then(result => {
-          logger.log("Creating pod " + this.runner.metadata.name);
-          // Once namespace creation has been accepted, we create the pod.
-          return k.createNamespacedPod(ns, this.runner);
         })
         .then(result => {
           resolve(this);
@@ -425,6 +420,47 @@ export class JobRunner implements jobs.JobRunner {
             reject(err);
           });
       }
+    });
+  }
+
+  /**
+   * runWithRetries waits for a pod to complete and retries it up to 3 times
+   * with exponential backoff
+   */
+  public runWithRetries(): Promise<jobs.Result> {
+    return new Promise((resolve, reject) => {
+      let ns = this.project.kubernetes.namespace;
+      let k = this.client;
+      const name = this.name;
+      const runner = this.runner;
+      const pause = (duration) => new Promise(res => setTimeout(res, duration));
+
+      const backoff = (retries, delay = 500) => {
+        k
+          .createNamespacedPod(ns, runner)
+          .then(() => {
+            this.wait()
+              .then(result => resolve(result))
+              .catch(err => {
+                if (retries > 0) {
+                  logger.log("Deleting pod", runner.metadata.name);
+                  k.deleteNamespacedPod(name, ns, new kubernetes.V1DeleteOptions());
+
+                  pause(delay).then(() => {
+                    logger.log("Rerunning pod", name);
+                    return backoff(retries - 1, delay * 2);
+                  });
+                } else {
+                  logger.log("Exhausted retries", name);
+                  reject(err);
+                }
+              });
+          })
+          .catch(reason => {
+            logger.error(reason);
+          });
+      };
+      backoff(3);
     });
   }
 
@@ -520,10 +556,10 @@ export class JobRunner implements jobs.JobRunner {
     });
 
     // This will fail if the timelimit is reached.
-    let timer = new Promise((solve, ject) => {
+    let timer = new Promise((solve, reject) => {
       waiter = setTimeout(() => {
         cancel = true;
-        ject("time limit exceeded");
+        reject("time limit exceeded");
       }, timeout);
     });
 

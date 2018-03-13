@@ -34,6 +34,7 @@ export interface JobRunner {
   start(): Promise<JobRunner>;
   // Wait waits unti the job being run has reached a success or failure state.
   wait(): Promise<Result>;
+  runWithRetries(): Promise<Result>;
 }
 
 /**

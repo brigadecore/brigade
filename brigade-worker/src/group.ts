@@ -5,6 +5,9 @@
 /** */
 
 import * as jobImpl from "./job";
+import {ContextLogger} from './logger';
+
+const logger = new ContextLogger("group");
 
 /**
  * Group describes a collection of associated jobs.
@@ -74,6 +77,34 @@ export class Group {
       plist.push(j.run());
     }
     return Promise.all(plist);
+  }
+  /**
+   * batchRunAll runs all jobs in parallel in batches of up to <maxConcurrent> and waits for them all to finish.
+   */
+  public batchRunAll(maxConcurrent: number): Promise<jobImpl.Result[]> {
+    const jobs = this.jobs;
+    return new Promise(function(resolve, reject) {
+      const results = [];
+      let i = 0;
+
+      function next() {
+        if (i < jobs.length) {
+          let plist: Promise<jobImpl.Result>[] = [];
+          logger.log("Running jobs from", i, "to", i + maxConcurrent);
+          for (let j of jobs.slice(i, i + maxConcurrent)) {
+            plist.push(j.run());
+          }
+          Promise.all(plist).then(function(data) {
+            results.push(data);
+            next();
+          }, reject);
+          i += maxConcurrent;
+        } else {
+          resolve(results);
+        }
+      }
+      next();
+    });
   }
 }
 
