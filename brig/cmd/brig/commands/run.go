@@ -24,12 +24,13 @@ var (
 	runEvent     string
 	runPayload   string
 	runCommitish string
+	runRef       string
 )
 
 const (
-	defaultCommit = "master"
-	kubeConfig    = "KUBECONFIG"
-	waitTimeout   = 5 * time.Minute
+	defaultRef  = "master"
+	kubeConfig  = "KUBECONFIG"
+	waitTimeout = 5 * time.Minute
 )
 
 const runUsage = `Send a Brigade JS file to the server.
@@ -54,7 +55,8 @@ func init() {
 	run.Flags().StringVarP(&runFile, "file", "f", "", "The JavaScript file to execute")
 	run.Flags().StringVarP(&runEvent, "event", "e", "exec", "The name of the event to fire")
 	run.Flags().StringVarP(&runPayload, "payload", "p", "", "The path to a payload file")
-	run.Flags().StringVarP(&runCommitish, "commit", "c", defaultCommit, "A VCS (git) commit version, tag, or branch")
+	run.Flags().StringVarP(&runCommitish, "commit", "c", "", "A VCS (git) commit")
+	run.Flags().StringVarP(&runRef, "ref", "r", defaultRef, "A VCS (git) version, tag, or branch")
 	Root.AddCommand(run)
 }
 
@@ -96,6 +98,7 @@ func newScriptRunner() (*scriptRunner, error) {
 		kc:     c,
 		event:  runEvent,
 		commit: runCommitish,
+		ref:    runRef,
 	}
 	if len(runPayload) > 0 {
 		data, err := ioutil.ReadFile(runPayload)
@@ -113,6 +116,7 @@ type scriptRunner struct {
 	payload []byte
 	event   string
 	commit  string
+	ref     string
 }
 
 func (a *scriptRunner) send(projectName string, data []byte) error {
@@ -121,7 +125,8 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 		Type:      a.event,
 		Provider:  "brigade-cli",
 		Revision: &brigade.Revision{
-			Ref: a.commit,
+			Commit: a.commit,
+			Ref:    a.ref,
 		},
 		Payload: a.payload,
 		Script:  data,
