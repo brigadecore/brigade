@@ -99,7 +99,7 @@ $ open myvalues.yaml    # Change all `tag:` fields to be `tag: latest`
 From here, you can install Brigade into Minikube using the Helm chart:
 
 ```
-$ helm install -n brigade ./charts/brigade -f myvalues.yaml
+$ helm install -n brigade ./charts/brigade -f myvalues.yaml # if this command fails run `helm init`
 ```
 
 Don't forget to also create a project (`$ helm install -n empty-testbed charts/brigade-project`).
