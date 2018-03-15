@@ -120,8 +120,14 @@ type scriptRunner struct {
 }
 
 func (a *scriptRunner) send(projectName string, data []byte) error {
+
+	projectID := brigade.ProjectID(projectName)
+	if _, err := a.store.GetProject(projectID); err != nil {
+		return fmt.Errorf("could not find the project %q: %s", projectName, err)
+	}
+
 	b := &brigade.Build{
-		ProjectID: brigade.ProjectID(projectName),
+		ProjectID: projectID,
 		Type:      a.event,
 		Provider:  "brigade-cli",
 		Revision: &brigade.Revision{
