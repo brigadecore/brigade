@@ -144,6 +144,8 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 
 	podName := fmt.Sprintf("brigade-worker-%s", b.ID)
 
+	fmt.Printf("Event created. Waiting for worker pod named %q.", podName)
+
 	if err := a.waitForWorker(b.ID); err != nil {
 		return err
 	}
