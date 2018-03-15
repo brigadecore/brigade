@@ -88,8 +88,9 @@ Docker daemon:
 $ eval $(minikube docker-env)
 ```
 
-Running `VERSION=latest make docker-build docker-push` will push the Brigade images to the Minikube Docker
-daemon.
+Running `VERSION=latest make docker-build` will push the Brigade images to the Minikube Docker
+daemon. You can verify this by running `docker images`. You should see the `latest` tags for
+the brigade images.
 
 Now create a custom `values.yaml` file for the chart, and set the images to all
 pull the `latest` image:
