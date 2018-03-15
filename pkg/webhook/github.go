@@ -32,13 +32,14 @@ type fileGetter func(commit, path string, proj *brigade.Project) ([]byte, error)
 type statusCreator func(commit string, proj *brigade.Project, status *github.RepoStatus) error
 
 // NewGithubHook creates a GitHub webhook handler.
-func NewGithubHook(s storage.Store, authors []string) *githubHook {
-	return &githubHook{
+func NewGithubHook(s storage.Store, authors []string) gin.HandlerFunc {
+	gh := &githubHook{
 		store:          s,
 		getFile:        getFileFromGithub,
 		createStatus:   setRepoStatus,
 		allowedAuthors: authors,
 	}
+	return gh.Handle
 }
 
 // Handle routes a webhook to its appropriate handler.

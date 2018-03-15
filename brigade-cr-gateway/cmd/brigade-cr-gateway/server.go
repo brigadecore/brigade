@@ -62,12 +62,12 @@ func newRouter(store storage.Store) *gin.Engine {
 		// Here, :org is actually a full project name, but due to Gin's naming rules
 		// we have to keep it named :org.
 		// This is the recommended form.
-		events.POST("/webhook/:org", handler.Handle)
+		events.POST("/webhook/:org", handler)
 
 		// Of the form /webhook/deis/empty-testbed?commit=master
-		events.POST("/webhook/:org/:repo", handler.Handle)
+		events.POST("/webhook/:org/:repo", handler)
 		// Of the form /webhook/deis/empty-testbed/master
-		events.POST("/webhook/:org/:repo/:commit", handler.Handle)
+		events.POST("/webhook/:org/:repo/:commit", handler)
 	}
 
 	router.GET("/healthz", healthz)

@@ -17,6 +17,7 @@ type WorkerConfig struct {
 	PullPolicy string `json:"pullPolicy"`
 }
 
+// Image returns the full worker image name
 func (c WorkerConfig) Image() string {
 	image := c.Name
 	if c.Registry != "" {

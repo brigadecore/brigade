@@ -110,30 +110,18 @@ test-js:
 
 .PHONY: test-style
 test-style:
-	gometalinter \
-		--disable-all \
-		--enable deadcode \
-		--severity deadcode:error \
-		--enable gofmt \
-		--enable ineffassign \
-		--enable misspell \
-		--enable vet \
-		--tests \
-		--vendor \
-		--deadline 60s \
-		./...
-	@echo "Recommended style checks ===>"
-	gometalinter \
-		--disable-all \
-		--enable golint \
-		--vendor \
-		--deadline 60s \
-		./... || :
+	gometalinter --config ./gometalinter.json ./...
 
 .PHONY: format
-format:
-	test -z "$$(find . -path ./vendor -prune -type f -o -name '*.go' -exec gofmt -d {} + | tee /dev/stderr)" || \
-	test -z "$$(find . -path ./vendor -prune -type f -o -name '*.go' -exec gofmt -w {} + | tee /dev/stderr)"
+format: format-go format-js
+
+.PHONY: format-go
+format-go:
+	go list -f '{{.Dir}}' ./... | xargs goimports -w -local github.com/Azure/brigade
+
+.PHONY: format-js
+format-js:
+	cd brigade-worker && yarn format
 
 HAS_GOMETALINTER := $(shell command -v gometalinter;)
 HAS_DEP          := $(shell command -v dep;)
