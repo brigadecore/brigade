@@ -150,7 +150,10 @@ export class JobRunner implements jobs.JobRunner {
     this.project = project;
     this.client = defaultClient;
 
-    this.serviceAccount = job.serviceAccount || process.env.BRIGADE_SERVICE_ACCOUNT || defaultServiceAccount;
+    this.serviceAccount =
+      job.serviceAccount ||
+      process.env.BRIGADE_SERVICE_ACCOUNT ||
+      defaultServiceAccount;
 
     // $JOB-$BUILD
     this.name = `${job.name}-${this.event.buildID}`;
