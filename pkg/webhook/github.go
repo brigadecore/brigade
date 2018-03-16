@@ -173,7 +173,7 @@ func (s *githubHook) buildStatus(eventType string, rev brigade.Revision, payload
 	if err := s.build(eventType, rev, payload, proj); err != nil {
 		log.Printf("Creating Build failed: %s", err)
 		svc := StatusContext
-		msg: = truncAt(err.Error(), 140)
+		msg := truncAt(err.Error(), 140)
 		status := new(github.RepoStatus)
 		status.State = &StatePending
 		status.Description = &msg
