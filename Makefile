@@ -91,17 +91,13 @@ test-unit: vendor
 #
 # This will clone the github.com/deis/empty-testbed repo and run the brigade.js
 # file found there.
-.PHONY: test-functional
-test-functional: vendor test-functional-prepare
-test-functional:
-	go test --tags integration ./tests
-
 # Test Repo is https://github.com/deis/empty-testbed
 TEST_REPO_COMMIT =  589e15029e1e44dee48de4800daf1f78e64287c0
 KUBECONFIG       ?= ${HOME}/.kube/config
-.PHONY: test-functional-prepare
-test-functional-prepare:
-	go run ./tests/cmd/generate.go -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
+.PHONY: test-functional
+test-functional: vendor
+test-functional:
+	go test --tags integration ./tests -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
 
 # JS test is local only
 .PHONY: test-js
