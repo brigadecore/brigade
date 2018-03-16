@@ -92,6 +92,10 @@ export class JobStorage {
  * JobHost expresses expectations about the host a job will run on.
  */
 export class JobHost {
+  constructor() {
+    this.nodeSelector = new Map<string, string>();
+  }
+
   /**
    * os is the name of the OS upon which the job's container must run.
    *
@@ -113,6 +117,11 @@ export class JobHost {
    * to run jobs on the bridge.
    */
   public name: string;
+
+  /**
+   * nodeSelector labels are used as selectors when choosing a node on which to run this job.
+   */
+  public nodeSelector: Map<string, string>;
 }
 
 /**

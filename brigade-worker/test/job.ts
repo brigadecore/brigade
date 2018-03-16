@@ -5,6 +5,7 @@ import * as mock from "./mock";
 import {
   Job,
   Result,
+  JobHost,
   JobCache,
   JobStorage,
   brigadeCachePath,
@@ -54,12 +55,27 @@ describe("job", function() {
       });
     });
   });
+  describe("JobHost", function() {
+    describe("#constructor", function() {
+      it("correctly sets default values", function() {
+        let h = new JobHost();
+        assert.equal(0, h.nodeSelector.size, "had empty nodeSelector map");
+        // Validate that the nodeSelector structure works like a map.
+        h.nodeSelector.set("callMe", "Ishmael");
+        assert.equal("Ishmael", h.nodeSelector.get("callMe"));
+      });
+    });
+  });
   describe("Job", function() {
     let j: mock.MockJob;
     describe("#constructor", function() {
       it("creates a named job", function() {
         j = new mock.MockJob("myName");
         assert.equal(j.name, "myName");
+      });
+      it("starts with initialized JobHost", function() {
+        j = new mock.MockJob("name");
+        assert.equal(j.host.nodeSelector.size, 0);
       });
       context("when image is supplied", function() {
         it("sets image property", function() {
