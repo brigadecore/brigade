@@ -170,21 +170,20 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 
 // buildStatus runs a build, and sets upstream status accordingly.
 func (s *githubHook) buildStatus(eventType string, rev brigade.Revision, payload []byte, proj *brigade.Project) {
-	msg := "Building"
-	svc := StatusContext
-	status := new(github.RepoStatus)
-	status.State = &StatePending
-	status.Description = &msg
-	status.Context = &svc
 	if err := s.build(eventType, rev, payload, proj); err != nil {
 		log.Printf("Creating Build failed: %s", err)
-		msg = truncAt(err.Error(), 140)
+		svc := StatusContext
+		msg: = truncAt(err.Error(), 140)
+		status := new(github.RepoStatus)
+		status.State = &StatePending
+		status.Description = &msg
+		status.Context = &svc
 		status.State = &StateFailure
 		status.Description = &msg
-	}
-	if err := s.createStatus(rev.Commit, proj, status); err != nil {
-		// For this one, we just log an error and continue.
-		log.Printf("Error setting status to %s: %s", *status.State, err)
+		if err := s.createStatus(rev.Commit, proj, status); err != nil {
+			// For this one, we just log an error and continue.
+			log.Printf("Error setting status to %s: %s", *status.State, err)
+		}
 	}
 }
 
