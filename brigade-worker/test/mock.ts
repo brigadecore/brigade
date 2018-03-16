@@ -1,9 +1,7 @@
-import {Project, BrigadeEvent} from "../src/events"
-import {Result, Job} from "../src/job"
-
+import { Project, BrigadeEvent } from "../src/events";
+import { Result, Job } from "../src/job";
 
 // This package contains mocks of objects found elsewhere in Brigade.
-
 
 export function mockProject(): Project {
   return {
@@ -21,8 +19,8 @@ export function mockProject(): Project {
       buildStorageSize: "50Mi"
     },
     allowPrivilegedJobs: true,
-    allowHostMounts: false,
-  } as Project
+    allowHostMounts: false
+  } as Project;
 }
 
 export function mockEvent() {
@@ -32,19 +30,19 @@ export function mockEvent() {
     type: "push",
     provider: "github",
     revision: {
-      commit: "c0ffee",
+      commit: "c0ffee"
     },
     payload: "{}"
-  } as BrigadeEvent
+  } as BrigadeEvent;
 }
 
 export class MockResult implements Result {
-  protected msg: string = "uninitialized"
+  protected msg: string = "uninitialized";
   constructor(msg: string) {
-    this.msg = msg
+    this.msg = msg;
   }
   public toString(): string {
-    return this.msg
+    return this.msg;
   }
 }
 
@@ -55,27 +53,33 @@ export class MockResult implements Result {
 // The MockJob.run method will sleep for one nanosecond (that is, give up at least
 // one scheduler run). To set a longer delay, set MockJob.delay.
 export class MockJob extends Job {
-  public fail: boolean = false
-  public delay: number = 1 // Just enough to cause the event loop to sleep it.
+  public fail: boolean = false;
+  public delay: number = 1; // Just enough to cause the event loop to sleep it.
   public run(): Promise<Result> {
-    let fail = this.fail
-    let delay = this.delay
-    this._podName = "generated-fake-job-name"
+    let fail = this.fail;
+    let delay = this.delay;
+    this._podName = "generated-fake-job-name";
     return new Promise((resolve, reject) => {
       if (fail) {
-        setTimeout(() => {reject("Failed")}, delay)
-        return
+        setTimeout(() => {
+          reject("Failed");
+        }, delay);
+        return;
       }
-      setTimeout(resolve(new MockResult(this.name)), delay)
-    })
+      setTimeout(resolve(new MockResult(this.name)), delay);
+    });
   }
 }
 
 export class MockBuildStorage {
-  public create(e: BrigadeEvent, project: Project, size?: string): Promise<string> {
-    return Promise.resolve(e.workerID)
+  public create(
+    e: BrigadeEvent,
+    project: Project,
+    size?: string
+  ): Promise<string> {
+    return Promise.resolve(e.workerID);
   }
   public destroy(): Promise<boolean> {
-    return Promise.resolve(true)
+    return Promise.resolve(true);
   }
 }
