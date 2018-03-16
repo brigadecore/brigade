@@ -129,6 +129,13 @@ describe("k8s", function() {
           assert.equal(jr.runner.spec.serviceAccountName, "brigade-worker");
         });
       });
+      context("when custom service account is specified", function() {
+        it("sets a service account name to 'custom-worker'", function() {
+          k8s.options.serviceAccount = "custom-worker";
+          let jr = new k8s.JobRunner(j, e, p);
+          assert.equal(jr.runner.spec.serviceAccountName, "custom-worker");
+        });
+      });
       context("when no tasks are supplied", function() {
         beforeEach(function() {
           j.tasks = [];
