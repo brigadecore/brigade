@@ -324,6 +324,15 @@ describe("k8s", function() {
           assert.equal("aciBridge", jr.runner.spec.nodeName);
         });
       });
+      context("when host nodeSelector are supplied", function() {
+        it("sets a node selector", function() {
+          j.host.nodeSelector.set("inn", "spouter");
+          j.host.nodeSelector.set("ship", "pequod");
+          let jr = new k8s.JobRunner(j, e, p);
+          assert.equal("spouter", jr.runner.spec.nodeSelector["inn"]);
+          assert.equal("pequod", jr.runner.spec.nodeSelector["ship"]);
+        });
+      });
     });
   });
 });

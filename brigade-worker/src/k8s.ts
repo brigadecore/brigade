@@ -265,6 +265,14 @@ export class JobRunner implements jobs.JobRunner {
     if (job.host.name) {
       this.runner.spec.nodeName = job.host.name;
     }
+    if (job.host.nodeSelector && job.host.nodeSelector.size > 0) {
+      if (!this.runner.spec.nodeSelector) {
+        this.runner.spec.nodeSelector = {};
+      }
+      for (const k of job.host.nodeSelector.keys()) {
+        this.runner.spec.nodeSelector[k] = job.host.nodeSelector.get(k);
+      }
+    }
 
     // If the job requests a cache, set up the cache.
     if (job.cache.enabled) {
