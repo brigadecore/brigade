@@ -6,7 +6,7 @@ import * as k8s from "../src/k8s";
 import { BrigadeEvent, Project } from "../src/events";
 import { Job, Result, brigadeCachePath, brigadeStoragePath } from "../src/job";
 
-import * as kubernetes from "@kubernetes/typescript-node";
+import * as kubernetes from "@kubernetes/client-node";
 
 describe("k8s", function() {
   describe("b64enc", () => {
