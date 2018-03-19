@@ -4,7 +4,7 @@
 
 /** */
 
-import * as kubernetes from "@kubernetes/typescript-node";
+import * as kubernetes from "@kubernetes/client-node";
 import * as jobs from "./job";
 import { Logger, ContextLogger } from "./logger";
 import { BrigadeEvent, Project } from "./events";
