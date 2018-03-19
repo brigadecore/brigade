@@ -24,6 +24,8 @@ const (
 var (
 	port    int
 	apiPort int
+
+	kashtiNamespace string
 )
 
 func init() {
@@ -32,7 +34,7 @@ func init() {
 	flags := proxy.PersistentFlags()
 	flags.IntVar(&port, "port", 8081, "local port for the Kashti dashboard")
 	flags.IntVar(&apiPort, "api-port", 7745, "local port for the Brigade API server")
-
+	flags.StringVarP(&kashtiNamespace, "kashtiNamespace", "", "default", "namespace for Kashti")
 }
 
 var proxy = &cobra.Command{
@@ -58,13 +60,13 @@ func startProxy(kashtiPort int) error {
 	}
 
 	apiSelector := labels.Set{"role": "api"}.AsSelector()
-	_, err = portforwarder.New(c, config, "default", apiSelector, remoteAPIPort, apiPort)
+	_, err = portforwarder.New(c, config, globalNamespace, apiSelector, remoteAPIPort, apiPort)
 	if err != nil {
 		return fmt.Errorf("cannot start port forward for brigade api: %v", err)
 	}
 
 	kashtiSelector := labels.Set{"app": "kashti"}.AsSelector()
-	_, err = portforwarder.New(c, config, "default", kashtiSelector, remotePort, port)
+	_, err = portforwarder.New(c, config, kashtiNamespace, kashtiSelector, remotePort, port)
 	if err != nil {
 		return fmt.Errorf("cannot start port forward for kashti: %v", err)
 	}
