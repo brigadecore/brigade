@@ -175,7 +175,7 @@ We can build this file into our Dockerfile by copying it into the image:
 FROM deis/brigade-worker:latest
 
 RUN yarn add xml-simple
-COPY mylib.js /home/dist
+COPY mylib.js /home/src/dist
 ```
 
 And now we can build the above:
