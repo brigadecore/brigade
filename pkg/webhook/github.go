@@ -201,7 +201,7 @@ func (s *githubHook) isAllowedPullRequest(e *github.PullRequestEvent) bool {
 		return false
 	}
 	switch e.GetAction() {
-	case "opened", "synchronize", "reopened", "labeled", "unlabeled":
+	case "opened", "synchronize", "reopened", "labeled", "unlabeled", "closed":
 		return true
 	}
 	log.Println("unsupported pull_request action:", e.GetAction())
