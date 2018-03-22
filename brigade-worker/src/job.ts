@@ -185,6 +185,10 @@ export class Vault {
   public vaultAddr: string;
 }
 
+export class Annotations {
+  [key: string]: string;
+}
+
 /**
  * Job represents a single job, which is composed of several closely related sequential tasks.
  * Jobs must have names. Every job also has an associated image, which references
@@ -262,6 +266,11 @@ export abstract class Job {
    * vault holds the configuration for vaulted database connections
    */
   public vault?: Vault;
+
+  /**
+   * annotations holds metadata annotations like aws roles
+   */
+  public annotations?: Annotations;
 
   /** _podName is set by the runtime. It is the name of the pod.*/
   protected _podName: string;

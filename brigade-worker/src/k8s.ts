@@ -175,6 +175,9 @@ export class JobRunner implements jobs.JobRunner {
     this.runner.metadata.labels.worker = e.workerID;
     this.runner.metadata.labels.build = e.buildID;
 
+    // Attach annotations (like aws roles) from job spec
+    this.runner.metadata.annotations = job.annotations;
+
     this.secret.metadata.labels.jobname = job.name;
     this.secret.metadata.labels.project = project.id;
     this.secret.metadata.labels.expires = String(expiresAt);
