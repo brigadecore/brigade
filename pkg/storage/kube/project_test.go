@@ -7,6 +7,31 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func TestGetProjects(t *testing.T) {
+	k, s := fakeStore()
+	createFakeProject(k, stubProjectSecret)
+	projects, err := s.GetProjects()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(projects) != 1 {
+		t.Fatalf("expected one project, got %d", len(projects))
+	}
+}
+
+func TestGetProject(t *testing.T) {
+	k, s := fakeStore()
+	createFakeProject(k, stubProjectSecret)
+	proj, err := s.GetProject(stubProjectID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if proj.ID != stubProjectID {
+		t.Error("Unexpected project ID: ", proj.ID)
+	}
+}
+
 func TestConfigureProject(t *testing.T) {
 	secret := &v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
