@@ -50,7 +50,7 @@ const requiredEnvVar = (name: string): string => {
 
 const projectID: string = requiredEnvVar("BRIGADE_PROJECT_ID");
 const projectNamespace: string = requiredEnvVar("BRIGADE_PROJECT_NAMESPACE");
-const defaultULID = ulid();
+const defaultULID = ulid().toLocaleLowerCase();
 let e: events.BrigadeEvent = {
   buildID: process.env.BRIGADE_BUILD_ID || defaultULID,
   workerID: process.env.BRIGADE_BUILD_NAME || `unknown-${defaultULID}`,
