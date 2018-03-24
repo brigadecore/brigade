@@ -301,8 +301,30 @@ Properties:
 - `tasks`: An array of commands to run for this job
 - `shell`: The terminal emulator that job tasks will be executed under. By default,
   this is /bin/sh
-- `env`: Key/value pairs that will be injected into the environment. The key is
-  the variable name (`MY_VAR`), and the value is the string value (`foo`)
+- `env`: Key/value pairs or Kubernetes value references that will be injected into the environment. 
+  - If supplying key/value, the key is the variable name (`MY_VAR`), and the value is the string value (`foo`)
+  - If you are referencing existing Secrets or ConfigMaps in your Kubernetes cluster, the `env` object key
+    will be your secret name, and the value will be a Kubernetes reference object. `fieldRef`, `secretKeyRef`,
+    and `configMapKeyRef` are accepted. `resourceFieldRef` is technically supported but not advised, since resources
+    are not generally specified for Brigade jobs.
+  - Example: 
+    ```javascript
+    myJob.env = {
+        myOneOffSecret: "secret value",
+        myConfigReference: {
+            configMapKeyRef: {
+                name: "my-configmap",
+                key: "my-configmap-key"
+            }
+        },
+        mySecretReference: {
+            secretKeyRef: {
+                name: "my-secret",
+                key: "my-secret-key"
+            }
+        }
+    }
+    ```
 
 It is common to pass data from the `e.env` Event object into the Job object as is appropriate:
 

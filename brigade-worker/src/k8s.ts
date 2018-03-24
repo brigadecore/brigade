@@ -210,18 +210,31 @@ export class JobRunner implements jobs.JobRunner {
     let envVars: kubernetes.V1EnvVar[] = [];
     for (let key in job.env) {
       let val = job.env[key];
-      this.secret.data[key] = b64enc(val);
 
-      // Add reference to pod
-      envVars.push({
-        name: key,
-        valueFrom: {
-          secretKeyRef: {
-            name: secName,
-            key: key
+      if (typeof val === 'string') {
+        // For environmental variables that are submitted as strings,
+        // add to the job's secret and add a reference.
+
+        this.secret.data[key] = b64enc(val);
+        // Add reference to pod
+        envVars.push({
+          name: key,
+          valueFrom: {
+            secretKeyRef: {
+              name: secName,
+              key: key
+            }
           }
-        }
-      } as kubernetes.V1EnvVar);
+        } as kubernetes.V1EnvVar);
+      } else {
+        // For environmental variables that are directly references,
+        // add the reference to the env var list.
+
+        envVars.push({
+            name: key,
+            valueFrom: val
+        } as kubernetes.V1EnvVar);
+      }
     }
 
     this.runner.spec.containers[0].env = envVars;
