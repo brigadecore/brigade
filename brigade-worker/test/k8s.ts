@@ -94,24 +94,58 @@ describe("k8s", function() {
         assert.property(jr.secret.data, "main.sh");
       });
       context("when env vars are specified", function() {
-        beforeEach(function() {
-          j.env = { one: "first", two: "second" };
-        });
-        it("sets them on the pod", function() {
-          let jr = new k8s.JobRunner(j, e, p);
-          let found = 0;
+        context("as data", function () {
+          beforeEach(function() {
+            j.env = { one: "first", two: "second" };
+          });
+          it("sets them on the pod", function() {
+            let jr = new k8s.JobRunner(j, e, p);
+            let found = 0;
 
-          for (let k in j.env) {
-            assert.equal(jr.secret.data[k], k8s.b64enc(j.env[k]));
-            for (let env of jr.runner.spec.containers[0].env) {
-              if (env.name == k) {
-                assert.equal(env.valueFrom.secretKeyRef.key, k);
-                found++;
+            for (let k in j.env) {
+              assert.equal(jr.secret.data[k], k8s.b64enc(j.env[k] as string));
+              for (let env of jr.runner.spec.containers[0].env) {
+                if (env.name == k) {
+                  assert.equal(env.valueFrom.secretKeyRef.key, k);
+                  found++;
+                }
               }
             }
-          }
 
-          assert.equal(found, 2);
+            assert.equal(found, 2);
+          });
+        });
+        context("as references", function () {
+          beforeEach(function () {
+            j.env = {
+              one: {
+                secretKeyRef: {
+                  name: 'secret-name',
+                  key: 'secret-key'
+                }
+              } as kubernetes.V1EnvVarSource,
+              two: {
+                configMapKeyRef: {
+                  name: 'configmap-name',
+                  key: 'configmap-key'
+                }
+              } as kubernetes.V1EnvVarSource
+            };
+          });
+          it("sets them on the pod", function () {
+              let jr = new k8s.JobRunner(j, e, p);
+              let found = 0;
+
+              for (let k in j.env) {
+                for (let env of jr.runner.spec.containers[0].env) {
+                  if (env.name == k) {
+                    assert.equal(env.valueFrom, j.env[k]);
+                    found++;
+                  }
+                }
+              }
+              assert.equal(found, 2);
+          });
         });
       });
       context("when service account is specified", function() {
