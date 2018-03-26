@@ -7,6 +7,8 @@
 
 /** */
 
+import {V1EnvVarSource} from "@kubernetes/client-node/api";
+
 /**
  * The default shell for the job.
  */
@@ -147,7 +149,7 @@ export abstract class Job {
   /** tasks is a list of tasks run inside of the shell*/
   public tasks: string[];
   /** env is the environment variables for the job*/
-  public env: { [key: string]: string };
+  public env: { [key: string]: string | V1EnvVarSource };
   /** image is the container image to be run*/
   public image: string = brigadeImage;
   /** imageForcePull defines the container image pull policy: Always if true or IfNotPresent if false */
