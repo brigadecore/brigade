@@ -13,9 +13,6 @@ for Kubernetes.
 - Easy construction of pipelines
 - Check out the [docs](/docs/index.md) to get started.
 
-
-[Kashti](https://github.com/Azure/kashti) is a dashboard for your Brigade pipelines.
-
 [![asciicast](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG.png)](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG)
 
 ## The Brigade Technology Stack
@@ -92,6 +89,11 @@ This will show you the detailed output of running your `brigade.js` script's
 `exec` hook.
 
 (To see the names of your projects, run `brig project list`.)
+
+## Related Projects
+
+* [Kashti](https://github.com/Azure/kashti) - a dashboard for your Brigade pipelines.
+* [Brigadeterm](https://github.com/slok/brigadeterm) - a simple terminal ui for brigade pipelining system.
 
 ## Brigade :heart: Developers
 
