@@ -94,6 +94,12 @@ This will show you the detailed output of running your `brigade.js` script's
 
 * [Kashti](https://github.com/Azure/kashti) - a dashboard for your Brigade pipelines.
 * [Brigadeterm](https://github.com/slok/brigadeterm) - a simple terminal ui for brigade pipelining system.
+* Gateways
+  - [BitBucket events](https://bitbucket.org/lukepatrick/bit-brigade): Support for BitBucket repositories
+  - [Kubernetes events](https://github.com/azure/brigade-k8s-gateway): Gateway that listens to Kubernetes event stream
+  - [Event Gride gateway](https://github.com/radu-matei/brigade-eventgrid-gateway)" Gateway for Azure Event Grid events
+  - [Trello and Generic Webhooks](https://github.com/technosophos/brigade-trello): Experimental gateway for Trello and for generic webhooks
+
 
 ## Brigade :heart: Developers
 
