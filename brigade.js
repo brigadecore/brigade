@@ -56,7 +56,8 @@ function build(e, project) {
     if (e.event == "push" && gh.ref.startsWith("refs/tags/")) {
       // Run the release in the background.
       runRelease = true
-      release(e, p)
+      let parts = gh.ref.split("/", 3)
+      release(e, p, parts[2])
     }
     return Promise.resolve(runRelease)
   }).catch(e => {
@@ -64,12 +65,11 @@ function build(e, project) {
   });
 }
 
-function release(e, p) {
+function release(e, p, tag) {
   if (!p.secrets.ghToken) {
     throw new Error("Project must have 'secrets.ghToken' set")
   }
 
-  const tag = e.commit
   const binName = "brig"
   const gopath = "/go"
   const localPath = gopath + "/src/github.com/" + p.repo.name;
@@ -90,16 +90,17 @@ function release(e, p) {
   cx.tasks = [
     "go get github.com/golang/dep/cmd/dep",
     "go get github.com/aktau/github-release",
+    `cd /src`,
+    `git checkout ${tag}`,
     // Need to move the source into GOPATH so vendor/ works as desired.
-    "mkdir -p " + localPath,
-    "cp -a /src/* " + localPath,
-    "cp -a /src/.git " + localPath,
-    "cd " + localPath,
-    "ls -lh",
+    `mkdir -p ${localPath}`,
+    `cp -a /src/* ${localPath}`,
+    `cp -a /src/.git ${localPath}`,
+    `cd ${localPath}`,
     "dep ensure",
     "make build-release",
-    `github-release release -t ${tag} -n "${parts[1]} ${tag}"`
-  ]
+    `github-release release -t ${tag} -n "${parts[1]} ${tag}" || echo "release ${tag} exists"`
+  ];
 
   // Upload for each target that we support
   for (const f of ["linux-amd64", "windows-amd64", "darwin-amd64"]) {
@@ -128,6 +129,19 @@ function ghNotify(state, msg, e, project) {
 
 events.on("push", build)
 events.on("pull_request", build)
+
+events.on("brig-release", (e, p) => {
+  /*
+   * Expects JSON of the form {'tag': 'v1.2.3'}
+   */
+  payload = JSON.parse(e.payload)
+  if (!payload.tag) {
+    throw error("No tag specified")
+  }
+
+  release(e, p, payload.tag)
+})
+
 events.on("image_push", (e, p) => {
   console.log(e.payload)
   var m = "New image pushed"
