@@ -1,14 +1,18 @@
 package commands
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
+	"github.com/Masterminds/kitt/progress"
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,12 +24,15 @@ import (
 )
 
 var (
-	runFile      string
-	runEvent     string
-	runPayload   string
-	runCommitish string
-	runRef       string
+	runFile       string
+	runEvent      string
+	runPayload    string
+	runCommitish  string
+	runRef        string
+	runNoProgress bool
 )
+
+var logPattern = regexp.MustCompile("\\[brigade:k8s\\]\\s[a-zA-Z0-9-]+/[a-zA-Z0-9-]+ phase \\w+")
 
 const (
 	defaultRef  = "master"
@@ -57,6 +64,7 @@ func init() {
 	run.Flags().StringVarP(&runPayload, "payload", "p", "", "The path to a payload file")
 	run.Flags().StringVarP(&runCommitish, "commit", "c", "", "A VCS (git) commit")
 	run.Flags().StringVarP(&runRef, "ref", "r", defaultRef, "A VCS (git) version, tag, or branch")
+	run.Flags().BoolVar(&runNoProgress, "no-progress", false, "Disable progress meter")
 	Root.AddCommand(run)
 }
 
@@ -209,6 +217,51 @@ func (a *scriptRunner) podLog(name string, w io.Writer) error {
 	}
 	defer readCloser.Close()
 
+	if !runNoProgress {
+		progressLogs(w, readCloser)
+	}
+
 	_, err = io.Copy(w, readCloser)
 	return err
+}
+
+func progressLogs(w io.Writer, r io.Reader) {
+	scanner := bufio.NewScanner(r)
+	last := []byte{}
+	p := &progress.Indicator{
+		Interval: 200 * time.Millisecond,
+		Writer:   w,
+		Frames: []string{
+			"....",
+			"=...",
+			".=..",
+			"..=.",
+			"...=",
+			"....",
+			"...=",
+			"..=.",
+			".=..",
+			"=...",
+		},
+	}
+	started := false
+	for scanner.Scan() {
+		raw := scanner.Bytes()
+		if string(raw) == string(last) && logPattern.Match(raw) {
+			if started {
+				continue
+			}
+			name := strings.Fields(string(raw))
+			p.Start(name[len(name)-1])
+			started = true
+		} else {
+			if started {
+				p.Done("done")
+				started = false
+			}
+			w.Write(raw)
+			w.Write([]byte{'\n'})
+		}
+		last = raw
+	}
 }
