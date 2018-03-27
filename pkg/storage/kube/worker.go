@@ -17,7 +17,7 @@ import (
 // This will return an error if no worker is found for the build, which can
 // happen when a build is scheduled, but not yet started.
 func (s *store) GetWorker(buildID string) (*brigade.Worker, error) {
-	labels := labels.Set{"heritage": "brigade", "build": buildID}
+	labels := labels.Set{"heritage": "brigade", "component": "build", "build": buildID}
 	listOption := meta.ListOptions{LabelSelector: labels.AsSelector().String()}
 	pods, err := s.client.CoreV1().Pods(s.namespace).List(listOption)
 	if err != nil {

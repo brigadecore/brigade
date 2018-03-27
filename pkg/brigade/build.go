@@ -17,7 +17,7 @@ type Build struct {
 	// Payload is the raw data as received by the webhook.
 	Payload []byte `json:"payload,omitempty"`
 	// Script is the brigadeJS to be executed.
-	Script []byte `json:"script,omityempty"`
+	Script []byte `json:"script,omitempty"`
 	// Worker is the master job that is running this build.
 	// The Worker's properties (creation time, state, exit code, and so on)
 	// reflect a "roll-up" of the job.

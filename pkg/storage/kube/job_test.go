@@ -63,3 +63,39 @@ func TestNewJobFromPod(t *testing.T) {
 		t.Errorf("job differs from expected job, got '%v', expected '%v'", job, expectedJob)
 	}
 }
+
+func TestGetJob(t *testing.T) {
+	k, s := fakeStore()
+	createFakeJob(k, stubJobPod)
+
+	job, err := s.GetJob(stubJobID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if job.ID != stubJobID {
+		t.Errorf("Expected job ID %s, got %s", stubJobID, job.ID)
+	}
+}
+
+func TestGetBuildJob(t *testing.T) {
+	k, s := fakeStore()
+	createFakeWorker(k, stubWorkerPod)
+	createFakeJob(k, stubJobPod)
+	if err := s.CreateBuild(stubBuild); err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := s.GetBuild(stubBuild.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jobs, err := s.GetBuildJobs(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(jobs) != 1 {
+		t.Fatal("Expected one job.")
+	}
+}

@@ -41,10 +41,14 @@ func listBuilds(out io.Writer) error {
 	}
 
 	table := uitable.New()
-	table.AddRow("ID", "TYPE", "PROVIDER", "PROJECT")
+	table.AddRow("ID", "TYPE", "PROVIDER", "PROJECT", "STATUS")
 
 	for _, b := range bs {
-		table.AddRow(b.ID, b.Type, b.Provider, b.ProjectID)
+		status := "???"
+		if b.Worker != nil {
+			status = b.Worker.Status.String()
+		}
+		table.AddRow(b.ID, b.Type, b.Provider, b.ProjectID, status)
 	}
 	fmt.Fprintln(out, table)
 	return nil
