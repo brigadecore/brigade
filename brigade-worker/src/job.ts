@@ -245,5 +245,5 @@ export abstract class Job {
  * jobNameIsValid checks the validity of a job's name.
  */
 export function jobNameIsValid(name: string): boolean {
-  return /^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])+$/.test(name);
+  return /^(([a-z0-9][-a-z0-9.]*)?[a-z0-9])+$/.test(name);
 }

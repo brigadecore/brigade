@@ -16,15 +16,18 @@ import {
 describe("job", function() {
   describe("jobNameIsValid", () => {
     it("allows DNS-like names", function() {
-      let legal = ["abcdef", "ab", "a-b", "a-9", "a12345678b", "A-B"];
+      let legal = ["abcdef", "ab", "a-b", "a-9", "a12345678b", "a.b"];
       for (let n of legal) {
-        assert.isTrue(jobNameIsValid(n), n);
+        assert.isTrue(jobNameIsValid(n), "tested " + n);
       }
     });
     it("disallows non-DNS-like names", function() {
       let illegal = [
         "ab-", // no trailing -
-        "-ab" // no leading dash
+        "-ab", // no leading dash
+        "a_b", // underscore is illegal
+        "ab.", // trailing dot is illegal
+        "A-B", // Capitals are illegal
       ];
       for (let n of illegal) {
         assert.isFalse(jobNameIsValid(n), "tested " + n);
@@ -70,8 +73,8 @@ describe("job", function() {
     let j: mock.MockJob;
     describe("#constructor", function() {
       it("creates a named job", function() {
-        j = new mock.MockJob("myName");
-        assert.equal(j.name, "myName");
+        j = new mock.MockJob("my-name");
+        assert.equal(j.name, "my-name");
       });
       it("starts with initialized JobHost", function() {
         j = new mock.MockJob("name");
@@ -79,13 +82,13 @@ describe("job", function() {
       });
       context("when image is supplied", function() {
         it("sets image property", function() {
-          j = new mock.MockJob("myName", "alpine:3.4");
+          j = new mock.MockJob("my-name", "alpine:3.4");
           assert.equal(j.image, "alpine:3.4");
         });
       });
       context("when imageForcePull is supplied", function() {
         it("sets imageForcePull property", function() {
-          j = new mock.MockJob("myName", "alpine:3.4", [], true);
+          j = new mock.MockJob("my-name", "alpine:3.4", [], true);
           assert.isTrue(j.imageForcePull);
         });
       });
@@ -97,7 +100,7 @@ describe("job", function() {
       });
       context("when serviceAccount is supplied", function() {
         it("sets serviceAccount property", function() {
-          j = new mock.MockJob("myName", "alpine:3.4", [], true);
+          j = new mock.MockJob("my-name", "alpine:3.4", [], true);
           j.serviceAccount = "svcAccount";
           assert.equal(j.serviceAccount, "svcAccount");
         });
