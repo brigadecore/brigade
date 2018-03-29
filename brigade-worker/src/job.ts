@@ -126,9 +126,9 @@ export class JobDockerMount {
 }
 
 /**
- * Request represents request of the resources
+ * JObResourceRequest represents request of the resources
  */
-export class Request {
+export class JobResourceRequest {
   /** cpu requests */
   public cpu: string;
   /** memory requests */
@@ -185,7 +185,7 @@ export abstract class Job {
   public serviceAccount: string;
 
   /** Set the resource requests for the containers */
-  public requests: Request;
+  public resourceRequests: JobResourceRequest;
 
   /**
    * host expresses expectations about the host the job will run on.
@@ -239,7 +239,7 @@ export abstract class Job {
     this.storage = new JobStorage();
     this.docker = new JobDockerMount();
     this.host = new JobHost();
-    this.requests = new Request();
+    this.resourceRequests = new JobResourceRequest();
   }
 
   /** run executes the job and then */
