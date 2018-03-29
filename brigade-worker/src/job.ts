@@ -135,6 +135,16 @@ export class JobDockerMount {
 }
 
 /**
+ * JObResourceRequest represents request of the resources
+ */
+export class JobResourceRequest {
+  /** cpu requests */
+  public cpu: string;
+  /** memory requests */
+  public memory: string;
+}
+
+/**
  * Job represents a single job, which is composed of several closely related sequential tasks.
  * Jobs must have names. Every job also has an associated image, which references
  * the Docker container to be run.
@@ -182,6 +192,9 @@ export abstract class Job {
    * See https://github.com/Azure/brigade/issues/251
    */
   public serviceAccount: string;
+
+  /** Set the resource requests for the containers */
+  public resourceRequests: JobResourceRequest;
 
   /**
    * host expresses expectations about the host the job will run on.
@@ -235,6 +248,7 @@ export abstract class Job {
     this.storage = new JobStorage();
     this.docker = new JobDockerMount();
     this.host = new JobHost();
+    this.resourceRequests = new JobResourceRequest();
   }
 
   /** run executes the job and then */
