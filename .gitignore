@@ -1,4 +1,5 @@
 /bin/
+/brig/rootfs/brig
 /brigade-api/rootfs/brigade-api
 /brigade-controller/rootfs/brigade-controller
 /brigade-cr-gateway/rootfs/brigade-cr-gateway
