@@ -5,9 +5,8 @@ DOCKER_REGISTRY    ?= deis
 DOCKER_BUILD_FLAGS :=
 LDFLAGS            :=
 
-BINS        = brigade-api brigade-controller brigade-github-gateway brig brigade-cr-gateway brigade-vacuum
-IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-worker git-sidecar brigade-cr-gateway brigade-vacuum
-DOCKER_BINS = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum
+BINS        = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig
+IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig brigade-worker git-sidecar
 
 GIT_TAG   = $(shell git describe --tags --always 2>/dev/null)
 VERSION   ?= ${GIT_TAG}
@@ -26,7 +25,7 @@ $(BINS): vendor
 	go build -ldflags '$(LDFLAGS)' -o bin/$@ ./$@/cmd/$@
 
 # Cross-compile for Docker+Linux
-build-docker-bins: $(addsuffix -docker-bin,$(DOCKER_BINS))
+build-docker-bins: $(addsuffix -docker-bin,$(BINS))
 
 %-docker-bin: vendor
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$*/rootfs/$* ./$*/cmd/$*
