@@ -65,7 +65,7 @@ function build(e, project) {
   });
 }
 
-function release(e, p, tag) {
+function releaseBrig(e, p, tag) {
   if (!p.secrets.ghToken) {
     throw new Error("Project must have 'secrets.ghToken' set")
   }
@@ -105,13 +105,11 @@ function release(e, p, tag) {
   // Upload for each target that we support
   for (const f of ["linux-amd64", "windows-amd64", "darwin-amd64"]) {
     const name = binName + "-"+f
-    cx.tasks.push(`github-release upload -f ./bin/${name} -n ${name} -t ${tag}`)
+    cx.tasks.push(`github-release upload -f ./bin/${name} -n ${name} -t ${tag}`)  
   }
-
-  console.log(cx.tasks)
-  cx.run().then( res => {
-    console.log(`releases at https://github.com/${p.repo.name}/releases/tag/${tag}`);
-  })
+  console.log(cx.tasks);
+  console.log(`releases at https://github.com/${p.repo.name}/releases/tag/${tag}`);
+  return cx.run();
 }
 
 function ghNotify(state, msg, e, project) {
@@ -127,10 +125,94 @@ function ghNotify(state, msg, e, project) {
   return gh
 }
 
+// Build docker images and push to a Docker registry.
+function releaseImages(e, project, tag) {
+  const gopath = "/go"
+  const localPath = gopath + "/src/github.com/" + project.repo.name;
+  const registryHost = project.secrets.registryHost;
+  const images = [
+    //"brig", // Uncomment this after 0.13.0.
+    "brigade-api",
+    "brigade-controller",
+    "brigade-cr-gateway",
+    "brigade-vacuum",
+    "brigade-worker", // brigade-worker does not have a rootfs. Could probably minify src into one and save space
+    "git-sidecar",
+    "brigade-github-gateway"
+  ]
+
+  // We build in a separate pod b/c AKS's Docker is too old to do multi-stage builds.
+  const goBuild = new Job("brigade-build", goImg);
+  goBuild.storage.enabled = true;
+  goBuild.env = {
+    "DEST_PATH": localPath,
+    "GOPATH": gopath
+  };
+  goBuild.tasks = [
+    `cd /src && git checkout ${tag}`,
+    "go get github.com/golang/dep/cmd/dep",
+    `mkdir -p ${localPath}/bin`,
+    `mv /src/* ${localPath}`,
+    `cd ${localPath}`,
+    "dep ensure",
+    "make build-docker-bins",
+  ];
+
+  for (let i of images) {
+    goBuild.tasks.push(
+      // Copy the Docker rootfs of each binary into shared storage. This is
+      // a little tricky because worker is non-Go, so later we will have
+      // to copy them back.
+      `mkdir -p /mnt/brigade/share/${i}/rootfs`,
+      // If there's no rootfs, we're done. Otherwise, copy it.
+      `[ ! -d ${i}/rootfs ] || cp -a ./${i}/rootfs/* /mnt/brigade/share/${i}/rootfs/`,
+    );
+  }
+  goBuild.tasks.push("ls -lah /mnt/brigade/share");
+
+  // Docker builder
+  const dind = new Job("dind", "docker:stable-dind")
+  dind.storage.enabled = true
+  dind.privileged = true
+  dind.env = {
+    DOCKER_DRIVER: "overlay"
+  }
+  dind.tasks = [
+    "dockerd-entrypoint.sh &",
+    "echo waiting for Docker && sleep 20",
+    `cd /src`,
+    "mkdir -p ./bin",
+    `docker login -u ${project.secrets.registryUser} -p ${project.secrets.registryToken} ${registryHost}`,
+    `echo LOGGED IN to ${registryHost} as ${project.secrets.registryUser}`
+  ]
+
+  // For each image we want to build, build it, then tag it latest, then post it to registry.
+  for (let i of images) {
+    let imgName = registryHost+"/"+i+":"+tag;
+    let latest = registryHost+"/"+i+":latest";
+    dind.tasks.push(
+      `cd ${i}`,
+      `echo '========> Building ${i}'`,
+      `cp -a /mnt/brigade/share/${i}/rootfs ./rootfs`,
+      // Total hack to work around something weird with brigade-github-gateway
+      `[ ! -f /mnt/brigade/share/${i}/rootfs/${i} ] || cp /mnt/brigade/share/${i}/rootfs/${i} ./rootfs/`,
+      // TODO: Fix the Makefile to make this easier.
+      `docker build -t ${imgName} .`,
+      `docker tag ${imgName} ${latest}`,
+      `docker push ${imgName}`,
+      `echo '<======== Finished ${i}'`,
+      `cd ..`
+    );
+  }
+  dind.tasks.push("killall dockerd");
+
+  return Group.runEach([goBuild, dind]);
+}
+
 events.on("push", build)
 events.on("pull_request", build)
 
-events.on("brig-release", (e, p) => {
+events.on("release_brig", (e, p) => {
   /*
    * Expects JSON of the form {'tag': 'v1.2.3'}
    */
@@ -139,7 +221,19 @@ events.on("brig-release", (e, p) => {
     throw error("No tag specified")
   }
 
-  release(e, p, payload.tag)
+  releaseBrig(e, p, payload.tag)
+})
+
+events.on("release_images", (e, p) => {
+  /*
+   * Expects JSON of the form {'tag': 'v1.2.3'}
+   */
+  payload = JSON.parse(e.payload)
+  if (!payload.tag) {
+    throw error("No tag specified")
+  }
+
+  releaseImages(e, p, payload.tag)
 })
 
 events.on("image_push", (e, p) => {
@@ -164,6 +258,3 @@ events.on("image_push", (e, p) => {
     console.log(m)
   }
 })
-
-// The "release" event will attempt to create a release for the given tag, and then attach a binary.
-events.on("release", release)
