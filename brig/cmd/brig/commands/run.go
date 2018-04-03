@@ -29,6 +29,7 @@ var (
 	runPayload    string
 	runCommitish  string
 	runRef        string
+	runLogLevel   string
 	runNoProgress bool
 )
 
@@ -54,7 +55,7 @@ To send a local JS file to the server, use the '-f' flag:
 
 	$ brig run -f my.js deis/empty-testbed
 
-While specifying an event is possible, use caution. Mny events expect a
+While specifying an event is possible, use caution. Many events expect a
 particular payload.
 `
 
@@ -65,6 +66,7 @@ func init() {
 	run.Flags().StringVarP(&runCommitish, "commit", "c", "", "A VCS (git) commit")
 	run.Flags().StringVarP(&runRef, "ref", "r", defaultRef, "A VCS (git) version, tag, or branch")
 	run.Flags().BoolVar(&runNoProgress, "no-progress", false, "Disable progress meter")
+	run.Flags().StringVarP(&runLogLevel, "level", "l", "log", "Specified log level: log, info, warn, error")
 	Root.AddCommand(run)
 }
 
@@ -74,7 +76,7 @@ var run = &cobra.Command{
 	Long:  runUsage,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("Project name required")
+			return errors.New("project name required")
 		}
 		proj := args[0]
 
@@ -102,11 +104,12 @@ func newScriptRunner() (*scriptRunner, error) {
 	}
 
 	app := &scriptRunner{
-		store:  kube.New(c, globalNamespace),
-		kc:     c,
-		event:  runEvent,
-		commit: runCommitish,
-		ref:    runRef,
+		store:    kube.New(c, globalNamespace),
+		kc:       c,
+		event:    runEvent,
+		commit:   runCommitish,
+		ref:      runRef,
+		logLevel: strings.ToUpper(runLogLevel),
 	}
 	if len(runPayload) > 0 {
 		data, err := ioutil.ReadFile(runPayload)
@@ -119,12 +122,13 @@ func newScriptRunner() (*scriptRunner, error) {
 }
 
 type scriptRunner struct {
-	store   storage.Store
-	kc      kubernetes.Interface
-	payload []byte
-	event   string
-	commit  string
-	ref     string
+	store    storage.Store
+	kc       kubernetes.Interface
+	payload  []byte
+	event    string
+	commit   string
+	ref      string
+	logLevel string
 }
 
 func (a *scriptRunner) send(projectName string, data []byte) error {
@@ -142,8 +146,9 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 			Commit: a.commit,
 			Ref:    a.ref,
 		},
-		Payload: a.payload,
-		Script:  data,
+		Payload:  a.payload,
+		Script:   data,
+		LogLevel: a.logLevel,
 	}
 
 	if err := a.store.CreateBuild(b); err != nil {
