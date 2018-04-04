@@ -57,7 +57,10 @@ function build(e, project) {
       // Run the release in the background.
       runRelease = true
       let parts = gh.ref.split("/", 3)
-      release(e, p, parts[2])
+      let tag = parts[2]
+      return releaseImages(e, project, tag).then(() => {
+        releaseBrig(e, project, tag)
+      })
     }
     return Promise.resolve(runRelease)
   }).catch(err => {
@@ -209,6 +212,83 @@ function releaseImages(e, project, tag) {
   return Group.runEach([goBuild, dind]);
 }
 
+function acrBuild(e, project, tag) {
+  const gopath = "/go"
+  const localPath = gopath + "/src/github.com/" + project.repo.name;
+  const registryHost = "deis"; //project.secrets.registryHost;
+  const images = [
+    //"brig", // Uncomment this after 0.13.0.
+    "brigade-api",
+    "brigade-controller",
+    "brigade-cr-gateway",
+    "brigade-vacuum",
+    "brigade-worker", // brigade-worker does not have a rootfs. Could probably minify src into one and save space
+    "git-sidecar",
+    "brigade-github-gateway"
+  ]
+
+  // We build in a separate pod b/c AKS's Docker is too old to do multi-stage builds.
+  const goBuild = new Job("brigade-build", goImg);
+  goBuild.storage.enabled = true;
+  goBuild.env = {
+    "DEST_PATH": localPath,
+    "GOPATH": gopath
+  };
+  goBuild.tasks = [
+    `cd /src && git checkout ${tag}`,
+    "go get github.com/golang/dep/cmd/dep",
+    `mkdir -p ${localPath}/bin`,
+    `mv /src/* ${localPath}`,
+    `cd ${localPath}`,
+    "dep ensure",
+    "make build-docker-bins"
+  ];
+
+  for (let i of images) {
+    goBuild.tasks.push(
+      // Copy the Docker rootfs of each binary into shared storage. This is
+      // a little tricky because worker is non-Go, so later we will have
+      // to copy them back.
+      `mkdir -p /mnt/brigade/share/${i}/rootfs`,
+      // If there's no rootfs, we're done. Otherwise, copy it.
+      `[ ! -d ${i}/rootfs ] || cp -a ./${i}/rootfs/* /mnt/brigade/share/${i}/rootfs/`,
+    );
+  }
+  goBuild.tasks.push("ls -lah /mnt/brigade/share");
+
+  let registry = "brigade"
+  var builder = new Job("az-build", "microsoft/azure-cli:latest")
+  builder.storage.enabled = true;
+  builder.tasks = [
+    // When the extension is included by default, we can remove this.
+    "az extension add --source https://acrbuild.blob.core.windows.net/cli/acrbuildext-0.0.2-py2.py3-none-any.whl -y",
+    // Create a service principal and assign it proper perms on the ACR.
+    `az login --service-principal -u ${project.secrets.acrName} -p '${project.secrets.acrToken}' --tenant ${project.secrets.acrTenant}`,
+    `cd /src`,
+    `mkdir -p ./bin`
+  ]
+
+  // For each image we want to build, build it, then tag it latest, then post it to registry.
+  for (let i of images) {
+    //let imgName = registryHost+"/"+i+":"+tag;
+    let imgName = registryHost+"/"+i+":"+tag;
+    let latest = registryHost+"/"+i+":latest";
+    builder.tasks.push(
+      `cd ${i}`,
+      `echo '========> Building ${i}'`,
+      `cp -a /mnt/brigade/share/${i}/rootfs ./rootfs`,
+      // Total hack to work around something weird with brigade-github-gateway
+      `[ ! -f /mnt/brigade/share/${i}/rootfs/${i} ] || cp /mnt/brigade/share/${i}/rootfs/${i} ./rootfs/`,
+      // Currently, it appears this is the only way to add two tags.
+      `az acr build -r ${registry} -t ${imgName} --context .`,
+      `az acr build -r ${registry} -t ${latest} --context .`,
+      `echo '<======== Finished ${i}'`,
+      `cd ..`
+    );
+  }
+  return Group.runEach([goBuild, builder]);
+}
+
 events.on("push", build)
 events.on("pull_request", build)
 
@@ -233,7 +313,12 @@ events.on("release_images", (e, p) => {
     throw error("No tag specified")
   }
 
-  releaseImages(e, p, payload.tag)
+  // If ACR is set up for building, use that. Otherwise, do a Docker build.
+  if (p.secrets.acrName) {
+    acrBuild(e, p, payload.tag)
+  } else {
+    releaseImages(e, p, payload.tag)
+  }
 })
 
 events.on("image_push", (e, p) => {
