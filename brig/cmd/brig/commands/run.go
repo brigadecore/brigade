@@ -30,6 +30,7 @@ var (
 	runCommitish  string
 	runRef        string
 	runNoProgress bool
+	runExitCode   bool
 )
 
 var logPattern = regexp.MustCompile("\\[brigade:k8s\\]\\s[a-zA-Z0-9-]+/[a-zA-Z0-9-]+ phase \\w+")
@@ -65,6 +66,7 @@ func init() {
 	run.Flags().StringVarP(&runCommitish, "commit", "c", "", "A VCS (git) commit")
 	run.Flags().StringVarP(&runRef, "ref", "r", defaultRef, "A VCS (git) version, tag, or branch")
 	run.Flags().BoolVar(&runNoProgress, "no-progress", false, "Disable progress meter")
+	run.Flags().BoolVar(&runExitCode, "exit-code", false, "Return a failing exit code if build fails")
 	Root.AddCommand(run)
 }
 
@@ -91,7 +93,20 @@ var run = &cobra.Command{
 			return err
 		}
 
-		return a.send(proj, script)
+		err = a.send(proj, script)
+		if err == nil {
+			return nil
+		}
+
+		// If err is a BuildFailure, then we don't want Cobra to print the Usage
+		// instructions on failure, since it's a pipeline issue and not a CLI issue.
+		_, ok := err.(BuildFailure)
+		if ok {
+			cmd.SilenceUsage = true
+			cmd.SilenceErrors = true
+		}
+
+		return err
 	},
 }
 
@@ -159,7 +174,29 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 	}
 
 	fmt.Printf("Started build %s as %q\n", b.ID, podName)
-	return a.podLog(podName, os.Stdout)
+	if err := a.podLog(podName, os.Stdout); err != nil {
+		return err
+	}
+
+	// If the --exit-code flag is not set, at this point brig has completed without errors
+	// and we can return. Note that if even if the build failed, brig will still exit 0.
+	if !runExitCode {
+		return nil
+	}
+
+	// Now that everything is complete, get the pod status. If the pod failed, exit 1.
+	// Fortunately, the worker pod is marked "failed" if one of the jobs
+	// in the build fails and the error isn't handled with a .catch().
+	pod, err := a.kc.CoreV1().Pods(globalNamespace).Get(podName, metav1.GetOptions{IncludeUninitialized: true})
+	if err != nil {
+		return err
+	}
+	podPhase := pod.Status.Phase
+	if podPhase == v1.PodFailed || podPhase == v1.PodUnknown {
+		return NewBuildFailure("build failed. (Build ID: %s)", b.ID)
+	}
+
+	return nil
 }
 
 // waitForWorker waits until the worker has started.
