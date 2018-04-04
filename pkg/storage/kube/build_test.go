@@ -25,6 +25,7 @@ func TestNewBuildFromSecret(t *testing.T) {
 			"script":         []byte("ohai"),
 			"commit_id":      []byte("abc123"),
 			"commit_ref":     []byte("refs/heads/master"),
+			"log_level":      []byte("LOG"),
 		},
 	}
 	build := NewBuildFromSecret(secret)

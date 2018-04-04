@@ -211,12 +211,16 @@ describe("k8s", function() {
         it("attaches key to pod", function() {
           let jr = new k8s.JobRunner(j, e, p);
           let sidecar = jr.runner.spec.initContainers[0];
-          assert.equal(sidecar.env.length, 13);
-          assert.equal(
-            sidecar.env[11].name,
-            "BRIGADE_REPO_KEY",
-            "Has BRIGADE REPO KEY as param"
-          );
+          assert.equal(sidecar.env.length, 14);
+
+          let hasBrigadeRepoKey : boolean = false;
+          for (let i of sidecar.env) {
+            if (i.name === "BRIGADE_REPO_KEY") {
+              hasBrigadeRepoKey = true;
+              break;
+            }
+          }
+          assert.isTrue(hasBrigadeRepoKey, "Has BRIGADE REPO KEY as param");
         });
       });
       context("when mount path is supplied", function() {

@@ -6,7 +6,7 @@
 
 import * as kubernetes from "@kubernetes/client-node";
 import * as jobs from "./job";
-import { Logger, ContextLogger } from "./logger";
+import { LogLevel, ContextLogger } from "./logger";
 import { BrigadeEvent, Project } from "./events";
 
 // The internals for running tasks. This must be loaded before any of the
@@ -20,8 +20,6 @@ import { BrigadeEvent, Project } from "./events";
 const expiresInMSec = 1000 * 60 * 60 * 24 * 30;
 
 const defaultClient = kubernetes.Config.defaultClient();
-
-const logger = new ContextLogger("k8s");
 
 /**
  * options is the set of configuration options for the library.
@@ -70,6 +68,7 @@ export class BuildStorage {
   proj: Project;
   name: string;
   build: string;
+  logger: ContextLogger;
 
   /**
    * create initializes a new PVC for storing data.
@@ -82,8 +81,10 @@ export class BuildStorage {
     this.proj = project;
     this.name = e.workerID.toLowerCase();
     this.build = e.buildID;
+    this.logger = new ContextLogger("k8s", e.logLevel);
+
     let pvc = this.buildPVC(size);
-    logger.log(`Creating PVC named ${this.name}`);
+    this.logger.log(`Creating PVC named ${this.name}`);
     return defaultClient
       .createNamespacedPersistentVolumeClaim(
         this.proj.kubernetes.namespace,
@@ -97,7 +98,7 @@ export class BuildStorage {
    * destroy deletes the PVC.
    */
   public destroy(): Promise<boolean> {
-    logger.log(`Destroying PVC named ${this.name}`);
+    this.logger.log(`Destroying PVC named ${this.name}`);
     let opts = new kubernetes.V1DeleteOptions();
     return defaultClient
       .deleteNamespacedPersistentVolumeClaim(
@@ -168,11 +169,13 @@ export class JobRunner implements jobs.JobRunner {
   client: kubernetes.Core_v1Api;
   options: KubernetesOptions;
   serviceAccount: string;
+  logger: ContextLogger;
 
   constructor(job: jobs.Job, e: BrigadeEvent, project: Project) {
     this.options = Object.assign({}, options);
 
     this.event = e;
+    this.logger = new ContextLogger("k8s", e.logLevel);
     this.job = job;
     this.project = project;
     this.client = defaultClient;
@@ -388,11 +391,11 @@ export class JobRunner implements jobs.JobRunner {
     return new Promise((resolve, reject) => {
       pvcPromise
         .then(() => {
-          logger.log("Creating secret " + this.secret.metadata.name);
+          this.logger.log("Creating secret " + this.secret.metadata.name);
           return k.createNamespacedSecret(ns, this.secret);
         })
         .then(result => {
-          logger.log("Creating pod " + this.runner.metadata.name);
+          this.logger.log("Creating pod " + this.runner.metadata.name);
           // Once namespace creation has been accepted, we create the pod.
           return k.createNamespacedPod(ns, this.runner);
         })
@@ -400,7 +403,7 @@ export class JobRunner implements jobs.JobRunner {
           resolve(this);
         })
         .catch(reason => {
-          logger.error(reason);
+          this.logger.error(reason);
           reject(reason);
         });
     });
@@ -421,7 +424,7 @@ export class JobRunner implements jobs.JobRunner {
         resolve("no cache requested");
       } else {
         let cname = this.cacheName();
-        logger.log(`looking up ${ns}/${cname}`);
+        this.logger.log(`looking up ${ns}/${cname}`);
         k
           .readNamespacedPersistentVolumeClaim(cname, ns)
           .then(result => {
@@ -429,16 +432,16 @@ export class JobRunner implements jobs.JobRunner {
           })
           .catch(result => {
             // TODO: check if cache exists.
-            logger.log(`Creating Job Cache PVC ${cname}`);
+            this.logger.log(`Creating Job Cache PVC ${cname}`);
             return k
               .createNamespacedPersistentVolumeClaim(ns, this.pvc)
               .then((result, newPVC) => {
-                logger.log("created cache");
+                this.logger.log("created cache");
                 resolve("created job cache");
               });
           })
           .catch(err => {
-            logger.error(err);
+            this.logger.error(err);
             reject(err);
           });
       }
@@ -457,7 +460,7 @@ export class JobRunner implements jobs.JobRunner {
     // This is a handle to clear the setTimeout when the promise is fulfilled.
     let waiter;
 
-    logger.log(`Timeout set at ${timeout}`);
+    this.logger.log(`Timeout set at ${timeout}`);
 
     // At intervals, poll the Kubernetes server and get the pod phase. If the
     // phase is Succeeded or Failed, bail out. Otherwise, keep polling.
@@ -477,7 +480,7 @@ export class JobRunner implements jobs.JobRunner {
           .then(response => {
             let pod = response.body;
             if (pod.status == undefined) {
-              logger.log("Pod not yet scheduled");
+              this.logger.log("Pod not yet scheduled");
               return;
             }
             let phase = pod.status.phase;
@@ -503,12 +506,12 @@ export class JobRunner implements jobs.JobRunner {
                     ns,
                     new kubernetes.V1DeleteOptions()
                   )
-                  .catch(e => logger.error(e));
+                  .catch(e => this.logger.error(e));
                 clearTimers();
                 reject(new Error(cs[0].state.waiting.message));
               }
             }
-            logger.log(
+            this.logger.log(
               `${pod.metadata.namespace}/${pod.metadata.name} phase ${
                 pod.status.phase
               }`
@@ -516,8 +519,8 @@ export class JobRunner implements jobs.JobRunner {
             // In all other cases we fall through and let the fn be run again.
           })
           .catch(reason => {
-            logger.error("failed pod lookup");
-            logger.error(reason);
+            this.logger.error("failed pod lookup");
+            this.logger.error(reason);
             clearTimers();
             reject(reason);
           });
@@ -604,7 +607,8 @@ function sidecarSpec(
       envVar("BRIGADE_REMOTE_URL", project.repo.cloneURL),
       envVar("BRIGADE_WORKSPACE", local),
       envVar("BRIGADE_PROJECT_NAMESPACE", project.kubernetes.namespace),
-      envVar("BRIGADE_SUBMODULES", initGitSubmodules.toString())
+      envVar("BRIGADE_SUBMODULES", initGitSubmodules.toString()),
+      envVar("BRIGADE_LOG_LEVEL", LogLevel[e.logLevel]),
     ]);
   spec.image = imageTag;
   (spec.imagePullPolicy = "IfNotPresent"),

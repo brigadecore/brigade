@@ -202,6 +202,7 @@ func (c *Controller) workerEnv(project, build *v1.Secret) []v1.EnvVar {
 		{Name: "BRIGADE_EVENT_PROVIDER", Value: sv.String("event_provider")},
 		{Name: "BRIGADE_EVENT_TYPE", Value: sv.String("event_type")},
 		{Name: "BRIGADE_PROJECT_ID", Value: sv.String("project_id")},
+		{Name: "BRIGADE_LOG_LEVEL", Value: sv.String("log_level")},
 		{Name: "BRIGADE_REMOTE_URL", Value: string(project.Data["cloneURL"])},
 		{Name: "BRIGADE_WORKSPACE", Value: sidecarVolumePath},
 		{
@@ -223,7 +224,7 @@ func (c *Controller) workerEnv(project, build *v1.Secret) []v1.EnvVar {
 	return env
 }
 
-// secretRef generate a SeccretKeyRef env var entry if `key` is present in `secret`.
+// secretRef generate a SecretKeyRef env var entry if `key` is present in `secret`.
 // If the key does not exist a name/value pair is returned with an empty value
 func secretRef(key string, secret *v1.Secret) *v1.EnvVarSource {
 	trueVal := true

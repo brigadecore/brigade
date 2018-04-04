@@ -76,6 +76,7 @@ export class App {
    */
   public run(e: events.BrigadeEvent): Promise<boolean> {
     this.lastEvent = e;
+    this.logger.logLevel = e.logLevel;
 
     // This closure destroys storage for us. It is called by event handlers.
     let destroyStorage = () => {
@@ -144,6 +145,7 @@ export class App {
         type: "after",
         provider: "brigade",
         revision: e.revision,
+        logLevel: e.logLevel,
         cause: {
           event: e,
           trigger: code == 0 ? "success" : "failure"
@@ -193,6 +195,7 @@ export class App {
       type: "error",
       provider: "brigade",
       revision: this.lastEvent.revision,
+      logLevel: this.lastEvent.logLevel,
       cause: {
         event: this.lastEvent,
         reason: reason,
