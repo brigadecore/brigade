@@ -215,7 +215,7 @@ export class JobRunner implements jobs.JobRunner {
     for (let key in job.env) {
       let val = job.env[key];
 
-      if (typeof val === 'string') {
+      if (typeof val === "string") {
         // For environmental variables that are submitted as strings,
         // add to the job's secret and add a reference.
 
@@ -235,8 +235,8 @@ export class JobRunner implements jobs.JobRunner {
         // add the reference to the env var list.
 
         envVars.push({
-            name: key,
-            valueFrom: val
+          name: key,
+          valueFrom: val
         } as kubernetes.V1EnvVar);
       }
     }
@@ -608,7 +608,7 @@ function sidecarSpec(
       envVar("BRIGADE_WORKSPACE", local),
       envVar("BRIGADE_PROJECT_NAMESPACE", project.kubernetes.namespace),
       envVar("BRIGADE_SUBMODULES", initGitSubmodules.toString()),
-      envVar("BRIGADE_LOG_LEVEL", LogLevel[e.logLevel]),
+      envVar("BRIGADE_LOG_LEVEL", LogLevel[e.logLevel])
     ]);
   spec.image = imageTag;
   (spec.imagePullPolicy = "IfNotPresent"),
@@ -664,7 +664,10 @@ function newRunnerPod(
   c1.securityContext = new kubernetes.V1SecurityContext();
   if (resourceRequests.cpu && resourceRequests.memory) {
     let resourceRequirements = new kubernetes.V1ResourceRequirements();
-    resourceRequirements.requests = {"cpu": resourceRequests.cpu, "memory": resourceRequests.memory }
+    resourceRequirements.requests = {
+      cpu: resourceRequests.cpu,
+      memory: resourceRequests.memory
+    };
     c1.resources = resourceRequirements;
   }
   pod.spec = new kubernetes.V1PodSpec();

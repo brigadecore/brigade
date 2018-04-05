@@ -31,14 +31,14 @@ import * as ulid from "ulid";
 
 import * as events from "./events";
 import { App } from "./app";
-import {ContextLogger, LogLevel} from "./logger";
+import { ContextLogger, LogLevel } from "./logger";
 
 import { options } from "./k8s";
 
 // This is a side-effect import.
 import "./brigade";
 
-const logLevel = LogLevel[process.env.BRIGADE_LOG_LEVEL || 'LOG'];
+const logLevel = LogLevel[process.env.BRIGADE_LOG_LEVEL || "LOG"];
 const logger = new ContextLogger([], logLevel);
 
 const version = require("../package.json").version;
@@ -64,7 +64,7 @@ let e: events.BrigadeEvent = {
     commit: process.env.BRIGADE_COMMIT_ID,
     ref: process.env.BRIGADE_COMMIT_REF || "refs/heads/master"
   },
-  logLevel: logLevel,
+  logLevel: logLevel
 };
 
 try {

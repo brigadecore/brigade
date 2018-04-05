@@ -27,7 +27,7 @@ describe("job", function() {
         "-ab", // no leading dash
         "a_b", // underscore is illegal
         "ab.", // trailing dot is illegal
-        "A-B", // Capitals are illegal
+        "A-B" // Capitals are illegal
       ];
       for (let n of illegal) {
         assert.isFalse(jobNameIsValid(n), "tested " + n);
