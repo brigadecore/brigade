@@ -490,6 +490,7 @@ export class JobRunner implements jobs.JobRunner {
     return new Promise((resolve, reject) => {
       let ns = this.project.kubernetes.namespace;
       let k = this.client;
+      let logger = this.logger;
       const name = this.name;
       const runner = this.runner;
       const pause = (duration) => new Promise(res => setTimeout(res, duration));
