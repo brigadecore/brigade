@@ -7,6 +7,10 @@ import (
 // JobStatus is a label for the condition of a Job at the current time.
 type JobStatus string
 
+func (j JobStatus) String() string {
+	return string(j)
+}
+
 // These are the valid statuses of jobs.
 const (
 	// JobPending means the job has been accepted by the system, but one or more of the containers

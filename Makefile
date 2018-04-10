@@ -5,9 +5,8 @@ DOCKER_REGISTRY    ?= deis
 DOCKER_BUILD_FLAGS :=
 LDFLAGS            :=
 
-BINS        = brigade-api brigade-controller brigade-github-gateway brig brigade-cr-gateway brigade-vacuum
-IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-worker git-sidecar brigade-cr-gateway brigade-vacuum
-DOCKER_BINS = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum
+BINS        = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig
+IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig brigade-worker git-sidecar
 
 GIT_TAG   = $(shell git describe --tags --always 2>/dev/null)
 VERSION   ?= ${GIT_TAG}
@@ -26,7 +25,7 @@ $(BINS): vendor
 	go build -ldflags '$(LDFLAGS)' -o bin/$@ ./$@/cmd/$@
 
 # Cross-compile for Docker+Linux
-build-docker-bins: $(addsuffix -docker-bin,$(DOCKER_BINS))
+build-docker-bins: $(addsuffix -docker-bin,$(BINS))
 
 %-docker-bin: vendor
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$*/rootfs/$* ./$*/cmd/$*
@@ -91,17 +90,13 @@ test-unit: vendor
 #
 # This will clone the github.com/deis/empty-testbed repo and run the brigade.js
 # file found there.
-.PHONY: test-functional
-test-functional: vendor test-functional-prepare
-test-functional:
-	go test --tags integration ./tests
-
 # Test Repo is https://github.com/deis/empty-testbed
 TEST_REPO_COMMIT =  589e15029e1e44dee48de4800daf1f78e64287c0
 KUBECONFIG       ?= ${HOME}/.kube/config
-.PHONY: test-functional-prepare
-test-functional-prepare:
-	go run ./tests/cmd/generate.go -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
+.PHONY: test-functional
+test-functional: vendor
+test-functional:
+	go test --tags integration ./tests -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
 
 # JS test is local only
 .PHONY: test-js
@@ -110,30 +105,18 @@ test-js:
 
 .PHONY: test-style
 test-style:
-	gometalinter \
-		--disable-all \
-		--enable deadcode \
-		--severity deadcode:error \
-		--enable gofmt \
-		--enable ineffassign \
-		--enable misspell \
-		--enable vet \
-		--tests \
-		--vendor \
-		--deadline 60s \
-		./...
-	@echo "Recommended style checks ===>"
-	gometalinter \
-		--disable-all \
-		--enable golint \
-		--vendor \
-		--deadline 60s \
-		./... || :
+	gometalinter --config ./gometalinter.json ./...
 
 .PHONY: format
-format:
-	test -z "$$(find . -path ./vendor -prune -type f -o -name '*.go' -exec gofmt -d {} + | tee /dev/stderr)" || \
-	test -z "$$(find . -path ./vendor -prune -type f -o -name '*.go' -exec gofmt -w {} + | tee /dev/stderr)"
+format: format-go format-js
+
+.PHONY: format-go
+format-go:
+	go list -f '{{.Dir}}' ./... | xargs goimports -w -local github.com/Azure/brigade
+
+.PHONY: format-js
+format-js:
+	cd brigade-worker && yarn format
 
 HAS_GOMETALINTER := $(shell command -v gometalinter;)
 HAS_DEP          := $(shell command -v dep;)

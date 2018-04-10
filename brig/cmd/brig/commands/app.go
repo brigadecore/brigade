@@ -13,7 +13,7 @@ import (
 const mainUsage = `Interact with the Brigade cluster service.
 
 Brigade is a tool for scripting cluster workflows, and 'brig' is the command
-line client for intearcting with Brigade.
+line client for interacting with Brigade.
 
 The most common use for this tool is to send a Brigade JavaScript file to the
 cluster for execution. This is done with the 'brigade run' command.

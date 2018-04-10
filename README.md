@@ -13,9 +13,6 @@ for Kubernetes.
 - Easy construction of pipelines
 - Check out the [docs](/docs/index.md) to get started.
 
-
-[Kashti](https://github.com/Azure/kashti) is a dashboard for your Brigade pipelines.
-
 [![asciicast](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG.png)](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG)
 
 ## The Brigade Technology Stack
@@ -92,6 +89,18 @@ This will show you the detailed output of running your `brigade.js` script's
 `exec` hook.
 
 (To see the names of your projects, run `brig project list`.)
+
+## Related Projects
+
+* [Kashti](https://github.com/Azure/kashti) - a dashboard for your Brigade pipelines.
+* [Brigadeterm](https://github.com/slok/brigadeterm) - a simple terminal ui for brigade pipelining system.
+* Gateways
+  - [BitBucket events](https://github.com/lukepatrick/brigade-bitbucket-gateway): Gateway Support for BitBucket repositories
+  - [GitLab events](https://github.com/lukepatrick/brigade-gitlab-gateway): Gateway Support for GitLab repositories
+  - [Kubernetes events](https://github.com/azure/brigade-k8s-gateway): Gateway that listens to Kubernetes event stream
+  - [Event Grid gateway](https://github.com/radu-matei/brigade-eventgrid-gateway)" Gateway for Azure Event Grid events
+  - [Cron Gateway](https://github.com/technosophos/brigade-cron): Schedule events to run at a particular time
+  - [Trello and Generic Webhooks](https://github.com/technosophos/brigade-trello): Experimental gateway for Trello and for generic webhooks
 
 ## Brigade :heart: Developers
 

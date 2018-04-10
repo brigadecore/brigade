@@ -42,14 +42,16 @@ func newTestStore() *testStore {
 }
 
 func newTestGithubHandler(store storage.Store, t *testing.T) *githubHook {
-	s := NewGithubHook(store, []string{"OWNER"})
-	s.getFile = func(commit, path string, proj *brigade.Project) ([]byte, error) {
-		return []byte(""), nil
+	return &githubHook{
+		store:          store,
+		allowedAuthors: []string{"OWNERS"},
+		getFile: func(commit, path string, proj *brigade.Project) ([]byte, error) {
+			return []byte(""), nil
+		},
+		createStatus: func(commit string, proj *brigade.Project, status *github.RepoStatus) error {
+			return nil
+		},
 	}
-	s.createStatus = func(commit string, proj *brigade.Project, status *github.RepoStatus) error {
-		return nil
-	}
-	return s
 }
 
 func TestGithubHandler(t *testing.T) {

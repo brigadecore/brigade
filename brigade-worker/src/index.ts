@@ -17,6 +17,7 @@
  *   this namespace.
  * - `BRIGADE_BUILD_ID`: The ULID for the build. This is unique.
  * - `BRIGADE_BUILD_NAME`: This is actually the ID of the worker.
+ * - `BRIGADE_SERVICE_ACCOUNT`: The service account to use.
  *
  * Also, the Brigade script must be written to `brigade.js`.
  */
@@ -30,12 +31,15 @@ import * as ulid from "ulid";
 
 import * as events from "./events";
 import { App } from "./app";
-import { Logger, ContextLogger } from "./logger";
+import {ContextLogger, LogLevel} from "./logger";
+
+import { options } from "./k8s";
 
 // This is a side-effect import.
 import "./brigade";
 
-const logger = new ContextLogger();
+const logLevel = LogLevel[process.env.BRIGADE_LOG_LEVEL || 'LOG'];
+const logger = new ContextLogger([], logLevel);
 
 const version = require("../package.json").version;
 logger.log(`brigade-worker version: ${version}`);
@@ -50,7 +54,7 @@ const requiredEnvVar = (name: string): string => {
 
 const projectID: string = requiredEnvVar("BRIGADE_PROJECT_ID");
 const projectNamespace: string = requiredEnvVar("BRIGADE_PROJECT_NAMESPACE");
-const defaultULID = ulid();
+const defaultULID = ulid().toLocaleLowerCase();
 let e: events.BrigadeEvent = {
   buildID: process.env.BRIGADE_BUILD_ID || defaultULID,
   workerID: process.env.BRIGADE_BUILD_NAME || `unknown-${defaultULID}`,
@@ -59,13 +63,18 @@ let e: events.BrigadeEvent = {
   revision: {
     commit: process.env.BRIGADE_COMMIT_ID,
     ref: process.env.BRIGADE_COMMIT_REF || "refs/heads/master"
-  }
+  },
+  logLevel: logLevel,
 };
 
 try {
   e.payload = fs.readFileSync("/etc/brigade/payload", "utf8");
 } catch (e) {
   logger.log("no payload loaded");
+}
+
+if (process.env.BRIGADE_SERVICE_ACCOUNT) {
+  options.serviceAccount = process.env.BRIGADE_SERVICE_ACCOUNT;
 }
 
 // Run the app.

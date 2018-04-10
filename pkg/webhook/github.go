@@ -32,13 +32,14 @@ type fileGetter func(commit, path string, proj *brigade.Project) ([]byte, error)
 type statusCreator func(commit string, proj *brigade.Project, status *github.RepoStatus) error
 
 // NewGithubHook creates a GitHub webhook handler.
-func NewGithubHook(s storage.Store, authors []string) *githubHook {
-	return &githubHook{
+func NewGithubHook(s storage.Store, authors []string) gin.HandlerFunc {
+	gh := &githubHook{
 		store:          s,
 		getFile:        getFileFromGithub,
 		createStatus:   setRepoStatus,
 		allowedAuthors: authors,
 	}
+	return gh.Handle
 }
 
 // Handle routes a webhook to its appropriate handler.
@@ -169,21 +170,20 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 
 // buildStatus runs a build, and sets upstream status accordingly.
 func (s *githubHook) buildStatus(eventType string, rev brigade.Revision, payload []byte, proj *brigade.Project) {
-	msg := "Building"
-	svc := StatusContext
-	status := new(github.RepoStatus)
-	status.State = &StatePending
-	status.Description = &msg
-	status.Context = &svc
 	if err := s.build(eventType, rev, payload, proj); err != nil {
 		log.Printf("Creating Build failed: %s", err)
-		msg = truncAt(err.Error(), 140)
+		svc := StatusContext
+		msg := truncAt(err.Error(), 140)
+		status := new(github.RepoStatus)
+		status.State = &StatePending
+		status.Description = &msg
+		status.Context = &svc
 		status.State = &StateFailure
 		status.Description = &msg
-	}
-	if err := s.createStatus(rev.Commit, proj, status); err != nil {
-		// For this one, we just log an error and continue.
-		log.Printf("Error setting status to %s: %s", *status.State, err)
+		if err := s.createStatus(rev.Commit, proj, status); err != nil {
+			// For this one, we just log an error and continue.
+			log.Printf("Error setting status to %s: %s", *status.State, err)
+		}
 	}
 }
 
@@ -201,7 +201,7 @@ func (s *githubHook) isAllowedPullRequest(e *github.PullRequestEvent) bool {
 		return false
 	}
 	switch e.GetAction() {
-	case "opened", "synchronize", "reopened", "labeled", "unlabeled":
+	case "opened", "synchronize", "reopened", "labeled", "unlabeled", "closed":
 		return true
 	}
 	log.Println("unsupported pull_request action:", e.GetAction())

@@ -1,14 +1,18 @@
 package commands
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
+	"github.com/Masterminds/kitt/progress"
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,16 +24,21 @@ import (
 )
 
 var (
-	runFile      string
-	runEvent     string
-	runPayload   string
-	runCommitish string
+	runFile       string
+	runEvent      string
+	runPayload    string
+	runCommitish  string
+	runRef        string
+	runLogLevel   string
+	runNoProgress bool
 )
 
+var logPattern = regexp.MustCompile("\\[brigade:k8s\\]\\s[a-zA-Z0-9-]+/[a-zA-Z0-9-]+ phase \\w+")
+
 const (
-	defaultCommit = "master"
-	kubeConfig    = "KUBECONFIG"
-	waitTimeout   = 5 * time.Minute
+	defaultRef  = "master"
+	kubeConfig  = "KUBECONFIG"
+	waitTimeout = 5 * time.Minute
 )
 
 const runUsage = `Send a Brigade JS file to the server.
@@ -46,7 +55,7 @@ To send a local JS file to the server, use the '-f' flag:
 
 	$ brig run -f my.js deis/empty-testbed
 
-While specifying an event is possible, use caution. Mny events expect a
+While specifying an event is possible, use caution. Many events expect a
 particular payload.
 `
 
@@ -54,7 +63,10 @@ func init() {
 	run.Flags().StringVarP(&runFile, "file", "f", "", "The JavaScript file to execute")
 	run.Flags().StringVarP(&runEvent, "event", "e", "exec", "The name of the event to fire")
 	run.Flags().StringVarP(&runPayload, "payload", "p", "", "The path to a payload file")
-	run.Flags().StringVarP(&runCommitish, "commit", "c", defaultCommit, "A VCS (git) commit version, tag, or branch")
+	run.Flags().StringVarP(&runCommitish, "commit", "c", "", "A VCS (git) commit")
+	run.Flags().StringVarP(&runRef, "ref", "r", defaultRef, "A VCS (git) version, tag, or branch")
+	run.Flags().BoolVar(&runNoProgress, "no-progress", false, "Disable progress meter")
+	run.Flags().StringVarP(&runLogLevel, "level", "l", "log", "Specified log level: log, info, warn, error")
 	Root.AddCommand(run)
 }
 
@@ -64,7 +76,7 @@ var run = &cobra.Command{
 	Long:  runUsage,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("Project name required")
+			return errors.New("project name required")
 		}
 		proj := args[0]
 
@@ -92,10 +104,12 @@ func newScriptRunner() (*scriptRunner, error) {
 	}
 
 	app := &scriptRunner{
-		store:  kube.New(c, globalNamespace),
-		kc:     c,
-		event:  runEvent,
-		commit: runCommitish,
+		store:    kube.New(c, globalNamespace),
+		kc:       c,
+		event:    runEvent,
+		commit:   runCommitish,
+		ref:      runRef,
+		logLevel: strings.ToUpper(runLogLevel),
 	}
 	if len(runPayload) > 0 {
 		data, err := ioutil.ReadFile(runPayload)
@@ -108,23 +122,33 @@ func newScriptRunner() (*scriptRunner, error) {
 }
 
 type scriptRunner struct {
-	store   storage.Store
-	kc      kubernetes.Interface
-	payload []byte
-	event   string
-	commit  string
+	store    storage.Store
+	kc       kubernetes.Interface
+	payload  []byte
+	event    string
+	commit   string
+	ref      string
+	logLevel string
 }
 
 func (a *scriptRunner) send(projectName string, data []byte) error {
+
+	projectID := brigade.ProjectID(projectName)
+	if _, err := a.store.GetProject(projectID); err != nil {
+		return fmt.Errorf("could not find the project %q: %s", projectName, err)
+	}
+
 	b := &brigade.Build{
-		ProjectID: brigade.ProjectID(projectName),
+		ProjectID: projectID,
 		Type:      a.event,
 		Provider:  "brigade-cli",
 		Revision: &brigade.Revision{
-			Ref: a.commit,
+			Commit: a.commit,
+			Ref:    a.ref,
 		},
-		Payload: a.payload,
-		Script:  data,
+		Payload:  a.payload,
+		Script:   data,
+		LogLevel: a.logLevel,
 	}
 
 	if err := a.store.CreateBuild(b); err != nil {
@@ -132,6 +156,8 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 	}
 
 	podName := fmt.Sprintf("brigade-worker-%s", b.ID)
+
+	fmt.Printf("Event created. Waiting for worker pod named %q.\n", podName)
 
 	if err := a.waitForWorker(b.ID); err != nil {
 		return err
@@ -196,6 +222,51 @@ func (a *scriptRunner) podLog(name string, w io.Writer) error {
 	}
 	defer readCloser.Close()
 
+	if !runNoProgress {
+		progressLogs(w, readCloser)
+	}
+
 	_, err = io.Copy(w, readCloser)
 	return err
+}
+
+func progressLogs(w io.Writer, r io.Reader) {
+	scanner := bufio.NewScanner(r)
+	last := []byte{}
+	p := &progress.Indicator{
+		Interval: 200 * time.Millisecond,
+		Writer:   w,
+		Frames: []string{
+			"....",
+			"=...",
+			".=..",
+			"..=.",
+			"...=",
+			"....",
+			"...=",
+			"..=.",
+			".=..",
+			"=...",
+		},
+	}
+	started := false
+	for scanner.Scan() {
+		raw := scanner.Bytes()
+		if string(raw) == string(last) && logPattern.Match(raw) {
+			if started {
+				continue
+			}
+			name := strings.Fields(string(raw))
+			p.Start(name[len(name)-1])
+			started = true
+		} else {
+			if started {
+				p.Done("done")
+				started = false
+			}
+			w.Write(raw)
+			w.Write([]byte{'\n'})
+		}
+		last = raw
+	}
 }

@@ -103,7 +103,7 @@ to the `Job.env`?**
 Brigade is designed to use off-the-shelf Docker images. In the examples above, we used the
 `alpine:3.4` image straight from DockerHub. We wouldn't want to just automatically pass
 all of our information straight into that container. For starters, doing so might
-inadvertantly override an existing environment variable of the same name. More
+inadvertently override an existing environment variable of the same name. More
 importantly, the data might get misused or unintentionally exposed by the container.
 
 So we err on the side of safety.
@@ -114,8 +114,11 @@ We use Kubernetes Secrets for holding sensitive data. As encrypted Secrets are
 adopted into Kubernetes, we plan to support them. However, the present stable
 version of Kubernetes Secrets only Base64-encodes data.
 
-Our present recomendation is for Brigade developers to fetch the secret directly from a
+Our present recommendation is for Brigade developers to fetch the secret directly from a
 trusted key store such as Vault.
+
+Alternatively, you could use `secretKeyRef` to reference existing secrets already in your
+Kubernetes cluster.
 
 **I don't want to use Helm to manage my project/secrets. Can I do it manually?**
 

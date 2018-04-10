@@ -15,14 +15,17 @@ type Build struct {
 	// Revision describes a vcs revision.
 	Revision *Revision `json:"revision"`
 	// Payload is the raw data as received by the webhook.
-	Payload []byte `json:"payload,omitempty"`
+	Payload []byte `json:"payload"`
 	// Script is the brigadeJS to be executed.
-	Script []byte `json:"script,omityempty"`
+	Script []byte `json:"script"`
 	// Worker is the master job that is running this build.
 	// The Worker's properties (creation time, state, exit code, and so on)
 	// reflect a "roll-up" of the job.
 	// This property is not guaranteed to be set, and may be nil.
-	Worker *Worker `json:"worker,omitempty"`
+	Worker *Worker `json:"worker"`
+	// LogLevel determines what level of logging from the Javascript
+	// to print to console.
+	LogLevel string `json:"log_level,omitempty"`
 }
 
 // Revision describes a vcs revision.

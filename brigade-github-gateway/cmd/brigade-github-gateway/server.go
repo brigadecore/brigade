@@ -63,7 +63,7 @@ func main() {
 	events := router.Group("/events")
 	{
 		events.Use(gin.Logger())
-		events.POST("/github", webhook.NewGithubHook(store, allowedAuthors).Handle)
+		events.POST("/github", webhook.NewGithubHook(store, allowedAuthors))
 	}
 
 	router.GET("/healthz", healthz)

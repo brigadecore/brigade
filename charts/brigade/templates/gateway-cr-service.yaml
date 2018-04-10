@@ -10,7 +10,7 @@ metadata:
     role: gateway
     type: dockerhub
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ .Values.cr.service.type }}
   ports:
   - port: {{ .Values.cr.service.externalPort }}
     targetPort: {{ .Values.cr.service.internalPort }}

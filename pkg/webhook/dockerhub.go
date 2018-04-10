@@ -18,11 +18,12 @@ type dockerPushHook struct {
 }
 
 // NewDockerPushHook creates a new Docker Push handler for webhooks.
-func NewDockerPushHook(s storage.Store) *dockerPushHook {
-	return &dockerPushHook{
+func NewDockerPushHook(s storage.Store) gin.HandlerFunc {
+	h := &dockerPushHook{
 		store:   s,
 		getFile: getFileFromGithub,
 	}
+	return h.Handle
 }
 
 // Handle handles a Push webhook event from DockerHub or a compatible agent.

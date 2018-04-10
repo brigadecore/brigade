@@ -57,3 +57,16 @@ func TestNewWorkerFromPod(t *testing.T) {
 		t.Errorf("worker differs from expected, got '%v', expected '%v'", worker, expect)
 	}
 }
+
+func TestGetWorker(t *testing.T) {
+	k, s := fakeStore()
+	createFakeWorker(k, stubWorkerPod)
+	worker, err := s.GetWorker(stubBuildID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if worker.ProjectID != stubProjectID {
+		t.Fatal("expected correct project ID")
+	}
+}

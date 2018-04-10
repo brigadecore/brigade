@@ -7,6 +7,8 @@
 
 /** */
 
+import {V1EnvVarSource} from "@kubernetes/client-node/api";
+
 /**
  * The default shell for the job.
  */
@@ -93,6 +95,10 @@ export class JobStorage {
  * JobHost expresses expectations about the host a job will run on.
  */
 export class JobHost {
+  constructor() {
+    this.nodeSelector = new Map<string, string>();
+  }
+
   /**
    * os is the name of the OS upon which the job's container must run.
    *
@@ -114,6 +120,11 @@ export class JobHost {
    * to run jobs on the bridge.
    */
   public name: string;
+
+  /**
+   * nodeSelector labels are used as selectors when choosing a node on which to run this job.
+   */
+  public nodeSelector: Map<string, string>;
 }
 
 /**
@@ -190,6 +201,16 @@ export class Annotations {
 }
 
 /**
+ * JObResourceRequest represents request of the resources
+ */
+export class JobResourceRequest {
+  /** cpu requests */
+  public cpu: string;
+  /** memory requests */
+  public memory: string;
+}
+
+/**
  * Job represents a single job, which is composed of several closely related sequential tasks.
  * Jobs must have names. Every job also has an associated image, which references
  * the Docker container to be run.
@@ -202,7 +223,7 @@ export abstract class Job {
   /** tasks is a list of tasks run inside of the shell*/
   public tasks: string[];
   /** env is the environment variables for the job*/
-  public env: { [key: string]: string };
+  public env: { [key: string]: string | V1EnvVarSource };
   /** image is the container image to be run*/
   public image: string = brigadeImage;
   /** imageForcePull defines the container image pull policy: Always if true or IfNotPresent if false */
@@ -237,6 +258,9 @@ export abstract class Job {
    * See https://github.com/Azure/brigade/issues/251
    */
   public serviceAccount: string;
+
+  /** Set the resource requests for the containers */
+  public resourceRequests: JobResourceRequest;
 
   /**
    * host expresses expectations about the host the job will run on.
@@ -305,6 +329,7 @@ export abstract class Job {
     this.storage = new JobStorage();
     this.docker = new JobDockerMount();
     this.host = new JobHost();
+    this.resourceRequests = new JobResourceRequest();
   }
 
   /** run executes the job and then */
@@ -315,5 +340,5 @@ export abstract class Job {
  * jobNameIsValid checks the validity of a job's name.
  */
 export function jobNameIsValid(name: string): boolean {
-  return /^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])+$/.test(name);
+  return /^(([a-z0-9][-a-z0-9.]*)?[a-z0-9])+$/.test(name);
 }

@@ -74,7 +74,7 @@ const (
 )
 
 func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
-	env := workerEnv(project, build)
+	env := c.workerEnv(project, build)
 
 	cmd := []string{"yarn", "-s", "start"}
 	if cmdString, ok := project.Data["workerCommand"]; ok {
@@ -204,7 +204,7 @@ func (c *Controller) workerImageConfig(project *v1.Secret) (string, string) {
 	return image, pullPolicy
 }
 
-func workerEnv(project, build *v1.Secret) []v1.EnvVar {
+func (c *Controller) workerEnv(project, build *v1.Secret) []v1.EnvVar {
 	sv := kube.SecretValues(build.Data)
 	env := []v1.EnvVar{
 		{Name: "CI", Value: "true"},
@@ -215,6 +215,7 @@ func workerEnv(project, build *v1.Secret) []v1.EnvVar {
 		{Name: "BRIGADE_EVENT_PROVIDER", Value: sv.String("event_provider")},
 		{Name: "BRIGADE_EVENT_TYPE", Value: sv.String("event_type")},
 		{Name: "BRIGADE_PROJECT_ID", Value: sv.String("project_id")},
+		{Name: "BRIGADE_LOG_LEVEL", Value: sv.String("log_level")},
 		{Name: "BRIGADE_REMOTE_URL", Value: string(project.Data["cloneURL"])},
 		{Name: "BRIGADE_WORKSPACE", Value: sidecarVolumePath},
 		{
@@ -231,11 +232,12 @@ func workerEnv(project, build *v1.Secret) []v1.EnvVar {
 			Name:      "BRIGADE_REPO_AUTH_TOKEN",
 			ValueFrom: secretRef("github.token", project),
 		},
+		{Name: "BRIGADE_SERVICE_ACCOUNT", Value: c.Config.WorkerServiceAccount},
 	}
 	return env
 }
 
-// secretRef generate a SeccretKeyRef env var entry if `key` is present in `secret`.
+// secretRef generate a SecretKeyRef env var entry if `key` is present in `secret`.
 // If the key does not exist a name/value pair is returned with an empty value
 func secretRef(key string, secret *v1.Secret) *v1.EnvVarSource {
 	trueVal := true

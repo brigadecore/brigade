@@ -4,9 +4,9 @@
 
 /** */
 
-import * as kubernetes from "@kubernetes/typescript-node";
+import * as kubernetes from "@kubernetes/client-node";
 import * as jobs from "./job";
-import { Logger, ContextLogger } from "./logger";
+import { LogLevel, ContextLogger } from "./logger";
 import { BrigadeEvent, Project } from "./events";
 
 // The internals for running tasks. This must be loaded before any of the
@@ -21,9 +21,31 @@ const expiresInMSec = 1000 * 60 * 60 * 24 * 30;
 
 const defaultClient = kubernetes.Config.defaultClient();
 
-const defaultServiceAccount = "brigade-worker";
+/**
+ * options is the set of configuration options for the library.
+ *
+ * The k8s library provides a backend for the brigade.js objects. But it needs
+ * some configuration that is to be passed directly to the library, not via the
+ * brigade.js. To allow for this plus overrides (e.g. by Project or Job objects),
+ * we maintain a top-level singleton object that holds configuration.
+ *
+ * It is initially populated with defaults. The defaults can be overridden first
+ * by the app (app.ts), then by the project (where allowed). Certain jobs may be
+ * allowed to override (or ignore) 'options', though they should never modify
+ * it.
+ */
+export var options: KubernetesOptions = {
+  serviceAccount: "brigade-worker",
+  mountPath: "/src"
+};
 
-const logger = new ContextLogger("k8s");
+/**
+ * KubernetesOptions exposes options for Kubernetes configuration.
+ */
+export class KubernetesOptions {
+  serviceAccount: string;
+  mountPath: string;
+}
 
 class K8sResult implements jobs.Result {
   data: string;
@@ -46,6 +68,7 @@ export class BuildStorage {
   proj: Project;
   name: string;
   build: string;
+  logger: ContextLogger;
 
   /**
    * create initializes a new PVC for storing data.
@@ -58,8 +81,10 @@ export class BuildStorage {
     this.proj = project;
     this.name = e.workerID.toLowerCase();
     this.build = e.buildID;
+    this.logger = new ContextLogger("k8s", e.logLevel);
+
     let pvc = this.buildPVC(size);
-    logger.log(`Creating PVC named ${this.name}`);
+    this.logger.log(`Creating PVC named ${this.name}`);
     return defaultClient
       .createNamespacedPersistentVolumeClaim(
         this.proj.kubernetes.namespace,
@@ -73,7 +98,7 @@ export class BuildStorage {
    * destroy deletes the PVC.
    */
   public destroy(): Promise<boolean> {
-    logger.log(`Destroying PVC named ${this.name}`);
+    this.logger.log(`Destroying PVC named ${this.name}`);
     let opts = new kubernetes.V1DeleteOptions();
     return defaultClient
       .deleteNamespacedPersistentVolumeClaim(
@@ -142,15 +167,19 @@ export class JobRunner implements jobs.JobRunner {
   event: BrigadeEvent;
   job: jobs.Job;
   client: kubernetes.Core_v1Api;
+  options: KubernetesOptions;
   serviceAccount: string;
+  logger: ContextLogger;
 
   constructor(job: jobs.Job, e: BrigadeEvent, project: Project) {
+    this.options = Object.assign({}, options);
+
     this.event = e;
+    this.logger = new ContextLogger("k8s", e.logLevel);
     this.job = job;
     this.project = project;
     this.client = defaultClient;
-
-    this.serviceAccount = job.serviceAccount || defaultServiceAccount;
+    this.serviceAccount = job.serviceAccount || this.options.serviceAccount;
 
     // $JOB-$BUILD
     this.name = `${job.name}-${this.event.buildID}`;
@@ -163,7 +192,8 @@ export class JobRunner implements jobs.JobRunner {
       runnerName,
       job.image,
       job.imageForcePull,
-      this.serviceAccount
+      this.serviceAccount,
+      job.resourceRequests
     );
 
     // Experimenting with setting a deadline field after which something
@@ -187,23 +217,36 @@ export class JobRunner implements jobs.JobRunner {
     let envVars: kubernetes.V1EnvVar[] = [];
     for (let key in job.env) {
       let val = job.env[key];
-      this.secret.data[key] = b64enc(val);
 
-      // Add reference to pod
-      envVars.push({
-        name: key,
-        valueFrom: {
-          secretKeyRef: {
-            name: secName,
-            key: key
+      if (typeof val === 'string') {
+        // For environmental variables that are submitted as strings,
+        // add to the job's secret and add a reference.
+
+        this.secret.data[key] = b64enc(val);
+        // Add reference to pod
+        envVars.push({
+          name: key,
+          valueFrom: {
+            secretKeyRef: {
+              name: secName,
+              key: key
+            }
           }
-        }
-      } as kubernetes.V1EnvVar);
+        } as kubernetes.V1EnvVar);
+      } else {
+        // For environmental variables that are directly references,
+        // add the reference to the env var list.
+
+        envVars.push({
+            name: key,
+            valueFrom: val
+        } as kubernetes.V1EnvVar);
+      }
     }
 
     this.runner.spec.containers[0].env = envVars;
 
-    let mountPath = job.mountPath || "/src";
+    let mountPath = job.mountPath || this.options.mountPath;
 
     // Add secret volume
     this.runner.spec.volumes = [
@@ -272,6 +315,14 @@ export class JobRunner implements jobs.JobRunner {
     }
     if (job.host.name) {
       this.runner.spec.nodeName = job.host.name;
+    }
+    if (job.host.nodeSelector && job.host.nodeSelector.size > 0) {
+      if (!this.runner.spec.nodeSelector) {
+        this.runner.spec.nodeSelector = {};
+      }
+      for (const k of job.host.nodeSelector.keys()) {
+        this.runner.spec.nodeSelector[k] = job.host.nodeSelector.get(k);
+      }
     }
 
     // If the job requests a cache, set up the cache.
@@ -374,14 +425,19 @@ export class JobRunner implements jobs.JobRunner {
     return new Promise((resolve, reject) => {
       pvcPromise
         .then(() => {
-          logger.log("Creating secret " + this.secret.metadata.name);
+          this.logger.log("Creating secret " + this.secret.metadata.name);
           return k.createNamespacedSecret(ns, this.secret);
+        })
+        .then(result => {
+          this.logger.log("Creating pod " + this.runner.metadata.name);
+          // Once namespace creation has been accepted, we create the pod.
+          return k.createNamespacedPod(ns, this.runner);
         })
         .then(result => {
           resolve(this);
         })
         .catch(reason => {
-          logger.error(reason);
+          this.logger.error(reason);
           reject(reason);
         });
     });
@@ -402,7 +458,7 @@ export class JobRunner implements jobs.JobRunner {
         resolve("no cache requested");
       } else {
         let cname = this.cacheName();
-        logger.log(`looking up ${ns}/${cname}`);
+        this.logger.log(`looking up ${ns}/${cname}`);
         k
           .readNamespacedPersistentVolumeClaim(cname, ns)
           .then(result => {
@@ -410,16 +466,16 @@ export class JobRunner implements jobs.JobRunner {
           })
           .catch(result => {
             // TODO: check if cache exists.
-            logger.log(`Creating Job Cache PVC ${cname}`);
+            this.logger.log(`Creating Job Cache PVC ${cname}`);
             return k
               .createNamespacedPersistentVolumeClaim(ns, this.pvc)
               .then((result, newPVC) => {
-                logger.log("created cache");
+                this.logger.log("created cache");
                 resolve("created job cache");
               });
           })
           .catch(err => {
-            logger.error(err);
+            this.logger.error(err);
             reject(err);
           });
       }
@@ -479,7 +535,7 @@ export class JobRunner implements jobs.JobRunner {
     // This is a handle to clear the setTimeout when the promise is fulfilled.
     let waiter;
 
-    logger.log(`Timeout set at ${timeout}`);
+    this.logger.log(`Timeout set at ${timeout}`);
 
     // At intervals, poll the Kubernetes server and get the pod phase. If the
     // phase is Succeeded or Failed, bail out. Otherwise, keep polling.
@@ -499,7 +555,7 @@ export class JobRunner implements jobs.JobRunner {
           .then(response => {
             let pod = response.body;
             if (pod.status == undefined) {
-              logger.log("Pod not yet scheduled");
+              this.logger.log("Pod not yet scheduled");
               return;
             }
             let phase = pod.status.phase;
@@ -525,12 +581,12 @@ export class JobRunner implements jobs.JobRunner {
                     ns,
                     new kubernetes.V1DeleteOptions()
                   )
-                  .catch(e => logger.error(e));
+                  .catch(e => this.logger.error(e));
                 clearTimers();
                 reject(new Error(cs[0].state.waiting.message));
               }
             }
-            logger.log(
+            this.logger.log(
               `${pod.metadata.namespace}/${pod.metadata.name} phase ${
                 pod.status.phase
               }`
@@ -538,8 +594,8 @@ export class JobRunner implements jobs.JobRunner {
             // In all other cases we fall through and let the fn be run again.
           })
           .catch(reason => {
-            logger.error("failed pod lookup");
-            logger.error(reason);
+            this.logger.error("failed pod lookup");
+            this.logger.error(reason);
             clearTimers();
             reject(reason);
           });
@@ -626,7 +682,8 @@ function sidecarSpec(
       envVar("BRIGADE_REMOTE_URL", project.repo.cloneURL),
       envVar("BRIGADE_WORKSPACE", local),
       envVar("BRIGADE_PROJECT_NAMESPACE", project.kubernetes.namespace),
-      envVar("BRIGADE_SUBMODULES", initGitSubmodules.toString())
+      envVar("BRIGADE_SUBMODULES", initGitSubmodules.toString()),
+      envVar("BRIGADE_LOG_LEVEL", LogLevel[e.logLevel]),
     ]);
   spec.image = imageTag;
   (spec.imagePullPolicy = "IfNotPresent"),
@@ -663,7 +720,8 @@ function newRunnerPod(
   podname: string,
   brigadeImage: string,
   imageForcePull: boolean,
-  serviceAccount: string
+  serviceAccount: string,
+  resourceRequests: jobs.JobResourceRequest
 ): kubernetes.V1Pod {
   let pod = new kubernetes.V1Pod();
   pod.metadata = new kubernetes.V1ObjectMeta();
@@ -679,7 +737,11 @@ function newRunnerPod(
   c1.command = ["/bin/sh", "/hook/main.sh"];
   c1.imagePullPolicy = imageForcePull ? "Always" : "IfNotPresent";
   c1.securityContext = new kubernetes.V1SecurityContext();
-
+  if (resourceRequests.cpu && resourceRequests.memory) {
+    let resourceRequirements = new kubernetes.V1ResourceRequirements();
+    resourceRequirements.requests = {"cpu": resourceRequests.cpu, "memory": resourceRequests.memory }
+    c1.resources = resourceRequirements;
+  }
   pod.spec = new kubernetes.V1PodSpec();
   pod.spec.containers = [c1];
   pod.spec.restartPolicy = "Never";

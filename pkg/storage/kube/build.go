@@ -65,6 +65,7 @@ func (s *store) CreateBuild(build *brigade.Build) error {
 			"event_provider": build.Provider,
 			"event_type":     build.Type,
 			"project_id":     build.ProjectID,
+			"log_level":      build.LogLevel,
 		},
 	}
 
