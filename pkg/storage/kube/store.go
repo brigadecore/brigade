@@ -3,7 +3,7 @@ package kube
 import (
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/Azure/brigade/pkg/storage"
+	"github.com/uswitch/brigade/pkg/storage"
 )
 
 // store represents a storage engine for a brigade.Project.
