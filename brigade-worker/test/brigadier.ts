@@ -62,6 +62,16 @@ describe("brigadier", function() {
           done();
         });
       });
+      it("gathers the logs after the run", function(done) {
+        let j1 = new mock.MockJob("first");
+        j1.fail = true;
+        j1.run().catch((res: jobImpl.Result) => {
+          j1.logs().then((output: string) => {
+            assert.equal(output, "These are the logs showing failure.");
+            done();
+          });
+        });
+      });
       context("when job fails", function() {
         it("stops processing with an error", function(done) {
           let j1 = new mock.MockJob("first");

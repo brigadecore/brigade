@@ -360,6 +360,15 @@ export class JobRunner implements jobs.JobRunner {
     }`.toLowerCase();
   }
 
+  public logs(): Promise<string> {
+    let podName = this.name;
+    let k = this.client;
+    let ns = this.project.kubernetes.namespace;
+    return k.readNamespacedPodLog(podName, ns).then(result => {
+      return result.body;
+    });
+  }
+
   /**
    * run starts a job and then waits until it is running.
    *
@@ -367,16 +376,13 @@ export class JobRunner implements jobs.JobRunner {
    * Success (resolve) or Failure (reject)
    */
   public run(): Promise<jobs.Result> {
-    let podName = this.name;
-    let k = this.client;
-    let ns = this.project.kubernetes.namespace;
     return this.start()
       .then(r => r.wait())
       .then(r => {
-        return k.readNamespacedPodLog(podName, ns);
+        return this.logs();
       })
       .then(response => {
-        return new K8sResult(response.body);
+        return new K8sResult(response);
       });
   }
 

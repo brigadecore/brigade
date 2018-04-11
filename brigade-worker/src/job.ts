@@ -255,6 +255,9 @@ export abstract class Job {
 
   /** run executes the job and then */
   public abstract run(): Promise<Result>;
+
+  /** logs retrieves the logs (so far) from the job run */
+  public abstract logs(): Promise<string>;
 }
 
 /**
