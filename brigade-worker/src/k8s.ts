@@ -429,11 +429,6 @@ export class JobRunner implements jobs.JobRunner {
           return k.createNamespacedSecret(ns, this.secret);
         })
         .then(result => {
-          this.logger.log("Creating pod " + this.runner.metadata.name);
-          // Once namespace creation has been accepted, we create the pod.
-          return k.createNamespacedPod(ns, this.runner);
-        })
-        .then(result => {
           resolve(this);
         })
         .catch(reason => {
