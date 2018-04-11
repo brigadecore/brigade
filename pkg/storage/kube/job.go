@@ -45,8 +45,8 @@ func (s *store) GetBuildJobs(build *brigade.Build) ([]*brigade.Job, error) {
 	}
 	return jobList, nil
 }
-func (s *store) GetJobLogStream(job *brigade.Job) (io.ReadCloser, error) {
-	req := s.client.CoreV1().Pods(s.namespace).GetLogs(job.ID, &v1.PodLogOptions{})
+func (s *store) GetJobLogStream(job *brigade.Job, container string) (io.ReadCloser, error) {
+	req := s.client.CoreV1().Pods(s.namespace).GetLogs(job.ID, &v1.PodLogOptions{Container: container})
 
 	readCloser, err := req.Stream()
 	if err != nil {
@@ -54,9 +54,9 @@ func (s *store) GetJobLogStream(job *brigade.Job) (io.ReadCloser, error) {
 	}
 	return readCloser, nil
 }
-func (s *store) GetJobLog(job *brigade.Job) (string, error) {
+func (s *store) GetJobLog(job *brigade.Job, container string) (string, error) {
 	buf := new(bytes.Buffer)
-	r, err := s.GetJobLogStream(job)
+	r, err := s.GetJobLogStream(job, container)
 	if err != nil {
 		return "", err
 	}
