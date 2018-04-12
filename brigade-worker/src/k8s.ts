@@ -781,8 +781,8 @@ function newVaultCredsContainer(
 		"--auth-role=" + authRole,
 		"--template=" + templatePath,
 		"--out=" + outputPath,
-		"--renew-interval=5m",
-		"--lease-duration=5m",
+		"--renew-interval=10m",
+		"--lease-duration=30m",
 		"--json-log",
 	];
 
