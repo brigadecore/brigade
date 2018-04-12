@@ -7,7 +7,7 @@
 
 /** */
 
-import {V1EnvVarSource} from "@kubernetes/client-node/api";
+import { V1EnvVarSource } from "@kubernetes/client-node/api";
 
 /**
  * The default shell for the job.

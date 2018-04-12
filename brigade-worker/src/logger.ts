@@ -15,7 +15,7 @@ export enum LogLevel {
   INFO,
   WARN,
   ERROR,
-  NONE,
+  NONE
 }
 
 export interface Logger {
@@ -30,7 +30,7 @@ export class ContextLogger implements Logger {
   context: string;
   logLevel: LogLevel;
   constructor(ctx: string[] | string = [], logLevel = LogLevel.LOG) {
-    if (typeof ctx === 'string') {
+    if (typeof ctx === "string") {
       ctx = [ctx];
     }
     this.context = `[${new Array("brigade", ...ctx).join(":")}]`;
