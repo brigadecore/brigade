@@ -69,6 +69,22 @@ export class MockJob extends Job {
       setTimeout(resolve(new MockResult(this.name)), delay);
     });
   }
+  public logs(): Promise<string> {
+    let fail = this.fail;
+    let delay = this.delay;
+    this._podName = "generated-fake-job-name-2";
+    return new Promise((resolve, reject) => {
+      if (fail) {
+        setTimeout(() => {
+          resolve(`These are the logs showing failure.`);
+        }, delay);
+        return;
+      }
+      setTimeout(() => {
+        resolve(`These are the logs showing successful completion.`);
+      }, delay);
+    });
+  }
 }
 
 export class MockBuildStorage {
