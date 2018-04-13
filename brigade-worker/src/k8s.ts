@@ -332,6 +332,10 @@ export class JobRunner implements jobs.JobRunner {
       }
     }
 
+    if (job.args.length > 0) {
+      this.runner.spec.containers[0].args = job.args;
+    }
+
     let newCmd = generateScript(job);
     if (!newCmd) {
       this.runner.spec.containers[0].command = null;
