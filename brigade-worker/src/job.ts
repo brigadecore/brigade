@@ -158,6 +158,8 @@ export abstract class Job {
   public shell: string = defaultShell;
   /** tasks is a list of tasks run inside of the shell*/
   public tasks: string[];
+  /** args is a list of arguments that will be supplied to the container.*/
+  public args: string[];
   /** env is the environment variables for the job*/
   public env: { [key: string]: string | V1EnvVarSource };
   /** image is the container image to be run*/
@@ -245,6 +247,7 @@ export abstract class Job {
     this.image = image;
     this.imageForcePull = imageForcePull;
     this.tasks = tasks || [];
+    this.args = [];
     this.env = {};
     this.cache = new JobCache();
     this.storage = new JobStorage();

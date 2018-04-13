@@ -170,6 +170,26 @@ describe("k8s", function() {
           assert.equal(jr.runner.spec.serviceAccountName, "custom-worker");
         });
       });
+      context("when args are supplied", function() {
+        beforeEach(function() {
+          j.tasks = [];
+          j.args = ["--aye", "-j", "kay"];
+        });
+        it("adds container args", function() {
+          let jr = new k8s.JobRunner(j, e, p);
+          assert.equal(jr.runner.spec.containers[0].args.length, 3);
+          assert.notProperty(jr.secret.data, "main.sh");
+        });
+      });
+      context("when no args are supplied", function() {
+        beforeEach(function() {
+          j.args = [];
+        });
+        it("has no container args", function() {
+          let jr = new k8s.JobRunner(j, e, p);
+          assert.notProperty(jr.runner.spec.containers[0], "args");
+        });
+      });
       context("when no tasks are supplied", function() {
         beforeEach(function() {
           j.tasks = [];
