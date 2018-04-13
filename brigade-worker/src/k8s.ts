@@ -193,7 +193,8 @@ export class JobRunner implements jobs.JobRunner {
       job.image,
       job.imageForcePull,
       this.serviceAccount,
-      job.resourceRequests
+      job.resourceRequests,
+      job.keepCommand
     );
 
     // Experimenting with setting a deadline field after which something
@@ -646,7 +647,8 @@ function newRunnerPod(
   brigadeImage: string,
   imageForcePull: boolean,
   serviceAccount: string,
-  resourceRequests: jobs.JobResourceRequest
+  resourceRequests: jobs.JobResourceRequest,
+  keepCommand: boolean
 ): kubernetes.V1Pod {
   let pod = new kubernetes.V1Pod();
   pod.metadata = new kubernetes.V1ObjectMeta();
@@ -659,7 +661,13 @@ function newRunnerPod(
   let c1 = new kubernetes.V1Container();
   c1.name = "brigaderun";
   c1.image = brigadeImage;
-  c1.command = ["/bin/sh", "/hook/main.sh"];
+
+  if (keepCommand) {
+    c1.args = ["/bin/sh", "/hook/main.sh"];
+  } else {
+    c1.command = ["/bin/sh", "/hook/main.sh"];
+  }
+
   c1.imagePullPolicy = imageForcePull ? "Always" : "IfNotPresent";
   c1.securityContext = new kubernetes.V1SecurityContext();
   if (resourceRequests.cpu && resourceRequests.memory) {

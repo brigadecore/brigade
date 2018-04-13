@@ -180,6 +180,16 @@ describe("k8s", function() {
           assert.notProperty(jr.secret.data, "main.sh");
         });
       });
+      context("when keepCommand is set to true", function () {
+        beforeEach(function() {
+          j.keepCommand = true;
+        });
+        it("puts the tasks as args instead of command", function() {
+          let jr = new k8s.JobRunner(j, e, p);
+          assert.isUndefined(jr.runner.spec.containers[0].command);
+          assert.deepEqual(jr.runner.spec.containers[0].args, ["/bin/sh", "/hook/main.sh"]);
+        })
+      });
       context("when useSource is set to false", function() {
         beforeEach(function() {
           j.tasks = [];

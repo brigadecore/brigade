@@ -156,6 +156,10 @@ export abstract class Job {
   public name: string;
   /** shell that will be used by default in this job*/
   public shell: string = defaultShell;
+  /** keepCommand determines whether Brigade runs the job
+   *  with the default container command (entrypoint) or whether it overrides and
+   *  removes it.*/
+  public keepCommand: boolean = false;
   /** tasks is a list of tasks run inside of the shell*/
   public tasks: string[];
   /** env is the environment variables for the job*/
