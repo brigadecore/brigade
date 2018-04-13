@@ -217,6 +217,11 @@ export abstract class Job {
    */
   public docker: JobDockerMount;
 
+  /**
+   * pod annotations for the job
+   */
+  public annotations: { [key: string]: string; } = {};
+
   /** _podName is set by the runtime. It is the name of the pod.*/
   protected _podName: string;
 
