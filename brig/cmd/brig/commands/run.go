@@ -33,7 +33,7 @@ var (
 	runNoProgress bool
 )
 
-var logPattern = regexp.MustCompile("\\[brigade:k8s\\]\\s[a-zA-Z0-9-]+/[a-zA-Z0-9-]+ phase \\w+")
+var logPattern = regexp.MustCompile(`\[brigade:k8s\]\s[a-zA-Z0-9-]+/[a-zA-Z0-9-]+ phase \w+`)
 
 const (
 	defaultRef  = "master"

@@ -173,7 +173,7 @@ describe("k8s", function() {
       context("when args are supplied", function() {
         beforeEach(function() {
           j.tasks = [];
-          j.args = ["--aye", "-j", "kay"]
+          j.args = ["--aye", "-j", "kay"];
         });
         it("adds container args", function() {
           let jr = new k8s.JobRunner(j, e, p);
