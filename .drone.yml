@@ -65,3 +65,13 @@ pipeline:
     tag:
       - latest
       - "${DRONE_COMMIT_SHA}"
+
+  deployment:
+    when:
+      event: deployment
+      branch: master
+    image: registry.usw.co/drone/deployment:latest
+    secrets: [ KUBE_CA, KUBE_TOKEN, KUBE_SERVER ]
+    kubernetes:
+      template: kubernetes.yaml
+      namespace: ldn
