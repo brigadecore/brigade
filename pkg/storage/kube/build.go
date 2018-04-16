@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/oklog/ulid"
-	"github.com/patrickmn/go-cache"
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -15,9 +14,6 @@ import (
 )
 
 const secretTypeBuild = "brigade.sh/build"
-
-var buildCache = cache.New(30*24*time.Hour, 10*time.Minute)
-var buildsCache = cache.New(30*24*time.Hour, 10*time.Minute)
 
 // GetBuild returns the build.
 func (s *store) GetBuild(id string) (*brigade.Build, error) {
@@ -27,21 +23,14 @@ func (s *store) GetBuild(id string) (*brigade.Build, error) {
 	listOption := meta.ListOptions{LabelSelector: labels}
 	secrets, err := s.client.CoreV1().Secrets(s.namespace).List(listOption)
 	if err != nil {
-		if build, found := buildCache.Get(id); found {
-			return build.(*brigade.Build), nil
-		}
 		return nil, err
 	}
 	if len(secrets.Items) < 1 {
-		if build, found := buildCache.Get(id); found {
-			return build.(*brigade.Build), nil
-		}
 		return nil, fmt.Errorf("could not find build %s: no secrets exist with labels %s", id, labels)
 	}
 	// Select the first secret as the build IDs are unique
 	b := NewBuildFromSecret(secrets.Items[0])
 	b.Worker, err = s.GetWorker(build.ID)
-	buildCache.Set(id, b, cache.DefaultExpiration)
 	return b, err
 }
 
@@ -116,9 +105,6 @@ func (s *store) GetProjectBuilds(proj *brigade.Project) ([]*brigade.Build, error
 
 	secretList, err := s.client.CoreV1().Secrets(s.namespace).List(lo)
 	if err != nil {
-		if builds, found := buildsCache.Get(proj.ID); found {
-			return builds.([]*brigade.Build), nil
-		}
 		return nil, err
 	}
 
@@ -127,9 +113,6 @@ func (s *store) GetProjectBuilds(proj *brigade.Project) ([]*brigade.Build, error
 	// a network hit to load each pod per secret.
 	podList, err := s.client.CoreV1().Pods(s.namespace).List(lo)
 	if err != nil {
-		if builds, found := buildsCache.Get(proj.ID); found {
-			return builds.([]*brigade.Build), nil
-		}
 		return nil, err
 	}
 
@@ -140,14 +123,6 @@ func (s *store) GetProjectBuilds(proj *brigade.Project) ([]*brigade.Build, error
 		// it and assign nil to the worker.
 		b.Worker, _ = findWorker(b.ID, podList)
 		buildList[i] = b
-	}
-
-	if len(buildList) == 0 {
-		buildsCache.Set(proj.ID, &buildList, cache.DefaultExpiration)
-	} else {
-		if builds, found := buildsCache.Get(proj.ID); found {
-			return builds.([]*brigade.Build), nil
-		}
 	}
 	return buildList, nil
 }
