@@ -497,6 +497,7 @@ export class JobRunner implements jobs.JobRunner {
             this.wait()
               .then(result => resolve(result))
               .catch(err => {
+                logger.log("Pod failed:", err)
                 if (retries > 0) {
                   logger.log("Deleting pod", runner.metadata.name);
                   k.deleteNamespacedPod(name, ns, new kubernetes.V1DeleteOptions());
