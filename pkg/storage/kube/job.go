@@ -73,6 +73,7 @@ func NewJobFromPod(pod v1.Pod) *brigade.Job {
 		CreationTime: pod.ObjectMeta.CreationTimestamp.Time,
 		Image:        pod.Spec.Containers[0].Image,
 		Status:       brigade.JobStatus(pod.Status.Phase),
+		Annotations:  pod.ObjectMeta.GetAnnotations(),
 	}
 
 	if (job.Status != brigade.JobPending) && (job.Status != brigade.JobUnknown) {
