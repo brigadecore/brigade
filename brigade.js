@@ -60,8 +60,8 @@ function build(e, project) {
       release(e, p, parts[2])
     }
     return Promise.resolve(runRelease)
-  }).catch(e => {
-    return ghNotify("failure", `failed build ${ e.toString() }`, e, project).run()
+  }).catch(err => {
+    return ghNotify("failure", `failed build ${ err.toString() }`, e, project).run()
   });
 }
 
