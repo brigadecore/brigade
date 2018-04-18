@@ -134,7 +134,7 @@ function releaseImages(e, project, tag) {
   const localPath = gopath + "/src/github.com/" + project.repo.name;
   const registryHost = project.secrets.registryHost;
   const images = [
-    //"brig", // Uncomment this after 0.13.0.
+    "brig",
     "brigade-api",
     "brigade-controller",
     "brigade-cr-gateway",
@@ -196,10 +196,7 @@ function releaseImages(e, project, tag) {
     dind.tasks.push(
       `cd ${i}`,
       `echo '========> Building ${i}'`,
-      `cp -a /mnt/brigade/share/${i}/rootfs ./rootfs`,
-      // Total hack to work around something weird with brigade-github-gateway
-      `[ ! -f /mnt/brigade/share/${i}/rootfs/${i} ] || cp /mnt/brigade/share/${i}/rootfs/${i} ./rootfs/`,
-      // TODO: Fix the Makefile to make this easier.
+      `cp -av /mnt/brigade/share/${i}/rootfs ./rootfs`,
       `docker build -t ${imgName} .`,
       `docker tag ${imgName} ${latest}`,
       `docker push ${imgName}`,
@@ -215,9 +212,8 @@ function releaseImages(e, project, tag) {
 function acrBuild(e, project, tag) {
   const gopath = "/go"
   const localPath = gopath + "/src/github.com/" + project.repo.name;
-  const registryHost = "deis"; //project.secrets.registryHost;
   const images = [
-    //"brig", // Uncomment this after 0.13.0.
+    "brig",
     "brigade-api",
     "brigade-controller",
     "brigade-cr-gateway",
@@ -261,7 +257,7 @@ function acrBuild(e, project, tag) {
   builder.storage.enabled = true;
   builder.tasks = [
     // When the extension is included by default, we can remove this.
-    "az extension add --source https://acrbuild.blob.core.windows.net/cli/acrbuildext-0.0.2-py2.py3-none-any.whl -y",
+    "az extension add --source https://acrbuild.blob.core.windows.net/cli/acrbuildext-0.0.4-py2.py3-none-any.whl -y",
     // Create a service principal and assign it proper perms on the ACR.
     `az login --service-principal -u ${project.secrets.acrName} -p '${project.secrets.acrToken}' --tenant ${project.secrets.acrTenant}`,
     `cd /src`,
@@ -270,18 +266,14 @@ function acrBuild(e, project, tag) {
 
   // For each image we want to build, build it, then tag it latest, then post it to registry.
   for (let i of images) {
-    //let imgName = registryHost+"/"+i+":"+tag;
-    let imgName = registryHost+"/"+i+":"+tag;
-    let latest = registryHost+"/"+i+":latest";
+    let imgName = i+":"+tag;
+    let latest = i+":latest";
     builder.tasks.push(
       `cd ${i}`,
       `echo '========> Building ${i}'`,
-      `cp -a /mnt/brigade/share/${i}/rootfs ./rootfs`,
-      // Total hack to work around something weird with brigade-github-gateway
-      `[ ! -f /mnt/brigade/share/${i}/rootfs/${i} ] || cp /mnt/brigade/share/${i}/rootfs/${i} ./rootfs/`,
+      `cp -av /mnt/brigade/share/${i}/rootfs ./rootfs`,
       // Currently, it appears this is the only way to add two tags.
-      `az acr build -r ${registry} -t ${imgName} --context .`,
-      `az acr build -r ${registry} -t ${latest} --context .`,
+      `az acr build -r ${registry} -t ${imgName} -t ${latest} --context .`,
       `echo '<======== Finished ${i}'`,
       `cd ..`
     );
