@@ -138,7 +138,7 @@ describe("job", function() {
       beforeEach(function() {
         j = new mock.MockJob("my-job");
       });
-      it("is a empty list that can be written", function() {
+      it("is an empty list that can be written", function() {
         assert.deepEqual(j.annotations, {});
         j.annotations['some_kubetoiam/thing'] = 'my/path';
         assert.deepEqual(j.annotations, { 'some_kubetoiam/thing': 'my/path' });
