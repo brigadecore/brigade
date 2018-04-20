@@ -39,14 +39,25 @@ func (api Project) ListWithLatestBuild(c *gin.Context) {
 	}
 
 	res := []*ProjectBuildSummary{}
+
+	resChan := make(chan *ProjectBuildSummary)
+
 	for _, p := range projects {
-		pbs := &ProjectBuildSummary{Project: p}
-		builds, err := api.store.GetProjectBuilds(p)
-		if err == nil && len(builds) > 0 {
-			pbs.LastBuild = builds[len(builds)-1]
-		}
-		res = append(res, pbs)
+		go func(p *brigade.Project) {
+			pbs := &ProjectBuildSummary{Project: p}
+			builds, err := api.store.GetProjectBuilds(p)
+			if err == nil && len(builds) > 0 {
+				pbs.LastBuild = builds[len(builds)-1]
+			}
+
+			resChan <- pbs
+		}(p)
 	}
+
+	for i := 0; i < len(projects); i++ {
+		res = append(res, <-resChan)
+	}
+
 	c.JSON(http.StatusOK, res)
 }
 
