@@ -209,7 +209,7 @@ describe("k8s", function() {
           let jr = new k8s.JobRunner(j, e, p);
           // Currently, annotations are only created if the init container
           // is specified.
-          assert.notProperty(jr.runner.metadata, "annotations");
+          assert.deepEqual(jr.runner.metadata.annotations, {});
         });
       });
       context("when no cloneURL is set", function() {
@@ -221,7 +221,7 @@ describe("k8s", function() {
           let jr = new k8s.JobRunner(j, e, p);
           // Currently, annotations are only created if the init container
           // is specified.
-          assert.notProperty(jr.runner.metadata, "annotations");
+          assert.deepEqual(jr.runner.metadata.annotations, {});
         });
       });
       context("when SSH key is provided", function() {
