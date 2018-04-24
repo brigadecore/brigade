@@ -790,7 +790,7 @@ function newVaultCredsContainer(
   c.volumeMounts = [
 		{ name: db.secret.templateVolume.name, mountPath: "/creds/template" } as kubernetes.V1VolumeMount,
 		{ name: db.secret.outputVolume.name, mountPath: "/creds/output" } as kubernetes.V1VolumeMount,
-		{ name: "database-secrets", mountPath: completedPath } as kubernetes.V1VolumeMount
+		{ name: "database-secrets", mountPath: "/etc/database-secrets" } as kubernetes.V1VolumeMount
 	];
 
   c.resources = {
