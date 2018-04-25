@@ -127,6 +127,10 @@ export class BuildStorage {
 
     s.spec = new kubernetes.V1PersistentVolumeClaimSpec();
     s.spec.accessModes = ["ReadWriteMany"];
+    s.spec.selector = {
+      matchLabels: {heritage: "brigade"},
+      matchExpressions: []
+    }
 
     let res = new kubernetes.V1ResourceRequirements();
     res.requests = { storage: size };
