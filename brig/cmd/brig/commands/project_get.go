@@ -35,7 +35,7 @@ var projectGet = &cobra.Command{
 }
 
 func getProject(out io.Writer, name string) error {
-	c, err := kube.GetClient("", kubeConfigPath())
+	c, err := kubeClient()
 	if err != nil {
 		return err
 	}
