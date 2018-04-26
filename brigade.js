@@ -58,7 +58,7 @@ function build(e, project) {
       runRelease = true
       let parts = gh.ref.split("/", 3)
       let tag = parts[2]
-      return releaseImages(e, project, tag).then(() => {
+      return acrBuild(e, project, tag).then(() => {
         releaseBrig(e, project, tag)
       })
     }
@@ -126,87 +126,6 @@ function ghNotify(state, msg, e, project) {
     GH_COMMIT: e.revision.commit
   }
   return gh
-}
-
-// Build docker images and push to a Docker registry.
-function releaseImages(e, project, tag) {
-  const gopath = "/go"
-  const localPath = gopath + "/src/github.com/" + project.repo.name;
-  const registryHost = project.secrets.registryHost;
-  const images = [
-    "brig",
-    "brigade-api",
-    "brigade-controller",
-    "brigade-cr-gateway",
-    "brigade-vacuum",
-    "brigade-worker", // brigade-worker does not have a rootfs. Could probably minify src into one and save space
-    "git-sidecar",
-    "brigade-github-gateway"
-  ]
-
-  // We build in a separate pod b/c AKS's Docker is too old to do multi-stage builds.
-  const goBuild = new Job("brigade-build", goImg);
-  goBuild.storage.enabled = true;
-  goBuild.env = {
-    "DEST_PATH": localPath,
-    "GOPATH": gopath
-  };
-  goBuild.tasks = [
-    `cd /src && git checkout ${tag}`,
-    "go get github.com/golang/dep/cmd/dep",
-    `mkdir -p ${localPath}/bin`,
-    `mv /src/* ${localPath}`,
-    `cd ${localPath}`,
-    "dep ensure",
-    "make build-docker-bins",
-  ];
-
-  for (let i of images) {
-    goBuild.tasks.push(
-      // Copy the Docker rootfs of each binary into shared storage. This is
-      // a little tricky because worker is non-Go, so later we will have
-      // to copy them back.
-      `mkdir -p /mnt/brigade/share/${i}/rootfs`,
-      // If there's no rootfs, we're done. Otherwise, copy it.
-      `[ ! -d ${i}/rootfs ] || cp -a ./${i}/rootfs/* /mnt/brigade/share/${i}/rootfs/`,
-    );
-  }
-  goBuild.tasks.push("ls -lah /mnt/brigade/share");
-
-  // Docker builder
-  const dind = new Job("dind", "docker:stable-dind")
-  dind.storage.enabled = true
-  dind.privileged = true
-  dind.env = {
-    DOCKER_DRIVER: "overlay"
-  }
-  dind.tasks = [
-    "dockerd-entrypoint.sh &",
-    "echo waiting for Docker && sleep 20",
-    `cd /src`,
-    "mkdir -p ./bin",
-    `docker login -u ${project.secrets.registryUser} -p ${project.secrets.registryToken} ${registryHost}`,
-    `echo LOGGED IN to ${registryHost} as ${project.secrets.registryUser}`
-  ]
-
-  // For each image we want to build, build it, then tag it latest, then post it to registry.
-  for (let i of images) {
-    let imgName = registryHost+"/"+i+":"+tag;
-    let latest = registryHost+"/"+i+":latest";
-    dind.tasks.push(
-      `cd ${i}`,
-      `echo '========> Building ${i}'`,
-      `cp -av /mnt/brigade/share/${i}/rootfs ./rootfs`,
-      `docker build -t ${imgName} .`,
-      `docker tag ${imgName} ${latest}`,
-      `docker push ${imgName}`,
-      `echo '<======== Finished ${i}'`,
-      `cd ..`
-    );
-  }
-  dind.tasks.push("killall dockerd");
-
-  return Group.runEach([goBuild, dind]);
 }
 
 function acrBuild(e, project, tag) {
@@ -304,13 +223,7 @@ events.on("release_images", (e, p) => {
   if (!payload.tag) {
     throw error("No tag specified")
   }
-
-  // If ACR is set up for building, use that. Otherwise, do a Docker build.
-  if (p.secrets.acrName) {
-    acrBuild(e, p, payload.tag)
-  } else {
-    releaseImages(e, p, payload.tag)
-  }
+  acrBuild(e, p, payload.tag)
 })
 
 events.on("image_push", (e, p) => {
