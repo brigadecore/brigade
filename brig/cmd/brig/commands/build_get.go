@@ -33,7 +33,7 @@ var buildGet = &cobra.Command{
 }
 
 func getBuild(out io.Writer, bid string) error {
-	c, err := kube.GetClient("", kubeConfigPath())
+	c, err := kubeClient()
 	if err != nil {
 		return err
 	}

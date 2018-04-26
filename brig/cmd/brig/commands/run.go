@@ -37,7 +37,6 @@ var logPattern = regexp.MustCompile(`\[brigade:k8s\]\s[a-zA-Z0-9-]+/[a-zA-Z0-9-]
 
 const (
 	defaultRef  = "master"
-	kubeConfig  = "KUBECONFIG"
 	waitTimeout = 5 * time.Minute
 )
 
@@ -98,7 +97,7 @@ var run = &cobra.Command{
 }
 
 func newScriptRunner() (*scriptRunner, error) {
-	c, err := kube.GetClient("", kubeConfigPath())
+	c, err := kubeClient()
 	if err != nil {
 		return nil, err
 	}
