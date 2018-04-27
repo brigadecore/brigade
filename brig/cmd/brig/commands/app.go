@@ -6,6 +6,7 @@ import (
 	// Kube client doesn't support all auth providers by default.
 	// this ensures we include all backends supported by the client.
 	"k8s.io/client-go/kubernetes"
+	// auth is a side-effect import for Client-Go
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
