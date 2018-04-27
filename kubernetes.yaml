@@ -1,206 +1,206 @@
----
-# Source: brigade/templates/api-role.yaml
-
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: ldn-brigade-api
-  labels:
-    app: ldn-brigade
-    chart: "brigade-0.10.0"
-    release: "ldn"
-    heritage: "Tiller"
-
----
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: ldn-brigade-api
-  labels:
-    app: ldn-brigade
-    chart: "brigade-0.10.0"
-    release: "ldn"
-    heritage: "Tiller"
-rules:
-- apiGroups: [""] # "" indicates the core API group
-  resources: ["pods", "secrets", "pods/log"]
-  verbs: ["get", "list", "watch"]
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: ldn-brigade-api
-  labels:
-    app: ldn-brigade
-    chart: "brigade-0.10.0"
-    release: "ldn"
-    heritage: "Tiller"
-subjects:
-- kind: ServiceAccount
-  name: ldn-brigade-api
-roleRef:
-  kind: Role
-  name: ldn-brigade-api
-  apiGroup: rbac.authorization.k8s.io
-
-
-
----
-# Source: brigade/templates/controller-role.yaml
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: ldn-brigade-ctrl
-  labels:
-    app: ldn-brigade
-    chart: "brigade-0.10.0"
-    release: "ldn"
-    heritage: "Tiller"
-
----
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: ldn-brigade-ctrl
-  labels:
-    app: ldn-brigade
-    chart: "brigade-0.10.0"
-    release: "ldn"
-    heritage: "Tiller"
-rules:
-- apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: ldn-brigade-ctrl
-  labels:
-    app: ldn-brigade
-    chart: "brigade-0.10.0"
-    release: "ldn"
-    heritage: "Tiller"
-subjects:
-- kind: ServiceAccount
-  name: ldn-brigade-ctrl
-roleRef:
-  kind: Role
-  name: ldn-brigade-ctrl
-  apiGroup: rbac.authorization.k8s.io
-
-
----
-# Source: brigade/templates/vacuum-role.yaml
-
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: ldn-brigade-vacuum
-  labels:
-    app: ldn-brigade
-    chart: "brigade-0.10.0"
-    release: "ldn"
-    heritage: "Tiller"
-
----
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: ldn-brigade-vacuum
-  labels:
-    app: ldn-brigade
-    chart: "brigade-0.10.0"
-    release: "ldn"
-    heritage: "Tiller"
-rules:
-- apiGroups: [""] # "" indicates the core API group
-  resources: ["pods", "secrets", "persistentvolumeclaims"]
-  verbs: ["get", "list", "watch", "delete"]
-- apiGroups: [""] # "" indicates the core API group
-  resources: ["pods/log"]
-  verbs: ["get", "list", "watch"]
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: ldn-brigade-vacuum
-  labels:
-    app: ldn-brigade
-    chart: "brigade-0.10.0"
-    release: "ldn"
-    heritage: "Tiller"
-subjects:
-- kind: ServiceAccount
-  name: ldn-brigade-vacuum
-roleRef:
-  kind: Role
-  name: ldn-brigade-vacuum
-  apiGroup: rbac.authorization.k8s.io
-
-
-
----
-# Source: brigade/templates/worker-role.yaml
-
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: brigade-worker
-  labels:
-    app: ldn-brigade
-    chart: "brigade-0.10.0"
-    release: "ldn"
-    heritage: "Tiller"
-
----
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: ldn-brigade-wrk
-  labels:
-    app: ldn-brigade
-    chart: "brigade-0.10.0"
-    release: "ldn"
-    heritage: "Tiller"
-rules:
-- apiGroups: [""] # "" indicates the core API group
-  resources: ["pods", "secrets", "persistentvolumeclaims"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-- apiGroups: [""] # "" indicates the core API group
-  resources: ["pods/log"]
-  verbs: ["get", "list", "watch"]
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: ldn-brigade-wrk
-  labels:
-    app: ldn-brigade
-    chart: "brigade-0.10.0"
-    release: "ldn"
-    heritage: "Tiller"
-subjects:
-- kind: ServiceAccount
-  name: brigade-worker
-roleRef:
-  kind: Role
-  name: ldn-brigade-wrk
-  apiGroup: rbac.authorization.k8s.io
-
-
----
+# ---
+# # Source: brigade/templates/api-role.yaml
+#
+#
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: ldn-brigade-api
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+#
+# ---
+# kind: Role
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-api
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# rules:
+# - apiGroups: [""] # "" indicates the core API group
+#   resources: ["pods", "secrets", "pods/log"]
+#   verbs: ["get", "list", "watch"]
+# ---
+# kind: RoleBinding
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-api
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# subjects:
+# - kind: ServiceAccount
+#   name: ldn-brigade-api
+# roleRef:
+#   kind: Role
+#   name: ldn-brigade-api
+#   apiGroup: rbac.authorization.k8s.io
+#
+#
+#
+# ---
+# # Source: brigade/templates/controller-role.yaml
+#
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: ldn-brigade-ctrl
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+#
+# ---
+# kind: Role
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-ctrl
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# rules:
+# - apiGroups: [""]
+#   resources: ["secrets"]
+#   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# - apiGroups: [""]
+#   resources: ["pods"]
+#   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# ---
+# kind: RoleBinding
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-ctrl
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# subjects:
+# - kind: ServiceAccount
+#   name: ldn-brigade-ctrl
+# roleRef:
+#   kind: Role
+#   name: ldn-brigade-ctrl
+#   apiGroup: rbac.authorization.k8s.io
+#
+#
+# ---
+# # Source: brigade/templates/vacuum-role.yaml
+#
+#
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: ldn-brigade-vacuum
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+#
+# ---
+# kind: Role
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-vacuum
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# rules:
+# - apiGroups: [""] # "" indicates the core API group
+#   resources: ["pods", "secrets", "persistentvolumeclaims"]
+#   verbs: ["get", "list", "watch", "delete"]
+# - apiGroups: [""] # "" indicates the core API group
+#   resources: ["pods/log"]
+#   verbs: ["get", "list", "watch"]
+# ---
+# kind: RoleBinding
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-vacuum
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# subjects:
+# - kind: ServiceAccount
+#   name: ldn-brigade-vacuum
+# roleRef:
+#   kind: Role
+#   name: ldn-brigade-vacuum
+#   apiGroup: rbac.authorization.k8s.io
+#
+#
+#
+# ---
+# # Source: brigade/templates/worker-role.yaml
+#
+#
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: brigade-worker
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+#
+# ---
+# kind: Role
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-wrk
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# rules:
+# - apiGroups: [""] # "" indicates the core API group
+#   resources: ["pods", "secrets", "persistentvolumeclaims"]
+#   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# - apiGroups: [""] # "" indicates the core API group
+#   resources: ["pods/log"]
+#   verbs: ["get", "list", "watch"]
+# ---
+# kind: RoleBinding
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-wrk
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# subjects:
+# - kind: ServiceAccount
+#   name: brigade-worker
+# roleRef:
+#   kind: Role
+#   name: ldn-brigade-wrk
+#   apiGroup: rbac.authorization.k8s.io
+#
+#
+# ---
 # Source: brigade/templates/api-service.yaml
 
 apiVersion: v1
@@ -326,7 +326,7 @@ metadata:
     heritage: "Tiller"
     role: vacuum
 spec:
-  schedule: "@daily"
+  schedule: "0 23 * * *"
   successfulJobsHistoryLimit: 10
   failedJobsHistoryLimit: 10
   jobTemplate:
@@ -376,28 +376,3 @@ spec:
               serviceName: ldn-brigade-api
               servicePort: 80
 ---
-# Source: brigade/templates/gateway-cr-deployment.yaml
-
-
----
-# Source: brigade/templates/gateway-cr-role.yaml
-
-
----
-# Source: brigade/templates/gateway-cr-service.yaml
-
-
----
-# Source: brigade/templates/gateway-github-deployment.yaml
-
-
----
-# Source: brigade/templates/gateway-github-role.yaml
-
-
----
-# Source: brigade/templates/gateway-github-service.yaml
-
-
----
-# Source: brigade/templates/ingress.yaml
