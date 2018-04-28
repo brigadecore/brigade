@@ -135,6 +135,10 @@ func TestGetBuilds(t *testing.T) {
 }
 
 func TestGetProjectBuilds(t *testing.T) {
+
+	// this could be related
+	// https://github.com/kubernetes/client-go/issues/352
+
 	k, s := fakeStore()
 	createFakeWorker(k, stubWorkerPod)
 	if err := s.CreateBuild(stubBuild); err != nil {
