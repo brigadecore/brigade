@@ -7,7 +7,7 @@ Brigade's Container Registry gateway:
 - DockerHub
 - Azure Container Registry (ACR) with the `Managed_*` classes
 
-DockerHub/ACS integration is _not enabled by default_.
+DockerHub/ACR integration is _not enabled by default_.
 
 ## Intro to Container Registry Webhook Integration
 

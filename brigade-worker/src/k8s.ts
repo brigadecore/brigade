@@ -193,7 +193,8 @@ export class JobRunner implements jobs.JobRunner {
       job.image,
       job.imageForcePull,
       this.serviceAccount,
-      job.resourceRequests
+      job.resourceRequests,
+      job.annotations
     );
 
     // Experimenting with setting a deadline field after which something
@@ -656,7 +657,8 @@ function newRunnerPod(
   brigadeImage: string,
   imageForcePull: boolean,
   serviceAccount: string,
-  resourceRequests: jobs.JobResourceRequest
+  resourceRequests: jobs.JobResourceRequest,
+  jobAnnotations: { [key: string]: string; }
 ): kubernetes.V1Pod {
   let pod = new kubernetes.V1Pod();
   pod.metadata = new kubernetes.V1ObjectMeta();
@@ -665,6 +667,7 @@ function newRunnerPod(
     heritage: "brigade",
     component: "job"
   };
+  pod.metadata.annotations = jobAnnotations;
 
   let c1 = new kubernetes.V1Container();
   c1.name = "brigaderun";

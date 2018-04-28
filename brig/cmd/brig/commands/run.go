@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/Azure/brigade/pkg/brigade"
+	"github.com/Azure/brigade/pkg/decolorizer"
 	"github.com/Azure/brigade/pkg/storage"
 	"github.com/Azure/brigade/pkg/storage/kube"
 )
@@ -31,13 +32,13 @@ var (
 	runRef        string
 	runLogLevel   string
 	runNoProgress bool
+	runNoColor    bool
 )
 
 var logPattern = regexp.MustCompile(`\[brigade:k8s\]\s[a-zA-Z0-9-]+/[a-zA-Z0-9-]+ phase \w+`)
 
 const (
 	defaultRef  = "master"
-	kubeConfig  = "KUBECONFIG"
 	waitTimeout = 5 * time.Minute
 )
 
@@ -66,6 +67,7 @@ func init() {
 	run.Flags().StringVarP(&runCommitish, "commit", "c", "", "A VCS (git) commit")
 	run.Flags().StringVarP(&runRef, "ref", "r", defaultRef, "A VCS (git) version, tag, or branch")
 	run.Flags().BoolVar(&runNoProgress, "no-progress", false, "Disable progress meter")
+	run.Flags().BoolVar(&runNoColor, "no-color", false, "Remove color codes from log output")
 	run.Flags().StringVarP(&runLogLevel, "level", "l", "log", "Specified log level: log, info, warn, error")
 	Root.AddCommand(run)
 }
@@ -98,7 +100,7 @@ var run = &cobra.Command{
 }
 
 func newScriptRunner() (*scriptRunner, error) {
-	c, err := kube.GetClient("", kubeConfigPath())
+	c, err := kubeClient()
 	if err != nil {
 		return nil, err
 	}
@@ -163,8 +165,15 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 		return err
 	}
 
+	var destination io.Writer = os.Stdout
+	if runNoColor {
+		// Pipe the data through a Writer that strips the color codes and then
+		// sends the resulting data to the underlying writer.
+		destination = decolorizer.New(destination)
+	}
+
 	fmt.Printf("Started build %s as %q\n", b.ID, podName)
-	return a.podLog(podName, os.Stdout)
+	return a.podLog(podName, destination)
 }
 
 // waitForWorker waits until the worker has started.

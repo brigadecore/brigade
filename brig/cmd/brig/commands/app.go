@@ -1,13 +1,15 @@
 package commands
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 
 	// Kube client doesn't support all auth providers by default.
 	// this ensures we include all backends supported by the client.
+	"k8s.io/client-go/kubernetes"
+	// auth is a side-effect import for Client-Go
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const mainUsage = `Interact with the Brigade cluster service.
@@ -28,15 +30,17 @@ environment variable.
 `
 
 var (
-	globalNamespace  = ""
-	globalVerbose    = false
-	globalKubeConfig = ""
+	globalNamespace   string
+	globalKubeConfig  string
+	globalKubeContext string
+	globalVerbose     bool
 )
 
 func init() {
 	f := Root.PersistentFlags()
 	f.StringVarP(&globalNamespace, "namespace", "n", "default", "The Kubernetes namespace for Brigade")
 	f.StringVar(&globalKubeConfig, "kubeconfig", "", "The path to a KUBECONFIG file, overrides $KUBECONFIG.")
+	f.StringVar(&globalKubeConfig, "kube-context", "", "The name of the kubeconfig context to use.")
 	f.BoolVarP(&globalVerbose, "verbose", "v", false, "Turn on verbose output")
 }
 
@@ -47,12 +51,25 @@ var Root = &cobra.Command{
 	Long:  mainUsage,
 }
 
-func kubeConfigPath() string {
-	if globalKubeConfig != "" {
-		return globalKubeConfig
+// kubeClient returns a Kubernetes clientset.
+func kubeClient() (*kubernetes.Clientset, error) {
+	cfg, err := getKubeConfig()
+	if err != nil {
+		return nil, err
 	}
-	if v, ok := os.LookupEnv(kubeConfig); ok {
-		return v
+	return kubernetes.NewForConfig(cfg)
+}
+
+// getKubeConfig returns a Kubernetes client config.
+func getKubeConfig() (*rest.Config, error) {
+	rules := clientcmd.NewDefaultClientConfigLoadingRules()
+	rules.DefaultClientConfig = &clientcmd.DefaultClientConfig
+	rules.ExplicitPath = globalKubeConfig
+
+	overrides := &clientcmd.ConfigOverrides{
+		ClusterDefaults: clientcmd.ClusterDefaults,
+		CurrentContext:  globalKubeContext,
 	}
-	return os.ExpandEnv("$HOME/.kube/config")
+
+	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, overrides).ClientConfig()
 }

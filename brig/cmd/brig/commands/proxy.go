@@ -9,10 +9,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/Azure/brigade/pkg/portforwarder"
-	"github.com/Azure/brigade/pkg/storage/kube"
 )
 
 const (
@@ -48,13 +47,12 @@ var proxy = &cobra.Command{
 
 func startProxy(kashtiPort int) error {
 
-	configLocation := kubeConfigPath()
-	config, err := clientcmd.BuildConfigFromFlags("", configLocation)
+	config, err := getKubeConfig()
 	if err != nil {
 		return err
 	}
 
-	c, err := kube.GetClient("", configLocation)
+	c, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return err
 	}
