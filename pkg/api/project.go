@@ -32,6 +32,7 @@ type ProjectBuildSummary struct {
 
 // ListWithLatestBuild lists the projects with the latest builds attached.
 func (api Project) ListWithLatestBuild(c *gin.Context) {
+
 	projects, err := api.store.GetProjects()
 	if err != nil {
 		c.JSON(http.StatusNotFound, struct{}{})
@@ -39,25 +40,14 @@ func (api Project) ListWithLatestBuild(c *gin.Context) {
 	}
 
 	res := []*ProjectBuildSummary{}
-
-	resChan := make(chan *ProjectBuildSummary)
-
 	for _, p := range projects {
-		go func(p *brigade.Project) {
-			pbs := &ProjectBuildSummary{Project: p}
-			builds, err := api.store.GetProjectBuilds(p)
-			if err == nil && len(builds) > 0 {
-				pbs.LastBuild = builds[len(builds)-1]
-			}
-
-			resChan <- pbs
-		}(p)
+		pbs := &ProjectBuildSummary{Project: p}
+		builds, err := api.store.GetProjectBuilds(p)
+		if err == nil && len(builds) > 0 {
+			pbs.LastBuild = builds[len(builds)-1]
+		}
+		res = append(res, pbs)
 	}
-
-	for i := 0; i < len(projects); i++ {
-		res = append(res, <-resChan)
-	}
-
 	c.JSON(http.StatusOK, res)
 }
 
