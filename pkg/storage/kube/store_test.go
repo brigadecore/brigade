@@ -152,42 +152,7 @@ func (f *fakeWatcher) ResultChan() <-chan watch.Event {
 
 // fakeStore returns a fake Kubernetes client and a *store that wraps it.
 func fakeStore() (kubernetes.Interface, storage.Store) {
-
 	client := fake.NewSimpleClientset()
-	/*client.AddWatchReactor("secrets", func(action testing.Action) (handled bool, ret watch.Interface, err error) {
-
-		ch := make(chan watch.Event)
-		go func(stubProjectSecret *v1.Secret) {
-			ch <- watch.Event{
-				Type:   watch.Added,
-				Object: stubProjectSecret,
-			}
-		}(stubProjectSecret)
-
-		return true, &fakeWatcher{
-			ch:ch,
-		}, nil
-	})
-
-	client.AddWatchReactor("pods", func(action testing.Action) (handled bool, ret watch.Interface, err error) {
-
-		ch := make(chan watch.Event)
-		go func(p1, p2 v1.Pod) {
-			ch <- watch.Event{
-				Type:   watch.Added,
-				Object: &p1,
-			}
-			ch <- watch.Event{
-				Type:   watch.Added,
-				Object: &p2,
-			}
-		}(stubJobPod, stubWorkerPod)
-
-		return true, &fakeWatcher{
-			ch:ch,
-		}, nil
-	})*/
-
 	return client, New(client, "default")
 }
 
