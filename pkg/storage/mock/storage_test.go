@@ -55,4 +55,8 @@ func TestStore(t *testing.T) {
 
 	wl, _ := m.GetWorkerLog(StubWorker)
 	assertSame("GetJobLog", StubLogData, wl)
+
+	if !m.BlockUntilApiCacheSynced(nil){
+		t.Fatal("expected to return true")
+	}
 }
