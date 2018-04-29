@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/Azure/brigade/pkg/brigade"
+	"time"
 )
 
 // Store represents a storage engine for a Project.
@@ -34,4 +35,6 @@ type Store interface {
 	GetWorkerLog(job *brigade.Worker) (string, error)
 	// GetWorkerLogStream retrieve a stream of all logs for a worker from storage.
 	GetWorkerLogStream(job *brigade.Worker) (io.ReadCloser, error)
+	// This is useful e.g. for testing to indicate when the ApiCache is populated
+	BlockUntilApiCacheSynced(waitUntil <- chan time.Time)bool
 }
