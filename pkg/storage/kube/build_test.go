@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/Azure/brigade/pkg/brigade"
+	"time"
 )
 
 func TestNewBuildFromSecret(t *testing.T) {
@@ -188,6 +189,9 @@ func TestGetProjectBuilds(t *testing.T) {
 	proj := &brigade.Project{
 		ID: stubProjectID,
 	}
+
+	// wait until api cache is synced
+	s.BlockUntilApiCacheSynced(time.After(time.Second))
 
 	builds, err := s.GetProjectBuilds(proj)
 	if err != nil {
