@@ -4,34 +4,39 @@ import (
 	"testing"
 	"k8s.io/client-go/kubernetes/fake"
 	"time"
-	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestApiCache(t *testing.T){
+func TestApiCache(t *testing.T) {
 
-	labels := map[string]string{
-		"foo": "bar",
+	client := fake.NewSimpleClientset()
+
+	cache := New(client,"default",time.Millisecond * time.Duration(500))
+	if cache == nil {
+		t.Fatal("expected cache not to ne nil")
 	}
 
-	pod := v1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: labels,
-		},
-		Spec: v1.PodSpec{
-			Hostname: "foo",
-		},
-		Status: v1.PodStatus{
-
-		},
+	syncedWithinOneSecond := cache.BlockUntilApiCacheSynced(time.After(time.Second))
+	if !syncedWithinOneSecond {
+		t.Fatal("expected to sync within one second")
 	}
 
-	client := fake.NewSimpleClientset(&pod)
-	// unexpectedly the api cache stays empty
-	apiCache := New(client,"default",time.Second * time.Duration(30))
+	syncedWithoutTimeout := cache.BlockUntilApiCacheSynced(nil)
+	if !syncedWithoutTimeout {
+		t.Fatal("expected to sync without timeout")
+	}
+}
 
-	pods := apiCache.GetPodsFilteredBy(labels)
-	if len(pods) != 1 {
-		t.Fatalf("expected 1 but found %d",len(pods))
+func TestApiCacheBlockUntilApiCacheSynced(t *testing.T) {
+
+	client := fake.NewSimpleClientset()
+
+	cache := New(client,"default",time.Millisecond * time.Duration(500))
+	if cache == nil {
+		t.Fatal("expected cache not to ne nil")
+	}
+
+	syncedAfterZeroTime := cache.BlockUntilApiCacheSynced(time.After(0))
+	if syncedAfterZeroTime {
+		t.Fatal("expected to sync within one second")
 	}
 }
