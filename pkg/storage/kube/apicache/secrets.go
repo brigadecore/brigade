@@ -35,11 +35,10 @@ func (secretStoreFactory) new(client kubernetes.Interface, namespace string, res
 //	"component": "build",
 //	"project":   proj.ID,
 // }
-func (a *apiCache) GetSecretsFilteredBy(labelSelectors map[string]string) []v1.Secret {
+func (a *apiCache) GetSecretsFilteredBy(selectors map[string]string) []v1.Secret {
 
 	var filteredSecrets []v1.Secret
 
-	OuterLoop:
 	for _, raw := range a.secretStore.List() {
 
 		secret, ok := raw.(*v1.Secret)
@@ -47,12 +46,9 @@ func (a *apiCache) GetSecretsFilteredBy(labelSelectors map[string]string) []v1.S
 			continue
 		}
 
-		// if the key doesn't exist on the secret or the expected value differs from the actual value, skip it
-		for key, expected := range labelSelectors {
-			actual, exists := secret.Labels[key]
-			if !exists || actual != expected {
-				continue OuterLoop
-			}
+		// skip if the string maps don't match
+		if !stringMapsMatch(secret.Labels,selectors) {
+			continue
 		}
 
 		filteredSecrets = append(filteredSecrets, *secret)
