@@ -39,12 +39,9 @@ func (a *apiCache) GetPodsFilteredBy(selectors map[string]string) []v1.Pod {
 			continue
 		}
 
-		// if the key doesn't exist on the secret or the expected value differs from the actual value, skip it
-		for key, expected := range labelSelectors {
-			actual, exists := secret.Labels[key]
-			if !exists || actual != expected {
-				continue OuterLoop
-			}
+		// skip if the maps don't match
+		if !stringMapsMatch(secret.Labels, selectors) {
+			continue
 		}
 
 		filteredSecrets = append(filteredSecrets, *secret)
