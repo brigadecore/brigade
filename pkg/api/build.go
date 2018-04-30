@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 
-	"gopkg.in/gin-gonic/gin.v1"
+	restful "github.com/emicklei/go-restful"
 
 	"github.com/Azure/brigade/pkg/storage"
 )
@@ -15,58 +15,59 @@ type Build struct {
 }
 
 // Get creates a new gin handler for the GET /build/:id endpoint
-func (api Build) Get(c *gin.Context) {
-	id := c.Params.ByName("id")
+func (api Build) Get(request *restful.Request, response *restful.Response) {
+	id := request.PathParameter("id")
 	// For now, we always get the worker.
 	build, err := api.store.GetBuild(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, struct{}{})
+		response.WriteErrorString(http.StatusNotFound, "Build could not be found.")
 		return
 	}
-	c.JSON(http.StatusOK, build)
+	response.WriteEntity(build)
 }
 
 // Jobs creates a new gin handler for the GET /build/:id/jobs endpoint
-func (api Build) Jobs(c *gin.Context) {
-	id := c.Params.ByName("id")
+func (api Build) Jobs(request *restful.Request, response *restful.Response) {
+	id := request.PathParameter("id")
 	build, err := api.store.GetBuild(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, struct{}{})
+		response.WriteErrorString(http.StatusNotFound, "Build could not be found.")
 		return
 	}
 	jobs, err := api.store.GetBuildJobs(build)
 	if err != nil {
-		c.JSON(http.StatusNotFound, struct{}{})
+		response.WriteErrorString(http.StatusNotFound, "Build Jobs could not be found.")
 		return
 	}
-	c.JSON(http.StatusOK, jobs)
+	response.WriteEntity(jobs)
+
 }
 
 // Logs creates a new gin handler for the GET /build/:id/logs endpoint
-func (api Build) Logs(c *gin.Context) {
-	id := c.Params.ByName("id")
+func (api Build) Logs(request *restful.Request, response *restful.Response) {
+	id := request.PathParameter("id")
 	build, err := api.store.GetBuild(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, struct{}{})
+		response.WriteErrorString(http.StatusNotFound, "Build could not be found.")
 		return
 	}
-	if c.Query("stream") == "true" {
+	if request.QueryParameter("stream") == "true" {
 		logReader, err := api.store.GetWorkerLogStream(build.Worker)
 		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
+			response.WriteErrorString(http.StatusNotFound, "Build Logs could not be found.")
 			return
 		}
 		defer logReader.Close()
-		io.Copy(c.Writer, logReader)
+		io.Copy(response.ResponseWriter, logReader)
 	} else {
 		logs, err := api.store.GetWorkerLog(build.Worker)
 		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
+			response.WriteErrorString(http.StatusNotFound, "Build Logs could not be found.")
 			return
 		}
 		if len(logs) == 0 {
-			c.JSON(http.StatusNoContent, nil)
+			response.WriteErrorString(http.StatusNoContent, "Build Logs Empty")
 		}
-		c.JSON(http.StatusOK, logs)
+		response.WriteEntity(logs)
 	}
 }

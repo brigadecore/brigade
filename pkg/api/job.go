@@ -4,9 +4,8 @@ import (
 	"io"
 	"net/http"
 
-	"gopkg.in/gin-gonic/gin.v1"
-
 	"github.com/Azure/brigade/pkg/storage"
+	restful "github.com/emicklei/go-restful"
 )
 
 // Job represents the job api handlers.
@@ -15,41 +14,41 @@ type Job struct {
 }
 
 // Get creates a new gin handler for the GET /job/:id endpoint
-func (api Job) Get(c *gin.Context) {
-	id := c.Params.ByName("id")
+func (api Job) Get(request *restful.Request, response *restful.Response) {
+	id := request.PathParameter("id")
 	job, err := api.store.GetJob(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, struct{}{})
+		response.WriteErrorString(http.StatusNotFound, "Job could not be found.")
 		return
 	}
-	c.JSON(http.StatusOK, job)
+	response.WriteEntity(job)
 }
 
 // Logs creates a new gin handler for the GET /job/:id/logs endpoint
-func (api Job) Logs(c *gin.Context) {
-	id := c.Params.ByName("id")
+func (api Job) Logs(request *restful.Request, response *restful.Response) {
+	id := request.PathParameter("id")
 	job, err := api.store.GetJob(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, struct{}{})
+		response.WriteErrorString(http.StatusNotFound, "Job could not be found.")
 		return
 	}
-	if c.Query("stream") == "true" {
+	if request.QueryParameter("stream") == "true" {
 		logReader, err := api.store.GetJobLogStream(job)
 		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
+			response.WriteErrorString(http.StatusNotFound, "Job could not be found.")
 			return
 		}
 		defer logReader.Close()
-		io.Copy(c.Writer, logReader)
+		io.Copy(response.ResponseWriter, logReader)
 	} else {
 		logs, err := api.store.GetJobLog(job)
 		if err != nil {
-			c.JSON(http.StatusNotFound, struct{}{})
+			response.WriteErrorString(http.StatusNotFound, "Job Logs could not be found.")
 			return
 		}
 		if len(logs) == 0 {
-			c.JSON(http.StatusNoContent, nil)
+			response.WriteErrorString(http.StatusNoContent, "Job Logs Empty")
 		}
-		c.JSON(http.StatusOK, logs)
+		response.WriteEntity(logs)
 	}
 }
