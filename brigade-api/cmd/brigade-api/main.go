@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -57,7 +56,7 @@ func (js jobService) WebService() *restful.WebService {
 	ws.
 		Path("/v1/job").
 		Consumes(restful.MIME_JSON).
-		Produces(restful.MIME_JSON)
+		Produces(restful.MIME_JSON, restful.MIME_XML, "plain/text", "text/javascript")
 
 	tags := []string{"job"}
 
@@ -89,7 +88,7 @@ func (bs buildService) WebService() *restful.WebService {
 	ws.
 		Path("/v1/build").
 		Consumes(restful.MIME_JSON).
-		Produces(restful.MIME_JSON)
+		Produces(restful.MIME_JSON, restful.MIME_XML, "plain/text", "text/javascript")
 
 	tags := []string{"build"}
 
@@ -130,7 +129,7 @@ func (ps projectService) WebService() *restful.WebService {
 	ws.
 		Path("/v1").
 		Consumes(restful.MIME_JSON).
-		Produces(restful.MIME_JSON)
+		Produces(restful.MIME_JSON, restful.MIME_XML, "plain/text", "text/javascript")
 
 	tags := []string{"projects"}
 
@@ -171,7 +170,7 @@ func (hs healthService) WebService() *restful.WebService {
 	ws := new(restful.WebService)
 
 	ws.
-		Path("/v1/healthz").
+		Path("/healthz").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
 
@@ -198,7 +197,6 @@ func main() {
 	storage := kube.New(clientset, namespace)
 	server := api.New(storage)
 
-	// router.GET("/healthz", api.Healthz)
 	j := jobService{server}
 	b := buildService{server}
 	p := projectService{server}
@@ -234,11 +232,6 @@ func main() {
 	log.Printf("Get the API using %s/apidocs.json", formattedAPIPort)
 	hserver := &http.Server{Addr: formattedAPIPort, Handler: restful.DefaultContainer}
 	log.Fatal(hserver.ListenAndServe())
-	//log.Fatal(http.ListenAndServe(formattedAPIPort, nil))
-}
-
-func hello(req *restful.Request, resp *restful.Response) {
-	io.WriteString(resp, "world")
 }
 
 func defaultNamespace() string {
