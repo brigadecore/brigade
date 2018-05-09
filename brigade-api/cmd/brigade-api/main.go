@@ -6,8 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
-	"time"
 
 	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage/kube"
@@ -206,7 +204,7 @@ func main() {
 	restful.DefaultContainer.Add(b.WebService())
 	restful.DefaultContainer.Add(p.WebService())
 	restful.DefaultContainer.Add(h.WebService())
-	restful.DefaultContainer.Filter(nCSACommonLogFormatLogger())
+	restful.DefaultContainer.Filter(NCSACommonLogFormatLogger())
 
 	config := restfulspec.Config{
 		WebServices: restful.RegisteredWebServices(), // you control what services are visible
@@ -263,28 +261,4 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 	swo.Tags = []spec.Tag{spec.Tag{TagProps: spec.TagProps{
 		Name:        "brigade",
 		Description: "Brigade"}}}
-}
-
-var logger *log.Logger = log.New(os.Stdout, "", 0)
-
-func nCSACommonLogFormatLogger() restful.FilterFunction {
-	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
-		var username = "-"
-		if req.Request.URL.User != nil {
-			if name := req.Request.URL.User.Username(); name != "" {
-				username = name
-			}
-		}
-		chain.ProcessFilter(req, resp)
-		logger.Printf("%s - %s [%s] \"%s %s %s\" %d %d",
-			strings.Split(req.Request.RemoteAddr, ":")[0],
-			username,
-			time.Now().Format("02/Jan/2006:15:04:05 -0700"),
-			req.Request.Method,
-			req.Request.URL.RequestURI(),
-			req.Request.Proto,
-			resp.StatusCode(),
-			resp.ContentLength(),
-		)
-	}
 }
