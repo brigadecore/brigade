@@ -131,9 +131,11 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 	case *github.DeploymentEvent:
 		repo = e.Repo.GetFullName()
 		rev.Commit = e.Deployment.GetSHA()
+		rev.Ref = e.Deployment.GetRef()
 	case *github.DeploymentStatusEvent:
 		repo = e.Repo.GetFullName()
 		rev.Commit = e.Deployment.GetSHA()
+		rev.Ref = e.Deployment.GetRef()
 	default:
 		log.Printf("Failed to parse payload")
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Received data is not valid JSON"})
