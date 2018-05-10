@@ -1,18 +1,12 @@
 package apicache
 
 import (
-	"time"
-
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 )
-
-type cacheStoreFactory interface {
-	new(client kubernetes.Interface, namespace string, resyncPeriod time.Duration, synced chan struct{}) cache.Store
-}
 
 // convenience method to create listStores
 func newListStore(client kubernetes.Interface, config storeConfig, hasSynced chan struct{}) cache.Store {

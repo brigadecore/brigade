@@ -8,8 +8,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 
-	"k8s.io/apimachinery/pkg/watch"
-
 	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage"
 )
@@ -141,15 +139,6 @@ var (
 		Script:   []byte("ohai"),
 	}
 )
-
-type fakeWatcher struct {
-	ch chan watch.Event
-}
-
-func (fakeWatcher) Stop() {}
-func (f *fakeWatcher) ResultChan() <-chan watch.Event {
-	return f.ch
-}
 
 // fakeStore returns a fake Kubernetes client and a *store that wraps it.
 func fakeStore() (kubernetes.Interface, storage.Store) {
