@@ -7,6 +7,8 @@ import (
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"time"
+
 	"github.com/Azure/brigade/pkg/brigade"
 )
 
@@ -135,6 +137,10 @@ func TestGetBuilds(t *testing.T) {
 }
 
 func TestGetProjectBuilds(t *testing.T) {
+
+	// this could be related
+	// https://github.com/kubernetes/client-go/issues/352
+
 	k, s := fakeStore()
 	createFakeWorker(k, stubWorkerPod)
 	if err := s.CreateBuild(stubBuild); err != nil {
@@ -184,6 +190,9 @@ func TestGetProjectBuilds(t *testing.T) {
 	proj := &brigade.Project{
 		ID: stubProjectID,
 	}
+
+	// wait until api cache is synced
+	s.BlockUntilAPICacheSynced(time.After(time.Second))
 
 	builds, err := s.GetProjectBuilds(proj)
 	if err != nil {
