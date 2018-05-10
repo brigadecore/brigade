@@ -1,16 +1,17 @@
 package apicache
 
 import (
+	"time"
+
 	"k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	"time"
 )
 
-type secretStoreFactory struct {}
+type secretStoreFactory struct{}
 
 // return a new cached store for secrets
 func (secretStoreFactory) new(client kubernetes.Interface, namespace string, resyncPeriod time.Duration, synced chan struct{}) cache.Store {
@@ -28,7 +29,7 @@ func (secretStoreFactory) new(client kubernetes.Interface, namespace string, res
 	}, synced)
 }
 
-// returns all secrets filtered by a label selector
+// GetSecretsFilteredBy returns all secrets filtered by a label selector
 // e.g. for 'heritage=brigade,component=build,project=%s'
 // map[string]string{
 //	"heritage":  "brigade",
@@ -47,7 +48,7 @@ func (a *apiCache) GetSecretsFilteredBy(selectors map[string]string) []v1.Secret
 		}
 
 		// skip if the string maps don't match
-		if !stringMapsMatch(secret.Labels,selectors) {
+		if !stringMapsMatch(secret.Labels, selectors) {
 			continue
 		}
 

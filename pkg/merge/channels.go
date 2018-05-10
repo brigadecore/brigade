@@ -2,6 +2,7 @@ package merge
 
 // this package offers utility methods to merge things like channels
 
+// Channels merges multiple channels into one channel
 func Channels(chans ...<-chan struct{}) <-chan struct{} {
 	switch len(chans) {
 	case 0:

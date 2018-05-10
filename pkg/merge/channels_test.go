@@ -49,7 +49,7 @@ func TestMergeTwo(t *testing.T) {
 	c2 := make(chan struct{})
 	merged := mergeTwoChannels(c1, c2)
 	go func() {
-		for i := 0;i<2;i++  {
+		for i := 0; i < 2; i++ {
 			<-merged
 		}
 	}()

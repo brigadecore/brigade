@@ -82,8 +82,8 @@ type Store struct {
 	LogData string
 }
 
-// the mocked store is declared to be in sync
-func (s *Store)BlockUntilApiCacheSynced(waitUntil <- chan time.Time)bool {
+// BlockUntilAPICacheSynced gets the mocked store is declared to be in sync
+func (s *Store) BlockUntilAPICacheSynced(waitUntil <-chan time.Time) bool {
 	return true
 }
 

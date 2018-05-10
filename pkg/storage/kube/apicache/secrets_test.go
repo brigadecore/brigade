@@ -2,10 +2,11 @@ package apicache
 
 import (
 	"testing"
-	"k8s.io/client-go/kubernetes/fake"
+	"time"
+
 	"k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestSecretStore(t *testing.T) {
@@ -16,11 +17,11 @@ func TestSecretStore(t *testing.T) {
 	store := factory.new(client, "default", 1, nil)
 
 	validLabels := map[string]string{
-		"foo" : "bar",
+		"foo": "bar",
 	}
 
 	invalidLabels := map[string]string{
-		"bar" : "baz",
+		"bar": "baz",
 	}
 
 	pod1 := v1.Pod{
@@ -31,24 +32,24 @@ func TestSecretStore(t *testing.T) {
 
 	secret1 := v1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
-			Labels:validLabels,
-			Name: "secret1",
+			Labels: validLabels,
+			Name:   "secret1",
 		},
 	}
 
 	secret2 := v1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
-			Labels:invalidLabels,
-			Name: "secret2",
+			Labels: invalidLabels,
+			Name:   "secret2",
 		},
 	}
 
-	_,err := client.CoreV1().Secrets("default").Create(&secret1)
+	_, err := client.CoreV1().Secrets("default").Create(&secret1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_,err = client.CoreV1().Secrets("default").Create(&secret2)
+	_, err = client.CoreV1().Secrets("default").Create(&secret2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,8 +60,8 @@ func TestSecretStore(t *testing.T) {
 	store.Add(&pod1)
 
 	cache := apiCache{
-		client: client,
-		secretStore:store,
+		client:      client,
+		secretStore: store,
 	}
 
 	filteredPods := cache.GetSecretsFilteredBy(validLabels)

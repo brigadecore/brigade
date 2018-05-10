@@ -8,9 +8,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 
+	"k8s.io/apimachinery/pkg/watch"
+
 	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage"
-	"k8s.io/apimachinery/pkg/watch"
 )
 
 const (

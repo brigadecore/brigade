@@ -2,13 +2,14 @@ package apicache
 
 import (
 	"testing"
-	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/apimachinery/pkg/runtime"
+	"time"
+
 	"k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestNewListStoreWithoutHasSyncedChan(t *testing.T) {
@@ -84,42 +85,33 @@ func TestNewListStoreInvokeWatchFunctions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	time.Sleep(time.Millisecond)
-	// seems like the fake impl doesn't delete objects
-	// this can be seen when looking at a cover html
-
-	/*if len(store.List()) != 0 {
-		spew.Dump(afterCreation,store.List())
-		t.Fatal("expected store to be empty after deletion")
-	}*/
 }
 
-func TestStringMapsMatch(t *testing.T){
+func TestStringMapsMatch(t *testing.T) {
 
 	expected := map[string]string{
-		"foo" : "bar",
-		"bar" : "baz",
+		"foo": "bar",
+		"bar": "baz",
 	}
 
-	keyMissing := map[string]string {
-		"foo" : "bar",
+	keyMissing := map[string]string{
+		"foo": "bar",
 	}
 
-	invalidValue := map[string]string {
-		"foo" : "bar",
-		"bar" : "bar",
+	invalidValue := map[string]string{
+		"foo": "bar",
+		"bar": "bar",
 	}
 
-	if !stringMapsMatch(expected,expected) {
+	if !stringMapsMatch(expected, expected) {
 		t.Fatal("expected maps to match")
 	}
 
-	if stringMapsMatch(keyMissing,expected){
+	if stringMapsMatch(keyMissing, expected) {
 		t.Fatal("expected not to match because key is missing")
 	}
 
-	if stringMapsMatch(invalidValue,expected){
+	if stringMapsMatch(invalidValue, expected) {
 		t.Fatal("expected not to match because one value is invalid")
 	}
 }

@@ -2,10 +2,11 @@ package apicache
 
 import (
 	"testing"
-	"k8s.io/client-go/kubernetes/fake"
+	"time"
+
 	"k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestPodStore(t *testing.T) {
@@ -16,24 +17,24 @@ func TestPodStore(t *testing.T) {
 	store := factory.new(client, "default", 1, nil)
 
 	validLabels := map[string]string{
-		"foo" : "bar",
+		"foo": "bar",
 	}
 
 	invalidLabels := map[string]string{
-		"bar" : "baz",
+		"bar": "baz",
 	}
 
 	pod1 := v1.Pod{
 		ObjectMeta: metaV1.ObjectMeta{
 			Labels: validLabels,
-			Name: "pod1",
+			Name:   "pod1",
 		},
 	}
 
 	pod2 := v1.Pod{
 		ObjectMeta: metaV1.ObjectMeta{
 			Labels: invalidLabels,
-			Name: "pod2",
+			Name:   "pod2",
 		},
 	}
 
@@ -43,12 +44,12 @@ func TestPodStore(t *testing.T) {
 		},
 	}
 
-	_,err := client.CoreV1().Pods("default").Create(&pod1)
+	_, err := client.CoreV1().Pods("default").Create(&pod1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_,err = client.CoreV1().Pods("default").Create(&pod2)
+	_, err = client.CoreV1().Pods("default").Create(&pod2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,8 +60,8 @@ func TestPodStore(t *testing.T) {
 	store.Add(&secret1)
 
 	cache := apiCache{
-		client: client,
-		podStore:store,
+		client:   client,
+		podStore: store,
 	}
 
 	filteredPods := cache.GetPodsFilteredBy(validLabels)
