@@ -150,6 +150,16 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
 			Env: env,
 		}}
 	}
+
+	if ips := project.Data["imagePullSecrets"]; len(ips) > 0 {
+		pullSecs := strings.Split(string(ips), ",")
+		refs := []v1.LocalObjectReference{}
+		for _, pullSec := range pullSecs {
+			ref := v1.LocalObjectReference{Name: strings.TrimSpace(pullSec)}
+			refs = append(refs, ref)
+		}
+		pod.Spec.ImagePullSecrets = refs
+	}
 	return pod, nil
 }
 

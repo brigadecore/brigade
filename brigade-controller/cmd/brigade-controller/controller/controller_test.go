@@ -55,7 +55,8 @@ func TestController(t *testing.T) {
 		},
 		// This and the missing 'script' will trigger an initContainer
 		Data: map[string][]byte{
-			"vcsSidecar": []byte(sidecarImage),
+			"vcsSidecar":       []byte(sidecarImage),
+			"imagePullSecrets": []byte(`foo,bar`),
 		},
 	}
 
@@ -98,6 +99,18 @@ func TestController(t *testing.T) {
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
+	}
+
+	imgSecrets := pod.Spec.ImagePullSecrets
+	if len(imgSecrets) != 2 {
+		t.Fatal("expected two image pull secrets")
+	}
+
+	expectedNames := []string{"foo", "bar"}
+	for i, ips := range imgSecrets {
+		if ips.Name != expectedNames[i] {
+			t.Errorf("expected imagePullSecrets %q, got %q", expectedNames[i], ips.Name)
+		}
 	}
 
 	for i, term := range []string{"yarn", "-s", "start"} {
