@@ -211,6 +211,16 @@ export class JobResourceRequest {
 }
 
 /**
+ * JobResourceLimit represents limit of the resources
+ */
+export class JobResourceLimit {
+  /** cpu requests */
+  public cpu: string;
+  /** memory requests */
+  public memory: string;
+}
+
+/**
  * Job represents a single job, which is composed of several closely related sequential tasks.
  * Jobs must have names. Every job also has an associated image, which references
  * the Docker container to be run.
@@ -261,6 +271,9 @@ export abstract class Job {
 
   /** Set the resource requests for the containers */
   public resourceRequests: JobResourceRequest;
+
+  /** Set the resource limits for the containers */
+  public resourceLimits: JobResourceLimit;
 
   /**
    * host expresses expectations about the host the job will run on.
@@ -330,6 +343,7 @@ export abstract class Job {
     this.docker = new JobDockerMount();
     this.host = new JobHost();
     this.resourceRequests = new JobResourceRequest();
+    this.resourceLimits = new JobResourceLimit();
   }
 
   /** run executes the job and then */
