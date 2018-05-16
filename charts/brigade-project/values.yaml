@@ -11,6 +11,9 @@ cloneURL: "https://github.com/deis/empty-testbed.git"
 # OPTIONAL: initGitSubmodules will recursively initialize all submodules in the repository. Default: false
 # initGitSubmodules: "false"
 
+# OPTIONAL: defaultScriptName is the name of a configmap that contains the brigade.js to be used when your VCS repo misses a brigade.js
+# defaultScriptName: 
+
 # OPTIONAL: defaultScript is the brigade.js used by default when your VCS repo misses a brigade.js
 # in it.
 # defaultScript: |

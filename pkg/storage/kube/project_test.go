@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"errors"
 	"testing"
 
 	"k8s.io/api/core/v1"
@@ -32,6 +33,44 @@ func TestGetProject(t *testing.T) {
 	}
 }
 
+func TestLoadScriptFromConfigMap(t *testing.T) {
+	configMap := &v1.ConfigMap{
+		ObjectMeta: meta.ObjectMeta{
+			Name: "testscript",
+		},
+		Data: map[string]string{
+			"brigade.js": `console.log("hello from configmap")`,
+		},
+	}
+
+	secret := &v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name: "brigadeTest",
+		},
+		Type: secretTypeBuild,
+		Data: map[string][]byte{
+			"defaultScript":     []byte(`console.log("hello default script")`),
+			"defaultScriptName": []byte("testscript"),
+		},
+	}
+
+	proj, err := NewProjectFromSecret(secret, "defaultNS", func(name string) (string, error) {
+		if name != configMap.ObjectMeta.Name {
+			return "", errors.New("ConfigMap not found")
+		}
+
+		return configMap.Data["brigade.js"], nil
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if proj.DefaultScript != `console.log("hello from configmap")` {
+		t.Error("Script was not loaded from configMap")
+	}
+}
+
 func TestConfigureProject(t *testing.T) {
 	secret := &v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
@@ -56,7 +95,7 @@ func TestConfigureProject(t *testing.T) {
 		},
 	}
 
-	proj, err := NewProjectFromSecret(secret, "defaultNS")
+	proj, err := NewProjectFromSecret(secret, "defaultNS", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

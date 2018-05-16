@@ -30,6 +30,8 @@ type Project struct {
 	Secrets SecretsMap `json:"secrets"`
 	// Worker holds a set of project-specific worker settings which takes precedence over brigade-wide settings
 	Worker WorkerConfig `json:"worker"`
+	// DefaultScriptName is the name of the configmap where the script is stored. It is overriden by Repo script and takes precedence over DefaultScript
+	DefaultScriptName string `json:"defaultScriptName"`
 }
 
 // SecretsMap is a map[string]string for storing secrets.
