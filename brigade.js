@@ -175,8 +175,6 @@ function acrBuild(e, project, tag) {
   var builder = new Job("az-build", "microsoft/azure-cli:latest")
   builder.storage.enabled = true;
   builder.tasks = [
-    // When the extension is included by default, we can remove this.
-    "az extension add --source https://acrbuild.blob.core.windows.net/cli/acrbuildext-0.0.4-py2.py3-none-any.whl -y",
     // Create a service principal and assign it proper perms on the ACR.
     `az login --service-principal -u ${project.secrets.acrName} -p '${project.secrets.acrToken}' --tenant ${project.secrets.acrTenant}`,
     `cd /src`,
@@ -191,8 +189,7 @@ function acrBuild(e, project, tag) {
       `cd ${i}`,
       `echo '========> Building ${i}'`,
       `cp -av /mnt/brigade/share/${i}/rootfs ./rootfs`,
-      // Currently, it appears this is the only way to add two tags.
-      `az acr build -r ${registry} -t ${imgName} -t ${latest} --context .`,
+      `az acr build -r ${registry} -t ${imgName} -t ${latest} .`,
       `echo '<======== Finished ${i}'`,
       `cd ..`
     );
