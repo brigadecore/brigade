@@ -7,7 +7,7 @@
 
 /** */
 
-import {V1EnvVarSource} from "@kubernetes/client-node/api";
+import { V1EnvVarSource } from "@kubernetes/client-node/api";
 
 /**
  * The default shell for the job.
@@ -196,10 +196,6 @@ export class Vault {
   public vaultAddr: string;
 }
 
-export class Annotations {
-  [key: string]: string;
-}
-
 /**
  * JObResourceRequest represents request of the resources
  */
@@ -232,6 +228,8 @@ export abstract class Job {
   public shell: string = defaultShell;
   /** tasks is a list of tasks run inside of the shell*/
   public tasks: string[];
+  /** args is a list of arguments that will be supplied to the container.*/
+  public args: string[];
   /** env is the environment variables for the job*/
   public env: { [key: string]: string | V1EnvVarSource };
   /** image is the container image to be run*/
@@ -305,9 +303,9 @@ export abstract class Job {
   public vault?: Vault;
 
   /**
-   * annotations holds metadata annotations like aws roles
+   * pod annotations for the job
    */
-  public annotations?: Annotations;
+  public annotations: { [key: string]: string; } = {};
 
   /** _podName is set by the runtime. It is the name of the pod.*/
   protected _podName: string;
@@ -337,6 +335,7 @@ export abstract class Job {
     this.image = image;
     this.imageForcePull = imageForcePull;
     this.tasks = tasks || [];
+    this.args = [];
     this.env = {};
     this.cache = new JobCache();
     this.storage = new JobStorage();
@@ -348,6 +347,9 @@ export abstract class Job {
 
   /** run executes the job and then */
   public abstract run(): Promise<Result>;
+
+  /** logs retrieves the logs (so far) from the job run */
+  public abstract logs(): Promise<string>;
 }
 
 /**

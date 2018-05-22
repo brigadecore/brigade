@@ -42,7 +42,7 @@ func (api Build) Jobs(c *gin.Context) {
 	c.JSON(http.StatusOK, jobs)
 }
 
-// Logs creates a new gin handler for the GET /job/:id/logs endpoint
+// Logs creates a new gin handler for the GET /build/:id/logs endpoint
 func (api Build) Logs(c *gin.Context) {
 	id := c.Params.ByName("id")
 	build, err := api.store.GetBuild(id)

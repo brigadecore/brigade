@@ -143,7 +143,7 @@ Functionally, this is equivalent to the static `runEach` method.
 
 The `Job` class describes a job that can be run.
 
-#### constructor `new Job(name: string, image?: string, tasks?: string[]): Job`
+#### constructor `new Job(name: string, image?: string, tasks?: string[], imageForcePull?: boolean): Job`
 
 The constructor requires a `name` parameter, and this must be unique within your
 script. It must be composed of the characters a-z, A-Z, 0-9, and `-`. Additionally,
@@ -172,6 +172,11 @@ Properties of `Job`
 
 - `name: string`: The job name
 - `shell: string`: The shell in which to execute the tasks (`/bin/sh`)
+- `tasks: string[]`: Tasks to be run in the job, in order. Tasks are concatenated
+  together and packaged as a Borne (`/bin/sh`) shell script with `set -eo pipefail`.
+- `args: string[]`: Arguments to pass to the container's entrypoint. It is recommended,
+  though not required, that implementors not use both `args` and `tasks`.
+- `imageForcePull: boolean`: Defines the container image pull policy: `Always` if `true` or `IfNotPresent` if `false` (defaults to `false`).
 - `tasks: string[]`: Tasks to be run in the job, in order.
 - `env: {[key: string]:string}`: Name/value pairs of environment variables.
 - `image: string`: The container image to run

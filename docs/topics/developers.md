@@ -40,7 +40,7 @@ cd $GOPATH/src/github.com/uswitch/brigade
 **Note**: this leaves you at the tip of **master** in the repository where active development
 is happening. You might prefer to checkout the most recent stable tag:
 
-- `$ git checkout v0.12.0`
+- `$ git checkout v0.14.0`
 
 ## Building Source
 

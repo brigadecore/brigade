@@ -270,7 +270,7 @@ events.on("exec", () => {
   var job = new Job("do-nothing", "alpine:3.4")
 
   job.run()
-}
+})
 ```
 [brigade-05.js](examples/brigade-05.js)
 

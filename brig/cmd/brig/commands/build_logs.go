@@ -48,7 +48,7 @@ var buildLogs = &cobra.Command{
 }
 
 func showBuildLogs(out io.Writer, buildID string) error {
-	c, err := kube.GetClient("", kubeConfigPath())
+	c, err := kubeClient()
 	if err != nil {
 		return err
 	}

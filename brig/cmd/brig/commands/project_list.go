@@ -29,7 +29,7 @@ var projectList = &cobra.Command{
 }
 
 func listProjects(out io.Writer) error {
-	c, err := kube.GetClient("", kubeConfigPath())
+	c, err := kubeClient()
 	if err != nil {
 		return err
 	}
