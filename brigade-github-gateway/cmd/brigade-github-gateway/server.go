@@ -11,8 +11,8 @@ import (
 	gin "gopkg.in/gin-gonic/gin.v1"
 	"k8s.io/api/core/v1"
 
-	"github.com/Azure/brigade/pkg/storage/kube"
-	"github.com/Azure/brigade/pkg/webhook"
+	"github.com/uswitch/brigade/pkg/storage/kube"
+	"github.com/uswitch/brigade/pkg/webhook"
 )
 
 var (

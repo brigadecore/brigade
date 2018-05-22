@@ -11,7 +11,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/uswitch/brigade/pkg/storage/kube"
 )
 
 var (
@@ -65,10 +65,12 @@ func (c *Controller) syncSecret(secret *v1.Secret) error {
 }
 
 const (
-	volumeName        = "brigade-build"
-	volumeMountPath   = "/etc/brigade"
-	sidecarVolumeName = "vcs-sidecar"
-	sidecarVolumePath = "/vcs"
+	volumeName            = "brigade-build"
+	volumeMountPath       = "/etc/brigade"
+	secretVolumeName      = "brigade-scripts"
+	secretVolumeMountPath = "/etc/brigade-scripts/"
+	sidecarVolumeName     = "vcs-sidecar"
+	sidecarVolumePath     = "/vcs"
 )
 
 func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
@@ -98,6 +100,11 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
 					ReadOnly:  true,
 				},
 				{
+					Name:      secretVolumeName,
+					MountPath: secretVolumeMountPath,
+					ReadOnly:  true,
+				},
+				{
 					Name:      sidecarVolumeName,
 					MountPath: sidecarVolumePath,
 					ReadOnly:  true,
@@ -110,6 +117,12 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
 				Name: volumeName,
 				VolumeSource: v1.VolumeSource{
 					Secret: &v1.SecretVolumeSource{SecretName: build.Name},
+				},
+			},
+			{
+				Name: secretVolumeName,
+				VolumeSource: v1.VolumeSource{
+					Secret: &v1.SecretVolumeSource{SecretName: string(build.Data["source_secret"])},
 				},
 			},
 			{

@@ -1,0 +1,378 @@
+# ---
+# # Source: brigade/templates/api-role.yaml
+#
+#
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: ldn-brigade-api
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+#
+# ---
+# kind: Role
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-api
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# rules:
+# - apiGroups: [""] # "" indicates the core API group
+#   resources: ["pods", "secrets", "pods/log"]
+#   verbs: ["get", "list", "watch"]
+# ---
+# kind: RoleBinding
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-api
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# subjects:
+# - kind: ServiceAccount
+#   name: ldn-brigade-api
+# roleRef:
+#   kind: Role
+#   name: ldn-brigade-api
+#   apiGroup: rbac.authorization.k8s.io
+#
+#
+#
+# ---
+# # Source: brigade/templates/controller-role.yaml
+#
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: ldn-brigade-ctrl
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+#
+# ---
+# kind: Role
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-ctrl
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# rules:
+# - apiGroups: [""]
+#   resources: ["secrets"]
+#   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# - apiGroups: [""]
+#   resources: ["pods"]
+#   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# ---
+# kind: RoleBinding
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-ctrl
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# subjects:
+# - kind: ServiceAccount
+#   name: ldn-brigade-ctrl
+# roleRef:
+#   kind: Role
+#   name: ldn-brigade-ctrl
+#   apiGroup: rbac.authorization.k8s.io
+#
+#
+# ---
+# # Source: brigade/templates/vacuum-role.yaml
+#
+#
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: ldn-brigade-vacuum
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+#
+# ---
+# kind: Role
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-vacuum
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# rules:
+# - apiGroups: [""] # "" indicates the core API group
+#   resources: ["pods", "secrets", "persistentvolumeclaims"]
+#   verbs: ["get", "list", "watch", "delete"]
+# - apiGroups: [""] # "" indicates the core API group
+#   resources: ["pods/log"]
+#   verbs: ["get", "list", "watch"]
+# ---
+# kind: RoleBinding
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-vacuum
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# subjects:
+# - kind: ServiceAccount
+#   name: ldn-brigade-vacuum
+# roleRef:
+#   kind: Role
+#   name: ldn-brigade-vacuum
+#   apiGroup: rbac.authorization.k8s.io
+#
+#
+#
+# ---
+# # Source: brigade/templates/worker-role.yaml
+#
+#
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: brigade-worker
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+#
+# ---
+# kind: Role
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-wrk
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# rules:
+# - apiGroups: [""] # "" indicates the core API group
+#   resources: ["pods", "secrets", "persistentvolumeclaims"]
+#   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# - apiGroups: [""] # "" indicates the core API group
+#   resources: ["pods/log"]
+#   verbs: ["get", "list", "watch"]
+# ---
+# kind: RoleBinding
+# apiVersion: rbac.authorization.k8s.io/v1beta1
+# metadata:
+#   name: ldn-brigade-wrk
+#   labels:
+#     app: ldn-brigade
+#     chart: "brigade-0.10.0"
+#     release: "ldn"
+#     heritage: "Tiller"
+# subjects:
+# - kind: ServiceAccount
+#   name: brigade-worker
+# roleRef:
+#   kind: Role
+#   name: ldn-brigade-wrk
+#   apiGroup: rbac.authorization.k8s.io
+#
+#
+# ---
+# Source: brigade/templates/api-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ldn-brigade-api
+  labels:
+    chart: "brigade-0.10.0"
+    release: "ldn"
+    heritage: "Tiller"
+    role: api
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 7745
+    protocol: TCP
+    name: brigade-api
+  selector:
+    app: ldn-brigade-api
+
+
+---
+# Source: brigade/templates/api-deployment.yaml
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ldn-brigade-api
+  labels:
+    app: ldn-brigade-api
+    chart: "brigade-0.10.0"
+    release: "ldn"
+    heritage: "Tiller"
+    role: api
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ldn-brigade-api
+        role: api
+    spec:
+      serviceAccountName: ldn-brigade-api
+      containers:
+      - name: brigade
+        image: "registry.usw.co/uswitch/ldn/brigade-api:{{ .Env.DRONE_COMMIT }}"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7745
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 7745
+
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 7745
+
+        env:
+          - name: BRIGADE_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: BRIGADE_API_PORT
+            value: "7745"
+
+
+
+---
+# Source: brigade/templates/controller-deployment.yaml
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ldn-brigade-ctrl
+  labels:
+    app: ldn-brigade-ctrl
+    chart: "brigade-0.10.0"
+    release: "ldn"
+    heritage: "Tiller"
+    role: controller
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ldn-brigade-ctrl
+        role: controller
+    spec:
+      serviceAccountName: ldn-brigade-ctrl
+      containers:
+      - name: brigade
+        image: "registry.usw.co/uswitch/ldn/brigade-controller:{{ .Env.DRONE_COMMIT }}"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7744
+        env:
+          - name: BRIGADE_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: BRIGADE_WORKER_IMAGE
+            value: "registry.usw.co/uswitch/ldn/brigade-worker:{{ .Env.DRONE_COMMIT }}"
+          - name: BRIGADE_WORKER_PULL_POLICY
+            value: Always
+          - name: BRIGADE_WORKER_SERVICE_ACCOUNT
+            value: brigade-worker
+
+
+---
+# Source: brigade/templates/vacuum-cronjob.yaml
+
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: ldn-brigade-vacuum
+  labels:
+    app: ldn-brigade
+    chart: "brigade-0.10.0"
+    release: "ldn"
+    heritage: "Tiller"
+    role: vacuum
+spec:
+  schedule: "0 23 * * *"
+  successfulJobsHistoryLimit: 10
+  failedJobsHistoryLimit: 10
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: ldn-brigade
+            role: vacuum
+        spec:
+          serviceAccountName: ldn-brigade-vacuum
+          containers:
+          - name: brigade-vacuum
+            image: "registry.usw.co/uswitch/ldn/brigade-vacuum:{{ .Env.DRONE_COMMIT }}"
+            imagePullPolicy: Always
+            env:
+            - name: VACUUM_AGE
+              value: "1h"
+            - name: VACUUM_MAX_BUILDS
+              value: "0"
+            - name: BRIGADE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          restartPolicy: OnFailure
+
+
+---
+# Source: brigade/templates/api-ingress.yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ldn-brigade-api
+  labels:
+    app: ldn-brigade-api
+    chart: brigade-0.10.0
+    release: ldn
+    heritage: Tiller
+  annotations:
+spec:
+  rules:
+    - host: ldn-brigade-api.internal.usw.co
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: ldn-brigade-api
+              servicePort: 80
+---

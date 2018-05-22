@@ -7,7 +7,7 @@ import (
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/Azure/brigade/pkg/brigade"
+	"github.com/uswitch/brigade/pkg/brigade"
 )
 
 // GetProjects retrieves all projects from storage.

@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/Azure/brigade/pkg/portforwarder"
+	"github.com/uswitch/brigade/pkg/portforwarder"
 )
 
 const (

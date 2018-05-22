@@ -127,6 +127,10 @@ export class BuildStorage {
 
     s.spec = new kubernetes.V1PersistentVolumeClaimSpec();
     s.spec.accessModes = ["ReadWriteMany"];
+    s.spec.selector = {
+      matchLabels: {heritage: "brigade"},
+      matchExpressions: []
+    }
 
     let res = new kubernetes.V1ResourceRequirements();
     res.requests = { storage: size };
@@ -194,6 +198,7 @@ export class JobRunner implements jobs.JobRunner {
       job.imageForcePull,
       this.serviceAccount,
       job.resourceRequests,
+      job.resourceLimits,
       job.annotations
     );
 
@@ -205,6 +210,9 @@ export class JobRunner implements jobs.JobRunner {
     this.runner.metadata.labels.project = project.id;
     this.runner.metadata.labels.worker = e.workerID;
     this.runner.metadata.labels.build = e.buildID;
+
+    // Attach annotations (like aws roles) from job spec
+    this.runner.metadata.annotations = job.annotations;
 
     this.secret.metadata.labels.jobname = job.name;
     this.secret.metadata.labels.project = project.id;
@@ -255,6 +263,37 @@ export class JobRunner implements jobs.JobRunner {
       { name: secName, mountPath: "/hook" } as kubernetes.V1VolumeMount,
       { name: "vcs-sidecar", mountPath: mountPath } as kubernetes.V1VolumeMount
     ];
+
+    job.volumes && job.volumes.forEach(function(volume) {
+      let copy = Object.assign({}, volume);
+      delete copy["name"];
+      delete copy["mountPath"];
+
+      const k = Object.getOwnPropertyNames(copy)[0];
+
+      let v = {name: volume.name};
+      v[k] = volume[k];
+
+      this.runner.spec.volumes.push(v as kubernetes.V1Volume);
+
+      if (volume.mountPath != undefined && volume.mountPath != "") {
+        this.runner.spec.containers[0].volumeMounts.push({
+          name: volume.name,
+          mountPath: volume.mountPath
+        } as kubernetes.V1VolumeMount);
+      }
+    }, this);
+
+    // Attach vaulted sidecars
+    if (job.vault) {
+      this.runner.spec.volumes.push({ name: "database-secrets", emptyDir: {} } as kubernetes.V1Volume)
+      this.runner.spec.volumes.push({ name: "database-template", configMap: { name: job.vault.templateName } } as kubernetes.V1Volume)
+      this.runner.spec.containers[0].volumeMounts.push({ name: "database-secrets", mountPath: "/etc/database-secrets" } as kubernetes.V1VolumeMount)
+
+      job.vault.databases.forEach(function(db) {
+        this.runner.spec.containers.push(newVaultCredsContainer(db, job.vault, this.project))
+      }, this)
+    }
 
     if (job.useSource && project.repo.cloneURL) {
       // Add the sidecar.
@@ -369,7 +408,7 @@ export class JobRunner implements jobs.JobRunner {
     let podName = this.name;
     let k = this.client;
     let ns = this.project.kubernetes.namespace;
-    return k.readNamespacedPodLog(podName, ns).then(result => {
+    return k.readNamespacedPodLog(podName, ns, "brigaderun").then(result => {
       return result.body;
     });
   }
@@ -382,7 +421,7 @@ export class JobRunner implements jobs.JobRunner {
    */
   public run(): Promise<jobs.Result> {
     return this.start()
-      .then(r => r.wait())
+      .then(r => r.runWithRetries())
       .then(r => {
         return this.logs();
       })
@@ -404,11 +443,6 @@ export class JobRunner implements jobs.JobRunner {
         .then(() => {
           this.logger.log("Creating secret " + this.secret.metadata.name);
           return k.createNamespacedSecret(ns, this.secret);
-        })
-        .then(result => {
-          this.logger.log("Creating pod " + this.runner.metadata.name);
-          // Once namespace creation has been accepted, we create the pod.
-          return k.createNamespacedPod(ns, this.runner);
         })
         .then(result => {
           resolve(this);
@@ -456,6 +490,74 @@ export class JobRunner implements jobs.JobRunner {
             reject(err);
           });
       }
+    });
+  }
+
+  /**
+   * runWithRetries waits for a pod to complete and retries it up to 3 times
+   * with exponential backoff
+   */
+  public runWithRetries(): Promise<jobs.Result> {
+    return new Promise((resolve, reject) => {
+      let ns = this.project.kubernetes.namespace;
+      let k = this.client;
+      let logger = this.logger;
+      const name = this.name;
+      const runner = this.runner;
+      const pause = (duration) => new Promise(res => setTimeout(res, duration));
+
+      const backoff = (retries) => {
+        k
+          .createNamespacedPod(ns, runner)
+          .then(() => {
+            this.wait()
+              .then(result => resolve(result))
+              .catch(err => {
+                logger.log("Pod failed:", err)
+                if (retries > 0) {
+                  logger.log("Deleting pod", runner.metadata.name);
+
+                  k.deleteNamespacedPod(name, ns, new kubernetes.V1DeleteOptions()).then((resp, body) => {
+                    this.waitForDeletion().then(() => {
+                      logger.log("Rerunning pod", name);
+                      return backoff(retries - 1);
+                    });
+                  });
+
+                } else {
+                  logger.log("Exhausted retries", name);
+                  reject(err);
+                }
+              });
+          })
+          .catch(reason => {
+            logger.error(reason);
+          });
+      };
+      backoff(3);
+    });
+  }
+
+  public waitForDeletion(): Promise<null> {
+    let client = this.client;
+    let name = this.name;
+    let ns = this.project.kubernetes.namespace;
+
+    let pollFn = (resolve, reject) => {
+      return function (client, name, ns) {
+        client
+          .readNamespacedPod(name, ns)
+          .catch(reason => {
+            resolve();
+          });
+      };
+    };
+
+    return new Promise((resolve, reject) => {
+      let poll = pollFn(resolve, reject);
+      let interval = setInterval(() => {
+        poll(client, name, ns);
+      }, 2000);
     });
   }
 
@@ -658,6 +760,7 @@ function newRunnerPod(
   imageForcePull: boolean,
   serviceAccount: string,
   resourceRequests: jobs.JobResourceRequest,
+  resourceLimits: jobs.JobResourceLimit,
   jobAnnotations: { [key: string]: string; }
 ): kubernetes.V1Pod {
   let pod = new kubernetes.V1Pod();
@@ -677,10 +780,8 @@ function newRunnerPod(
   c1.securityContext = new kubernetes.V1SecurityContext();
   if (resourceRequests.cpu && resourceRequests.memory) {
     let resourceRequirements = new kubernetes.V1ResourceRequirements();
-    resourceRequirements.requests = {
-      cpu: resourceRequests.cpu,
-      memory: resourceRequests.memory
-    };
+    resourceRequirements.requests = {"cpu": resourceRequests.cpu, "memory": resourceRequests.memory }
+    resourceRequirements.limits = {"cpu": resourceLimits.cpu, "memory": resourceLimits.memory }
     c1.resources = resourceRequirements;
   }
   pod.spec = new kubernetes.V1PodSpec();
@@ -689,6 +790,62 @@ function newRunnerPod(
   pod.spec.serviceAccount = serviceAccount;
   pod.spec.serviceAccountName = serviceAccount;
   return pod;
+}
+
+function newVaultCredsContainer(
+  db: jobs.Database,
+  vault: jobs.Vault,
+  project: Project
+): kubernetes.V1Container {
+  const vaultAddr = vault.vaultAddr;
+  const secretPath = `database/creds/${db.name}_${db.role}`;
+  const loginPath = vault.loginPath;
+  const completedPath = `/etc/database-secrets/${vault.completedPath}`;
+  const authRole = `${db.name}_${project.kubernetes.namespace}_${db.serviceAccountName}`;
+  const templatePath = `/creds/template/${db.secret.templateVolume.path}`;
+  const outputPath = `/creds/output/${db.secret.outputVolume.path}`;
+
+  const requests = {
+		"cpu":    "10m",
+		"memory": "20Mi",
+	};
+
+	const limits = {
+		"cpu":    "30m",
+		"memory": "50Mi",
+	};
+
+  let c = new kubernetes.V1Container();
+  c.name = `vault-creds-${db.name.replace(/_/gi, "-")}-${db.role}`;
+  c.image = "registry.usw.co/cloud/vault-creds";
+  c.args = [
+		"--vault-addr=" + vaultAddr,
+		"--ca-cert=/vault.ca",
+		"--secret-path=" + secretPath,
+		"--login-path=" + loginPath,
+    "--completed-path=" + completedPath,
+		"--auth-role=" + authRole,
+		"--template=" + templatePath,
+		"--out=" + outputPath,
+		"--renew-interval=10m",
+		"--lease-duration=30m",
+		"--json-log",
+	];
+
+  c.volumeMounts = [
+		{ name: db.secret.templateVolume.name, mountPath: "/creds/template" } as kubernetes.V1VolumeMount,
+		{ name: db.secret.outputVolume.name, mountPath: "/creds/output" } as kubernetes.V1VolumeMount,
+		{ name: "database-secrets", mountPath: "/etc/database-secrets" } as kubernetes.V1VolumeMount
+	];
+
+  c.resources = {
+		requests: requests,
+		limits:   limits,
+	} as kubernetes.V1ResourceRequirements;
+
+  c.imagePullPolicy = "Always";
+  c.securityContext = new kubernetes.V1SecurityContext();
+  return c;
 }
 
 function newSecret(name: string): kubernetes.V1Secret {

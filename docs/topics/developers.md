@@ -31,9 +31,9 @@ Follow these steps when cloning the brigade repository to use an existing `GOPAT
 ```bash
 export GOPATH=$(go env GOPATH) # GOPATH is set to $HOME/go by default
 export PATH=$GOPATH/bin:$PATH # 'make bootstrap brig' will try to execute binnaries in $GOPATH/bin
-mkdir -p $GOPATH/src/github.com/Azure
-git clone https://github.com/Azure/brigade $GOPATH/src/github.com/Azure/brigade
-cd $GOPATH/src/github.com/Azure/brigade
+mkdir -p $GOPATH/src/github.com/uswitch
+git clone https://github.com/uswitch/brigade $GOPATH/src/github.com/uswitch/brigade
+cd $GOPATH/src/github.com/uswitch/brigade
 ```
 
 

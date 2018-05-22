@@ -18,10 +18,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/Azure/brigade/pkg/brigade"
-	"github.com/Azure/brigade/pkg/decolorizer"
-	"github.com/Azure/brigade/pkg/storage"
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/uswitch/brigade/pkg/brigade"
+	"github.com/uswitch/brigade/pkg/decolorizer"
+	"github.com/uswitch/brigade/pkg/storage"
+	"github.com/uswitch/brigade/pkg/storage/kube"
 )
 
 var (

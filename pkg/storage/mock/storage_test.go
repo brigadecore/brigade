@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Azure/brigade/pkg/brigade"
-	"github.com/Azure/brigade/pkg/storage"
+	"github.com/uswitch/brigade/pkg/brigade"
+	"github.com/uswitch/brigade/pkg/storage"
 )
 
 func TestStore(t *testing.T) {
@@ -50,7 +50,7 @@ func TestStore(t *testing.T) {
 	w1, _ := m.GetWorker(StubBuild.ID)
 	assertSame("GetWorker", StubWorker, w1)
 
-	jl, _ := m.GetJobLog(StubJob)
+	jl, _ := m.GetJobLog(StubJob, "")
 	assertSame("GetJobLog", StubLogData, jl)
 
 	wl, _ := m.GetWorkerLog(StubWorker)

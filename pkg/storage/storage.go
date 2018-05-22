@@ -5,7 +5,7 @@ import (
 
 	"time"
 
-	"github.com/Azure/brigade/pkg/brigade"
+	"github.com/uswitch/brigade/pkg/brigade"
 )
 
 // Store represents a storage engine for a Project.
@@ -29,9 +29,9 @@ type Store interface {
 	// GetJob retrieves the job from storage.
 	GetJob(id string) (*brigade.Job, error)
 	// GetJobLog retrieves all logs for a job from storage.
-	GetJobLog(job *brigade.Job) (string, error)
+	GetJobLog(job *brigade.Job, container string) (string, error)
 	// GetJobLogStream retrieve a stream of all logs for a job from storage.
-	GetJobLogStream(job *brigade.Job) (io.ReadCloser, error)
+	GetJobLogStream(job *brigade.Job, container string) (io.ReadCloser, error)
 	// GetWorkerLog retrieves all logs for a worker from storage.
 	GetWorkerLog(job *brigade.Worker) (string, error)
 	// GetWorkerLogStream retrieve a stream of all logs for a worker from storage.

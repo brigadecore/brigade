@@ -8,8 +8,8 @@ import (
 
 	"gopkg.in/gin-gonic/gin.v1"
 
-	"github.com/Azure/brigade/pkg/brigade"
-	"github.com/Azure/brigade/pkg/storage"
+	"github.com/uswitch/brigade/pkg/brigade"
+	"github.com/uswitch/brigade/pkg/storage"
 )
 
 type dockerPushHook struct {

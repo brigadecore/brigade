@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/Azure/brigade/brigade-controller/cmd/brigade-controller/controller"
+	"github.com/uswitch/brigade/brigade-controller/cmd/brigade-controller/controller"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -61,7 +61,7 @@ func defaultWorkerImage() string {
 	if image, ok := os.LookupEnv("BRIGADE_WORKER_IMAGE"); ok {
 		return image
 	}
-	return "deis/brigade-worker:latest"
+	return "registry.usw.co/uswitch/ldn/brigade-worker:test"
 }
 
 func defaultWorkerPullPolicy() string {

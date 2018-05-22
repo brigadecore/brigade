@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
 
-	"github.com/Azure/brigade/brigade-vacuum/cmd/brigade-vacuum/vacuum"
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/uswitch/brigade/brigade-vacuum/cmd/brigade-vacuum/vacuum"
+	"github.com/uswitch/brigade/pkg/storage/kube"
 )
 
 const (

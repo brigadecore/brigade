@@ -197,5 +197,5 @@ over the network via the URL provided in `cloneURL`.
 It is possible to write a simple VCS sidecar that uses other VCS systems such as
 Mercurial, Bazaar, or Subversion. Essentially, a VCS sidecar need only be able
 to take the given information from the project and use it to create a local snapshot
-of the project in an appointed location. See the [Git sidecar](https://github.com/Azure/brigade/tree/master/git-sidecar)
+of the project in an appointed location. See the [Git sidecar](https://github.com/uswitch/brigade/tree/master/git-sidecar)
 for an example.

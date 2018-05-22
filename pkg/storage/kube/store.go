@@ -5,8 +5,8 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/Azure/brigade/pkg/storage"
-	"github.com/Azure/brigade/pkg/storage/kube/apicache"
+	"github.com/uswitch/brigade/pkg/storage"
+	"github.com/uswitch/brigade/pkg/storage/kube/apicache"
 )
 
 // store represents a storage engine for a brigade.Project.

@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/Azure/brigade/pkg/brigade"
+	"github.com/uswitch/brigade/pkg/brigade"
 )
 
 var (
@@ -128,12 +128,12 @@ func (s *Store) GetJob(id string) (*brigade.Job, error) {
 }
 
 // GetJobLog gets the mock log data
-func (s *Store) GetJobLog(j *brigade.Job) (string, error) {
+func (s *Store) GetJobLog(j *brigade.Job, container string) (string, error) {
 	return s.LogData, nil
 }
 
 // GetJobLogStream gets the mock log data as a readcloser
-func (s *Store) GetJobLogStream(j *brigade.Job) (io.ReadCloser, error) {
+func (s *Store) GetJobLogStream(j *brigade.Job, container string) (io.ReadCloser, error) {
 	return rc(s.LogData), nil
 }
 

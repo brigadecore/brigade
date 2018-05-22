@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Azure/brigade/brig/cmd/brig/commands"
+	"github.com/uswitch/brigade/brig/cmd/brig/commands"
 )
 
 func main() {

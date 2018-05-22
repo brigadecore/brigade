@@ -11,7 +11,7 @@ IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-cr-g
 GIT_TAG   = $(shell git describe --tags --always 2>/dev/null)
 VERSION   ?= ${GIT_TAG}
 IMAGE_TAG ?= ${VERSION}
-LDFLAGS   += -X github.com/Azure/brigade/pkg/version.Version=$(VERSION)
+LDFLAGS   += -X github.com/uswitch/brigade/pkg/version.Version=$(VERSION)
 
 CX_OSES = linux windows darwin
 CX_ARCHS = amd64
@@ -112,7 +112,7 @@ format: format-go format-js
 
 .PHONY: format-go
 format-go:
-	go list -f '{{.Dir}}' ./... | xargs goimports -w -local github.com/Azure/brigade
+	go list -f '{{.Dir}}' ./... | xargs goimports -w -local github.com/uswitch/brigade
 
 .PHONY: format-js
 format-js:

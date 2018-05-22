@@ -7,7 +7,7 @@ import (
 	"github.com/gosuri/uitable"
 	"github.com/spf13/cobra"
 
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/uswitch/brigade/pkg/storage/kube"
 )
 
 const projectListUsage = `List all installed projects.

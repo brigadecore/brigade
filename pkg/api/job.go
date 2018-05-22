@@ -4,9 +4,9 @@ import (
 	"io"
 	"net/http"
 
-	"gopkg.in/gin-gonic/gin.v1"
+	"github.com/gin-gonic/gin"
 
-	"github.com/Azure/brigade/pkg/storage"
+	"github.com/uswitch/brigade/pkg/storage"
 )
 
 // Job represents the job api handlers.
@@ -28,13 +28,14 @@ func (api Job) Get(c *gin.Context) {
 // Logs creates a new gin handler for the GET /job/:id/logs endpoint
 func (api Job) Logs(c *gin.Context) {
 	id := c.Params.ByName("id")
+	container := c.Query("container")
 	job, err := api.store.GetJob(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, struct{}{})
 		return
 	}
 	if c.Query("stream") == "true" {
-		logReader, err := api.store.GetJobLogStream(job)
+		logReader, err := api.store.GetJobLogStream(job, container)
 		if err != nil {
 			c.JSON(http.StatusNotFound, struct{}{})
 			return
@@ -42,7 +43,7 @@ func (api Job) Logs(c *gin.Context) {
 		defer logReader.Close()
 		io.Copy(c.Writer, logReader)
 	} else {
-		logs, err := api.store.GetJobLog(job)
+		logs, err := api.store.GetJobLog(job, container)
 		if err != nil {
 			c.JSON(http.StatusNotFound, struct{}{})
 			return

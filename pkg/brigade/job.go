@@ -52,4 +52,6 @@ type Job struct {
 	ExitCode int32 `json:"exit_code"`
 	// Status is a textual representation of the job's running status
 	Status JobStatus `json:"status"`
+	// Annotations is a map of metadata attached to the job
+	Annotations map[string]string `json:"annotations"`
 }

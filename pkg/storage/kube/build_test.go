@@ -9,7 +9,7 @@ import (
 
 	"time"
 
-	"github.com/Azure/brigade/pkg/brigade"
+	"github.com/uswitch/brigade/pkg/brigade"
 )
 
 func TestNewBuildFromSecret(t *testing.T) {

@@ -14,9 +14,9 @@ import { V1EnvVarSource } from "@kubernetes/client-node/api";
  */
 const defaultShell: string = "/bin/sh";
 /**
- * defaultTimeout is the default timeout for a job (15 minutes)
+ * defaultTimeout is the default timeout for a job (5 minutes)
  */
-const defaultTimeout: number = 1000 * 60 * 15;
+const defaultTimeout: number = 1000 * 60 * 5;
 /**
  * The default image if `Job.image` is not set
  */
@@ -36,6 +36,7 @@ export interface JobRunner {
   start(): Promise<JobRunner>;
   // Wait waits unti the job being run has reached a success or failure state.
   wait(): Promise<Result>;
+  runWithRetries(): Promise<Result>;
 }
 
 /**
@@ -136,10 +137,79 @@ export class JobDockerMount {
   public enabled: boolean = false;
 }
 
+export class VolumeSecret {
+  public secretName: string;
+  items: {};
+
+  public constructor(
+    name: string,
+    items: {}[]
+  ) {
+    this.secretName = name;
+    items = items;
+  }
+}
+
+export class Volume {
+  public name: string;
+  public mountPath?: string;
+  public secret?: VolumeSecret;
+  public hostPath?: {
+    path: string;
+  };
+  public emptyDir?: {};
+  public configMap?: {
+    name: string;
+  };
+
+  public constructor(
+    name: string,
+    mountPath?: string
+  ) {
+    this.name = name;
+    this.mountPath = mountPath;
+  }
+}
+
+export class Database {
+  public name: string;
+  public role: string;
+  public serviceAccountName: string;
+  public secret: {
+    templateVolume: {
+      name: string;
+      path: string;
+    }
+    outputVolume: {
+      name: string;
+      path: string;
+    }
+  }
+}
+
+export class Vault {
+  public cluster: string;
+  public databases: Database[];
+  public loginPath: string;
+  public completedPath: string;
+  public templateName: string;
+  public vaultAddr: string;
+}
+
 /**
  * JObResourceRequest represents request of the resources
  */
 export class JobResourceRequest {
+  /** cpu requests */
+  public cpu: string;
+  /** memory requests */
+  public memory: string;
+}
+
+/**
+ * JobResourceLimit represents limit of the resources
+ */
+export class JobResourceLimit {
   /** cpu requests */
   public cpu: string;
   /** memory requests */
@@ -200,6 +270,9 @@ export abstract class Job {
   /** Set the resource requests for the containers */
   public resourceRequests: JobResourceRequest;
 
+  /** Set the resource limits for the containers */
+  public resourceLimits: JobResourceLimit;
+
   /**
    * host expresses expectations about the host the job will run on.
    */
@@ -218,6 +291,16 @@ export abstract class Job {
    * docker controls the job's preferences on mounting the host's docker daemon.
    */
   public docker: JobDockerMount;
+
+  /**
+   * volumes holds the configuration for volumes to be mounted onto the job's container.
+   */
+  public volumes: Volume[];
+
+  /**
+   * vault holds the configuration for vaulted database connections
+   */
+  public vault?: Vault;
 
   /**
    * pod annotations for the job
@@ -259,6 +342,7 @@ export abstract class Job {
     this.docker = new JobDockerMount();
     this.host = new JobHost();
     this.resourceRequests = new JobResourceRequest();
+    this.resourceLimits = new JobResourceLimit();
   }
 
   /** run executes the job and then */
