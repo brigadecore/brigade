@@ -506,7 +506,7 @@ export class JobRunner implements jobs.JobRunner {
       const runner = this.runner;
       const pause = (duration) => new Promise(res => setTimeout(res, duration));
 
-      const backoff = (retries, delay = 500) => {
+      const backoff = (retries) => {
         k
           .createNamespacedPod(ns, runner)
           .then(() => {
@@ -516,12 +516,14 @@ export class JobRunner implements jobs.JobRunner {
                 logger.log("Pod failed:", err)
                 if (retries > 0) {
                   logger.log("Deleting pod", runner.metadata.name);
-                  k.deleteNamespacedPod(name, ns, new kubernetes.V1DeleteOptions());
 
-                  pause(delay).then(() => {
-                    logger.log("Rerunning pod", name);
-                    return backoff(retries - 1, delay * 2);
+                  k.deleteNamespacedPod(name, ns, new kubernetes.V1DeleteOptions()).then((resp, body) => {
+                    this.waitForDeletion().then(() => {
+                      logger.log("Rerunning pod", name);
+                      return backoff(retries - 1);
+                    });
                   });
+
                 } else {
                   logger.log("Exhausted retries", name);
                   reject(err);
@@ -533,6 +535,29 @@ export class JobRunner implements jobs.JobRunner {
           });
       };
       backoff(3);
+    });
+  }
+
+  public waitForDeletion(): Promise<null> {
+    let client = this.client;
+    let name = this.name;
+    let ns = this.project.kubernetes.namespace;
+
+    let pollFn = (resolve, reject) => {
+      return function (client, name, ns) {
+        client
+          .readNamespacedPod(name, ns)
+          .catch(reason => {
+            resolve();
+          });
+      };
+    };
+
+    return new Promise((resolve, reject) => {
+      let poll = pollFn(resolve, reject);
+      let interval = setInterval(() => {
+        poll(client, name, ns);
+      }, 2000);
     });
   }
 
