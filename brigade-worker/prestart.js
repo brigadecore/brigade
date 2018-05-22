@@ -1,12 +1,22 @@
 const process = require("process")
 const fs = require("fs")
 
-// Worker should always set both env vars. The defaults are for local testing.
-const script = process.env.BRIGADE_SCRIPT || "/etc/brigade/script"
-const vcsScript = process.env.BRIGADE_VCS_SCRIPT || "/vcs/brigade.js"
+// Script locations in order of precedence.
+const scripts = [
+  process.env.BRIGADE_SCRIPT,
+
+  // checked out in repo
+  "/vcs/brigade.js",
+
+  // mounted data from brigade.sh/build.Script
+  "/etc/brigade/script",
+
+  // mounted configmap named in brigade.sh/project.DefaultScriptName
+  "/etc/brigade-default-script",
+];
 
 try {
-  var data = loadScript(script)
+  var data = loadScript()
   let wrapper = "const {overridingRequire} = require('./require');((require) => {" +
     data.toString() +
     "})(overridingRequire)"
@@ -18,19 +28,14 @@ try {
   process.exit(1)
 }
 
-// loadScript tries to load the configured script. But if it can't, it falls
-// back to the VCS copy of the script.
-function loadScript(script) {
-  // This happens if the secret volume is mis-mounted, which should never happen.
-  if (!fs.existsSync(script)) {
-    console.log("prestart: no script found. Falling back to VCS script")
-    return fs.readFileSync(vcsScript, 'utf8')
+// loadScript loads the first configured script it finds.
+function loadScript() {
+  for (let src of scripts) {
+    if (fs.existsSync(src)) {
+      var data = fs.readFileSync(src, 'utf8')
+      if (data == "") {
+        return data
+      }
+    }
   }
-  var data = fs.readFileSync(script, 'utf8')
-  if (data == "") {
-    // This happens if no file was submitted by the consumer.
-    console.log("prestart: empty script found. Falling back to VCS script")
-    return fs.readFileSync(vcsScript, 'utf8')
-  }
-  return data
 }

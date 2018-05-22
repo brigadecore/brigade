@@ -62,6 +62,7 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 	proj.Kubernetes.VCSSidecar = sv.String("vcsSidecar")
 	proj.Kubernetes.BuildStorageSize = def(sv.String("buildStorageSize"), "50Mi")
 	proj.DefaultScript = sv.String("defaultScript")
+	proj.DefaultScriptName = sv.String("defaultScriptName")
 
 	proj.Repo = brigade.Repo{
 		Name: def(sv.String("repository"), proj.Name),

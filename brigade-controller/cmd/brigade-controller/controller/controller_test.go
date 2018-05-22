@@ -190,7 +190,8 @@ func TestController_WithScript(t *testing.T) {
 		},
 		// This and the missing 'script' will trigger an initContainer
 		Data: map[string][]byte{
-			"vcsSidecar": []byte(sidecarImage),
+			"vcsSidecar":        []byte(sidecarImage),
+			"defaultScriptName": []byte("my-script"),
 		},
 	}
 
@@ -232,9 +233,11 @@ func TestController_WithScript(t *testing.T) {
 	if c.VolumeMounts[0].Name != volumeName {
 		t.Error("Container.VolumeMounts is not correct")
 	}
-
-	if l := len(pod.Spec.InitContainers); l != 0 {
-		t.Fatalf("Expected no init container, got %d", l)
+	if l := len(pod.Spec.InitContainers); l != 1 {
+		t.Fatalf("Expected 1 init container, got %d", l)
+	}
+	if l := len(pod.Spec.Containers[0].VolumeMounts); l != 3 {
+		t.Fatalf("Expected 3 volume mounts, got %d", l)
 	}
 }
 

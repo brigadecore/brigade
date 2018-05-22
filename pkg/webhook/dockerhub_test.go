@@ -31,8 +31,7 @@ func TestDoDockerImagePush(t *testing.T) {
 	commit := "e1e10"
 	store := &testStore{}
 	hook := &dockerPushHook{
-		store:   store,
-		getFile: getFileFromGithub,
+		store: store,
 	}
 
 	if err := hook.doDockerImagePush(proj, commit, []byte(exampleWebhook)); err != nil {
@@ -50,10 +49,7 @@ func TestDoDockerImagePush_WithDefaultScript(t *testing.T) {
 
 	commit := "e1e10"
 	store := &testStore{}
-	hook := &dockerPushHook{
-		store:   store,
-		getFile: getFileFromGithub,
-	}
+	hook := &dockerPushHook{store: store}
 
 	if err := hook.doDockerImagePush(proj, commit, []byte(exampleWebhook)); err != nil {
 		t.Errorf("failed docker image push: %s", err)
