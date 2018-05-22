@@ -112,7 +112,7 @@ format: format-go format-js
 
 .PHONY: format-go
 format-go:
-	go list -f '{{.Dir}}' ./... | xargs goimports -w -local github.com/Azure/brigade
+	go list -f '{{.Dir}}' ./... | xargs goimports -w -local github.com/uswitch/brigade
 
 .PHONY: format-js
 format-js:

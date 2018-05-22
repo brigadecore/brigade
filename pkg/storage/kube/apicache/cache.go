@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/Azure/brigade/pkg/merge"
+	"github.com/uswitch/brigade/pkg/merge"
 )
 
 // APICache continuously queries the kubernetes api and caches secret and pod information in the current implementation
