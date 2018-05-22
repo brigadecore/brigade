@@ -57,15 +57,18 @@ function build(e, project) {
       // Run the release in the background.
       runRelease = true
       let parts = gh.ref.split("/", 3)
-      release(e, p, parts[2])
+      let tag = parts[2]
+      return acrBuild(e, project, tag).then(() => {
+        releaseBrig(e, project, tag)
+      })
     }
     return Promise.resolve(runRelease)
-  }).catch(e => {
-    return ghNotify("failure", `failed build ${ e.toString() }`, e, project).run()
+  }).catch(err => {
+    return ghNotify("failure", `failed build ${ err.toString() }`, e, project).run()
   });
 }
 
-function release(e, p, tag) {
+function releaseBrig(e, p, tag) {
   if (!p.secrets.ghToken) {
     throw new Error("Project must have 'secrets.ghToken' set")
   }
@@ -105,13 +108,11 @@ function release(e, p, tag) {
   // Upload for each target that we support
   for (const f of ["linux-amd64", "windows-amd64", "darwin-amd64"]) {
     const name = binName + "-"+f
-    cx.tasks.push(`github-release upload -f ./bin/${name} -n ${name} -t ${tag}`)
+    cx.tasks.push(`github-release upload -f ./bin/${name} -n ${name} -t ${tag}`)  
   }
-
-  console.log(cx.tasks)
-  cx.run().then( res => {
-    console.log(`releases at https://github.com/${p.repo.name}/releases/tag/${tag}`);
-  })
+  console.log(cx.tasks);
+  console.log(`releases at https://github.com/${p.repo.name}/releases/tag/${tag}`);
+  return cx.run();
 }
 
 function ghNotify(state, msg, e, project) {
@@ -127,10 +128,82 @@ function ghNotify(state, msg, e, project) {
   return gh
 }
 
+function acrBuild(e, project, tag) {
+  const gopath = "/go"
+  const localPath = gopath + "/src/github.com/" + project.repo.name;
+  const images = [
+    "brig",
+    "brigade-api",
+    "brigade-controller",
+    "brigade-cr-gateway",
+    "brigade-vacuum",
+    "brigade-worker", // brigade-worker does not have a rootfs. Could probably minify src into one and save space
+    "git-sidecar",
+    "brigade-github-gateway"
+  ]
+
+  // We build in a separate pod b/c AKS's Docker is too old to do multi-stage builds.
+  const goBuild = new Job("brigade-build", goImg);
+  goBuild.storage.enabled = true;
+  goBuild.env = {
+    "DEST_PATH": localPath,
+    "GOPATH": gopath
+  };
+  goBuild.tasks = [
+    `cd /src && git checkout ${tag}`,
+    "go get github.com/golang/dep/cmd/dep",
+    `mkdir -p ${localPath}/bin`,
+    `mv /src/* ${localPath}`,
+    `cd ${localPath}`,
+    "dep ensure",
+    "make build-docker-bins"
+  ];
+
+  for (let i of images) {
+    goBuild.tasks.push(
+      // Copy the Docker rootfs of each binary into shared storage. This is
+      // a little tricky because worker is non-Go, so later we will have
+      // to copy them back.
+      `mkdir -p /mnt/brigade/share/${i}/rootfs`,
+      // If there's no rootfs, we're done. Otherwise, copy it.
+      `[ ! -d ${i}/rootfs ] || cp -a ./${i}/rootfs/* /mnt/brigade/share/${i}/rootfs/`,
+    );
+  }
+  goBuild.tasks.push("ls -lah /mnt/brigade/share");
+
+  let registry = "brigade"
+  var builder = new Job("az-build", "microsoft/azure-cli:latest")
+  builder.storage.enabled = true;
+  builder.tasks = [
+    // When the extension is included by default, we can remove this.
+    "az extension add --source https://acrbuild.blob.core.windows.net/cli/acrbuildext-0.0.4-py2.py3-none-any.whl -y",
+    // Create a service principal and assign it proper perms on the ACR.
+    `az login --service-principal -u ${project.secrets.acrName} -p '${project.secrets.acrToken}' --tenant ${project.secrets.acrTenant}`,
+    `cd /src`,
+    `mkdir -p ./bin`
+  ]
+
+  // For each image we want to build, build it, then tag it latest, then post it to registry.
+  for (let i of images) {
+    let imgName = i+":"+tag;
+    let latest = i+":latest";
+    builder.tasks.push(
+      `cd ${i}`,
+      `echo '========> Building ${i}'`,
+      `cp -av /mnt/brigade/share/${i}/rootfs ./rootfs`,
+      // Currently, it appears this is the only way to add two tags.
+      `az acr build -r ${registry} -t ${imgName} -t ${latest} --context .`,
+      `echo '<======== Finished ${i}'`,
+      `cd ..`
+    );
+  }
+  return Group.runEach([goBuild, builder]);
+}
+
 events.on("push", build)
 events.on("pull_request", build)
 
-events.on("brig-release", (e, p) => {
+events.on("release_brig", (e, p) => {
   /*
    * Expects JSON of the form {'tag': 'v1.2.3'}
    */
@@ -139,7 +212,18 @@ events.on("brig-release", (e, p) => {
     throw error("No tag specified")
   }
 
-  release(e, p, payload.tag)
+  releaseBrig(e, p, payload.tag)
+})
+
+events.on("release_images", (e, p) => {
+  /*
+   * Expects JSON of the form {'tag': 'v1.2.3'}
+   */
+  payload = JSON.parse(e.payload)
+  if (!payload.tag) {
+    throw error("No tag specified")
+  }
+  acrBuild(e, p, payload.tag)
 })
 
 events.on("image_push", (e, p) => {
@@ -164,6 +248,3 @@ events.on("image_push", (e, p) => {
     console.log(m)
   }
 })
-
-// The "release" event will attempt to create a release for the given tag, and then attach a binary.
-events.on("release", release)

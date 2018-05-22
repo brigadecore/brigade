@@ -55,7 +55,8 @@ func TestController(t *testing.T) {
 		},
 		// This and the missing 'script' will trigger an initContainer
 		Data: map[string][]byte{
-			"vcsSidecar": []byte(sidecarImage),
+			"vcsSidecar":       []byte(sidecarImage),
+			"imagePullSecrets": []byte(`foo,bar`),
 		},
 	}
 
@@ -93,11 +94,23 @@ func TestController(t *testing.T) {
 	if c.Name != "brigade-runner" {
 		t.Error("Container.Name is not correct")
 	}
-	if envlen := len(c.Env); envlen != 14 {
-		t.Errorf("expected 14 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 15 {
+		t.Errorf("expected 15 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
+	}
+
+	imgSecrets := pod.Spec.ImagePullSecrets
+	if len(imgSecrets) != 2 {
+		t.Fatal("expected two image pull secrets")
+	}
+
+	expectedNames := []string{"foo", "bar"}
+	for i, ips := range imgSecrets {
+		if ips.Name != expectedNames[i] {
+			t.Errorf("expected imagePullSecrets %q, got %q", expectedNames[i], ips.Name)
+		}
 	}
 
 	for i, term := range []string{"yarn", "-s", "start"} {
@@ -114,8 +127,8 @@ func TestController(t *testing.T) {
 		t.Fatalf("Expected 1 init container, got %d", l)
 	}
 	ic := pod.Spec.InitContainers[0]
-	if envlen := len(ic.Env); envlen != 14 {
-		t.Errorf("expected 14 env vars, got %d", envlen)
+	if envlen := len(ic.Env); envlen != 15 {
+		t.Errorf("expected 15 env vars, got %d", envlen)
 	}
 
 	if ic.Image != sidecarImage {
@@ -210,8 +223,8 @@ func TestController_WithScript(t *testing.T) {
 	if c.Name != "brigade-runner" {
 		t.Error("Container.Name is not correct")
 	}
-	if envlen := len(c.Env); envlen != 14 {
-		t.Errorf("expected 14 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 15 {
+		t.Errorf("expected 15 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
@@ -284,8 +297,8 @@ func TestController_NoSidecar(t *testing.T) {
 	}
 
 	c := pod.Spec.Containers[0]
-	if envlen := len(c.Env); envlen != 14 {
-		t.Errorf("expected 14 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 15 {
+		t.Errorf("expected 15 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
@@ -513,8 +526,8 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 			if c.Name != "brigade-runner" {
 				t.Error("Container.Name is not correct")
 			}
-			if envlen := len(c.Env); envlen != 14 {
-				t.Errorf("expected 14 items in Container.Env, got %d", envlen)
+			if envlen := len(c.Env); envlen != 15 {
+				t.Errorf("expected 15 items in Container.Env, got %d", envlen)
 			}
 			if c.Image != test.expWorkerImage {
 				t.Errorf("Container.Image is not correct, got %s; want %s", c.Image, test.expWorkerImage)
@@ -530,8 +543,8 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 				t.Fatalf("Expected 1 init container, got %d", l)
 			}
 			ic := pod.Spec.InitContainers[0]
-			if envlen := len(ic.Env); envlen != 14 {
-				t.Errorf("expected 14 env vars, got %d", envlen)
+			if envlen := len(ic.Env); envlen != 15 {
+				t.Errorf("expected 15 env vars, got %d", envlen)
 			}
 
 			if ic.Image != sidecarImage {

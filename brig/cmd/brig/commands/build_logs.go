@@ -7,9 +7,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Azure/brigade/pkg/brigade"
-	"github.com/Azure/brigade/pkg/storage"
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/uswitch/brigade/pkg/brigade"
+	"github.com/uswitch/brigade/pkg/storage"
+	"github.com/uswitch/brigade/pkg/storage/kube"
 )
 
 const (
@@ -48,7 +48,7 @@ var buildLogs = &cobra.Command{
 }
 
 func showBuildLogs(out io.Writer, buildID string) error {
-	c, err := kube.GetClient("", kubeConfigPath())
+	c, err := kubeClient()
 	if err != nil {
 		return err
 	}

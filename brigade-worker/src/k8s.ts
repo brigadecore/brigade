@@ -198,7 +198,8 @@ export class JobRunner implements jobs.JobRunner {
       job.imageForcePull,
       this.serviceAccount,
       job.resourceRequests,
-      job.resourceLimits
+      job.resourceLimits,
+      job.annotations
     );
 
     // Experimenting with setting a deadline field after which something
@@ -223,7 +224,7 @@ export class JobRunner implements jobs.JobRunner {
     for (let key in job.env) {
       let val = job.env[key];
 
-      if (typeof val === 'string') {
+      if (typeof val === "string") {
         // For environmental variables that are submitted as strings,
         // add to the job's secret and add a reference.
 
@@ -243,8 +244,8 @@ export class JobRunner implements jobs.JobRunner {
         // add the reference to the env var list.
 
         envVars.push({
-            name: key,
-            valueFrom: val
+          name: key,
+          valueFrom: val
         } as kubernetes.V1EnvVar);
       }
     }
@@ -371,6 +372,10 @@ export class JobRunner implements jobs.JobRunner {
       }
     }
 
+    if (job.args.length > 0) {
+      this.runner.spec.containers[0].args = job.args;
+    }
+
     let newCmd = generateScript(job);
     if (!newCmd) {
       this.runner.spec.containers[0].command = null;
@@ -399,6 +404,15 @@ export class JobRunner implements jobs.JobRunner {
     }`.toLowerCase();
   }
 
+  public logs(): Promise<string> {
+    let podName = this.name;
+    let k = this.client;
+    let ns = this.project.kubernetes.namespace;
+    return k.readNamespacedPodLog(podName, ns, "brigaderun").then(result => {
+      return result.body;
+    });
+  }
+
   /**
    * run starts a job and then waits until it is running.
    *
@@ -406,16 +420,13 @@ export class JobRunner implements jobs.JobRunner {
    * Success (resolve) or Failure (reject)
    */
   public run(): Promise<jobs.Result> {
-    let podName = this.name;
-    let k = this.client;
-    let ns = this.project.kubernetes.namespace;
     return this.start()
       .then(r => r.runWithRetries())
       .then(r => {
-        return k.readNamespacedPodLog(podName, ns, "brigaderun");
+        return this.logs();
       })
       .then(response => {
-        return new K8sResult(response.body);
+        return new K8sResult(response);
       });
   }
 
@@ -685,7 +696,7 @@ function sidecarSpec(
       envVar("BRIGADE_WORKSPACE", local),
       envVar("BRIGADE_PROJECT_NAMESPACE", project.kubernetes.namespace),
       envVar("BRIGADE_SUBMODULES", initGitSubmodules.toString()),
-      envVar("BRIGADE_LOG_LEVEL", LogLevel[e.logLevel]),
+      envVar("BRIGADE_LOG_LEVEL", LogLevel[e.logLevel])
     ]);
   spec.image = imageTag;
   (spec.imagePullPolicy = "IfNotPresent"),
@@ -724,7 +735,8 @@ function newRunnerPod(
   imageForcePull: boolean,
   serviceAccount: string,
   resourceRequests: jobs.JobResourceRequest,
-  resourceLimits: jobs.JobResourceLimit
+  resourceLimits: jobs.JobResourceLimit,
+  jobAnnotations: { [key: string]: string; }
 ): kubernetes.V1Pod {
   let pod = new kubernetes.V1Pod();
   pod.metadata = new kubernetes.V1ObjectMeta();
@@ -733,6 +745,7 @@ function newRunnerPod(
     heritage: "brigade",
     component: "job"
   };
+  pod.metadata.annotations = jobAnnotations;
 
   let c1 = new kubernetes.V1Container();
   c1.name = "brigaderun";

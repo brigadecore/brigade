@@ -125,11 +125,13 @@ func TestGithubHandler(t *testing.T) {
 		{
 			event:       "deployment",
 			commit:      "9049f1265b7d61be4a8904a9a27120d2064dab3b",
+			ref:         "master",
 			payloadFile: "testdata/github-deployment-payload.json",
 		},
 		{
 			event:       "deployment_status",
 			commit:      "9049f1265b7d61be4a8904a9a27120d2064dab3b",
+			ref:         "master",
 			payloadFile: "testdata/github-deployment_status-payload.json",
 		},
 	}

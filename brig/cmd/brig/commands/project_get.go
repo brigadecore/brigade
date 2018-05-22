@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/uswitch/brigade/pkg/storage/kube"
 )
 
 const projectGetUsage = `Get details for a project.
@@ -35,7 +35,7 @@ var projectGet = &cobra.Command{
 }
 
 func getProject(out io.Writer, name string) error {
-	c, err := kube.GetClient("", kubeConfigPath())
+	c, err := kubeClient()
 	if err != nil {
 		return err
 	}

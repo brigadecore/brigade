@@ -94,7 +94,7 @@ describe("k8s", function() {
         assert.property(jr.secret.data, "main.sh");
       });
       context("when env vars are specified", function() {
-        context("as data", function () {
+        context("as data", function() {
           beforeEach(function() {
             j.env = { one: "first", two: "second" };
           });
@@ -115,36 +115,36 @@ describe("k8s", function() {
             assert.equal(found, 2);
           });
         });
-        context("as references", function () {
-          beforeEach(function () {
+        context("as references", function() {
+          beforeEach(function() {
             j.env = {
               one: {
                 secretKeyRef: {
-                  name: 'secret-name',
-                  key: 'secret-key'
+                  name: "secret-name",
+                  key: "secret-key"
                 }
               } as kubernetes.V1EnvVarSource,
               two: {
                 configMapKeyRef: {
-                  name: 'configmap-name',
-                  key: 'configmap-key'
+                  name: "configmap-name",
+                  key: "configmap-key"
                 }
               } as kubernetes.V1EnvVarSource
             };
           });
-          it("sets them on the pod", function () {
-              let jr = new k8s.JobRunner(j, e, p);
-              let found = 0;
+          it("sets them on the pod", function() {
+            let jr = new k8s.JobRunner(j, e, p);
+            let found = 0;
 
-              for (let k in j.env) {
-                for (let env of jr.runner.spec.containers[0].env) {
-                  if (env.name == k) {
-                    assert.equal(env.valueFrom, j.env[k]);
-                    found++;
-                  }
+            for (let k in j.env) {
+              for (let env of jr.runner.spec.containers[0].env) {
+                if (env.name == k) {
+                  assert.equal(env.valueFrom, j.env[k]);
+                  found++;
                 }
               }
-              assert.equal(found, 2);
+            }
+            assert.equal(found, 2);
           });
         });
       });
@@ -170,6 +170,26 @@ describe("k8s", function() {
           assert.equal(jr.runner.spec.serviceAccountName, "custom-worker");
         });
       });
+      context("when args are supplied", function() {
+        beforeEach(function() {
+          j.tasks = [];
+          j.args = ["--aye", "-j", "kay"];
+        });
+        it("adds container args", function() {
+          let jr = new k8s.JobRunner(j, e, p);
+          assert.equal(jr.runner.spec.containers[0].args.length, 3);
+          assert.notProperty(jr.secret.data, "main.sh");
+        });
+      });
+      context("when no args are supplied", function() {
+        beforeEach(function() {
+          j.args = [];
+        });
+        it("has no container args", function() {
+          let jr = new k8s.JobRunner(j, e, p);
+          assert.notProperty(jr.runner.spec.containers[0], "args");
+        });
+      });
       context("when no tasks are supplied", function() {
         beforeEach(function() {
           j.tasks = [];
@@ -189,7 +209,7 @@ describe("k8s", function() {
           let jr = new k8s.JobRunner(j, e, p);
           // Currently, annotations are only created if the init container
           // is specified.
-          assert.notProperty(jr.runner.metadata, "annotations");
+          assert.deepEqual(jr.runner.metadata.annotations, {});
         });
       });
       context("when no cloneURL is set", function() {
@@ -201,7 +221,7 @@ describe("k8s", function() {
           let jr = new k8s.JobRunner(j, e, p);
           // Currently, annotations are only created if the init container
           // is specified.
-          assert.notProperty(jr.runner.metadata, "annotations");
+          assert.deepEqual(jr.runner.metadata.annotations, {});
         });
       });
       context("when SSH key is provided", function() {
@@ -213,7 +233,7 @@ describe("k8s", function() {
           let sidecar = jr.runner.spec.initContainers[0];
           assert.equal(sidecar.env.length, 14);
 
-          let hasBrigadeRepoKey : boolean = false;
+          let hasBrigadeRepoKey: boolean = false;
           for (let i of sidecar.env) {
             if (i.name === "BRIGADE_REPO_KEY") {
               hasBrigadeRepoKey = true;

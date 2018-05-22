@@ -27,7 +27,7 @@ describe("job", function() {
         "-ab", // no leading dash
         "a_b", // underscore is illegal
         "ab.", // trailing dot is illegal
-        "A-B", // Capitals are illegal
+        "A-B" // Capitals are illegal
       ];
       for (let n of illegal) {
         assert.isFalse(jobNameIsValid(n), "tested " + n);
@@ -149,6 +149,16 @@ describe("job", function() {
     describe("#storage", function() {
       it("is disabled by default", function() {
         assert.isFalse(j.storage.enabled);
+      });
+    });
+    describe("#annotations", function() {
+      beforeEach(function() {
+        j = new mock.MockJob("my-job");
+      });
+      it("is an empty list that can be written", function() {
+        assert.deepEqual(j.annotations, {});
+        j.annotations['some_kubetoiam/thing'] = 'my/path';
+        assert.deepEqual(j.annotations, { 'some_kubetoiam/thing': 'my/path' });
       });
     });
   });

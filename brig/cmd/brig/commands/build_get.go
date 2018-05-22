@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/uswitch/brigade/pkg/storage/kube"
 )
 
 const buildGetUsage = `Get details for a build.
@@ -33,7 +33,7 @@ var buildGet = &cobra.Command{
 }
 
 func getBuild(out io.Writer, bid string) error {
-	c, err := kube.GetClient("", kubeConfigPath())
+	c, err := kubeClient()
 	if err != nil {
 		return err
 	}

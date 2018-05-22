@@ -61,6 +61,8 @@ export class App {
    */
   public buildStorage: BuildStorage = new k8s.BuildStorage();
 
+  protected exitCode: number = 0;
+
   /**
    * Create a new App.
    *
@@ -105,7 +107,11 @@ export class App {
       this.logger.log("error handler is cleaning up");
       if (this.exitOnError) {
         destroyStorage().then(() => {
-          process.exit(1);
+          // Docs say this should work, but it produces an tsc error.
+          // process.exitCode = 1
+          // So we work around by storing state and calling process.exit()
+          // in the "exit" event handler.
+          this.exitCode = 1;
         });
       }
     });
@@ -117,7 +123,7 @@ export class App {
 
       // Delay long enough to cause beforeExit to be emitted again.
       setImmediate(() => {
-        this.logger.log("after: default event fired");
+        this.logger.info("after: default event handler fired");
       }, 20);
     });
 
@@ -127,8 +133,19 @@ export class App {
       this.fireError(reason, "unhandledRejection");
     });
 
+    process.on("exit", code => {
+      if (this.exitCode != 0) {
+        process.exit(this.exitCode);
+      }
+    });
+
     // Run at the end.
     process.on("beforeExit", code => {
+      // If an error has occurred, skip running the after handler.
+      if (this.exitCode != 0) {
+        return;
+      }
+
       if (this.afterHasFired) {
         // So at this point, the after event has fired and we can cleanup.
         if (!this.storageIsDestroyed) {
