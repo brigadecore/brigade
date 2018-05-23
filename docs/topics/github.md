@@ -11,6 +11,7 @@ following events:
   - opened
   - reopened
   - synchronize
+  - closed
 - `pull_request:labeled`: Fired whenever a label is added to a pull request.
 - `pull_request:unlabeled`: Fired whenever a label is removed from a pull request.
 - `create`: Fired when a tag, branch, or repo is created.
