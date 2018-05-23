@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const buildUsage = `manage builds
+const buildUsage = `Manage builds
 
 Work with Brigade builds.
 `
@@ -15,6 +15,6 @@ func init() {
 
 var build = &cobra.Command{
 	Use:   "build",
-	Short: "manage builds",
+	Short: "Manage builds",
 	Long:  buildUsage,
 }

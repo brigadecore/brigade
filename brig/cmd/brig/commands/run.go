@@ -133,26 +133,7 @@ type scriptRunner struct {
 	logLevel string
 }
 
-func (a *scriptRunner) send(projectName string, data []byte) error {
-
-	projectID := brigade.ProjectID(projectName)
-	if _, err := a.store.GetProject(projectID); err != nil {
-		return fmt.Errorf("could not find the project %q: %s", projectName, err)
-	}
-
-	b := &brigade.Build{
-		ProjectID: projectID,
-		Type:      a.event,
-		Provider:  "brigade-cli",
-		Revision: &brigade.Revision{
-			Commit: a.commit,
-			Ref:    a.ref,
-		},
-		Payload:  a.payload,
-		Script:   data,
-		LogLevel: a.logLevel,
-	}
-
+func (a *scriptRunner) sendBuild(b *brigade.Build) error {
 	if err := a.store.CreateBuild(b); err != nil {
 		return err
 	}
@@ -174,6 +155,28 @@ func (a *scriptRunner) send(projectName string, data []byte) error {
 
 	fmt.Printf("Started build %s as %q\n", b.ID, podName)
 	return a.podLog(podName, destination)
+}
+
+func (a *scriptRunner) send(projectName string, data []byte) error {
+
+	projectID := brigade.ProjectID(projectName)
+	if _, err := a.store.GetProject(projectID); err != nil {
+		return fmt.Errorf("could not find the project %q: %s", projectName, err)
+	}
+
+	b := &brigade.Build{
+		ProjectID: projectID,
+		Type:      a.event,
+		Provider:  "brigade-cli",
+		Revision: &brigade.Revision{
+			Commit: a.commit,
+			Ref:    a.ref,
+		},
+		Payload:  a.payload,
+		Script:   data,
+		LogLevel: a.logLevel,
+	}
+	return a.sendBuild(b)
 }
 
 // waitForWorker waits until the worker has started.
@@ -237,6 +240,10 @@ func (a *scriptRunner) podLog(name string, w io.Writer) error {
 
 	_, err = io.Copy(w, readCloser)
 	return err
+}
+
+func (a *scriptRunner) getBuild(bid string) (*brigade.Build, error) {
+	return a.store.GetBuild(bid)
 }
 
 func progressLogs(w io.Writer, r io.Reader) {

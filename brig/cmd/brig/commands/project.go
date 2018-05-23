@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const projectUsage = `manage projects
+const projectUsage = `Manage projects
 
 Work with Brigade projects.
 `
@@ -15,6 +15,6 @@ func init() {
 
 var project = &cobra.Command{
 	Use:   "project",
-	Short: "manage projects",
+	Short: "Manage projects",
 	Long:  projectUsage,
 }

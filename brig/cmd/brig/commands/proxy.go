@@ -38,7 +38,7 @@ func init() {
 
 var proxy = &cobra.Command{
 	Use:   "proxy",
-	Short: "proxy",
+	Short: "Open a proxy to Kashti and the API server",
 	Long:  proxyUsage,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return startProxy(port)
