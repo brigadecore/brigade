@@ -70,19 +70,19 @@ func TestNewListStoreInvokeWatchFunctions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	time.Sleep(time.Millisecond * time.Duration(10))
+	<-hasSynced
+
 	if len(store.List()) != 1 {
 		t.Fatal("expected store to contain one object")
 	}
 
-	_, err = client.CoreV1().Secrets("default").Update(created)
-	if err != nil {
+	if _, err := client.CoreV1().Secrets("default").Update(created); err != nil {
 		t.Fatal(err)
 	}
 
-	time.Sleep(time.Millisecond)
-	err = client.CoreV1().Secrets("default").Delete(created.Name, nil)
-	if err != nil {
+	<-hasSynced
+
+	if err := client.CoreV1().Secrets("default").Delete(created.Name, nil); err != nil {
 		t.Fatal(err)
 	}
 }
