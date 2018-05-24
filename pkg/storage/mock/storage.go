@@ -153,6 +153,11 @@ func (s *Store) CreateBuild(b *brigade.Build) error {
 	return nil
 }
 
+// GetScript fake
+func (s *Store) GetScript(name string) (string, error) {
+	return "", nil
+}
+
 // rc wraps a string in a ReadCloser.
 func rc(s string) io.ReadCloser {
 	return ioutil.NopCloser(bytes.NewBufferString(s))

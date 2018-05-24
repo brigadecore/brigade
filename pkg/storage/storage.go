@@ -38,4 +38,6 @@ type Store interface {
 	GetWorkerLogStream(job *brigade.Worker) (io.ReadCloser, error)
 	// BlockUntilAPICacheSynced signals when the cache is initially populated (useful e.g. for testing)
 	BlockUntilAPICacheSynced(waitUntil <-chan time.Time) bool
+	// GetScript retrieves brigade.js script from storage
+	GetScript(name string) (string, error)
 }

@@ -2,6 +2,7 @@ package kube
 
 import (
 	"encoding/json"
+	"log"
 	"strings"
 
 	"k8s.io/api/core/v1"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/Azure/brigade/pkg/brigade"
 )
+
+type scriptLoader func(name string) (string, error)
 
 // GetProjects retrieves all projects from storage.
 func (s *store) GetProjects() ([]*brigade.Project, error) {
@@ -20,7 +23,7 @@ func (s *store) GetProjects() ([]*brigade.Project, error) {
 	projList := make([]*brigade.Project, len(secretList.Items))
 	for i := range secretList.Items {
 		var err error
-		projList[i], err = NewProjectFromSecret(&secretList.Items[i], s.namespace)
+		projList[i], err = NewProjectFromSecret(&secretList.Items[i], s.namespace, s.GetScript)
 		if err != nil {
 			return nil, err
 		}
@@ -43,11 +46,11 @@ func (s *store) loadProjectConfig(id string) (*brigade.Project, error) {
 		return nil, err
 	}
 
-	return NewProjectFromSecret(secret, s.namespace)
+	return NewProjectFromSecret(secret, s.namespace, s.GetScript)
 }
 
 // NewProjectFromSecret creates a new project from a secret.
-func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project, error) {
+func NewProjectFromSecret(secret *v1.Secret, namespace string, configMapLoader scriptLoader) (*brigade.Project, error) {
 	sv := SecretValues(secret.Data)
 	proj := new(brigade.Project)
 	proj.ID = secret.ObjectMeta.Name
@@ -62,6 +65,16 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 	proj.Kubernetes.VCSSidecar = sv.String("vcsSidecar")
 	proj.Kubernetes.BuildStorageSize = def(sv.String("buildStorageSize"), "50Mi")
 	proj.DefaultScript = sv.String("defaultScript")
+	proj.DefaultScriptName = sv.String("defaultScriptName")
+
+	if proj.DefaultScriptName != "" && configMapLoader != nil {
+		script, err := configMapLoader(proj.DefaultScriptName)
+		if err != nil {
+			log.Printf("DefaultScriptName was present, but failed to retrieve script (falling back to DefaultScript): %v", err)
+		} else {
+			proj.DefaultScript = script
+		}
+	}
 
 	proj.Repo = brigade.Repo{
 		Name: def(sv.String("repository"), proj.Name),

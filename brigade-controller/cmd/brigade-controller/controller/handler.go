@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -12,6 +13,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/Azure/brigade/pkg/storage/kube"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
 
 var (
@@ -72,6 +75,10 @@ const (
 )
 
 func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
+	build, err := c.EnsureBuildScriptIfPossible(build, project)
+	if err != nil {
+		log.Printf("Could not ensure build script: %v", err)
+	}
 	env := c.workerEnv(project, build)
 
 	cmd := []string{"yarn", "-s", "start"}
@@ -247,4 +254,60 @@ func secretRef(key string, secret *v1.Secret) *v1.EnvVarSource {
 			Optional: &trueVal,
 		},
 	}
+}
+
+// EnsureBuildScriptIfPossible will try to add a default script if the build is missing one
+func (c *Controller) EnsureBuildScriptIfPossible(build, project *v1.Secret) (*v1.Secret, error) {
+	if value, ok := build.Data["script"]; ok && len(value) > 0 {
+		return build, nil
+	}
+	log.Print("Missing script - will try to load from project configuration")
+	store := kube.New(c.clientset, c.Namespace)
+	var err error
+	var script string
+	if value, ok := project.Data["defaultScriptName"]; ok && len(value) > 0{
+		script, err = store.GetScript(string(value))
+		if err != nil {
+			return nil, fmt.Errorf("Failed loading configured script from %s: %v", value, err)
+		}
+	} else if value, ok := project.Data["defaultScript"]; ok && len(value) > 0 {
+		script = string(value)
+	}
+
+	if script != "" {
+		updatedBuild := build.DeepCopy()
+		updatedBuild.Data["script"] = []byte(script)
+		err = c.updateBuild(build, updatedBuild)
+		if err != nil {
+			return nil, err
+		}
+		log.Print("Successfully updated build with default script")
+		return updatedBuild, nil
+	}
+
+	return build, nil
+}
+
+//updateBuild saves the changes back to k8s
+func (c *Controller) updateBuild(build, updatedBuild *v1.Secret) error {
+	oldBuild, err := json.Marshal(build)
+	if err != nil {
+		return err
+	}
+
+	newBuild, err := json.Marshal(updatedBuild)
+	if err != nil {
+		return err
+	}
+
+	patchBytes, err := strategicpatch.CreateTwoWayMergePatch(oldBuild, newBuild, v1.Secret{})
+	if err != nil {
+		return err
+	}
+	_, err = c.clientset.CoreV1().Secrets(build.Namespace).Patch(build.Name, types.StrategicMergePatchType, patchBytes)
+
+	if err != nil {
+		return err
+	}
+	return nil
 }
