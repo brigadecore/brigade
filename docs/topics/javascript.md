@@ -190,6 +190,7 @@ Properties of `Job`
 - `storage: JobStorage`: Preferences for the way this job attaches to the build storage
 - `docker: JobDockerMount`: Preferences for mounting a Docker socket
 - `serviceAccount: string`: The name of the service account to use (if you need to override the default).
+- `annotations: {[key: string]:string}`: Name/value pairs of annotations to add to the job's pod
 
 #### The `job.podName()` method
 
