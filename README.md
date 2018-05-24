@@ -74,9 +74,7 @@ events.on("exec", (brigadeEvent, project) => {
 
 Check out [the tutorial](/docs/intro/) for more on creating scripts.
 
-> In the future, Brigade will provide prebuilt `brig` binaries. But currently you
-need to build your own. Take a look at the [Developer's Guide](/docs/topics/developers.md)
-to learn more.
+> You can download the latest version of the Brig client from [the releases page](https://github.com/Azure/brigade/releases)
 
 Assuming you named your project `deis/empty-testbed`, you can run a `brigade.js`
 file like this:
@@ -98,9 +96,10 @@ This will show you the detailed output of running your `brigade.js` script's
   - [BitBucket events](https://github.com/lukepatrick/brigade-bitbucket-gateway): Gateway Support for BitBucket repositories
   - [GitLab events](https://github.com/lukepatrick/brigade-gitlab-gateway): Gateway Support for GitLab repositories
   - [Kubernetes events](https://github.com/azure/brigade-k8s-gateway): Gateway that listens to Kubernetes event stream
-  - [Event Grid gateway](https://github.com/radu-matei/brigade-eventgrid-gateway)" Gateway for Azure Event Grid events
+  - [Event Grid gateway](https://github.com/radu-matei/brigade-eventgrid-gateway): Gateway for Azure Event Grid events
   - [Cron Gateway](https://github.com/technosophos/brigade-cron): Schedule events to run at a particular time
   - [Trello and Generic Webhooks](https://github.com/technosophos/brigade-trello): Experimental gateway for Trello and for generic webhooks
+  - [Draft Pack for Building Custom Gateways](https://github.com/technosophos/draft-brigade): Build your own gateway [in 5 minutes](http://technosophos.com/2018/04/23/building-brigade-gateways-the-easy-way.html)
 
 ## Brigade :heart: Developers
 
