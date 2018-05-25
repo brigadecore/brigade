@@ -21,44 +21,56 @@ var (
 	containerImageRegex = regexp.MustCompile("(.*):([^:]+)$")
 )
 
-func (c *Controller) syncSecret(secret *v1.Secret) error {
+func (c *Controller) syncSecret(build *v1.Secret) error {
+	// Ensure this secret has not yet been handled.
+	if build.Labels["status"] == "accepted" {
+		return nil
+	}
+
 	// If a secret does not have a build ID then it cannot be tracked through
 	// the system. A build ID should be a ULID.
-	if bid, ok := secret.Labels["build"]; !ok || len(bid) == 0 {
+	if bid, ok := build.Labels["build"]; !ok || len(bid) == 0 {
 		// Alternately, we could add a build ID and then re-save the secret.
-		log.Printf("syncSecret: secret %s/%s has no build ID. Discarding.", secret.Namespace, secret.Name)
+		log.Printf("syncSecret: secret %s/%s has no build ID. Discarding.", build.Namespace, build.Name)
 		return ErrNoBuildID
 	}
-	data := secret.Data
+	data := build.Data
 
 	log.Printf("EventHandler: type=%s provider=%s commit=%s", data["event_type"], data["event_provider"], data["commit_id"])
 
-	podClient := c.clientset.CoreV1().Pods(secret.Namespace)
+	podClient := c.clientset.CoreV1().Pods(build.Namespace)
 
-	if _, err := podClient.Get(secret.Name, metav1.GetOptions{}); err != nil {
+	if _, err := podClient.Get(build.Name, metav1.GetOptions{}); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
 
-		pid := secret.Labels["project"]
+		pid := build.Labels["project"]
 		if pid == "" {
 			return errors.New("project ID not found")
 		}
 
-		secretClient := c.clientset.CoreV1().Secrets(secret.Namespace)
+		secretClient := c.clientset.CoreV1().Secrets(build.Namespace)
 		project, err := secretClient.Get(pid, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 
-		pod := c.newWorkerPod(secret, project)
+		pod := c.newWorkerPod(build, project)
 		if _, err := podClient.Create(&pod); err != nil {
 			return err
 		}
 		log.Printf("Started %s for %q [%s] at %d", pod.Name, data["event_type"], data["commit_id"], pod.CreationTimestamp.Unix())
 	}
 
-	return nil
+	return c.updateBuildStatus(build)
+}
+
+func (c *Controller) updateBuildStatus(build *v1.Secret) error {
+	buildCopy := build.DeepCopy()
+	buildCopy.Labels["status"] = "accepted"
+	_, err := c.clientset.CoreV1().Secrets(build.Namespace).Update(buildCopy)
+	return err
 }
 
 const (

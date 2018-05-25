@@ -144,6 +144,15 @@ func TestController(t *testing.T) {
 	} else if os != "linux" {
 		t.Errorf("Unexpected node selector: %s", os)
 	}
+
+	sec, err := client.CoreV1().Secrets(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if sec.Labels["status"] != "accepted" {
+		t.Error("expected label 'status=accepted'")
+	}
 }
 
 func TestController_WithScript(t *testing.T) {
