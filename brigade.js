@@ -107,7 +107,10 @@ function releaseBrig(e, p, tag) {
 
   // Upload for each target that we support
   for (const f of ["linux-amd64", "windows-amd64", "darwin-amd64"]) {
-    const name = binName + "-"+f
+    var name = binName + "-"+f
+    if (f == "windows-amd64") {
+      name += ".exe"
+    }
     cx.tasks.push(`github-release upload -f ./bin/${name} -n ${name} -t ${tag}`)  
   }
   console.log(cx.tasks);
