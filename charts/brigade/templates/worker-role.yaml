@@ -23,7 +23,7 @@ metadata:
     heritage: "{{ .Release.Service }}"
 rules:
 - apiGroups: [""] # "" indicates the core API group
-  resources: ["pods", "secrets", "persistentvolumeclaims"]
+  resources: ["pods", "secrets", "persistentvolumeclaims", "configmaps"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 - apiGroups: [""] # "" indicates the core API group
   resources: ["pods/log"]

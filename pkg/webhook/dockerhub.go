@@ -13,16 +13,12 @@ import (
 )
 
 type dockerPushHook struct {
-	store   storage.Store
-	getFile fileGetter
+	store storage.Store
 }
 
 // NewDockerPushHook creates a new Docker Push handler for webhooks.
 func NewDockerPushHook(s storage.Store) gin.HandlerFunc {
-	h := &dockerPushHook{
-		store:   s,
-		getFile: getFileFromGithub,
-	}
+	h := &dockerPushHook{store: s}
 	return h.Handle
 }
 

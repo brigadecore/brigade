@@ -41,6 +41,7 @@ func TestConfigureProject(t *testing.T) {
 		Data: map[string][]byte{
 			"repository":        []byte("myrepo"),
 			"defaultScript":     []byte(`console.log("hello default script")`),
+			"defaultScriptName": []byte("global-cm-script"),
 			"sharedSecret":      []byte("mysecret"),
 			"github.token":      []byte("like a fish needs a bicycle"),
 			"github.baseURL":    []byte("https://example.com/base"),
@@ -72,6 +73,9 @@ func TestConfigureProject(t *testing.T) {
 	}
 	if proj.DefaultScript != `console.log("hello default script")` {
 		t.Errorf("Unexpected DefaultScript: %q", proj.DefaultScript)
+	}
+	if proj.DefaultScriptName != "global-cm-script" {
+		t.Errorf("Unexpected DefaultScriptName: %q", proj.DefaultScriptName)
 	}
 	if proj.SharedSecret != "mysecret" {
 		t.Error("SharedSecret is not correct")

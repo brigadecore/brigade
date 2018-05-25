@@ -51,10 +51,7 @@ func (c *Controller) syncSecret(secret *v1.Secret) error {
 			return err
 		}
 
-		pod, err := c.newWorkerPod(secret, project)
-		if err != nil {
-			return err
-		}
+		pod := c.newWorkerPod(secret, project)
 		if _, err := podClient.Create(&pod); err != nil {
 			return err
 		}
@@ -71,7 +68,7 @@ const (
 	sidecarVolumePath = "/vcs"
 )
 
-func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
+func (c *Controller) newWorkerPod(build, project *v1.Secret) v1.Pod {
 	env := c.workerEnv(project, build)
 
 	cmd := []string{"yarn", "-s", "start"}
@@ -81,7 +78,7 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
 
 	image, pullPolicy := c.workerImageConfig(project)
 
-	podSpec := v1.PodSpec{
+	spec := v1.PodSpec{
 		ServiceAccountName: c.Config.WorkerServiceAccount,
 		NodeSelector: map[string]string{
 			"beta.kubernetes.io/os": "linux",
@@ -122,24 +119,13 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
 		RestartPolicy: v1.RestartPolicyNever,
 	}
 
-	pod := v1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   build.Name,
-			Labels: build.Labels,
-		},
-		Spec: podSpec,
-	}
-
-	sv := kube.SecretValues(build.Data)
-
-	// Skip adding the sidecar pod if the script is provided already.
-	if len(sv.Bytes("script")) > 0 {
-		return pod, nil
+	if scriptName := project.Data["defaultScriptName"]; len(scriptName) > 0 {
+		attachConfigMap(&spec, string(scriptName), "/etc/brigade-default-script")
 	}
 
 	// Skip adding the sidecar pod if no sidecar pod image is supplied.
 	if image := project.Data["vcsSidecar"]; len(image) > 0 {
-		pod.Spec.InitContainers = []v1.Container{{
+		spec.InitContainers = []v1.Container{{
 			Name:            "vcs-sidecar",
 			Image:           string(image),
 			ImagePullPolicy: v1.PullPolicy(pullPolicy),
@@ -158,9 +144,16 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) (v1.Pod, error) {
 			ref := v1.LocalObjectReference{Name: strings.TrimSpace(pullSec)}
 			refs = append(refs, ref)
 		}
-		pod.Spec.ImagePullSecrets = refs
+		spec.ImagePullSecrets = refs
 	}
-	return pod, nil
+
+	return v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   build.Name,
+			Labels: build.Labels,
+		},
+		Spec: spec,
+	}
 }
 
 func (c *Controller) workerImageConfig(project *v1.Secret) (string, string) {
@@ -246,5 +239,27 @@ func secretRef(key string, secret *v1.Secret) *v1.EnvVarSource {
 			},
 			Optional: &trueVal,
 		},
+	}
+}
+
+func attachConfigMap(spec *v1.PodSpec, name, path string) {
+	spec.Volumes = append(spec.Volumes, v1.Volume{
+		Name: name,
+		VolumeSource: v1.VolumeSource{
+			ConfigMap: &v1.ConfigMapVolumeSource{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: name,
+				},
+			},
+		},
+	})
+
+	for i := range spec.Containers {
+		spec.Containers[i].VolumeMounts = append(
+			spec.Containers[i].VolumeMounts,
+			v1.VolumeMount{
+				Name:      name,
+				MountPath: path,
+			})
 	}
 }
