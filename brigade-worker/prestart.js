@@ -33,7 +33,7 @@ function loadScript() {
   for (let src of scripts) {
     if (fs.existsSync(src)) {
       var data = fs.readFileSync(src, 'utf8')
-      if (data == "") {
+      if (data != "") {
         return data
       }
     }
