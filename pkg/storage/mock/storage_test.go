@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 
@@ -53,8 +54,28 @@ func TestStore(t *testing.T) {
 	jl, _ := m.GetJobLog(StubJob)
 	assertSame("GetJobLog", StubLogData, jl)
 
+	jls, _ := m.GetJobLogStream(StubJob)
+	bjls := new(bytes.Buffer)
+	bjls.ReadFrom(jls)
+	assertSame("GetJobLogStream", StubLogData, bjls.String())
+
+	jlsf, _ := m.GetJobLogStreamFollow(StubJob)
+	bjlsf := new(bytes.Buffer)
+	bjlsf.ReadFrom(jlsf)
+	assertSame("GetJobLogStreamFollow", StubLogData, bjlsf.String())
+
 	wl, _ := m.GetWorkerLog(StubWorker)
-	assertSame("GetJobLog", StubLogData, wl)
+	assertSame("GetWorkerLog", StubLogData, wl)
+
+	wls, _ := m.GetWorkerLogStream(StubWorker)
+	bwls := new(bytes.Buffer)
+	bwls.ReadFrom(wls)
+	assertSame("GetWorkerLogStream", StubLogData, bwls.String())
+
+	wlsf, _ := m.GetWorkerLogStreamFollow(StubWorker)
+	bwlsf := new(bytes.Buffer)
+	bwlsf.ReadFrom(wlsf)
+	assertSame("GetWorkerLogStreamFollow", StubLogData, bwlsf.String())
 
 	if !m.BlockUntilAPICacheSynced(nil) {
 		t.Fatal("expected to return true")

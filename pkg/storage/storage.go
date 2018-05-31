@@ -32,10 +32,14 @@ type Store interface {
 	GetJobLog(job *brigade.Job) (string, error)
 	// GetJobLogStream retrieve a stream of all logs for a job from storage.
 	GetJobLogStream(job *brigade.Job) (io.ReadCloser, error)
+	// GetJobLogStreamFollow retrieve a follow stream of all logs for a job from storage.
+	GetJobLogStreamFollow(job *brigade.Job) (io.ReadCloser, error)
 	// GetWorkerLog retrieves all logs for a worker from storage.
 	GetWorkerLog(job *brigade.Worker) (string, error)
 	// GetWorkerLogStream retrieve a stream of all logs for a worker from storage.
 	GetWorkerLogStream(job *brigade.Worker) (io.ReadCloser, error)
+	// GetWorkerLogStreamFollow retrieve a followed stream of all logs for a worker from storage.
+	GetWorkerLogStreamFollow(job *brigade.Worker) (io.ReadCloser, error)
 	// BlockUntilAPICacheSynced signals when the cache is initially populated (useful e.g. for testing)
 	BlockUntilAPICacheSynced(waitUntil <-chan time.Time) bool
 }
