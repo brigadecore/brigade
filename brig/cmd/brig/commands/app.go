@@ -40,7 +40,7 @@ func init() {
 	f := Root.PersistentFlags()
 	f.StringVarP(&globalNamespace, "namespace", "n", "default", "The Kubernetes namespace for Brigade")
 	f.StringVar(&globalKubeConfig, "kubeconfig", "", "The path to a KUBECONFIG file, overrides $KUBECONFIG.")
-	f.StringVar(&globalKubeConfig, "kube-context", "", "The name of the kubeconfig context to use.")
+	f.StringVar(&globalKubeContext, "kube-context", "", "The name of the kubeconfig context to use.")
 	f.BoolVarP(&globalVerbose, "verbose", "v", false, "Turn on verbose output")
 }
 
