@@ -62,6 +62,7 @@ function addDeps() {
 function addYarn(arg) {
   return exec.exec(`yarn add ${arg}`, {})
     .catch(e => {
-      console.log(e);
+      console.error(e)
+      process.exit(1)
     });
 }
