@@ -1,5 +1,6 @@
 const process = require("process")
 const fs = require("fs")
+const exec = require("child-process-promise")
 
 // Script locations in order of precedence.
 const scripts = [
@@ -15,6 +16,11 @@ const scripts = [
   "/etc/brigade-default-script",
 ];
 
+//checked out in repo
+const deps = "/vcs/brigade.json"
+
+addDeps()
+
 try {
   var data = loadScript()
   let wrapper = "const {overridingRequire} = require('./require');((require) => {" +
@@ -23,7 +29,7 @@ try {
   fs.writeFile("dist/brigade.js", wrapper, () => {
     console.log("prestart: src/brigade.js written")
   })
-} catch(e) {
+} catch (e) {
   console.log("prestart: no script override")
   process.exit(1)
 }
@@ -38,4 +44,24 @@ function loadScript() {
       }
     }
   }
+}
+
+function addDeps() {
+  if (fs.existsSync(deps)) {
+    const p = require(deps)
+    for (var dep in p.dependencies) {
+      var d = dep + "@" + p.dependencies[dep];
+      console.log("installing " + d)
+      addYarn(d);
+    }
+  } else {
+    console.log("prestart: no dependencies file found")
+  }
+}
+
+function addYarn(arg) {
+  return exec.exec(`yarn add ${arg}`, {})
+    .catch(e => {
+      console.log(e);
+    });
 }
