@@ -4,13 +4,14 @@ const exec = require("child-process-promise")
 
 // Script locations in order of precedence.
 const scripts = [
+  // manual override for debugging
   process.env.BRIGADE_SCRIPT,
+
+  // data mounted from event secret (e.g. brig run)
+  "/etc/brigade/script",
 
   // checked out in repo
   "/vcs/brigade.js",
-
-  // mounted data from brigade.sh/build.Script
-  "/etc/brigade/script",
 
   // mounted configmap named in brigade.sh/project.DefaultScriptName
   "/etc/brigade-default-script",
