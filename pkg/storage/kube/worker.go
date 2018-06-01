@@ -53,15 +53,12 @@ func NewWorkerFromPod(pod v1.Pod) *brigade.Worker {
 
 	return worker
 }
-
 func (s *store) GetWorkerLogStream(worker *brigade.Worker) (io.ReadCloser, error) {
-	req := s.client.CoreV1().Pods(s.namespace).GetLogs(worker.ID, &v1.PodLogOptions{})
+	return s.getWorkerLogStream(false, worker)
+}
 
-	readCloser, err := req.Stream()
-	if err != nil {
-		return nil, err
-	}
-	return readCloser, nil
+func (s *store) GetWorkerLogStreamFollow(worker *brigade.Worker) (io.ReadCloser, error) {
+	return s.getWorkerLogStream(true, worker)
 }
 
 func (s *store) GetWorkerLog(worker *brigade.Worker) (string, error) {
@@ -73,4 +70,16 @@ func (s *store) GetWorkerLog(worker *brigade.Worker) (string, error) {
 	defer r.Close()
 	io.Copy(buf, r)
 	return buf.String(), nil
+}
+
+func (s *store) getWorkerLogStream(follow bool, worker *brigade.Worker) (io.ReadCloser, error) {
+	req := s.client.CoreV1().Pods(s.namespace).GetLogs(worker.ID, &v1.PodLogOptions{
+		Follow: follow,
+	})
+
+	readCloser, err := req.Stream()
+	if err != nil {
+		return nil, err
+	}
+	return readCloser, nil
 }

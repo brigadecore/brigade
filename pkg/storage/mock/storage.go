@@ -53,7 +53,7 @@ var (
 		ExitCode:     0,
 		Status:       brigade.JobSucceeded,
 	}
-	// StubLogData is string data representing a log
+	// StubLogData is string data representing a log.
 	StubLogData = "Hello World"
 )
 
@@ -82,7 +82,7 @@ type Store struct {
 	LogData string
 }
 
-// BlockUntilAPICacheSynced gets the mocked store is declared to be in sync
+// BlockUntilAPICacheSynced gets the mocked store is declared to be in sync.
 func (s *Store) BlockUntilAPICacheSynced(waitUntil <-chan time.Time) bool {
 	return true
 }
@@ -107,7 +107,7 @@ func (s *Store) GetBuilds() ([]*brigade.Build, error) {
 	return []*brigade.Build{s.Build}, nil
 }
 
-// GetBuild gets the mock Build
+// GetBuild gets the mock Build.
 func (s *Store) GetBuild(id string) (*brigade.Build, error) {
 	return s.Build, nil
 }
@@ -127,14 +127,19 @@ func (s *Store) GetJob(id string) (*brigade.Job, error) {
 	return s.Job, nil
 }
 
-// GetJobLog gets the mock log data
+// GetJobLog gets the mock log data.
 func (s *Store) GetJobLog(j *brigade.Job) (string, error) {
 	return s.LogData, nil
 }
 
-// GetJobLogStream gets the mock log data as a readcloser
+// GetJobLogStream gets the mock log data as a readcloser.
 func (s *Store) GetJobLogStream(j *brigade.Job) (io.ReadCloser, error) {
 	return rc(s.LogData), nil
+}
+
+// GetJobLogStreamFollow gets the mock log data as a readcloser.
+func (s *Store) GetJobLogStreamFollow(j *brigade.Job) (io.ReadCloser, error) {
+	return s.GetJobLogStream(j)
 }
 
 // GetWorkerLog gets the mock log data.
@@ -145,6 +150,11 @@ func (s *Store) GetWorkerLog(w *brigade.Worker) (string, error) {
 // GetWorkerLogStream gets a readcloser of the mock log data.
 func (s *Store) GetWorkerLogStream(w *brigade.Worker) (io.ReadCloser, error) {
 	return rc(s.LogData), nil
+}
+
+// GetWorkerLogStreamFollow gets a readcloser of the mock log data.
+func (s *Store) GetWorkerLogStreamFollow(w *brigade.Worker) (io.ReadCloser, error) {
+	return s.GetWorkerLogStream(w)
 }
 
 // CreateBuild fakes a new build.
