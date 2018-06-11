@@ -25,6 +25,9 @@ rules:
 - apiGroups: [""]
   resources: ["secrets"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list", "watch"]
 ---
 kind: RoleBinding
 apiVersion: {{ template "brigade.rbac.version" }}
