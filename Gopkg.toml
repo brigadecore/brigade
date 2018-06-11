@@ -21,13 +21,15 @@
 
 [[constraint]]
   name = "k8s.io/api"
+  branch = "release-1.10"
 
 [[constraint]]
   name = "k8s.io/apimachinery"
+  branch = "release-1.10"
 
 [[constraint]]
   name = "k8s.io/client-go"
-  version = "5.0.1"
+  branch = "release-7.0"
 
 [[constraint]]
   branch = "master"
