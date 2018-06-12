@@ -32,6 +32,22 @@ type Project struct {
 	Secrets SecretsMap `json:"secrets"`
 	// Worker holds a set of project-specific worker settings which takes precedence over brigade-wide settings
 	Worker WorkerConfig `json:"worker"`
+
+	// InitGitSubmodules initializes Git submodules in VCS if true.
+	InitGitSubmodules bool `json:"initGitSubmodules"`
+
+	// AllowPrivilegedJobs allows jobs to use privileged mode.
+	AllowPrivilegedJobs bool `json:"allowPrivilegedJobs"`
+
+	// AllowHostMounts lets the worker use host mounted volumes
+	AllowHostMounts bool `json:"allowHostMounts"`
+
+	// ImagePullSecrets is a comma-separated list of image pull secrets
+	ImagePullSecrets string `json:"imagePullSecrets"`
+
+	// WorkerCommand is a string command that can be issued to the worker image.
+	// This is an alternative to the 'yarn start' command usually issued.
+	WorkerCommand string `json:"workerCommand"`
 }
 
 // SecretsMap is a map[string]string for storing secrets.
@@ -97,4 +113,8 @@ type Kubernetes struct {
 	VCSSidecar string `json:"vcsSidecar"`
 	// BuildStorageSize is the size of the build shared storage used by the jobs
 	BuildStorageSize string `json:"buildStorageSize"`
+	// BuildStorageCache is the storage class used for build storage.
+	BuildStorageClass string `json:"buildStorageClass"`
+	// CacheStorageClass is the storage class used for caching jobs.
+	CacheStorageClass string `json:"cacheStorageClass"`
 }

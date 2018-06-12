@@ -2,6 +2,7 @@ package mock
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"time"
@@ -60,18 +61,18 @@ var (
 // New returns a new Store with the default stubs.
 func New() *Store {
 	return &Store{
-		Project: StubProject,
-		Worker:  StubWorker,
-		Build:   StubBuild,
-		Job:     StubJob,
-		LogData: StubLogData,
+		ProjectList: []*brigade.Project{StubProject},
+		Worker:      StubWorker,
+		Build:       StubBuild,
+		Job:         StubJob,
+		LogData:     StubLogData,
 	}
 }
 
 // Store implements the storage.Storage interface, but returns mock data.
 type Store struct {
 	// Project is the project you want returned.
-	Project *brigade.Project
+	//Project *brigade.Project
 	// Build is the build you want returned.
 	Build *brigade.Build
 	// Job is the job you want returned.
@@ -80,6 +81,8 @@ type Store struct {
 	Worker *brigade.Worker
 	// LogData is the log data you want returned.
 	LogData string
+	// ProjectList on this mock
+	ProjectList []*brigade.Project
 }
 
 // BlockUntilAPICacheSynced gets the mocked store is declared to be in sync.
@@ -89,12 +92,23 @@ func (s *Store) BlockUntilAPICacheSynced(waitUntil <-chan time.Time) bool {
 
 // GetProjects gets the mock project wrapped as a slice of projects.
 func (s *Store) GetProjects() ([]*brigade.Project, error) {
-	return []*brigade.Project{s.Project}, nil
+	return s.ProjectList, nil
+}
+
+// CreateProject adds a project to the internal mock
+func (s *Store) CreateProject(p *brigade.Project) error {
+	s.ProjectList = append(s.ProjectList, p)
+	return nil
 }
 
 // GetProject returns the Project
 func (s *Store) GetProject(id string) (*brigade.Project, error) {
-	return s.Project, nil
+	for _, proj := range s.ProjectList {
+		if proj.ID == id {
+			return proj, nil
+		}
+	}
+	return nil, fmt.Errorf("mock project not found for %s", id)
 }
 
 // GetProjectBuilds returns the mock Build wrapped in a slice.

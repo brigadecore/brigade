@@ -20,7 +20,7 @@ func TestStore(t *testing.T) {
 			t.Errorf("failed equality for %s", label)
 		}
 	}
-	assertSame("project", StubProject, m.Project)
+	assertSame("project", StubProject, m.ProjectList[0])
 	assertSame("worker", StubWorker, m.Worker)
 	assertSame("build", StubBuild, m.Build)
 	assertSame("job", StubJob, m.Job)
