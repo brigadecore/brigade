@@ -8,6 +8,12 @@
   version = "v0.16.0"
 
 [[projects]]
+  name = "github.com/AlecAivazis/survey"
+  packages = ["."]
+  revision = "e752db451e07e09c7d7dc8cada807a44bdb0fd47"
+  version = "v1.5.3"
+
+[[projects]]
   name = "github.com/Azure/go-autorest"
   packages = [
     "autorest",
@@ -240,6 +246,12 @@
   revision = "d5b7844b561a7bc640052f1b935f7b800330d7e0"
 
 [[projects]]
+  name = "github.com/mattn/go-colorable"
+  packages = ["."]
+  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
+  version = "v0.0.9"
+
+[[projects]]
   name = "github.com/mattn/go-isatty"
   packages = ["."]
   revision = "fc9e8d8ef48496124e79ae0df75490096eccf6fe"
@@ -250,6 +262,12 @@
   packages = ["."]
   revision = "d6bea18f789704b5f83375793155289da36a3c7f"
   version = "v0.0.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mgutz/ansi"
+  packages = ["."]
+  revision = "9520e82c474b0a04dd04f8a40959027271bab992"
 
 [[projects]]
   name = "github.com/oklog/ulid"
@@ -357,6 +375,15 @@
     "urlfetch"
   ]
   revision = "12d5545dc1cfa6047a286d5e853841b6471f4c19"
+
+[[projects]]
+  name = "gopkg.in/AlecAivazis/survey.v1"
+  packages = [
+    "core",
+    "terminal"
+  ]
+  revision = "e752db451e07e09c7d7dc8cada807a44bdb0fd47"
+  version = "v1.5.3"
 
 [[projects]]
   name = "gopkg.in/gin-gonic/gin.v1"
@@ -558,6 +585,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cc6b2287126a9cd12d7a88c9d30cb053ebc57029d6ea79c6889e2c2035839faa"
+  inputs-digest = "bf85a0e606206e142341d796f6269a5092dbbac2ce4981111b2a78c6a6e3afa0"
   solver-name = "gps-cdcl"
   solver-version = 1

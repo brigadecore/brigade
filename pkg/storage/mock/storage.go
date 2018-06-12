@@ -71,8 +71,6 @@ func New() *Store {
 
 // Store implements the storage.Storage interface, but returns mock data.
 type Store struct {
-	// Project is the project you want returned.
-	//Project *brigade.Project
 	// Build is the build you want returned.
 	Build *brigade.Build
 	// Job is the job you want returned.

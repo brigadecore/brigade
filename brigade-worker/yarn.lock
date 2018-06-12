@@ -634,12 +634,6 @@ is-buffer@^1.1.5:
   version "1.1.6"
   resolved "https://registry.yarnpkg.com/is-buffer/-/is-buffer-1.1.6.tgz#efaa2ea9daa0d7ab2ea13a97b2b8ad51fefbe8be"
 
-is-thirteen@2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/is-thirteen/-/is-thirteen-2.0.0.tgz#a2dbd0f5ab7e10a4d0186e9a0b24263224d3f9b1"
-  dependencies:
-    noop3 "^13.7.2"
-
 is-typedarray@^1.0.0, is-typedarray@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/is-typedarray/-/is-typedarray-1.0.0.tgz#e479c80858df0c1b11ddda6940f96011fcda4a9a"
@@ -880,10 +874,6 @@ nomnom@1.5.2:
   dependencies:
     colors "0.5.x"
     underscore "1.1.x"
-
-noop3@^13.7.2:
-  version "13.8.1"
-  resolved "https://registry.yarnpkg.com/noop3/-/noop3-13.8.1.tgz#0ae6414b6d7de3b6d85055cd2a920c1a0d61ad6e"
 
 nth-check@~1.0.1:
   version "1.0.1"

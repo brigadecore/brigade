@@ -8,6 +8,7 @@ import (
 	"github.com/Azure/brigade/pkg/brigade"
 )
 
+// ProjectStore represents storage for projects.
 type ProjectStore interface {
 	// GetProjects retrieves all projects from storage.
 	GetProjects() ([]*brigade.Project, error)
