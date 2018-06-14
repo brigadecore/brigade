@@ -37,16 +37,16 @@ builds. However, there are a few things that are much harder to do when running 
   what you are doing.
 - Other inbound services may also be limited by the same restriction.
 
-## Notes for Azure Container Services (ACS)
+## Notes for Azure Container Services (AKS)
 
-Brigade is well-tested on ACS Kubernetes. We recommend using at least Kubernetes 1.6.
+Brigade is well-tested on [AKS Kubernetes](https://docs.microsoft.com/en-us/azure/aks/). We recommend using at least Kubernetes 1.6.
 
-- It is recommended to use a Service with type LoadBalancer on ACS, which will generate
+- It is recommended to use a Service with type LoadBalancer on AKS, which will generate
   an Azure load balancer for you.
 - For caching and storage, we recommend creating an Azure Storage instance and
   creating a Persistent Volume and Storage Class that use the `AzureFile` driver.
 - You can use Azure Container Registry for private images, provided that you
-  add the ACR instance to the same Resource Group that ACS belongs to.
+  add the ACR instance to the same Resource Group that AKS belongs to.
 - ACR's webhooks can be used to trigger events, as they follow the DockerHub
   webhook format.
 - When configuring webhooks, it is recommended that you map a domain (via Azure's
