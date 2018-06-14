@@ -172,6 +172,9 @@ This concludes the basic tutorial. If you are familiar with Brigade and are inte
 
 You might also be scratching your head on what to [read next][readnext].
 
+---
+
+Prev: [Part 3][part3] `|` Next: [Next Steps][readnext]
 
 [efficient-pipelines]: writing-efficient-pipelines.md
 [part1]: tutorial01.md
