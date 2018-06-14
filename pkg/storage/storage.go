@@ -8,14 +8,21 @@ import (
 	"github.com/Azure/brigade/pkg/brigade"
 )
 
-// Store represents a storage engine for a Project.
-type Store interface {
+// ProjectStore represents storage for projects.
+type ProjectStore interface {
 	// GetProjects retrieves all projects from storage.
 	GetProjects() ([]*brigade.Project, error)
 	// GetProject retrieves the project from storage.
 	GetProject(id string) (*brigade.Project, error)
 	// GetProjectBuilds retrieves the project's builds from storage.
 	GetProjectBuilds(proj *brigade.Project) ([]*brigade.Build, error)
+	// CreateProject creates a new project record in storage.
+	CreateProject(proj *brigade.Project) error
+}
+
+// Store represents a storage engine for a brigade projects, builds, and jobs.
+type Store interface {
+	ProjectStore
 	// GetBuilds retrieves all active builds from storage.
 	GetBuilds() ([]*brigade.Build, error)
 	// GetBuild retrieves the build from storage.
