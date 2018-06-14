@@ -26,6 +26,10 @@ The `EXTERNAL-IP` field is the IP address that external services, such as GitHub
 
 Note that this is just one way of configuring Brigade to receive inbound connections. Brigade itself does not care how traffic is routed to it. Those with operational knowledge of Kubernetes may wish to use another method of ingress routing.
 
+## Brig
+
+We recommend using [Brig](https://github.com/Azure/brigade/tree/master/brig), a command line tool for interacting with Brigade. Read the [Brig guide](https://github.com/Azure/brigade/tree/master/brig) for [installation and usage] docs.
+
 ## Notes for Minikube
 
 You can run Brigade on [Minikube](https://github.com/kubernetes/minikube) for easy testing
