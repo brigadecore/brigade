@@ -99,6 +99,18 @@ func (s *Store) CreateProject(p *brigade.Project) error {
 	return nil
 }
 
+// DeleteProject deletes a project from the internal mock
+func (s *Store) DeleteProject(id string) error {
+	tmp := []*brigade.Project{}
+	for _, p := range s.ProjectList {
+		if p.ID == id {
+			tmp = append(tmp, p)
+		}
+	}
+	s.ProjectList = tmp
+	return nil
+}
+
 // GetProject returns the Project
 func (s *Store) GetProject(id string) (*brigade.Project, error) {
 	for _, proj := range s.ProjectList {

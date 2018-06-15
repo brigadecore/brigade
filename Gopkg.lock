@@ -19,6 +19,12 @@
   version = "v8.0.0"
 
 [[projects]]
+  name = "github.com/Masterminds/goutils"
+  packages = ["."]
+  revision = "3391d3790d23d03408670993e957e8f408993c34"
+  version = "v1.0.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/Masterminds/kitt"
   packages = ["progress"]
@@ -483,6 +489,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1b5712966359a654bfa271eb37e92fa4081f328b46d619fec62558869e3b10bf"
+  inputs-digest = "053fa3b6759499cd90f55688e6863cce1c70bae3139e545a54b72b4983162818"
   solver-name = "gps-cdcl"
   solver-version = 1

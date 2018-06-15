@@ -30,8 +30,8 @@ func TestStore(t *testing.T) {
 	p, _ := m.GetProjects()
 	assertSame("GetProjects", []*brigade.Project{StubProject}, p)
 
-	p2, _ := m.GetProject(StubProject.ID)
-	assertSame("GetProject", StubProject, p2)
+	extraProj, _ := m.GetProject(StubProject.ID)
+	assertSame("GetProject", StubProject, extraProj)
 
 	b1, _ := m.GetProjectBuilds(StubProject)
 	assertSame("GetProjectBuilds", StubBuild, b1[0])
@@ -79,5 +79,23 @@ func TestStore(t *testing.T) {
 
 	if !m.BlockUntilAPICacheSynced(nil) {
 		t.Fatal("expected to return true")
+	}
+
+	extraProj = &brigade.Project{
+		Name:    "extra",
+		ID:      "extra",
+		Secrets: map[string]string{},
+	}
+	if err := m.CreateProject(extraProj); err != nil {
+		t.Fatal(err)
+	}
+	if len(m.ProjectList) != 2 {
+		t.Fatal("project was not saved by CreateProject")
+	}
+	if err := m.DeleteProject("extra"); err != nil {
+		t.Fatal(err)
+	}
+	if len(m.ProjectList) != 1 {
+		t.Fatal("project was not deleted by DeleteProject")
 	}
 }
