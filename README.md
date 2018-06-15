@@ -11,7 +11,7 @@ for Kubernetes.
 - Project-based management
 - Configurable event hooks
 - Easy construction of pipelines
-- Check out the docs](https://azure.github.io/brigade/) to get started.
+- Check out the [docs](https://azure.github.io/brigade/) to get started.
 
 [![asciicast](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG.png)](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG)
 
@@ -27,7 +27,7 @@ for Kubernetes.
   other popular web services. And it can be easily extended to support your own
   services.
 
-The [design introduction](docs/topics/design.md) introduces Brigade concepts and
+The [design introduction](https://azure.github.io/brigade/topics/design.html) introduces Brigade concepts and
 architecture.
 
 ## Quickstart
@@ -72,7 +72,7 @@ events.on("exec", (brigadeEvent, project) => {
 })
 ```
 
-Check out [the tutorial](/docs/intro/) for more on creating scripts.
+Check out [the tutorial](https://azure.github.io/brigade/intro/) for more on creating scripts.
 
 > You can download the latest version of the Brig client from [the releases page](https://github.com/Azure/brigade/releases)
 
@@ -103,7 +103,7 @@ This will show you the detailed output of running your `brigade.js` script's
 
 ## Brigade :heart: Developers
 
-To get started head to the [developer's guide](docs/topics/developers.md)
+To get started head to the [developer's guide](https://azure.github.io/brigade/topics/developers.html)
 
 Brigade is well-tested on Minikube and Azure Container Services.
 
