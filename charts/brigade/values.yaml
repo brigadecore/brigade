@@ -70,6 +70,8 @@ api:
   ingress:
     enabled: false
     hosts: []
+    paths:
+    - /
 
 # worker is the JavaScript worker. These are created on demand by the controller.
 worker:
@@ -159,6 +161,8 @@ service:
 ingress:
   enabled: false
   hosts: []
+  paths:
+  - /
   # Add TLS configuration
   # tls: <TLS_CONFIG>
   # Add custom annotations
