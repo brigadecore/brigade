@@ -248,7 +248,7 @@ export abstract class Job {
         "job name must be letters, numbers, and '-', and must not start or end with '-'"
       );
     }
-    this.name = name;
+    this.name = name.toLocaleLowerCase();
     this.image = image;
     this.imageForcePull = imageForcePull;
     this.tasks = tasks || [];
