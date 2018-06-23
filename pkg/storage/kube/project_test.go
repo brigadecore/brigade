@@ -138,6 +138,20 @@ func TestCreateProject(t *testing.T) {
 	}
 }
 
+func TestDeleteProject(t *testing.T) {
+	k, s := fakeStore()
+	p := &brigade.Project{ID: "fake", Name: "fake"}
+	if err := s.CreateProject(p); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := k.CoreV1().Secrets("default").Get("fake", meta.GetOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteProject("fake"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestConfigureProject(t *testing.T) {
 	secret := &v1.Secret{
 		ObjectMeta: meta.ObjectMeta{

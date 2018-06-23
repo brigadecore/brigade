@@ -37,15 +37,10 @@ func (s *store) GetProject(id string) (*brigade.Project, error) {
 	return s.loadProjectConfig(brigade.ProjectID(id))
 }
 
-// CreateProject stores a given project.
-//
-// Project Name is a required field. If not present, Project ID will be calculated
-// from project name. This is preferred.
-//
-// Note that project secrets are not redacted.
-func (s *store) CreateProject(project *brigade.Project) error {
+// SecretFromProject takes a project and converts it to a Kubernetes Secret.
+func SecretFromProject(project *brigade.Project) (v1.Secret, error) {
 	if project.Name == "" {
-		return errors.New("project name is required")
+		return v1.Secret{}, errors.New("project name is required")
 	}
 
 	if project.ID == "" {
@@ -57,7 +52,7 @@ func (s *store) CreateProject(project *brigade.Project) error {
 	var secrets map[string]string = project.Secrets
 	secretsJSON, err := json.Marshal(secrets)
 	if err != nil {
-		return err
+		return v1.Secret{}, err
 	}
 
 	bfmt := func(b bool) string { return fmt.Sprintf("%t", b) }
@@ -109,9 +104,27 @@ func (s *store) CreateProject(project *brigade.Project) error {
 			"kubernetes.buildStorageClass": project.Kubernetes.BuildStorageClass,
 		},
 	}
+	return secret, nil
+}
 
+// CreateProject stores a given project.
+//
+// Project Name is a required field. If not present, Project ID will be calculated
+// from project name. This is preferred.
+//
+// Note that project secrets are not redacted.
+func (s *store) CreateProject(project *brigade.Project) error {
+	secret, err := SecretFromProject(project)
+	if err != nil {
+		return err
+	}
 	_, err = s.client.CoreV1().Secrets(s.namespace).Create(&secret)
 	return err
+}
+
+// DeleteProject deletes a project from storage.
+func (s *store) DeleteProject(id string) error {
+	return s.client.CoreV1().Secrets(s.namespace).Delete(id, &meta.DeleteOptions{})
 }
 
 // loadProjectConfig loads a project config from inside of Kubernetes.
