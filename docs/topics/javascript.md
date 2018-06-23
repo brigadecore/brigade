@@ -213,7 +213,7 @@ Properties:
 - `size: string`: The size, defaults to `5Mi`. This value is only evaluated the first
   time a job is cached. To resize, the cache must be destroyed manually.
 - `path: string`: A read-only attribute returning path (in the container) in which the cache
-  is available.
+  is available. EXPERIMENTAL: Support for setting the path was added in Brigade 0.15.
 
 ### The `JobDockerMount` class
 
@@ -241,6 +241,7 @@ A `JobHost` object provides preferences for the host upon which the job is execu
    Build storage exposes a mounted volume at `/mnt/brigade/share` with storage that
    can be shared across jobs.
 - `path: string`: The read-only path to the shared storage from within the container.
+   EXPERIMENTAL: Support for setting the `path` was added in Brigade 0.15.
 
 ### The `KubernetesConfig` class
 
