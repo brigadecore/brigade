@@ -22,7 +22,7 @@ spec:
       http:
         paths:
           {{- range $path := $paths }}
-          - path: {{ $path }}
+          - path: {{ default "/" $path }}
             backend:
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
@@ -33,7 +33,7 @@ spec:
       http:
         paths:
           {{- range $path := .Values.ingress.paths }}
-          - path: {{ $path }}
+          - path: {{ default "/" $path }}
             backend:
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
