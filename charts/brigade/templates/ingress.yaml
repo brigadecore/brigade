@@ -32,7 +32,7 @@ spec:
     - host: {{ .Release.Name }}.{{ .Values.basedomain }}
       http:
         paths:
-          {{- range $path := .Values.ingress.paths }}
+          {{- range $path := $paths }}
           - path: {{ default "/" $path }}
             backend:
               serviceName: {{ $serviceName }}
