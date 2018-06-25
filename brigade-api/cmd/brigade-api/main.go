@@ -7,13 +7,15 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/Azure/brigade/pkg/api"
 	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage/kube"
+
 	"github.com/emicklei/go-restful"
 	restfulspec "github.com/emicklei/go-restful-openapi"
 
-	"github.com/Azure/brigade/pkg/api"
 	"github.com/go-openapi/spec"
+
 	"k8s.io/api/core/v1"
 )
 
@@ -49,8 +51,7 @@ type healthService struct {
 func (js jobService) WebService() *restful.WebService {
 	ws := new(restful.WebService)
 	j := js.server.Job()
-	// rest.GET("/job/:id", j.Get)
-	// rest.GET("/job/:id/logs", j.Logs)
+
 	ws.
 		Path("/v1/job").
 		Consumes(restful.MIME_JSON).
@@ -80,9 +81,7 @@ func (js jobService) WebService() *restful.WebService {
 func (bs buildService) WebService() *restful.WebService {
 	ws := new(restful.WebService)
 	b := bs.server.Build()
-	// rest.GET("/build/:id", b.Get)
-	// rest.GET("/build/:id/jobs", b.Jobs)
-	// rest.GET("/build/:id/logs", b.Logs)
+
 	ws.
 		Path("/v1/build").
 		Consumes(restful.MIME_JSON).
@@ -120,10 +119,7 @@ func (bs buildService) WebService() *restful.WebService {
 func (ps projectService) WebService() *restful.WebService {
 	ws := new(restful.WebService)
 	p := ps.server.Project()
-	// rest.GET("/projects", p.List)
-	// rest.GET("/project/:id", p.Get)
-	// rest.GET("/project/:id/builds", p.Builds)
-	// rest.GET("/projects-build", p.ListWithLatestBuild)
+
 	ws.
 		Path("/v1").
 		Consumes(restful.MIME_JSON).
@@ -193,11 +189,11 @@ func main() {
 	}
 
 	storage := kube.New(clientset, namespace)
-	server := api.New(storage)
+	storageServer := api.New(storage)
 
-	j := jobService{server}
-	b := buildService{server}
-	p := projectService{server}
+	j := jobService{server: storageServer}
+	b := buildService{server: storageServer}
+	p := projectService{server: storageServer}
 	h := healthService{}
 
 	restful.DefaultContainer.Add(j.WebService())
@@ -207,17 +203,11 @@ func main() {
 	restful.DefaultContainer.Filter(NCSACommonLogFormatLogger())
 
 	config := restfulspec.Config{
-		WebServices: restful.RegisteredWebServices(), // you control what services are visible
+		WebServices: restful.RegisteredWebServices(),
 		APIPath:     "/apidocs.json",
 		PostBuildSwaggerObjectHandler: enrichSwaggerObject}
 	restful.DefaultContainer.Add(restfulspec.NewOpenAPIService(config))
 
-	// Optionally, you can install the Swagger Service which provides a nice Web UI on your REST API
-	// You need to download the Swagger HTML5 assets and change the FilePath location in the config below.
-	// Open http://localhost:8080/apidocs/?url=http://localhost:8080/apidocs.json
-	//http.Handle("/apidocs/", http.StripPrefix("/apidocs/", http.FileServer(http.Dir("/swagger-ui/dist"))))
-
-	// Optionally, you may need to enable CORS for the UI to work.
 	cors := restful.CrossOriginResourceSharing{
 		AllowedHeaders: []string{"Content-Type", "Accept"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
@@ -258,7 +248,4 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 			Version: "1.0.0",
 		},
 	}
-	swo.Tags = []spec.Tag{spec.Tag{TagProps: spec.TagProps{
-		Name:        "brigade",
-		Description: "Brigade"}}}
 }

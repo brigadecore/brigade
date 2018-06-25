@@ -97,8 +97,8 @@
 [[projects]]
   name = "github.com/emicklei/go-restful-openapi"
   packages = ["."]
-  revision = "60f3c22579aa3b998e4c6e902649760531ca03ca"
-  version = "v0.9.1"
+  revision = "51bf251d405ad1e23511fef0a2dbe40bc70ce2c6"
+  version = "v0.11.0"
 
 [[projects]]
   name = "github.com/ghodss/yaml"
@@ -611,6 +611,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6e7b33a7dc085e5b9232d996e849fb441fe9c95d90b9875fdc08b6089d6d78f1"
+  inputs-digest = "398fb4ee308a6546c0c0c1b766f3f617d028117fd44703c483b4987518a7cb3a"
   solver-name = "gps-cdcl"
   solver-version = 1

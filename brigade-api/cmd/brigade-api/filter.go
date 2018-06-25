@@ -22,11 +22,11 @@ var (
 	disableColor = false
 )
 
-var logger *log.Logger = log.New(os.Stdout, "", 0)
+var logger = log.New(os.Stdout, "", 0)
 
 // NCSACommonLogFormatLogger Create a filter that produces log lines
 // according to the Common Log Format, also known as the NCSA standard.
-// Coloring inspired by gin
+// Coloring inspired by ansi
 func NCSACommonLogFormatLogger() restful.FilterFunction {
 	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 		var username = "-"
@@ -40,10 +40,16 @@ func NCSACommonLogFormatLogger() restful.FilterFunction {
 		if err != nil {
 			return
 		}
+		isTerm := true
+		if disableColor {
+			isTerm = false
+		}
 		var statusColor, methodColor, resetColor string
-		methodColor = colorForMethod(req.Request.Method)
-		resetColor = reset
-		statusColor = colorForStatus(resp.StatusCode())
+		if isTerm {
+			methodColor = colorForMethod(req.Request.Method)
+			resetColor = reset
+			statusColor = colorForStatus(resp.StatusCode())
+		}
 		logger.Printf("%15s - %s [%s] \"%s %7s %s %s %s\" %s %3d %s %d",
 			ip,
 			username,
@@ -55,13 +61,6 @@ func NCSACommonLogFormatLogger() restful.FilterFunction {
 			resp.ContentLength(),
 		)
 	}
-}
-
-// MeasureTime web-service (post-process) Filter (as a struct that defines a FilterFunction)
-func MeasureTime(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
-	now := time.Now()
-	chain.ProcessFilter(req, resp)
-	logger.Printf("[webservice-filter (timer)] %v\n", time.Now().Sub(now))
 }
 
 func colorForMethod(method string) string {
