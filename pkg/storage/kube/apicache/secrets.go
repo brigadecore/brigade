@@ -1,6 +1,7 @@
 package apicache
 
 import (
+	"sort"
 	"time"
 
 	"k8s.io/api/core/v1"
@@ -54,6 +55,26 @@ func (a *apiCache) GetSecretsFilteredBy(selectors map[string]string) []v1.Secret
 
 		filteredSecrets = append(filteredSecrets, *secret)
 	}
-
+	sort.Sort(ByCreation(filteredSecrets))
 	return filteredSecrets
+}
+
+// ByCreation sorts secrets by their creation timestamp.
+type ByCreation []v1.Secret
+
+// Len returns the length of the secrets slice.
+func (b ByCreation) Len() int {
+	return len(b)
+}
+
+// Swap swaps the position of two indices.
+func (b ByCreation) Swap(i, j int) {
+	b[i], b[j] = b[j], b[i]
+}
+
+// Less tests that i is less than j.
+func (b ByCreation) Less(i, j int) bool {
+	jj := b[j].ObjectMeta.CreationTimestamp.Time
+	ii := b[i].ObjectMeta.CreationTimestamp.Time
+	return ii.After(jj)
 }
