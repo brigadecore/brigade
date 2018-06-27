@@ -15,6 +15,7 @@ node_modules/
 # IDEs
 .vscode/
 .idea/
+.swp
 
 # Developer
 pvt/
