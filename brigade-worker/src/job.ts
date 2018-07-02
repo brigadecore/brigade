@@ -69,12 +69,10 @@ export class JobCache {
    */
   public size: string = "5Mi";
 
-  // future-proof Cache.path. For now we will hard-code it, but make it so that
-  // we can modify in the future.
-  private _path: string = brigadeCachePath;
-  public get path(): string {
-    return this._path;
-  }
+  // EXPERIMENTAL: Allow script authors to change this location.
+  // Before Brigade 0.15, this used a getter to prevent scripters from setting
+  // this path directly.
+  public path: string = brigadeCachePath;
 }
 
 /**
@@ -84,10 +82,10 @@ export class JobCache {
  */
 export class JobStorage {
   public enabled: boolean = false;
-  private _path: string = brigadeStoragePath;
-  public get path(): string {
-    return this._path;
-  }
+
+  // EXPERIMENTAL: Allow setting the path.
+  // Prior to Brigade 0.15, this was read-only.
+  public path: string = brigadeStoragePath;
 }
 
 /**

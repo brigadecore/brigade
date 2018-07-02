@@ -300,6 +300,32 @@ describe("k8s", function() {
           assert.isTrue(foundCache, "expected cache volume claim found");
           assert.isTrue(foundStorage, "expected storage volume claim found");
         });
+        it("configures volumes with custom paths", function() {
+          j.cache.path = "/cache";
+          j.cache.enabled = true;
+          j.storage.path = "/storage";
+          j.storage.enabled = true;
+          let jr = new k8s.JobRunner(j, e, p);
+
+          let cname = `${p.name.replace(
+            /[.\/]/g,
+            "-"
+          )}-${j.name.toLowerCase()}`;
+          let foundCache = false;
+          let storageName = "build-storage";
+          let foundStorage = false;
+          for (let v of jr.runner.spec.containers[0].volumeMounts) {
+            if (v.name == cname) {
+              foundCache = true;
+              assert.equal(v.mountPath, "/cache");
+            } else if (v.name == storageName) {
+              foundStorage = true;
+              assert.equal(v.mountPath, "/storage");
+            }
+          }
+          assert.isTrue(foundCache, "expected cache volume mount found");
+          assert.isTrue(foundStorage, "expected storage volume mount found");
+        });
       });
       context("when the project has enabled host mounts", function() {
         beforeEach(function() {
