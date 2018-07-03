@@ -33,7 +33,7 @@ func init() {
 	flags := proxy.PersistentFlags()
 	flags.IntVar(&port, "port", 8081, "local port for the Kashti dashboard")
 	flags.IntVar(&apiPort, "api-port", 7745, "local port for the Brigade API server")
-	flags.StringVarP(&kashtiNamespace, "kashtiNamespace", "", "default", "namespace for Kashti")
+	flags.StringVarP(&kashtiNamespace, "kashti-namespace", "", "default", "namespace for Kashti")
 }
 
 var proxy = &cobra.Command{
