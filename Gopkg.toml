@@ -34,7 +34,3 @@
 [[constraint]]
   branch = "master"
   name = "github.com/Masterminds/kitt"
-
-[[constraint]]
-  name = "github.com/Masterminds/goutils"
-  version = "1.0.1"
