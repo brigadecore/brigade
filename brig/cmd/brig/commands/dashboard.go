@@ -7,12 +7,26 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/Azure/brigade/pkg/portforwarder"
 	"github.com/bacongobbler/browser"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
 )
 
-const dashboardUsage = `Opens the Kashti dashboard with the default browser.
+const (
+	dashboardUsage = `Opens the Kashti dashboard with the default browser.
 `
+	remoteAPIPort = 7745
+	remotePort    = 80
+)
+
+var (
+	port            int
+	apiPort         int
+	kashtiNamespace string
+	openDashboard   bool
+)
 
 func init() {
 	Root.AddCommand(dashboard)
@@ -20,7 +34,8 @@ func init() {
 	flags := dashboard.PersistentFlags()
 	flags.IntVar(&port, "port", 8081, "local port for the Kashti dashboard")
 	flags.IntVar(&apiPort, "api-port", 7745, "local port for the Brigade API server")
-	flags.StringVarP(&kashtiNamespace, "kashti-namespace", "", "default", "namespace for Kashti")
+	flags.StringVar(&kashtiNamespace, "kashti-namespace", "default", "namespace for Kashti")
+	flags.BoolVar(&openDashboard, "open-dashboard", true, "open the dashboard in the browser")
 }
 
 var dashboard = &cobra.Command{
@@ -43,14 +58,42 @@ var dashboard = &cobra.Command{
 			os.Exit(0)
 		}()
 
-		log.Printf("Connected! When you are finished with this session, enter CTRL+C.", port)
+		log.Println("Connected! When you are finished with this session, enter CTRL+C.")
 
-		if err := browser.Open(fmt.Sprintf("http://localhost:%d", port)); err != nil {
-			return err
+		if openDashboard {
+			if err := browser.Open(fmt.Sprintf("http://localhost:%d", port)); err != nil {
+				return err
+			}
 		}
 
 		// block until the user sends a CTRL+C
 		for {
 		}
 	},
+}
+
+func startProxy(kashtiPort int) (*portforwarder.Tunnel, error) {
+	config, err := getKubeConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	apiSelector := labels.Set{"role": "api"}.AsSelector()
+	_, err = portforwarder.New(c, config, globalNamespace, apiSelector, remoteAPIPort, apiPort)
+	if err != nil {
+		return nil, fmt.Errorf("cannot start port forward for brigade api: %v", err)
+	}
+
+	kashtiSelector := labels.Set{"app": "kashti"}.AsSelector()
+	tunnel, err := portforwarder.New(c, config, kashtiNamespace, kashtiSelector, remotePort, port)
+	if err != nil {
+		return nil, fmt.Errorf("cannot start port forward for kashti: %v", err)
+	}
+
+	return tunnel, nil
 }
