@@ -27,8 +27,8 @@
 [[projects]]
   name = "github.com/bacongobbler/browser"
   packages = ["."]
-  revision = "2f18dae3152b9cd2aa11a6d2bd0e027d12a48eb3"
-  version = "v1.0.0"
+  revision = "792d0443b3e34e0a99a68e254084079ad9356db5"
+  version = "v1.0.1"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -489,6 +489,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fa57795b8fdf3e7d0b3326fc7802eed8d3acdf113fe83c7e612cb16fce034ee1"
+  inputs-digest = "ce868ba487d6ca0774ce548894d8caabcc197e7c0e932921298711b40e49282d"
   solver-name = "gps-cdcl"
   solver-version = 1
