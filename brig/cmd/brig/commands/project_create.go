@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage/kube"
@@ -36,16 +37,15 @@ If a file is provided (-f), then the project defaults will be set from the file.
 The user will be prompted to answer questions to build the configuration. If -f
 is specified in conjunction with -x/--no-prompts, then the values in the file will
 be used without prompting the user for any changes.
-
 `
 
 var (
-	projectCreateConfig      = ""
-	projectCreateOut         = ""
-	projectCreateFromProject = ""
-	projectCreateDryRun      = false
-	projectCreateNoPrompts   = false
-	projectCreateReplace     = false
+	projectCreateConfig      string
+	projectCreateOut         string
+	projectCreateFromProject string
+	projectCreateDryRun      bool
+	projectCreateNoPrompts   bool
+	projectCreateReplace     bool
 )
 
 var defaultProject = &brigade.Project{
@@ -81,7 +81,7 @@ var projectCreate = &cobra.Command{
 	Long:  projectCreateUsage,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if projectCreateFromProject != "" && projectCreateConfig != "" {
-			return errors.New("cannot specify both -f/--config and -p/--from-project.")
+			return errors.New("cannot specify both -f/--config and -p/--from-project")
 		}
 		return createProject(cmd.OutOrStderr())
 	},
@@ -126,8 +126,7 @@ func createProject(out io.Writer) error {
 	}
 
 	if globalVerbose {
-		out.Write(data)
-		fmt.Println()
+		fmt.Printf("%s\n", data)
 	}
 
 	if projectCreateOut != "" {
@@ -143,7 +142,7 @@ func createProject(out io.Writer) error {
 
 	if !projectCreateReplace {
 		if _, err = store.GetProject(proj.Name); err == nil {
-			return fmt.Errorf("Project %s already exists. Refusing to overwrite.", proj.Name)
+			return fmt.Errorf("project %s already exists. Refusing to overwrite", proj.Name)
 		}
 	}
 
@@ -172,7 +171,7 @@ func projectCreatePrompts(p *brigade.Project) error {
 			Name: "name",
 			Prompt: &survey.Input{
 				Message: "Full repository name",
-				Help:    "A protocol-neutral path to your repo",
+				Help:    "A protocol-neutral path to your repo, like github.com/foo/bar",
 				Default: p.Repo.Name,
 			},
 		},
@@ -191,8 +190,8 @@ func projectCreatePrompts(p *brigade.Project) error {
 		return fmt.Errorf(abort, err)
 	}
 
-	// Only prompt for key if clone URL requires it
-	if strings.HasPrefix(p.Repo.CloneURL, "ssh") || strings.HasPrefix(p.Repo.CloneURL, "git+ssh") {
+	// Don't prompt for key if the URL is HTTP(S).
+	if !isHTTP(p.Repo.CloneURL) {
 		var fname string
 		err := survey.AskOne(&survey.Input{
 			Message: "Path to SSH key for SSH clone URLs (leave blank to skip)",
@@ -211,7 +210,7 @@ func projectCreatePrompts(p *brigade.Project) error {
 		for k := range p.Secrets {
 			fmt.Printf("\t- %s\n", k)
 		}
-		fmt.Println("  (To remove a secret, entre the key for the name, and '-' as the value)")
+		fmt.Println("  (To remove a secret, enter the key for the name, and '-' as the value)")
 	}
 
 	addSecrets := false
@@ -485,12 +484,6 @@ func loadFileValidator(val interface{}) error {
 	return err
 }
 
-// loadFileTransformer should not be called unless loadFileValidator is called first.
-func loadFileTransformer(val interface{}) interface{} {
-	name := os.ExpandEnv(val.(string))
-	return loadFileStr(name)
-}
-
 // loadFileStr should not be called unless loadFileValidator is called first.
 func loadFileStr(name string) string {
 	if name == "" {
@@ -505,17 +498,43 @@ func loadFileStr(name string) string {
 
 // loadProjectConfig loads a project configuration from the local filesystem.
 func loadProjectConfig(file string, proj *brigade.Project) (*brigade.Project, error) {
-	data, err := ioutil.ReadFile(file)
+	rdr, err := os.Open(file)
 	if err != nil {
 		return proj, err
 	}
-	sec := &v1.Secret{}
-	if err := json.Unmarshal(data, sec); err != nil {
+	defer rdr.Close()
+
+	sec, err := parseSecret(rdr)
+	if err != nil {
 		return proj, err
 	}
+
 	if sec.Name == "" {
 		return proj, fmt.Errorf("secret in %s is missing required name field", file)
 	}
-	newproj, err := kube.NewProjectFromSecret(sec, "")
-	return newproj, err
+	return kube.NewProjectFromSecret(sec, "")
+}
+
+func parseSecret(reader io.Reader) (*v1.Secret, error) {
+	dec := yaml.NewYAMLOrJSONDecoder(reader, 4096)
+	secret := &v1.Secret{}
+	// We are only decoding the first item in the YAML.
+	err := dec.Decode(secret)
+
+	// Convert StringData to Data
+	if len(secret.StringData) > 0 {
+		if secret.Data == nil {
+			secret.Data = map[string][]byte{}
+		}
+		for key, val := range secret.StringData {
+			secret.Data[key] = []byte(val)
+		}
+	}
+
+	return secret, err
+}
+
+func isHTTP(str string) bool {
+	str = strings.ToLower(str)
+	return strings.HasPrefix(str, "http:") || strings.HasPrefix(str, "https:")
 }
