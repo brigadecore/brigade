@@ -33,6 +33,7 @@ var (
 	runLogLevel   string
 	runNoProgress bool
 	runNoColor    bool
+	runBackground bool
 )
 
 var logPattern = regexp.MustCompile(`\[brigade:k8s\]\s[a-zA-Z0-9-]+/[a-zA-Z0-9-]+ phase \w+`)
@@ -58,6 +59,10 @@ To send a local JS file to the server, use the '-f' flag:
 
 While specifying an event is possible, use caution. Many events expect a
 particular payload.
+
+To run the job in the background, use -b/--background. Note, though, that in this
+case the exit code indicates only whether the event was submitted, not whether
+the worker successfully ran to completion.
 `
 
 func init() {
@@ -68,6 +73,7 @@ func init() {
 	run.Flags().StringVarP(&runRef, "ref", "r", defaultRef, "A VCS (git) version, tag, or branch")
 	run.Flags().BoolVar(&runNoProgress, "no-progress", false, "Disable progress meter")
 	run.Flags().BoolVar(&runNoColor, "no-color", false, "Remove color codes from log output")
+	run.Flags().BoolVarP(&runBackground, "background", "b", false, "Trigger the event and exit. Let the job run in the background.")
 	run.Flags().StringVarP(&runLogLevel, "level", "l", "log", "Specified log level: log, info, warn, error")
 	Root.AddCommand(run)
 }
@@ -106,12 +112,13 @@ func newScriptRunner() (*scriptRunner, error) {
 	}
 
 	app := &scriptRunner{
-		store:    kube.New(c, globalNamespace),
-		kc:       c,
-		event:    runEvent,
-		commit:   runCommitish,
-		ref:      runRef,
-		logLevel: strings.ToUpper(runLogLevel),
+		store:      kube.New(c, globalNamespace),
+		kc:         c,
+		event:      runEvent,
+		commit:     runCommitish,
+		ref:        runRef,
+		logLevel:   strings.ToUpper(runLogLevel),
+		background: runBackground,
 	}
 	if len(runPayload) > 0 {
 		data, err := ioutil.ReadFile(runPayload)
@@ -124,13 +131,14 @@ func newScriptRunner() (*scriptRunner, error) {
 }
 
 type scriptRunner struct {
-	store    storage.Store
-	kc       kubernetes.Interface
-	payload  []byte
-	event    string
-	commit   string
-	ref      string
-	logLevel string
+	store      storage.Store
+	kc         kubernetes.Interface
+	payload    []byte
+	event      string
+	commit     string
+	ref        string
+	logLevel   string
+	background bool
 }
 
 func (a *scriptRunner) sendBuild(b *brigade.Build) error {
@@ -140,6 +148,10 @@ func (a *scriptRunner) sendBuild(b *brigade.Build) error {
 
 	podName := fmt.Sprintf("brigade-worker-%s", b.ID)
 
+	if a.background {
+		fmt.Printf("Build: %s, Worker: %s\n", b.ID, podName)
+		return nil
+	}
 	fmt.Printf("Event created. Waiting for worker pod named %q.\n", podName)
 
 	if err := a.waitForWorker(b.ID); err != nil {
@@ -153,7 +165,7 @@ func (a *scriptRunner) sendBuild(b *brigade.Build) error {
 		destination = decolorizer.New(destination)
 	}
 
-	fmt.Printf("Started build %s as %q\n", b.ID, podName)
+	fmt.Printf("Build: %s, Worker: %s\n", b.ID, podName)
 	return a.podLog(podName, destination)
 }
 
