@@ -1,12 +1,12 @@
 package commands
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 
 	"github.com/Azure/brigade/pkg/storage/kube"
 )
@@ -46,7 +46,12 @@ func getProject(out io.Writer, name string) error {
 		return err
 	}
 
-	bytes, err := yaml.Marshal(p)
+	s, err := kube.SecretFromProject(p)
+	if err != nil {
+		return err
+	}
+
+	bytes, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return err
 	}
