@@ -177,7 +177,6 @@ Properties of `Job`
 - `args: string[]`: Arguments to pass to the container's entrypoint. It is recommended,
   though not required, that implementors not use both `args` and `tasks`.
 - `imageForcePull: boolean`: Defines the container image pull policy: `Always` if `true` or `IfNotPresent` if `false` (defaults to `false`).
-- `tasks: string[]`: Tasks to be run in the job, in order.
 - `env: {[key: string]:string}`: Name/value pairs of environment variables.
 - `image: string`: The container image to run
 - `imagePullSecrets: string[]`: The names of the pull secrets (for pulling images from a secure remote repository)
