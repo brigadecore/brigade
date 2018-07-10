@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/gosuri/uitable"
 	"github.com/spf13/cobra"
@@ -40,6 +41,10 @@ func listBuilds(out io.Writer, project string) error {
 	}
 
 	store := kube.New(c, globalNamespace)
+	// We need to give the cache time to sync. Typically, this is under one
+	// second, but a slow connection between Brig and Brigade could make this
+	// longer, so we give it a comfortable window.
+	store.BlockUntilAPICacheSynced(time.After(30 * time.Second))
 
 	var bs []*brigade.Build
 	if project == "" {
@@ -52,8 +57,6 @@ func listBuilds(out io.Writer, project string) error {
 		if err != nil {
 			return err
 		}
-
-		fmt.Printf("getting builds for %s\n", proj.Name)
 
 		bs, err = store.GetProjectBuilds(proj)
 		if err != nil {
