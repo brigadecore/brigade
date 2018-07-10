@@ -14,6 +14,7 @@ special cluster environment. An environment is composed of the following things:
 - A Brigade server running in your cluster
 - A project in which the script will run
 - (Optionally) A source code repository (e.g. git) that contains data our
+- (Optionally) A [`brigade.json`](workers.md) file that contains additional dependencies that can be used from `brigade.js`
 - (Optionally) Other configuration data, like [secrets](secrets.md)
 
 For the examples in this document, we have created a project with these values:
