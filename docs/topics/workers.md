@@ -70,32 +70,8 @@ Notes:
 
 - the dependencies should point the exact version (and not use the tilde ~ and caret ^ to indicate semver compatible versions)
 
-- note the already existing dependencies and dev dependencies for a Brigade worker:
-
-```
-  "dependencies": {
-    "@kubernetes/client-node": "^0.1.3",
-    "child-process-promise": "^2.2.1",
-    "pretty-error": "^2.1.1",
-    "ulid": "^0.2.0"
-  },
-
-  "devDependencies": {
-    "@types/chai": "^4.0.1",
-    "@types/mocha": "^2.2.41",
-    "@types/node": "^8.0.14",
-    "chai": "^4.1.0",
-    "mocha": "5.2.0",
-    "prettier": "^1.9.1",
-    "rimraf": "^2.6.2",
-    "ts-node": "^3.3.0",
-    "typedoc": "^0.8.0",
-    "typescript": "^2.4.2"
-  }
-```
-
-When adding a custom dependency using `brigade.json`, `yarn` will add it side-by-side with the worker's 
-dependencies - this means that the process will fail if a dependency that conflicts with one of the 
+- when adding a custom dependency using `brigade.json`, `yarn` will add it side-by-side with [the worker's 
+dependencies](../../brigade-worker/package.json) - this means that the process will fail if a dependency that conflicts with one of the 
 worker's dependency is added. However, already existing dependencies (such as `@kubernetes/client-node`, `ulid` or `chai`) 
 can be used from `brigade.js` without adding them to `brigade.json`. 
 
