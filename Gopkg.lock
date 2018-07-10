@@ -427,6 +427,7 @@
     "pkg/util/cache",
     "pkg/util/clock",
     "pkg/util/diff",
+    "pkg/util/duration",
     "pkg/util/errors",
     "pkg/util/framer",
     "pkg/util/httpstream",
@@ -551,6 +552,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c1e9edf42863b0e537ebf244adb7a8115529a3633a1dd9d819a1c2231c078808"
+  inputs-digest = "0681c62028366b0a4f0537b59e4c9c2940ad68f3a6c662990e0895b5f348415d"
   solver-name = "gps-cdcl"
   solver-version = 1

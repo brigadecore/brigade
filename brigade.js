@@ -4,7 +4,7 @@
 // ============================================================================
 const { events, Job, Group} = require("brigadier")
 
-const goImg = "golang:1.9"
+const goImg = "golang:1.10"
 
 function build(e, project) {
   // This is a Go project, so we want to set it up for Go.
