@@ -1,5 +1,6 @@
 {{ $fname := include "brigade.worker.fullname" . }}
-{{ $serviceAccount := default "brigade-worker" .Values.worker.serviceAccount }}
+{{ $serviceAccount := default "brigade-worker" .Values.worker.serviceAccount.name }}
+{{ if .Values.worker.serviceAccount.create }}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -45,4 +46,5 @@ roleRef:
   kind: Role
   name: {{ $fname }}
   apiGroup: rbac.authorization.k8s.io
+{{ end }}
 {{ end }}

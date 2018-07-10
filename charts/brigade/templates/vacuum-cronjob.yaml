@@ -1,4 +1,5 @@
 {{ if .Values.vacuum.enabled }}{{ $fullname := include "brigade.vacuum.fullname" .}}
+{{ $serviceAccount := default "brigade-vacuum" .Values.vacuum.serviceAccount.name }}
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
@@ -21,7 +22,7 @@ spec:
             app: {{ template "brigade.fullname" . }}
             role: vacuum
         spec:
-          serviceAccountName: {{ $fullname }}
+          serviceAccountName: {{ $serviceAccount }}
           containers:
           - name: {{ .Chart.Name }}-vacuum
             image: "{{ .Values.vacuum.registry }}/{{ .Values.vacuum.name }}:{{ default .Chart.AppVersion .Values.vacuum.tag }}"

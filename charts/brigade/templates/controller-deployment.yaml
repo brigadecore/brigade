@@ -34,6 +34,6 @@ spec:
           - name: BRIGADE_WORKER_PULL_POLICY
             value: {{ default "IfNotPresent" .Values.worker.pullPolicy }}
           - name: BRIGADE_WORKER_SERVICE_ACCOUNT
-            value: {{ default "brigade-worker" .Values.worker.serviceAccount }}
+            value: {{ default "brigade-worker" .Values.worker.serviceAccount.name }}
       {{ if .Values.privateRegistry }}imagePullSecrets:
         - name: {{.Values.privateRegistry}}{{ end }}
