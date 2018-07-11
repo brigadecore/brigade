@@ -38,3 +38,11 @@
 [[constraint]]
   branch = "master"
   name = "github.com/Masterminds/kitt"
+
+[[constraint]]
+  name = "github.com/emicklei/go-restful"
+  version = "2.7.1"
+
+[[constraint]]
+  name = "github.com/emicklei/go-restful-openapi"
+  version = "0.11.0"

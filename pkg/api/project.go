@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"gopkg.in/gin-gonic/gin.v1"
+	restful "github.com/emicklei/go-restful"
 
 	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage"
@@ -15,13 +15,13 @@ type Project struct {
 }
 
 // List creates a new gin handler for the GET /projects endpoint
-func (api Project) List(c *gin.Context) {
+func (api Project) List(request *restful.Request, response *restful.Response) {
 	projects, err := api.store.GetProjects()
 	if err != nil {
-		c.JSON(http.StatusNotFound, struct{}{})
+		response.WriteErrorString(http.StatusNotFound, "No Projects found.")
 		return
 	}
-	c.JSON(http.StatusOK, projects)
+	response.WriteHeaderAndEntity(http.StatusOK, projects)
 }
 
 // ProjectBuildSummary is a project plus the latest build data
@@ -31,11 +31,10 @@ type ProjectBuildSummary struct {
 }
 
 // ListWithLatestBuild lists the projects with the latest builds attached.
-func (api Project) ListWithLatestBuild(c *gin.Context) {
-
+func (api Project) ListWithLatestBuild(request *restful.Request, response *restful.Response) {
 	projects, err := api.store.GetProjects()
 	if err != nil {
-		c.JSON(http.StatusNotFound, struct{}{})
+		response.WriteErrorString(http.StatusNotFound, "No Projects found.")
 		return
 	}
 
@@ -48,32 +47,32 @@ func (api Project) ListWithLatestBuild(c *gin.Context) {
 		}
 		res = append(res, pbs)
 	}
-	c.JSON(http.StatusOK, res)
+	response.WriteHeaderAndEntity(http.StatusOK, res)
 }
 
 // Get creates a new gin handler for the GET /project/:id endpoint
-func (api Project) Get(c *gin.Context) {
-	id := c.Params.ByName("id")
+func (api Project) Get(request *restful.Request, response *restful.Response) {
+	id := request.PathParameter("id")
 	proj, err := api.store.GetProject(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, struct{}{})
+		response.WriteErrorString(http.StatusNotFound, "No Project found.")
 		return
 	}
-	c.JSON(http.StatusOK, proj)
+	response.WriteHeaderAndEntity(http.StatusOK, proj)
 }
 
 // Builds creates a new gin handler for the GET /project/:id/builds endpoint
-func (api Project) Builds(c *gin.Context) {
-	id := c.Params.ByName("id")
+func (api Project) Builds(request *restful.Request, response *restful.Response) {
+	id := request.PathParameter("id")
 	proj, err := api.store.GetProject(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, struct{}{})
+		response.WriteErrorString(http.StatusNotFound, "No Project found.")
 		return
 	}
 	builds, err := api.store.GetProjectBuilds(proj)
 	if err != nil {
-		c.JSON(http.StatusNotFound, struct{}{})
+		response.WriteErrorString(http.StatusNotFound, "No Project Builds found.")
 		return
 	}
-	c.JSON(http.StatusOK, builds)
+	response.WriteHeaderAndEntity(http.StatusOK, builds)
 }
