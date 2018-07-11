@@ -43,13 +43,13 @@ function build(e, project) {
     "yarn test"
   ];
 
-  start = ghNotify("pending", "Build started", e, project)
+  start = ghNotify("pending", `Build started as ${ e.buildID }`, e, project)
 
   // Run tests in parallel. Then if it's a release, push binaries.
   // Then send GitHub a notification on the status.
   Group.runAll([start, jsTest, goBuild])
   .then(() => {
-      return ghNotify("success", "Passed", e, project).run()
+      return ghNotify("success", `Build ${ e.buildID } passed`, e, project).run()
    }).then( () => {
     const gh = JSON.parse(e.payload)
     var runRelease = false
@@ -64,7 +64,7 @@ function build(e, project) {
     }
     return Promise.resolve(runRelease)
   }).catch(err => {
-    return ghNotify("failure", `failed build ${ err.toString() }`, e, project).run()
+    return ghNotify("failure", `failed build ${ e.buildID } ${ err.toString() }`, e, project).run()
   });
 }
 
