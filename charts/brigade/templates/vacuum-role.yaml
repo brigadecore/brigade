@@ -17,7 +17,7 @@ metadata:
 kind: Role
 apiVersion: {{ template "brigade.rbac.version" }}
 metadata:
-  name: {{ $serviceAccount }}
+  name: {{ $fname }}
   labels:
     app: {{ template "brigade.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
