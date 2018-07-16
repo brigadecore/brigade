@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/AlecAivazis/survey"
 	"github.com/Masterminds/goutils"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -158,6 +158,9 @@ func createProject(out io.Writer) error {
 // Default values are read from the given project. Values are then
 // replaced on that object.
 func projectCreatePrompts(p *brigade.Project) error {
+	// We always set this to the globalNamespace, otherwise things will break.
+	p.Kubernetes.Namespace = globalNamespace
+
 	if err := survey.AskOne(&survey.Input{
 		Message: "Project name",
 		Help:    "By convention, this is user/project or org/project",
@@ -304,14 +307,6 @@ func projectCreatePrompts(p *brigade.Project) error {
 		return fmt.Errorf(abort, err)
 	} else if configureK8s {
 		if err := survey.Ask([]*survey.Question{
-			{
-				Name: "namespace",
-				Prompt: &survey.Input{
-					Message: "Kubernetes Namespace",
-					Help:    "The namespace in which this project applies",
-					Default: p.Kubernetes.Namespace,
-				},
-			},
 			{
 				Name: "vCSSidecar",
 				Prompt: &survey.Input{
