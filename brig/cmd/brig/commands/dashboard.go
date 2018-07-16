@@ -67,8 +67,7 @@ var dashboard = &cobra.Command{
 		}
 
 		// block until the user sends a CTRL+C
-		select {
-		}
+		select {}
 	},
 }
 
