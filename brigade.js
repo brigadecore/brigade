@@ -64,7 +64,7 @@ function build(e, project) {
     }
     return Promise.resolve(runRelease)
   }).catch(err => {
-    return ghNotify("failure", `failed build ${ e.buildID } ${ err.toString() }`, e, project).run()
+    return ghNotify("failure", `failed build ${ e.buildID }`, e, project).run()
   });
 }
 
