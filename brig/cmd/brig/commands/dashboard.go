@@ -7,11 +7,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Azure/brigade/pkg/portforwarder"
 	"github.com/bacongobbler/browser"
 	"github.com/spf13/cobra"
+
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/Azure/brigade/pkg/portforwarder"
 )
 
 const (
