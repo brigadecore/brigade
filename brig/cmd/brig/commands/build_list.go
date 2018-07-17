@@ -3,9 +3,12 @@ package commands
 import (
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/gosuri/uitable"
 	"github.com/spf13/cobra"
+
+	"k8s.io/apimachinery/pkg/util/duration"
 
 	"github.com/Azure/brigade/pkg/storage/kube"
 )
@@ -41,14 +44,15 @@ func listBuilds(out io.Writer) error {
 	}
 
 	table := uitable.New()
-	table.AddRow("ID", "TYPE", "PROVIDER", "PROJECT", "STATUS")
+	table.AddRow("ID", "TYPE", "PROVIDER", "PROJECT", "STATUS", "AGE")
 
 	for _, b := range bs {
 		status := "???"
 		if b.Worker != nil {
 			status = b.Worker.Status.String()
 		}
-		table.AddRow(b.ID, b.Type, b.Provider, b.ProjectID, status)
+		since := duration.ShortHumanDuration(time.Since(b.Worker.EndTime))
+		table.AddRow(b.ID, b.Type, b.Provider, b.ProjectID, status, since)
 	}
 	fmt.Fprintln(out, table)
 	return nil
