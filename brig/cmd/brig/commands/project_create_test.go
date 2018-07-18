@@ -81,3 +81,11 @@ func TestIsHTTP(t *testing.T) {
 		}
 	}
 }
+
+func TestReplaceNewlines(t *testing.T) {
+	given := "foo\nbar\nbaz"
+	expect := "foo$bar$baz"
+	if got := replaceNewlines(given); got != expect {
+		t.Fatalf("Expected %q, got %q", expect, got)
+	}
+}

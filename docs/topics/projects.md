@@ -46,7 +46,7 @@ $ brig project create
 ? Configure Advanced Brigade Settings? No
 ```
 
-You can use `--dry-run --debug` to see the answers to the question without creating
+You can use `--dry-run --verbose` to see the answers to the question without creating
 a new release. For more, see `brig project create --help`.
 
 ### Managing Your Projects
@@ -214,8 +214,8 @@ You can use SSH keys and a `git+ssh` URL to secure a private repository.
 In this case, your project's `cloneURL` should be of the form `git@github.com:Azure/brigade.git`
 and you will need to add the SSH _private key_ to the `values.yaml` file.
 
-When doing `brig project create`, if you choose a URL that looks like it supports
-an SSH key, you will be prompted to enter the path to the SSH private key file.
+When doing `brig project create`, URLs that do not use HTTP or HTTPS will prompt
+for (optionally) adding an SSH key.
 
 ## Using other Git providers
 

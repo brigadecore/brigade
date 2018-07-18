@@ -62,6 +62,7 @@ var defaultProject = &brigade.Project{
 	Worker: brigade.WorkerConfig{
 		PullPolicy: "IfNotPresent",
 	},
+	WorkerCommand: "yarn -s start",
 }
 
 func init() {
@@ -161,12 +162,22 @@ func projectCreatePrompts(p *brigade.Project) error {
 	// We always set this to the globalNamespace, otherwise things will break.
 	p.Kubernetes.Namespace = globalNamespace
 
+	initialName := p.Name
 	if err := survey.AskOne(&survey.Input{
 		Message: "Project name",
 		Help:    "By convention, this is user/project or org/project",
 		Default: p.Name,
 	}, &p.Name, survey.Required); err != nil {
 		return err
+	}
+
+	// If the name changes, let's quickly try to set some sensible defaults.
+	// If the name has not changed, we assume we should keep using the previously
+	// loaded values, since this is an update or a namespace move or something
+	// similar.
+	if p.Name != initialName {
+		p.Repo.Name = fmt.Sprintf("github.com/%s", p.Name)
+		p.Repo.CloneURL = fmt.Sprintf("https://%s.git", p.Repo.Name)
 	}
 
 	qs := []*survey.Question{
@@ -204,7 +215,7 @@ func projectCreatePrompts(p *brigade.Project) error {
 			return fmt.Errorf(abort, err)
 		}
 		if key := loadFileStr(fname); key != "" {
-			p.Repo.SSHKey = key
+			p.Repo.SSHKey = replaceNewlines(key)
 		}
 	}
 
@@ -319,7 +330,7 @@ func projectCreatePrompts(p *brigade.Project) error {
 				Name: "buildStorageSize",
 				Prompt: &survey.Input{
 					Message: "Build storage size",
-					Help:    "By default, 50Mi of shared temp space is allocated per build. Larger values slow down build startup.",
+					Help:    "By default, 50Mi of shared temp space is allocated per build. Larger values slow down build startup. Units are Ki, Mi, or Gi",
 					Default: p.Kubernetes.BuildStorageSize,
 				},
 			},
@@ -438,7 +449,7 @@ func projectCreatePrompts(p *brigade.Project) error {
 				Name: "workerCommand",
 				Prompt: &survey.Input{
 					Message: "Worker Command",
-					Help:    "Override the worker's default command (yarn start). For debugging/expert use",
+					Help:    "EXPERT: Override the worker's default command (yarn -s start)",
 					Default: p.WorkerCommand,
 				},
 			},
@@ -446,7 +457,7 @@ func projectCreatePrompts(p *brigade.Project) error {
 				Name: "defaultScriptName",
 				Prompt: &survey.Input{
 					Message: "Default Script ConfigMap Name",
-					Help:    "It is possible to store a default script in a ConfigMap. Supply the name of that ConfigMap to use the script.",
+					Help:    "EXPERT: It is possible to store a default script in a ConfigMap. Supply the name of that ConfigMap to use the script.",
 					Default: p.DefaultScriptName,
 				},
 			},
@@ -488,7 +499,11 @@ func loadFileStr(name string) string {
 	if err != nil {
 		return ""
 	}
-	return strings.Replace(string(data), "\n", "$", 0)
+	return string(data)
+}
+
+func replaceNewlines(data string) string {
+	return strings.Replace(data, "\n", "$", -1)
 }
 
 // loadProjectConfig loads a project configuration from the local filesystem.
