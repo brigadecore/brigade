@@ -62,6 +62,7 @@ var defaultProject = &brigade.Project{
 	Worker: brigade.WorkerConfig{
 		PullPolicy: "IfNotPresent",
 	},
+	WorkerCommand: "yarn -s start",
 }
 
 func init() {
@@ -161,12 +162,22 @@ func projectCreatePrompts(p *brigade.Project) error {
 	// We always set this to the globalNamespace, otherwise things will break.
 	p.Kubernetes.Namespace = globalNamespace
 
+	initialName := p.Name
 	if err := survey.AskOne(&survey.Input{
 		Message: "Project name",
 		Help:    "By convention, this is user/project or org/project",
 		Default: p.Name,
 	}, &p.Name, survey.Required); err != nil {
 		return err
+	}
+
+	// If the name changes, let's quickly try to set some sensible defaults.
+	// If the name has not changed, we assume we should keep using the previously
+	// loaded values, since this is an update or a namespace move or something
+	// similar.
+	if p.Name != initialName {
+		p.Repo.Name = fmt.Sprintf("github.com/%s", p.Name)
+		p.Repo.CloneURL = fmt.Sprintf("https://%s.git", p.Repo.Name)
 	}
 
 	qs := []*survey.Question{
