@@ -46,12 +46,12 @@ func getProject(out io.Writer, name string) error {
 		return err
 	}
 
-	s, err := kube.SecretFromProject(p)
+	sec, err := kube.SecretFromProject(p)
 	if err != nil {
 		return err
 	}
 
-	bytes, err := json.MarshalIndent(s, "", "  ")
+	bytes, err := json.MarshalIndent(sec, "", "  ")
 	if err != nil {
 		return err
 	}
