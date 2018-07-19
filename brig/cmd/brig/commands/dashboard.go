@@ -19,13 +19,11 @@ import (
 const (
 	dashboardUsage = `Opens the Kashti dashboard with the default browser.
 `
-	remoteAPIPort = 7745
-	remotePort    = 80
+	remotePort = 80
 )
 
 var (
 	port            int
-	apiPort         int
 	kashtiNamespace string
 	openDashboard   bool
 )
@@ -35,7 +33,6 @@ func init() {
 
 	flags := dashboard.PersistentFlags()
 	flags.IntVar(&port, "port", 8081, "local port for the Kashti dashboard")
-	flags.IntVar(&apiPort, "api-port", 7745, "local port for the Brigade API server")
 	flags.StringVar(&kashtiNamespace, "kashti-namespace", "default", "namespace for Kashti")
 	flags.BoolVar(&openDashboard, "open-dashboard", true, "open the dashboard in the browser")
 }
@@ -82,12 +79,6 @@ func startProxy(kashtiPort int) (*portforwarder.Tunnel, error) {
 	c, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
-	}
-
-	apiSelector := labels.Set{"role": "api"}.AsSelector()
-	_, err = portforwarder.New(c, config, globalNamespace, apiSelector, remoteAPIPort, apiPort)
-	if err != nil {
-		return nil, fmt.Errorf("cannot start port forward for brigade api: %v", err)
 	}
 
 	kashtiSelector := labels.Set{"app": "kashti"}.AsSelector()
