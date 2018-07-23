@@ -227,6 +227,7 @@ func (s *githubHook) build(eventType string, rev brigade.Revision, payload []byt
 		Provider:  "github",
 		Revision:  &rev,
 		Payload:   payload,
+		Script: []byte(proj.DefaultScript),
 	}
 
 	return s.store.CreateBuild(b)
