@@ -6,7 +6,7 @@ explains how to use that chart to manage your Brigade projects.
 
 ## An Introduction to Projects
 
-Brigade projects provide the necesary context for executing Brigade scripts.
+Brigade projects provide the necessary context for executing Brigade scripts.
 They provide _permission_ to run scripts, _authentication_ for some operations,
 _configuration_ for VCS, and _secret management_ for Brigade scripts.
 
