@@ -376,7 +376,14 @@ events.on("exec", () => {
 ```
 [brigade-06.js](examples/brigade-06.js)
 
-This time we have added some tasks by adding them to the tasks array: `job.tasks = [ /* ... */]`
+Tasks can be an arbitrary shell command _that is supported by the image you use_.
+Tasks are concatenated together and executed as one shell script. (In Linux, they
+are executed as `/bin/sh` commands, with `set -eo pipefail`.)
+
+> You can change the shell a job uses by setting `Job.shell`. However, if the shell
+> you set is not present in the image, this will cause an error.
+
+In the example above we have added some tasks by adding them to the tasks array: `job.tasks = [ /* ... */]`
 It will run the `echo` command twice. If we run this new script, its output will look just
 about the same as when we ran no tasks:
 
