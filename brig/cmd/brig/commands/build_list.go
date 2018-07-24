@@ -10,6 +10,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/duration"
 
+	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage/kube"
 )
 
@@ -23,24 +24,42 @@ func init() {
 }
 
 var buildList = &cobra.Command{
-	Use:   "list",
+	Use:   "list [project]",
 	Short: "list builds",
 	Long:  buildListUsage,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return listBuilds(cmd.OutOrStdout())
+		proj := ""
+		if len(args) > 0 {
+			proj = args[0]
+		}
+		return listBuilds(cmd.OutOrStdout(), proj)
 	},
 }
 
-func listBuilds(out io.Writer) error {
+func listBuilds(out io.Writer, project string) error {
 	c, err := kubeClient()
 	if err != nil {
 		return err
 	}
 
 	store := kube.New(c, globalNamespace)
-	bs, err := store.GetBuilds()
-	if err != nil {
-		return err
+
+	var bs []*brigade.Build
+	if project == "" {
+		bs, err = store.GetBuilds()
+		if err != nil {
+			return err
+		}
+	} else {
+		proj, err := store.GetProject(project)
+		if err != nil {
+			return err
+		}
+
+		bs, err = store.GetProjectBuilds(proj)
+		if err != nil {
+			return err
+		}
 	}
 
 	table := uitable.New()
