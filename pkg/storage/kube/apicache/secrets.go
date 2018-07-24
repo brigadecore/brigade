@@ -12,10 +12,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-type secretStoreFactory struct{}
-
 // return a new cached store for secrets
-func (secretStoreFactory) new(client kubernetes.Interface, namespace string, resyncPeriod time.Duration, synced chan struct{}) cache.Store {
+func newSecretStore(client kubernetes.Interface, namespace string, resyncPeriod time.Duration, synced chan struct{}) cache.Store {
 	return newListStore(client, storeConfig{
 		resource:     "secrets",
 		namespace:    namespace,
@@ -37,9 +35,12 @@ func (secretStoreFactory) new(client kubernetes.Interface, namespace string, res
 //	"component": "build",
 //	"project":   proj.ID,
 // }
-func (a *apiCache) GetSecretsFilteredBy(selectors map[string]string) []v1.Secret {
-
+func (a *apiCache) GetSecretsFilteredBy(selectors map[string]string) ([]v1.Secret, error) {
 	var filteredSecrets []v1.Secret
+
+	if err := a.blockUntilAPICacheSynced(defaultCacheSyncTimeout); err != nil {
+		return filteredSecrets, err
+	}
 
 	for _, raw := range a.secretStore.List() {
 
@@ -56,7 +57,7 @@ func (a *apiCache) GetSecretsFilteredBy(selectors map[string]string) []v1.Secret
 		filteredSecrets = append(filteredSecrets, *secret)
 	}
 	sort.Sort(ByCreation(filteredSecrets))
-	return filteredSecrets
+	return filteredSecrets, nil
 }
 
 // ByCreation sorts secrets by their creation timestamp.

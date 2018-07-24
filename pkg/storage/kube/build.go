@@ -108,12 +108,18 @@ func (s *store) GetProjectBuilds(proj *brigade.Project) ([]*brigade.Build, error
 		"project":   proj.ID,
 	}
 
-	projectSecrets := s.apiCache.GetSecretsFilteredBy(labelSelectorMap)
+	projectSecrets, err := s.apiCache.GetSecretsFilteredBy(labelSelectorMap)
+	if err != nil {
+		return nil, err
+	}
 
 	// The theory here is that the secrets and pods are close to 1:1, so we can
 	// preload the pods and take a local hit in walking the list rather than take
 	// a network hit to load each pod per secret.
-	projectPods := s.apiCache.GetPodsFilteredBy(labelSelectorMap)
+	projectPods, err := s.apiCache.GetPodsFilteredBy(labelSelectorMap)
+	if err != nil {
+		return nil, err
+	}
 
 	buildList := make([]*brigade.Build, len(projectSecrets))
 	for i := range projectSecrets {
