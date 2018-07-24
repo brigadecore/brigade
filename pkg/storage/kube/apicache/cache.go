@@ -1,6 +1,7 @@
 package apicache
 
 import (
+	"errors"
 	"time"
 
 	"k8s.io/api/core/v1"
@@ -13,16 +14,15 @@ import (
 	"github.com/Azure/brigade/pkg/merge"
 )
 
+const defaultCacheSyncTimeout = 30 * time.Second
+
 // APICache continuously queries the kubernetes api and caches secret and pod information in the current implementation
 // this way dashboards can be build faster
 type APICache interface {
 	// get cached secrets filtered by label selectors k/v pairs
-	GetSecretsFilteredBy(labelSelectors map[string]string) []v1.Secret
+	GetSecretsFilteredBy(labelSelectors map[string]string) ([]v1.Secret, error)
 	// get cached pods filtered by label selectors k/v pairs
-	GetPodsFilteredBy(labelSelectors map[string]string) []v1.Pod
-	// blocks until the api cache is populated
-	// returns true when cache is synced or false when timeout reached
-	BlockUntilAPICacheSynced(waitUntil <-chan time.Time) bool
+	GetPodsFilteredBy(labelSelectors map[string]string) ([]v1.Pod, error)
 }
 
 type apiCache struct {
@@ -59,31 +59,29 @@ func New(client kubernetes.Interface, namespace string, resyncPeriod time.Durati
 	secretsSynced := make(chan struct{})
 	podsSynced := make(chan struct{})
 
-	merged := merge.Channels(secretsSynced, podsSynced)
-
 	return &apiCache{
-		hasSyncedInitially: merged,
 		client:             client,
-		secretStore:        secretStoreFactory{}.new(client, namespace, resyncPeriod, secretsSynced),
-		podStore:           podStoreFactory{}.new(client, namespace, resyncPeriod, podsSynced),
+		hasSyncedInitially: merge.Channels(secretsSynced, podsSynced),
+		secretStore:        newSecretStore(client, namespace, resyncPeriod, secretsSynced),
+		podStore:           newPodStore(client, namespace, resyncPeriod, podsSynced),
 	}
 }
 
-// BlockUntilAPICacheSynced blocks until all cache.Store's are synced
-// returns true if all channels are closed
-// returns false if the timeout was reached (in case waitUntil is not nil)
-func (a *apiCache) BlockUntilAPICacheSynced(waitUntil <-chan time.Time) bool {
-	if waitUntil == nil {
+// blockUntilAPICacheSynced blocks until all cache.Store's are synced
+// returns nil if all channels are closed
+// returns error if the timeout was reached (in case timeout > 0)
+func (a *apiCache) blockUntilAPICacheSynced(timeout time.Duration) error {
+	if timeout < 0 {
 		<-a.hasSyncedInitially
-		return true
+		return nil
 	}
 
 	select {
-	case <-waitUntil:
-		return false
-	case _, ok := <-a.hasSyncedInitially:
+	case <-time.After(timeout):
+		return errors.New("Timed out waiting for cache to sync")
+	case <-a.hasSyncedInitially:
 		// ok == false when all merged channels are closed
 		// therefore return !ok to indicate every listener is synced if that's the case
-		return !ok
+		return nil
 	}
 }

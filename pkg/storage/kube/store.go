@@ -16,11 +16,6 @@ type store struct {
 	apiCache  apicache.APICache
 }
 
-// BlockUntilAPICacheSynced blocks until the APICache is populated, useful for testing
-func (s *store) BlockUntilAPICacheSynced(waitUntil <-chan time.Time) bool {
-	return s.apiCache.BlockUntilAPICacheSynced(waitUntil)
-}
-
 // New initializes a new storage backend.
 func New(c kubernetes.Interface, namespace string) storage.Store {
 	return &store{

@@ -11,10 +11,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-type podStoreFactory struct{}
-
 // return a new cached store for secrets
-func (podStoreFactory) new(client kubernetes.Interface, namespace string, resyncPeriod time.Duration, synced chan struct{}) cache.Store {
+func newPodStore(client kubernetes.Interface, namespace string, resyncPeriod time.Duration, synced chan struct{}) cache.Store {
 	return newListStore(client, storeConfig{
 		resource:     "pods",
 		namespace:    namespace,
@@ -36,9 +34,12 @@ func (podStoreFactory) new(client kubernetes.Interface, namespace string, resync
 //	"component": "build",
 //	"project":   proj.ID,
 // }
-func (a *apiCache) GetPodsFilteredBy(selectors map[string]string) []v1.Pod {
+func (a *apiCache) GetPodsFilteredBy(selectors map[string]string) ([]v1.Pod, error) {
+	var filteredPods []v1.Pod
 
-	var filteredSecrets []v1.Pod
+	if err := a.blockUntilAPICacheSynced(defaultCacheSyncTimeout); err != nil {
+		return filteredPods, err
+	}
 
 	for _, raw := range a.podStore.List() {
 
@@ -52,8 +53,8 @@ func (a *apiCache) GetPodsFilteredBy(selectors map[string]string) []v1.Pod {
 			continue
 		}
 
-		filteredSecrets = append(filteredSecrets, *secret)
+		filteredPods = append(filteredPods, *secret)
 	}
 
-	return filteredSecrets
+	return filteredPods, nil
 }

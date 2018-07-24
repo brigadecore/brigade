@@ -83,11 +83,6 @@ type Store struct {
 	ProjectList []*brigade.Project
 }
 
-// BlockUntilAPICacheSynced gets the mocked store is declared to be in sync.
-func (s *Store) BlockUntilAPICacheSynced(waitUntil <-chan time.Time) bool {
-	return true
-}
-
 // GetProjects gets the mock project wrapped as a slice of projects.
 func (s *Store) GetProjects() ([]*brigade.Project, error) {
 	return s.ProjectList, nil

@@ -7,14 +7,19 @@ import (
 	"k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
+
+	"github.com/Azure/brigade/pkg/merge"
 )
 
 func TestPodStore(t *testing.T) {
 
 	client := fake.NewSimpleClientset()
 
-	factory := podStoreFactory{}
-	store := factory.new(client, "default", 1, nil)
+	secretsSynced := make(chan struct{})
+	podsSynced := make(chan struct{})
+	merged := merge.Channels(secretsSynced, podsSynced)
+
+	store := newPodStore(client, "default", 1, podsSynced)
 
 	validLabels := map[string]string{
 		"foo": "bar",
@@ -44,13 +49,11 @@ func TestPodStore(t *testing.T) {
 		},
 	}
 
-	_, err := client.CoreV1().Pods("default").Create(&pod1)
-	if err != nil {
+	if _, err := client.CoreV1().Pods("default").Create(&pod1); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = client.CoreV1().Pods("default").Create(&pod2)
-	if err != nil {
+	if _, err := client.CoreV1().Pods("default").Create(&pod2); err != nil {
 		t.Fatal(err)
 	}
 
@@ -60,11 +63,16 @@ func TestPodStore(t *testing.T) {
 	store.Add(&secret1)
 
 	cache := apiCache{
-		client:   client,
-		podStore: store,
+		hasSyncedInitially: merged,
+		client:             client,
+		podStore:           store,
+		secretStore:        newSecretStore(client, "default", 1, secretsSynced),
 	}
 
-	filteredPods := cache.GetPodsFilteredBy(validLabels)
+	filteredPods, err := cache.GetPodsFilteredBy(validLabels)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(filteredPods) != 1 {
 		t.Fatal("expected len(filtered pods) to be 1")
 	}

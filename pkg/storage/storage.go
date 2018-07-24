@@ -3,8 +3,6 @@ package storage
 import (
 	"io"
 
-	"time"
-
 	"github.com/Azure/brigade/pkg/brigade"
 )
 
@@ -49,6 +47,4 @@ type Store interface {
 	GetWorkerLogStream(job *brigade.Worker) (io.ReadCloser, error)
 	// GetWorkerLogStreamFollow retrieve a followed stream of all logs for a worker from storage.
 	GetWorkerLogStreamFollow(job *brigade.Worker) (io.ReadCloser, error)
-	// BlockUntilAPICacheSynced signals when the cache is initially populated (useful e.g. for testing)
-	BlockUntilAPICacheSynced(waitUntil <-chan time.Time) bool
 }

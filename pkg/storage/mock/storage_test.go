@@ -77,10 +77,6 @@ func TestStore(t *testing.T) {
 	bwlsf.ReadFrom(wlsf)
 	assertSame("GetWorkerLogStreamFollow", StubLogData, bwlsf.String())
 
-	if !m.BlockUntilAPICacheSynced(nil) {
-		t.Fatal("expected to return true")
-	}
-
 	extraProj = &brigade.Project{
 		Name:    "extra",
 		ID:      "extra",
