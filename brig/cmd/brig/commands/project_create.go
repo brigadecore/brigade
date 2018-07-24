@@ -39,6 +39,8 @@ is specified in conjunction with -x/--no-prompts, then the values in the file wi
 be used without prompting the user for any changes.
 `
 
+const abort = "project could not be saved: %s"
+
 var (
 	projectCreateConfig      string
 	projectCreateOut         string
@@ -48,21 +50,25 @@ var (
 	projectCreateReplace     bool
 )
 
-var defaultProject = &brigade.Project{
+// defaultProject has the default project settings.
+// Rather than use this directly, you should get a copy from newProject().
+var defaultProject = brigade.Project{
 	Name: "deis/empty-testbed",
 	Repo: brigade.Repo{
 		Name:     "github.com/deis/empty-testbed",
 		CloneURL: "https://github.com/deis/empty-testbed.git",
-		SSHKey:   "",
 	},
-	Secrets:      map[string]string{},
-	SharedSecret: "",
-	Github:       brigade.Github{},
-	Kubernetes:   brigade.Kubernetes{},
+	Secrets: map[string]string{},
 	Worker: brigade.WorkerConfig{
 		PullPolicy: "IfNotPresent",
 	},
 	WorkerCommand: "yarn -s start",
+}
+
+// newProject clones the default project.
+func newProject() *brigade.Project {
+	proj := defaultProject
+	return &proj
 }
 
 func init() {
@@ -96,7 +102,7 @@ func createProject(out io.Writer) error {
 
 	store := kube.New(c, globalNamespace)
 
-	proj := defaultProject
+	proj := newProject()
 	if projectCreateConfig != "" {
 		if proj, err = loadProjectConfig(projectCreateConfig, proj); err != nil {
 			return err
@@ -199,7 +205,6 @@ func projectCreatePrompts(p *brigade.Project) error {
 		},
 	}
 
-	abort := "project could not be saved: %s"
 	if err := survey.Ask(qs, &p.Repo); err != nil {
 		return fmt.Errorf(abort, err)
 	}
@@ -275,7 +280,7 @@ func projectCreatePrompts(p *brigade.Project) error {
 
 	configureGitHub := false
 	if err := survey.AskOne(&survey.Confirm{
-		Message: "Configure GitHub Enterprise or OAuth?",
+		Message: "Configure GitHub Access?",
 		Help:    "Configure GitHub CI/CD integration for this project",
 	}, &configureGitHub, nil); err != nil {
 		return fmt.Errorf(abort, err)
@@ -284,7 +289,7 @@ func projectCreatePrompts(p *brigade.Project) error {
 			{
 				Name: "token",
 				Prompt: &survey.Input{
-					Message: "OAuth2 Token",
+					Message: "OAuth2 token",
 					Help:    "Used for contacting the GitHub API. GitHub issues this.",
 					Default: p.Github.Token,
 				},
@@ -300,7 +305,7 @@ func projectCreatePrompts(p *brigade.Project) error {
 			{
 				Name: "uploadURL",
 				Prompt: &survey.Input{
-					Message: "GitHub Enterprise Upload URL",
+					Message: "GitHub Enterprise upload URL",
 					Help:    "If using GitHub Enterprise, set the upload URL here",
 					Default: p.Github.UploadURL,
 				},
@@ -310,171 +315,159 @@ func projectCreatePrompts(p *brigade.Project) error {
 		}
 	}
 
-	configureK8s := false
+	doAdvanced := false
 	if err := survey.AskOne(&survey.Confirm{
-		Message: "Configure advanced Kubernetes options?",
-		Help:    "Set advanced options for custom VCS images, storage, and permissions",
-	}, &configureK8s, nil); err != nil {
+		Message: "Configure advanced options",
+		Help:    "Show the advanced configuration options for projects",
+	}, &doAdvanced, nil); err != nil {
 		return fmt.Errorf(abort, err)
-	} else if configureK8s {
-		if err := survey.Ask([]*survey.Question{
-			{
-				Name: "vCSSidecar",
-				Prompt: &survey.Input{
-					Message: "Custom VCS Sidecar",
-					Help:    "The default sidecar uses Git to fetch your repository",
-					Default: p.Kubernetes.VCSSidecar,
-				},
+	} else if doAdvanced {
+		return projectAdvancedPrompts(p)
+	}
+	return nil
+}
+
+func projectAdvancedPrompts(p *brigade.Project) error {
+	if err := survey.Ask([]*survey.Question{
+		{
+			Name: "vCSSidecar",
+			Prompt: &survey.Input{
+				Message: "Custom VCS sidecar",
+				Help:    "The default sidecar uses Git to fetch your repository",
+				Default: p.Kubernetes.VCSSidecar,
 			},
-			{
-				Name: "buildStorageSize",
-				Prompt: &survey.Input{
-					Message: "Build storage size",
-					Help:    "By default, 50Mi of shared temp space is allocated per build. Larger values slow down build startup. Units are Ki, Mi, or Gi",
-					Default: p.Kubernetes.BuildStorageSize,
-				},
+		},
+		{
+			Name: "buildStorageSize",
+			Prompt: &survey.Input{
+				Message: "Build storage size",
+				Help:    "By default, 50Mi of shared temp space is allocated per build. Larger values slow down build startup. Units are Ki, Mi, or Gi",
+				Default: p.Kubernetes.BuildStorageSize,
 			},
-			{
-				Name: "buildStorageClass",
-				Prompt: &survey.Input{
-					Message: "Build Storage Class",
-					Help:    "Kubernetes provides named storage classes. If you want to use a custom storage class, set the class name here.",
-					Default: p.Kubernetes.BuildStorageClass,
-				},
+		},
+		{
+			Name: "buildStorageClass",
+			Prompt: &survey.Input{
+				Message: "Build storage class",
+				Help:    "Kubernetes provides named storage classes. If you want to use a custom storage class, set the class name here.",
+				Default: p.Kubernetes.BuildStorageClass,
 			},
-			{
-				Name: "cacheStorageClass",
-				Prompt: &survey.Input{
-					Message: "Job Cache Storage Class",
-					Help:    "Kubernetes provides named storage classes. If you want to use a custom storage class, set the class name here.",
-					Default: p.Kubernetes.CacheStorageClass,
-				},
+		},
+		{
+			Name: "cacheStorageClass",
+			Prompt: &survey.Input{
+				Message: "Job cache storage class",
+				Help:    "Kubernetes provides named storage classes. If you want to use a custom storage class, set the class name here.",
+				Default: p.Kubernetes.CacheStorageClass,
 			},
-		}, &p.Kubernetes); err != nil {
-			return fmt.Errorf(abort, err)
-		}
+		},
+	}, &p.Kubernetes); err != nil {
+		return fmt.Errorf(abort, err)
 	}
 
-	configureWorker := false
-	if err := survey.AskOne(&survey.Confirm{
-		Message: "Configure Brigade worker?",
-		Help:    "Set advanced options for the Brigade worker",
-	}, &configureWorker, nil); err != nil {
+	if err := survey.Ask([]*survey.Question{
+		{
+			Name: "registry",
+			Prompt: &survey.Input{
+				Message: "Worker image registry or DockerHub org",
+				Help:    "For non-DockerHub, this is the root URL. For DockerHub, it is the org.",
+				Default: p.Worker.Registry,
+			},
+		},
+		{
+			Name: "name",
+			Prompt: &survey.Input{
+				Message: "Worker image name",
+				Help:    "The name of the worker image, e.g. workerImage",
+				Default: p.Worker.Name,
+			},
+		},
+		{
+			Name: "tag",
+			Prompt: &survey.Input{
+				Message: "Custom worker image tag",
+				Help:    "The woerker image tag to pull, e.g. 1.2.3 or latest",
+				Default: p.Worker.Tag,
+			},
+		},
+		{
+			Name: "pullPolicy",
+			Prompt: &survey.Select{
+				Message: "Worker image pull policy",
+				Help:    "The image pull policy determines how often Kubernetes will try to refresh this image",
+				Options: []string{
+					"IfNotPresent",
+					"Always",
+					"Never",
+				},
+				Default: p.Worker.PullPolicy,
+			},
+		},
+	}, &p.Worker); err != nil {
 		return fmt.Errorf(abort, err)
-	} else if configureWorker {
-		if err := survey.Ask([]*survey.Question{
-			{
-				Name: "registry",
-				Prompt: &survey.Input{
-					Message: "Image registry or DockerHub org",
-					Help:    "For non-DockerHub, this is the root URL",
-					Default: p.Worker.Registry,
-				},
-			},
-			{
-				Name: "name",
-				Prompt: &survey.Input{
-					Message: "Image Name",
-					Help:    "The name of the image, e.g. workerImage",
-					Default: p.Worker.Name,
-				},
-			},
-			{
-				Name: "tag",
-				Prompt: &survey.Input{
-					Message: "Image Tag",
-					Help:    "The image tag to pull, e.g. 1.2.3 or latest",
-					Default: p.Worker.Tag,
-				},
-			},
-			{
-				Name: "pullPolicy",
-				Prompt: &survey.Select{
-					Message: "Image Pull Policy",
-					Help:    "The image pull policy determines how often Kubernetes will try to refresh this image",
-					Options: []string{
-						"IfNotPresent",
-						"Always",
-						"Never",
-					},
-					Default: p.Worker.PullPolicy,
-				},
-			},
-		}, &p.Worker); err != nil {
-			return fmt.Errorf(abort, err)
-		}
 	}
-
-	advanced := false
-	if err := survey.AskOne(&survey.Confirm{
-		Message: "Configure Advanced Brigade Settings?",
-		Help:    "Set advanced options for Brigade",
-	}, &advanced, nil); err != nil {
+	if err := survey.Ask([]*survey.Question{
+		{
+			Name: "workerCommand",
+			Prompt: &survey.Input{
+				Message: "Worker command",
+				Help:    "EXPERT: Override the worker's default command (yarn -s start)",
+				Default: p.WorkerCommand,
+			},
+		},
+		{
+			Name: "initGitSubmodules",
+			Prompt: &survey.Confirm{
+				Message: "Initialize Git submodules",
+				Help:    "For repos that have submodules, initialize them on each clone. Not recommended on public repos.",
+				Default: p.InitGitSubmodules,
+			},
+		},
+		{
+			Name: "allowHostMounts",
+			Prompt: &survey.Confirm{
+				Message: "Allow host mounts",
+				Help:    "Allow host-mounted volumes for worker and jobs. Not recommended in multi-tenant clusters.",
+				Default: p.AllowHostMounts,
+			},
+		},
+		{
+			Name: "allowPrivilegedJobs",
+			Prompt: &survey.Confirm{
+				Message: "Allow privileged jobs",
+				Help:    "Allow jobs to mount the Docker socket or perform other privileged operations. Not recommended for multi-tenant clusters.",
+				Default: p.AllowPrivilegedJobs,
+			},
+		},
+		{
+			Name: "imagePullSecrets",
+			Prompt: &survey.Input{
+				Message: "Image pull secrets",
+				Help:    "Comma-separated list of image pull secret names that will be supplied to workers and jobs",
+				Default: p.ImagePullSecrets,
+			},
+		},
+		{
+			Name: "defaultScriptName",
+			Prompt: &survey.Input{
+				Message: "Default script ConfigMap name",
+				Help:    "EXPERT: It is possible to store a default script in a ConfigMap. Supply the name of that ConfigMap to use the script.",
+				Default: p.DefaultScriptName,
+			},
+		},
+	}, p); err != nil {
 		return fmt.Errorf(abort, err)
-	} else if advanced {
-		if err := survey.Ask([]*survey.Question{
-			{
-				Name: "initGitSubmodules",
-				Prompt: &survey.Confirm{
-					Message: "Initialize Git Submodules",
-					Help:    "For repos that have submodules, initialize them on each clone. Not recommended on public repos.",
-					Default: p.InitGitSubmodules,
-				},
-			},
-			{
-				Name: "allowHostMounts",
-				Prompt: &survey.Confirm{
-					Message: "Allow host mounts",
-					Help:    "Allow host-mounted volumes for worker and jobs. Not recommended in multi-tenant clusters.",
-					Default: p.AllowHostMounts,
-				},
-			},
-			{
-				Name: "allowPrivilegedJobs",
-				Prompt: &survey.Confirm{
-					Message: "Allow privileged jobs",
-					Help:    "Allow jobs to mount the Docker socket or perform other privileged operations. Not recommended for multi-tenant clusters.",
-					Default: p.AllowPrivilegedJobs,
-				},
-			},
-			{
-				Name: "imagePullSecrets",
-				Prompt: &survey.Input{
-					Message: "Image Pull Secrets",
-					Help:    "Comma-separated list of image pull secret names that will be supplied to workers and jobs",
-					Default: p.ImagePullSecrets,
-				},
-			},
-			{
-				Name: "workerCommand",
-				Prompt: &survey.Input{
-					Message: "Worker Command",
-					Help:    "EXPERT: Override the worker's default command (yarn -s start)",
-					Default: p.WorkerCommand,
-				},
-			},
-			{
-				Name: "defaultScriptName",
-				Prompt: &survey.Input{
-					Message: "Default Script ConfigMap Name",
-					Help:    "EXPERT: It is possible to store a default script in a ConfigMap. Supply the name of that ConfigMap to use the script.",
-					Default: p.DefaultScriptName,
-				},
-			},
-		}, p); err != nil {
-			return fmt.Errorf(abort, err)
-		}
-		var fname string
-		err := survey.AskOne(&survey.Input{
-			Message: "Upload a Default brigade.js Script",
-			Help:    "The local path to a default brigade.js file that will be run if none exists in the repo. Overrides the ConfigMap script.",
-		}, &fname, loadFileValidator)
-		if err != nil {
-			return fmt.Errorf(abort, err)
-		}
-		if script := loadFileStr(fname); script != "" {
-			p.DefaultScript = loadFileStr(fname)
-		}
+	}
+	var fname string
+	err := survey.AskOne(&survey.Input{
+		Message: "Upload a default brigade.js script",
+		Help:    "The local path to a default brigade.js file that will be run if none exists in the repo. Overrides the ConfigMap script.",
+	}, &fname, loadFileValidator)
+	if err != nil {
+		return fmt.Errorf(abort, err)
+	}
+	if script := loadFileStr(fname); script != "" {
+		p.DefaultScript = loadFileStr(fname)
 	}
 
 	return nil

@@ -7,6 +7,18 @@ import (
 
 const testProjectSecret = "./testdata/project_secret.json"
 
+func TestInitProject(t *testing.T) {
+	p := newProject()
+	if p.Name != defaultProject.Name {
+		t.Fatal("newProject is not cloning default project")
+	}
+
+	p.Name = "overrideName"
+	if p.Name == defaultProject.Name {
+		t.Fatal("newProject returned the pointer to the default project.")
+	}
+}
+
 func TestParseSecret(t *testing.T) {
 	f, err := os.Open(testProjectSecret)
 	if err != nil {
@@ -24,7 +36,7 @@ func TestParseSecret(t *testing.T) {
 }
 
 func TestLoadProjectConfig(t *testing.T) {
-	proj, err := loadProjectConfig(testProjectSecret, defaultProject)
+	proj, err := loadProjectConfig(testProjectSecret, newProject())
 	if err != nil {
 		t.Fatal(err)
 	}
