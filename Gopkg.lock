@@ -19,6 +19,12 @@
   version = "v8.0.0"
 
 [[projects]]
+  name = "github.com/Masterminds/goutils"
+  packages = ["."]
+  revision = "3391d3790d23d03408670993e957e8f408993c34"
+  version = "v1.0.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/Masterminds/kitt"
   packages = ["progress"]
@@ -235,16 +241,28 @@
   revision = "3fdea8d05856a0c8df22ed4bc71b3219245e4485"
 
 [[projects]]
+  name = "github.com/mattn/go-colorable"
+  packages = ["."]
+  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
+  version = "v0.0.9"
+
+[[projects]]
   name = "github.com/mattn/go-isatty"
   packages = ["."]
-  revision = "fc9e8d8ef48496124e79ae0df75490096eccf6fe"
-  version = "v0.0.2"
+  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
+  version = "v0.0.3"
 
 [[projects]]
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
   revision = "d6bea18f789704b5f83375793155289da36a3c7f"
   version = "v0.0.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mgutz/ansi"
+  packages = ["."]
+  revision = "9520e82c474b0a04dd04f8a40959027271bab992"
 
 [[projects]]
   name = "github.com/oklog/ulid"
@@ -340,6 +358,16 @@
     "urlfetch"
   ]
   revision = "12d5545dc1cfa6047a286d5e853841b6471f4c19"
+
+[[projects]]
+  name = "gopkg.in/AlecAivazis/survey.v1"
+  packages = [
+    ".",
+    "core",
+    "terminal"
+  ]
+  revision = "17861e192dc11fd2f5081df1932c94cce262fa1e"
+  version = "v1.6.1"
 
 [[projects]]
   name = "gopkg.in/gin-gonic/gin.v1"
@@ -552,6 +580,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0681c62028366b0a4f0537b59e4c9c2940ad68f3a6c662990e0895b5f348415d"
+  inputs-digest = "244646581bd1134d40731a24d89c5c2f58da0b96cd29919a51bfe162d166d179"
   solver-name = "gps-cdcl"
   solver-version = 1

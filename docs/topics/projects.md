@@ -28,7 +28,36 @@ other Git services, and how to extend Brigade to work with other VCS systems.
   repo private. Put them in your `values.yaml` file for your project (and don't
   put that in GitHub).
 
-## The Brigade Project Chart
+## The `brig project create` Command (Brigade 0.16 and on)
+
+In Brigade 0.16, a new `brig project create` command has been added. To create a
+new Brigade project with it, simply run `brig project create` and you will be
+prompted to answer a few questions:
+
+```console
+$ brig project create
+? Project name deis/empty-testbed
+? Full repository name github.com/deis/empty-testbed
+? Clone URL (https://github.com/your/repo.git) https://github.com/deis/empty-testbed.git
+? Add secrets? No
+? Configure GitHub Enterprise or OAuth? No
+? Configure advanced Kubernetes options? No
+? Configure Brigade worker? No
+? Configure Advanced Brigade Settings? No
+```
+
+You can use `--dry-run --verbose` to see the answers to the question without creating
+a new release. For more, see `brig project create --help`.
+
+### Managing Your Projects
+
+With `brig project create`, your projects are stored in Kubernetes secrets. You
+can save a local copy of that secret using `brigade project create --out=myproject.json`.
+
+If you have already created the secret, you can fetch it from Kubernetes by running
+`brig project get my/project` where `my/project` is the project name you assigned.
+
+## The Brigade Project Chart (Brigade <= 0.15)
 
 The Brigade Project chart is located in the Brigade source tree at
 `brigade-project`. You can also install it out of the Brigade chart repository.
@@ -40,11 +69,11 @@ NAME                   	VERSION	DESCRIPTION
 brigade/brigade-project	0.2.0  	Create a Brigade project
 ```
 
-## Creating and Managing a Project
+### Creating and Managing a Project (The Old Way)
 
 We recommend using the following pattern to create your project:
 
-### 1. Create a place to store project configs
+#### 1. Create a place to store project configs
 
 Store your project configuration in a safe place (probably locally or in a storage
 system like Keybase).
@@ -58,13 +87,13 @@ $ cd brigade-projects/myproject
 > this. Keybase has free encrypted private Git repos, which are great for this
 > sort of thing.
 
-### 2. Create a `values.yaml` file for your project
+#### 2. Create a `values.yaml` file for your project
 
 ```
 $ helm inspect values brigade/brigade-project > values.yaml
 ```
 
-### 3. Edit the values for your project
+#### 3. Edit the values for your project
 
 Read through the generated `values.yaml` file and modify it accordingly.
 
@@ -90,7 +119,7 @@ sharedSecret: "IBrakeForSeaBeasts"
 
 For information on configuring for GitHub, see the [GitHub configuration guide](github.md).
 
-### 4. Install your project
+#### 4. Install your project
 
 Use Helm to install your chart, with its override values.
 
@@ -103,7 +132,28 @@ Replace `$MY_NAME` with the name of your project (something like `deis-empty-tes
 Once the project is created, you can use `brig` or another gateway to begin
 writing and running `brigade` scripts.
 
-### 5. Listing and inspect projects with `brig`
+#### 5. Fetch values later
+
+To get just the values later, you can run `helm get values $MY_NAME`
+
+#### 6. Upgrade a project
+
+You can upgrade a project at any time with the command
+
+```console
+$ helm upgrade $MY_PROJECT brigade/brigade-project -f values.yaml
+```
+
+We suggest not using the `--reuse-values` flag on `helm upgrade` because it can
+cause confusing results unless you really know what you are doing.
+
+#### 7. Deleting a project
+
+Use `helm delete $MY_PROJECT` to delete a project. Note that once you have done
+this, Brigade will no longer execute brigade scripts for this project.
+
+
+## Listing and inspectecting projects with `brig`
 
 If you have the `brig` client installed, you can use it to list and interact with
 your projects:
@@ -140,26 +190,6 @@ secrets:
 ```
 
 
-### 6. Fetch values later
-
-To get just the values later, you can run `helm get values $MY_NAME`
-
-### 7. Upgrade a project
-
-You can upgrade a project at any time with the command
-
-```console
-$ helm upgrade $MY_PROJECT brigade/brigade-project -f values.yaml
-```
-
-We suggest not using the `--reuse-values` flag on `helm upgrade` because it can
-cause confusing results unless you really know what you are doing.
-
-### 7. Deleting a project
-
-Use `helm delete $MY_PROJECT` to delete a project. Note that once you have done
-this, Brigade will no longer execute brigade scripts for this project.
-
 ## Internal Brigade Project Names
 
 Brigade creates an "internal name" for each project. It looks something like
@@ -183,6 +213,9 @@ You can use SSH keys and a `git+ssh` URL to secure a private repository.
 
 In this case, your project's `cloneURL` should be of the form `git@github.com:Azure/brigade.git`
 and you will need to add the SSH _private key_ to the `values.yaml` file.
+
+When doing `brig project create`, URLs that do not use HTTP or HTTPS will prompt
+for (optionally) adding an SSH key.
 
 ## Using other Git providers
 

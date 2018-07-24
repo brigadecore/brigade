@@ -33,9 +33,9 @@ architecture.
 ## Quickstart
 
 1. Install Brigade
-2. Create a Brigade project
-3. Write a Brigade script
-4. Execute the script
+2. Install `brig`
+3. Create a Brigade project
+4. Write and run a Brigade script
 
 The easiest way to install Brigade into your Kubernetes cluster is to install it using Helm.
 
@@ -46,7 +46,17 @@ $ helm install -n brigade brigade/brigade
 
 You will now have Brigade installed.
 
-To create new projects, use the `brigade-project` Helm chart. While inside the Git
+In your local environment, install `brig`, the Brigade commandline client. To get
+the latest version, go to the [releases page](https://github.com/Azure/brigade/releases/)
+and download the binary for your platform.
+
+### Creating A New Project
+
+To create a new project, use `brig project create` and answer the prompts. Make
+sure you are pointing to the same Kubernetes cluster and namespace that you
+installed Brigade into.
+
+**For Brigade 0.15 and earlier**: To create new projects, use the `brigade-project` Helm chart. While inside the Git
 repository cloned above, run these commands:
 
 ```console
@@ -62,7 +72,13 @@ based on your new configuration by passing it with `-f myvalues.yaml`.
 $ helm install --name my-project brigade/brigade-project -f myvalues.yaml
 ```
 
-Now creating your first `brigade.js` is as easy as this:
+The Helm chart will be removed before Brigade 1.0.0, so we recommend using
+`brig project create` instead. Note that the projects created with the Helm chart
+remain compatible with Brigade.
+
+### Creating Your First `brigade.js`
+
+Creating your first `brigade.js` is as easy as this:
 
 ```javascript
 const { events } = require('brigadier')
@@ -73,8 +89,6 @@ events.on("exec", (brigadeEvent, project) => {
 ```
 
 Check out [the tutorial](https://azure.github.io/brigade/intro/) for more on creating scripts.
-
-> You can download the latest version of the Brig client from [the releases page](https://github.com/Azure/brigade/releases)
 
 Assuming you named your project `deis/empty-testbed`, you can run a `brigade.js`
 file like this:

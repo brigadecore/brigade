@@ -84,8 +84,8 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) v1.Pod {
 	env := c.workerEnv(project, build)
 
 	cmd := []string{"yarn", "-s", "start"}
-	if cmdString, ok := project.Data["workerCommand"]; ok {
-		cmd = strings.Split(string(cmdString), " ")
+	if cmdBytes, ok := project.Data["workerCommand"]; ok && len(cmdBytes) > 0 {
+		cmd = strings.Split(string(cmdBytes), " ")
 	}
 
 	image, pullPolicy := c.workerImageConfig(project)
