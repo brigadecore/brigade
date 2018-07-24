@@ -1150,7 +1150,7 @@ is performed on the image just built.
 ## Jobs and Return Values
 
 We have seen already that when we run a job, it will return a JavaScript Promise.
-Each Promise also wraps a value. And the value is the ouput of the job. So it is possible
+Each Promise also wraps a value. And the value is the output of the job. So it is possible
 to run a job, capture its output, and use that as input to the next job.
 
 To illustrate this, let's write a script that creates two jobs. The first job will
@@ -1267,7 +1267,7 @@ events.on("next", (e) => {
 
 In this example, `e2` is a new event. Any new event _must_ have the following fields:
 
-- `type`: The name of teh event to fire
+- `type`: The name of the event to fire
 - `provider`: A name to indicate what fired the event
 - `buildID`: The Build ID
 - `workerID`: The Worker ID
