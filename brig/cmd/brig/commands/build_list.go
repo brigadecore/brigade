@@ -67,10 +67,11 @@ func listBuilds(out io.Writer, project string) error {
 
 	for _, b := range bs {
 		status := "???"
+		since := "???"
 		if b.Worker != nil {
 			status = b.Worker.Status.String()
+			since = duration.ShortHumanDuration(time.Since(b.Worker.EndTime))
 		}
-		since := duration.ShortHumanDuration(time.Since(b.Worker.EndTime))
 		table.AddRow(b.ID, b.Type, b.Provider, b.ProjectID, status, since)
 	}
 	fmt.Fprintln(out, table)
