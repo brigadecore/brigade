@@ -59,7 +59,7 @@ func init() {
 	f := Root.PersistentFlags()
 	f.StringVarP(&globalNamespace, "namespace", "n", "", "The Kubernetes namespace for Brigade")
 	f.StringVarP(&globalAge, "age", "a", "", "Age as a fuzzy date ('48h' for hours, '20m' for minutes, '2000s' for seconds)")
-	f.IntVarP(&globalMaxBuilds, "max-builds", "m", 0, "Maxinum number of builds to keep")
+	f.IntVarP(&globalMaxBuilds, "max-builds", "m", -1, "Maxinum number of builds to keep")
 	f.BoolVarP(&globalVerbose, "verbose", "v", false, "Turn on verbose output")
 	f.StringVar(&globalKubeConfig, "kubeconfig", "", "The path to a KUBECONFIG file, overrides $KUBECONFIG.")
 }
@@ -88,7 +88,7 @@ var Root = &cobra.Command{
 			return err
 		}
 		if globalVerbose {
-			fmt.Fprintf(os.Stderr, "Max Age: %s\nMax Builds: %d\n", age, globalMaxBuilds)
+			fmt.Fprintf(os.Stderr, "Max Age: %s\nMax Builds: %d\n", age, mb)
 		}
 		count, err := vacuum.New(age, mb, c, ns()).Run()
 		fmt.Fprintf(os.Stdout, "Deleted %d\n", count)
