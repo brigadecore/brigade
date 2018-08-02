@@ -11,6 +11,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// NoMaxBuilds indicates that there is no maximum number of builds.
+const NoMaxBuilds = -1
+
+// NoMaxAge indicates that there is no maximum age.
+var NoMaxAge = time.Time{}
+
 const (
 	buildFilter = "component = build, heritage = brigade"
 	jobFilter   = "component in (build, job), heritage = brigade, build = %s"
@@ -68,7 +74,7 @@ func (v *Vacuum) Run() (int, error) {
 	}
 
 	// If no max, return now.
-	if v.max == 0 {
+	if v.max == NoMaxBuilds {
 		return deleted, nil
 	}
 
