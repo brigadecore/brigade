@@ -28,7 +28,7 @@ func TestRun_Age(t *testing.T) {
 		t.Fatalf("expected 3 pods, got %d", len(pods.Items))
 	}
 
-	num, err := New(time.Now(), 0, client, v1.NamespaceDefault).Run()
+	num, err := New(time.Now(), NoMaxBuilds, client, v1.NamespaceDefault).Run()
 	if err != nil {
 		t.Errorf("I blame fakeclient: %s", err)
 	}

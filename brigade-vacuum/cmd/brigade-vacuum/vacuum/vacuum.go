@@ -11,6 +11,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// NoMaxBuilds indicates that there is no maximum number of builds.
+const NoMaxBuilds = -1
+
+// NoMaxAge indicates that there is no maximum age.
+var NoMaxAge = time.Time{}
+
 const (
 	buildFilter = "component = build, heritage = brigade"
 	jobFilter   = "component in (build, job), heritage = brigade, build = %s"
@@ -68,7 +74,7 @@ func (v *Vacuum) Run() (int, error) {
 	}
 
 	// If no max, return now.
-	if v.max == 0 {
+	if v.max == NoMaxBuilds {
 		return deleted, nil
 	}
 
@@ -78,22 +84,24 @@ func (v *Vacuum) Run() (int, error) {
 		return deleted, err
 	}
 	l := len(secrets.Items)
-	if l > v.max {
-		sort.Sort(ByCreation(secrets.Items))
-		for i := v.max; i < l; i++ {
-			// Delete secret and builds
-			s := secrets.Items[i]
-			bid, ok := s.ObjectMeta.Labels["build"]
-			if !ok {
-				log.Printf("Build %q has no build ID. Skipping.\n", s.Name)
-				continue
-			}
-			if err := v.deleteBuild(bid); err != nil {
-				log.Printf("Failed to delete build %s: %s (max)\n", bid, err)
-				continue
-			}
-			deleted++
+	if l <= v.max {
+		log.Printf("Skipping vacuum. %d is ≤ max %d", l, v.max)
+		return deleted, nil
+	}
+	sort.Sort(ByCreation(secrets.Items))
+	for i := v.max; i < l; i++ {
+		// Delete secret and builds
+		s := secrets.Items[i]
+		bid, ok := s.ObjectMeta.Labels["build"]
+		if !ok {
+			log.Printf("Build %q has no build ID. Skipping.\n", s.Name)
+			continue
 		}
+		if err := v.deleteBuild(bid); err != nil {
+			log.Printf("Failed to delete build %s: %s (max)\n", bid, err)
+			continue
+		}
+		deleted++
 	}
 
 	return deleted, nil
