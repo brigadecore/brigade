@@ -161,6 +161,7 @@ func TestGithubHandler(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create request: %s", err)
 			}
+			r.Header.Add("Content-Type", "application/json")
 			r.Header.Add("X-GitHub-Event", tt.event)
 			r.Header.Add("X-Hub-Signature", SHA1HMAC([]byte("asdf"), payload))
 

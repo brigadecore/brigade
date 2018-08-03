@@ -77,7 +77,7 @@ api:
 worker:
   registry: deis
   name: brigade-worker
-  serviceAccount: 
+  serviceAccount:
     create: true
     name: brigade-worker
   #tag:
@@ -152,7 +152,7 @@ vacuum:
   maxBuilds: -1
   serviceAccount:
     create: true
-    name: 
+    name:
 
 # The service is for the Brigade gateway. If you do not want to have Brigade
 # listening for incomming GitHub requests, disable this.
@@ -161,6 +161,7 @@ service:
   type: LoadBalancer
   externalPort: 7744
   internalPort: 7744
+  host:
 # By default, this is off. If you enable it, you might want to change the
 # service.type to ClusterIP
 ingress:

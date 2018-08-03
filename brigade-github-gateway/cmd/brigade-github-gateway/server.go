@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	gin "gopkg.in/gin-gonic/gin.v1"
+	"gopkg.in/gin-gonic/gin.v1"
 	"k8s.io/api/core/v1"
 
 	"github.com/Azure/brigade/pkg/storage/kube"
@@ -20,6 +20,7 @@ var (
 	master         string
 	namespace      string
 	gatewayPort    string
+	gatewayHost    string
 	allowedAuthors authors
 )
 
@@ -32,6 +33,7 @@ func init() {
 	flag.StringVar(&master, "master", "", "master url")
 	flag.StringVar(&namespace, "namespace", defaultNamespace(), "kubernetes namespace")
 	flag.StringVar(&gatewayPort, "gateway-port", defaultGatewayPort(), "TCP port to use for brigade-github-gateway")
+	flag.StringVar(&gatewayHost, "gateway-host", defaultGatewayHost(), "Hostname to use for brigade-github-gateway")
 	flag.Var(&allowedAuthors, "authors", "allowed author associations, separated by commas (COLLABORATOR, CONTRIBUTOR, FIRST_TIMER, FIRST_TIME_CONTRIBUTOR, MEMBER, OWNER, NONE)")
 }
 
@@ -60,11 +62,12 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Recovery())
 
-	events := router.Group("/events")
-	{
-		events.Use(gin.Logger())
-		events.POST("/github", webhook.NewGithubHook(store, allowedAuthors))
-	}
+	api := router.Group("/", gin.Logger())
+
+	api.GET("/activate/:project", webhook.Activate(store, gatewayHost))
+
+	// TODO add support for /events/github endpoint
+	api.POST("/events/:project", webhook.NewGithubHook(store, allowedAuthors))
 
 	router.GET("/healthz", healthz)
 
@@ -84,6 +87,10 @@ func defaultGatewayPort() string {
 		return port
 	}
 	return "7744"
+}
+
+func defaultGatewayHost() string {
+	return os.Getenv("BRIGADE_GATEWAY_HOST")
 }
 
 func healthz(c *gin.Context) {

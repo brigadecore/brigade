@@ -42,6 +42,8 @@ spec:
                 fieldPath: metadata.namespace
           - name: BRIGADE_GATEWAY_PORT
             value: {{ .Values.service.internalPort | quote }}
+          - name: BRIGADE_GATEWAY_HOST
+            value: {{ .Values.service.host | quote }}
           - name: BRIGADE_AUTHORS
             value: {{ if .Values.gw.allowedAuthorRoles }}{{ join "," .Values.gw.allowedAuthorRoles | quote }}{{ end }}
       {{ if .Values.privateRegistry }}imagePullSecrets:

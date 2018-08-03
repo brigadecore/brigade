@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-github/github"
 	"k8s.io/api/core/v1"
 
+	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage/kube"
 	"github.com/Azure/brigade/pkg/webhook"
 )
@@ -30,7 +31,7 @@ func init() {
 	flag.StringVar(&namespace, "namespace", os.Getenv("BRIGADE_NAMESPACE"), "kubernetes namespace")
 }
 
-func generate() (payload []byte, hmac string) {
+func generate() (proj *brigade.Project, payload []byte, hmac string) {
 	if flag.NArg() < 1 {
 		fmt.Fprintln(os.Stderr, "required arg: Git SHA")
 		os.Exit(1)
@@ -74,22 +75,23 @@ func generate() (payload []byte, hmac string) {
 		namespace = v1.NamespaceDefault
 	}
 
-	proj, err := kube.New(clientset, namespace).GetProject(repo)
+	proj, err = kube.New(clientset, namespace).GetProject(repo)
 	if err != nil {
 		panic(err)
 	}
 	hmac = webhook.SHA1HMAC([]byte(proj.SharedSecret), out)
-	return out, hmac
+	return proj, out, hmac
 }
 
 func TestFunctional(t *testing.T) {
-	payload, hmac := generate()
+	proj, payload, hmac := generate()
 
 	requests := []*http.Request{{
 		Method: "POST",
-		URL:    &url.URL{Scheme: "http", Host: "localhost:7744", Path: "/events/github"},
+		URL:    &url.URL{Scheme: "http", Host: "localhost:7744", Path: "/events/" + proj.ID},
 		Body:   ioutil.NopCloser(bytes.NewReader(payload)),
 		Header: http.Header{
+			"Content-Type":    []string{"application/json"},
 			"X-Github-Event":  []string{"push"},
 			"X-Hub-Signature": []string{hmac},
 		},

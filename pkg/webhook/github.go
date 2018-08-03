@@ -1,10 +1,7 @@
 package webhook
 
 import (
-	"crypto/subtle"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -14,8 +11,6 @@ import (
 	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage"
 )
-
-const hubSignatureHeader = "X-Hub-Signature"
 
 type githubHook struct {
 	store          storage.Store
@@ -39,40 +34,49 @@ func NewGithubHook(s storage.Store, authors []string) gin.HandlerFunc {
 //
 // It does this by sniffing the event from the header, and routing accordingly.
 func (s *githubHook) Handle(c *gin.Context) {
-	event := c.Request.Header.Get("X-GitHub-Event")
+	event := github.WebHookType(c.Request)
 	switch event {
+	case "push", "pull_request", "create", "release", "status", "commit_comment", "pull_request_review", "deployment", "deployment_status":
+		s.handleEvent(c, event)
 	case "ping":
 		log.Print("Received ping from GitHub")
 		c.JSON(200, gin.H{"message": "OK"})
-		return
-	case "push", "pull_request", "create", "release", "status", "commit_comment", "pull_request_review", "deployment", "deployment_status":
-		s.handleEvent(c, event)
-		return
 	default:
 		// Issue #127: Don't return an error for unimplemented events.
 		log.Printf("Unsupported event %q", event)
 		c.JSON(200, gin.H{"message": "Ignored"})
-		return
 	}
 }
 
 func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
-	body, err := ioutil.ReadAll(c.Request.Body)
+	projectID := c.Param("project")
+
+	proj, err := s.store.GetProject(projectID)
 	if err != nil {
-		log.Printf("Failed to read body: %s", err)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "Malformed body"})
+		log.Printf("Project %q not found. No secret loaded. %s", projectID, err)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
 		return
 	}
-	defer c.Request.Body.Close()
 
-	e, err := github.ParseWebHook(eventType, body)
+	if proj.SharedSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "No secret is configured for this repo."})
+		return
+	}
+
+	payload, err := github.ValidatePayload(c.Request, []byte(proj.SharedSecret))
+	if err != nil {
+		log.Printf("Failed payload signature check: %s", err)
+		c.JSON(http.StatusForbidden, gin.H{"status": "malformed signature"})
+		return
+	}
+
+	e, err := github.ParseWebHook(eventType, payload)
 	if err != nil {
 		log.Printf("Failed to parse body: %s", err)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Malformed body"})
 		return
 	}
 
-	var repo string
 	var rev brigade.Revision
 
 	switch e := e.(type) {
@@ -83,7 +87,6 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 			return
 		}
 
-		repo = e.Repo.GetFullName()
 		rev.Commit = e.HeadCommit.GetID()
 		rev.Ref = e.GetRef()
 	case *github.PullRequestEvent:
@@ -100,33 +103,25 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 			eventType = "pull_request:" + a
 		}
 
-		repo = e.Repo.GetFullName()
 		rev.Commit = e.PullRequest.Head.GetSHA()
 		rev.Ref = fmt.Sprintf("refs/pull/%d/head", e.PullRequest.GetNumber())
 	case *github.CommitCommentEvent:
-		repo = e.Repo.GetFullName()
 		rev.Commit = e.Comment.GetCommitID()
 	case *github.CreateEvent:
 		// TODO: There are three ref_type values: tag, branch, and repo. Do we
 		// want to be opinionated about how we handle these?
-		repo = e.Repo.GetFullName()
 		rev.Ref = e.GetRef()
 	case *github.ReleaseEvent:
-		repo = e.Repo.GetFullName()
 		rev.Ref = e.Release.GetTagName()
 	case *github.StatusEvent:
-		repo = e.Repo.GetFullName()
 		rev.Commit = e.Commit.GetSHA()
 	case *github.PullRequestReviewEvent:
-		repo = e.Repo.GetFullName()
 		rev.Commit = e.PullRequest.Head.GetSHA()
 		rev.Ref = fmt.Sprintf("refs/pull/%d/head", e.PullRequest.GetNumber())
 	case *github.DeploymentEvent:
-		repo = e.Repo.GetFullName()
 		rev.Commit = e.Deployment.GetSHA()
 		rev.Ref = e.Deployment.GetRef()
 	case *github.DeploymentStatusEvent:
-		repo = e.Repo.GetFullName()
 		rev.Commit = e.Deployment.GetSHA()
 		rev.Ref = e.Deployment.GetRef()
 	default:
@@ -135,30 +130,7 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 		return
 	}
 
-	proj, err := s.store.GetProject(repo)
-	if err != nil {
-		log.Printf("Project %q not found. No secret loaded. %s", repo, err)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "project not found"})
-		return
-	}
-
-	if proj.SharedSecret == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "No secret is configured for this repo."})
-		return
-	}
-
-	signature := c.Request.Header.Get(hubSignatureHeader)
-	if err := validateSignature(signature, proj.SharedSecret, body); err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"status": "malformed signature"})
-		return
-	}
-
-	if proj.Name != repo {
-		// TODO: Test this. I believe it should error out if these don't match.
-		log.Printf("!!!WARNING!!! Expected project secret to have name %q, got %q", repo, proj.Name)
-	}
-
-	s.buildStatus(eventType, rev, body, proj)
+	s.buildStatus(eventType, rev, payload, proj)
 
 	c.JSON(http.StatusOK, gin.H{"status": "Complete"})
 }
@@ -230,14 +202,4 @@ func (s *githubHook) build(eventType string, rev brigade.Revision, payload []byt
 	}
 
 	return s.store.CreateBuild(b)
-}
-
-// validateSignature compares the salted digest in the header with our own computing of the body.
-func validateSignature(signature, secretKey string, payload []byte) error {
-	sum := SHA1HMAC([]byte(secretKey), payload)
-	if subtle.ConstantTimeCompare([]byte(sum), []byte(signature)) != 1 {
-		log.Printf("Expected signature %q (sum), got %q (hub-signature)", sum, signature)
-		return errors.New("payload signature check failed")
-	}
-	return nil
 }
