@@ -126,7 +126,8 @@ function ghNotify(state, msg, e, project) {
     GH_DESCRIPTION: msg,
     GH_CONTEXT: "brigade",
     GH_TOKEN: project.secrets.ghToken,
-    GH_COMMIT: e.revision.commit
+    GH_COMMIT: e.revision.commit,
+    GH_TARGET_URL: `https://azure.github.io/kashti/builds/${ e.buildID }`,
   }
   return gh
 }
