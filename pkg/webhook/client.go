@@ -3,7 +3,6 @@ package webhook
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	"github.com/google/go-github/github"
@@ -55,62 +54,6 @@ func setRepoStatus(commit string, proj *brigade.Project, status *github.RepoStat
 	}
 	_, _, err = client.Repositories.CreateStatus(ctx, owner, repo, commit, status)
 	return err
-}
-
-// GetRepoStatus gets the Brigade repository status.
-// The ref can be a SHA or a branch or tag.
-func GetRepoStatus(proj *brigade.Project, ref string) (*github.RepoStatus, error) {
-	client, err := ghClient(proj.Github)
-	if err != nil {
-		return nil, err
-	}
-	owner, repo, err := parseRepoName(proj.Repo.Name)
-	if err != nil {
-		return nil, err
-	}
-	statii, _, err := client.Repositories.ListStatuses(ctx, owner, repo, ref, &github.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, status := range statii {
-		if *status.Context == StatusContext {
-			return status, nil
-		}
-	}
-	return nil, fmt.Errorf("no brigade status found")
-}
-
-// GetLastCommit gets the last commit on the give reference (branch name or tag).
-func GetLastCommit(proj *brigade.Project, ref string) (string, error) {
-	client, err := ghClient(proj.Github)
-	if err != nil {
-		return "", err
-	}
-	owner, repo, err := parseRepoName(proj.Repo.Name)
-	if err != nil {
-		return "", err
-	}
-	sha, _, err := client.Repositories.GetCommitSHA1(ctx, owner, repo, ref, "")
-	return sha, err
-}
-
-// GetFileContents returns the contents for a particular file in the project.
-func GetFileContents(proj *brigade.Project, ref, path string) ([]byte, error) {
-	client, err := ghClient(proj.Github)
-	if err != nil {
-		return []byte{}, err
-	}
-	owner, repo, err := parseRepoName(proj.Repo.Name)
-	if err != nil {
-		return nil, err
-	}
-	opts := &github.RepositoryContentGetOptions{Ref: ref}
-	r, err := client.Repositories.DownloadContents(ctx, owner, repo, path, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer r.Close()
-	return ioutil.ReadAll(r)
 }
 
 type webhookClient interface {
