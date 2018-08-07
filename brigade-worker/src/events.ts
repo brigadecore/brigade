@@ -241,4 +241,8 @@ export class EventRegistry extends EventEmitter {
   public fire(e: BrigadeEvent, proj: Project) {
     this.emit(e.type, e, proj);
   }
+
+  public on(eventName: string | symbol, cb: ((...args: any[]) => void)): this {
+    return super.on(eventName, cb)
+  }
 }
