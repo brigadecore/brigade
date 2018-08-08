@@ -1,6 +1,6 @@
 import "mocha";
 import { assert } from "chai";
-import * as events from "../src/events";
+import * as events from "@azure/brigadier/out/events";
 import * as app from "../src/app";
 import * as mock from "./mock";
 import * as brigadier from "../src/brigadier";

@@ -1,11 +1,11 @@
 /**
  * Module app is the main application runner.
  */
-import * as events from "./events";
+import * as events from "@azure/brigadier/out/events";
 import * as process from "process";
 import * as k8s from "./k8s";
 import * as brigadier from "./brigadier";
-import { Logger, ContextLogger } from "./logger";
+import { Logger, ContextLogger } from "@azure/brigadier/out/logger";
 
 interface BuildStorage {
   create(

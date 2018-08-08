@@ -1,6 +1,7 @@
 const pkgOverrides: Pkg[] = [
   { name: "brigade", override: "./brigadier" },
-  { name: "brigadier", override: "./brigadier" }
+  { name: "brigadier", override: "./brigadier" },
+  { name: "@azure/brigadier", override: "./brigadier" }
 ];
 
 class Pkg {

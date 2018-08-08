@@ -6,9 +6,9 @@
 
 /** */
 
-import * as jobImpl from "./job";
-import * as groupImpl from "./group";
-import * as eventsImpl from "./events";
+import * as jobImpl from "@azure/brigadier/out/job";
+import * as groupImpl from "@azure/brigadier/out/group";
+import * as eventsImpl from "@azure/brigadier/out/events";
 import { JobRunner } from "./k8s";
 
 // These are filled by the 'fire' event handler.
@@ -52,12 +52,12 @@ export class Job extends jobImpl.Job {
   jr: JobRunner;
 
   run(): Promise<jobImpl.Result> {
-    this.jr = new JobRunner(this, currentEvent, currentProject);
+    this.jr = new JobRunner().init(this, currentEvent, currentProject);
     this._podName = this.jr.name;
     return this.jr.run().catch(err => {
       // Wrap the message to give clear context.
       console.error(err);
-      let msg = `job ${this.name}(${this.jr.name}): ${err}`;
+      let msg = `job ${ this.name }(${this.jr.name}): ${err}`;
       return Promise.reject(new Error(msg));
     });
   }
@@ -66,6 +66,7 @@ export class Job extends jobImpl.Job {
     return this.jr.logs();
   }
 }
+
 
 /**
  * Group describes a collection of associated jobs.

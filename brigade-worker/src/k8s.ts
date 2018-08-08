@@ -5,9 +5,9 @@
 /** */
 
 import * as kubernetes from "@kubernetes/client-node";
-import * as jobs from "./job";
-import { LogLevel, ContextLogger } from "./logger";
-import { BrigadeEvent, Project } from "./events";
+import * as jobs from "@azure/brigadier/out/job";
+import { LogLevel, ContextLogger } from "@azure/brigadier/out/logger";
+import { BrigadeEvent, Project } from "@azure/brigadier/out/events";
 import * as fs from "fs";
 import * as path from "path";
 import * as request from "request";
@@ -238,8 +238,12 @@ export class JobRunner implements jobs.JobRunner {
   pod: kubernetes.V1Pod;
   cancel: boolean;
   reconnect: boolean;
+  
+  constructor() {}
 
-  constructor(job: jobs.Job, e: BrigadeEvent, project: Project) {
+  public init<T extends jobs.Job>(job: T, e: BrigadeEvent, project: Project) {
+    // init takes a generic so we can run this against mocks as well as against the real
+    // Job type.
     this.options = Object.assign({}, options);
 
     this.event = e;
@@ -434,6 +438,7 @@ export class JobRunner implements jobs.JobRunner {
         this.runner.spec.containers[i].securityContext.privileged = true;
       }
     }
+    return this;
   }
 
   /**

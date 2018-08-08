@@ -29,9 +29,9 @@ import * as fs from "fs";
 import * as process from "process";
 import * as ulid from "ulid";
 
-import * as events from "./events";
+import * as events from "@azure/brigadier/out/events";
 import { App } from "./app";
-import { ContextLogger, LogLevel } from "./logger";
+import { ContextLogger, LogLevel } from "@azure/brigadier/out/logger";
 
 import { options } from "./k8s";
 
