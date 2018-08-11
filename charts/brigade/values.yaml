@@ -149,7 +149,7 @@ vacuum:
   # 0 means no limit is imposed.
   #
   # If both age and maxBuilds are provided, age is applied first, then maxBuilds.
-  maxBuilds: 0
+  maxBuilds: -1
   serviceAccount:
     create: true
     name: 
