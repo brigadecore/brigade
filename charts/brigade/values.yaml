@@ -146,7 +146,7 @@ vacuum:
   age: "720h"
   # maxBuilds tells the vacuum what the absolute maximum number of builds may be stored
   # at a time. Where possible, we recommend using age rather than builds.
-  # 0 means no limit is imposed.
+  # -1 means no limit is imposed.
   #
   # If both age and maxBuilds are provided, age is applied first, then maxBuilds.
   maxBuilds: -1
