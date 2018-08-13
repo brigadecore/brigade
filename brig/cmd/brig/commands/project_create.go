@@ -63,6 +63,9 @@ var defaultProject = brigade.Project{
 		PullPolicy: "IfNotPresent",
 	},
 	WorkerCommand: "yarn -s start",
+	Kubernetes: brigade.Kubernetes{
+		VCSSidecar: "deis/git-sidecar:latest",
+	},
 }
 
 // newProject clones the default project.
