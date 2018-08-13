@@ -1,6 +1,6 @@
 {
   "name": "brigade-worker",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "Brigade Worker",
   "main": "dist/index",
   "types": "dist/index",
