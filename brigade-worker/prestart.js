@@ -27,11 +27,10 @@ try {
   let wrapper = "const {overridingRequire} = require('./require');((require) => {" +
     data.toString() +
     "})(overridingRequire)"
-  fs.writeFile("dist/brigade.js", wrapper, () => {
-    console.log("prestart: src/brigade.js written")
-  })
+  fs.writeFileSync("dist/brigade.js", wrapper)
 } catch (e) {
   console.log("prestart: no script override")
+  console.error(e.toString())
   process.exit(1)
 }
 
@@ -41,6 +40,7 @@ function loadScript() {
     if (fs.existsSync(src)) {
       var data = fs.readFileSync(src, 'utf8')
       if (data != "") {
+        console.log(`prestart: loading script from ${ src }`)
         return data
       }
     }
