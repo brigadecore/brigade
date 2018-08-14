@@ -49,6 +49,7 @@ function jsTest(e, project) {
 
   jsTest.tasks = [
     "cd /src",
+    "make bootstrap-js",
     "make test-js"
   ];
 

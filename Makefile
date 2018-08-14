@@ -102,8 +102,8 @@ test-functional:
 
 # JS test is local only
 .PHONY: test-js
-test-js: bootstrap-js
-	cd brigade-worker && yarn test
+test-js:
+	cd brigade-worker && KUBECONFIG="./test/fake_kubeconfig.yaml" yarn test
 
 .PHONY: test-style
 test-style:

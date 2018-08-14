@@ -241,11 +241,14 @@ export class JobRunner implements jobs.JobRunner {
   
   constructor() {}
 
+  /**
+   * init takes a generic so we can run this against mocks as well as against the real Job type.
+   * @param job The Job object
+   * @param e  The event that was fired
+   * @param project  The project in which this job runs
+   */
   public init<T extends jobs.Job>(job: T, e: BrigadeEvent, project: Project) {
-    // init takes a generic so we can run this against mocks as well as against the real
-    // Job type.
     this.options = Object.assign({}, options);
-
     this.event = e;
     this.logger = new ContextLogger("k8s", e.logLevel);
     this.job = job;
