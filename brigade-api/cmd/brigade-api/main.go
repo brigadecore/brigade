@@ -20,10 +20,11 @@ import (
 )
 
 var (
+	apiPort    string
 	kubeconfig string
 	master     string
 	namespace  string
-	apiPort    string
+	verbose    bool
 )
 
 func init() {
@@ -31,6 +32,7 @@ func init() {
 	flag.StringVar(&master, "master", "", "master url")
 	flag.StringVar(&namespace, "namespace", defaultNamespace(), "kubernetes namespace")
 	flag.StringVar(&apiPort, "api-port", defaultAPIPort(), "TCP port to use for brigade-api")
+	flag.BoolVar(&verbose, "verbose", false, "enables detailed logging of http request matching and filter invocation")
 }
 
 type jobService struct {
@@ -182,6 +184,9 @@ func (hs healthService) WebService() *restful.WebService {
 
 func main() {
 	flag.Parse()
+
+	restful.EnableTracing(verbose)
+
 	clientset, err := kube.GetClient(master, kubeconfig)
 	if err != nil {
 		log.Fatalf("error creating kubernetes client (%s)", err)
