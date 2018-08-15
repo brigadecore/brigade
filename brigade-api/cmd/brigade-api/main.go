@@ -20,6 +20,14 @@ import (
 )
 
 var (
+	// DefaultCORS defines the default CORS settings for the API
+	DefaultCORS = restful.CrossOriginResourceSharing{
+		AllowedHeaders: []string{"Content-Type", "Accept"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+		CookiesAllowed: false,
+		Container:      restful.DefaultContainer,
+	}
+
 	kubeconfig string
 	master     string
 	namespace  string
@@ -196,29 +204,28 @@ func main() {
 	p := projectService{server: storageServer}
 	h := healthService{}
 
-	restful.DefaultContainer.Add(j.WebService())
-	restful.DefaultContainer.Add(b.WebService())
-	restful.DefaultContainer.Add(p.WebService())
-	restful.DefaultContainer.Add(h.WebService())
-	restful.DefaultContainer.Filter(NCSACommonLogFormatLogger())
+	container := restful.DefaultContainer
+
+	container.Add(j.WebService())
+	container.Add(b.WebService())
+	container.Add(p.WebService())
+	container.Add(h.WebService())
+	container.Filter(NCSACommonLogFormatLogger())
 
 	config := restfulspec.Config{
 		WebServices: restful.RegisteredWebServices(),
 		APIPath:     "/apidocs.json",
 		PostBuildSwaggerObjectHandler: enrichSwaggerObject}
-	restful.DefaultContainer.Add(restfulspec.NewOpenAPIService(config))
+	container.Add(restfulspec.NewOpenAPIService(config))
 
-	cors := restful.CrossOriginResourceSharing{
-		AllowedHeaders: []string{"Content-Type", "Accept"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
-		CookiesAllowed: false,
-		Container:      restful.DefaultContainer}
-	restful.DefaultContainer.Filter(cors.Filter)
+	cors := DefaultCORS
+	cors.Container = container
+	container.Filter(cors.Filter)
 
 	formattedAPIPort := fmt.Sprintf(":%v", apiPort)
 
 	log.Printf("Get the API using %s/apidocs.json", formattedAPIPort)
-	hserver := &http.Server{Addr: formattedAPIPort, Handler: restful.DefaultContainer}
+	hserver := &http.Server{Addr: formattedAPIPort, Handler: container}
 	log.Fatal(hserver.ListenAndServe())
 }
 
