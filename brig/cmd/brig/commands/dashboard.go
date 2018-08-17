@@ -23,9 +23,8 @@ const (
 )
 
 var (
-	port            int
-	kashtiNamespace string
-	openDashboard   bool
+	port          int
+	openDashboard bool
 )
 
 func init() {
