@@ -17,25 +17,25 @@ func TestRun_Age(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(secrets.Items) != 3 {
-		t.Fatalf("expected 3 secrets, got %d", len(secrets.Items))
+	if len(secrets.Items) != 6 {
+		t.Fatalf("expected 6 secrets, got %d", len(secrets.Items))
 	}
 	pods, err := client.CoreV1().Pods(v1.NamespaceDefault).List(meta.ListOptions{})
 	if err != nil {
 		t.Fatal("no pods returned")
 	}
-	if len(pods.Items) != 3 {
-		t.Fatalf("expected 3 pods, got %d", len(pods.Items))
+	if len(pods.Items) != 6 {
+		t.Fatalf("expected 6 pods, got %d", len(pods.Items))
 	}
 
-	num, err := New(time.Now(), NoMaxBuilds, client, v1.NamespaceDefault).Run()
+	num, err := New(time.Now(), NoMaxBuilds, false, client, v1.NamespaceDefault).Run()
 	if err != nil {
 		t.Errorf("I blame fakeclient: %s", err)
 	}
 
 	// We expect one build (two pods, two secrets) to be deleted.
-	if num != 1 {
-		t.Errorf("expected 1 deletion, got %d", num)
+	if num != 2 {
+		t.Errorf("expected 2 deletion, got %d", num)
 	}
 
 	secrets, _ = client.CoreV1().Secrets(v1.NamespaceDefault).List(meta.ListOptions{})
@@ -50,14 +50,14 @@ func TestRun_Age(t *testing.T) {
 
 func TestRun_Max(t *testing.T) {
 	client := setupFakeClient()
-	num, err := New(time.Time{}, 1, client, v1.NamespaceDefault).Run()
+	num, err := New(time.Time{}, 1, false, client, v1.NamespaceDefault).Run()
 	if err != nil {
 		t.Errorf("error running: %s", err)
 	}
 
 	// We expect one build (two pods, two secrets) to be deleted.
-	if num != 1 {
-		t.Errorf("expected 1 deletion, got %d", num)
+	if num != 2 {
+		t.Errorf("expected 2 deletion, got %d", num)
 	}
 
 	secrets, _ := client.CoreV1().Secrets(v1.NamespaceDefault).List(meta.ListOptions{})
@@ -76,6 +76,34 @@ func TestRun_Max(t *testing.T) {
 	}
 	if secrets.Items[0].Name != "scrooge" {
 		t.Errorf("expected scrooge to be the last secret, got %q", secrets.Items[0].Name)
+	}
+}
+
+func TestRun_SkipRunningBuilds(t *testing.T) {
+	client := setupFakeClient()
+
+	secrets, err := client.CoreV1().Secrets(v1.NamespaceDefault).List(meta.ListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	num, err := New(time.Now(), NoMaxBuilds, true, client, v1.NamespaceDefault).Run()
+	if err != nil {
+		t.Errorf("I blame fakeclient: %s", err)
+	}
+
+	// We expect one build (two pods, two secrets) to be deleted.
+	if num != 1 {
+		t.Errorf("expected 1 deletion, got %d", num)
+	}
+
+	secrets, _ = client.CoreV1().Secrets(v1.NamespaceDefault).List(meta.ListOptions{})
+	if len(secrets.Items) != 4 {
+		t.Fatalf("expected 4 secret, got %d", len(secrets.Items))
+	}
+	pods, _ := client.CoreV1().Pods(v1.NamespaceDefault).List(meta.ListOptions{})
+	if len(pods.Items) != 4 {
+		t.Fatalf("expected 4 pods, got %d", len(pods.Items))
 	}
 }
 
@@ -99,7 +127,6 @@ func setupFakeClient() kubernetes.Interface {
 			CreationTimestamp: started,
 		},
 	}
-
 	jobSecret := v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
 			Name:      "tashtego",
@@ -109,6 +136,45 @@ func setupFakeClient() kubernetes.Interface {
 				"component": "job",
 				"project":   "moby-dick",
 				"build":     "123456",
+			},
+			CreationTimestamp: started,
+		},
+	}
+	buildSecret2 := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "queequeg2",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "build",
+				"project":   "moby-dick",
+				"build":     "234567",
+			},
+			CreationTimestamp: started,
+		},
+	}
+	jobSecret21 := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "tashtego21",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "job",
+				"project":   "moby-dick",
+				"build":     "234567",
+			},
+			CreationTimestamp: started,
+		},
+	}
+	jobSecret22 := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "tashtego22",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "job",
+				"project":   "moby-dick",
+				"build":     "234567",
 			},
 			CreationTimestamp: started,
 		},
@@ -130,6 +196,9 @@ func setupFakeClient() kubernetes.Interface {
 	cs := client.CoreV1().Secrets(v1.NamespaceDefault)
 	cs.Create(&buildSecret)
 	cs.Create(&jobSecret)
+	cs.Create(&buildSecret2)
+	cs.Create(&jobSecret21)
+	cs.Create(&jobSecret22)
 	cs.Create(&unrelatedSecret)
 
 	buildPod := v1.Pod{
@@ -150,6 +219,9 @@ func setupFakeClient() kubernetes.Interface {
 				},
 			},
 		},
+		Status: v1.PodStatus{
+			Phase: v1.PodSucceeded,
+		},
 	}
 	jobPod := v1.Pod{
 		ObjectMeta: meta.ObjectMeta{
@@ -168,6 +240,75 @@ func setupFakeClient() kubernetes.Interface {
 					Image: "foo",
 				},
 			},
+		},
+		Status: v1.PodStatus{
+			Phase: v1.PodSucceeded,
+		},
+	}
+	buildPod2 := v1.Pod{
+		ObjectMeta: meta.ObjectMeta{
+			Name: "queequeg2",
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "build",
+				"project":   "moby-dick",
+				"build":     "234567",
+			},
+			CreationTimestamp: started,
+		},
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Image: "foo",
+				},
+			},
+		},
+		Status: v1.PodStatus{
+			Phase: v1.PodRunning,
+		},
+	}
+	jobPod21 := v1.Pod{
+		ObjectMeta: meta.ObjectMeta{
+			Name: "tashtego21",
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "job",
+				"project":   "moby-dick",
+				"build":     "234567",
+			},
+			CreationTimestamp: started,
+		},
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Image: "foo",
+				},
+			},
+		},
+		Status: v1.PodStatus{
+			Phase: v1.PodRunning,
+		},
+	}
+	jobPod22 := v1.Pod{
+		ObjectMeta: meta.ObjectMeta{
+			Name: "tashtego22",
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "job",
+				"project":   "moby-dick",
+				"build":     "234567",
+			},
+			CreationTimestamp: started,
+		},
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Image: "foo",
+				},
+			},
+		},
+		Status: v1.PodStatus{
+			Phase: v1.PodSucceeded,
 		},
 	}
 	unrelatedPod := v1.Pod{
@@ -193,6 +334,9 @@ func setupFakeClient() kubernetes.Interface {
 	cb := client.CoreV1().Pods(v1.NamespaceDefault)
 	cb.Create(&buildPod)
 	cb.Create(&jobPod)
+	cb.Create(&buildPod2)
+	cb.Create(&jobPod21)
+	cb.Create(&jobPod22)
 	cb.Create(&unrelatedPod)
 
 	return client

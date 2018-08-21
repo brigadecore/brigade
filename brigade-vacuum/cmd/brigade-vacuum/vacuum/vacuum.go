@@ -1,6 +1,7 @@
 package vacuum
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -24,19 +25,21 @@ const (
 
 // Vacuum describes a vacuum for cleaning up expired builds and jobs.
 type Vacuum struct {
-	age       time.Time
-	max       int
-	namespace string
-	client    kubernetes.Interface
+	age               time.Time
+	max               int
+	skipRunningBuilds bool
+	namespace         string
+	client            kubernetes.Interface
 }
 
 // New creates a new *Vacuum.
-func New(age time.Time, max int, client kubernetes.Interface, ns string) *Vacuum {
+func New(age time.Time, max int, skipRunningBuilds bool, client kubernetes.Interface, ns string) *Vacuum {
 	return &Vacuum{
-		age:       age,
-		max:       max,
-		client:    client,
-		namespace: ns,
+		age:               age,
+		max:               max,
+		skipRunningBuilds: skipRunningBuilds,
+		client:            client,
+		namespace:         ns,
 	}
 }
 
@@ -112,6 +115,28 @@ func (v *Vacuum) deleteBuild(bid string) error {
 		LabelSelector: fmt.Sprintf(jobFilter, bid),
 	}
 	delOpts := metav1.NewDeleteOptions(0)
+	pods, err := v.client.CoreV1().Pods(v.namespace).List(opts)
+	if err != nil {
+		return err
+	}
+	if v.skipRunningBuilds {
+		for _, p := range pods.Items {
+			if p.Labels["component"] == "build" {
+				if p.Status.Phase == v1.PodRunning || p.Status.Phase == v1.PodPending {
+					return errors.New("skipping because build is still running")
+				} else {
+					break
+				}
+			}
+		}
+	}
+	for _, p := range pods.Items {
+		log.Printf("Deleting pod %q", p.Name)
+		if err := v.client.CoreV1().Pods(v.namespace).Delete(p.Name, delOpts); err != nil {
+			log.Printf("failed to delete job pod %s (continuing): %s", p.Name, err)
+		}
+	}
+
 	secrets, err := v.client.CoreV1().Secrets(v.namespace).List(opts)
 	if err != nil {
 		return err
@@ -120,17 +145,6 @@ func (v *Vacuum) deleteBuild(bid string) error {
 		log.Printf("Deleting secret %q", s.Name)
 		if err := v.client.CoreV1().Secrets(v.namespace).Delete(s.Name, delOpts); err != nil {
 			log.Printf("failed to delete job secret %s (continuing): %s", s.Name, err)
-		}
-	}
-
-	pods, err := v.client.CoreV1().Pods(v.namespace).List(opts)
-	if err != nil {
-		return err
-	}
-	for _, p := range pods.Items {
-		log.Printf("Deleting pod %q", p.Name)
-		if err := v.client.CoreV1().Pods(v.namespace).Delete(p.Name, delOpts); err != nil {
-			log.Printf("failed to delete job pod %s (continuing): %s", p.Name, err)
 		}
 	}
 
