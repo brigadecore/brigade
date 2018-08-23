@@ -45,8 +45,7 @@ describe("group", function() {
           j2.fail = true;
           let j3 = new mock.MockJob("third");
           g.add(j1, j2, j3);
-          g
-            .runEach()
+          g.runEach()
             .then((rez: jobImpl.Result[]) => {
               done("expected error on job 2");
             })
@@ -75,8 +74,7 @@ describe("group", function() {
           j2.fail = true;
           let j3 = new mock.MockJob("third");
           g.add(j1, j2, j3);
-          g
-            .runAll()
+          g.runAll()
             .then((rez: jobImpl.Result) => {
               done("expected error on job 2");
             })

@@ -27,12 +27,11 @@ const getWatchClient = (): kubernetes.Watch => {
   const config = path.join(process.env.HOME, ".kube", "config");
   if (fs.existsSync(config)) {
     kc.loadFromFile(config);
-  }
-  else {
+  } else {
     kc.loadFromCluster();
   }
   return new kubernetes.Watch(kc);
-}
+};
 const watchClient = getWatchClient();
 
 /**
@@ -99,14 +98,16 @@ export class BuildStorage {
 
     let pvc = this.buildPVC(size);
     this.logger.log(`Creating PVC named ${this.name}`);
-    return Promise.resolve<string>(defaultClient
-      .createNamespacedPersistentVolumeClaim(
-        this.proj.kubernetes.namespace,
-        pvc
-      )
-      .then(() => {
-        return this.name;
-      }));
+    return Promise.resolve<string>(
+      defaultClient
+        .createNamespacedPersistentVolumeClaim(
+          this.proj.kubernetes.namespace,
+          pvc
+        )
+        .then(() => {
+          return this.name;
+        })
+    );
   }
   /**
    * destroy deletes the PVC.
@@ -114,15 +115,17 @@ export class BuildStorage {
   public destroy(): Promise<boolean> {
     this.logger.log(`Destroying PVC named ${this.name}`);
     let opts = new kubernetes.V1DeleteOptions();
-    return Promise.resolve<boolean>(defaultClient
-      .deleteNamespacedPersistentVolumeClaim(
-        this.name,
-        this.proj.kubernetes.namespace,
-        opts
-      )
-      .then(() => {
-        return true;
-      }));
+    return Promise.resolve<boolean>(
+      defaultClient
+        .deleteNamespacedPersistentVolumeClaim(
+          this.name,
+          this.proj.kubernetes.namespace,
+          opts
+        )
+        .then(() => {
+          return true;
+        })
+    );
   }
   /**
    * Get a PVC for a volume that lives for the duration of a build.
@@ -158,15 +161,17 @@ export class BuildStorage {
  * from the secret.
  */
 export function loadProject(name: string, ns: string): Promise<Project> {
-  return Promise.resolve<Project>(defaultClient
-    .readNamespacedSecret(name, ns)
-    .catch(reason => {
-      const msg = reason.body ? reason.body.message : reason;
-      return Promise.reject(new Error(`Project not found: ${msg}`));
-    })
-    .then(result => {
-      return secretToProject(ns, result.body);
-    }));
+  return Promise.resolve<Project>(
+    defaultClient
+      .readNamespacedSecret(name, ns)
+      .catch(reason => {
+        const msg = reason.body ? reason.body.message : reason;
+        return Promise.reject(new Error(`Project not found: ${msg}`));
+      })
+      .then(result => {
+        return secretToProject(ns, result.body);
+      })
+  );
 }
 
 /**
@@ -380,16 +385,18 @@ export class JobRunner implements jobs.JobRunner {
     // appended to job name.
     return `${this.project.name.replace(/[.\/]/g, "-")}-${
       this.job.name
-      }`.toLowerCase();
+    }`.toLowerCase();
   }
 
   public logs(): Promise<string> {
     let podName = this.name;
     let k = this.client;
     let ns = this.project.kubernetes.namespace;
-    return Promise.resolve<string>(k.readNamespacedPodLog(podName, ns).then(result => {
-      return result.body;
-    }));
+    return Promise.resolve<string>(
+      k.readNamespacedPodLog(podName, ns).then(result => {
+        return result.body;
+      })
+    );
   }
 
   /**
@@ -454,8 +461,7 @@ export class JobRunner implements jobs.JobRunner {
       } else {
         let cname = this.cacheName();
         this.logger.log(`looking up ${ns}/${cname}`);
-        k
-          .readNamespacedPersistentVolumeClaim(cname, ns)
+        k.readNamespacedPersistentVolumeClaim(cname, ns)
           .then(result => {
             resolve("re-using existing cache");
           })
@@ -464,7 +470,7 @@ export class JobRunner implements jobs.JobRunner {
             this.logger.log(`Creating Job Cache PVC ${cname}`);
             return k
               .createNamespacedPersistentVolumeClaim(ns, this.pvc)
-              .then((result) => {
+              .then(result => {
                 this.logger.log("created cache");
                 resolve("created job cache");
               });
@@ -481,18 +487,20 @@ export class JobRunner implements jobs.JobRunner {
    * update pod info on event using watch
    */
   private startUpdatingPod(): any {
-    return watchClient.watch(`/api/v1/namespaces/${this.project.kubernetes.namespace}/pods`,
-      { "labelSelector": `build=${this.event.buildID},jobname=${this.job.name}` },
+    return watchClient.watch(
+      `/api/v1/namespaces/${this.project.kubernetes.namespace}/pods`,
+      { labelSelector: `build=${this.event.buildID},jobname=${this.job.name}` },
       (_type, obj) => {
-        this.pod = obj
+        this.pod = obj;
       },
-      (err) => {
+      err => {
         if (err) {
           this.logger.error("failed pod lookup");
           this.logger.error(err);
           this.cancel = true;
         }
-      });
+      }
+    );
   }
 
   /** wait listens for the running job to complete.*/
@@ -549,24 +557,22 @@ export class JobRunner implements jobs.JobRunner {
             cs[0].state.waiting &&
             cs[0].state.waiting.reason == "ErrImagePull"
           ) {
-            k
-              .deleteNamespacedPod(
-                name,
-                ns,
-                new kubernetes.V1DeleteOptions()
-              )
-              .catch(e => this.logger.error(e));
+            k.deleteNamespacedPod(
+              name,
+              ns,
+              new kubernetes.V1DeleteOptions()
+            ).catch(e => this.logger.error(e));
             clearTimers();
             reject(new Error(cs[0].state.waiting.message));
           }
         }
         this.logger.log(
           `${this.pod.metadata.namespace}/${this.pod.metadata.name} phase ${
-          this.pod.status.phase
+            this.pod.status.phase
           }`
         );
         // In all other cases we fall through and let the fn be run again.
-      }
+      };
       let interval = setInterval(() => {
         if (this.cancel) {
           podUpdater.abort();
@@ -691,7 +697,7 @@ function newRunnerPod(
   imageForcePull: boolean,
   serviceAccount: string,
   resourceRequests: jobs.JobResourceRequest,
-  jobAnnotations: { [key: string]: string; }
+  jobAnnotations: { [key: string]: string }
 ): kubernetes.V1Pod {
   let pod = new kubernetes.V1Pod();
   pod.metadata = new kubernetes.V1ObjectMeta();

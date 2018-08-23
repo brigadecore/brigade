@@ -48,7 +48,7 @@ describe("job", function() {
       it("correctly sets and gets path", function() {
         let c = new JobCache();
         assert.equal(c.path, brigadeCachePath, "Dir is /brigade/cache");
-        c.path = "/foo"
+        c.path = "/foo";
         assert.equal(c.path, "/foo", "Assert dir is /foo");
       });
     });
@@ -69,7 +69,7 @@ describe("job", function() {
       it("correctly sets and gets path", function() {
         let s = new JobStorage();
         assert.equal(s.path, brigadeStoragePath, "Dir is /brigade/cache");
-        s.path = "/foo"
+        s.path = "/foo";
         assert.equal(s.path, "/foo", "Assert dir is /foo");
       });
     });
@@ -156,8 +156,8 @@ describe("job", function() {
       });
       it("is an empty list that can be written", function() {
         assert.deepEqual(j.annotations, {});
-        j.annotations['some_kubetoiam/thing'] = 'my/path';
-        assert.deepEqual(j.annotations, { 'some_kubetoiam/thing': 'my/path' });
+        j.annotations["some_kubetoiam/thing"] = "my/path";
+        assert.deepEqual(j.annotations, { "some_kubetoiam/thing": "my/path" });
       });
     });
   });
