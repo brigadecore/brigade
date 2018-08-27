@@ -26,9 +26,6 @@ cd "${BRIGADE_WORKSPACE}"
 
 git fetch -q --force --update-head-ok "${BRIGADE_REMOTE_URL}" "${refspec}"
 
-# reset to $BRIGADE_COMMIT_ID or FETCH_HEAD
-git reset -q --hard "${BRIGADE_COMMIT_ID:-FETCH_HEAD}"
-
 git checkout -q --force "${BRIGADE_COMMIT_REF}"
 
 if [ "${BRIGADE_SUBMODULES:=}" = "true" ]; then
