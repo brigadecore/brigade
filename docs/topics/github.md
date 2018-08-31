@@ -100,9 +100,13 @@ The gateway listens on port `7744`, so the URL for the above will be
 
 ### Protectecting Your Gateway with SSL/TLS
 
-You may optionally use the [Kube LEGO](https://github.com/kubernetes/charts/tree/master/stable/kube-lego)
-Helm chart and set up an NGINX SSL proxy in front of your Brigade Gateway (`brigade-gw`)
-service.
+You may optionally set up an NGINX SSL proxy in front of your Brigade Gateway (`brigade-gw`)
+service. This can be done using [`cert-manager`](https://github.com/helm/charts/tree/master/stable/cert-manager) or  [`kube lego`](https://github.com/kubernetes/charts/tree/master/stable/kube-lego).
+
+> Please note that [`cert-manager` is pre-1.0, and does not currently offer strong guarantees around the API stability](https://github.com/jetstack/cert-manager#current-status) and [`kube-lego` is in maintenance mode only, with Kubernetes 1.8 as the last release with official support](https://github.com/jetstack/kube-lego#kube-lego)
+
+> `cert-manager` is the the [officially endorsed successor of `kube-lego`](https://www.jetstack.io/open-source/cert-manager/). Here are some resources for installing and configuring `cert-manager` for [Azure Kubernetes Service](https://docs.microsoft.com/en-us/azure/aks/ingress) and for [Google Kubernetes Engine](https://github.com/ahmetb/gke-letsencrypt).
+ 
 
 In this case, once the NGINX proxy is set up with SSL, you can point your
 GitHub "Payload URL" to the proxy instead of directly at the `brigade-gw` service.
