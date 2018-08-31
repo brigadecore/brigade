@@ -11,6 +11,8 @@
 /vendor/
 node_modules/
 
+yarn-error.log
+
 
 # IDEs
 .vscode/

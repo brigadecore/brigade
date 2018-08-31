@@ -20,6 +20,9 @@ cloneURL: "https://github.com/deis/empty-testbed.git"
 #   }
 #   events.on("run", run)
 
+# OPTIONAL: defaultScriptName is the name of a ConfigMap that contains a 'brigade.js' file.
+# defaultScriptName = "my-config-map"
+
 # Used by GitHub and other services to compute hook HMACs.
 sharedSecret: "IBrakeForSeaBeasts"
 
