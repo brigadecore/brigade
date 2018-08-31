@@ -20,6 +20,10 @@ cloneURL: "https://github.com/deis/empty-testbed.git"
 #   }
 #   events.on("run", run)
 
+# OPTIONAL: defaultScriptName is the name of a configmap used as a fallback brigade.js.
+# defaultScriptName: default-script-cm
+
+
 # Used by GitHub and other services to compute hook HMACs.
 sharedSecret: "IBrakeForSeaBeasts"
 

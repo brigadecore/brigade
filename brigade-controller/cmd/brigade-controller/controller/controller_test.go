@@ -86,7 +86,7 @@ func TestController(t *testing.T) {
 		t.Errorf("expected service account %s, got %s", svcAccountName, pod.Spec.ServiceAccountName)
 	}
 
-	if pod.Spec.Volumes[0].Name != volumeName {
+	if pod.Spec.Volumes[0].Name != "brigade-build" {
 		t.Error("Spec.Volumes are not correct")
 	}
 
@@ -119,7 +119,7 @@ func TestController(t *testing.T) {
 		}
 	}
 
-	if c.VolumeMounts[0].Name != volumeName {
+	if c.VolumeMounts[0].Name != "brigade-build" {
 		t.Error("Container.VolumeMounts is not correct")
 	}
 
@@ -135,8 +135,8 @@ func TestController(t *testing.T) {
 		t.Errorf("expected sidecar %q, got %q", sidecarImage, ic.Image)
 	}
 
-	if ic.VolumeMounts[0].Name != sidecarVolumeName {
-		t.Errorf("expected sidecar volume %q, got %q", sidecarVolumeName, ic.VolumeMounts[0].Name)
+	if ic.VolumeMounts[0].Name != "vcs-sidecar" {
+		t.Errorf("expected sidecar volume %q, got %q", "vcs-sidecar", ic.VolumeMounts[0].Name)
 	}
 
 	if os, ok := pod.Spec.NodeSelector["beta.kubernetes.io/os"]; !ok {
@@ -226,7 +226,7 @@ func TestController_WithScript(t *testing.T) {
 		t.Error("Pod.Lables do not match")
 	}
 
-	if pod.Spec.Volumes[0].Name != volumeName {
+	if pod.Spec.Volumes[0].Name != "brigade-build" {
 		t.Error("Spec.Volumes are not correct")
 	}
 	c := pod.Spec.Containers[0]
@@ -239,13 +239,13 @@ func TestController_WithScript(t *testing.T) {
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
 	}
-	if c.VolumeMounts[0].Name != volumeName {
+	if c.VolumeMounts[0].Name != "brigade-build" {
 		t.Error("Container.VolumeMounts is not correct")
 	}
 	if l := len(pod.Spec.InitContainers); l != 1 {
 		t.Fatalf("Expected 1 init container, got %d", l)
 	}
-	if l := len(pod.Spec.Containers[0].VolumeMounts); l != 3 {
+	if l := len(pod.Spec.Containers[0].VolumeMounts); l != 4 {
 		t.Fatalf("Expected 3 volume mounts, got %d", l)
 	}
 }
@@ -530,7 +530,7 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 				t.Error("Pod.Lables do not match")
 			}
 
-			if pod.Spec.Volumes[0].Name != volumeName {
+			if pod.Spec.Volumes[0].Name != "brigade-build" {
 				t.Error("Spec.Volumes are not correct")
 			}
 
@@ -547,7 +547,7 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 			if c.ImagePullPolicy != workerPullPolicy {
 				t.Error("Container.ImagePullPolicy is not correct")
 			}
-			if c.VolumeMounts[0].Name != volumeName {
+			if c.VolumeMounts[0].Name != "brigade-build" {
 				t.Error("Container.VolumeMounts is not correct")
 			}
 
@@ -567,8 +567,8 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 				t.Errorf("expected sidecar %q, got %q", workerPullPolicy, ic.ImagePullPolicy)
 			}
 
-			if ic.VolumeMounts[0].Name != sidecarVolumeName {
-				t.Errorf("expected sidecar volume %q, got %q", sidecarVolumeName, ic.VolumeMounts[0].Name)
+			if ic.VolumeMounts[0].Name != "vcs-sidecar" {
+				t.Errorf("expected sidecar volume %q, got %q", "vcs-sidecar", ic.VolumeMounts[0].Name)
 			}
 
 			if os, ok := pod.Spec.NodeSelector["beta.kubernetes.io/os"]; !ok {
