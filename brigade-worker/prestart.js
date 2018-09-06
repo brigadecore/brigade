@@ -30,7 +30,7 @@ try {
   fs.writeFileSync("dist/brigade.js", wrapper)
 } catch (e) {
   console.log("prestart: no script override")
-  console.error(e.toString())
+  console.error(e)
   process.exit(1)
 }
 
