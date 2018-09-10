@@ -4,7 +4,11 @@ import (
 	"errors"
 	"io/ioutil"
 
+	"os"
+
 	"github.com/spf13/cobra"
+
+	"github.com/Azure/brigade/pkg/script"
 )
 
 const rerunUsage = `Request that Brigade re-run a build.
@@ -37,12 +41,17 @@ var rerun = &cobra.Command{
 		}
 		bid := args[0]
 
-		a, err := newScriptRunner()
+		kc, err := kubeClient()
 		if err != nil {
 			return err
 		}
 
-		build, err := a.getBuild(bid)
+		a, err := script.NewDelegatedRunner(kc, os.Stdout, globalNamespace, runNoProgress, runBackground, globalVerbose)
+		if err != nil {
+			return err
+		}
+
+		build, err := a.GetBuild(bid)
 		if err != nil {
 			return err
 		}
@@ -60,6 +69,6 @@ var rerun = &cobra.Command{
 		build.LogLevel = rerunLogLevel
 		build.Worker = nil
 
-		return a.sendBuild(build)
+		return a.SendBuild(build)
 	},
 }
