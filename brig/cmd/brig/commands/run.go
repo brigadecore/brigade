@@ -79,9 +79,10 @@ func init() {
 }
 
 var run = &cobra.Command{
-	Use:   "run PROJECT",
-	Short: "Run a brigade.js file",
-	Long:  runUsage,
+	Use:     "run PROJECT",
+	Aliases: []string{"exec"},
+	Short:   "Run a brigade.js file",
+	Long:    runUsage,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("project name required")
