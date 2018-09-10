@@ -10,6 +10,8 @@ import { LogLevel, ContextLogger } from "./logger";
 import { BrigadeEvent, Project } from "./events";
 import * as fs from "fs";
 import * as path from "path";
+import * as request from "request";
+import * as byline_1 from "byline";
 
 // The internals for running tasks. This must be loaded before any of the
 // objects that use run().
@@ -22,17 +24,35 @@ import * as path from "path";
 const expiresInMSec = 1000 * 60 * 60 * 24 * 30;
 
 const defaultClient = kubernetes.Config.defaultClient();
-const getWatchClient = (): kubernetes.Watch => {
+const retry = (fn, args, delay, times) => { // exponential back-off retry if status is in the 500s
+  return fn.apply(defaultClient, args).catch(err => {
+    if (times > 0 && err.response && 500 <= err.response.statusCode && err.response.statusCode < 600) {
+      return new Promise(resolve => {
+        setTimeout(() => { resolve(retry(fn, args, delay * 2, times - 1)); }, delay);
+      });
+    }
+    return Promise.reject(err);
+  });
+};
+const wrapClient = (fns) => { // wrap client methods with retry logic
+  for (let fn of fns) {
+    let originalFn = defaultClient[fn.name];
+    defaultClient[fn.name] = function () { return retry(originalFn, arguments, 4000, 5); }
+  }
+}
+wrapClient([defaultClient.createNamespacedPersistentVolumeClaim, defaultClient.deleteNamespacedPersistentVolumeClaim, defaultClient.readNamespacedSecret, defaultClient.readNamespacedPodLog, defaultClient.createNamespacedSecret, defaultClient.createNamespacedPod, defaultClient.readNamespacedPersistentVolumeClaim, defaultClient.deleteNamespacedPod]);
+
+const getKubeConfig = (): kubernetes.KubeConfig => {
   const kc = new kubernetes.KubeConfig();
-  const config = path.join(process.env.HOME, ".kube", "config");
+  const config = process.env.KUBECONFIG || path.join(process.env.HOME, ".kube", "config");
   if (fs.existsSync(config)) {
     kc.loadFromFile(config);
   } else {
     kc.loadFromCluster();
   }
-  return new kubernetes.Watch(kc);
+  return kc;
 };
-const watchClient = getWatchClient();
+const kc = getKubeConfig();
 
 /**
  * options is the set of configuration options for the library.
@@ -191,6 +211,7 @@ export class JobRunner implements jobs.JobRunner {
   logger: ContextLogger;
   pod: any;
   cancel: boolean;
+  reconnect: boolean;
 
   constructor(job: jobs.Job, e: BrigadeEvent, project: Project) {
     this.options = Object.assign({}, options);
@@ -203,6 +224,7 @@ export class JobRunner implements jobs.JobRunner {
     this.serviceAccount = job.serviceAccount || this.options.serviceAccount;
     this.pod = undefined;
     this.cancel = false;
+    this.reconnect = false;
 
     // $JOB-$BUILD
     this.name = `${job.name}-${this.event.buildID}`;
@@ -385,7 +407,7 @@ export class JobRunner implements jobs.JobRunner {
     // appended to job name.
     return `${this.project.name.replace(/[.\/]/g, "-")}-${
       this.job.name
-    }`.toLowerCase();
+      }`.toLowerCase();
   }
 
   public logs(): Promise<string> {
@@ -487,20 +509,35 @@ export class JobRunner implements jobs.JobRunner {
    * update pod info on event using watch
    */
   private startUpdatingPod(): any {
-    return watchClient.watch(
-      `/api/v1/namespaces/${this.project.kubernetes.namespace}/pods`,
-      { labelSelector: `build=${this.event.buildID},jobname=${this.job.name}` },
-      (_type, obj) => {
-        this.pod = obj;
-      },
-      err => {
-        if (err) {
-          this.logger.error("failed pod lookup");
-          this.logger.error(err);
-          this.cancel = true;
+    const url = `${kc.getCurrentCluster().server}/api/v1/namespaces/${this.project.kubernetes.namespace}/pods`;
+    const requestOptions = {
+      qs: { watch: true, labelSelector: `build=${this.event.buildID},jobname=${this.job.name}` },
+      method: 'GET', uri: url, useQuerystring: true, json: true,
+    };
+    kc.applyToRequest(requestOptions);
+    const stream = new byline_1.LineStream();
+    stream.on('data', (data) => {
+      let obj = null;
+      try {
+        if (data instanceof Buffer) {
+          obj = JSON.parse(data.toString());
         }
+        else {
+          obj = JSON.parse(data);
+        }
+      } catch (e) { } //let it stay connected.
+      if (obj && obj.object) {
+        this.pod = obj.object;
       }
-    );
+    });
+    const req = request(requestOptions, (error, response, body) => {
+      if (error) {
+        this.logger.error(error);
+        this.reconnect = true; //reconnect unless aborted
+      }
+    });
+    req.pipe(stream);
+    return req;
   }
 
   /** wait listens for the running job to complete.*/
@@ -530,10 +567,14 @@ export class JobRunner implements jobs.JobRunner {
     // Poll the server waiting for a Succeeded.
     let poll = new Promise((resolve, reject) => {
       let pollOnce = (name, ns, i) => {
-        if (!podUpdater || (!this.cancel && podUpdater._ended)) {
-          if (podUpdater) {
+        if (!podUpdater) {
+          podUpdater = this.startUpdatingPod();
+        } else if (!this.cancel && (podUpdater._ended || this.reconnect)) {
+          //if not intentionally cancelled, reconnect
+          this.reconnect = false;
+          try {
             podUpdater.abort();
-          }
+          } catch (e) { this.logger.log(e); }
           podUpdater = this.startUpdatingPod();
         }
         if (!this.pod || this.pod.status == undefined) {
@@ -568,7 +609,7 @@ export class JobRunner implements jobs.JobRunner {
         }
         this.logger.log(
           `${this.pod.metadata.namespace}/${this.pod.metadata.name} phase ${
-            this.pod.status.phase
+          this.pod.status.phase
           }`
         );
         // In all other cases we fall through and let the fn be run again.
