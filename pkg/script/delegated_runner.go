@@ -26,39 +26,36 @@ const (
 	waitTimeout = 5 * time.Minute
 )
 
-func NewDelegatedRunner(c *kubernetes.Clientset, logDest io.Writer, namespace string, noProgress, background, verbose bool) (*scriptRunner, error) {
-	app := &scriptRunner{
+func NewDelegatedRunner(c *kubernetes.Clientset, logDest io.Writer, namespace string) (*ScriptRunner, error) {
+	app := &ScriptRunner{
 		store:          kube.New(c, namespace),
 		kc:             c,
 		namespace:      namespace,
 		logDestination: logDest,
-		noProgress:     noProgress,
-		background:     background,
-		verbose:        verbose,
 	}
 	return app, nil
 }
 
-type scriptRunner struct {
+type ScriptRunner struct {
 	store     storage.Store
 	kc        kubernetes.Interface
 	namespace string
 
 	logDestination io.Writer
 
-	noProgress bool
-	background bool
-	verbose    bool
+	NoProgress bool
+	Background bool
+	Verbose    bool
 }
 
-func (a *scriptRunner) SendBuild(b *brigade.Build) error {
+func (a *ScriptRunner) SendBuild(b *brigade.Build) error {
 	if err := a.store.CreateBuild(b); err != nil {
 		return err
 	}
 
 	podName := fmt.Sprintf("brigade-worker-%s", b.ID)
 
-	if a.background {
+	if a.Background {
 		fmt.Printf("Build: %s, Worker: %s\n", b.ID, podName)
 		return nil
 	}
@@ -72,7 +69,7 @@ func (a *scriptRunner) SendBuild(b *brigade.Build) error {
 	return a.podLog(podName, a.logDestination)
 }
 
-func (a *scriptRunner) SendScript(projectName string, data []byte, event, commitish, ref string, payload []byte, logLevel string) error {
+func (a *ScriptRunner) SendScript(projectName string, data []byte, event, commitish, ref string, payload []byte, logLevel string) error {
 
 	projectID := brigade.ProjectID(projectName)
 	if _, err := a.store.GetProject(projectID); err != nil {
@@ -95,7 +92,7 @@ func (a *scriptRunner) SendScript(projectName string, data []byte, event, commit
 }
 
 // waitForWorker waits until the worker has started.
-func (a *scriptRunner) waitForWorker(buildID string) error {
+func (a *ScriptRunner) waitForWorker(buildID string) error {
 	opts := metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("heritage=brigade,component=build,build=%s", buildID),
 	}
@@ -110,7 +107,7 @@ func (a *scriptRunner) waitForWorker(buildID string) error {
 	for {
 		select {
 		case e := <-res:
-			if a.verbose {
+			if a.Verbose {
 				d, _ := json.MarshalIndent(e.Object, "", "  ")
 				fmt.Printf("Event: %s\n %s\n", e.Type, d)
 			}
@@ -140,7 +137,7 @@ func (a *scriptRunner) waitForWorker(buildID string) error {
 	}
 }
 
-func (a *scriptRunner) podLog(name string, w io.Writer) error {
+func (a *ScriptRunner) podLog(name string, w io.Writer) error {
 	req := a.kc.CoreV1().Pods(a.namespace).GetLogs(name, &v1.PodLogOptions{Follow: true})
 
 	readCloser, err := req.Timeout(waitTimeout).Stream()
@@ -149,7 +146,7 @@ func (a *scriptRunner) podLog(name string, w io.Writer) error {
 	}
 	defer readCloser.Close()
 
-	if !a.noProgress {
+	if !a.NoProgress {
 		progressLogs(w, readCloser)
 	}
 
@@ -157,7 +154,7 @@ func (a *scriptRunner) podLog(name string, w io.Writer) error {
 	return err
 }
 
-func (a *scriptRunner) GetBuild(bid string) (*brigade.Build, error) {
+func (a *ScriptRunner) GetBuild(bid string) (*brigade.Build, error) {
 	return a.store.GetBuild(bid)
 }
 

@@ -46,10 +46,13 @@ var rerun = &cobra.Command{
 			return err
 		}
 
-		a, err := script.NewDelegatedRunner(kc, os.Stdout, globalNamespace, runNoProgress, runBackground, globalVerbose)
+		a, err := script.NewDelegatedRunner(kc, os.Stdout, globalNamespace)
 		if err != nil {
 			return err
 		}
+		a.NoProgress = runNoProgress
+		a.Background = runBackground
+		a.Verbose = globalVerbose
 
 		build, err := a.GetBuild(bid)
 		if err != nil {

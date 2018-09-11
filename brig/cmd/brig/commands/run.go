@@ -101,10 +101,13 @@ var run = &cobra.Command{
 			return err
 		}
 
-		runner, err := script.NewDelegatedRunner(kc, destination, globalNamespace, runNoProgress, runBackground, globalVerbose)
+		runner, err := script.NewDelegatedRunner(kc, destination, globalNamespace)
 		if err != nil {
 			return err
 		}
+		runner.NoProgress = runNoProgress
+		runner.Background = runBackground
+		runner.Verbose = globalVerbose
 
 		return runner.SendScript(proj, scr, runEvent, runCommitish, runRef, payload, runLogLevel)
 	},
