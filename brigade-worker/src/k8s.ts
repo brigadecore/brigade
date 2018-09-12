@@ -101,7 +101,7 @@ export class BuildStorage {
   proj: Project;
   name: string;
   build: string;
-  logger: ContextLogger;
+  logger: ContextLogger = new ContextLogger("k8s");
 
   /**
    * create initializes a new PVC for storing data.
@@ -114,7 +114,7 @@ export class BuildStorage {
     this.proj = project;
     this.name = e.workerID.toLowerCase();
     this.build = e.buildID;
-    this.logger = new ContextLogger("k8s", e.logLevel);
+    this.logger.logLevel = e.logLevel;
 
     let pvc = this.buildPVC(size);
     this.logger.log(`Creating PVC named ${this.name}`);
@@ -133,6 +133,11 @@ export class BuildStorage {
    * destroy deletes the PVC.
    */
   public destroy(): Promise<boolean> {
+    if(!this.proj && !this.name) {
+      this.logger.log('Build storage not exists');
+      return Promise.resolve(false);
+    }
+
     this.logger.log(`Destroying PVC named ${this.name}`);
     let opts = new kubernetes.V1DeleteOptions();
     return Promise.resolve<boolean>(

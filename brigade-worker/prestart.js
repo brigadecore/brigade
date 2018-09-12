@@ -14,10 +14,10 @@ const scripts = [
   "/vcs/brigade.js",
 
   // data mounted from project.DefaultScript
-  "/etc/brigade-project/defaultScript"
+  "/etc/brigade-project/defaultScript",
 
   // mounted configmap named in brigade.sh/project.DefaultScriptName
-  "/etc/brigade-default-script/brigade.js",
+  "/etc/brigade-default-script/brigade.js"
 ];
 
 //checked out in repo
