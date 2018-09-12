@@ -133,7 +133,7 @@ export class BuildStorage {
    * destroy deletes the PVC.
    */
   public destroy(): Promise<boolean> {
-    if(!this.proj && !this.name) {
+    if (!this.proj && !this.name) {
       this.logger.log('Build storage not exists');
       return Promise.resolve(false);
     }
@@ -214,7 +214,7 @@ export class JobRunner implements jobs.JobRunner {
   options: KubernetesOptions;
   serviceAccount: string;
   logger: ContextLogger;
-  pod: any;
+  pod: kubernetes.V1Pod;
   cancel: boolean;
   reconnect: boolean;
 
@@ -513,10 +513,10 @@ export class JobRunner implements jobs.JobRunner {
   /**
    * update pod info on event using watch
    */
-  private startUpdatingPod(): any {
+  private startUpdatingPod(): request.Request {
     const url = `${kc.getCurrentCluster().server}/api/v1/namespaces/${this.project.kubernetes.namespace}/pods`;
     const requestOptions = {
-      qs: { watch: true, labelSelector: `build=${this.event.buildID},jobname=${this.job.name}` },
+      qs: { watch: true, timeoutSeconds: 200, labelSelector: `build=${this.event.buildID},jobname=${this.job.name}` },
       method: 'GET', uri: url, useQuerystring: true, json: true,
     };
     kc.applyToRequest(requestOptions);
@@ -532,7 +532,7 @@ export class JobRunner implements jobs.JobRunner {
         }
       } catch (e) { } //let it stay connected.
       if (obj && obj.object) {
-        this.pod = obj.object;
+        this.pod = obj.object as kubernetes.V1Pod;
       }
     });
     const req = request(requestOptions, (error, response, body) => {
@@ -542,6 +542,7 @@ export class JobRunner implements jobs.JobRunner {
       }
     });
     req.pipe(stream);
+    req.on('end', () => { this.reconnect = true; }); //stay connected on transient faults
     return req;
   }
 
@@ -552,7 +553,7 @@ export class JobRunner implements jobs.JobRunner {
     let timeout = this.job.timeout || 60000;
     let name = this.name;
     let ns = this.project.kubernetes.namespace;
-    let podUpdater = undefined;
+    let podUpdater: request.Request = undefined;
 
     // This is a handle to clear the setTimeout when the promise is fulfilled.
     let waiter;
@@ -574,7 +575,7 @@ export class JobRunner implements jobs.JobRunner {
       let pollOnce = (name, ns, i) => {
         if (!podUpdater) {
           podUpdater = this.startUpdatingPod();
-        } else if (!this.cancel && (podUpdater._ended || this.reconnect)) {
+        } else if (!this.cancel && this.reconnect) {
           //if not intentionally cancelled, reconnect
           this.reconnect = false;
           try {
