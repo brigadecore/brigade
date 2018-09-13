@@ -149,7 +149,8 @@ $ helm install -f functional-test-project.yaml -n brigade-functional-tests ./cha
 
 At the very least, you will want a config that looks like this:
 
-```yamlproject: "deis/empty-testbed"
+```yaml
+project: "deis/empty-testbed"
 project: deis/empty-testbed
 repository: "github.com/deis/empty-testbed"
 cloneURL: "https://github.com/deis/empty-testbed.git"
