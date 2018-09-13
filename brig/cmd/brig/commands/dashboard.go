@@ -23,9 +23,8 @@ const (
 )
 
 var (
-	port            int
-	kashtiNamespace string
-	openDashboard   bool
+	port          int
+	openDashboard bool
 )
 
 func init() {
@@ -33,7 +32,6 @@ func init() {
 
 	flags := dashboard.PersistentFlags()
 	flags.IntVar(&port, "port", 8081, "local port for the Kashti dashboard")
-	flags.StringVar(&kashtiNamespace, "kashti-namespace", "default", "namespace for Kashti")
 	flags.BoolVar(&openDashboard, "open-dashboard", true, "open the dashboard in the browser")
 }
 
@@ -82,7 +80,7 @@ func startProxy(kashtiPort int) (*portforwarder.Tunnel, error) {
 	}
 
 	kashtiSelector := labels.Set{"app": "kashti"}.AsSelector()
-	tunnel, err := portforwarder.New(c, config, kashtiNamespace, kashtiSelector, remotePort, port)
+	tunnel, err := portforwarder.New(c, config, globalNamespace, kashtiSelector, remotePort, port)
 	if err != nil {
 		return nil, fmt.Errorf("cannot start port forward for kashti: %v", err)
 	}

@@ -7,7 +7,7 @@
 
 /** */
 
-import { V1EnvVarSource } from "@kubernetes/client-node/api";
+import { V1EnvVarSource } from "@kubernetes/client-node/dist/api";
 
 /**
  * The default shell for the job.
@@ -220,7 +220,7 @@ export abstract class Job {
   /**
    * pod annotations for the job
    */
-  public annotations: { [key: string]: string; } = {};
+  public annotations: { [key: string]: string } = {};
 
   /** _podName is set by the runtime. It is the name of the pod.*/
   protected _podName: string;

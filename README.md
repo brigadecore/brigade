@@ -81,11 +81,11 @@ remain compatible with Brigade.
 Creating your first `brigade.js` is as easy as this:
 
 ```javascript
-const { events } = require('brigadier')
+const { events } = require("brigadier");
 
 events.on("exec", (brigadeEvent, project) => {
-  console.log("Hello world!")
-})
+  console.log("Hello world!");
+});
 ```
 
 Check out [the tutorial](https://azure.github.io/brigade/intro/) for more on creating scripts.
@@ -104,9 +104,10 @@ This will show you the detailed output of running your `brigade.js` script's
 
 ## Related Projects
 
-* [Kashti](https://github.com/Azure/kashti) - a dashboard for your Brigade pipelines.
-* [Brigadeterm](https://github.com/slok/brigadeterm) - a simple terminal ui for brigade pipelining system.
-* Gateways
+- [Kashti](https://github.com/Azure/kashti) - a dashboard for your Brigade pipelines.
+- [Brigadeterm](https://github.com/slok/brigadeterm) - a simple terminal ui for brigade pipelining system.
+- [Brigade exporter](https://github.com/slok/brigade-exporter) - a [Prometheus](https://prometheus.io) exporter to gather metrics from Brigade.
+- Gateways
   - [BitBucket events](https://github.com/lukepatrick/brigade-bitbucket-gateway): Gateway Support for BitBucket repositories
   - [GitLab events](https://github.com/lukepatrick/brigade-gitlab-gateway): Gateway Support for GitLab repositories
   - [Kubernetes events](https://github.com/azure/brigade-k8s-gateway): Gateway that listens to Kubernetes event stream
@@ -123,7 +124,7 @@ Brigade is well-tested on Minikube and Azure Container Services.
 
 # Contributing
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
+This project welcomes contributions and suggestions. Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.microsoft.com.
 

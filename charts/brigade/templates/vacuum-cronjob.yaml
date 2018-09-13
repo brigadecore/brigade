@@ -32,6 +32,8 @@ spec:
               value: {{ default "" .Values.vacuum.age | quote }}
             - name: VACUUM_MAX_BUILDS
               value: {{ default "0" .Values.vacuum.maxBuilds | quote }}
+            - name: VACUUM_SKIP_RUNNING_BUILDS
+              value: {{ default "false" .Values.vacuum.skipRunningBuilds | quote }}
             - name: BRIGADE_NAMESPACE
               valueFrom:
                 fieldRef:

@@ -13,8 +13,11 @@ const scripts = [
   // checked out in repo
   "/vcs/brigade.js",
 
+  // data mounted from project.DefaultScript
+  "/etc/brigade-project/defaultScript",
+
   // mounted configmap named in brigade.sh/project.DefaultScriptName
-  "/etc/brigade-default-script/brigade.js",
+  "/etc/brigade-default-script/brigade.js"
 ];
 
 //checked out in repo
@@ -30,7 +33,7 @@ try {
   fs.writeFileSync("dist/brigade.js", wrapper)
 } catch (e) {
   console.log("prestart: no script override")
-  console.error(e.toString())
+  console.error(e)
   process.exit(1)
 }
 

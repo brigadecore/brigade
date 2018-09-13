@@ -15,10 +15,11 @@ import (
 )
 
 const (
-	envKubeConfig = "KUBECONFIG"
-	envMaxBuilds  = "VACUUM_MAX_BUILDS"
-	envAge        = "VACUUM_AGE"
-	envNamespace  = "BRIGADE_NAMESPACE"
+	envKubeConfig        = "KUBECONFIG"
+	envMaxBuilds         = "VACUUM_MAX_BUILDS"
+	envAge               = "VACUUM_AGE"
+	envSkipRunningBuilds = "VACUUM_SKIP_RUNNING_BUILDS"
+	envNamespace         = "BRIGADE_NAMESPACE"
 )
 
 const mainUsage = `Clean up old Brigade builds
@@ -72,6 +73,7 @@ var Root = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		a := getAge()
 		mb := maxBuilds()
+		srb := getSkipRunningBuilds()
 		if a == "" && mb == 0 {
 			return errors.New("one of --age or --max-builds must be greater than zero")
 		}
@@ -90,7 +92,7 @@ var Root = &cobra.Command{
 		if globalVerbose {
 			fmt.Fprintf(os.Stderr, "Max Age: %s\nMax Builds: %d\n", age, mb)
 		}
-		count, err := vacuum.New(age, mb, c, ns()).Run()
+		count, err := vacuum.New(age, mb, srb, c, ns()).Run()
 		fmt.Fprintf(os.Stdout, "Deleted %d\n", count)
 		return err
 	},
@@ -144,4 +146,13 @@ func getAge() string {
 		return globalAge
 	}
 	return os.Getenv(envAge)
+}
+
+func getSkipRunningBuilds() bool {
+	//delete all builds by default, so default is false
+	v, ok := os.LookupEnv(envSkipRunningBuilds)
+	if !ok {
+		return false
+	}
+	return v == "true"
 }

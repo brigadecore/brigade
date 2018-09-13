@@ -276,9 +276,9 @@ func projectCreatePrompts(p *brigade.Project) error {
 
 	}
 
-	if p.SharedSecret != "" {
-		fmt.Println("Auto-generating a Shared Secret...")
+	if p.SharedSecret == "" {
 		p.SharedSecret, _ = goutils.RandomAlphaNumeric(24)
+		fmt.Printf("Auto-generated a Shared Secret: %q\n", p.SharedSecret)
 	}
 
 	configureGitHub := false

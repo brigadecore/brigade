@@ -76,6 +76,7 @@ Now is a good time to commit your work.
 
 ```
 $ git add tests/ setup.py
+$ git add .
 $ git commit -m "add unit tests"
 $ git push origin master
 ```

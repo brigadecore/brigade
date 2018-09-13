@@ -243,6 +243,6 @@ export class EventRegistry extends EventEmitter {
   }
 
   public on(eventName: string | symbol, cb: ((...args: any[]) => void)): this {
-    return super.on(eventName, cb)
+    return super.on(eventName, cb);
   }
 }

@@ -73,13 +73,6 @@ func (c *Controller) updateBuildStatus(build *v1.Secret) error {
 	return err
 }
 
-const (
-	volumeName        = "brigade-build"
-	volumeMountPath   = "/etc/brigade"
-	sidecarVolumeName = "vcs-sidecar"
-	sidecarVolumePath = "/vcs"
-)
-
 func (c *Controller) newWorkerPod(build, project *v1.Secret) v1.Pod {
 	env := c.workerEnv(project, build)
 
@@ -89,6 +82,22 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) v1.Pod {
 	}
 
 	image, pullPolicy := c.workerImageConfig(project)
+
+	buildVolume := v1.VolumeMount{
+		Name:      "brigade-build",
+		MountPath: "/etc/brigade",
+		ReadOnly:  true,
+	}
+	projectVolume := v1.VolumeMount{
+		Name:      "brigade-project",
+		MountPath: "/etc/brigade-project",
+		ReadOnly:  true,
+	}
+	sidecarVolume := v1.VolumeMount{
+		Name:      "vcs-sidecar",
+		MountPath: "/vcs",
+		ReadOnly:  true,
+	}
 
 	spec := v1.PodSpec{
 		ServiceAccountName: c.Config.WorkerServiceAccount,
@@ -101,33 +110,28 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) v1.Pod {
 			ImagePullPolicy: v1.PullPolicy(pullPolicy),
 			Command:         cmd,
 			VolumeMounts: []v1.VolumeMount{
-				{
-					Name:      volumeName,
-					MountPath: volumeMountPath,
-					ReadOnly:  true,
-				},
-				{
-					Name:      sidecarVolumeName,
-					MountPath: sidecarVolumePath,
-					ReadOnly:  true,
-				},
+				buildVolume,
+				projectVolume,
+				sidecarVolume,
 			},
 			Env: env,
 		}},
-		Volumes: []v1.Volume{
-			{
-				Name: volumeName,
-				VolumeSource: v1.VolumeSource{
-					Secret: &v1.SecretVolumeSource{SecretName: build.Name},
-				},
+		Volumes: []v1.Volume{{
+			Name: buildVolume.Name,
+			VolumeSource: v1.VolumeSource{
+				Secret: &v1.SecretVolumeSource{SecretName: build.Name},
 			},
-			{
-				Name: sidecarVolumeName,
-				VolumeSource: v1.VolumeSource{
-					EmptyDir: &v1.EmptyDirVolumeSource{},
-				},
+		}, {
+			Name: projectVolume.Name,
+			VolumeSource: v1.VolumeSource{
+				Secret: &v1.SecretVolumeSource{SecretName: project.Name},
 			},
-		},
+		}, {
+			Name: sidecarVolume.Name,
+			VolumeSource: v1.VolumeSource{
+				EmptyDir: &v1.EmptyDirVolumeSource{},
+			},
+		}},
 		RestartPolicy: v1.RestartPolicyNever,
 	}
 
@@ -141,11 +145,8 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) v1.Pod {
 			Name:            "vcs-sidecar",
 			Image:           string(image),
 			ImagePullPolicy: v1.PullPolicy(pullPolicy),
-			VolumeMounts: []v1.VolumeMount{{
-				Name:      sidecarVolumeName,
-				MountPath: sidecarVolumePath,
-			}},
-			Env: env,
+			VolumeMounts:    []v1.VolumeMount{sidecarVolume},
+			Env:             env,
 		}}
 	}
 
@@ -208,7 +209,7 @@ func (c *Controller) workerImageConfig(project *v1.Secret) (string, string) {
 
 func (c *Controller) workerEnv(project, build *v1.Secret) []v1.EnvVar {
 	sv := kube.SecretValues(build.Data)
-	env := []v1.EnvVar{
+	return []v1.EnvVar{
 		{Name: "CI", Value: "true"},
 		{Name: "BRIGADE_BUILD_ID", Value: build.Labels["build"]},
 		{Name: "BRIGADE_BUILD_NAME", Value: sv.String("build_name")},
@@ -219,24 +220,17 @@ func (c *Controller) workerEnv(project, build *v1.Secret) []v1.EnvVar {
 		{Name: "BRIGADE_PROJECT_ID", Value: sv.String("project_id")},
 		{Name: "BRIGADE_LOG_LEVEL", Value: sv.String("log_level")},
 		{Name: "BRIGADE_REMOTE_URL", Value: string(project.Data["cloneURL"])},
-		{Name: "BRIGADE_WORKSPACE", Value: sidecarVolumePath},
-		{
-			Name: "BRIGADE_PROJECT_NAMESPACE",
-			ValueFrom: &v1.EnvVarSource{
-				FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"},
-			},
-		},
+		{Name: "BRIGADE_WORKSPACE", Value: "/vcs"},
+		{Name: "BRIGADE_PROJECT_NAMESPACE", Value: build.Namespace},
+		{Name: "BRIGADE_SERVICE_ACCOUNT", Value: c.Config.WorkerServiceAccount},
 		{
 			Name:      "BRIGADE_REPO_KEY",
 			ValueFrom: secretRef("sshKey", project),
-		},
-		{
+		}, {
 			Name:      "BRIGADE_REPO_AUTH_TOKEN",
 			ValueFrom: secretRef("github.token", project),
 		},
-		{Name: "BRIGADE_SERVICE_ACCOUNT", Value: c.Config.WorkerServiceAccount},
 	}
-	return env
 }
 
 // secretRef generate a SecretKeyRef env var entry if `key` is present in `secret`.
