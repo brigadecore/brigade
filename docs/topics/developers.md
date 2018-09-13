@@ -68,14 +68,14 @@ Start Minikube. Your addons should look like this:
 
 ```
 $  minikube addons list
-- default-storageclass: enabled
-- kube-dns: enabled
+- addon-manager: enabled
 - dashboard: disabled
+- default-storageclass: enabled
 - heapster: disabled
 - ingress: enabled
+- kube-dns: enabled
 - registry: disabled
 - registry-creds: disabled
-- addon-manager: enabled
 ```
 
 Feel free to enable other addons, but the ones above are expected to be present
