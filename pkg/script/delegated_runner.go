@@ -66,7 +66,24 @@ func (a *ScriptRunner) SendBuild(b *brigade.Build) error {
 	}
 
 	fmt.Printf("Build: %s, Worker: %s\n", b.ID, podName)
-	return a.podLog(podName, a.logDestination)
+	if err := a.podLog(podName, a.logDestination); err != nil {
+		return err
+	}
+
+	// Now that everything is complete, get the pod status. If the pod failed, exit 1.
+	// Fortunately, the worker pod is marked "failed" if one of the jobs
+	// in the build fails and the error isn't handled with a .catch().
+	pod, err := a.kc.CoreV1().Pods(a.namespace).Get(podName, metav1.GetOptions{IncludeUninitialized: true})
+	if err != nil {
+		return err
+	}
+
+	podPhase := pod.Status.Phase
+	if podPhase == v1.PodFailed || podPhase == v1.PodUnknown {
+		return NewBuildFailure("build failed. (Build ID: %s)", b.ID)
+	}
+
+	return nil
 }
 
 func (a *ScriptRunner) SendScript(projectName string, data []byte, event, commitish, ref string, payload []byte, logLevel string) error {

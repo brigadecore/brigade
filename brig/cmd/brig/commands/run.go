@@ -22,7 +22,6 @@ var (
 	runNoProgress bool
 	runNoColor    bool
 	runBackground bool
-    runExitCode   bool
 )
 
 const (
@@ -61,7 +60,6 @@ func init() {
 	run.Flags().BoolVar(&runNoColor, "no-color", false, "Remove color codes from log output")
 	run.Flags().BoolVarP(&runBackground, "background", "b", false, "Trigger the event and exit. Let the job run in the background.")
 	run.Flags().StringVarP(&runLogLevel, "level", "l", "log", "Specified log level: log, info, warn, error")
-    run.Flags().BoolVar(&runExitCode, "exit-code", false, "Return a failing exit code if build fails")
 	Root.AddCommand(run)
 }
 
@@ -112,19 +110,20 @@ var run = &cobra.Command{
 		runner.Background = runBackground
 		runner.Verbose = globalVerbose
 
-        err = runner.SendScript(proj, scr, runEvent, runCommitish, runRef, payload, runLogLevel)
-        if err == nil {
-            return nil
-        }
+		err = runner.SendScript(proj, scr, runEvent, runCommitish, runRef, payload, runLogLevel)
+		if err == nil {
+			return nil
+		}
 
-        // If err is a BuildFailure, then we don't want Cobra to print the Usage
-        // instructions on failure, since it's a pipeline issue and not a CLI issue.
-        _, ok := err.(BuildFailure)
-        if ok {
-            cmd.SilenceUsage = true
-            cmd.SilenceErrors = true
-        }
+		// If err is a BuildFailure, then we don't want Cobra to print the Usage
+		// instructions on failure, since it's a pipeline issue and not a CLI issue.
+		_, ok := err.(script.BuildFailure)
+		if ok {
+			cmd.SilenceUsage = true
+			cmd.SilenceErrors = true
+			return BrigError{Code: 2, cause: err}
+		}
 
-        return err
+		return err
 	},
 }
