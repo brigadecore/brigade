@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"io/ioutil"
-
 	"os"
 
 	"github.com/spf13/cobra"
@@ -46,10 +45,11 @@ var rerun = &cobra.Command{
 			return err
 		}
 
-		a, err := script.NewDelegatedRunner(kc, os.Stdout, globalNamespace)
+		a, err := script.NewDelegatedRunner(kc, globalNamespace)
 		if err != nil {
 			return err
 		}
+		a.ScriptLogDestination = os.Stdout
 		a.NoProgress = runNoProgress
 		a.Background = runBackground
 		a.Verbose = globalVerbose

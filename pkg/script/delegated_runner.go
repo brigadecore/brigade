@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -26,12 +27,13 @@ const (
 	waitTimeout = 5 * time.Minute
 )
 
-func NewDelegatedRunner(c *kubernetes.Clientset, logDest io.Writer, namespace string) (*ScriptRunner, error) {
+func NewDelegatedRunner(c *kubernetes.Clientset, namespace string) (*ScriptRunner, error) {
 	app := &ScriptRunner{
-		store:          kube.New(c, namespace),
-		kc:             c,
-		namespace:      namespace,
-		logDestination: logDest,
+		store:                kube.New(c, namespace),
+		kc:                   c,
+		namespace:            namespace,
+		ScriptLogDestination: os.Stdout,
+		RunnerLogDestination: os.Stdout,
 	}
 	return app, nil
 }
@@ -41,7 +43,8 @@ type ScriptRunner struct {
 	kc        kubernetes.Interface
 	namespace string
 
-	logDestination io.Writer
+	ScriptLogDestination io.Writer
+	RunnerLogDestination io.Writer
 
 	NoProgress bool
 	Background bool
@@ -56,17 +59,17 @@ func (a *ScriptRunner) SendBuild(b *brigade.Build) error {
 	podName := fmt.Sprintf("brigade-worker-%s", b.ID)
 
 	if a.Background {
-		fmt.Printf("Build: %s, Worker: %s\n", b.ID, podName)
+		fmt.Fprintf(a.RunnerLogDestination, "Build: %s, Worker: %s\n", b.ID, podName)
 		return nil
 	}
-	fmt.Printf("Event created. Waiting for worker pod named %q.\n", podName)
+	fmt.Fprintf(a.RunnerLogDestination, "Event created. Waiting for worker pod named %q.\n", podName)
 
 	if err := a.waitForWorker(b.ID); err != nil {
 		return err
 	}
 
-	fmt.Printf("Build: %s, Worker: %s\n", b.ID, podName)
-	if err := a.podLog(podName, a.logDestination); err != nil {
+	fmt.Fprintf(a.RunnerLogDestination, "Build: %s, Worker: %s\n", b.ID, podName)
+	if err := a.podLog(podName, a.ScriptLogDestination); err != nil {
 		return err
 	}
 
@@ -126,7 +129,7 @@ func (a *ScriptRunner) waitForWorker(buildID string) error {
 		case e := <-res:
 			if a.Verbose {
 				d, _ := json.MarshalIndent(e.Object, "", "  ")
-				fmt.Printf("Event: %s\n %s\n", e.Type, d)
+				fmt.Fprintf(a.RunnerLogDestination, "Event: %s\n %s\n", e.Type, d)
 			}
 			// If the pod is added or modified, check the phase and see if it is
 			// running or complete.
