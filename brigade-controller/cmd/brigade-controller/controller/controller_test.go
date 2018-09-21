@@ -55,7 +55,8 @@ func TestController(t *testing.T) {
 		},
 		// This and the missing 'script' will trigger an initContainer
 		Data: map[string][]byte{
-			"vcsSidecar": []byte(sidecarImage),
+			"vcsSidecar":       []byte(sidecarImage),
+			"imagePullSecrets": []byte(`foo,bar`),
 		},
 	}
 
@@ -85,7 +86,7 @@ func TestController(t *testing.T) {
 		t.Errorf("expected service account %s, got %s", svcAccountName, pod.Spec.ServiceAccountName)
 	}
 
-	if pod.Spec.Volumes[0].Name != volumeName {
+	if pod.Spec.Volumes[0].Name != "brigade-build" {
 		t.Error("Spec.Volumes are not correct")
 	}
 
@@ -93,11 +94,23 @@ func TestController(t *testing.T) {
 	if c.Name != "brigade-runner" {
 		t.Error("Container.Name is not correct")
 	}
-	if envlen := len(c.Env); envlen != 14 {
-		t.Errorf("expected 14 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 15 {
+		t.Errorf("expected 15 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
+	}
+
+	imgSecrets := pod.Spec.ImagePullSecrets
+	if len(imgSecrets) != 2 {
+		t.Fatal("expected two image pull secrets")
+	}
+
+	expectedNames := []string{"foo", "bar"}
+	for i, ips := range imgSecrets {
+		if ips.Name != expectedNames[i] {
+			t.Errorf("expected imagePullSecrets %q, got %q", expectedNames[i], ips.Name)
+		}
 	}
 
 	for i, term := range []string{"yarn", "-s", "start"} {
@@ -106,7 +119,7 @@ func TestController(t *testing.T) {
 		}
 	}
 
-	if c.VolumeMounts[0].Name != volumeName {
+	if c.VolumeMounts[0].Name != "brigade-build" {
 		t.Error("Container.VolumeMounts is not correct")
 	}
 
@@ -114,22 +127,31 @@ func TestController(t *testing.T) {
 		t.Fatalf("Expected 1 init container, got %d", l)
 	}
 	ic := pod.Spec.InitContainers[0]
-	if envlen := len(ic.Env); envlen != 14 {
-		t.Errorf("expected 14 env vars, got %d", envlen)
+	if envlen := len(ic.Env); envlen != 15 {
+		t.Errorf("expected 15 env vars, got %d", envlen)
 	}
 
 	if ic.Image != sidecarImage {
 		t.Errorf("expected sidecar %q, got %q", sidecarImage, ic.Image)
 	}
 
-	if ic.VolumeMounts[0].Name != sidecarVolumeName {
-		t.Errorf("expected sidecar volume %q, got %q", sidecarVolumeName, ic.VolumeMounts[0].Name)
+	if ic.VolumeMounts[0].Name != "vcs-sidecar" {
+		t.Errorf("expected sidecar volume %q, got %q", "vcs-sidecar", ic.VolumeMounts[0].Name)
 	}
 
 	if os, ok := pod.Spec.NodeSelector["beta.kubernetes.io/os"]; !ok {
 		t.Error("No OS node selector found")
 	} else if os != "linux" {
 		t.Errorf("Unexpected node selector: %s", os)
+	}
+
+	sec, err := client.CoreV1().Secrets(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if sec.Labels["status"] != "accepted" {
+		t.Error("expected label 'status=accepted'")
 	}
 }
 
@@ -177,7 +199,8 @@ func TestController_WithScript(t *testing.T) {
 		},
 		// This and the missing 'script' will trigger an initContainer
 		Data: map[string][]byte{
-			"vcsSidecar": []byte(sidecarImage),
+			"vcsSidecar":        []byte(sidecarImage),
+			"defaultScriptName": []byte("my-script"),
 		},
 	}
 
@@ -203,25 +226,27 @@ func TestController_WithScript(t *testing.T) {
 		t.Error("Pod.Lables do not match")
 	}
 
-	if pod.Spec.Volumes[0].Name != volumeName {
+	if pod.Spec.Volumes[0].Name != "brigade-build" {
 		t.Error("Spec.Volumes are not correct")
 	}
 	c := pod.Spec.Containers[0]
 	if c.Name != "brigade-runner" {
 		t.Error("Container.Name is not correct")
 	}
-	if envlen := len(c.Env); envlen != 14 {
-		t.Errorf("expected 14 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 15 {
+		t.Errorf("expected 15 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
 	}
-	if c.VolumeMounts[0].Name != volumeName {
+	if c.VolumeMounts[0].Name != "brigade-build" {
 		t.Error("Container.VolumeMounts is not correct")
 	}
-
-	if l := len(pod.Spec.InitContainers); l != 0 {
-		t.Fatalf("Expected no init container, got %d", l)
+	if l := len(pod.Spec.InitContainers); l != 1 {
+		t.Fatalf("Expected 1 init container, got %d", l)
+	}
+	if l := len(pod.Spec.Containers[0].VolumeMounts); l != 4 {
+		t.Fatalf("Expected 3 volume mounts, got %d", l)
 	}
 }
 
@@ -284,8 +309,8 @@ func TestController_NoSidecar(t *testing.T) {
 	}
 
 	c := pod.Spec.Containers[0]
-	if envlen := len(c.Env); envlen != 14 {
-		t.Errorf("expected 14 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != 15 {
+		t.Errorf("expected 15 items in Container.Env, got %d", envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
@@ -505,7 +530,7 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 				t.Error("Pod.Lables do not match")
 			}
 
-			if pod.Spec.Volumes[0].Name != volumeName {
+			if pod.Spec.Volumes[0].Name != "brigade-build" {
 				t.Error("Spec.Volumes are not correct")
 			}
 
@@ -513,8 +538,8 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 			if c.Name != "brigade-runner" {
 				t.Error("Container.Name is not correct")
 			}
-			if envlen := len(c.Env); envlen != 14 {
-				t.Errorf("expected 14 items in Container.Env, got %d", envlen)
+			if envlen := len(c.Env); envlen != 15 {
+				t.Errorf("expected 15 items in Container.Env, got %d", envlen)
 			}
 			if c.Image != test.expWorkerImage {
 				t.Errorf("Container.Image is not correct, got %s; want %s", c.Image, test.expWorkerImage)
@@ -522,7 +547,7 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 			if c.ImagePullPolicy != workerPullPolicy {
 				t.Error("Container.ImagePullPolicy is not correct")
 			}
-			if c.VolumeMounts[0].Name != volumeName {
+			if c.VolumeMounts[0].Name != "brigade-build" {
 				t.Error("Container.VolumeMounts is not correct")
 			}
 
@@ -530,8 +555,8 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 				t.Fatalf("Expected 1 init container, got %d", l)
 			}
 			ic := pod.Spec.InitContainers[0]
-			if envlen := len(ic.Env); envlen != 14 {
-				t.Errorf("expected 14 env vars, got %d", envlen)
+			if envlen := len(ic.Env); envlen != 15 {
+				t.Errorf("expected 15 env vars, got %d", envlen)
 			}
 
 			if ic.Image != sidecarImage {
@@ -542,8 +567,8 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 				t.Errorf("expected sidecar %q, got %q", workerPullPolicy, ic.ImagePullPolicy)
 			}
 
-			if ic.VolumeMounts[0].Name != sidecarVolumeName {
-				t.Errorf("expected sidecar volume %q, got %q", sidecarVolumeName, ic.VolumeMounts[0].Name)
+			if ic.VolumeMounts[0].Name != "vcs-sidecar" {
+				t.Errorf("expected sidecar volume %q, got %q", "vcs-sidecar", ic.VolumeMounts[0].Name)
 			}
 
 			if os, ok := pod.Spec.NodeSelector["beta.kubernetes.io/os"]; !ok {

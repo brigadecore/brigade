@@ -7,7 +7,7 @@
 
 /** */
 
-import {V1EnvVarSource} from "@kubernetes/client-node/api";
+import { V1EnvVarSource } from "@kubernetes/client-node/dist/api";
 
 /**
  * The default shell for the job.
@@ -69,12 +69,10 @@ export class JobCache {
    */
   public size: string = "5Mi";
 
-  // future-proof Cache.path. For now we will hard-code it, but make it so that
-  // we can modify in the future.
-  private _path: string = brigadeCachePath;
-  public get path(): string {
-    return this._path;
-  }
+  // EXPERIMENTAL: Allow script authors to change this location.
+  // Before Brigade 0.15, this used a getter to prevent scripters from setting
+  // this path directly.
+  public path: string = brigadeCachePath;
 }
 
 /**
@@ -84,10 +82,10 @@ export class JobCache {
  */
 export class JobStorage {
   public enabled: boolean = false;
-  private _path: string = brigadeStoragePath;
-  public get path(): string {
-    return this._path;
-  }
+
+  // EXPERIMENTAL: Allow setting the path.
+  // Prior to Brigade 0.15, this was read-only.
+  public path: string = brigadeStoragePath;
 }
 
 /**
@@ -158,6 +156,8 @@ export abstract class Job {
   public shell: string = defaultShell;
   /** tasks is a list of tasks run inside of the shell*/
   public tasks: string[];
+  /** args is a list of arguments that will be supplied to the container.*/
+  public args: string[];
   /** env is the environment variables for the job*/
   public env: { [key: string]: string | V1EnvVarSource };
   /** image is the container image to be run*/
@@ -217,6 +217,11 @@ export abstract class Job {
    */
   public docker: JobDockerMount;
 
+  /**
+   * pod annotations for the job
+   */
+  public annotations: { [key: string]: string } = {};
+
   /** _podName is set by the runtime. It is the name of the pod.*/
   protected _podName: string;
 
@@ -241,10 +246,11 @@ export abstract class Job {
         "job name must be letters, numbers, and '-', and must not start or end with '-'"
       );
     }
-    this.name = name;
+    this.name = name.toLocaleLowerCase();
     this.image = image;
     this.imageForcePull = imageForcePull;
     this.tasks = tasks || [];
+    this.args = [];
     this.env = {};
     this.cache = new JobCache();
     this.storage = new JobStorage();
@@ -255,6 +261,9 @@ export abstract class Job {
 
   /** run executes the job and then */
   public abstract run(): Promise<Result>;
+
+  /** logs retrieves the logs (so far) from the job run */
+  public abstract logs(): Promise<string>;
 }
 
 /**

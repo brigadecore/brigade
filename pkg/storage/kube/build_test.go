@@ -25,6 +25,7 @@ func TestNewBuildFromSecret(t *testing.T) {
 			"script":         []byte("ohai"),
 			"commit_id":      []byte("abc123"),
 			"commit_ref":     []byte("refs/heads/master"),
+			"log_level":      []byte("LOG"),
 		},
 	}
 	build := NewBuildFromSecret(secret)
@@ -134,6 +135,10 @@ func TestGetBuilds(t *testing.T) {
 }
 
 func TestGetProjectBuilds(t *testing.T) {
+
+	// this could be related
+	// https://github.com/kubernetes/client-go/issues/352
+
 	k, s := fakeStore()
 	createFakeWorker(k, stubWorkerPod)
 	if err := s.CreateBuild(stubBuild); err != nil {

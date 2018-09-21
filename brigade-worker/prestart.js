@@ -1,36 +1,72 @@
 const process = require("process")
 const fs = require("fs")
+const exec = require("child-process-promise")
 
-// Worker should always set both env vars. The defaults are for local testing.
-const script = process.env.BRIGADE_SCRIPT || "/etc/brigade/script"
-const vcsScript = process.env.BRIGADE_VCS_SCRIPT || "/vcs/brigade.js"
+// Script locations in order of precedence.
+const scripts = [
+  // manual override for debugging
+  process.env.BRIGADE_SCRIPT,
+
+  // data mounted from event secret (e.g. brig run)
+  "/etc/brigade/script",
+
+  // checked out in repo
+  "/vcs/brigade.js",
+
+  // data mounted from project.DefaultScript
+  "/etc/brigade-project/defaultScript",
+
+  // mounted configmap named in brigade.sh/project.DefaultScriptName
+  "/etc/brigade-default-script/brigade.js"
+];
+
+//checked out in repo
+const deps = "/vcs/brigade.json"
+
+addDeps()
 
 try {
-  var data = loadScript(script)
+  var data = loadScript()
   let wrapper = "const {overridingRequire} = require('./require');((require) => {" +
     data.toString() +
     "})(overridingRequire)"
-  fs.writeFile("dist/brigade.js", wrapper, () => {
-    console.log("prestart: src/brigade.js written")
-  })
-} catch(e) {
+  fs.writeFileSync("dist/brigade.js", wrapper)
+} catch (e) {
   console.log("prestart: no script override")
+  console.error(e)
   process.exit(1)
 }
 
-// loadScript tries to load the configured script. But if it can't, it falls
-// back to the VCS copy of the script.
-function loadScript(script) {
-  // This happens if the secret volume is mis-mounted, which should never happen.
-  if (!fs.existsSync(script)) {
-    console.log("prestart: no script found. Falling back to VCS script")
-    return fs.readFileSync(vcsScript, 'utf8')
+// loadScript loads the first configured script it finds.
+function loadScript() {
+  for (let src of scripts) {
+    if (fs.existsSync(src)) {
+      var data = fs.readFileSync(src, 'utf8')
+      if (data != "") {
+        console.log(`prestart: loading script from ${ src }`)
+        return data
+      }
+    }
   }
-  var data = fs.readFileSync(script, 'utf8')
-  if (data == "") {
-    // This happens if no file was submitted by the consumer.
-    console.log("prestart: empty script found. Falling back to VCS script")
-    return fs.readFileSync(vcsScript, 'utf8')
+}
+
+function addDeps() {
+  if (fs.existsSync(deps)) {
+    const p = require(deps)
+    for (var dep in p.dependencies) {
+      var d = dep + "@" + p.dependencies[dep];
+      console.log("installing " + d)
+      addYarn(d);
+    }
+  } else {
+    console.log("prestart: no dependencies file found")
   }
-  return data
+}
+
+function addYarn(arg) {
+  return exec.exec(`yarn add ${arg}`, {})
+    .catch(e => {
+      console.error(e)
+      process.exit(1)
+    });
 }

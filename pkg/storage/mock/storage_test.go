@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 
@@ -19,7 +20,7 @@ func TestStore(t *testing.T) {
 			t.Errorf("failed equality for %s", label)
 		}
 	}
-	assertSame("project", StubProject, m.Project)
+	assertSame("project", StubProject, m.ProjectList[0])
 	assertSame("worker", StubWorker, m.Worker)
 	assertSame("build", StubBuild, m.Build)
 	assertSame("job", StubJob, m.Job)
@@ -29,8 +30,8 @@ func TestStore(t *testing.T) {
 	p, _ := m.GetProjects()
 	assertSame("GetProjects", []*brigade.Project{StubProject}, p)
 
-	p2, _ := m.GetProject(StubProject.ID)
-	assertSame("GetProject", StubProject, p2)
+	extraProj, _ := m.GetProject(StubProject.ID)
+	assertSame("GetProject", StubProject, extraProj)
 
 	b1, _ := m.GetProjectBuilds(StubProject)
 	assertSame("GetProjectBuilds", StubBuild, b1[0])
@@ -53,6 +54,44 @@ func TestStore(t *testing.T) {
 	jl, _ := m.GetJobLog(StubJob)
 	assertSame("GetJobLog", StubLogData, jl)
 
+	jls, _ := m.GetJobLogStream(StubJob)
+	bjls := new(bytes.Buffer)
+	bjls.ReadFrom(jls)
+	assertSame("GetJobLogStream", StubLogData, bjls.String())
+
+	jlsf, _ := m.GetJobLogStreamFollow(StubJob)
+	bjlsf := new(bytes.Buffer)
+	bjlsf.ReadFrom(jlsf)
+	assertSame("GetJobLogStreamFollow", StubLogData, bjlsf.String())
+
 	wl, _ := m.GetWorkerLog(StubWorker)
-	assertSame("GetJobLog", StubLogData, wl)
+	assertSame("GetWorkerLog", StubLogData, wl)
+
+	wls, _ := m.GetWorkerLogStream(StubWorker)
+	bwls := new(bytes.Buffer)
+	bwls.ReadFrom(wls)
+	assertSame("GetWorkerLogStream", StubLogData, bwls.String())
+
+	wlsf, _ := m.GetWorkerLogStreamFollow(StubWorker)
+	bwlsf := new(bytes.Buffer)
+	bwlsf.ReadFrom(wlsf)
+	assertSame("GetWorkerLogStreamFollow", StubLogData, bwlsf.String())
+
+	extraProj = &brigade.Project{
+		Name:    "extra",
+		ID:      "extra",
+		Secrets: map[string]string{},
+	}
+	if err := m.CreateProject(extraProj); err != nil {
+		t.Fatal(err)
+	}
+	if len(m.ProjectList) != 2 {
+		t.Fatal("project was not saved by CreateProject")
+	}
+	if err := m.DeleteProject("extra"); err != nil {
+		t.Fatal(err)
+	}
+	if len(m.ProjectList) != 1 {
+		t.Fatal("project was not deleted by DeleteProject")
+	}
 }

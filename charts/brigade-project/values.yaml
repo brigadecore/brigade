@@ -20,6 +20,10 @@ cloneURL: "https://github.com/deis/empty-testbed.git"
 #   }
 #   events.on("run", run)
 
+# OPTIONAL: defaultScriptName is the name of a configmap used as a fallback brigade.js.
+# defaultScriptName: default-script-cm
+
+
 # Used by GitHub and other services to compute hook HMACs.
 sharedSecret: "IBrakeForSeaBeasts"
 
@@ -50,7 +54,7 @@ github:
 #
 #   events.push = function(e, p) {
 #     j = new Job("example")
-#     j.env= {"MY_ENV_VAR", p.secrets.myVar}
+#     j.env= {"MY_ENV_VAR": p.secrets.myVar}
 #   }
 #
 # And here, add this:
@@ -78,6 +82,12 @@ secrets:
 # very slightly, but will break some gateways or cause the default script to
 # be used.
 vcsSidecar: "deis/git-sidecar:latest"
+
+# OPTIONAL: imagePullSecrets allows you to specify a comma-separated list of
+# image pull secrets that will be injected into the worker. With this, you can
+# use a vcsSidecar or worker image from an internal repository.
+# https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+# imagePullSecrets: foo
 
 # OPTIONAL: buildStorageSize is the size of the shared storage space used by the jobs
 # buildStorageSize: "50Mi"

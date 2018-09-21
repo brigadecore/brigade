@@ -45,15 +45,19 @@ the shared storage volume.
 ## Supporting Brigade Storage
 
 Only certain volume plugins _can_ support Brigade. Specifically, **a volume driver
-must be readWriteMany** in order for Brigade to use it.
+must be readWriteMany** in order for Brigade to use it. At the time of writing
+very few VolumePlugins support the `readWriteMany` access mode. Ensure that your
+volume plugin can support `readWriteMany`
+([table](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes))
+or that you're able to use [NFS](https://github.com/Azure/brigade/blob/master/docs/topics/install.md#using-an-nfs-server).
 
-In the initial release of Brigade, only the following volume drivers are tested:
+Only the following volume drivers are tested:
 
 - Minikube's 9P implementation
 - Azure's AzureFile storage
+- NFS
 
-We believe, but have never tested, Gluster and NFS to be capable drivers. (If you
-successfully test these, please let us know.)
+We believe Gluster will work, but it's untested.
 
 ## Errata
 

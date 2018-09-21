@@ -1,6 +1,7 @@
 {{- if .Values.api.ingress.enabled -}}
 {{- $serviceName := include "brigade.api.fullname" . -}}
 {{- $servicePort := .Values.api.service.externalPort -}}
+{{- $paths := .Values.api.ingress.paths -}}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -20,10 +21,12 @@ spec:
     - host: {{ $host }}
       http:
         paths:
-          - path: /
+          {{- range $path := $paths }}
+          - path: {{ $path }}
             backend:
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
+          {{- end -}}
     {{- end -}}
   {{- if .Values.api.ingress.tls }}
   tls:

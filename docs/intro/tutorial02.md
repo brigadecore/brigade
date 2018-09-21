@@ -59,6 +59,9 @@ There you have it! Your first Github repository, linked to your local git reposi
 
 When you’re comfortable with the git workflow, read [part 3 of this tutorial][part3] to learn about configuring our Github repository to test new features using Brigade.
 
+ ---
 
-[part1]: tutorial01.md
-[part3]: tutorial03.md
+ Prev: [Part 1][part1] `|` Next: [Part 3][part3]
+
+ [part1]: tutorial01.md
+ [part3]: tutorial03.md

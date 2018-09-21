@@ -65,6 +65,7 @@ func (s *store) CreateBuild(build *brigade.Build) error {
 			"event_provider": build.Provider,
 			"event_type":     build.Type,
 			"project_id":     build.ProjectID,
+			"log_level":      build.LogLevel,
 		},
 	}
 
@@ -91,7 +92,7 @@ func (s *store) GetBuilds() ([]*brigade.Build, error) {
 		b := NewBuildFromSecret(secretList.Items[i])
 		// The error is ErrWorkerNotFound, and in that case, we just ignore
 		// it and assign nil to the worker.
-		b.Worker, _ = findWorker(b.ID, podList)
+		b.Worker, _ = findWorker(b.ID, podList.Items)
 		buildList[i] = b
 	}
 	return buildList, nil
@@ -99,10 +100,15 @@ func (s *store) GetBuilds() ([]*brigade.Build, error) {
 
 // GetProjectBuilds returns all the builds for the given project.
 func (s *store) GetProjectBuilds(proj *brigade.Project) ([]*brigade.Build, error) {
-	// Load the pods that ran as part of this build.
-	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("heritage=brigade,component=build,project=%s", proj.ID)}
 
-	secretList, err := s.client.CoreV1().Secrets(s.namespace).List(lo)
+	// Load the pods that ran as part of this build.
+	labelSelectorMap := map[string]string{
+		"heritage":  "brigade",
+		"component": "build",
+		"project":   proj.ID,
+	}
+
+	projectSecrets, err := s.apiCache.GetSecretsFilteredBy(labelSelectorMap)
 	if err != nil {
 		return nil, err
 	}
@@ -110,24 +116,25 @@ func (s *store) GetProjectBuilds(proj *brigade.Project) ([]*brigade.Build, error
 	// The theory here is that the secrets and pods are close to 1:1, so we can
 	// preload the pods and take a local hit in walking the list rather than take
 	// a network hit to load each pod per secret.
-	podList, err := s.client.CoreV1().Pods(s.namespace).List(lo)
+	projectPods, err := s.apiCache.GetPodsFilteredBy(labelSelectorMap)
 	if err != nil {
 		return nil, err
 	}
 
-	buildList := make([]*brigade.Build, len(secretList.Items))
-	for i := range secretList.Items {
-		b := NewBuildFromSecret(secretList.Items[i])
+	buildList := make([]*brigade.Build, len(projectSecrets))
+	for i := range projectSecrets {
+		b := NewBuildFromSecret(projectSecrets[i])
 		// The error is ErrWorkerNotFound, and in that case, we just ignore
 		// it and assign nil to the worker.
-		b.Worker, _ = findWorker(b.ID, podList)
+		b.Worker, _ = findWorker(b.ID, projectPods)
 		buildList[i] = b
 	}
+
 	return buildList, nil
 }
 
-func findWorker(id string, pods *v1.PodList) (*brigade.Worker, bool) {
-	for _, i := range pods.Items {
+func findWorker(id string, pods []v1.Pod) (*brigade.Worker, bool) {
+	for _, i := range pods {
 		buildID, ok := i.Labels["build"]
 		if !ok {
 			continue

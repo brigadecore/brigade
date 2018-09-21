@@ -3,10 +3,11 @@ package api
 import (
 	"bytes"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"gopkg.in/gin-gonic/gin.v1"
+	restful "github.com/emicklei/go-restful"
 
 	"github.com/Azure/brigade/pkg/storage/mock"
 )
@@ -14,27 +15,33 @@ import (
 func TestBuildLogs(t *testing.T) {
 	store := mock.New()
 	mockAPI := New(store)
-	rw := httptest.NewRecorder()
-	ctx, _ := gin.CreateTestContext(rw)
+
+	//ctx, _ := gin.CreateTestContext(rw)
 
 	// There is a bug in Gin that will cause a panic if we don't send a request
 	// that has a query param.
-	ctx.Request = httptest.NewRequest("GET", "/?foo=bar", bytes.NewBuffer(nil))
 
-	mockAPI.Build().Logs(ctx)
-	logLines := rw.Body.String()
+	httpRequest, _ := http.NewRequest("GET", "/?foo=bar", bytes.NewBuffer(nil))
+	req := restful.NewRequest(httpRequest)
+	httpWriter := httptest.NewRecorder()
+	respo := restful.NewResponse(httpWriter)
+	respo.SetRequestAccepts("application/json")
+
+	mockAPI.Build().Logs(req, respo)
+	logLines := httpWriter.Body.String()
 	expect := fmt.Sprintf("%q", mock.StubLogData)
 	if logLines != expect {
 		t.Errorf("Expected %q, got %q", expect, logLines)
 	}
 
 	// Retest with streaming on, which should return line data instead of JSON data.
-	rw = httptest.NewRecorder()
-	ctx, _ = gin.CreateTestContext(rw)
-	ctx.Request = httptest.NewRequest("GET", "/?stream=true", bytes.NewBuffer(nil))
+	httpWriter = httptest.NewRecorder()
+	httpRequest = httptest.NewRequest("GET", "/?stream=true", bytes.NewBuffer(nil))
+	respo = restful.NewResponse(httpWriter)
+	req = restful.NewRequest(httpRequest)
 
-	mockAPI.Build().Logs(ctx)
-	logLines = rw.Body.String()
+	mockAPI.Build().Logs(req, respo)
+	logLines = httpWriter.Body.String()
 	if logLines != mock.StubLogData {
 		t.Errorf("Expected %q, got %q", mock.StubLogData, logLines)
 	}
@@ -42,12 +49,13 @@ func TestBuildLogs(t *testing.T) {
 	// Check that we get a 204 for no content.
 	// Retest with streaming on, which should return line data instead of JSON data.
 	store.LogData = ""
-	rw = httptest.NewRecorder()
-	ctx, _ = gin.CreateTestContext(rw)
-	ctx.Request = httptest.NewRequest("GET", "/?a=b", bytes.NewBuffer(nil))
+	httpWriter = httptest.NewRecorder()
+	respo = restful.NewResponse(httpWriter)
+	httpRequest = httptest.NewRequest("GET", "/?a=b", bytes.NewBuffer(nil))
+	req = restful.NewRequest(httpRequest)
 
-	mockAPI.Build().Logs(ctx)
-	if rw.Code != 204 {
+	mockAPI.Build().Logs(req, respo)
+	if httpWriter.Code != 204 {
 		t.Errorf("Expected %q, got %q", mock.StubLogData, logLines)
 	}
 

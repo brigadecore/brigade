@@ -70,12 +70,16 @@ api:
   ingress:
     enabled: false
     hosts: []
+    paths:
+    - /
 
 # worker is the JavaScript worker. These are created on demand by the controller.
 worker:
   registry: deis
   name: brigade-worker
-  serviceAccount: brigade-worker
+  serviceAccount: 
+    create: true
+    name: brigade-worker
   #tag:
   #pullPolicy: IfNotPresent
 
@@ -142,10 +146,13 @@ vacuum:
   age: "720h"
   # maxBuilds tells the vacuum what the absolute maximum number of builds may be stored
   # at a time. Where possible, we recommend using age rather than builds.
-  # 0 means no limit is imposed.
+  # -1 means no limit is imposed.
   #
   # If both age and maxBuilds are provided, age is applied first, then maxBuilds.
-  maxBuilds: 0
+  maxBuilds: -1
+  serviceAccount:
+    create: true
+    name: 
 
 # The service is for the Brigade gateway. If you do not want to have Brigade
 # listening for incomming GitHub requests, disable this.
@@ -159,6 +166,8 @@ service:
 ingress:
   enabled: false
   hosts: []
+  paths:
+  - /
   # Add TLS configuration
   # tls: <TLS_CONFIG>
   # Add custom annotations

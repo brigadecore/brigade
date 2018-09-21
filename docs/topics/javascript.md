@@ -143,7 +143,7 @@ Functionally, this is equivalent to the static `runEach` method.
 
 The `Job` class describes a job that can be run.
 
-#### constructor `new Job(name: string, image?: string, tasks?: string[]): Job`
+#### constructor `new Job(name: string, image?: string, tasks?: string[], imageForcePull?: boolean): Job`
 
 The constructor requires a `name` parameter, and this must be unique within your
 script. It must be composed of the characters a-z, A-Z, 0-9, and `-`. Additionally,
@@ -172,12 +172,16 @@ Properties of `Job`
 
 - `name: string`: The job name
 - `shell: string`: The shell in which to execute the tasks (`/bin/sh`)
-- `tasks: string[]`: Tasks to be run in the job, in order.
+- `tasks: string[]`: Tasks to be run in the job, in order. Tasks are concatenated
+  together and packaged as a Borne (`/bin/sh`) shell script with `set -eo pipefail`.
+- `args: string[]`: Arguments to pass to the container's entrypoint. It is recommended,
+  though not required, that implementors not use both `args` and `tasks`.
+- `imageForcePull: boolean`: Defines the container image pull policy: `Always` if `true` or `IfNotPresent` if `false` (defaults to `false`).
 - `env: {[key: string]:string}`: Name/value pairs of environment variables.
 - `image: string`: The container image to run
-- `imagePullSecrets: string`: The names of the pull secrets (for pulling images from a secure remote repository)
+- `imagePullSecrets: string[]`: The names of the pull secrets (for pulling images from a secure remote repository)
 - `mountPath: string`: The path where any resources should be mounted (e.g. where a Git repository will be cloned) (defaults to `/src`)
-- `timeout: number`: Time to wait, in seconds, before the job is marked "failed"
+- `timeout: number`: Time to wait, in milliseconds, before the job is marked "failed"
 - `useSource: bool`: If false, no external resource will be loaded (e.g. no git clone will be performed)
 - `privileged: bool`: If this is true, the job will be executed in privileged mode, which allows it to do things like access a Docker socket. EXPERTS ONLY.
 - `host: JobHost`: Preferences for the host that runs the job.
@@ -185,6 +189,7 @@ Properties of `Job`
 - `storage: JobStorage`: Preferences for the way this job attaches to the build storage
 - `docker: JobDockerMount`: Preferences for mounting a Docker socket
 - `serviceAccount: string`: The name of the service account to use (if you need to override the default).
+- `annotations: {[key: string]:string}`: Name/value pairs of annotations to add to the job's pod
 
 #### The `job.podName()` method
 
@@ -207,7 +212,7 @@ Properties:
 - `size: string`: The size, defaults to `5Mi`. This value is only evaluated the first
   time a job is cached. To resize, the cache must be destroyed manually.
 - `path: string`: A read-only attribute returning path (in the container) in which the cache
-  is available.
+  is available. EXPERIMENTAL: Support for setting the path was added in Brigade 0.15.
 
 ### The `JobDockerMount` class
 
@@ -235,6 +240,7 @@ A `JobHost` object provides preferences for the host upon which the job is execu
    Build storage exposes a mounted volume at `/mnt/brigade/share` with storage that
    can be shared across jobs.
 - `path: string`: The read-only path to the shared storage from within the container.
+   EXPERIMENTAL: Support for setting the `path` was added in Brigade 0.15.
 
 ### The `KubernetesConfig` class
 

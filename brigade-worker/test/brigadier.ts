@@ -62,6 +62,16 @@ describe("brigadier", function() {
           done();
         });
       });
+      it("gathers the logs after the run", function(done) {
+        let j1 = new mock.MockJob("first");
+        j1.fail = true;
+        j1.run().catch((res: jobImpl.Result) => {
+          j1.logs().then((output: string) => {
+            assert.equal(output, "These are the logs showing failure.");
+            done();
+          });
+        });
+      });
       context("when job fails", function() {
         it("stops processing with an error", function(done) {
           let j1 = new mock.MockJob("first");
@@ -69,8 +79,7 @@ describe("brigadier", function() {
           j2.fail = true;
           let j3 = new mock.MockJob("third");
           g.add(j1, j2, j3);
-          g
-            .runEach()
+          g.runEach()
             .then((rez: jobImpl.Result) => {
               done("expected error on job 2");
             })
@@ -99,8 +108,7 @@ describe("brigadier", function() {
           j2.fail = true;
           let j3 = new mock.MockJob("third");
           g.add(j1, j2, j3);
-          g
-            .runAll()
+          g.runAll()
             .then((rez: jobImpl.Result) => {
               done("expected error on job 2");
             })

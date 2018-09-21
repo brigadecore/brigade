@@ -1,10 +1,14 @@
 package kube
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/Azure/brigade/pkg/brigade"
 )
 
 func TestGetProjects(t *testing.T) {
@@ -32,6 +36,122 @@ func TestGetProject(t *testing.T) {
 	}
 }
 
+func TestCreateProject(t *testing.T) {
+	k, s := fakeStore()
+	secretsMap := map[string]string{"username": "hello", "password": "world"}
+	n := "tennyson/light-brigade"
+	proj := &brigade.Project{
+		Name:         n,
+		SharedSecret: "We Break for Seabeasts",
+		Github: brigade.Github{
+			Token:     "half-a-league",
+			BaseURL:   "http://example.com",
+			UploadURL: "http://up.example.com",
+		},
+		Kubernetes: brigade.Kubernetes{
+			BuildStorageSize:  "50Mi",
+			VCSSidecar:        "alpine:3.7",
+			Namespace:         "brigade",
+			BuildStorageClass: "3rdGrade",
+			CacheStorageClass: "underwaterbasketweaving",
+		},
+		DefaultScript:     "console.log('hi');",
+		DefaultScriptName: "bernie",
+		Repo: brigade.Repo{
+			Name:     "git.example.com/tennyson/light-brigade",
+			SSHKey:   "i know what you did last summer",
+			CloneURL: "http://clown.example.com/clown.git",
+		},
+		Secrets: secretsMap,
+		Worker: brigade.WorkerConfig{
+			Registry:   "reggie",
+			Name:       "bobby",
+			Tag:        "millie",
+			PullPolicy: "Always",
+		},
+		InitGitSubmodules:   true,
+		AllowPrivilegedJobs: true,
+		AllowHostMounts:     true,
+		WorkerCommand:       "echo hello",
+	}
+	err := s.CreateProject(proj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	id := brigade.ProjectID(n)
+	secret, err := k.CoreV1().Secrets("default").Get(id, meta.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedLabels := map[string]string{
+		"app":       "brigade",
+		"heritage":  "brigade",
+		"component": "project",
+	}
+	for n, want := range expectedLabels {
+		if got := secret.ObjectMeta.Labels[n]; got != want {
+			t.Errorf("Expected %s to be %q, got %q", n, want, got)
+		}
+	}
+
+	if pn := secret.ObjectMeta.Annotations["projectName"]; pn != n {
+		t.Errorf("Expected %s for projectName, got %s", n, pn)
+	}
+
+	secretsJSON, err := json.Marshal(secretsMap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stringData := map[string]string{
+		"sharedSecret":                 proj.SharedSecret,
+		"github.token":                 proj.Github.Token,
+		"github.baseURL":               proj.Github.BaseURL,
+		"github.uploadURL":             proj.Github.UploadURL,
+		"vcsSidecar":                   proj.Kubernetes.VCSSidecar,
+		"namespace":                    proj.Kubernetes.Namespace,
+		"buildStorageSize":             proj.Kubernetes.BuildStorageSize,
+		"kubernetes.cacheStorageClass": proj.Kubernetes.CacheStorageClass,
+		"kubernetes.buildStorageClass": proj.Kubernetes.BuildStorageClass,
+		"defaultScript":                proj.DefaultScript,
+		"defaultScriptName":            proj.DefaultScriptName,
+		"repository":                   proj.Repo.Name,
+		"sshKey":                       proj.Repo.SSHKey,
+		"cloneURL":                     proj.Repo.CloneURL,
+		"secrets":                      string(secretsJSON),
+		"worker.registry":              proj.Worker.Registry,
+		"worker.name":                  proj.Worker.Name,
+		"worker.tag":                   proj.Worker.Tag,
+		"worker.pullPolicy":            proj.Worker.PullPolicy,
+		"initGitSubmodules":            fmt.Sprintf("%t", proj.InitGitSubmodules),
+		"imagePullSecrets":             proj.ImagePullSecrets,
+		"allowPrivilegedJobs":          fmt.Sprintf("%t", proj.AllowPrivilegedJobs),
+		"allowHostMounts":              fmt.Sprintf("%t", proj.AllowHostMounts),
+		"workerCommand":                proj.WorkerCommand,
+	}
+
+	for key, want := range stringData {
+		if got := secret.StringData[key]; got != want {
+			t.Errorf("For key %s, got %q, want %q", key, got, want)
+		}
+	}
+}
+
+func TestDeleteProject(t *testing.T) {
+	k, s := fakeStore()
+	p := &brigade.Project{ID: "fake", Name: "fake"}
+	if err := s.CreateProject(p); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := k.CoreV1().Secrets("default").Get("fake", meta.GetOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteProject("fake"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestConfigureProject(t *testing.T) {
 	secret := &v1.Secret{
 		ObjectMeta: meta.ObjectMeta{
@@ -41,6 +161,7 @@ func TestConfigureProject(t *testing.T) {
 		Data: map[string][]byte{
 			"repository":        []byte("myrepo"),
 			"defaultScript":     []byte(`console.log("hello default script")`),
+			"defaultScriptName": []byte("global-cm-script"),
 			"sharedSecret":      []byte("mysecret"),
 			"github.token":      []byte("like a fish needs a bicycle"),
 			"github.baseURL":    []byte("https://example.com/base"),
@@ -53,6 +174,13 @@ func TestConfigureProject(t *testing.T) {
 			"worker.tag":        []byte("canary"),
 			"worker.pullPolicy": []byte("Always"),
 			// Intentionally skip cloneURL, test that this is ""
+			"buildStorageSize":             []byte("50Mi"),
+			"kubernetes.cacheStorageClass": []byte("hello"),
+			"kubernetes.buildStorageClass": []byte("goodbye"),
+			"allowPrivilegedJobs":          []byte("true"),
+			// Default fo allowHostMounts is false. Testing that
+			"initGitSubmodules": []byte("false"),
+			"workerCommand":     []byte("echo hello"),
 		},
 	}
 
@@ -72,6 +200,9 @@ func TestConfigureProject(t *testing.T) {
 	}
 	if proj.DefaultScript != `console.log("hello default script")` {
 		t.Errorf("Unexpected DefaultScript: %q", proj.DefaultScript)
+	}
+	if proj.DefaultScriptName != "global-cm-script" {
+		t.Errorf("Unexpected DefaultScriptName: %q", proj.DefaultScriptName)
 	}
 	if proj.SharedSecret != "mysecret" {
 		t.Error("SharedSecret is not correct")
@@ -109,6 +240,28 @@ func TestConfigureProject(t *testing.T) {
 	}
 	if proj.Worker.PullPolicy != "Always" {
 		t.Fatalf("unexpected Worker.PullPolicy: %s != Always", proj.Worker.PullPolicy)
+	}
+	if proj.Kubernetes.BuildStorageSize != "50Mi" {
+		t.Fatalf("buildStorageSize is wrong %s", proj.Kubernetes.BuildStorageSize)
+	}
+	if proj.Kubernetes.BuildStorageClass != "goodbye" {
+		t.Errorf("buildStorageClass is wrong %s", proj.Kubernetes.BuildStorageClass)
+	}
+	if proj.Kubernetes.CacheStorageClass != "hello" {
+		t.Errorf("cacheStorageClass is wrong")
+	}
+	if !proj.AllowPrivilegedJobs {
+		t.Error("allowPrivilegedJobs should be true")
+	}
+	if proj.AllowHostMounts {
+		t.Error("allowHostMounts should be false")
+	}
+	if proj.InitGitSubmodules {
+		t.Error("initGitSubmodules should be false")
+	}
+
+	if proj.WorkerCommand != "echo hello" {
+		t.Error("unexpected worker command")
 	}
 }
 

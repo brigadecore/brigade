@@ -7,6 +7,7 @@
  */
 
 import { EventEmitter } from "events";
+import { LogLevel } from "./logger";
 
 /**
  * BrigadeEvent describes an event.
@@ -62,6 +63,13 @@ export class BrigadeEvent {
    * JSON as a string that must be decoded with something like `JSON.parse()`
    */
   payload?: any;
+
+  /**
+   * logLevel is the level at which the Brigade worker will print logs to console.
+   * Permitted values are the names of the logLevel enum.
+   */
+  logLevel: LogLevel;
+
   cause?: Cause;
 }
 
@@ -232,5 +240,9 @@ export class EventRegistry extends EventEmitter {
    */
   public fire(e: BrigadeEvent, proj: Project) {
     this.emit(e.type, e, proj);
+  }
+
+  public on(eventName: string | symbol, cb: ((...args: any[]) => void)): this {
+    return super.on(eventName, cb);
   }
 }

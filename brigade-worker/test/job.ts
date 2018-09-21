@@ -27,7 +27,7 @@ describe("job", function() {
         "-ab", // no leading dash
         "a_b", // underscore is illegal
         "ab.", // trailing dot is illegal
-        "A-B", // Capitals are illegal
+        "A-B" // Capitals are illegal
       ];
       for (let n of illegal) {
         assert.isFalse(jobNameIsValid(n), "tested " + n);
@@ -44,6 +44,14 @@ describe("job", function() {
         assert.equal(c.size, "5Mi", "size is 5mi");
       });
     });
+    describe("#setPath", function() {
+      it("correctly sets and gets path", function() {
+        let c = new JobCache();
+        assert.equal(c.path, brigadeCachePath, "Dir is /brigade/cache");
+        c.path = "/foo";
+        assert.equal(c.path, "/foo", "Assert dir is /foo");
+      });
+    });
   });
   describe("JobStorage", function() {
     describe("#constructor", function() {
@@ -55,6 +63,14 @@ describe("job", function() {
           "Dir is " + brigadeStoragePath
         );
         assert.isFalse(c.enabled, "disabled by default");
+      });
+    });
+    describe("#setPath", function() {
+      it("correctly sets and gets path", function() {
+        let s = new JobStorage();
+        assert.equal(s.path, brigadeStoragePath, "Dir is /brigade/cache");
+        s.path = "/foo";
+        assert.equal(s.path, "/foo", "Assert dir is /foo");
       });
     });
   });
@@ -132,6 +148,16 @@ describe("job", function() {
     describe("#storage", function() {
       it("is disabled by default", function() {
         assert.isFalse(j.storage.enabled);
+      });
+    });
+    describe("#annotations", function() {
+      beforeEach(function() {
+        j = new mock.MockJob("my-job");
+      });
+      it("is an empty list that can be written", function() {
+        assert.deepEqual(j.annotations, {});
+        j.annotations["some_kubetoiam/thing"] = "my/path";
+        assert.deepEqual(j.annotations, { "some_kubetoiam/thing": "my/path" });
       });
     });
   });

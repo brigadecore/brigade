@@ -1,4 +1,8 @@
 [[constraint]]
+  name = "github.com/bacongobbler/browser"
+  version = "v1.0.1"
+
+[[constraint]]
   name = "github.com/google/go-github"
 
 [[constraint]]
@@ -21,14 +25,27 @@
 
 [[constraint]]
   name = "k8s.io/api"
+  branch = "release-1.10"
 
 [[constraint]]
   name = "k8s.io/apimachinery"
+  branch = "release-1.10"
 
 [[constraint]]
   name = "k8s.io/client-go"
-  version = "5.0.1"
+  branch = "release-7.0"
 
 [[constraint]]
   branch = "master"
   name = "github.com/Masterminds/kitt"
+
+[[constraint]]
+  name = "github.com/emicklei/go-restful"
+  version = "2.7.1"
+
+[[constraint]]
+  name = "github.com/emicklei/go-restful-openapi"
+
+[[constraint]]
+  name = "gopkg.in/AlecAivazis/survey.v1"
+  version = "1.6.1"

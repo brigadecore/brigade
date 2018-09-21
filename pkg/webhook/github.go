@@ -15,19 +15,13 @@ import (
 	"github.com/Azure/brigade/pkg/storage"
 )
 
-const (
-	brigadeJSFile      = "brigade.js"
-	hubSignatureHeader = "X-Hub-Signature"
-)
+const hubSignatureHeader = "X-Hub-Signature"
 
 type githubHook struct {
 	store          storage.Store
-	getFile        fileGetter
 	createStatus   statusCreator
 	allowedAuthors []string
 }
-
-type fileGetter func(commit, path string, proj *brigade.Project) ([]byte, error)
 
 type statusCreator func(commit string, proj *brigade.Project, status *github.RepoStatus) error
 
@@ -35,7 +29,6 @@ type statusCreator func(commit string, proj *brigade.Project, status *github.Rep
 func NewGithubHook(s storage.Store, authors []string) gin.HandlerFunc {
 	gh := &githubHook{
 		store:          s,
-		getFile:        getFileFromGithub,
 		createStatus:   setRepoStatus,
 		allowedAuthors: authors,
 	}
@@ -131,9 +124,11 @@ func (s *githubHook) handleEvent(c *gin.Context, eventType string) {
 	case *github.DeploymentEvent:
 		repo = e.Repo.GetFullName()
 		rev.Commit = e.Deployment.GetSHA()
+		rev.Ref = e.Deployment.GetRef()
 	case *github.DeploymentStatusEvent:
 		repo = e.Repo.GetFullName()
 		rev.Commit = e.Deployment.GetSHA()
+		rev.Ref = e.Deployment.GetRef()
 	default:
 		log.Printf("Failed to parse payload")
 		c.JSON(http.StatusBadRequest, gin.H{"status": "Received data is not valid JSON"})
@@ -225,26 +220,13 @@ func truncAt(str string, max int) string {
 	return str
 }
 
-func getFileFromGithub(commit, path string, proj *brigade.Project) ([]byte, error) {
-	return GetFileContents(proj, commit, path)
-}
-
 func (s *githubHook) build(eventType string, rev brigade.Revision, payload []byte, proj *brigade.Project) error {
-	brigadeScript, err := s.getFile(rev.Commit, brigadeJSFile, proj)
-	if err != nil {
-		if proj.DefaultScript == "" {
-			return fmt.Errorf("no brigade.js found in either project's defaultScript or the git repository: %v", err)
-		}
-		brigadeScript = []byte(proj.DefaultScript)
-	}
-
 	b := &brigade.Build{
 		ProjectID: proj.ID,
 		Type:      eventType,
 		Provider:  "github",
 		Revision:  &rev,
 		Payload:   payload,
-		Script:    brigadeScript,
 	}
 
 	return s.store.CreateBuild(b)

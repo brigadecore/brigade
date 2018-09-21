@@ -12,7 +12,7 @@ import (
 
 func TestNewRouter(t *testing.T) {
 	s := mock.New()
-	s.Project.Name = "pequod/stubbs"
+	s.ProjectList[0].Name = "pequod/stubbs"
 	r := newRouter(s)
 
 	if r == nil {

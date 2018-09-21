@@ -11,7 +11,7 @@ for Kubernetes.
 - Project-based management
 - Configurable event hooks
 - Easy construction of pipelines
-- Check out the [docs](/docs/index.md) to get started.
+- Check out the [docs](https://azure.github.io/brigade/) to get started.
 
 [![asciicast](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG.png)](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG)
 
@@ -27,15 +27,15 @@ for Kubernetes.
   other popular web services. And it can be easily extended to support your own
   services.
 
-The [design introduction](docs/topics/design.md) introduces Brigade concepts and
+The [design introduction](https://azure.github.io/brigade/topics/design.html) introduces Brigade concepts and
 architecture.
 
 ## Quickstart
 
 1. Install Brigade
-2. Create a Brigade project
-3. Write a Brigade script
-4. Execute the script
+2. Install `brig`
+3. Create a Brigade project
+4. Write and run a Brigade script
 
 The easiest way to install Brigade into your Kubernetes cluster is to install it using Helm.
 
@@ -46,7 +46,17 @@ $ helm install -n brigade brigade/brigade
 
 You will now have Brigade installed.
 
-To create new projects, use the `brigade-project` Helm chart. While inside the Git
+In your local environment, install `brig`, the Brigade commandline client. To get
+the latest version, go to the [releases page](https://github.com/Azure/brigade/releases/)
+and download the binary for your platform.
+
+### Creating A New Project
+
+To create a new project, use `brig project create` and answer the prompts. Make
+sure you are pointing to the same Kubernetes cluster and namespace that you
+installed Brigade into.
+
+**For Brigade 0.15 and earlier**: To create new projects, use the `brigade-project` Helm chart. While inside the Git
 repository cloned above, run these commands:
 
 ```console
@@ -62,21 +72,23 @@ based on your new configuration by passing it with `-f myvalues.yaml`.
 $ helm install --name my-project brigade/brigade-project -f myvalues.yaml
 ```
 
-Now creating your first `brigade.js` is as easy as this:
+The Helm chart will be removed before Brigade 1.0.0, so we recommend using
+`brig project create` instead. Note that the projects created with the Helm chart
+remain compatible with Brigade.
+
+### Creating Your First `brigade.js`
+
+Creating your first `brigade.js` is as easy as this:
 
 ```javascript
-const { events } = require('brigadier')
+const { events } = require("brigadier");
 
 events.on("exec", (brigadeEvent, project) => {
-  console.log("Hello world!")
-})
+  console.log("Hello world!");
+});
 ```
 
-Check out [the tutorial](/docs/intro/) for more on creating scripts.
-
-> In the future, Brigade will provide prebuilt `brig` binaries. But currently you
-need to build your own. Take a look at the [Developer's Guide](/docs/topics/developers.md)
-to learn more.
+Check out [the tutorial](https://azure.github.io/brigade/intro/) for more on creating scripts.
 
 Assuming you named your project `deis/empty-testbed`, you can run a `brigade.js`
 file like this:
@@ -92,25 +104,27 @@ This will show you the detailed output of running your `brigade.js` script's
 
 ## Related Projects
 
-* [Kashti](https://github.com/Azure/kashti) - a dashboard for your Brigade pipelines.
-* [Brigadeterm](https://github.com/slok/brigadeterm) - a simple terminal ui for brigade pipelining system.
-* Gateways
+- [Kashti](https://github.com/Azure/kashti) - a dashboard for your Brigade pipelines.
+- [Brigadeterm](https://github.com/slok/brigadeterm) - a simple terminal ui for brigade pipelining system.
+- [Brigade exporter](https://github.com/slok/brigade-exporter) - a [Prometheus](https://prometheus.io) exporter to gather metrics from Brigade.
+- Gateways
   - [BitBucket events](https://github.com/lukepatrick/brigade-bitbucket-gateway): Gateway Support for BitBucket repositories
   - [GitLab events](https://github.com/lukepatrick/brigade-gitlab-gateway): Gateway Support for GitLab repositories
   - [Kubernetes events](https://github.com/azure/brigade-k8s-gateway): Gateway that listens to Kubernetes event stream
-  - [Event Grid gateway](https://github.com/radu-matei/brigade-eventgrid-gateway)" Gateway for Azure Event Grid events
+  - [Event Grid gateway](https://github.com/radu-matei/brigade-eventgrid-gateway): Gateway for Azure Event Grid events
   - [Cron Gateway](https://github.com/technosophos/brigade-cron): Schedule events to run at a particular time
   - [Trello and Generic Webhooks](https://github.com/technosophos/brigade-trello): Experimental gateway for Trello and for generic webhooks
+  - [Draft Pack for Building Custom Gateways](https://github.com/technosophos/draft-brigade): Build your own gateway [in 5 minutes](http://technosophos.com/2018/04/23/building-brigade-gateways-the-easy-way.html)
 
 ## Brigade :heart: Developers
 
-To get started head to the [developer's guide](docs/topics/developers.md)
+To get started head to the [developer's guide](https://azure.github.io/brigade/topics/developers.html)
 
 Brigade is well-tested on Minikube and Azure Container Services.
 
 # Contributing
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
+This project welcomes contributions and suggestions. Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.microsoft.com.
 

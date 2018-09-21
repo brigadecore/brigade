@@ -29,7 +29,7 @@ You can tell pip is installed and which version by running the following command
 $ pip --version
 ```
 
-If you see "command not found", see [how to install pip][install-pip] for advice on how to install pip.
+If you see "command not found", see [how to install pip](https://pip.pypa.io/en/stable/installing/) for advice on how to install pip.
 
 If you're having trouble going through this tutorial, please post an issue to [Azure/brigade][github] to chat with other Brigade users who might be able to help.
 
@@ -103,7 +103,11 @@ Keep refreshing the page. You should see new UUIDs being generated every time yo
 
 When you’re comfortable with the application, read [part 2 of this tutorial][part2] to learn about pushing our application to GitHub.
 
+---
+
+Prev: [Quickstart Guide][part1] `|` Next: [Writing your first CI pipeline, Part 2][part2]
 
 [github]: https://github.com/Azure/brigade
 [install]: install.md
+[part1]: tutorial01.md
 [part2]: tutorial02.md

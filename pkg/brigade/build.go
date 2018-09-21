@@ -23,6 +23,9 @@ type Build struct {
 	// reflect a "roll-up" of the job.
 	// This property is not guaranteed to be set, and may be nil.
 	Worker *Worker `json:"worker"`
+	// LogLevel determines what level of logging from the Javascript
+	// to print to console.
+	LogLevel string `json:"log_level,omitempty"`
 }
 
 // Revision describes a vcs revision.

@@ -45,15 +45,15 @@ func (s *store) GetBuildJobs(build *brigade.Build) ([]*brigade.Job, error) {
 	}
 	return jobList, nil
 }
-func (s *store) GetJobLogStream(job *brigade.Job) (io.ReadCloser, error) {
-	req := s.client.CoreV1().Pods(s.namespace).GetLogs(job.ID, &v1.PodLogOptions{})
 
-	readCloser, err := req.Stream()
-	if err != nil {
-		return nil, err
-	}
-	return readCloser, nil
+func (s *store) GetJobLogStream(job *brigade.Job) (io.ReadCloser, error) {
+	return s.getJobLogStream(false, job)
 }
+
+func (s *store) GetJobLogStreamFollow(job *brigade.Job) (io.ReadCloser, error) {
+	return s.getJobLogStream(true, job)
+}
+
 func (s *store) GetJobLog(job *brigade.Job) (string, error) {
 	buf := new(bytes.Buffer)
 	r, err := s.GetJobLogStream(job)
@@ -63,6 +63,18 @@ func (s *store) GetJobLog(job *brigade.Job) (string, error) {
 	defer r.Close()
 	io.Copy(buf, r)
 	return buf.String(), nil
+}
+
+func (s *store) getJobLogStream(follow bool, job *brigade.Job) (io.ReadCloser, error) {
+	req := s.client.CoreV1().Pods(s.namespace).GetLogs(job.ID, &v1.PodLogOptions{
+		Follow: follow,
+	})
+
+	readCloser, err := req.Stream()
+	if err != nil {
+		return nil, err
+	}
+	return readCloser, nil
 }
 
 // NewJobFromPod parses the pod object metadata and deserializes it into a Job.

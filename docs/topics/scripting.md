@@ -14,6 +14,7 @@ special cluster environment. An environment is composed of the following things:
 - A Brigade server running in your cluster
 - A project in which the script will run
 - (Optionally) A source code repository (e.g. git) that contains data our
+- (Optionally) A [`brigade.json`](workers.md) file that contains additional dependencies that can be used from `brigade.js`
 - (Optionally) Other configuration data, like [secrets](secrets.md)
 
 For the examples in this document, we have created a project with these values:
@@ -270,7 +271,7 @@ events.on("exec", () => {
   var job = new Job("do-nothing", "alpine:3.4")
 
   job.run()
-}
+})
 ```
 [brigade-05.js](examples/brigade-05.js)
 
@@ -375,7 +376,14 @@ events.on("exec", () => {
 ```
 [brigade-06.js](examples/brigade-06.js)
 
-This time we have added some tasks by adding them to the tasks array: `job.tasks = [ /* ... */]`
+Tasks can be an arbitrary shell command _that is supported by the image you use_.
+Tasks are concatenated together and executed as one shell script. (In Linux, they
+are executed as `/bin/sh` commands, with `set -eo pipefail`.)
+
+> You can change the shell a job uses by setting `Job.shell`. However, if the shell
+> you set is not present in the image, this will cause an error.
+
+In the example above we have added some tasks by adding them to the tasks array: `job.tasks = [ /* ... */]`
 It will run the `echo` command twice. If we run this new script, its output will look just
 about the same as when we ran no tasks:
 
@@ -1142,7 +1150,7 @@ is performed on the image just built.
 ## Jobs and Return Values
 
 We have seen already that when we run a job, it will return a JavaScript Promise.
-Each Promise also wraps a value. And the value is the ouput of the job. So it is possible
+Each Promise also wraps a value. And the value is the output of the job. So it is possible
 to run a job, capture its output, and use that as input to the next job.
 
 To illustrate this, let's write a script that creates two jobs. The first job will
@@ -1259,7 +1267,7 @@ events.on("next", (e) => {
 
 In this example, `e2` is a new event. Any new event _must_ have the following fields:
 
-- `type`: The name of teh event to fire
+- `type`: The name of the event to fire
 - `provider`: A name to indicate what fired the event
 - `buildID`: The Build ID
 - `workerID`: The Worker ID
