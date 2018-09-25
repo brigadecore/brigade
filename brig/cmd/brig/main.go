@@ -10,6 +10,11 @@ import (
 func main() {
 	if err := commands.Root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		switch e := err.(type) {
+		case commands.BrigError:
+			os.Exit(e.Code)
+		default:
+			os.Exit(1)
+		}
 	}
 }

@@ -111,6 +111,20 @@ var run = &cobra.Command{
 		runner.Background = runBackground
 		runner.Verbose = globalVerbose
 
-		return runner.SendScript(proj, scr, runEvent, runCommitish, runRef, payload, runLogLevel)
+		err = runner.SendScript(proj, scr, runEvent, runCommitish, runRef, payload, runLogLevel)
+		if err == nil {
+			return nil
+		}
+
+		// If err is a BuildFailure, then we don't want Cobra to print the Usage
+		// instructions on failure, since it's a pipeline issue and not a CLI issue.
+		_, ok := err.(script.BuildFailure)
+		if ok {
+			cmd.SilenceUsage = true
+			cmd.SilenceErrors = true
+			return BrigError{Code: 2, cause: err}
+		}
+
+		return err
 	},
 }
