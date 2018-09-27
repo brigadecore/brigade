@@ -96,7 +96,6 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) v1.Pod {
 	sidecarVolume := v1.VolumeMount{
 		Name:      "vcs-sidecar",
 		MountPath: "/vcs",
-		ReadOnly:  true,
 	}
 
 	spec := v1.PodSpec{
