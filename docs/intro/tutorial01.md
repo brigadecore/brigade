@@ -35,7 +35,7 @@ If you're having trouble going through this tutorial, please post an issue to [A
 
 ## Creating your first application
 
-For this tutorial, we'll be creating an example application written in Python which uses [Flask](http://flask.pocoo.org/) to provide a very simple UUID generator web server. Flask is a microframework for Python based on Werkzeug, Jinja 2 and good intentions.
+For this tutorial, we'll be creating an example application written in Python which uses [Flask](http://flask.pocoo.org/) to provide a very simple UUID generator web server. Flask is a microframework for Python based on Werkzeug, Jinja 2 and good intentions.  (Note that this application is written for [Python 3](https://docs.python.org/3/), specifically.)
 
 Let's write the web server. To create your app, type this command:
 
