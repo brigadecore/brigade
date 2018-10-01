@@ -99,7 +99,7 @@ Given this, the role of the `brigade.js` file is to declare event handlers. And 
 const { events } = require("brigadier");
 
 events.on("push", function(e, project) {
-  console.log("received push for commit " + e.commit)
+  console.log("received push for commit " + e.revision.commit)
 })
 ```
 
@@ -113,7 +113,7 @@ In our script above, we just log the comment:
 received push for commit e459558...
 ```
 
-Note that `e.commit` holds the git commit SHA for the commit that was just pushed.
+Note that `e.revision.commit` holds the git commit SHA for the commit that was just pushed.
 
 # Add a job
 
@@ -125,7 +125,7 @@ Edit `brigade.js` again so it looks like this:
 const { events, Job } = require("brigadier");
 
 events.on("push", function(e, project) {
-  console.log("received push for commit " + e.commit)
+  console.log("received push for commit " + e.revision.commit)
 
   // Create a new job
   var node = new Job("test-runner")
