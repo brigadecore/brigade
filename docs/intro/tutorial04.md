@@ -30,7 +30,7 @@ class AppTestCase(unittest.TestCase):
         self.client = app.app.test_client()
 
 
-    def test_brigade_ci_meetup(self):
+    def test_uuid_generated(self):
         resp = self.client.get('/')
         assert uuid.UUID(bytes_to_str(resp.data))
 ```
@@ -76,7 +76,6 @@ Now is a good time to commit your work.
 
 ```
 $ git add tests/ setup.py
-$ git add .
 $ git commit -m "add unit tests"
 $ git push origin master
 ```
@@ -113,7 +112,7 @@ In our script above, we just log the comment:
 received push for commit e459558...
 ```
 
-Note that `e.commit` holds the git commit SHA for the commit that was just pushed.
+Note that `e.revision.commit` holds the git commit SHA for the commit that was just pushed.
 
 # Add a job
 
@@ -125,7 +124,7 @@ Edit `brigade.js` again so it looks like this:
 const { events, Job } = require("brigadier");
 
 events.on("push", function(e, project) {
-  console.log("received push for commit " + e.commit)
+  console.log("received push for commit " + e.revision.commit)
 
   // Create a new job
   var node = new Job("test-runner")
