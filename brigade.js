@@ -193,7 +193,7 @@ function acrBuild(e, project, tag) {
     builder.tasks.push(
       `cd ${i}`,
       `echo '========> Building ${i}'`,
-      `cp -av /mnt/brigade/share/${i}/rootfs ./rootfs`,
+      `cp -av /mnt/brigade/share/${i}/rootfs ./`,
       `az acr build -r ${registry} -t ${imgName} -t ${latest} .`,
       `echo '<======== Finished ${i}'`,
       `cd ..`
