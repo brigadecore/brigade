@@ -27,8 +27,9 @@ const (
 	waitTimeout = 5 * time.Minute
 )
 
-func NewDelegatedRunner(c *kubernetes.Clientset, namespace string) (*ScriptRunner, error) {
-	app := &ScriptRunner{
+// NewDelegatedRunner returns a new Runner object with the provided Kubernetes Clientset and namespace
+func NewDelegatedRunner(c *kubernetes.Clientset, namespace string) (*Runner, error) {
+	app := &Runner{
 		store:                kube.New(c, namespace),
 		kc:                   c,
 		namespace:            namespace,
@@ -38,7 +39,8 @@ func NewDelegatedRunner(c *kubernetes.Clientset, namespace string) (*ScriptRunne
 	return app, nil
 }
 
-type ScriptRunner struct {
+// Runner represents an object that delegates running a script on Kubernetes
+type Runner struct {
 	store     storage.Store
 	kc        kubernetes.Interface
 	namespace string
@@ -51,7 +53,8 @@ type ScriptRunner struct {
 	Verbose    bool
 }
 
-func (a *ScriptRunner) SendBuild(b *brigade.Build) error {
+// SendBuild creates and runs a given Brigade build
+func (a *Runner) SendBuild(b *brigade.Build) error {
 	if err := a.store.CreateBuild(b); err != nil {
 		return err
 	}
@@ -89,7 +92,8 @@ func (a *ScriptRunner) SendBuild(b *brigade.Build) error {
 	return nil
 }
 
-func (a *ScriptRunner) SendScript(projectName string, data []byte, event, commitish, ref string, payload []byte, logLevel string) error {
+// SendScript converts a script into a Brigade Build object and submits it
+func (a *Runner) SendScript(projectName string, data []byte, event, commitish, ref string, payload []byte, logLevel string) error {
 
 	projectID := brigade.ProjectID(projectName)
 	if _, err := a.store.GetProject(projectID); err != nil {
@@ -112,7 +116,7 @@ func (a *ScriptRunner) SendScript(projectName string, data []byte, event, commit
 }
 
 // waitForWorker waits until the worker has started.
-func (a *ScriptRunner) waitForWorker(buildID string) error {
+func (a *Runner) waitForWorker(buildID string) error {
 	opts := metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("heritage=brigade,component=build,build=%s", buildID),
 	}
@@ -157,7 +161,7 @@ func (a *ScriptRunner) waitForWorker(buildID string) error {
 	}
 }
 
-func (a *ScriptRunner) podLog(name string, w io.Writer) error {
+func (a *Runner) podLog(name string, w io.Writer) error {
 	req := a.kc.CoreV1().Pods(a.namespace).GetLogs(name, &v1.PodLogOptions{Follow: true})
 
 	readCloser, err := req.Timeout(waitTimeout).Stream()
@@ -174,7 +178,8 @@ func (a *ScriptRunner) podLog(name string, w io.Writer) error {
 	return err
 }
 
-func (a *ScriptRunner) GetBuild(bid string) (*brigade.Build, error) {
+// GetBuild retrieves a given build by id from storage
+func (a *Runner) GetBuild(bid string) (*brigade.Build, error) {
 	return a.store.GetBuild(bid)
 }
 
