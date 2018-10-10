@@ -1,4 +1,4 @@
-FROM node:8-alpine
+FROM node:8-slim
 
 WORKDIR /home/src
 COPY . /home/src

@@ -1,10 +1,10 @@
-FROM alpine:3.8
+FROM debian:jessie-slim
 
-RUN apk update && apk add --no-cache \
-    ca-certificates \
-    git \
-    openssh-client \
-    && update-ca-certificates
+RUN apt-get update && apt-get install -y \
+  git \
+  openssh-client \
+  ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY rootfs /
 ENV GIT_SSH=/gitssh.sh
