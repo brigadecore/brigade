@@ -51,12 +51,11 @@ function build(e, project) {
   .then(() => {
       return ghNotify("success", `Build ${ e.buildID } passed`, e, project).run()
    }).then( () => {
-    const gh = JSON.parse(e.payload)
     var runRelease = false
-    if (e.event == "push" && gh.ref.startsWith("refs/tags/")) {
+    if (e.type == "push" && e.revision.ref.startsWith("refs/tags/")) {
       // Run the release in the background.
       runRelease = true
-      let parts = gh.ref.split("/", 3)
+      let parts = e.revision.ref.split("/", 3)
       let tag = parts[2]
       return acrBuild(e, project, tag).then(() => {
         releaseBrig(e, project, tag)
