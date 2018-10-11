@@ -82,7 +82,7 @@ In the example above, the second job (`j2`) will execute `exit 1`, which will ca
 If we run this, we'll see something like this:
 
 ```console
-$ brig run -e advanced-03.js deis/empty-testbed
+$ brig run -f advanced-03.js deis/empty-testbed
 Event created. Waiting for worker pod named "brigade-worker-01ckcc06200kqdvkdp3nc65bap".
 Build: 01ckcc06200kqdvkdp3nc65bap, Worker: brigade-worker-01ckcc06200kqdvkdp3nc65bap
 prestart: no dependencies file found
