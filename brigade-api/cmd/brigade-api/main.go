@@ -13,7 +13,6 @@ import (
 
 	"github.com/emicklei/go-restful"
 	restfulspec "github.com/emicklei/go-restful-openapi"
-
 	"github.com/go-openapi/spec"
 
 	"k8s.io/api/core/v1"
@@ -208,8 +207,8 @@ func main() {
 	restful.DefaultContainer.Filter(NCSACommonLogFormatLogger())
 
 	config := restfulspec.Config{
-		WebServices: restful.RegisteredWebServices(),
-		APIPath:     "/apidocs.json",
+		WebServices:                   restful.RegisteredWebServices(),
+		APIPath:                       "/apidocs.json",
 		PostBuildSwaggerObjectHandler: enrichSwaggerObject}
 	restful.DefaultContainer.Add(restfulspec.NewOpenAPIService(config))
 

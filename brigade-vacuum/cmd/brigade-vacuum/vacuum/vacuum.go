@@ -124,8 +124,6 @@ func (v *Vacuum) deleteBuild(bid string) error {
 			if p.Labels["component"] == "build" {
 				if p.Status.Phase == v1.PodRunning || p.Status.Phase == v1.PodPending {
 					return errors.New("skipping because build is still running")
-				} else {
-					break
 				}
 			}
 		}
