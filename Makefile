@@ -53,7 +53,10 @@ docker-push: $(addsuffix -push,$(IMAGES))
 		echo "building $$os"; \
 		for arch in $(CX_ARCHS); do \
 			GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./bin/$*-$$os-$$arch ./$*/cmd/$*; \
-		done;\
+		done; \
+		if [ $$os == 'windows' ]; then \
+			mv ./bin/$*-$$os-$$arch ./bin/$*-$$os-$$arch.exe; \
+		fi; \
 	done
 
 .PHONY: build-release
