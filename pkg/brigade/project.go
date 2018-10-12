@@ -22,6 +22,8 @@ type Project struct {
 	DefaultScript string `json:"defaultScript"`
 	// DefaultScriptName is the name of the configmap where the script is stored.
 	DefaultScriptName string `json:"defaultScriptName"`
+	// Pipeline is the name of the declarative pipeline to be used instead of js script
+	Pipeline string `json:"pipeline"`
 	// Kubernetes holds information about Kubernetes
 	Kubernetes Kubernetes `json:"kubernetes"`
 	// SharedSecret is the GitHub shared key

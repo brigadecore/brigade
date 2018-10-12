@@ -1,0 +1,26 @@
+apiVersion: brigade.sh/v1
+kind: PipelineDefinition
+metadata:
+  name: default-pipeline
+spec:
+  description: "This is a sample pipeline definition"
+  params:
+    - name: imageTag
+      type: string
+      description: "Name of the resulting Docker image"
+    - name: dockerFile
+      type: string
+      description: "Path to the Dockerfile"
+    - name: buildContext
+      type: string
+      description: "Path to folder containing source"
+  phases:
+    - name: kaniko-build
+      namespace: default
+      params:
+        - name: imageTag
+          valueFromParam: imageTag
+        - name: buildContext
+          valueFromParam: buildContext
+        - name: dockerFile
+          valueFromParam: dockerFile

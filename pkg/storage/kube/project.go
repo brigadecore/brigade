@@ -83,6 +83,7 @@ func SecretFromProject(project *brigade.Project) (v1.Secret, error) {
 			"buildStorageSize":  project.Kubernetes.BuildStorageSize,
 			"defaultScript":     project.DefaultScript,
 			"defaultScriptName": project.DefaultScriptName,
+			"pipeline":          project.Pipeline,
 
 			"repository": project.Repo.Name,
 			"sshKey":     project.Repo.SSHKey,

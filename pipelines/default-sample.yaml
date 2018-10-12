@@ -1,0 +1,18 @@
+apiVersion: brigade.sh/v1
+kind: Pipeline
+metadata:
+  name: build-my-app
+spec:
+  events:
+  - name: push
+    description: "This runs every time code is pushed to the repo"
+    spec:
+      name: default-pipeline
+      namespace: default
+      params:
+        - name: imageTag
+          value: "chaos.azurecr.io/testimage:v1"
+        - name: dockerFile
+          value: "/src/Dockerfile"
+        - name: buildContext
+          value: "/src"
