@@ -1,4 +1,4 @@
-apiVersion: styx.io/v1
+apiVersion: brigade.io/v1
 kind: PipelineComponent
 metadata:
   name: kaniko-build
