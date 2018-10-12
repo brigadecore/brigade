@@ -1,0 +1,21 @@
+apiVersion: brigade.io/v1
+kind: PipelineComponent
+metadata:
+  name: kaniko-build
+spec:
+  params:
+    - name: name
+      type: string
+    - name: imageTag
+      type: string
+    - name: registry-secret
+      type: string
+  template:
+    image: gcr.io/kaniko-project/executor:latest
+    args:
+      - --dockerfile=asdf
+      - --destination=asdf
+    env:
+      - name: CREDS
+        value: asdf
+  script: |

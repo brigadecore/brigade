@@ -1,0 +1,9 @@
+apiVersion: brigade.io/v1
+kind: PipelineDefinition
+metadata:
+  name: default
+spec:
+  pipeline:
+    - name: kaniko-build
+      mandatory: true
+      kind: PipelineComponent #make this the default so it doesnt need to be specified everytime

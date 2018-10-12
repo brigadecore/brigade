@@ -693,6 +693,38 @@
   pruneopts = ""
   revision = "26a26f55b28aa1b338fbaf6fbbe0bcd76aed05e0"
 
+[[projects]]
+  branch = "master"
+  digest = "1:979853267bf4e5a16030c57e07e1ae89ee879841fc3138cff4e0f771a9a9fcde"
+  name = "k8s.io/code-generator"
+  packages = [
+    "cmd/client-gen",
+    "cmd/client-gen/args",
+    "cmd/client-gen/generators",
+    "cmd/client-gen/generators/fake",
+    "cmd/client-gen/generators/scheme",
+    "cmd/client-gen/generators/util",
+    "cmd/client-gen/path",
+    "cmd/client-gen/types",
+    "pkg/util",
+  ]
+  pruneopts = ""
+  revision = "6a2840f5b572addf60da1f63db87e5f03dadd95e"
+
+[[projects]]
+  branch = "master"
+  digest = "1:4a75352fad3a8e993928462643415e8263f94ae845aa5e7dce1de2f34f961e36"
+  name = "k8s.io/gengo"
+  packages = [
+    "args",
+    "generator",
+    "namer",
+    "parser",
+    "types",
+  ]
+  pruneopts = ""
+  revision = "4242d8e6c5dba56827bb7bcf14ad11cda38f3991"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -713,15 +745,23 @@
     "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",
+<<<<<<< HEAD
     "k8s.io/apimachinery/pkg/api/resource",
+=======
+>>>>>>> 0d0313d... added crd types
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/labels",
     "k8s.io/apimachinery/pkg/runtime",
+    "k8s.io/apimachinery/pkg/runtime/schema",
+    "k8s.io/apimachinery/pkg/runtime/serializer",
+    "k8s.io/apimachinery/pkg/types",
     "k8s.io/apimachinery/pkg/util/duration",
     "k8s.io/apimachinery/pkg/util/runtime",
     "k8s.io/apimachinery/pkg/util/wait",
     "k8s.io/apimachinery/pkg/util/yaml",
     "k8s.io/apimachinery/pkg/watch",
+    "k8s.io/client-go/discovery",
+    "k8s.io/client-go/discovery/fake",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/fake",
     "k8s.io/client-go/plugin/pkg/client/auth",
@@ -731,7 +771,12 @@
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/client-go/tools/portforward",
     "k8s.io/client-go/transport/spdy",
+    "k8s.io/client-go/util/flowcontrol",
     "k8s.io/client-go/util/workqueue",
+<<<<<<< HEAD
+=======
+    "k8s.io/code-generator/cmd/client-gen",
+>>>>>>> 0d0313d... added crd types
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

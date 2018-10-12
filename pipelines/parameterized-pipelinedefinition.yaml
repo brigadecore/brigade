@@ -1,0 +1,26 @@
+apiVersion: brigade.io/v1
+kind: PipelineDefinition
+metadata:
+  name: parameterized-pipeline
+spec:
+  params:
+    - name: buildprocess
+      type: Pipeline
+    - name: test
+      type: Pipeline
+  pipeline:
+    - valueFrom:
+        pipelineRef:
+          - param: buildprocess
+      required: true
+    - name: security-scan
+      required: true
+      type: Pipeline
+      onerror: warn
+    - valueFrom:
+        pipelineRef:
+          - param: test
+    - name: deploy
+      required: false
+      type: PipelineComponent
+      onerror: fail

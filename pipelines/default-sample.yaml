@@ -1,0 +1,21 @@
+apiVersion: brigade.io/v1
+kind: Pipeline
+metadata:
+  name: default
+spec:
+  pipeline:
+    name: default
+    config:
+      - name: kaniko-build
+        params:
+          - name: imageTag
+            value: "test-build:{{Build-ID}}"
+          - name: registry-secret
+            value: acr-creds
+      - name: deploy
+        params:
+          - name: image
+            value:
+              fromComponentRef:
+                - name: kaniko-build
+                  value: imageTag
