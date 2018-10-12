@@ -8,6 +8,8 @@ spec:
       type: string
     - name: imageTag
       type: string
+    - name: registry-secret
+      type: string
   template:
     image: gcr.io/kaniko-project/executor:latest
     args:

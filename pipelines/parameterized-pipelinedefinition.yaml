@@ -1,5 +1,5 @@
 apiVersion: brigade.io/v1
-kind: Pipeline
+kind: PipelineDefinition
 metadata:
   name: parameterized-pipeline
 spec:
