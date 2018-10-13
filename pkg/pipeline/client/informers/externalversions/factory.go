@@ -172,9 +172,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Radix() pipeline.Interface
+	Pipeline() pipeline.Interface
 }
 
-func (f *sharedInformerFactory) Radix() pipeline.Interface {
+func (f *sharedInformerFactory) Pipeline() pipeline.Interface {
 	return pipeline.New(f, f.namespace, f.tweakListOptions)
 }

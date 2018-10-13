@@ -25,22 +25,27 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-type RadixV1Interface interface {
+type PipelineV1Interface interface {
 	RESTClient() rest.Interface
 	PipelineComponentsGetter
+	PipelineDefinitionsGetter
 }
 
-// RadixV1Client is used to interact with features provided by the radix.equinor.com group.
-type RadixV1Client struct {
+// PipelineV1Client is used to interact with features provided by the pipeline.brigade.io group.
+type PipelineV1Client struct {
 	restClient rest.Interface
 }
 
-func (c *RadixV1Client) PipelineComponents(namespace string) PipelineComponentInterface {
+func (c *PipelineV1Client) PipelineComponents(namespace string) PipelineComponentInterface {
 	return newPipelineComponents(c, namespace)
 }
 
-// NewForConfig creates a new RadixV1Client for the given config.
-func NewForConfig(c *rest.Config) (*RadixV1Client, error) {
+func (c *PipelineV1Client) PipelineDefinitions(namespace string) PipelineDefinitionInterface {
+	return newPipelineDefinitions(c, namespace)
+}
+
+// NewForConfig creates a new PipelineV1Client for the given config.
+func NewForConfig(c *rest.Config) (*PipelineV1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -49,12 +54,12 @@ func NewForConfig(c *rest.Config) (*RadixV1Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &RadixV1Client{client}, nil
+	return &PipelineV1Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new RadixV1Client for the given config and
+// NewForConfigOrDie creates a new PipelineV1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *RadixV1Client {
+func NewForConfigOrDie(c *rest.Config) *PipelineV1Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -62,9 +67,9 @@ func NewForConfigOrDie(c *rest.Config) *RadixV1Client {
 	return client
 }
 
-// New creates a new RadixV1Client for the given RESTClient.
-func New(c rest.Interface) *RadixV1Client {
-	return &RadixV1Client{c}
+// New creates a new PipelineV1Client for the given RESTClient.
+func New(c rest.Interface) *PipelineV1Client {
+	return &PipelineV1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -82,7 +87,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *RadixV1Client) RESTClient() rest.Interface {
+func (c *PipelineV1Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

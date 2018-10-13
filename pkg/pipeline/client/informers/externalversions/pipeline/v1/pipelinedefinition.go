@@ -31,59 +31,59 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// PipelineComponentInformer provides access to a shared informer and lister for
-// PipelineComponents.
-type PipelineComponentInformer interface {
+// PipelineDefinitionInformer provides access to a shared informer and lister for
+// PipelineDefinitions.
+type PipelineDefinitionInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1.PipelineComponentLister
+	Lister() v1.PipelineDefinitionLister
 }
 
-type pipelineComponentInformer struct {
+type pipelineDefinitionInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewPipelineComponentInformer constructs a new informer for PipelineComponent type.
+// NewPipelineDefinitionInformer constructs a new informer for PipelineDefinition type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewPipelineComponentInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredPipelineComponentInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewPipelineDefinitionInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredPipelineDefinitionInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredPipelineComponentInformer constructs a new informer for PipelineComponent type.
+// NewFilteredPipelineDefinitionInformer constructs a new informer for PipelineDefinition type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredPipelineComponentInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredPipelineDefinitionInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PipelineV1().PipelineComponents(namespace).List(options)
+				return client.PipelineV1().PipelineDefinitions(namespace).List(options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PipelineV1().PipelineComponents(namespace).Watch(options)
+				return client.PipelineV1().PipelineDefinitions(namespace).Watch(options)
 			},
 		},
-		&pipelinev1.PipelineComponent{},
+		&pipelinev1.PipelineDefinition{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *pipelineComponentInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredPipelineComponentInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *pipelineDefinitionInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredPipelineDefinitionInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *pipelineComponentInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&pipelinev1.PipelineComponent{}, f.defaultInformer)
+func (f *pipelineDefinitionInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&pipelinev1.PipelineDefinition{}, f.defaultInformer)
 }
 
-func (f *pipelineComponentInformer) Lister() v1.PipelineComponentLister {
-	return v1.NewPipelineComponentLister(f.Informer().GetIndexer())
+func (f *pipelineDefinitionInformer) Lister() v1.PipelineDefinitionLister {
+	return v1.NewPipelineDefinitionLister(f.Informer().GetIndexer())
 }

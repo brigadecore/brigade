@@ -53,7 +53,7 @@ type pipelineComponents struct {
 }
 
 // newPipelineComponents returns a PipelineComponents
-func newPipelineComponents(c *RadixV1Client, namespace string) *pipelineComponents {
+func newPipelineComponents(c *PipelineV1Client, namespace string) *pipelineComponents {
 	return &pipelineComponents{
 		client: c.RESTClient(),
 		ns:     namespace,

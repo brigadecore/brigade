@@ -20,8 +20,8 @@ package fake
 
 import (
 	clientset "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned"
-	radixv1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1"
-	fakeradixv1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1/fake"
+	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1"
+	fakepipelinev1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -71,12 +71,12 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 
 var _ clientset.Interface = &Clientset{}
 
-// RadixV1 retrieves the RadixV1Client
-func (c *Clientset) RadixV1() radixv1.RadixV1Interface {
-	return &fakeradixv1.FakeRadixV1{Fake: &c.Fake}
+// PipelineV1 retrieves the PipelineV1Client
+func (c *Clientset) PipelineV1() pipelinev1.PipelineV1Interface {
+	return &fakepipelinev1.FakePipelineV1{Fake: &c.Fake}
 }
 
-// Radix retrieves the RadixV1Client
-func (c *Clientset) Radix() radixv1.RadixV1Interface {
-	return &fakeradixv1.FakeRadixV1{Fake: &c.Fake}
+// Pipeline retrieves the PipelineV1Client
+func (c *Clientset) Pipeline() pipelinev1.PipelineV1Interface {
+	return &fakepipelinev1.FakePipelineV1{Fake: &c.Fake}
 }

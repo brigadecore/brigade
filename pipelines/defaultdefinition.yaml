@@ -5,18 +5,5 @@ metadata:
 spec:
   pipeline:
     - name: kaniko-build
-      required: true
-      type: PipelineComponent #make this the default so it doesnt need to be specified everytime
-    - name: security-scan
-      required: true
-      type: Pipeline
-      onerror: warn
-    - name: validation
-      required: false
-      type: Pipeline
-      onerror: fail
-      runInParallell: true  #all steps will run in parallell instead of sequence
-    - name: deploy
-      required: false
-      type: PipelineComponent
-      onerror: fail
+      mandatory: true
+      kind: PipelineComponent #make this the default so it doesnt need to be specified everytime

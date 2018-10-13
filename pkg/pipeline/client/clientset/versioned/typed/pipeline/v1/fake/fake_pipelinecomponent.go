@@ -30,13 +30,13 @@ import (
 
 // FakePipelineComponents implements PipelineComponentInterface
 type FakePipelineComponents struct {
-	Fake *FakeRadixV1
+	Fake *FakePipelineV1
 	ns   string
 }
 
-var pipelinecomponentsResource = schema.GroupVersionResource{Group: "radix.equinor.com", Version: "v1", Resource: "pipelinecomponents"}
+var pipelinecomponentsResource = schema.GroupVersionResource{Group: "pipeline.brigade.io", Version: "v1", Resource: "pipelinecomponents"}
 
-var pipelinecomponentsKind = schema.GroupVersionKind{Group: "radix.equinor.com", Version: "v1", Kind: "PipelineComponent"}
+var pipelinecomponentsKind = schema.GroupVersionKind{Group: "pipeline.brigade.io", Version: "v1", Kind: "PipelineComponent"}
 
 // Get takes name of the pipelineComponent, and returns the corresponding pipelineComponent object, and an error if there is any.
 func (c *FakePipelineComponents) Get(name string, options v1.GetOptions) (result *pipelinev1.PipelineComponent, err error) {

@@ -1,4 +1,4 @@
 // +k8s:deepcopy-gen=package
-// +groupName=radix.equinor.com
+// +groupName=pipeline.brigade.io
 
 package v1

@@ -5,12 +5,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/statoil/radix-operator/pkg/apis/radix"
+	"github.com/Azure/brigade/pkg/pipeline"
 )
 
 //SchemeGroupVersion provides the group version
 var SchemeGroupVersion = schema.GroupVersion{
-	Group:   radix.GroupName,
+	Group:   pipeline.GroupName,
 	Version: "v1",
 }
 var (
@@ -35,6 +35,10 @@ func Resource(resource string) schema.GroupResource {
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(
 		SchemeGroupVersion,
+		&PipelineComponent{},
+		&PipelineComponentList{},
+		&PipelineDefinition{},
+		&PipelineDefinitionList{},
 	)
 
 	// register the type in the scheme

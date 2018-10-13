@@ -19,7 +19,7 @@ limitations under the License.
 package versioned
 
 import (
-	radixv1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1"
+	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -27,27 +27,27 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	RadixV1() radixv1.RadixV1Interface
+	PipelineV1() pipelinev1.PipelineV1Interface
 	// Deprecated: please explicitly pick a version if possible.
-	Radix() radixv1.RadixV1Interface
+	Pipeline() pipelinev1.PipelineV1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	radixV1 *radixv1.RadixV1Client
+	pipelineV1 *pipelinev1.PipelineV1Client
 }
 
-// RadixV1 retrieves the RadixV1Client
-func (c *Clientset) RadixV1() radixv1.RadixV1Interface {
-	return c.radixV1
+// PipelineV1 retrieves the PipelineV1Client
+func (c *Clientset) PipelineV1() pipelinev1.PipelineV1Interface {
+	return c.pipelineV1
 }
 
-// Deprecated: Radix retrieves the default version of RadixClient.
+// Deprecated: Pipeline retrieves the default version of PipelineClient.
 // Please explicitly pick a version.
-func (c *Clientset) Radix() radixv1.RadixV1Interface {
-	return c.radixV1
+func (c *Clientset) Pipeline() pipelinev1.PipelineV1Interface {
+	return c.pipelineV1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -66,7 +66,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
-	cs.radixV1, err = radixv1.NewForConfig(&configShallowCopy)
+	cs.pipelineV1, err = pipelinev1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
-	cs.radixV1 = radixv1.NewForConfigOrDie(c)
+	cs.pipelineV1 = pipelinev1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -91,7 +91,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.radixV1 = radixv1.New(c)
+	cs.pipelineV1 = pipelinev1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

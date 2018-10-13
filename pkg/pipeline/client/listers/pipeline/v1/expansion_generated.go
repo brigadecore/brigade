@@ -25,3 +25,11 @@ type PipelineComponentListerExpansion interface{}
 // PipelineComponentNamespaceListerExpansion allows custom methods to be added to
 // PipelineComponentNamespaceLister.
 type PipelineComponentNamespaceListerExpansion interface{}
+
+// PipelineDefinitionListerExpansion allows custom methods to be added to
+// PipelineDefinitionLister.
+type PipelineDefinitionListerExpansion interface{}
+
+// PipelineDefinitionNamespaceListerExpansion allows custom methods to be added to
+// PipelineDefinitionNamespaceLister.
+type PipelineDefinitionNamespaceListerExpansion interface{}

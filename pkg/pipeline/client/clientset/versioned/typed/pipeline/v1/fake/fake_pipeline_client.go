@@ -24,17 +24,21 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeRadixV1 struct {
+type FakePipelineV1 struct {
 	*testing.Fake
 }
 
-func (c *FakeRadixV1) PipelineComponents(namespace string) v1.PipelineComponentInterface {
+func (c *FakePipelineV1) PipelineComponents(namespace string) v1.PipelineComponentInterface {
 	return &FakePipelineComponents{c, namespace}
+}
+
+func (c *FakePipelineV1) PipelineDefinitions(namespace string) v1.PipelineDefinitionInterface {
+	return &FakePipelineDefinitions{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeRadixV1) RESTClient() rest.Interface {
+func (c *FakePipelineV1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }
