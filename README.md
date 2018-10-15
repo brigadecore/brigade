@@ -48,7 +48,9 @@ You will now have Brigade installed.
 
 In your local environment, install `brig`, the Brigade commandline client. To get
 the latest version, go to the [releases page](https://github.com/Azure/brigade/releases/)
-and download the binary for your platform.
+and download the binary for your platform. Alternatively, you can use
+[asdf-brig](https://github.com/Ibotta/asdf-brig) to install & manage multiple
+versions of `brig`.
 
 ### Creating A New Project
 
