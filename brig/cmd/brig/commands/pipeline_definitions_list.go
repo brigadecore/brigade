@@ -10,25 +10,25 @@ import (
 	"github.com/Azure/brigade/pkg/pipeline/api"
 )
 
-const pipelineListUsage = `List all pipelines.
+const pipelineDefinitionListUsage = `List all pipelines.
 
 Print a list of all of the pipelines in all namespaces.
 `
 
 func init() {
-	pipeline.AddCommand(pipelineList)
+	pipelineDefinitions.AddCommand(pipelineDefinitionsList)
 }
 
-var pipelineList = &cobra.Command{
+var pipelineDefinitionsList = &cobra.Command{
 	Use:   "list",
-	Short: "list pipelines",
-	Long:  pipelineListUsage,
+	Short: "list pipeline definitions",
+	Long:  pipelineDefinitionListUsage,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return listPipelines(cmd.OutOrStdout())
+		return listPipelineDefinitions(cmd.OutOrStdout())
 	},
 }
 
-func listPipelines(out io.Writer) error {
+func listPipelineDefinitions(out io.Writer) error {
 	c, err := getKubeConfig()
 	if err != nil {
 		return err
@@ -38,17 +38,14 @@ func listPipelines(out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	pipelines, err := client.GetPipelines(globalNamespace)
-	if err != nil {
-		return err
-	}
-
+	definitions, err := client.GetPipelineDefinitions("")
 	table := uitable.New()
 	table.AddRow("NAME", "DESCRIPTION")
 
-	for _, d := range pipelines {
-		table.AddRow(d.Name)
+	for _, d := range definitions {
+		table.AddRow(d.Name, d.Spec.Description)
 	}
+
 	fmt.Fprintln(out, table)
 	return nil
 }

@@ -1,21 +1,18 @@
-apiVersion: brigade.io/v1
+apiVersion: brigade.sh/v1
 kind: Pipeline
 metadata:
-  name: default
+  name: build-my-app
 spec:
-  pipeline:
-    name: default
-    config:
-      - name: kaniko-build
-        params:
-          - name: imageTag
-            value: "test-build:{{Build-ID}}"
-          - name: registry-secret
-            value: acr-creds
-      - name: deploy
-        params:
-          - name: image
-            value:
-              fromComponentRef:
-                - name: kaniko-build
-                  value: imageTag
+  events:
+  - name: push
+    description: "This runs every time code is pushed to the repo"
+    spec:
+      name: default-pipeline
+      namespace: default
+      params:
+        - name: imageTag
+          value: "chaos.azurecr.io/testimage:v1"
+        - name: dockerFile
+          value: "/src/Dockerfile"
+        - name: buildContext
+          value: "/src"

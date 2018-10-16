@@ -54,3 +54,6 @@ required = ["k8s.io/code-generator/cmd/client-gen"]
 
 [[constraint]]
   name = "k8s.io/code-generator"
+
+[[constraint]]
+  name = "github.com/iancoleman/strcase"

@@ -1,21 +1,25 @@
-apiVersion: brigade.io/v1
+apiVersion: brigade.sh/v1
 kind: PipelineComponent
 metadata:
   name: kaniko-build
 spec:
   params:
-    - name: name
+    - name: dockerFile
       type: string
     - name: imageTag
       type: string
     - name: registry-secret
       type: string
+    - name: buildContext
+      type: string
   template:
     image: gcr.io/kaniko-project/executor:latest
     args:
-      - --dockerfile=asdf
-      - --destination=asdf
+      - --dockerfile={{dockerFile}}
+      - --context={{buildContext}}
+      - --destination={{imageTag}}
     env:
       - name: CREDS
         value: asdf
-  script: |
+    secrets:
+      - name: "{{registry-secret}}"

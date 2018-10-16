@@ -39,6 +39,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&PipelineComponentList{},
 		&PipelineDefinition{},
 		&PipelineDefinitionList{},
+		&Pipeline{},
+		&PipelineList{},
 	)
 
 	// register the type in the scheme

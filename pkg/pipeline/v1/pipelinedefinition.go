@@ -17,8 +17,9 @@ type PipelineDefinition struct {
 
 //PipelineDefinitionSpec is the spec for a pipeline
 type PipelineDefinitionSpec struct {
-	Params   []ParameterDefinition     `json:"params"`
-	Pipeline []PipelineComponentSource `json:"pipeline"`
+	Description string                    `json:"description,omitempty"`
+	Params      []ParameterDefinition     `json:"params"`
+	Phases      []PipelineComponentSource `json:"phases"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -36,7 +37,8 @@ type PipelineComponentSource struct {
 	Namespace string `json:"namespace,omitempty"`
 	Mandatory bool   `json:"mandatory"`
 	//+optional
-	ValueFrom *PipelineSource `json:"valueFrom,omitempty"`
+	ValueFrom *PipelineSource               `json:"valueFrom,omitempty"`
+	Params    []PipelineDefinitionParameter `json:"params,omitempty"`
 }
 
 //PipelineSource represents a source for the value of the pipeline
@@ -50,4 +52,11 @@ type PipelineSourceRef struct {
 	Name      string `json:"name,omitempty"`
 	Kind      string `json:"kind,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
+}
+
+//PipelineDefinitionParameter represents an input parameter to a pipeline definition
+type PipelineDefinitionParameter struct {
+	Name string `json:"name"`
+	//ValueFromParam specifies that the input value to the components parameter comes from the pipeline definition input parameter
+	ValueFromParam string `json:"valueFromParam"`
 }

@@ -18,6 +18,14 @@ limitations under the License.
 
 package v1
 
+// PipelineListerExpansion allows custom methods to be added to
+// PipelineLister.
+type PipelineListerExpansion interface{}
+
+// PipelineNamespaceListerExpansion allows custom methods to be added to
+// PipelineNamespaceLister.
+type PipelineNamespaceListerExpansion interface{}
+
 // PipelineComponentListerExpansion allows custom methods to be added to
 // PipelineComponentLister.
 type PipelineComponentListerExpansion interface{}
