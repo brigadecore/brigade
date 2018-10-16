@@ -38,12 +38,12 @@ func listPipelines(out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	definitions, err := client.GetPipelineDefinitions()
+	pipelines, err := client.GetPipelines("")
 	table := uitable.New()
-	table.AddRow("NAME", "PARAM COUNT", "STEPS")
+	table.AddRow("NAME", "DESCRIPTION")
 
-	for _, d := range definitions {
-		table.AddRow(d.Name, len(d.Spec.Params), len(d.Spec.Pipeline))
+	for _, d := range pipelines {
+		table.AddRow(d.Name, d.Spec.Description)
 	}
 	fmt.Fprintln(out, table)
 	return nil

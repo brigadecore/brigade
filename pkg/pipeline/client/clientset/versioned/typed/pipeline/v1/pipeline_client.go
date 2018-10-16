@@ -27,6 +27,7 @@ import (
 
 type PipelineV1Interface interface {
 	RESTClient() rest.Interface
+	PipelinesGetter
 	PipelineComponentsGetter
 	PipelineDefinitionsGetter
 }
@@ -34,6 +35,10 @@ type PipelineV1Interface interface {
 // PipelineV1Client is used to interact with features provided by the pipeline.brigade.io group.
 type PipelineV1Client struct {
 	restClient rest.Interface
+}
+
+func (c *PipelineV1Client) Pipelines(namespace string) PipelineInterface {
+	return newPipelines(c, namespace)
 }
 
 func (c *PipelineV1Client) PipelineComponents(namespace string) PipelineComponentInterface {

@@ -53,6 +53,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=pipeline.brigade.io, Version=v1
+	case v1.SchemeGroupVersion.WithResource("pipelines"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Pipeline().V1().Pipelines().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("pipelinecomponents"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Pipeline().V1().PipelineComponents().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("pipelinedefinitions"):

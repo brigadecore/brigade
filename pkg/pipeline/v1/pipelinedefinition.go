@@ -17,8 +17,9 @@ type PipelineDefinition struct {
 
 //PipelineDefinitionSpec is the spec for a pipeline
 type PipelineDefinitionSpec struct {
-	Params   []ParameterDefinition     `json:"params"`
-	Pipeline []PipelineComponentSource `json:"pipeline"`
+	Description string                    `json:"description,omitempty"`
+	Params      []ParameterDefinition     `json:"params"`
+	Pipeline    []PipelineComponentSource `json:"pipeline"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

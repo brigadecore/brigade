@@ -28,6 +28,10 @@ type FakePipelineV1 struct {
 	*testing.Fake
 }
 
+func (c *FakePipelineV1) Pipelines(namespace string) v1.PipelineInterface {
+	return &FakePipelines{c, namespace}
+}
+
 func (c *FakePipelineV1) PipelineComponents(namespace string) v1.PipelineComponentInterface {
 	return &FakePipelineComponents{c, namespace}
 }

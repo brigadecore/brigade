@@ -4,7 +4,7 @@ metadata:
   name: kaniko-build
 spec:
   params:
-    - name: name
+    - name: dockerfile
       type: string
     - name: imageTag
       type: string
@@ -13,9 +13,10 @@ spec:
   template:
     image: gcr.io/kaniko-project/executor:latest
     args:
-      - --dockerfile=asdf
-      - --destination=asdf
+      - --dockerfile={{dockerfile}}
+      - --destination={{imageTag}}
     env:
       - name: CREDS
         value: asdf
-  script: |
+    secrets:
+      - name: "{{registry-secret}}"

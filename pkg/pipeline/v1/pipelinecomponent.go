@@ -18,8 +18,9 @@ type PipelineComponent struct {
 
 //PipelineComponentSpec is the spec for a pipeline component
 type PipelineComponentSpec struct {
-	Params   []ParameterDefinition     `json:"params"`
-	Template PipelineComponentTemplate `json:"template"`
+	Description string                    `json:"description,omitempty"`
+	Params      []ParameterDefinition     `json:"params"`
+	Template    PipelineComponentTemplate `json:"template"`
 }
 
 //PipelineComponentTemplate defines what is needed to generate the javascript fragment for the brigade script

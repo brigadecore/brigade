@@ -441,15 +441,16 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:899227ac10efc560eec9699b47bdc7cde00d3922debaf241307bf48ece27eb60"
+  digest = "1:19e6467b9934614872b092d019b757fbc89de35cf473d71828d604dbd9f9c172"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
     "imports",
     "internal/fastwalk",
+    "internal/gopathwalk",
   ]
   pruneopts = ""
-  revision = "d3c6139142f2181b42a21db02903fafea6215674"
+  revision = "5e66757b835f155f7e50931f54c9f6af8af86f75"
 
 [[projects]]
   digest = "1:7b693deb3738e3bcfccbb74cb8033878a6a32189e882a0fbc0407617fdf2dbed"
@@ -705,7 +706,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:979853267bf4e5a16030c57e07e1ae89ee879841fc3138cff4e0f771a9a9fcde"
+  digest = "1:b06fc2e0b324eba982e862ee987228b927655705659203e8b114d4bfe2684bbb"
   name = "k8s.io/code-generator"
   packages = [
     "cmd/client-gen",
@@ -719,7 +720,7 @@
     "pkg/util",
   ]
   pruneopts = ""
-  revision = "6a2840f5b572addf60da1f63db87e5f03dadd95e"
+  revision = "a6373b15aae1a4ccc3d617e9a4e8368e16f9a6bf"
 
 [[projects]]
   branch = "master"
