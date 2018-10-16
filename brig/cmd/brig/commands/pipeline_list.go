@@ -38,7 +38,11 @@ func listPipelines(out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	pipelines, err := client.GetPipelines("")
+	pipelines, err := client.GetPipelines(globalNamespace)
+	if err != nil {
+		return err
+	}
+
 	table := uitable.New()
 	table.AddRow("NAME", "DESCRIPTION")
 

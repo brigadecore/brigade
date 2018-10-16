@@ -25,6 +25,16 @@ func (c *PipelineClient) GetPipelineDefinitions(namespace string) ([]v1.Pipeline
 	return definitions.Items, nil
 }
 
+//GetPipelineDefinition retrieves the specified pipeline definition
+func (c *PipelineClient) GetPipelineDefinition(name string, namespace string) (*v1.PipelineDefinition, error) {
+	definition, err := c.client.PipelineV1().PipelineDefinitions(namespace).Get(name, meta_v1.GetOptions{})
+	if err != nil {
+		fmt.Printf("Error occured: %v", err)
+		return nil, err
+	}
+	return definition, nil
+}
+
 //GetPipelineComponents returns a list of all registered pipeline components
 func (c *PipelineClient) GetPipelineComponents(namespace string) ([]v1.PipelineComponent, error) {
 	components, err := c.client.PipelineV1().PipelineComponents(namespace).List(meta_v1.ListOptions{})
@@ -54,6 +64,16 @@ func (c *PipelineClient) GetPipelines(namespace string) ([]v1.Pipeline, error) {
 	}
 
 	return pipelines.Items, nil
+}
+
+//GetPipeline retrieve specified pipeline
+func (c *PipelineClient) GetPipeline(name string, namespace string) (*v1.Pipeline, error) {
+	pipeline, err := c.client.PipelineV1().Pipelines(namespace).Get(name, meta_v1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return pipeline, nil
 }
 
 //New creates a new PipelineClient

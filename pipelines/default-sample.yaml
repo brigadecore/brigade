@@ -4,6 +4,7 @@ metadata:
   name: build-my-app
 spec:
   name: default-pipeline
+  description: "This is the default pipeline sample"
   namespace: default
   phases:
     - name: kaniko-build
@@ -12,10 +13,10 @@ spec:
           value: "test-build:{{Build-ID}}"
         - name: registry-secret
           value: acr-creds
-    - name: deploy
-      params:
-        - name: image
-          value:
-            fromComponentRef:
-              - name: kaniko-build
-                value: imageTag
+    # - name: deploy
+    #   params:
+    #     - name: image
+    #       value:
+    #         fromComponentRef:
+    #           - name: kaniko-build
+    #             value: imageTag
