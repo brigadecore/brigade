@@ -123,7 +123,7 @@ kubernetes:
 # OPTIONAL: Project-specific worker settings which takes precedence over brigade-wide settings
 # Useful when you want a specific brigade-worker image for running brigade.js of this project.
 worker:
-  #registry: deis
+  #registry: mcr.microsoft.com/deis
   #name: brigade-worker
   #tag:
   #pullPolicy: IfNotPresent

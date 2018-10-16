@@ -61,7 +61,7 @@ func defaultWorkerImage() string {
 	if image, ok := os.LookupEnv("BRIGADE_WORKER_IMAGE"); ok {
 		return image
 	}
-	return "deis/brigade-worker:latest"
+	return "mcr.microsoft.com/deis/brigade-worker:latest"
 }
 
 func defaultWorkerPullPolicy() string {

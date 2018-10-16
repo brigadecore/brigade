@@ -24,7 +24,7 @@ func TestController(t *testing.T) {
 	svcAccountName := "my-service-account"
 	config := &Config{
 		Namespace:            v1.NamespaceDefault,
-		WorkerImage:          "deis/brigade-worker:latest",
+		WorkerImage:          "mcr.microsoft.com/deis/brigade-worker:latest",
 		WorkerPullPolicy:     string(v1.PullIfNotPresent),
 		WorkerServiceAccount: svcAccountName,
 	}
@@ -166,7 +166,7 @@ func TestController_WithScript(t *testing.T) {
 
 	config := &Config{
 		Namespace:        v1.NamespaceDefault,
-		WorkerImage:      "deis/brigade-worker:latest",
+		WorkerImage:      "mcr.microsoft.com/deis/brigade-worker:latest",
 		WorkerPullPolicy: string(v1.PullIfNotPresent),
 	}
 	controller := NewController(client, config)
@@ -261,7 +261,7 @@ func TestController_NoSidecar(t *testing.T) {
 
 	config := &Config{
 		Namespace:        v1.NamespaceDefault,
-		WorkerImage:      "deis/brigade-worker:latest",
+		WorkerImage:      "mcr.microsoft.com/deis/brigade-worker:latest",
 		WorkerPullPolicy: string(v1.PullIfNotPresent),
 	}
 	controller := NewController(client, config)
@@ -331,7 +331,7 @@ func TestController_WithWorkerCommand(t *testing.T) {
 
 	config := &Config{
 		Namespace:        v1.NamespaceDefault,
-		WorkerImage:      "deis/brigade-worker:latest",
+		WorkerImage:      "mcr.microsoft.com/deis/brigade-worker:latest",
 		WorkerPullPolicy: string(v1.PullIfNotPresent),
 	}
 	controller := NewController(client, config)
@@ -407,8 +407,8 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 		expWorkerImage         string
 	}{
 		{
-			defaultWorkerImage: "deis/brigade-worker:latest",
-			expWorkerImage:     "deis/brigade-worker:latest",
+			defaultWorkerImage: "mcr.microsoft.com/deis/brigade-worker:latest",
+			expWorkerImage:     "mcr.microsoft.com/deis/brigade-worker:latest",
 		},
 		{
 			defaultWorkerImage: "dist.custom.registry.io:5000/brigade/worker:d454e0a8cfd92deaad893a39c2ad5243d97dc7fd",
@@ -416,45 +416,45 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 		},
 		{
 			defaultWorkerImage:     "dist.custom.registry.io:5000/brigade/worker:d454e0a8cfd92deaad893a39c2ad5243d97dc7fd",
-			projectWorkerImageReg:  "deis",
+			projectWorkerImageReg:  "mcr.microsoft.com/deis",
 			projectWorkerImageName: "brigade-worker",
 			projectWorkerImageTag:  "latest",
-			expWorkerImage:         "deis/brigade-worker:latest",
+			expWorkerImage:         "mcr.microsoft.com/deis/brigade-worker:latest",
 		},
 		{
-			defaultWorkerImage:     "deis/brigade-worker:latest",
+			defaultWorkerImage:     "mcr.microsoft.com/deis/brigade-worker:latest",
 			projectWorkerImageReg:  "myrepo",
 			projectWorkerImageName: "brigade-worker-with-deps",
 			projectWorkerImageTag:  "canary",
 			expWorkerImage:         "myrepo/brigade-worker-with-deps:canary",
 		},
 		{
-			defaultWorkerImage:    "deis/brigade-worker:latest",
+			defaultWorkerImage:    "mcr.microsoft.com/deis/brigade-worker:latest",
 			projectWorkerImageTag: "d454e0a8cfd92deaad893a39c2ad5243d97dc7fd",
-			expWorkerImage:        "deis/brigade-worker:d454e0a8cfd92deaad893a39c2ad5243d97dc7fd",
+			expWorkerImage:        "mcr.microsoft.com/deis/brigade-worker:d454e0a8cfd92deaad893a39c2ad5243d97dc7fd",
 		},
 		{
-			defaultWorkerImage:     "deis/brigade-worker:latest",
+			defaultWorkerImage:     "mcr.microsoft.com/deis/brigade-worker:latest",
 			projectWorkerImageReg:  "dist.custom.registry.io:5000",
 			projectWorkerImageName: "brigade/worker",
 			expWorkerImage:         "dist.custom.registry.io:5000/brigade/worker:latest",
 		},
 		{
-			defaultWorkerImage:     "deis/brigade-worker:latest",
-			projectWorkerImageReg:  "customregsitry",
+			defaultWorkerImage:     "mcr.microsoft.com/deis/brigade-worker:latest",
+			projectWorkerImageReg:  "customregistry",
 			projectWorkerImageName: "brigade-worker",
 			projectWorkerImageTag:  "1234567890",
-			expWorkerImage:         "customregsitry/brigade-worker:1234567890",
+			expWorkerImage:         "customregistry/brigade-worker:1234567890",
 		},
 		{
-			defaultWorkerImage:     "deis/brigade-worker:latest",
+			defaultWorkerImage:     "mcr.microsoft.com/deis/brigade-worker:latest",
 			projectWorkerImageName: "azure/brigade-worker",
 			projectWorkerImageTag:  "1234567890",
 			expWorkerImage:         "azure/brigade-worker:1234567890",
 		},
 		{
-			defaultWorkerImage: "deis/brigade-worker",
-			expWorkerImage:     "deis/brigade-worker:latest",
+			defaultWorkerImage: "mcr.microsoft.com/deis/brigade-worker",
+			expWorkerImage:     "mcr.microsoft.com/deis/brigade-worker:latest",
 		},
 	}
 

@@ -117,7 +117,7 @@ Say we want to provide an XML parser to our Brigade scripts. We can do that
 using a `Dockerfile`:
 
 ```Dockerfile
-FROM deis/brigade-worker:latest
+FROM mcr.microsoft.com/deis/brigade-worker:latest
 
 RUN yarn add xml-simple
 ```
@@ -247,7 +247,7 @@ exports.alpineJob = function(name) {
 We can build this file into our Dockerfile by copying it into the image:
 
 ```
-FROM deis/brigade-worker:latest
+FROM mcr.microsoft.com/deis/brigade-worker:latest
 
 RUN yarn add xml-simple
 COPY mylib.js /home/src/dist

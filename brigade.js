@@ -171,6 +171,7 @@ function acrBuild(e, project, tag) {
   goBuild.tasks.push("ls -lah /mnt/brigade/share");
 
   let registry = "brigade"
+  let acrImagePrefix = "public/deis/"
   var builder = new Job("az-build", "microsoft/azure-cli:latest")
   builder.storage.enabled = true;
   builder.tasks = [
@@ -182,13 +183,14 @@ function acrBuild(e, project, tag) {
 
   // For each image we want to build, build it, then tag it latest, then post it to registry.
   for (let i of images) {
-    let imgName = i+":"+tag;
-    let latest = i+":latest";
+    let imgName = acrImagePrefix+i;
+    let tagged = imgName+":"+tag;
+    let latest = imgName+":latest";
     builder.tasks.push(
       `cd ${i}`,
       `echo '========> Building ${i}'`,
       `cp -av /mnt/brigade/share/${i}/rootfs ./`,
-      `az acr build -r ${registry} -t ${imgName} -t ${latest} .`,
+      `az acr build -r ${registry} -t ${tagged} -t ${latest} .`,
       `echo '<======== Finished ${i}'`,
       `cd ..`
     );

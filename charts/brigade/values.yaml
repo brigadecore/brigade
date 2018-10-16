@@ -38,7 +38,7 @@ rbac:
 
 # controller is the main event processor in Brigade.
 controller:
-  registry: deis
+  registry: mcr.microsoft.com/deis
   name: brigade-controller
   # tag should only be specified if you want to override Chart.appVersion
   # The default tag is the value of .Chart.AppVersion
@@ -53,7 +53,7 @@ controller:
 # brig) may not be able to learn about it.
 api:
   enabled: true
-  registry: deis
+  registry: mcr.microsoft.com/deis
   name: brigade-api
   # tag:
   service:
@@ -75,7 +75,7 @@ api:
 
 # worker is the JavaScript worker. These are created on demand by the controller.
 worker:
-  registry: deis
+  registry: mcr.microsoft.com/deis
   name: brigade-worker
   serviceAccount: 
     create: true
@@ -86,7 +86,7 @@ worker:
 # gw is the GitHub gateway.
 gw:
   enabled: true
-  registry: deis
+  registry: mcr.microsoft.com/deis
   name: brigade-github-gateway
   #tag:
   #pullPolicy: IfNotPresent
@@ -113,7 +113,7 @@ gw:
 # attacks on your cluster.
 cr:
   enabled: false
-  registry: deis
+  registry: mcr.microsoft.com/deis
   name: brigade-cr-gateway
   #tag: latest
   service:
