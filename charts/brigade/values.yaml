@@ -61,10 +61,10 @@ api:
     type: ClusterIP
     externalPort: 7745
     internalPort: 7745
-  # Configure liveness probes except `httpGet` and the belongings
+  # Configure liveness probes except `httpGet`
   #livenessProbe:
   #  initialDelaySeconds: 20
-  # Configure readiness probes except `httpGet` and the belongings
+  # Configure readiness probes except `httpGet`
   #readinessProbe:
   #  initialDelaySeconds: 20
   ingress:
@@ -121,6 +121,12 @@ cr:
     type: ClusterIP  # Change to LoadBalancer if you want this externally available.
     externalPort: 80
     internalPort: 8000
+  # Configure liveness probes except `httpGet`
+  #livenessProbe:
+  #  initialDelaySeconds: 20
+  # Configure readiness probes except `httpGet`
+  #readinessProbe:
+  #  initialDelaySeconds: 20
 
 # The vacuum periodically cleans up old builds.
 # Brigade does not delete builds on completion. Instead, it leaves builds around
@@ -161,6 +167,12 @@ service:
   type: LoadBalancer
   externalPort: 7744
   internalPort: 7744
+  # Configure liveness probes except `httpGet`
+  #livenessProbe:
+  #  initialDelaySeconds: 20
+  # Configure readiness probes except `httpGet`
+  #readinessProbe:
+  #  initialDelaySeconds: 20
 # By default, this is off. If you enable it, you might want to change the
 # service.type to ClusterIP
 ingress:
