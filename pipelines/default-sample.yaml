@@ -3,20 +3,14 @@ kind: Pipeline
 metadata:
   name: build-my-app
 spec:
-  name: default-pipeline
-  description: "This is the default pipeline sample"
-  namespace: default
-  phases:
-    - name: kaniko-build
+  events:
+  - name: push
+    description: "This runs every time code is pushed to the repo"
+    spec:
+      name: default-pipeline
+      namespace: default
       params:
         - name: imageTag
-          value: "test-build:{{Build-ID}}"
-        - name: registry-secret
-          value: acr-creds
-    # - name: deploy
-    #   params:
-    #     - name: image
-    #       value:
-    #         fromComponentRef:
-    #           - name: kaniko-build
-    #             value: imageTag
+          value: "chaos.azurecr.io/testimage:v1"
+        - name: dockerFile
+          value: "./Dockerfile"

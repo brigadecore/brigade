@@ -43,7 +43,7 @@ func listPipelineDefinitions(out io.Writer) error {
 	table.AddRow("NAME", "DESCRIPTION", "STEPS")
 
 	for _, d := range definitions {
-		table.AddRow(d.Name, d.Spec.Description, len(d.Spec.Pipeline))
+		table.AddRow(d.Name, d.Spec.Description, len(d.Spec.Phases))
 	}
 
 	fmt.Fprintln(out, table)

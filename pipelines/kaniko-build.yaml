@@ -4,7 +4,7 @@ metadata:
   name: kaniko-build
 spec:
   params:
-    - name: dockerfile
+    - name: dockerFile
       type: string
     - name: imageTag
       type: string
@@ -13,7 +13,7 @@ spec:
   template:
     image: gcr.io/kaniko-project/executor:latest
     args:
-      - --dockerfile={{dockerfile}}
+      - --dockerfile={{dockerFile}}
       - --destination={{imageTag}}
     env:
       - name: CREDS

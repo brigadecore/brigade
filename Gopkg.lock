@@ -274,6 +274,14 @@
   revision = "bf9dde6d0d2c004a008c27aaee91170c786f6db8"
 
 [[projects]]
+  branch = "master"
+  digest = "1:67bcf41677f33b22aee1b82e9460aa093a96cfe4877445dd19ea950c200a47ab"
+  name = "github.com/iancoleman/strcase"
+  packages = ["."]
+  pruneopts = ""
+  revision = "3605ed457bf7f8caa1371b4fafadadc026673479"
+
+[[projects]]
   digest = "1:af7e132906cb360f4d7c34a9e1434825467f21c4ff5c521ad4cc5b55352876a8"
   name = "github.com/imdario/mergo"
   packages = ["."]
@@ -748,6 +756,7 @@
     "github.com/go-openapi/spec",
     "github.com/google/go-github/github",
     "github.com/gosuri/uitable",
+    "github.com/iancoleman/strcase",
     "github.com/oklog/ulid",
     "github.com/spf13/cobra",
     "golang.org/x/oauth2",

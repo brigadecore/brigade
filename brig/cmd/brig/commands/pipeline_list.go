@@ -47,7 +47,7 @@ func listPipelines(out io.Writer) error {
 	table.AddRow("NAME", "DESCRIPTION")
 
 	for _, d := range pipelines {
-		table.AddRow(d.Name, d.Spec.Description)
+		table.AddRow(d.Name)
 	}
 	fmt.Fprintln(out, table)
 	return nil

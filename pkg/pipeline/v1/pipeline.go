@@ -15,12 +15,23 @@ type Pipeline struct {
 	Spec               PipelineSpec `json:"spec" yaml:"spec"`
 }
 
-//PipelineSpec describes a pipeline
+//PipelineSpec describes the pipelines for various triggers
 type PipelineSpec struct {
-	Name        string          `json:"name"`
-	Namespace   string          `json:"namespace,omitempty"`
-	Description string          `json:"description,omitempty"`
-	Phases      []PipelinePhase `json:"phases"`
+	Events []PipelineTriggerEvent `json:"events"`
+}
+
+//PipelineTriggerEvent describes which pipeline to run on a trigger ie. push, pull_request, etc
+type PipelineTriggerEvent struct {
+	Name        string            `json:"name"`
+	Description string            `json:"description,omitempty"`
+	Spec        PipelineEventSpec `json:"spec"`
+}
+
+//PipelineEventSpec describes a pipeline for a trigger event
+type PipelineEventSpec struct {
+	Name      string              `json:"name"`
+	Namespace string              `json:"namespace,omitempty"`
+	Params    []PipelineParameter `json:"params"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -30,13 +41,6 @@ type PipelineList struct {
 	meta_v1.TypeMeta `json:",inline" yaml:",inline"`
 	meta_v1.ListMeta `json:"metadata" yaml:"metadata"`
 	Items            []Pipeline `json:"items" yaml:"items"`
-}
-
-//PipelinePhase describes a phase in the pipeline
-type PipelinePhase struct {
-	Name      string              `json:"name"`
-	Namespace string              `json:"namespace,omitempty"`
-	Params    []PipelineParameter `json:"params"`
 }
 
 //PipelineParameter describes a input value to the specified pipeline

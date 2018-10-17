@@ -76,6 +76,16 @@ func (c *PipelineClient) GetPipeline(name string, namespace string) (*v1.Pipelin
 	return pipeline, nil
 }
 
+//GetPipelineComponentFrom retrieves a PipelineComponent or other Pipeline from the specified pipeline definition
+func (c *PipelineClient) GetPipelineComponentFrom(definition *v1.PipelineDefinition, name string) (meta_v1.Object, error) {
+	for _, componentSource := range definition.Spec.Phases {
+		if componentSource.Name == name && componentSource.ValueFrom == nil {
+			return c.GetPipelineComponent(name, componentSource.Namespace)
+		}
+	}
+	return nil, fmt.Errorf("Could not find component %s", name)
+}
+
 //New creates a new PipelineClient
 func New(config *rest.Config) (*PipelineClient, error) {
 	clientset, err := pipeclient.NewForConfig(config)

@@ -3,7 +3,15 @@ kind: PipelineDefinition
 metadata:
   name: default-pipeline
 spec:
-  pipeline:
+  description: "This is a sample pipeline definition"
+  params:
+    - name: imageTag
+      kind: string
+    - name: dockerFile
+      kind: string
+  phases:
     - name: kaniko-build
-      mandatory: true
-      kind: PipelineComponent #make this the default so it doesnt need to be specified everytime
+      namespace: default
+      params:
+        - name: imageTag
+          valueFromParam: imageTag
