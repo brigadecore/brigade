@@ -6,9 +6,11 @@ spec:
   description: "This is a sample pipeline definition"
   params:
     - name: imageTag
-      kind: string
+      type: string
+      description: "Name of the resulting Docker image"
     - name: dockerFile
-      kind: string
+      type: string
+      description: "Path to the Dockerfile"
   phases:
     - name: kaniko-build
       namespace: default

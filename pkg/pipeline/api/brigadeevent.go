@@ -59,21 +59,30 @@ func (e *BrigadeEvent) gatherParameters(definition *v1.PipelineDefinition) {
 }
 
 func (e *BrigadeEvent) createJobs(definition *v1.PipelineDefinition) {
+	var jobList []string
 	for _, phase := range definition.Spec.Phases {
-		e.createJob(definition, phase)
+		jobName, err := e.createJob(definition, phase)
+		if err != nil {
+			fmt.Printf("Error creating job: %v", err)
+			break
+		}
+
+		jobList = append(jobList, jobName)
 	}
+	e.createPipeline(jobList)
 }
 
-func (e *BrigadeEvent) createJob(definition *v1.PipelineDefinition, componentSource v1.PipelineComponentSource) {
+func (e *BrigadeEvent) createJob(definition *v1.PipelineDefinition, componentSource v1.PipelineComponentSource) (string, error) {
 	component, err := e.PipelineAPI.GetPipelineComponentFrom(definition, componentSource.Name)
 	if err != nil {
-		fmt.Printf("Error building script: %v", err)
-		return
+
+		return "", fmt.Errorf("Error building script: %v", err)
 	}
 
+	jobName := ""
 	switch t := component.(type) {
 	case *v1.PipelineComponent:
-		jobName := strcase.ToLowerCamel(t.Name)
+		jobName = strcase.ToLowerCamel(t.Name)
 		fmt.Fprintf(&e.builder, "\tvar %s = new Job('%s');\n", jobName, t.Name)
 		fmt.Fprintf(&e.builder, "\t%s.image = '%s';\n", jobName, t.Spec.Template.Image)
 		fmt.Fprintf(&e.builder, "\t%s.args = [\n", jobName)
@@ -84,4 +93,14 @@ func (e *BrigadeEvent) createJob(definition *v1.PipelineDefinition, componentSou
 
 	case *v1.PipelineDefinition:
 	}
+
+	return jobName, nil
+}
+
+func (e *BrigadeEvent) createPipeline(jobs []string) {
+	e.builder.WriteString("\n\tvar pipeline = new Group();\n")
+	for _, jobName := range jobs {
+		fmt.Fprintf(&e.builder, "\tpipeline.add(%s);\n", jobName)
+	}
+	e.builder.WriteString("\tpipeline.runEach();")
 }

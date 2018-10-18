@@ -43,6 +43,7 @@ type PipelineComponentList struct {
 
 //ParameterDefinition defines an configurable parameter for the pipeline component
 type ParameterDefinition struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
 }

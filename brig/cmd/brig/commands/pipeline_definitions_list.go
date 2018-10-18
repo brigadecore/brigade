@@ -40,10 +40,10 @@ func listPipelineDefinitions(out io.Writer) error {
 	}
 	definitions, err := client.GetPipelineDefinitions("")
 	table := uitable.New()
-	table.AddRow("NAME", "DESCRIPTION", "STEPS")
+	table.AddRow("NAME", "DESCRIPTION")
 
 	for _, d := range definitions {
-		table.AddRow(d.Name, d.Spec.Description, len(d.Spec.Phases))
+		table.AddRow(d.Name, d.Spec.Description)
 	}
 
 	fmt.Fprintln(out, table)
