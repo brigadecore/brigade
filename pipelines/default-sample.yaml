@@ -13,4 +13,6 @@ spec:
         - name: imageTag
           value: "chaos.azurecr.io/testimage:v1"
         - name: dockerFile
-          value: "./Dockerfile"
+          value: "/src/Dockerfile"
+        - name: buildContext
+          value: "/src"

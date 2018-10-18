@@ -10,10 +10,13 @@ spec:
       type: string
     - name: registry-secret
       type: string
+    - name: buildContext
+      type: string
   template:
     image: gcr.io/kaniko-project/executor:latest
     args:
       - --dockerfile={{dockerFile}}
+      - --context={{buildContext}}
       - --destination={{imageTag}}
     env:
       - name: CREDS

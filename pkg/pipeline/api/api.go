@@ -70,6 +70,7 @@ func (c *PipelineClient) GetPipelines(namespace string) ([]v1.Pipeline, error) {
 func (c *PipelineClient) GetPipeline(name string, namespace string) (*v1.Pipeline, error) {
 	pipeline, err := c.client.PipelineV1().Pipelines(namespace).Get(name, meta_v1.GetOptions{})
 	if err != nil {
+		fmt.Printf("Error: %v", err)
 		return nil, err
 	}
 

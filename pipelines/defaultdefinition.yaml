@@ -11,9 +11,16 @@ spec:
     - name: dockerFile
       type: string
       description: "Path to the Dockerfile"
+    - name: buildContext
+      type: string
+      description: "Path to folder containing source"
   phases:
     - name: kaniko-build
       namespace: default
       params:
         - name: imageTag
           valueFromParam: imageTag
+        - name: buildContext
+          valueFromParam: buildContext
+        - name: dockerFile
+          valueFromParam: dockerFile

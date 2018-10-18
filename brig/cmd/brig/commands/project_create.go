@@ -458,6 +458,14 @@ func projectAdvancedPrompts(p *brigade.Project) error {
 				Default: p.DefaultScriptName,
 			},
 		},
+		{
+			Name: "pipeline",
+			Prompt: &survey.Input{
+				Message: "Pipeline",
+				Help:    "EXPERT: It is possible to use a declarative pipeline instead of a script. Supply the name of that pipeline.",
+				Default: p.Pipeline,
+			},
+		},
 	}, p); err != nil {
 		return fmt.Errorf(abort, err)
 	}

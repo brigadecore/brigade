@@ -10,6 +10,9 @@ import (
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/clientcmd"
+
+	pipelineapi "github.com/Azure/brigade/pkg/pipeline/api"
 
 	"github.com/Azure/brigade/pkg/storage/kube"
 )
@@ -136,6 +139,10 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) v1.Pod {
 
 	if scriptName := project.Data["defaultScriptName"]; len(scriptName) > 0 {
 		attachConfigMap(&spec, string(scriptName), "/etc/brigade-default-script")
+	}
+
+	if pipelineName := project.Data["pipeline"]; len(pipelineName) > 0 {
+		c.generateScriptFromPipeline(&spec, build, string(pipelineName))
 	}
 
 	// Skip adding the sidecar pod if no sidecar pod image is supplied.
@@ -267,4 +274,50 @@ func attachConfigMap(spec *v1.PodSpec, name, path string) {
 				MountPath: path,
 			})
 	}
+}
+
+func (c *Controller) generateScriptFromPipeline(spec *v1.PodSpec, build *v1.Secret, name string) {
+	config, _ := clientcmd.BuildConfigFromFlags("", "")
+	client, err := pipelineapi.New(config)
+	if err != nil {
+		log.Fatalf("Failed to create pipeline api client: %v", err)
+		fmt.Printf("Failed to create pipeline api client: %v", err)
+		return
+	}
+
+	script, err := client.GenerateScript(name, c.Config.Namespace)
+	if err != nil {
+		log.Fatalf("Failed to generate script: %v", err)
+	}
+
+	trueVar := true
+	configMapName := build.Name + "-script"
+	configMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: configMapName,
+			OwnerReferences: []metav1.OwnerReference{
+				metav1.OwnerReference{
+					APIVersion: "v1",
+					Kind:       "Secret",
+					Name:       build.Name,
+					UID:        build.UID,
+					Controller: &trueVar,
+				},
+			},
+		},
+		Data: map[string]string{
+			"brigade.js": script,
+		},
+	}
+
+	existingCm, _ := c.clientset.CoreV1().ConfigMaps(c.Config.Namespace).Get(configMapName, metav1.GetOptions{})
+	if existingCm != nil {
+		c.clientset.CoreV1().ConfigMaps(c.Config.Namespace).Delete(configMapName, &metav1.DeleteOptions{})
+	}
+
+	cm, err := c.clientset.Core().ConfigMaps(c.Config.Namespace).Create(configMap)
+	if err != nil {
+		log.Fatalf("Failed to create configmap for script: %v", err)
+	}
+	attachConfigMap(spec, cm.Name, "/etc/brigade-default-script")
 }

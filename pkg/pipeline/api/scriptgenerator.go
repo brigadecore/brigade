@@ -35,9 +35,10 @@ func (builder *BrigadeScriptBuilder) Script() string {
 
 //GenerateScript generates javascript based on declarative pipeline configuration
 func (c *PipelineClient) GenerateScript(pipelineName string, namespace string) (string, error) {
+	fmt.Printf("Generating script from %s in namespace %s", pipelineName, namespace)
 	pipeline, err := c.GetPipeline(pipelineName, namespace)
 	if err != nil {
-		return "", fmt.Errorf("Failed to retrieve %s: %v", pipeline.Name, err)
+		return "", fmt.Errorf("Failed to retrieve %s: %v", pipelineName, err)
 	}
 
 	builder := &BrigadeScriptBuilder{
