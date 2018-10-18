@@ -1,4 +1,4 @@
-apiVersion: brigade.io/v1
+apiVersion: brigade.sh/v1
 kind: PipelineComponent
 metadata:
   name: kaniko-build

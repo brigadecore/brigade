@@ -1,3 +1,3 @@
 package pipeline
 
-const GroupName = "brigade.io"
+const GroupName = "brigade.sh"

@@ -1,4 +1,4 @@
-apiVersion: brigade.io/v1
+apiVersion: brigade.sh/v1
 kind: PipelineDefinition
 metadata:
   name: parameterized-pipeline

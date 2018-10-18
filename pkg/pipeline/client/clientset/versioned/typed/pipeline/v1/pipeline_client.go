@@ -32,7 +32,7 @@ type PipelineV1Interface interface {
 	PipelineDefinitionsGetter
 }
 
-// PipelineV1Client is used to interact with features provided by the pipeline.brigade.io group.
+// PipelineV1Client is used to interact with features provided by the pipeline.brigade.sh group.
 type PipelineV1Client struct {
 	restClient rest.Interface
 }
