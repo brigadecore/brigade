@@ -6,6 +6,19 @@ const { events, Job, Group} = require("brigadier")
 
 const goImg = "golang:1.11"
 
+// TODO: Possible/preferred to use canonical image list in Makefile?
+// Would necessitate looping inside of Job, i.e., within one shell task
+const images = [
+  "brig",
+  "brigade-api",
+  "brigade-controller",
+  "brigade-cr-gateway",
+  "brigade-vacuum",
+  "brigade-worker", // brigade-worker does not have a rootfs. Could probably minify src into one and save space
+  "git-sidecar",
+  "brigade-github-gateway"
+]
+
 function build(e, project) {
   // This is a Go project, so we want to set it up for Go.
   var gopath = "/go"
@@ -52,14 +65,34 @@ function build(e, project) {
       return ghNotify("success", `Build ${ e.buildID } passed`, e, project).run()
    }).then( () => {
     var runRelease = false
-    if (e.type == "push" && e.revision.ref.startsWith("refs/tags/")) {
-      // Run the release in the background.
-      runRelease = true
-      let parts = e.revision.ref.split("/", 3)
-      let tag = parts[2]
-      return acrBuild(e, project, tag).then(() => {
-        releaseBrig(e, project, tag)
-      })
+    if (e.type == "push") {
+      // Push to master: run "latest" release, don't release brig
+      if (e.revision.ref.includes("refs/heads/master")) {
+        runRelease = true
+        return goDockerBuild(project, e.revision.ref).run()
+          .then(() => {
+            Group.runAll([
+              acrBuild(project, "latest"),
+              dockerhubPublish(project, "latest")
+            ])
+          })
+      }
+      // Tag pushed: run tag release, release brig
+      if (e.revision.ref.startsWith("refs/tags/")) {
+        runRelease = true
+        let parts = e.revision.ref.split("/", 3)
+        let tag = parts[2]
+        return goDockerBuild(project, tag).run()
+          .then(() => {
+            Group.runAll([
+              acrBuild(project, tag),
+              dockerhubPublish(project, tag)
+            ])
+          })
+          .then(() => {
+            releaseBrig(project, tag)
+          })
+      }
     }
     return Promise.resolve(runRelease)
   }).catch(err => {
@@ -67,7 +100,7 @@ function build(e, project) {
   });
 }
 
-function releaseBrig(e, p, tag) {
+function releaseBrig(p, tag) {
   if (!p.secrets.ghToken) {
     throw new Error("Project must have 'secrets.ghToken' set")
   }
@@ -116,6 +149,7 @@ function releaseBrig(e, p, tag) {
 
 function ghNotify(state, msg, e, project) {
   const gh = new Job(`notify-${ state }`, "technosophos/github-notify:latest")
+  gh.imageForcePull = true;
   gh.env = {
     GH_REPO: project.repo.name,
     GH_STATE: state,
@@ -128,22 +162,12 @@ function ghNotify(state, msg, e, project) {
   return gh
 }
 
-function acrBuild(e, project, tag) {
+function goDockerBuild(project, tag) {
+  // We build in a separate pod b/c AKS's Docker is too old to do multi-stage builds.
+  const goBuild = new Job("brigade-docker-build", goImg);
   const gopath = "/go"
   const localPath = gopath + "/src/github.com/" + project.repo.name;
-  const images = [
-    "brig",
-    "brigade-api",
-    "brigade-controller",
-    "brigade-cr-gateway",
-    "brigade-vacuum",
-    "brigade-worker", // brigade-worker does not have a rootfs. Could probably minify src into one and save space
-    "git-sidecar",
-    "brigade-github-gateway"
-  ]
 
-  // We build in a separate pod b/c AKS's Docker is too old to do multi-stage builds.
-  const goBuild = new Job("brigade-build", goImg);
   goBuild.storage.enabled = true;
   goBuild.env = {
     "DEST_PATH": localPath,
@@ -170,8 +194,39 @@ function acrBuild(e, project, tag) {
   }
   goBuild.tasks.push("ls -lah /mnt/brigade/share");
 
-  let registry = "brigade"
+  return goBuild;
+}
+
+function dockerhubPublish(project, tag) {
+  const publisher = new Job("dockerhub-publish", "docker");
+  let dockerRegistry = project.secrets.dockerhubRegistry || "docker.io";
+  let dockerOrg = project.secrets.dockerhubOrg || "deis";
+
+  publisher.docker.enabled = true;
+  publisher.storage.enabled = true;
+  publisher.tasks = [
+    "apk add --update --no-cache make",
+    `docker login ${dockerRegistry} -u ${project.secrets.dockerhubUsername} -p ${project.secrets.dockerhubPassword}`,
+    "cd /src"
+  ];
+
+  for (let i of images) {
+      publisher.tasks.push(
+        `cp -av /mnt/brigade/share/${i}/rootfs ./${i}`,
+        `DOCKER_REGISTRY=${dockerOrg} VERSION=${tag} make ${i}-image ${i}-push`
+      );
+  }
+  publisher.tasks.push(`docker logout ${dockerRegistry}`);
+
+  return publisher;
+}
+
+function acrBuild(project, tag) {
+  const acrImagePrefix = "public/deis/"
+
+  let registry = project.secrets.acrRegistry || "brigade"
   var builder = new Job("az-build", "microsoft/azure-cli:latest")
+  builder.imageForcePull = true;
   builder.storage.enabled = true;
   builder.tasks = [
     // Create a service principal and assign it proper perms on the ACR.
@@ -180,20 +235,21 @@ function acrBuild(e, project, tag) {
     `mkdir -p ./bin`
   ]
 
-  // For each image we want to build, build it, then tag it latest, then post it to registry.
+  // For each image, build, tag and finally push to registry
   for (let i of images) {
-    let imgName = i+":"+tag;
-    let latest = i+":latest";
+    let imgName = acrImagePrefix+i;
+    let tagged = imgName+":"+tag;
+
     builder.tasks.push(
       `cd ${i}`,
       `echo '========> Building ${i}'`,
       `cp -av /mnt/brigade/share/${i}/rootfs ./`,
-      `az acr build -r ${registry} -t ${imgName} -t ${latest} .`,
+      `az acr build -r ${registry} -t ${tagged} .`,
       `echo '<======== Finished ${i}'`,
       `cd ..`
     );
   }
-  return Group.runEach([goBuild, builder]);
+  return builder;
 }
 
 events.on("push", build)
@@ -208,7 +264,7 @@ events.on("release_brig", (e, p) => {
     throw error("No tag specified")
   }
 
-  releaseBrig(e, p, payload.tag)
+  releaseBrig(p, payload.tag)
 })
 
 events.on("release_images", (e, p) => {
@@ -219,7 +275,14 @@ events.on("release_images", (e, p) => {
   if (!payload.tag) {
     throw error("No tag specified")
   }
-  acrBuild(e, p, payload.tag)
+
+  goDockerBuild(p, payload.tag).run()
+    .then(() => {
+      Group.runAll([
+        acrBuild(p, payload.tag),
+        dockerhubPublish(p, payload.tag)
+      ])
+    });
 })
 
 events.on("image_push", (e, p) => {
