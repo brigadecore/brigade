@@ -74,6 +74,7 @@ build-chart:
 test: test-style
 test: test-unit
 test: test-js
+test: test-chart
 
 # Unit tests. Local only.
 .PHONY: test-unit
@@ -109,6 +110,10 @@ test-js:
 .PHONY: test-style
 test-style:
 	gometalinter --config ./gometalinter.json ./...
+
+.PHONY: test-chart
+test-chart:
+	helm lint ./charts/*
 
 .PHONY: format
 format: format-go format-js
