@@ -55,14 +55,22 @@ An instance of an `BrigadeEvent` has the following properties:
 - `buildID: string`: The unique ID for the build. This will change for each build.
 - `type: string`: The event type (`push`, `exec`, `pull_request`).
 - `provider: string`: The name of the thing that triggered this event.
-- `commit: string`: The commit ID, if supplied, for the underlying VCS system. When this is
-  supplied, each Job will have access to the VCS _at this revision_.
+- `revision: Revision`: The revision details, if supplied, of the underlying VCS system.  
 - `payload: string`: Arbitrary data supplied by an event emitter. Each event emitter
   will describe its own payload. For example, the GitHub gateway emits events that
   contain GitHub's webhook objects.
 - `cause: Cause`: If one event triggers another event, the causal chain is passed
   through the `cause` property
 
+### The `revision` object
+
+The `revision` object has the following properties:
+
+- `commit: string`: The commit ID, if supplied, for the underlying VCS system. When this is supplied, each Job will have access to the VCS at this revision.
+- `ref: string`: The symbolic ref name. (e.g `refs/heads/master`)
+
+If the `revision` object is not provided, it may be interpreted as `master`, or the head of the main branch.
+_The default value is not guaranteed to be `master` in future versions._
 
 #### The `Cause` class
 
@@ -283,7 +291,7 @@ Properties:
 
 - `type`: The event type (e.g. `push`)
 - `provider`: The entity that caused the event (`github`)
-- `commit`: The commit ID that this script should operate on.
+- `revision`: The [Revision](#the-revision-object) object containing details for the commit that this script should operate on.
 - `payload`: The object received from the event trigger. For GitHub requests, its
   the data we get from GitHub.
 
@@ -307,13 +315,13 @@ Properties:
 - `tasks`: An array of commands to run for this job
 - `shell`: The terminal emulator that job tasks will be executed under. By default,
   this is /bin/sh
-- `env`: Key/value pairs or Kubernetes value references that will be injected into the environment. 
+- `env`: Key/value pairs or Kubernetes value references that will be injected into the environment.
   - If supplying key/value, the key is the variable name (`MY_VAR`), and the value is the string value (`foo`)
   - If you are referencing existing Secrets or ConfigMaps in your Kubernetes cluster, the `env` object key
     will be your secret name, and the value will be a Kubernetes reference object. `fieldRef`, `secretKeyRef`,
     and `configMapKeyRef` are accepted. `resourceFieldRef` is technically supported but not advised, since resources
     are not generally specified for Brigade jobs.
-  - Example: 
+  - Example:
     ```javascript
     myJob.env = {
         myOneOffSecret: "secret value",
