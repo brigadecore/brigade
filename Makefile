@@ -129,6 +129,14 @@ format-js:
 HAS_GOMETALINTER := $(shell command -v gometalinter;)
 HAS_DEP          := $(shell command -v dep;)
 HAS_GIT          := $(shell command -v git;)
+HAS_YARN         := $(shell command -v yarn;)
+
+.PHONY: bootstrap-js
+bootstrap-js:
+ifndef HAS_YARN
+	$(error You must install yarn)
+endif
+	cd brigade-worker && yarn install
 
 vendor:
 ifndef HAS_GIT
