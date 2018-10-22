@@ -22,7 +22,7 @@ This document covers development of `brigade-controller`, `brigade-server`, and
 - Minikube
 - Docker
 - make
-- Node.js and NPM
+- Node.js, Yarn and NPM
 
 ## Clone the Repository In GOPATH
 
@@ -61,6 +61,28 @@ To build Docker images, run:
 ```
 $ make docker-build
 ```
+
+## Javascript Bootstrap/Test
+
+To bootstrap the Javascript dependencies required by Brigade Worker:
+
+```
+$ make bootstrap-js
+```
+
+To format the Javascript files:
+
+```
+$ make format-js
+```
+
+To run the tests:
+
+```
+$ make test-js
+```
+
+(See `Running the Brigade-Worker Locally` below for live testing against a running instance.)
 
 ## Minikube configuration
 
