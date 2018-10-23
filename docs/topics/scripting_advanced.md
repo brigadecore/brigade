@@ -1,10 +1,10 @@
 # Advanced Scripting Guide
 
 This guide provides some tips and ideas for advanced scripting. It assumes that
-you are familier with [the scripting guide](scripting.md) and the 
+you are familiar with [the scripting guide](scripting.md) and the 
 [JavaScript API](javascript.md).
 
-## Using `async` and `await` to Run Jobs
+## Using `async` and `await` to run Jobs
 
 Recent versions of JavaScript added a new way of declaring asynchronous methods, and then calling them. This way is compatible with promises. Brigade supports the new `async` and `await` decorators.
 
@@ -181,4 +181,4 @@ hello
 world
 ```
 
-Job `j1` has our extra command, while `j2` only inhereted the defaults from `MyJob`.
+Job `j1` has our extra command, while `j2` only inherited the defaults from `MyJob`.
