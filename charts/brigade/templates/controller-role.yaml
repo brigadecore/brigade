@@ -5,7 +5,7 @@ kind: ServiceAccount
 metadata:
   name: {{ $fname }}
   labels:
-    app: {{ template "brigade.fullname" . }}
+    app.kubernetes.io/name: {{ template "brigade.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -16,7 +16,7 @@ apiVersion: {{ template "brigade.rbac.version" }}
 metadata:
   name: {{ $fname }}
   labels:
-    app: {{ template "brigade.fullname" . }}
+    app.kubernetes.io/name: {{ template "brigade.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -30,7 +30,7 @@ apiVersion: {{ template "brigade.rbac.version" }}
 metadata:
   name: {{ $fname }}
   labels:
-    app: {{ template "brigade.fullname" . }}
+    app.kubernetes.io/name: {{ template "brigade.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"

@@ -17,7 +17,7 @@ spec:
     protocol: TCP
     name: {{ .Values.service.name }}
   selector:
-    app: {{ template "brigade.fullname" . }}
+    app.kubernetes.io/name: {{ template "brigade.fullname" . }}
     role: gateway
     type: github
 {{ end }}

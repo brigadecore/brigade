@@ -7,7 +7,7 @@ kind: Ingress
 metadata:
   name: {{ $serviceName }}
   labels:
-    app: {{ template "brigade.fullname" . }}
+    app.kubernetes.io/name: {{ template "brigade.fullname" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}

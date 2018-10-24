@@ -16,5 +16,5 @@ spec:
     protocol: TCP
     name: {{ .Values.api.service.name }}
   selector:
-    app: {{ template "brigade.api.fullname" . }}
+    app.kubernetes.io/name: {{ template "brigade.api.fullname" . }}
 {{ end }}

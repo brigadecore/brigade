@@ -5,7 +5,7 @@ kind: Deployment
 metadata:
   name: {{ $fullname }}
   labels:
-    app: {{ template "brigade.fullname" . }}
+    app.kubernetes.io/name: {{ template "brigade.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -16,7 +16,7 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ template "brigade.fullname" . }}
+        app.kubernetes.io/name: {{ template "brigade.fullname" . }}
         role: gateway
         type: github
     spec:
