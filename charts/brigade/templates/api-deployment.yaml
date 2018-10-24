@@ -5,7 +5,7 @@ metadata:
   name: {{ template "brigade.fullname" . }}-api
   labels:
     app.kubernetes.io/name: {{ template "brigade.fullname" . }}-api
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     role: api

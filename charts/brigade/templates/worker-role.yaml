@@ -8,7 +8,7 @@ metadata:
   name: {{ $serviceAccount }}
   labels:
     app.kubernetes.io/name: {{ template "brigade.fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 {{ if .Values.rbac.enabled }}
@@ -19,7 +19,7 @@ metadata:
   name: {{ $fname }}
   labels:
     app.kubernetes.io/name: {{ template "brigade.fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 rules:
@@ -36,7 +36,7 @@ metadata:
   name: {{ $fname }}
   labels:
     app.kubernetes.io/name: {{ template "brigade.fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 subjects:

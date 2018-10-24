@@ -5,7 +5,7 @@ metadata:
   name: {{ $fullname }}
   labels:
     app.kubernetes.io/name: {{ $fullname }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     role: controller
