@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/name: {{ template "brigade.fullname" . }}
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     app.kubernetes.io/instance: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app.kubernetes.io/managed-by: "{{ .Release.Service }}"
 {{ if .Values.rbac.enabled }}
 ---
 kind: Role
@@ -22,7 +22,7 @@ metadata:
     app.kubernetes.io/name: {{ template "brigade.fullname" . }}
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     app.kubernetes.io/instance: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app.kubernetes.io/managed-by: "{{ .Release.Service }}"
 rules:
 - apiGroups: [""] # "" indicates the core API group
   resources: ["pods", "secrets", "persistentvolumeclaims"]
@@ -39,7 +39,7 @@ metadata:
     app.kubernetes.io/name: {{ template "brigade.fullname" . }}
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     app.kubernetes.io/instance: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app.kubernetes.io/managed-by: "{{ .Release.Service }}"
 subjects:
 - kind: ServiceAccount
   name: {{ $serviceAccount }}

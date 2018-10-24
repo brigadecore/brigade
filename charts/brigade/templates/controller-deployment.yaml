@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: {{ $fullname }}
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     app.kubernetes.io/instance: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app.kubernetes.io/managed-by: "{{ .Release.Service }}"
     role: controller
 spec:
   replicas: 1
