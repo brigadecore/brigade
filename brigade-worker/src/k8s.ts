@@ -281,6 +281,11 @@ export class JobRunner implements jobs.JobRunner {
             }
           }
         } as kubernetes.V1EnvVar);
+      } else if (val === null) {
+        envVars.push({
+          name: key,
+          value: ""
+        } as kubernetes.V1EnvVar); 
       } else {
         // For environmental variables that are directly references,
         // add the reference to the env var list.
