@@ -59,6 +59,24 @@ Only the following volume drivers are tested:
 
 We believe Gluster will work, but it's untested.
 
+## Examples
+
+### Azure File Setup
+
+As an example, if one has a Kubernetes cluster on [Azure](https://azure.microsoft.com/en-us/services/kubernetes-service/),
+and the `default` storageclass is of the non-`readWriteMany`-compatible `kubernetes.io/azure-disk` variety, one can create
+an Azure File storageclass and then configure the Brigade project to use this instead of `default`.
+
+See the official [Azure File storageclass example](https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-file)
+for the yaml to use.  _(Hint: The parameters section can be omitted altogether and Azure will use the defaults associated
+with the existing Kubernetes cluster.)_
+
+Create the resource via `kubectl create -f azure-file-storage-class.yaml`.
+
+Finally, be sure to set `kubernetes.buildStorageClass=azurefile` on the Brigade project Helm release, or via the "Advanced" set up
+if creating via the `brig` cli.
+
+
 ## Errata
 
 - At this point, cache PVCs are never destroyed, even if the project to which
