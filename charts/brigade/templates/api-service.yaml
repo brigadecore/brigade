@@ -5,7 +5,7 @@ metadata:
   name: {{ template "brigade.api.fullname" . }}
   labels:
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    release: "{{ .Release.Name }}"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     role: api
 spec:

@@ -7,7 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/name: {{ template "brigade.fullname" . }}
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    release: "{{ .Release.Name }}"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     role: vacuum
 spec:
