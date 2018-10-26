@@ -157,10 +157,7 @@ func createProject(out io.Writer) error {
 	}
 
 	// Store the project
-	if err := store.CreateProject(proj); err != nil {
-		return err
-	}
-	return nil
+	return store.CreateProject(proj)
 }
 
 // projectCreatePrompts handles all of the prompts.
