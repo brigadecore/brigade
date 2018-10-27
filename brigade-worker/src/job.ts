@@ -243,7 +243,7 @@ export abstract class Job {
   ) {
     if (!jobNameIsValid(name)) {
       throw new Error(
-        "job name must be letters, numbers, and '-', and must not start or end with '-'"
+        "job name must be letters, numbers, and '-', and must not start or end with '-', having max length 36"
       );
     }
     this.name = name.toLocaleLowerCase();
@@ -270,5 +270,5 @@ export abstract class Job {
  * jobNameIsValid checks the validity of a job's name.
  */
 export function jobNameIsValid(name: string): boolean {
-  return /^(([a-z0-9][-a-z0-9.]*)?[a-z0-9])+$/.test(name);
+  return (name.length < 37) && /^(([a-z0-9][-a-z0-9.]*)?[a-z0-9])+$/.test(name);
 }
