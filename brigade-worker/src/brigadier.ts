@@ -52,6 +52,10 @@ export class Job extends jobImpl.Job {
   jr: JobRunner;
 
   run(): Promise<jobImpl.Result> {
+    if (this.name.length > 36) {
+      throw new Error("Job name should not be more than 36 characters");
+    }
+
     this.jr = new JobRunner(this, currentEvent, currentProject);
     this._podName = this.jr.name;
     return this.jr.run().catch(err => {
