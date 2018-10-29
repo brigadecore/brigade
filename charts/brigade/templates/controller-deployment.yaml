@@ -4,17 +4,17 @@ kind: Deployment
 metadata:
   name: {{ $fullname }}
   labels:
-    app: {{ $fullname }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app.kubernetes.io/name: {{ $fullname }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/managed-by: "{{ .Release.Service }}"
     role: controller
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ $fullname }}
+        app.kubernetes.io/name: {{ $fullname }}
         role: controller
     spec:
       serviceAccountName: {{ $fullname }}

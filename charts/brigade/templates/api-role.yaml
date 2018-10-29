@@ -6,10 +6,10 @@ kind: ServiceAccount
 metadata:
   name: {{ $fname }}
   labels:
-    app: {{ template "brigade.fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app.kubernetes.io/name: {{ template "brigade.fullname" . }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/managed-by: "{{ .Release.Service }}"
 {{ if .Values.rbac.enabled }}
 ---
 kind: Role
@@ -17,10 +17,10 @@ apiVersion: {{ template "brigade.rbac.version" }}
 metadata:
   name: {{ $fname }}
   labels:
-    app: {{ template "brigade.fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app.kubernetes.io/name: {{ template "brigade.fullname" . }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/managed-by: "{{ .Release.Service }}"
 rules:
 - apiGroups: [""] # "" indicates the core API group
   resources: ["pods", "secrets", "pods/log"]
@@ -31,10 +31,10 @@ apiVersion: {{ template "brigade.rbac.version" }}
 metadata:
   name: {{ $fname }}
   labels:
-    app: {{ template "brigade.fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app.kubernetes.io/name: {{ template "brigade.fullname" . }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/managed-by: "{{ .Release.Service }}"
 subjects:
 - kind: ServiceAccount
   name: {{ $fname }}

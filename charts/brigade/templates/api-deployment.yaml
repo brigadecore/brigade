@@ -4,17 +4,17 @@ kind: Deployment
 metadata:
   name: {{ template "brigade.fullname" . }}-api
   labels:
-    app: {{ template "brigade.fullname" . }}-api
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app.kubernetes.io/name: {{ template "brigade.fullname" . }}-api
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/managed-by: "{{ .Release.Service }}"
     role: api
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ template "brigade.fullname" . }}-api
+        app.kubernetes.io/name: {{ template "brigade.fullname" . }}-api
         role: api
     spec:
       serviceAccountName: {{ template "brigade.api.fullname" . }}
