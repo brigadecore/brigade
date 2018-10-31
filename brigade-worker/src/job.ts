@@ -150,6 +150,8 @@ export class JobResourceRequest {
  * the Docker container to be run.
  * */
 export abstract class Job {
+  public static readonly MAX_JOB_NAME_LENGTH = 36;
+
   /** name of the job*/
   public name: string;
   /** shell that will be used by default in this job*/
@@ -243,7 +245,8 @@ export abstract class Job {
   ) {
     if (!jobNameIsValid(name)) {
       throw new Error(
-        "job name must be letters, numbers, and '-', and must not start or end with '-', having max length 36"
+        "job name must be letters, numbers, and '-', and must not start or end with '-', having max length " +
+          Job.MAX_JOB_NAME_LENGTH
       );
     }
     this.name = name.toLocaleLowerCase();
@@ -270,5 +273,8 @@ export abstract class Job {
  * jobNameIsValid checks the validity of a job's name.
  */
 export function jobNameIsValid(name: string): boolean {
-  return (name.length < 37) && /^(([a-z0-9][-a-z0-9.]*)?[a-z0-9])+$/.test(name);
+  return (
+    name.length <= Job.MAX_JOB_NAME_LENGTH &&
+    /^(([a-z0-9][-a-z0-9.]*)?[a-z0-9])+$/.test(name)
+  );
 }
