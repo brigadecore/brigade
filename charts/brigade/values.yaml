@@ -38,6 +38,7 @@ rbac:
 
 # controller is the main event processor in Brigade.
 controller:
+  enabled: true
   registry: deis
   name: brigade-controller
   # tag should only be specified if you want to override Chart.appVersion

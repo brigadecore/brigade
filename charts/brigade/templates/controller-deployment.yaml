@@ -1,4 +1,4 @@
-{{ $fullname := include "brigade.ctrl.fullname" . }}
+{{ if .Values.controller.enabled }}{{ $fullname := include "brigade.ctrl.fullname" . }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -37,3 +37,4 @@ spec:
             value: {{ default "brigade-worker" .Values.worker.serviceAccount.name }}
       {{ if .Values.privateRegistry }}imagePullSecrets:
         - name: {{.Values.privateRegistry}}{{ end }}
+{{ end }}
