@@ -92,7 +92,7 @@ gw:
   #pullPolicy: IfNotPresent
   # The author associations who are allowed to have PRs built
   # Classes are: COLLABORATOR, CONTRIBUTOR, OWNER, NONE, MEMBER, FIRST_TIMER, FIRST_TME_CONTRIBUTOR
-  # See https://developer.github.com/v4/reference/enum/commentauthorassociation/
+  # See https://developer.github.com/v4/enum/commentauthorassociation/
   # To completely disable pull request builds, leave this list blank.
   allowedAuthorRoles:
     - OWNER
