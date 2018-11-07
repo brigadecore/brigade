@@ -96,6 +96,14 @@ describe("job", function() {
         j = new mock.MockJob("name");
         assert.equal(j.host.nodeSelector.size, 0);
       });
+      it("longer than expected name", function(done) {
+        try {
+          new mock.MockJob("justmakingthesethirtysevencharacterss");
+          done("Expecting to fail for more than 36 characters");
+        } catch (error) {
+          done();
+        }
+      });
       context("when image is supplied", function() {
         it("sets image property", function() {
           j = new mock.MockJob("my-name", "alpine:3.4");
