@@ -5,19 +5,16 @@ import (
 	"testing"
 
 	"k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestNewWorkerPod_Defaults(t *testing.T) {
 	build := &v1.Secret{}
 	proj := &v1.Secret{}
-	client := fake.NewSimpleClientset()
 	config := &Config{
 		Namespace: v1.NamespaceDefault,
 	}
 
-	c := NewController(client, config)
-	pod := c.newWorkerPod(build, proj)
+	pod := NewWorkerPod(build, proj, config)
 
 	spec := pod.Spec
 	if spec.NodeSelector["beta.kubernetes.io/os"] != "linux" {

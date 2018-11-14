@@ -56,7 +56,7 @@ func (c *Controller) syncSecret(build *v1.Secret) error {
 			return err
 		}
 
-		pod := c.newWorkerPod(build, project)
+		pod := NewWorkerPod(build, project, c.Config)
 		if _, err := podClient.Create(&pod); err != nil {
 			return err
 		}
@@ -73,15 +73,16 @@ func (c *Controller) updateBuildStatus(build *v1.Secret) error {
 	return err
 }
 
-func (c *Controller) newWorkerPod(build, project *v1.Secret) v1.Pod {
-	env := c.workerEnv(project, build)
+// NewWorkerPod returns pod context to create a worker pod
+func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
+	env := workerEnv(project, build, config)
 
 	cmd := []string{"yarn", "-s", "start"}
 	if cmdBytes, ok := project.Data["workerCommand"]; ok && len(cmdBytes) > 0 {
 		cmd = strings.Split(string(cmdBytes), " ")
 	}
 
-	image, pullPolicy := c.workerImageConfig(project)
+	image, pullPolicy := workerImageConfig(project, config)
 
 	buildVolume := v1.VolumeMount{
 		Name:      "brigade-build",
@@ -99,7 +100,7 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) v1.Pod {
 	}
 
 	spec := v1.PodSpec{
-		ServiceAccountName: c.Config.WorkerServiceAccount,
+		ServiceAccountName: config.WorkerServiceAccount,
 		NodeSelector: map[string]string{
 			"beta.kubernetes.io/os": "linux",
 		},
@@ -168,7 +169,7 @@ func (c *Controller) newWorkerPod(build, project *v1.Secret) v1.Pod {
 	}
 }
 
-func (c *Controller) workerImageConfig(project *v1.Secret) (string, string) {
+func workerImageConfig(project *v1.Secret, config *Config) (string, string) {
 	// There isn't a correct way of making a proper distinction between registry,
 	// registry+name or name, examples:
 	//	* azure/brigade-worker:1234
@@ -177,12 +178,12 @@ func (c *Controller) workerImageConfig(project *v1.Secret) (string, string) {
 	// In order to tackle this, registry+name will be the name of the image.
 
 	var name, tag string
-	matches := containerImageRegex.FindStringSubmatch(c.WorkerImage)
+	matches := containerImageRegex.FindStringSubmatch(config.WorkerImage)
 	if len(matches) == 3 {
 		name = matches[1]
 		tag = matches[2]
 	} else { // If no tag then name to default and tag to latest.
-		name = c.WorkerImage
+		name = config.WorkerImage
 		tag = "latest"
 	}
 
@@ -199,14 +200,14 @@ func (c *Controller) workerImageConfig(project *v1.Secret) (string, string) {
 	}
 	image := fmt.Sprintf("%s:%s", name, tag)
 
-	pullPolicy := c.WorkerPullPolicy
+	pullPolicy := config.WorkerPullPolicy
 	if p := sv.String("worker.pullPolicy"); len(p) > 0 {
 		pullPolicy = p
 	}
 	return image, pullPolicy
 }
 
-func (c *Controller) workerEnv(project, build *v1.Secret) []v1.EnvVar {
+func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 	sv := kube.SecretValues(build.Data)
 	return []v1.EnvVar{
 		{Name: "CI", Value: "true"},
@@ -221,7 +222,7 @@ func (c *Controller) workerEnv(project, build *v1.Secret) []v1.EnvVar {
 		{Name: "BRIGADE_REMOTE_URL", Value: string(project.Data["cloneURL"])},
 		{Name: "BRIGADE_WORKSPACE", Value: "/vcs"},
 		{Name: "BRIGADE_PROJECT_NAMESPACE", Value: build.Namespace},
-		{Name: "BRIGADE_SERVICE_ACCOUNT", Value: c.Config.WorkerServiceAccount},
+		{Name: "BRIGADE_SERVICE_ACCOUNT", Value: config.WorkerServiceAccount},
 		{
 			Name:      "BRIGADE_REPO_KEY",
 			ValueFrom: secretRef("sshKey", project),
