@@ -62,7 +62,7 @@ let e: events.BrigadeEvent = {
   provider: process.env.BRIGADE_EVENT_PROVIDER || "unknown",
   revision: {
     commit: process.env.BRIGADE_COMMIT_ID,
-    ref: process.env.BRIGADE_COMMIT_REF || "refs/heads/master"
+    ref: process.env.BRIGADE_COMMIT_REF
   },
   logLevel: logLevel
 };
