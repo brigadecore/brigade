@@ -135,12 +135,22 @@ export class JobDockerMount {
 }
 
 /**
- * JObResourceRequest represents request of the resources
+ * JobResourceRequest represents request of the resources
  */
 export class JobResourceRequest {
   /** cpu requests */
   public cpu: string;
   /** memory requests */
+  public memory: string;
+}
+
+/**
+ * JobResourceLimit represents limit of the resources
+ */
+export class JobResourceLimit {
+  /** cpu limits */
+  public cpu: string;
+  /** memory limits */
   public memory: string;
 }
 
@@ -199,6 +209,9 @@ export abstract class Job {
 
   /** Set the resource requests for the containers */
   public resourceRequests: JobResourceRequest;
+
+  /** Set the resource limits for the containers */
+  public resourceLimits: JobResourceLimit;
 
   /**
    * host expresses expectations about the host the job will run on.
@@ -260,6 +273,7 @@ export abstract class Job {
     this.docker = new JobDockerMount();
     this.host = new JobHost();
     this.resourceRequests = new JobResourceRequest();
+    this.resourceLimits = new JobResourceLimit();
   }
 
   /** run executes the job and then */

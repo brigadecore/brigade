@@ -244,6 +244,7 @@ export class JobRunner implements jobs.JobRunner {
       job.imageForcePull,
       this.serviceAccount,
       job.resourceRequests,
+      job.resourceLimits,
       job.annotations
     );
 
@@ -749,6 +750,7 @@ function newRunnerPod(
   imageForcePull: boolean,
   serviceAccount: string,
   resourceRequests: jobs.JobResourceRequest,
+  resourceLimits: jobs.JobResourceLimit,
   jobAnnotations: { [key: string]: string }
 ): kubernetes.V1Pod {
   let pod = new kubernetes.V1Pod();
@@ -766,14 +768,23 @@ function newRunnerPod(
   c1.command = ["/bin/sh", "/hook/main.sh"];
   c1.imagePullPolicy = imageForcePull ? "Always" : "IfNotPresent";
   c1.securityContext = new kubernetes.V1SecurityContext();
-  if (resourceRequests.cpu && resourceRequests.memory) {
-    let resourceRequirements = new kubernetes.V1ResourceRequirements();
+
+  // Setup pod container resources (requests and limits).
+  let resourceRequirements = new kubernetes.V1ResourceRequirements();
+  if (resourceRequests) {
     resourceRequirements.requests = {
       cpu: resourceRequests.cpu,
       memory: resourceRequests.memory
     };
-    c1.resources = resourceRequirements;
   }
+  if (resourceLimits) {
+    resourceRequirements.limits = {
+      cpu: resourceLimits.cpu,
+      memory: resourceLimits.memory
+    };
+  }
+
+  c1.resources = resourceRequirements;
   pod.spec = new kubernetes.V1PodSpec();
   pod.spec.containers = [c1];
   pod.spec.restartPolicy = "Never";

@@ -148,6 +148,24 @@ describe("k8s", function() {
           });
         });
       });
+      context("when resources are specified", function() {
+        beforeEach(function() {
+          j.resourceRequests.cpu = "250m";
+          j.resourceRequests.memory = "512Mi";
+          j.resourceLimits.cpu = "500m";
+          j.resourceLimits.memory = "1Gi";
+        });
+        it("sets resource requests and limits for the container pod", function() {
+          let jr = new k8s.JobRunner(j, e, p);
+          let expResources = new kubernetes.V1ResourceRequirements();
+          expResources.requests = { cpu: "250m", memory: "512Mi" };
+          expResources.limits = { cpu: "500m", memory: "1Gi" };
+          assert.deepEqual(
+            jr.runner.spec.containers[0].resources,
+            expResources
+          );
+        });
+      });
       context("when service account is specified", function() {
         beforeEach(function() {
           j.serviceAccount = "svcAccount";
