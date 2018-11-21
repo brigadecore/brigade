@@ -22,7 +22,6 @@ Brigade files respond to _events_. That is, Brigade scripts are typically compos
 more _event handlers_. When the Brigade environment triggers an event, the associated
 event handler will be called.
 
-
 ## The `brigadier` Library
 
 The main library for Brigade is called `brigadier`. The Brigade runtime grants access to
@@ -55,7 +54,7 @@ An instance of an `BrigadeEvent` has the following properties:
 - `buildID: string`: The unique ID for the build. This will change for each build.
 - `type: string`: The event type (`push`, `exec`, `pull_request`).
 - `provider: string`: The name of the thing that triggered this event.
-- `revision: Revision`: The revision details, if supplied, of the underlying VCS system.  
+- `revision: Revision`: The revision details, if supplied, of the underlying VCS system.
 - `payload: string`: Arbitrary data supplied by an event emitter. Each event emitter
   will describe its own payload. For example, the GitHub gateway emits events that
   contain GitHub's webhook objects.
@@ -95,8 +94,8 @@ when the named event fires.
 
 ```javascript
 events.on("push", (e, p) => {
-  console.log(p.name)
-})
+  console.log(p.name);
+});
 ```
 
 #### `events.has(eventName: string): boolean`
@@ -169,11 +168,11 @@ defaults.
 These two are equivalent:
 
 ```javascript
-var one = new Job("one")
-one.image = "alpine:3.4"
-one.tasks = ["echo hello"]
+var one = new Job("one");
+one.image = "alpine:3.4";
+one.tasks = ["echo hello"];
 
-var two = new Job("two", "alpine:3.4", ["echo hello"])
+var two = new Job("two", "alpine:3.4", ["echo hello"]);
 ```
 
 Properties of `Job`
@@ -198,6 +197,24 @@ Properties of `Job`
 - `docker: JobDockerMount`: Preferences for mounting a Docker socket
 - `serviceAccount: string`: The name of the service account to use (if you need to override the default).
 - `annotations: {[key: string]:string}`: Name/value pairs of annotations to add to the job's pod
+- `resourceRequests: JobResourceRequest`: CPU and memory request resources for the job pod container.
+- `resourceLimits: JobResourceLimit`: CPU and memory limit resources for the job pod container.
+
+#### Setting execution resources to a job
+
+For some jobs is a good practice to set limits and guarantee some resources. In the following example job pod container resource requests and limits are set.
+
+```javascript
+var job = new Job("huge-job");
+
+// Our job uses a lot of resources, we set huge requests but set safe memory limits:
+job.resourceRequests.memory = "2Gi";
+job.resourceRequests.cpu = "500m";
+job.resourceLimits.memory = "3Gi";
+job.resourceLimits.cpu = "1";
+```
+
+All are optional, for example you could set only `resourceLimits.memory = 3Gi`).
 
 #### The `job.podName()` method
 
@@ -244,11 +261,11 @@ A `JobHost` object provides preferences for the host upon which the job is execu
 
 ### The `JobStorage` class
 
-- `enabled: boolean`: If set to `true `, the Job will mount the build storage.
-   Build storage exposes a mounted volume at `/mnt/brigade/share` with storage that
-   can be shared across jobs.
+- `enabled: boolean`: If set to `true`, the Job will mount the build storage.
+  Build storage exposes a mounted volume at `/mnt/brigade/share` with storage that
+  can be shared across jobs.
 - `path: string`: The read-only path to the shared storage from within the container.
-   EXPERIMENTAL: Support for setting the `path` was added in Brigade 0.15.
+  EXPERIMENTAL: Support for setting the `path` was added in Brigade 0.15.
 
 ### The `KubernetesConfig` class
 
@@ -271,12 +288,12 @@ This returns the result as a string.
 
 Properties:
 
-  - `id: string`: The unique ID of the project
-  - `name: string`: The project name, typically `org/name`.
-  - `kubernetes: KubernetesConfig`: The object describing this project's Kubernetes settings
-  - `repo: Repository`: Information on the upstream repository (if available).
-  - `secrets: {[key: string]: string}`: Key/value pairs of secret name and secret value.
-    The security model _may_ limit access to this property or its values.
+- `id: string`: The unique ID of the project
+- `name: string`: The project name, typically `org/name`.
+- `kubernetes: KubernetesConfig`: The object describing this project's Kubernetes settings
+- `repo: Repository`: Information on the upstream repository (if available).
+- `secrets: {[key: string]: string}`: Key/value pairs of secret name and secret value.
+  The security model _may_ limit access to this property or its values.
 
 Secrets (`project.secrets`) are passed from the project configuration into a Kubernetes Secret, then injected into Brigade.
 
@@ -295,13 +312,12 @@ Properties:
 - `payload`: The object received from the event trigger. For GitHub requests, its
   the data we get from GitHub.
 
-
 ### The `Job` object
 
 To create a new job:
 
 ```javascript
-j = new Job(name)
+j = new Job(name);
 ```
 
 Parameters:
@@ -324,31 +340,31 @@ Properties:
   - Example:
     ```javascript
     myJob.env = {
-        myOneOffSecret: "secret value",
-        myConfigReference: {
-            configMapKeyRef: {
-                name: "my-configmap",
-                key: "my-configmap-key"
-            }
-        },
-        mySecretReference: {
-            secretKeyRef: {
-                name: "my-secret",
-                key: "my-secret-key"
-            }
+      myOneOffSecret: "secret value",
+      myConfigReference: {
+        configMapKeyRef: {
+          name: "my-configmap",
+          key: "my-configmap-key"
         }
-    }
+      },
+      mySecretReference: {
+        secretKeyRef: {
+          name: "my-secret",
+          key: "my-secret-key"
+        }
+      }
+    };
     ```
 
 It is common to pass data from the `e.env` Event object into the Job object as is appropriate:
 
 ```javascript
 events.push = function(e) {
-  j = new Job("example")
-  j.env = { "DB_PASSWORD": project.secrets.dbPassword }
+  j = new Job("example");
+  j.env = { DB_PASSWORD: project.secrets.dbPassword };
   //...
-  j.run()
-}
+  j.run();
+};
 ```
 
 The above will make `$DB_PASSWORD` available to the "example" job's runtime.
