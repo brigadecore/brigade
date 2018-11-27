@@ -51,7 +51,7 @@ git remote add fork https://github.com/<GitHub username>/brigade
 To push your changes to your fork, you should use:
 
 ```bash
-git push --set-remote fork <branch>
+git push --set-upstream fork <branch>
 ```
 
 ## Building Source
