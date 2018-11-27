@@ -23,7 +23,7 @@ var buildDeleteAll = &cobra.Command{
 	Use:   "delete-all PROJECT_ID",
 	Short: "deletes all builds for a project",
 	Long:  buildDeleteAllUsage,
-	Args:  cobra.ExactArgs(1)
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return errors.New("project ID is a required argument")
