@@ -23,6 +23,7 @@ var buildDelete = &cobra.Command{
 	Use:   "delete BUILD_ID",
 	Short: "deletes build",
 	Long:  buildDeleteUsage,
+	Args:  cobra.ExactArgs(1)
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return errors.New("build ID is a required argument")
