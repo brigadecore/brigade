@@ -357,11 +357,12 @@
   version = "v0.0.3"
 
 [[projects]]
-  digest = "1:11705e15791a8855c4b81839cbd71722b82f0304bf5e4225c878e6961c0d4c25"
+  digest = "1:cbaf13cdbfef0e4734ed8a7504f57fe893d471d62a35b982bf6fb3f036449a66"
   name = "github.com/spf13/pflag"
   packages = ["."]
   pruneopts = ""
-  revision = "9ff6c6923cfffbcd502984b8e0c80539a94968b7"
+  revision = "298182f68c66c05229eb03ac171abe6e309ee79a"
+  version = "v1.0.3"
 
 [[projects]]
   digest = "1:cb2800cd5716e9d6172888e0e3ffe1f9c07b7f142eb83d49a391029bcf4f6cc1"
