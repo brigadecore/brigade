@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/Azure/brigade/pkg/storage"
+
 	"github.com/Azure/brigade/pkg/brigade"
 )
 
@@ -179,6 +181,11 @@ func (s *Store) GetWorkerLogStreamFollow(w *brigade.Worker) (io.ReadCloser, erro
 // CreateBuild fakes a new build.
 func (s *Store) CreateBuild(b *brigade.Build) error {
 	s.Build = b
+	return nil
+}
+
+// DeleteBuild fakes a build deletion.
+func (s *Store) DeleteBuild(bid string, options storage.DeleteBuildOptions) error {
 	return nil
 }
 

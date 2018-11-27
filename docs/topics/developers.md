@@ -42,6 +42,18 @@ is happening. You might prefer to checkout the most recent stable tag:
 
 - `$ git checkout v0.18.0`
 
+After cloning, you should run this command to [configure the remote](https://help.github.com/articles/configuring-a-remote-for-a-fork/): 
+
+```bash
+git remote add fork https://github.com/<GitHub username>/brigade
+```
+
+To push your changes to your fork, you should use:
+
+```bash
+git push --set-remote fork <branch>
+```
+
 ## Building Source
 
 To build all of the source, run this:
