@@ -10,10 +10,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const buildDeleteUsage = `Deletes a build, regardless of its state.`
+const buildDeleteUsage = `Deletes a build.`
+
+var forceDeleteRunning bool
 
 func init() {
 	build.AddCommand(buildDelete)
+	buildDelete.Flags().BoolVar(&forceDeleteRunning, "force", false, "If set, will also delete running builds. Default: false")
 }
 
 var buildDelete = &cobra.Command{
@@ -35,8 +38,7 @@ func deleteBuild(out io.Writer, bid string) error {
 	}
 
 	store := kube.New(c, globalNamespace)
-	err = store.DeleteBuild(bid, storage.DeleteBuildOptions{
-		SkipRunningBuilds: false,
+	return store.DeleteBuild(bid, storage.DeleteBuildOptions{
+		SkipRunningBuilds: !forceDeleteRunning,
 	})
-	return err
 }
