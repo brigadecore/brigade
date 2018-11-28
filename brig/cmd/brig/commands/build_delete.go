@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const buildDeleteUsage = `Deletes a build.`
+const buildDeleteUsage = `Deletes a build and its corresponding jobs.`
 
 var forceDeleteRunning bool
 

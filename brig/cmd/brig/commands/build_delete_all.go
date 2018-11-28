@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const buildDeleteAllUsage = `Deletes all builds for a project.`
+const buildDeleteAllUsage = `Deletes all builds for a project as well as their corresponding jobs.`
 
 var forceDeleteRunningAll bool
 
