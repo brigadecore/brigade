@@ -53,7 +53,7 @@ func (s *store) DeleteBuild(bid string, options storage.DeleteBuildOptions) erro
 		for _, p := range pods.Items {
 			if p.Labels["component"] == "build" {
 				if p.Status.Phase == v1.PodRunning || p.Status.Phase == v1.PodPending {
-					log.Printf("skipping Build %s because it is on Status %s", p.Labels["build"], p.Status.Phase)
+					log.Printf("skipping Build %s because its Status is %s", p.Labels["build"], p.Status.Phase)
 					return nil
 				}
 			}
