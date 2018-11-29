@@ -1,14 +1,17 @@
 package vacuum
 
 import (
-	"errors"
-	"fmt"
 	"log"
 	"sort"
 	"time"
 
+	"github.com/Azure/brigade/pkg/storage"
+	"github.com/Azure/brigade/pkg/storage/kube"
+
 	"k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -20,7 +23,6 @@ var NoMaxAge = time.Time{}
 
 const (
 	buildFilter = "component = build, heritage = brigade"
-	jobFilter   = "component in (build, job), heritage = brigade, build = %s"
 )
 
 // Vacuum describes a vacuum for cleaning up expired builds and jobs.
@@ -111,43 +113,10 @@ func (v *Vacuum) Run() (int, error) {
 }
 
 func (v *Vacuum) deleteBuild(bid string) error {
-	opts := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf(jobFilter, bid),
-	}
-	delOpts := metav1.NewDeleteOptions(0)
-	pods, err := v.client.CoreV1().Pods(v.namespace).List(opts)
-	if err != nil {
-		return err
-	}
-	if v.skipRunningBuilds {
-		for _, p := range pods.Items {
-			if p.Labels["component"] == "build" {
-				if p.Status.Phase == v1.PodRunning || p.Status.Phase == v1.PodPending {
-					return errors.New("skipping because build is still running")
-				}
-			}
-		}
-	}
-	for _, p := range pods.Items {
-		log.Printf("Deleting pod %q", p.Name)
-		if err := v.client.CoreV1().Pods(v.namespace).Delete(p.Name, delOpts); err != nil {
-			log.Printf("failed to delete job pod %s (continuing): %s", p.Name, err)
-		}
-	}
-
-	secrets, err := v.client.CoreV1().Secrets(v.namespace).List(opts)
-	if err != nil {
-		return err
-	}
-	for _, s := range secrets.Items {
-		log.Printf("Deleting secret %q", s.Name)
-		if err := v.client.CoreV1().Secrets(v.namespace).Delete(s.Name, delOpts); err != nil {
-			log.Printf("failed to delete job secret %s (continuing): %s", s.Name, err)
-		}
-	}
-
-	// As a safety condition, we might also consider deleting PVCs.
-	return nil
+	store := kube.New(v.client, v.namespace)
+	return store.DeleteBuild(bid, storage.DeleteBuildOptions{
+		SkipRunningBuilds: v.skipRunningBuilds,
+	})
 }
 
 // ByCreation sorts secrets by their creation timestamp.

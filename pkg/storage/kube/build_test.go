@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/Azure/brigade/pkg/storage"
+
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -43,6 +45,27 @@ func TestCreateBuild(t *testing.T) {
 	secrets, _ := k.CoreV1().Secrets("default").List(metav1.ListOptions{})
 	if len(secrets.Items) != 1 {
 		t.Fatalf("Build was not stored as secret")
+	}
+}
+
+func TestDeleteBuild(t *testing.T) {
+	k, s := fakeStore()
+	if err := s.CreateBuild(stubBuild); err != nil {
+		t.Fatal(err)
+	}
+
+	secrets, _ := k.CoreV1().Secrets("default").List(metav1.ListOptions{})
+	if len(secrets.Items) != 1 {
+		t.Fatalf("Build was not stored as secret")
+	}
+
+	if err := s.DeleteBuild(stubBuild.ID, storage.DeleteBuildOptions{SkipRunningBuilds: true}); err != nil {
+		t.Fatal(err)
+	}
+
+	secrets, _ = k.CoreV1().Secrets("default").List(metav1.ListOptions{})
+	if len(secrets.Items) != 0 {
+		t.Fatalf("Build was not deleted")
 	}
 }
 

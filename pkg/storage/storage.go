@@ -6,6 +6,11 @@ import (
 	"github.com/Azure/brigade/pkg/brigade"
 )
 
+// DeleteBuildOptions represents options for a build deletion
+type DeleteBuildOptions struct {
+	SkipRunningBuilds bool
+}
+
 // ProjectStore represents storage for projects.
 type ProjectStore interface {
 	// GetProjects retrieves all projects from storage.
@@ -27,6 +32,8 @@ type Store interface {
 	GetBuilds() ([]*brigade.Build, error)
 	// GetBuild retrieves the build from storage.
 	GetBuild(id string) (*brigade.Build, error)
+	// DeleteBuild deletes the build from storage.
+	DeleteBuild(id string, options DeleteBuildOptions) error
 	// CreateBuild creates a new job for the work queue.
 	CreateBuild(build *brigade.Build) error
 	// GetBuildJobs retrieves all build jobs (pods) from storage.

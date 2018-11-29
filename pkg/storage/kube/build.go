@@ -2,18 +2,23 @@ package kube
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"strings"
 	"time"
 
+	"github.com/Azure/brigade/pkg/brigade"
+	"github.com/Azure/brigade/pkg/storage"
+
 	"github.com/oklog/ulid"
+
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/Azure/brigade/pkg/brigade"
 )
 
 const secretTypeBuild = "brigade.sh/build"
+
+const jobFilter = "component in (build, job), heritage = brigade, build = %s"
 
 // GetBuild returns the build.
 func (s *store) GetBuild(id string) (*brigade.Build, error) {
@@ -34,7 +39,49 @@ func (s *store) GetBuild(id string) (*brigade.Build, error) {
 	return b, err
 }
 
-// Get creates a new project and writes it to storage.
+// DeleteBuild deletes a build.
+func (s *store) DeleteBuild(bid string, options storage.DeleteBuildOptions) error {
+	opts := meta.ListOptions{
+		LabelSelector: fmt.Sprintf(jobFilter, bid),
+	}
+	delOpts := meta.NewDeleteOptions(0)
+	pods, err := s.client.CoreV1().Pods(s.namespace).List(opts)
+	if err != nil {
+		return err
+	}
+	if options.SkipRunningBuilds {
+		for _, p := range pods.Items {
+			if p.Labels["component"] == "build" {
+				if p.Status.Phase == v1.PodRunning || p.Status.Phase == v1.PodPending {
+					log.Printf("skipping Build %s because its Status is %s", p.Labels["build"], p.Status.Phase)
+					return nil
+				}
+			}
+		}
+	}
+	for _, p := range pods.Items {
+		log.Printf("Deleting pod %q", p.Name)
+		if err := s.client.CoreV1().Pods(s.namespace).Delete(p.Name, delOpts); err != nil {
+			log.Printf("failed to delete job pod %s (continuing): %s", p.Name, err)
+		}
+	}
+
+	secrets, err := s.client.CoreV1().Secrets(s.namespace).List(opts)
+	if err != nil {
+		return err
+	}
+	for _, sec := range secrets.Items {
+		log.Printf("Deleting secret %q", sec.Name)
+		if err := s.client.CoreV1().Secrets(s.namespace).Delete(sec.Name, delOpts); err != nil {
+			log.Printf("failed to delete job secret %s (continuing): %s", sec.Name, err)
+		}
+	}
+
+	// As a safety condition, we might also consider deleting PVCs.
+	return nil
+}
+
+// CreateBuild creates a new Secret based on the build options and writes it to storage.
 func (s *store) CreateBuild(build *brigade.Build) error {
 	if build.ID == "" {
 		build.ID = genID()
