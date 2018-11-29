@@ -92,9 +92,7 @@ var Root = &cobra.Command{
 		if globalVerbose {
 			fmt.Fprintf(os.Stderr, "Max Age: %s\nMax Builds: %d\n", age, mb)
 		}
-		count, err := vacuum.New(age, mb, srb, c, ns()).Run()
-		fmt.Fprintf(os.Stdout, "Deleted %d\n", count)
-		return err
+		return vacuum.New(age, mb, srb, c, ns()).Run()
 	},
 }
 

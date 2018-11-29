@@ -9,9 +9,7 @@ import (
 	"github.com/Azure/brigade/pkg/storage/kube"
 
 	"k8s.io/api/core/v1"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -46,20 +44,16 @@ func New(age time.Time, max int, skipRunningBuilds bool, client kubernetes.Inter
 }
 
 // Run executes the vacuum, destroying resources that are expired.
-//
-// It returns the number of builds deleted.
-func (v *Vacuum) Run() (int, error) {
+func (v *Vacuum) Run() error {
 	opts := metav1.ListOptions{
 		LabelSelector: buildFilter,
 	}
-
-	deleted := 0
 
 	if !v.age.IsZero() {
 		log.Printf("Pruning records older than %s", v.age)
 		secrets, err := v.client.CoreV1().Secrets(v.namespace).List(opts)
 		if err != nil {
-			return 0, err
+			return err
 		}
 		for _, s := range secrets.Items {
 			ts := s.ObjectMeta.CreationTimestamp.Time
@@ -73,25 +67,24 @@ func (v *Vacuum) Run() (int, error) {
 					log.Printf("Failed to delete build %s: %s (age)\n", bid, err)
 					continue
 				}
-				deleted++
 			}
 		}
 	}
 
 	// If no max, return now.
 	if v.max == NoMaxBuilds {
-		return deleted, nil
+		return nil
 	}
 
 	// We need to re-load the secrets list and see if we are still over the max.
 	secrets, err := v.client.CoreV1().Secrets(v.namespace).List(opts)
 	if err != nil {
-		return deleted, err
+		return err
 	}
 	l := len(secrets.Items)
 	if l <= v.max {
 		log.Printf("Skipping vacuum. %d is ≤ max %d", l, v.max)
-		return deleted, nil
+		return nil
 	}
 	sort.Sort(ByCreation(secrets.Items))
 	for i := v.max; i < l; i++ {
@@ -106,10 +99,9 @@ func (v *Vacuum) Run() (int, error) {
 			log.Printf("Failed to delete build %s: %s (max)\n", bid, err)
 			continue
 		}
-		deleted++
 	}
 
-	return deleted, nil
+	return nil
 }
 
 func (v *Vacuum) deleteBuild(bid string) error {

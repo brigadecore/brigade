@@ -4,10 +4,20 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+)
+
+const (
+	testBuildPod1Name = "queequeg"
+	testJobPod11Name  = "tashtego"
+	testBuildPod2Name = "queequeg2"
+	testJobPod21Name  = "tashtego21"
+	testJobPod22Name  = "tashtego22"
 )
 
 func TestRun_Age(t *testing.T) {
@@ -28,15 +38,12 @@ func TestRun_Age(t *testing.T) {
 		t.Fatalf("expected 6 pods, got %d", len(pods.Items))
 	}
 
-	num, err := New(time.Now(), NoMaxBuilds, false, client, v1.NamespaceDefault).Run()
+	err = New(time.Now(), NoMaxBuilds, false, client, v1.NamespaceDefault).Run()
 	if err != nil {
 		t.Errorf("I blame fakeclient: %s", err)
 	}
 
-	// We expect one build (two pods, two secrets) to be deleted.
-	if num != 2 {
-		t.Errorf("expected 2 deletion, got %d", num)
-	}
+	verifyPodsDeleted(t, client, testBuildPod1Name, testJobPod11Name, testBuildPod2Name, testJobPod21Name, testJobPod22Name)
 
 	secrets, _ = client.CoreV1().Secrets(v1.NamespaceDefault).List(meta.ListOptions{})
 	if len(secrets.Items) != 1 {
@@ -50,15 +57,12 @@ func TestRun_Age(t *testing.T) {
 
 func TestRun_Max(t *testing.T) {
 	client := setupFakeClient()
-	num, err := New(time.Time{}, 1, false, client, v1.NamespaceDefault).Run()
+	err := New(time.Time{}, 1, false, client, v1.NamespaceDefault).Run()
 	if err != nil {
 		t.Errorf("error running: %s", err)
 	}
 
-	// We expect one build (two pods, two secrets) to be deleted.
-	if num != 2 {
-		t.Errorf("expected 2 deletion, got %d", num)
-	}
+	verifyPodsDeleted(t, client, testBuildPod1Name, testJobPod11Name, testBuildPod2Name, testJobPod21Name, testJobPod22Name)
 
 	secrets, _ := client.CoreV1().Secrets(v1.NamespaceDefault).List(meta.ListOptions{})
 	if len(secrets.Items) != 1 {
@@ -87,15 +91,13 @@ func TestRun_SkipRunningBuilds(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	num, err := New(time.Now(), NoMaxBuilds, true, client, v1.NamespaceDefault).Run()
+	err = New(time.Now(), NoMaxBuilds, true, client, v1.NamespaceDefault).Run()
 	if err != nil {
 		t.Errorf("I blame fakeclient: %s", err)
 	}
 
-	// We expect one build (two pods, two secrets) to be deleted.
-	if num != 1 {
-		t.Errorf("expected 1 deletion, got %d", num)
-	}
+	verifyPodsExist(t, client, testBuildPod2Name, testJobPod21Name, testJobPod22Name)
+	verifyPodsDeleted(t, client, testBuildPod1Name, testJobPod11Name)
 
 	secrets, _ = client.CoreV1().Secrets(v1.NamespaceDefault).List(meta.ListOptions{})
 	if len(secrets.Items) != 4 {
@@ -104,6 +106,24 @@ func TestRun_SkipRunningBuilds(t *testing.T) {
 	pods, _ := client.CoreV1().Pods(v1.NamespaceDefault).List(meta.ListOptions{})
 	if len(pods.Items) != 4 {
 		t.Fatalf("expected 4 pods, got %d", len(pods.Items))
+	}
+}
+
+func verifyPodsDeleted(t *testing.T, client kubernetes.Interface, podNames ...string) {
+	for _, podName := range podNames {
+		_, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(podName, meta.GetOptions{})
+		if !errors.IsNotFound(err) {
+			t.Errorf("expected Pod %s to be deleted", podName)
+		}
+	}
+}
+
+func verifyPodsExist(t *testing.T, client kubernetes.Interface, podNames ...string) {
+	for _, podName := range podNames {
+		_, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(podName, meta.GetOptions{})
+		if errors.IsNotFound(err) {
+			t.Errorf("Pod %s cannot be found (was it deleted?)", podName)
+		}
 	}
 }
 
@@ -203,7 +223,7 @@ func setupFakeClient() kubernetes.Interface {
 
 	buildPod := v1.Pod{
 		ObjectMeta: meta.ObjectMeta{
-			Name: "queequeg",
+			Name: testBuildPod1Name,
 			Labels: map[string]string{
 				"heritage":  "brigade",
 				"component": "build",
@@ -225,7 +245,7 @@ func setupFakeClient() kubernetes.Interface {
 	}
 	jobPod := v1.Pod{
 		ObjectMeta: meta.ObjectMeta{
-			Name: "tashtego",
+			Name: testJobPod11Name,
 			Labels: map[string]string{
 				"heritage":  "brigade",
 				"component": "job",
@@ -247,7 +267,7 @@ func setupFakeClient() kubernetes.Interface {
 	}
 	buildPod2 := v1.Pod{
 		ObjectMeta: meta.ObjectMeta{
-			Name: "queequeg2",
+			Name: testBuildPod2Name,
 			Labels: map[string]string{
 				"heritage":  "brigade",
 				"component": "build",
@@ -269,7 +289,7 @@ func setupFakeClient() kubernetes.Interface {
 	}
 	jobPod21 := v1.Pod{
 		ObjectMeta: meta.ObjectMeta{
-			Name: "tashtego21",
+			Name: testJobPod21Name,
 			Labels: map[string]string{
 				"heritage":  "brigade",
 				"component": "job",
@@ -291,7 +311,7 @@ func setupFakeClient() kubernetes.Interface {
 	}
 	jobPod22 := v1.Pod{
 		ObjectMeta: meta.ObjectMeta{
-			Name: "tashtego22",
+			Name: testJobPod22Name,
 			Labels: map[string]string{
 				"heritage":  "brigade",
 				"component": "job",

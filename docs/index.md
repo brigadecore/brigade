@@ -35,8 +35,7 @@ Brigade-related projects and tools.
   project for testing Brigade.
 - The [Trello Brigade Gateway](https://github.com/technosophos/brigade-trello) links
   Trello webhooks to Brigade.
-- The [Twitter-T](https://hub.docker.com/r/technosophos/twitter-t/) and [Slack Notify](https://hub.docker.com/r/technosophos/slack-notify/)
-  Docker images provide easy tools for sending messages from Brigade scripts.
+- The [Twitter-T](https://hub.docker.com/r/technosophos/twitter-t/), [Slack Notify](https://hub.docker.com/r/technosophos/slack-notify/) and [Office 365 Notify](https://hub.docker.com/r/dgkanatsios/o365-notify) Docker images provide easy tools for sending messages from Brigade scripts.
 - [bit-brigade](https://bitbucket.org/lukepatrick/bit-brigade) provides an example project using 
   BitBucket as a source repository
 - [minio-brigade](https://github.com/lukepatrick/minio-brigade) examples of storing artifacts in object storage (minio)
