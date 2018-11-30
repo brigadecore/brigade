@@ -16,11 +16,14 @@ import (
 
 const buildListUsage = `List all installed builds.
 
-Print a list of all of the current builds.
+Print a list of the current builds, from latest to oldest. By default it will fetch all the builds, use --count to get a subset of them.
 `
+
+var buildListCount int
 
 func init() {
 	build.AddCommand(buildList)
+	buildList.Flags().IntVar(&buildListCount, "count", 0, "The maximum number of builds to return. 0 for all")
 }
 
 var buildList = &cobra.Command{
@@ -65,12 +68,21 @@ func listBuilds(out io.Writer, project string) error {
 	table := uitable.New()
 	table.AddRow("ID", "TYPE", "PROVIDER", "PROJECT", "STATUS", "AGE")
 
-	for _, b := range bs {
+	for i := len(bs) - 1; i >= 0; i-- {
+
+		if buildListCount > 0 && len(bs)-i-1 >= buildListCount {
+			break
+		}
+
+		b := bs[i]
+
 		status := "???"
 		since := "???"
 		if b.Worker != nil {
 			status = b.Worker.Status.String()
-			since = duration.ShortHumanDuration(time.Since(b.Worker.EndTime))
+			if b.Worker.Status == brigade.JobSucceeded || b.Worker.Status == brigade.JobFailed {
+				since = duration.ShortHumanDuration(time.Since(b.Worker.EndTime))
+			}
 		}
 		table.AddRow(b.ID, b.Type, b.Provider, b.ProjectID, status, since)
 	}
