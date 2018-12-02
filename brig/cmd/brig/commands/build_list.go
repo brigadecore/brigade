@@ -5,6 +5,8 @@ import (
 	"io"
 	"time"
 
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/gosuri/uitable"
 	"github.com/spf13/cobra"
 
@@ -16,7 +18,7 @@ import (
 
 const buildListUsage = `List all installed builds.
 
-Print a list of the current builds, from latest to oldest. By default it will fetch all the builds, use --count to get a subset of them.
+Print a list of the current builds starting from latest (in creation time) to oldest. By default it will print all the builds, use --count to get a subset of them.
 `
 
 var buildListCount int
@@ -35,57 +37,79 @@ var buildList = &cobra.Command{
 		if len(args) > 0 {
 			proj = args[0]
 		}
-		return listBuilds(cmd.OutOrStdout(), proj)
+
+		c, err := kubeClient()
+		if err != nil {
+			return err
+		}
+
+		bls, err := getBuilds(proj, c, buildListCount)
+		if err != nil {
+			return err
+		}
+
+		listBuilds(bls, cmd.OutOrStdout())
+		return nil
 	},
 }
 
-func listBuilds(out io.Writer, project string) error {
-	c, err := kubeClient()
-	if err != nil {
-		return err
+func listBuilds(bs []*buildForStdout, out io.Writer) {
+	table := uitable.New()
+	table.AddRow("ID", "TYPE", "PROVIDER", "PROJECT", "STATUS", "AGE")
+	for _, b := range bs {
+		table.AddRow(b.ID, b.Type, b.Provider, b.ProjectID, b.status, b.since)
 	}
+	fmt.Fprintln(out, table)
+}
 
-	store := kube.New(c, globalNamespace)
+func getBuilds(project string, client kubernetes.Interface, count int) ([]*buildForStdout, error) {
 
-	var bs []*brigade.Build
+	store := kube.New(client, globalNamespace)
+
+	var builds []*brigade.Build
+	var err error
 	if project == "" {
-		bs, err = store.GetBuilds()
+		builds, err = store.GetBuilds()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		proj, err := store.GetProject(project)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		bs, err = store.GetProjectBuilds(proj)
+		builds, err = store.GetProjectBuilds(proj)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	table := uitable.New()
-	table.AddRow("ID", "TYPE", "PROVIDER", "PROJECT", "STATUS", "AGE")
-
-	for i := len(bs) - 1; i >= 0; i-- {
-
-		if buildListCount > 0 && len(bs)-i-1 >= buildListCount {
+	var bfss []*buildForStdout
+	for i := len(builds) - 1; i >= 0; i-- {
+		if count > 0 && len(builds)-i-1 >= count {
 			break
 		}
 
-		b := bs[i]
+		b := builds[i]
+		bfs := &buildForStdout{Build: builds[i]}
 
-		status := "???"
-		since := "???"
+		bfs.status = "???"
+		bfs.since = "???"
 		if b.Worker != nil {
-			status = b.Worker.Status.String()
+			bfs.status = b.Worker.Status.String()
 			if b.Worker.Status == brigade.JobSucceeded || b.Worker.Status == brigade.JobFailed {
-				since = duration.ShortHumanDuration(time.Since(b.Worker.EndTime))
+				bfs.since = duration.ShortHumanDuration(time.Since(b.Worker.EndTime))
 			}
 		}
-		table.AddRow(b.ID, b.Type, b.Provider, b.ProjectID, status, since)
+		bfss = append(bfss, bfs)
 	}
-	fmt.Fprintln(out, table)
-	return nil
+
+	return bfss, nil
+}
+
+type buildForStdout struct {
+	*brigade.Build
+	status string
+	since  string
 }
