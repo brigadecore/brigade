@@ -96,7 +96,7 @@ func TestGetBuildListWithProject(t *testing.T) {
 
 }
 
-// TestGetBuildListWithProject tests the command `brig build list --count 2`
+// TestGetBuildListCountTwo tests the command `brig build list --count 2`
 func TestGetBuildListCountTwo(t *testing.T) {
 	client := fake.NewSimpleClientset()
 	createFakeBuilds(t, client)
