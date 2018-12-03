@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"io"
+	"sort"
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -84,6 +85,15 @@ func getBuilds(project string, client kubernetes.Interface, count int) ([]*build
 			return nil, err
 		}
 	}
+
+	// sorting here on StartTime because we do not want to rely on K8s sorting (which would be the order that Secrets/Pods were created)
+	// remember that most recent *started* builds must be at the top
+	sort.Slice(builds, func(i, j int) bool {
+		if builds[i].Worker == nil || builds[j] == nil {
+			return false
+		}
+		return builds[i].Worker.StartTime.Before(builds[j].Worker.StartTime)
+	})
 
 	var bfss []*buildForStdout
 	for i := len(builds) - 1; i >= 0; i-- {

@@ -31,6 +31,25 @@ var (
 	stubDT3End       = time.Now().Add(-time.Minute)
 )
 
+func TestGetEmptyBuildList(t *testing.T) {
+	client := fake.NewSimpleClientset()
+	bls, err := getBuilds("", client, 0)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(bls) != 0 {
+		t.Error("Error in getBuilds for no project(s)")
+	}
+
+	bls, err = getBuilds("", client, 5)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(bls) != 0 {
+		t.Error("Error in getBuilds for no project(s) with --count 5")
+	}
+}
+
 // TestGetBuildList tests the command `brig build list`
 func TestGetBuildList(t *testing.T) {
 	client := fake.NewSimpleClientset()
@@ -44,14 +63,14 @@ func TestGetBuildList(t *testing.T) {
 		t.Error("Error in getBuilds for all projects")
 	}
 
-	if bls[0].since != "1m" || bls[0].ID != stubBuild3ID {
-		t.Error("Error in build2")
+	if bls[0].since != "???" || bls[0].ID != stubBuild2ID {
+		t.Error("Error in build2 time")
 	}
-	if bls[1].since != "???" || bls[1].ID != stubBuild2ID {
-		t.Error("Error in build2")
+	if bls[1].since != "1m" || bls[1].ID != stubBuild3ID {
+		t.Error("Error in build3 time")
 	}
 	if bls[2].since != "2m" || bls[2].ID != stubBuild1ID {
-		t.Error("Error in build1")
+		t.Error("Error in build1 time")
 	}
 }
 
@@ -90,12 +109,13 @@ func TestGetBuildListCountTwo(t *testing.T) {
 		t.Error("Error in getBuilds for '--count 2'")
 	}
 
-	if bls[0].since != "1m" || bls[0].ID != stubBuild3ID {
-		t.Error("Error in build2")
+	if bls[0].since != "???" || bls[0].ID != stubBuild2ID {
+		t.Error("Error in build2 time")
 	}
-	if bls[1].since != "???" || bls[1].ID != stubBuild2ID {
-		t.Error("Error in build2")
+	if bls[1].since != "1m" || bls[1].ID != stubBuild3ID {
+		t.Error("Error in build3 time")
 	}
+
 }
 
 // createFakeBuilds creates necessary Pods/Secrets for 3 fake builds/jobs
