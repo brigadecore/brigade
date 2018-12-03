@@ -104,7 +104,7 @@ test-functional:
 
 # JS test is local only
 .PHONY: test-js
-test-js:
+test-js: bootstrap-js
 	cd brigade-worker && yarn test
 
 .PHONY: test-style
