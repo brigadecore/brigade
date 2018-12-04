@@ -579,3 +579,92 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestController_WithWorkerResources(t *testing.T) {
+	createdPod := false
+	client := fake.NewSimpleClientset()
+	client.PrependReactor("create", "pods", func(action core.Action) (bool, runtime.Object, error) {
+		createdPod = true
+		t.Log("creating pod")
+		return false, nil, nil
+	})
+
+	config := &Config{
+		Namespace:            v1.NamespaceDefault,
+		WorkerImage:          "deis/brigade-worker:latest",
+		WorkerPullPolicy:     string(v1.PullIfNotPresent),
+		WorkerLimitsCPU:      "1",
+		WorkerLimitsMemory:   "1Gi",
+		WorkerRequestsCPU:    "500m",
+		WorkerRequestsMemory: "500Mi",
+	}
+	controller := NewController(client, config)
+
+	secret := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "moby",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "build",
+				"project":   "ahab",
+				"build":     "queequeg",
+			},
+		},
+		Data: map[string][]byte{
+			"script": []byte("hello"),
+		},
+	}
+
+	sidecarImage := "fake/sidecar:latest"
+	project := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "ahab",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "project",
+			},
+		},
+		// This and the missing 'script' will trigger an initContainer
+		Data: map[string][]byte{
+			"vcsSidecar": []byte(sidecarImage),
+		},
+	}
+
+	// Now let's start the controller
+	stop := make(chan struct{})
+	defer close(stop)
+	go controller.Run(1, stop)
+
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+
+	// Let's wait for the controller to create the pod
+	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
+		return createdPod, nil
+	})
+
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	c := pod.Spec.Containers[0]
+	if c.Name != "brigade-runner" {
+		t.Error("Container.Name is not correct")
+	}
+
+	if cpu := c.Resources.Limits.Cpu(); cpu.String() != config.WorkerLimitsCPU {
+		t.Errorf("Worker resources limit cpu is not the expected one. Got: %s, Expected: %s", cpu.String(), config.WorkerLimitsCPU)
+	}
+	if mem := c.Resources.Limits.Memory(); mem.String() != config.WorkerLimitsMemory {
+		t.Errorf("Worker resources limit memory is not the expected one. Got: %s, Expected: %s", mem.String(), config.WorkerLimitsMemory)
+	}
+	if cpu := c.Resources.Requests.Cpu(); cpu.String() != config.WorkerRequestsCPU {
+		t.Errorf("Worker resources limit cpu is not the expected one. Got: %s, Expected: %s", cpu.String(), config.WorkerRequestsCPU)
+	}
+	if mem := c.Resources.Requests.Memory(); mem.String() != config.WorkerRequestsMemory {
+		t.Errorf("Worker resources limit memory is not the expected one. Got: %s, Expected: %s", mem.String(), config.WorkerRequestsMemory)
+	}
+}

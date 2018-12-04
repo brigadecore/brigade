@@ -9,6 +9,7 @@ import (
 
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/Azure/brigade/pkg/storage/kube"
@@ -77,6 +78,8 @@ func (c *Controller) updateBuildStatus(build *v1.Secret) error {
 func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 	env := workerEnv(project, build, config)
 
+	resources := workerResources(config)
+
 	cmd := []string{"yarn", "-s", "start"}
 	if cmdBytes, ok := project.Data["workerCommand"]; ok && len(cmdBytes) > 0 {
 		cmd = strings.Split(string(cmdBytes), " ")
@@ -114,7 +117,8 @@ func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 				projectVolume,
 				sidecarVolume,
 			},
-			Env: env,
+			Env:       env,
+			Resources: resources,
 		}},
 		Volumes: []v1.Volume{{
 			Name: buildVolume.Name,
@@ -229,6 +233,26 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 		}, {
 			Name:      "BRIGADE_REPO_AUTH_TOKEN",
 			ValueFrom: secretRef("github.token", project),
+		},
+	}
+}
+
+// workerResources generates the resources for the worker, given in the cofiguration
+// If the value is not given, or it's wrong, an empty quantity will be set
+func workerResources(config *Config) v1.ResourceRequirements {
+	limitCPU, _ := apiresource.ParseQuantity(config.WorkerLimitsCPU)
+	limitMemory, _ := apiresource.ParseQuantity(config.WorkerLimitsMemory)
+	requestCPU, _ := apiresource.ParseQuantity(config.WorkerRequestsCPU)
+	requestMemory, _ := apiresource.ParseQuantity(config.WorkerRequestsMemory)
+
+	return v1.ResourceRequirements{
+		Limits: v1.ResourceList{
+			v1.ResourceCPU:    limitCPU,
+			v1.ResourceMemory: limitMemory,
+		},
+		Requests: v1.ResourceList{
+			v1.ResourceCPU:    requestCPU,
+			v1.ResourceMemory: requestMemory,
 		},
 	}
 }
