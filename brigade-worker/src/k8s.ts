@@ -24,27 +24,48 @@ import * as byline_1 from "byline";
 const expiresInMSec = 1000 * 60 * 60 * 24 * 30;
 
 const defaultClient = kubernetes.Config.defaultClient();
-const retry = (fn, args, delay, times) => { // exponential back-off retry if status is in the 500s
+const retry = (fn, args, delay, times) => {
+  // exponential back-off retry if status is in the 500s
   return fn.apply(defaultClient, args).catch(err => {
-    if (times > 0 && err.response && 500 <= err.response.statusCode && err.response.statusCode < 600) {
+    if (
+      times > 0 &&
+      err.response &&
+      500 <= err.response.statusCode &&
+      err.response.statusCode < 600
+    ) {
       return new Promise(resolve => {
-        setTimeout(() => { resolve(retry(fn, args, delay * 2, times - 1)); }, delay);
+        setTimeout(() => {
+          resolve(retry(fn, args, delay * 2, times - 1));
+        }, delay);
       });
     }
     return Promise.reject(err);
   });
 };
-const wrapClient = (fns) => { // wrap client methods with retry logic
+const wrapClient = fns => {
+  // wrap client methods with retry logic
   for (let fn of fns) {
     let originalFn = defaultClient[fn.name];
-    defaultClient[fn.name] = function () { return retry(originalFn, arguments, 4000, 5); }
+    defaultClient[fn.name] = function() {
+      return retry(originalFn, arguments, 4000, 5);
+    };
   }
-}
-wrapClient([defaultClient.createNamespacedPersistentVolumeClaim, defaultClient.deleteNamespacedPersistentVolumeClaim, defaultClient.readNamespacedSecret, defaultClient.readNamespacedPodLog, defaultClient.createNamespacedSecret, defaultClient.createNamespacedPod, defaultClient.readNamespacedPersistentVolumeClaim, defaultClient.deleteNamespacedPod]);
+};
+wrapClient([
+  defaultClient.createNamespacedPersistentVolumeClaim,
+  defaultClient.deleteNamespacedPersistentVolumeClaim,
+  defaultClient.readNamespacedSecret,
+  defaultClient.readNamespacedPodLog,
+  defaultClient.createNamespacedSecret,
+  defaultClient.createNamespacedPod,
+  defaultClient.readNamespacedPersistentVolumeClaim,
+  defaultClient.deleteNamespacedPod
+]);
 
 const getKubeConfig = (): kubernetes.KubeConfig => {
   const kc = new kubernetes.KubeConfig();
-  const config = process.env.KUBECONFIG || path.join(process.env.HOME, ".kube", "config");
+  const config =
+    process.env.KUBECONFIG || path.join(process.env.HOME, ".kube", "config");
   if (fs.existsSync(config)) {
     kc.loadFromFile(config);
   } else {
@@ -134,7 +155,7 @@ export class BuildStorage {
    */
   public destroy(): Promise<boolean> {
     if (!this.proj && !this.name) {
-      this.logger.log('Build storage not exists');
+      this.logger.log("Build storage not exists");
       return Promise.resolve(false);
     }
 
@@ -286,7 +307,7 @@ export class JobRunner implements jobs.JobRunner {
         envVars.push({
           name: key,
           value: ""
-        } as kubernetes.V1EnvVar); 
+        } as kubernetes.V1EnvVar);
       } else {
         // For environmental variables that are directly references,
         // add the reference to the env var list.
@@ -418,7 +439,7 @@ export class JobRunner implements jobs.JobRunner {
     // appended to job name.
     return `${this.project.name.replace(/[.\/]/g, "-")}-${
       this.job.name
-      }`.toLowerCase();
+    }`.toLowerCase();
   }
 
   public logs(): Promise<string> {
@@ -520,23 +541,31 @@ export class JobRunner implements jobs.JobRunner {
    * update pod info on event using watch
    */
   private startUpdatingPod(): request.Request {
-    const url = `${kc.getCurrentCluster().server}/api/v1/namespaces/${this.project.kubernetes.namespace}/pods`;
+    const url = `${kc.getCurrentCluster().server}/api/v1/namespaces/${
+      this.project.kubernetes.namespace
+    }/pods`;
     const requestOptions = {
-      qs: { watch: true, timeoutSeconds: 200, labelSelector: `build=${this.event.buildID},jobname=${this.job.name}` },
-      method: 'GET', uri: url, useQuerystring: true, json: true,
+      qs: {
+        watch: true,
+        timeoutSeconds: 200,
+        labelSelector: `build=${this.event.buildID},jobname=${this.job.name}`
+      },
+      method: "GET",
+      uri: url,
+      useQuerystring: true,
+      json: true
     };
     kc.applyToRequest(requestOptions);
     const stream = new byline_1.LineStream();
-    stream.on('data', (data) => {
+    stream.on("data", data => {
       let obj = null;
       try {
         if (data instanceof Buffer) {
           obj = JSON.parse(data.toString());
-        }
-        else {
+        } else {
           obj = JSON.parse(data);
         }
-      } catch (e) { } //let it stay connected.
+      } catch (e) {} //let it stay connected.
       if (obj && obj.object) {
         this.pod = obj.object as kubernetes.V1Pod;
       }
@@ -548,7 +577,9 @@ export class JobRunner implements jobs.JobRunner {
       }
     });
     req.pipe(stream);
-    req.on('end', () => { this.reconnect = true; }); //stay connected on transient faults
+    req.on("end", () => {
+      this.reconnect = true;
+    }); //stay connected on transient faults
     return req;
   }
 
@@ -586,7 +617,9 @@ export class JobRunner implements jobs.JobRunner {
           this.reconnect = false;
           try {
             podUpdater.abort();
-          } catch (e) { this.logger.log(e); }
+          } catch (e) {
+            this.logger.log(e);
+          }
           podUpdater = this.startUpdatingPod();
         }
         if (!this.pod || this.pod.status == undefined) {
@@ -621,7 +654,7 @@ export class JobRunner implements jobs.JobRunner {
         }
         this.logger.log(
           `${this.pod.metadata.namespace}/${this.pod.metadata.name} phase ${
-          this.pod.status.phase
+            this.pod.status.phase
           }`
         );
         // In all other cases we fall through and let the fn be run again.
@@ -740,6 +773,16 @@ function sidecarSpec(
       }
     } as kubernetes.V1EnvVar);
   }
+
+  spec.resources = new kubernetes.V1ResourceRequirements();
+  spec.resources.limits = {
+    cpu: project.kubernetes.vcsSidecarResourcesLimitsCPU,
+    memory: project.kubernetes.vcsSidecarResourcesLimitsMemory
+  };
+  spec.resources.requests = {
+    cpu: project.kubernetes.vcsSidecarResourcesRequestsCPU,
+    memory: project.kubernetes.vcsSidecarResourcesRequestsMemory
+  };
 
   return spec;
 }
@@ -866,6 +909,10 @@ export function secretToProject(
       namespace: secret.metadata.namespace || ns,
       buildStorageSize: "50Mi",
       vcsSidecar: "",
+      vcsSidecarResourcesLimitsCPU: "",
+      vcsSidecarResourcesLimitsMemory: "",
+      vcsSidecarResourcesRequestsCPU: "",
+      vcsSidecarResourcesRequestsMemory: "",
       cacheStorageClass: "",
       buildStorageClass: ""
     },
@@ -880,6 +927,26 @@ export function secretToProject(
   };
   if (secret.data.vcsSidecar) {
     p.kubernetes.vcsSidecar = b64dec(secret.data.vcsSidecar);
+  }
+  if (secret.data.vcsSidecarResourcesLimitsCPU) {
+    p.kubernetes.vcsSidecarResourcesLimitsCPU = b64dec(
+      secret.data["vcsSidecarResources.limits.cpu"]
+    );
+  }
+  if (secret.data.vcsSidecarResourcesLimitsMemory) {
+    p.kubernetes.vcsSidecarResourcesLimitsMemory = b64dec(
+      secret.data["vcsSidecarResources.limits.memory"]
+    );
+  }
+  if (secret.data.vcsSidecarResourcesRequestsCPU) {
+    p.kubernetes.vcsSidecarResourcesRequestsCPU = b64dec(
+      secret.data["vcsSidecarResources.requests.cpu"]
+    );
+  }
+  if (secret.data.vcsSidecarResourcesRequestsMemory) {
+    p.kubernetes.vcsSidecarResourcesRequestsMemory = b64dec(
+      secret.data["vcsSidecarResources.requests.memory"]
+    );
   }
   if (secret.data.buildStorageSize) {
     p.kubernetes.buildStorageSize = b64dec(secret.data.buildStorageSize);
