@@ -40,7 +40,7 @@ cd $GOPATH/src/github.com/Azure/brigade
 **Note**: this leaves you at the tip of **master** in the repository where active development
 is happening. You might prefer to checkout the most recent stable tag:
 
-- `$ git checkout v0.18.0`
+- `$ git checkout v0.19.0`
 
 After cloning the project locally, you should run this command to [configure the remote](https://help.github.com/articles/configuring-a-remote-for-a-fork/): 
 
