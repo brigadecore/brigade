@@ -78,8 +78,6 @@ func (c *Controller) updateBuildStatus(build *v1.Secret) error {
 func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 	env := workerEnv(project, build, config)
 
-	resources := workerResources(config)
-
 	cmd := []string{"yarn", "-s", "start"}
 	if cmdBytes, ok := project.Data["workerCommand"]; ok && len(cmdBytes) > 0 {
 		cmd = strings.Split(string(cmdBytes), " ")
@@ -118,7 +116,7 @@ func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 				sidecarVolume,
 			},
 			Env:       env,
-			Resources: resources,
+			Resources: workerResources(config),
 		}},
 		Volumes: []v1.Volume{{
 			Name: buildVolume.Name,
@@ -151,6 +149,7 @@ func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 			ImagePullPolicy: v1.PullPolicy(pullPolicy),
 			VolumeMounts:    []v1.VolumeMount{sidecarVolume},
 			Env:             env,
+			Resources:       vcsSidecarResources(project),
 		}}
 	}
 
@@ -244,6 +243,42 @@ func workerResources(config *Config) v1.ResourceRequirements {
 	limitMemory, _ := apiresource.ParseQuantity(config.WorkerLimitsMemory)
 	requestCPU, _ := apiresource.ParseQuantity(config.WorkerRequestsCPU)
 	requestMemory, _ := apiresource.ParseQuantity(config.WorkerRequestsMemory)
+
+	return v1.ResourceRequirements{
+		Limits: v1.ResourceList{
+			v1.ResourceCPU:    limitCPU,
+			v1.ResourceMemory: limitMemory,
+		},
+		Requests: v1.ResourceList{
+			v1.ResourceCPU:    requestCPU,
+			v1.ResourceMemory: requestMemory,
+		},
+	}
+}
+
+// vcsSidecarResources generates the resources for the init-container in the worker
+// If the value is not given, or it's wrong, an empty quantity will be set
+func vcsSidecarResources(project *v1.Secret) v1.ResourceRequirements {
+	var (
+		limitCPU      apiresource.Quantity
+		limitMemory   apiresource.Quantity
+		requestCPU    apiresource.Quantity
+		requestMemory apiresource.Quantity
+	)
+
+	if givenLimitCPU, ok := project.Data["vcsSidecarResources.limits.cpu"]; ok {
+		limitCPU, _ = apiresource.ParseQuantity(string(givenLimitCPU))
+
+	}
+	if givenLimitMemory, ok := project.Data["vcsSidecarResources.limits.memory"]; ok {
+		limitMemory, _ = apiresource.ParseQuantity(string(givenLimitMemory))
+	}
+	if givenRequestCPU, ok := project.Data["vcsSidecarResources.requests.cpu"]; ok {
+		requestCPU, _ = apiresource.ParseQuantity(string(givenRequestCPU))
+	}
+	if givenRequestMemory, ok := project.Data["vcsSidecarResources.requests.memory"]; ok {
+		requestMemory, _ = apiresource.ParseQuantity(string(givenRequestMemory))
+	}
 
 	return v1.ResourceRequirements{
 		Limits: v1.ResourceList{
