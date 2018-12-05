@@ -775,14 +775,24 @@ function sidecarSpec(
   }
 
   spec.resources = new kubernetes.V1ResourceRequirements();
-  spec.resources.limits = {
-    cpu: project.kubernetes.vcsSidecarResourcesLimitsCPU,
-    memory: project.kubernetes.vcsSidecarResourcesLimitsMemory
-  };
-  spec.resources.requests = {
-    cpu: project.kubernetes.vcsSidecarResourcesRequestsCPU,
-    memory: project.kubernetes.vcsSidecarResourcesRequestsMemory
-  };
+  spec.resources.limits = {};
+  spec.resources.requests = {};
+  if (project.kubernetes.vcsSidecarResourcesLimitsCPU) {
+    spec.resources.limits["cpu"] =
+      project.kubernetes.vcsSidecarResourcesLimitsCPU;
+  }
+  if (project.kubernetes.vcsSidecarResourcesLimitsMemory) {
+    spec.resources.limits["memory"] =
+      project.kubernetes.vcsSidecarResourcesLimitsMemory;
+  }
+  if (project.kubernetes.vcsSidecarResourcesRequestsCPU) {
+    spec.resources.requests["cpu"] =
+      project.kubernetes.vcsSidecarResourcesRequestsCPU;
+  }
+  if (project.kubernetes.vcsSidecarResourcesRequestsMemory) {
+    spec.resources.requests["memory"] =
+      project.kubernetes.vcsSidecarResourcesRequestsMemory;
+  }
 
   return spec;
 }
@@ -928,22 +938,22 @@ export function secretToProject(
   if (secret.data.vcsSidecar) {
     p.kubernetes.vcsSidecar = b64dec(secret.data.vcsSidecar);
   }
-  if (secret.data.vcsSidecarResourcesLimitsCPU) {
+  if (secret.data["vcsSidecarResources.limits.cpu"]) {
     p.kubernetes.vcsSidecarResourcesLimitsCPU = b64dec(
       secret.data["vcsSidecarResources.limits.cpu"]
     );
   }
-  if (secret.data.vcsSidecarResourcesLimitsMemory) {
+  if (secret.data["vcsSidecarResources.limits.memory"]) {
     p.kubernetes.vcsSidecarResourcesLimitsMemory = b64dec(
       secret.data["vcsSidecarResources.limits.memory"]
     );
   }
-  if (secret.data.vcsSidecarResourcesRequestsCPU) {
+  if (secret.data["vcsSidecarResources.requests.cpu"]) {
     p.kubernetes.vcsSidecarResourcesRequestsCPU = b64dec(
       secret.data["vcsSidecarResources.requests.cpu"]
     );
   }
-  if (secret.data.vcsSidecarResourcesRequestsMemory) {
+  if (secret.data["vcsSidecarResources.requests.memory"]) {
     p.kubernetes.vcsSidecarResourcesRequestsMemory = b64dec(
       secret.data["vcsSidecarResources.requests.memory"]
     );

@@ -453,6 +453,38 @@ describe("k8s", function() {
           );
         });
       });
+      context("when vcsSidecar only cpu resources defined", function() {
+        beforeEach(function() {
+          p.kubernetes.vcsSidecarResourcesLimitsCPU = "100m";
+          p.kubernetes.vcsSidecarResourcesRequestsCPU = "50m";
+        });
+        it("sets only cpu resource requests and limits for the init-container pod", function() {
+          let jr = new k8s.JobRunner(j, e, p);
+          let expResources = new kubernetes.V1ResourceRequirements();
+          expResources.limits = { cpu: "100m" };
+          expResources.requests = { cpu: "50m" };
+          assert.deepEqual(
+            jr.runner.spec.initContainers[0].resources,
+            expResources
+          );
+        });
+      });
+      context("when vcsSidecar only memory resources defined", function() {
+        beforeEach(function() {
+          p.kubernetes.vcsSidecarResourcesLimitsMemory = "100Mi";
+          p.kubernetes.vcsSidecarResourcesRequestsMemory = "50Mi";
+        });
+        it("sets only memory resource requests and limits for the init-container pod", function() {
+          let jr = new k8s.JobRunner(j, e, p);
+          let expResources = new kubernetes.V1ResourceRequirements();
+          expResources.limits = { memory: "100Mi" };
+          expResources.requests = { memory: "50Mi" };
+          assert.deepEqual(
+            jr.runner.spec.initContainers[0].resources,
+            expResources
+          );
+        });
+      });
     });
   });
 });
