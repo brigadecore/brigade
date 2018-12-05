@@ -24,6 +24,15 @@ spec:
         imagePullPolicy: {{ default "IfNotPresent" .Values.controller.pullPolicy }}
         ports:
         - containerPort: {{ .Values.service.internalPort }}
+        command:
+        - /usr/bin/brigade-controller
+        {{ if .Values.controller.workerResources }}
+        args:
+        - -worker-requests-cpu={{ default "" .Values.controller.workerResources.requestsCPU | quote }}
+        - -worker-requests-memory={{ default "" .Values.controller.workerResources.requestsMemory | quote }}
+        - -worker-limits-cpu={{ default "" .Values.controller.workerResources.limitsCPU | quote }}
+        - -worker-limits-memory={{ default "" .Values.controller.workerResources.limitsMemory | quote }}
+        {{- end }}
         env:
           - name: BRIGADE_NAMESPACE
             valueFrom:
