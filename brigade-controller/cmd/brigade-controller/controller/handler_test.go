@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestNewWorkerPod_Defaults(t *testing.T) {
@@ -31,22 +30,12 @@ func TestNewWorkerPod_Defaults(t *testing.T) {
 		t.Errorf("Unexpected command: %s", cmd)
 	}
 
-	emptyQuantity := resource.Quantity{}
-
-	if quantity := container.Resources.Limits.Cpu(); *quantity != emptyQuantity {
-		t.Errorf("Unexpected cpu limits quantity: %s", quantity.String())
+	if len(container.Resources.Limits) != 0 {
+		t.Errorf("Limits should be undefined")
 	}
 
-	if quantity := container.Resources.Limits.Memory(); *quantity != emptyQuantity {
-		t.Errorf("Unexpected memory limits quantity: %s", quantity.String())
-	}
-
-	if quantity := container.Resources.Requests.Cpu(); *quantity != emptyQuantity {
-		t.Errorf("Unexpected cpu requests quantity: %s", quantity.String())
-	}
-
-	if quantity := container.Resources.Requests.Memory(); *quantity != emptyQuantity {
-		t.Errorf("Unexpected memory requests quantity: %s", quantity.String())
+	if len(container.Resources.Requests) != 0 {
+		t.Errorf("Requests should be undefined")
 	}
 
 }

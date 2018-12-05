@@ -237,59 +237,59 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 }
 
 // workerResources generates the resources for the worker, given in the cofiguration
-// If the value is not given, or it's wrong, an empty quantity will be set
+// If the value is not given, or it's wrong, empty resources gill be returned
 func workerResources(config *Config) v1.ResourceRequirements {
-	limitCPU, _ := apiresource.ParseQuantity(config.WorkerLimitsCPU)
-	limitMemory, _ := apiresource.ParseQuantity(config.WorkerLimitsMemory)
-	requestCPU, _ := apiresource.ParseQuantity(config.WorkerRequestsCPU)
-	requestMemory, _ := apiresource.ParseQuantity(config.WorkerRequestsMemory)
-
-	return v1.ResourceRequirements{
-		Limits: v1.ResourceList{
-			v1.ResourceCPU:    limitCPU,
-			v1.ResourceMemory: limitMemory,
-		},
-		Requests: v1.ResourceList{
-			v1.ResourceCPU:    requestCPU,
-			v1.ResourceMemory: requestMemory,
-		},
+	resources := v1.ResourceRequirements{
+		Limits:   v1.ResourceList{},
+		Requests: v1.ResourceList{},
 	}
+
+	if v, err := apiresource.ParseQuantity(config.WorkerLimitsCPU); err == nil {
+		resources.Limits[v1.ResourceCPU] = v
+	}
+	if v, err := apiresource.ParseQuantity(config.WorkerLimitsMemory); err == nil {
+		resources.Limits[v1.ResourceMemory] = v
+	}
+	if v, err := apiresource.ParseQuantity(config.WorkerRequestsCPU); err == nil {
+		resources.Requests[v1.ResourceCPU] = v
+	}
+	if v, err := apiresource.ParseQuantity(config.WorkerRequestsMemory); err == nil {
+		resources.Requests[v1.ResourceMemory] = v
+	}
+
+	return resources
 }
 
 // vcsSidecarResources generates the resources for the init-container in the worker
-// If the value is not given, or it's wrong, an empty quantity will be set
+// If the value is not given, or it's wrong, empty resources gill be returned
 func vcsSidecarResources(project *v1.Secret) v1.ResourceRequirements {
-	var (
-		limitCPU      apiresource.Quantity
-		limitMemory   apiresource.Quantity
-		requestCPU    apiresource.Quantity
-		requestMemory apiresource.Quantity
-	)
-
-	if givenLimitCPU, ok := project.Data["vcsSidecarResources.limits.cpu"]; ok {
-		limitCPU, _ = apiresource.ParseQuantity(string(givenLimitCPU))
-
-	}
-	if givenLimitMemory, ok := project.Data["vcsSidecarResources.limits.memory"]; ok {
-		limitMemory, _ = apiresource.ParseQuantity(string(givenLimitMemory))
-	}
-	if givenRequestCPU, ok := project.Data["vcsSidecarResources.requests.cpu"]; ok {
-		requestCPU, _ = apiresource.ParseQuantity(string(givenRequestCPU))
-	}
-	if givenRequestMemory, ok := project.Data["vcsSidecarResources.requests.memory"]; ok {
-		requestMemory, _ = apiresource.ParseQuantity(string(givenRequestMemory))
+	resources := v1.ResourceRequirements{
+		Limits:   v1.ResourceList{},
+		Requests: v1.ResourceList{},
 	}
 
-	return v1.ResourceRequirements{
-		Limits: v1.ResourceList{
-			v1.ResourceCPU:    limitCPU,
-			v1.ResourceMemory: limitMemory,
-		},
-		Requests: v1.ResourceList{
-			v1.ResourceCPU:    requestCPU,
-			v1.ResourceMemory: requestMemory,
-		},
+	if givenValue, ok := project.Data["vcsSidecarResources.limits.cpu"]; ok {
+		if v, err := apiresource.ParseQuantity(string(givenValue)); err == nil {
+			resources.Limits[v1.ResourceCPU] = v
+		}
 	}
+	if givenValue, ok := project.Data["vcsSidecarResources.limits.memory"]; ok {
+		if v, err := apiresource.ParseQuantity(string(givenValue)); err == nil {
+			resources.Limits[v1.ResourceMemory] = v
+		}
+	}
+	if givenValue, ok := project.Data["vcsSidecarResources.requests.cpu"]; ok {
+		if v, err := apiresource.ParseQuantity(string(givenValue)); err == nil {
+			resources.Requests[v1.ResourceCPU] = v
+		}
+	}
+	if givenValue, ok := project.Data["vcsSidecarResources.requests.memory"]; ok {
+		if v, err := apiresource.ParseQuantity(string(givenValue)); err == nil {
+			resources.Requests[v1.ResourceMemory] = v
+		}
+	}
+
+	return resources
 }
 
 // secretRef generate a SecretKeyRef env var entry if `key` is present in `secret`.
