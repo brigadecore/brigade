@@ -15,6 +15,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: {{ $fullname }}
+        app: {{ $fullname }}
         role: controller
     spec:
       serviceAccountName: {{ $fullname }}
