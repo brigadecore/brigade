@@ -15,6 +15,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: {{ template "brigade.fullname" . }}-api
+        app: {{ template "brigade.fullname" . }}-api
         role: api
     spec:
       serviceAccountName: {{ template "brigade.api.fullname" . }}
