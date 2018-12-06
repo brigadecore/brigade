@@ -83,6 +83,16 @@ secrets:
 # be used.
 # vcsSidecar: "deis/git-sidecar:latest"
 
+# OPTIONAL: vcsSidecarResources defines the resources (limits/requests) for all
+# the init-containers to be created by the worker and the one for the worker itself
+# vcsSidecarResources:
+#   limits:
+#     cpu: "100m"
+#     memory: "100Mi"
+#   requests:
+#     cpu: "100m"
+#     memory: "100Mi"
+
 # OPTIONAL: imagePullSecrets allows you to specify a comma-separated list of
 # image pull secrets that will be injected into the worker. With this, you can
 # use a vcsSidecar or worker image from an internal repository.

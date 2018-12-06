@@ -19,6 +19,10 @@ type Config struct {
 	WorkerImage          string
 	WorkerPullPolicy     string
 	WorkerServiceAccount string
+	WorkerRequestsCPU    string
+	WorkerRequestsMemory string
+	WorkerLimitsCPU      string
+	WorkerLimitsMemory   string
 }
 
 // Controller listens for new brigade builds and starts the worker pods.
