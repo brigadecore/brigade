@@ -28,10 +28,14 @@ spec:
         - /usr/bin/brigade-controller
         {{ if .Values.controller.workerResources }}
         args:
-        - -worker-requests-cpu={{ default "" .Values.controller.workerResources.requestsCPU }}
-        - -worker-requests-memory={{ default "" .Values.controller.workerResources.requestsMemory }}
-        - -worker-limits-cpu={{ default "" .Values.controller.workerResources.limitsCPU }}
-        - -worker-limits-memory={{ default "" .Values.controller.workerResources.limitsMemory }}
+        {{ if .Values.controller.workerResources.requests }}
+        - -worker-requests-cpu={{ default "" .Values.controller.workerResources.requests.cpu }}
+        - -worker-requests-memory={{ default "" .Values.controller.workerResources.requests.memory }}
+        {{- end }}
+        {{ if .Values.controller.workerResources.limits }}
+        - -worker-limits-cpu={{ default "" .Values.controller.workerResources.limits.cpu }}
+        - -worker-limits-memory={{ default "" .Values.controller.workerResources.limits.memory }}
+        {{- end }}
         {{- end }}
         env:
           - name: BRIGADE_NAMESPACE

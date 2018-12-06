@@ -46,10 +46,12 @@ controller:
   #tag:
   #pullPolicy: IfNotPresent
   #workerResources:
-  #  limitsCPU:
-  #  limitsMemory:
-  #  requestsCPU:
-  #  requestsMemory:
+  #  limits:
+  #    cpu:
+  #    memory:
+  #  requests:
+  #    cpu:
+  #    memory:
 
 # api is the API server. It is technically not needed for the operation of the
 # Brigade controller, but it is used by tools to learn about the state of the
