@@ -30,4 +30,12 @@ func TestNewWorkerPod_Defaults(t *testing.T) {
 		t.Errorf("Unexpected command: %s", cmd)
 	}
 
+	if len(container.Resources.Limits) != 0 {
+		t.Errorf("Limits should be undefined")
+	}
+
+	if len(container.Resources.Requests) != 0 {
+		t.Errorf("Requests should be undefined")
+	}
+
 }

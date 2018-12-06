@@ -158,6 +158,26 @@ export interface KubernetesConfig {
   vcsSidecar: string;
 
   /**
+   * vcsSidecarResourcesLimitsCPU is the cpu limits name for the sidecar container.
+   */
+  vcsSidecarResourcesLimitsCPU: string;
+
+  /**
+   * vcsSidecarResourcesLimitsMemory is the memory limits name for the sidecar container.
+   */
+  vcsSidecarResourcesLimitsMemory: string;
+
+  /**
+   * vcsSidecarResourcesRequestsCPU is the cpu requests name for the sidecar container.
+   */
+  vcsSidecarResourcesRequestsCPU: string;
+
+  /**
+   * vcsSidecarResourcesRequestsMemory is the memory requests name for the sidecar container.
+   */
+  vcsSidecarResourcesRequestsMemory: string;
+
+  /**
    *  buildStorageSize is the size of the build shared storage space used by the jobs
    */
   buildStorageSize: string;

@@ -45,6 +45,13 @@ controller:
   # The default tag is the value of .Chart.AppVersion
   #tag:
   #pullPolicy: IfNotPresent
+  #workerResources:
+  #  limits:
+  #    cpu:
+  #    memory:
+  #  requests:
+  #    cpu:
+  #    memory:
 
 # api is the API server. It is technically not needed for the operation of the
 # Brigade controller, but it is used by tools to learn about the state of the

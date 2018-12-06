@@ -9,6 +9,7 @@ import (
 
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/Azure/brigade/pkg/storage/kube"
@@ -114,7 +115,8 @@ func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 				projectVolume,
 				sidecarVolume,
 			},
-			Env: env,
+			Env:       env,
+			Resources: workerResources(config),
 		}},
 		Volumes: []v1.Volume{{
 			Name: buildVolume.Name,
@@ -147,6 +149,7 @@ func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 			ImagePullPolicy: v1.PullPolicy(pullPolicy),
 			VolumeMounts:    []v1.VolumeMount{sidecarVolume},
 			Env:             env,
+			Resources:       vcsSidecarResources(project),
 		}}
 	}
 
@@ -231,6 +234,62 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 			ValueFrom: secretRef("github.token", project),
 		},
 	}
+}
+
+// workerResources generates the resources for the worker, given in the cofiguration
+// If the value is not given, or it's wrong, empty resources gill be returned
+func workerResources(config *Config) v1.ResourceRequirements {
+	resources := v1.ResourceRequirements{
+		Limits:   v1.ResourceList{},
+		Requests: v1.ResourceList{},
+	}
+
+	if v, err := apiresource.ParseQuantity(config.WorkerLimitsCPU); err == nil {
+		resources.Limits[v1.ResourceCPU] = v
+	}
+	if v, err := apiresource.ParseQuantity(config.WorkerLimitsMemory); err == nil {
+		resources.Limits[v1.ResourceMemory] = v
+	}
+	if v, err := apiresource.ParseQuantity(config.WorkerRequestsCPU); err == nil {
+		resources.Requests[v1.ResourceCPU] = v
+	}
+	if v, err := apiresource.ParseQuantity(config.WorkerRequestsMemory); err == nil {
+		resources.Requests[v1.ResourceMemory] = v
+	}
+
+	return resources
+}
+
+// vcsSidecarResources generates the resources for the init-container in the worker
+// If the value is not given, or it's wrong, empty resources gill be returned
+func vcsSidecarResources(project *v1.Secret) v1.ResourceRequirements {
+	resources := v1.ResourceRequirements{
+		Limits:   v1.ResourceList{},
+		Requests: v1.ResourceList{},
+	}
+
+	if givenValue, ok := project.Data["vcsSidecarResources.limits.cpu"]; ok {
+		if v, err := apiresource.ParseQuantity(string(givenValue)); err == nil {
+			resources.Limits[v1.ResourceCPU] = v
+		}
+	}
+	if givenValue, ok := project.Data["vcsSidecarResources.limits.memory"]; ok {
+		if v, err := apiresource.ParseQuantity(string(givenValue)); err == nil {
+			resources.Limits[v1.ResourceMemory] = v
+		}
+	}
+	if givenValue, ok := project.Data["vcsSidecarResources.requests.cpu"]; ok {
+		if v, err := apiresource.ParseQuantity(string(givenValue)); err == nil {
+			resources.Requests[v1.ResourceCPU] = v
+		}
+	}
+	if givenValue, ok := project.Data["vcsSidecarResources.requests.memory"]; ok {
+		if v, err := apiresource.ParseQuantity(string(givenValue)); err == nil {
+			resources.Requests[v1.ResourceMemory] = v
+		}
+	}
+
+	return resources
 }
 
 // secretRef generate a SecretKeyRef env var entry if `key` is present in `secret`.

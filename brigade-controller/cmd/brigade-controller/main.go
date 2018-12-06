@@ -31,6 +31,10 @@ func main() {
 	flag.StringVar(&ctrConfig.WorkerImage, "worker-image", defaultWorkerImage(), "kubernetes worker image")
 	flag.StringVar(&ctrConfig.WorkerPullPolicy, "worker-pull-policy", defaultWorkerPullPolicy(), "kubernetes worker image pull policy")
 	flag.StringVar(&ctrConfig.WorkerServiceAccount, "worker-service-account", defaultWorkerServiceAccount(), "kubernetes worker service account name")
+	flag.StringVar(&ctrConfig.WorkerRequestsCPU, "worker-requests-cpu", "", "kubernetes worker cpu requests")
+	flag.StringVar(&ctrConfig.WorkerRequestsMemory, "worker-requests-memory", "", "kubernetes worker memory requests")
+	flag.StringVar(&ctrConfig.WorkerLimitsCPU, "worker-limits-cpu", "", "kubernetes worker cpu limits")
+	flag.StringVar(&ctrConfig.WorkerLimitsMemory, "worker-limits-memory", "", "kubernetes worker memory limits")
 	flag.Parse()
 
 	// creates the connection
