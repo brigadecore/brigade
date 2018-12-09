@@ -41,7 +41,8 @@ The easiest way to install Brigade into your Kubernetes cluster is to install it
 
 ```console
 $ helm repo add brigade https://azure.github.io/brigade
-$ helm install -n brigade brigade/brigade
+$ # remove the rbac.enabled value if your cluster is not RBAC enabled
+$ helm install -n brigade brigade/brigade --set rbac.enabled=true
 ```
 
 You will now have Brigade installed.
