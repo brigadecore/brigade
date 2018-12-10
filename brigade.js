@@ -31,6 +31,7 @@ function goTest(e, project) {
     // Need to move the source into GOPATH so vendor/ works as desired.
     "mkdir -p " + localPath,
     "mv /src/* " + localPath,
+    "mv /src/.git " + localPath,
     "cd " + localPath,
     "make vendor",
     "make test-style",
