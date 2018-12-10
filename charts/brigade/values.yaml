@@ -4,8 +4,8 @@
 #
 #    $ helm install -n brigade -f myValues.yaml brigade/brigade
 #
-# By default, the chart will install without RBAC. To install with
-# RBAC, set `rbac.enabled` to `true`.
+# By default, the chart will install with RBAC. To install without
+# RBAC, set `rbac.enabled` to `false`.
 #
 # To disable the GitHub gateway, set `gw.enabled` to `false`. This will mean
 # that no GitHub hooks will work, though scripts will still be able to mount
@@ -19,22 +19,20 @@
 # used to pull the tag. If you override the `tag` value, that version will
 # be used instead.
 #
-# Note that if `rbac.enabled` is turned on, the chart will install a set of
-# RBAC objects that are designed to give a moderate set of permissions to the
-# Brigade core components. However, even if RBACs are not enabled, this chart
-# will create service accounts for each entity that we install.Security experts
-# may prefer to apply their own RBACs instead of the ones supplied by the chart.
-# Provided that the service accounts remain the same, this chart should provide
-# compatibility with custom rules.
+# Note that when `rbac.enabled` is turned on, as is the default, the chart will
+# install a set of RBAC objects that are designed to give a moderate set of
+# permissions to the Brigade core components. However, even if RBACs are not
+# enabled, this chart will create service accounts for each entity that we
+# install. Security experts may prefer to apply their own RBACs instead of the
+# ones supplied by the chart.  Provided that the service accounts remain the
+# same, this chart should provide compatibility with custom rules.
 
 
-# If enabled, roles, role bindings will be turned on.
 # IMPORTANT: The RBAC system is complex, and if you are using RBACs in your
 # cluster, you may need to evaluate existing rules and accounts in addition
-# to the rules created here. We recommend that you understand RBACs
-# before enabling this.
+# to the rules created here.
 rbac:
-  enabled: false
+  enabled: true
 
 # controller is the main event processor in Brigade.
 controller:
