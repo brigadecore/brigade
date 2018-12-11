@@ -22,3 +22,6 @@ func (api API) Build() Build { return Build(api) }
 
 // Job returns a handler for jobs.
 func (api API) Job() Job { return Job(api) }
+
+// Store returns the API store
+func (api API) Store() storage.Store { return api.store }
