@@ -278,15 +278,6 @@ func projectCreatePrompts(p *brigade.Project) error {
 		fmt.Printf("Auto-generated a Shared Secret: %q\n", p.SharedSecret)
 	}
 
-	if strings.TrimSpace(p.GenericWebhookSecret) == "" {
-		var err error
-		p.GenericWebhookSecret, err = goutils.RandomAlphaNumeric(5)
-		if err != nil {
-			return fmt.Errorf("Error in generating Generic Webhook Secret: %s", err.Error())
-		}
-		fmt.Printf("Auto-generated Generic Webhook Secret (for Brigade API Server): %s\n", p.GenericWebhookSecret)
-	}
-
 	configureGitHub := false
 	if err := survey.AskOne(&survey.Confirm{
 		Message: "Configure GitHub Access?",
