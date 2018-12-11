@@ -176,6 +176,8 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 	}
 	proj.Secrets = envVars
 
+	proj.GenericWebhookSecret = sv.String("genericWebhookSecret")
+
 	proj.Worker = brigade.WorkerConfig{
 		Registry:   sv.String("worker.registry"),
 		Name:       sv.String("worker.name"),

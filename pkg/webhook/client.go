@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
@@ -104,15 +106,27 @@ func GetLastCommit(proj *brigade.Project, ref string) (string, error) {
 // GetFileContents returns the contents for a particular file in the project.
 func GetFileContents(proj *brigade.Project, ref, path string) ([]byte, error) {
 	c := context.Background()
-	client, err := ghClient(proj.Github)
-	if err != nil {
-		return []byte{}, err
+
+	var client *github.Client
+	if proj.Github.Token != "" { // GitHub project configured with Auth Token
+		var err error
+		client, err = ghClient(proj.Github)
+		if err != nil {
+			return []byte{}, err
+		}
+	} else { // OSS project
+		netClient := &http.Client{ // https://medium.com/@nate510/don-t-use-go-s-default-http-client-4804cb19f779
+			Timeout: time.Second * 30, // 30 seconds timeout should be enough
+		}
+		client = github.NewClient(netClient)
 	}
+
 	parts := strings.SplitN(proj.Repo.Name, "/", 3)
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("project name %q is malformed", proj.Repo.Name)
 	}
 	opts := &github.RepositoryContentGetOptions{Ref: ref}
+
 	r, err := client.Repositories.DownloadContents(c, parts[1], parts[2], path, opts)
 	if err != nil {
 		return nil, err
