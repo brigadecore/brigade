@@ -6,8 +6,8 @@ For that reason, it is prudent to configure security.
 
 - *Isolate Brigade in a namespace*: It is best to run Brigade in its own namespace. For example,
   in a Helm install, do `helm install --namespace brigade ...`.
-- *Enable RBAC*: When installing with Helm, using `--set rbac.enabled=true` will turn on
-  role-based access control.
+- *RBAC Enabled*: When installing with Helm, role-based access control is enabled by default.
+  To disable,`--set rbac.enabled=false` will turn off role-based access control.
 - *Do not run more than one brigade per namespace*: Running multiple installs of Brigade
   in the same namespace can cause naming collisions which could result in
   unauthorized access to pods.

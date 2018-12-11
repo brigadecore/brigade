@@ -59,16 +59,16 @@ $ helm install brigade/brigade --set controller.name=my-image --set controller.t
 There are a variety of other configuration options for Brigade. Run `helm fetch values ./charts/brigade`
 to see them all.
 
-### Enabling RBAC (optional)
+### Disabling RBAC
 
-By default, Brigade has Role Based Access Control support turned off. To enable this, set
-`rbac.enabled` to `true`:
+By default, Brigade has Role Based Access Control support turned on. To disable this, set
+`rbac.enabled` to `false`:
 
 ```console
-$ helm install brigade/brigade --set rbac.enabled=true
+$ helm install brigade/brigade --set rbac.enabled=false
 ```
 
-> RBAC is disabled by default because many clusters to not enable RBAC by default.
+> RBAC is enabled by default because many clusters enable RBAC by default.
 
 ## Configuring Brigade
 
