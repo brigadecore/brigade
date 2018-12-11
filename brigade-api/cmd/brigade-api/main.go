@@ -10,20 +10,21 @@ import (
 	"github.com/Azure/brigade/pkg/api"
 	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/Azure/brigade/pkg/webhook"
 
 	"github.com/emicklei/go-restful"
 	restfulspec "github.com/emicklei/go-restful-openapi"
 	"github.com/go-openapi/spec"
-
 	"k8s.io/api/core/v1"
 )
 
 var (
-	apiPort    string
-	kubeconfig string
-	master     string
-	namespace  string
-	verbose    bool
+	apiPort        string
+	kubeconfig     string
+	master         string
+	namespace      string
+	verbose        bool
+	genericGateway bool
 )
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 	flag.StringVar(&namespace, "namespace", defaultNamespace(), "kubernetes namespace")
 	flag.StringVar(&apiPort, "api-port", defaultAPIPort(), "TCP port to use for brigade-api")
 	flag.BoolVar(&verbose, "verbose", false, "enables detailed logging of http request matching and filter invocation")
+	flag.BoolVar(&genericGateway, "generic-gateway", false, "enables the generic webhook server")
 }
 
 type jobService struct {
@@ -43,6 +45,10 @@ type buildService struct {
 }
 
 type projectService struct {
+	server api.API
+}
+
+type genericWebhookService struct {
 	server api.API
 }
 
@@ -161,6 +167,28 @@ func (ps projectService) WebService() *restful.WebService {
 	return ws
 }
 
+func (gh genericWebhookService) WebService() *restful.WebService {
+	ws := new(restful.WebService)
+
+	ws.
+		Path("/webhook").
+		Consumes(restful.MIME_JSON).
+		Produces(restful.MIME_JSON, restful.MIME_XML, "plain/text", "text/javascript")
+
+	tags := []string{"genericwebhook"}
+
+	ws.Route(ws.POST("/{projectID}/{secret}").To(webhook.NewGenericWebhook(gh.server.Store())).
+		Doc("create a webhook event").
+		Metadata(restfulspec.KeyOpenAPITags, tags).
+		Param(ws.PathParameter("projectID", "identifier of the projectID").DataType("string")).
+		Param(ws.PathParameter("secret", "shared secret").DataType("string")).
+		Writes([]byte{}).
+		Returns(200, "OK", []byte{}).
+		Returns(404, "Not Found", nil))
+
+	return ws
+}
+
 func (hs healthService) WebService() *restful.WebService {
 	ws := new(restful.WebService)
 
@@ -198,12 +226,16 @@ func main() {
 	j := jobService{server: storageServer}
 	b := buildService{server: storageServer}
 	p := projectService{server: storageServer}
+	gh := genericWebhookService{server: storageServer}
 	h := healthService{}
 
 	restful.DefaultContainer.Add(j.WebService())
 	restful.DefaultContainer.Add(b.WebService())
 	restful.DefaultContainer.Add(p.WebService())
 	restful.DefaultContainer.Add(h.WebService())
+	if genericGateway {
+		restful.DefaultContainer.Add(gh.WebService())
+	}
 	restful.DefaultContainer.Filter(NCSACommonLogFormatLogger())
 
 	config := restfulspec.Config{

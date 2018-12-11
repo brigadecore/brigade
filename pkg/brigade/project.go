@@ -48,6 +48,9 @@ type Project struct {
 	// WorkerCommand is a string command that can be issued to the worker image.
 	// This is an alternative to the 'yarn start' command usually issued.
 	WorkerCommand string `json:"workerCommand"`
+
+	// GenericWebHookSecret is a string that contains the access code used by API Server to authenticate generic webhook requests
+	GenericWebhookSecret string `json:"genericWebhookSecret"`
 }
 
 // SecretsMap is a map[string]string for storing secrets.
