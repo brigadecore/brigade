@@ -18,7 +18,9 @@ const goEnv = {
 
 // Used by Docker image build/publish jobs
 const sharedMountPrefix = `/mnt/${projectName}/share/`
-const addMake = "apk upgrade && apk add --update --no-cache make"
+const addMake =
+  "apk upgrade 1>/dev/null && \
+  apk add --update --no-cache make 1>/dev/null"
 
 function goTest(e, project) {
   // Create a new job to run Go tests
