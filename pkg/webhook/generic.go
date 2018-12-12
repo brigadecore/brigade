@@ -29,11 +29,10 @@ func NewGenericWebhook(s storage.Store) func(request *restful.Request, response 
 
 // Handle handles a generic webhook event.
 func (g *genericWebhook) Handle(request *restful.Request, response *restful.Response) {
-	projectID := request.PathParameter("projectID")
-	log.Printf("ProjectID: %s\n", projectID)
+	log.Printf("Parameters: %s\n", request.PathParameters())
 
+	projectID := request.PathParameter("projectID")
 	secret := request.PathParameter("secret")
-	log.Printf("Secret: %s\n", secret)
 
 	gwData := &genericWebhookData{}
 	err := request.ReadEntity(gwData)
@@ -41,6 +40,7 @@ func (g *genericWebhook) Handle(request *restful.Request, response *restful.Resp
 	if err != nil {
 		log.Printf("Failed to read GenericWebHookData: %s", err)
 		response.WriteErrorString(http.StatusBadRequest, "{\"status\": \"Malformed genericWebhookData\"}")
+		return
 	}
 
 	log.Printf("gwData: %#v\n", gwData)
@@ -54,9 +54,18 @@ func (g *genericWebhook) Handle(request *restful.Request, response *restful.Resp
 	defer request.Request.Body.Close()
 
 	proj, err := g.store.GetProject(projectID)
+
 	if err != nil {
 		log.Printf("Project %q not found. No secret loaded. %s", projectID, err)
 		response.WriteErrorString(http.StatusBadRequest, "{\"status\": \"project not found\"}")
+		return
+	}
+
+	// if the secret is "" (probably due to a Brigade upgrade)
+	// refuse to serve it, so user will be forced to update it
+	if proj.GenericWebhookSecret == "" {
+		log.Printf("Secret for project %s is empty, please update it and try again", projectID)
+		response.WriteErrorString(http.StatusUnauthorized, "{\"status\": \"secret is empty, please update it\"}")
 		return
 	}
 
@@ -77,16 +86,12 @@ func (g *genericWebhook) notifyGenericWebhookEvent(proj *brigade.Project, payloa
 }
 
 func (g *genericWebhook) genericWebhookEvent(proj *brigade.Project, payload []byte, gwData *genericWebhookData) error {
-	// setup a default revision
-	revision := &brigade.Revision{Ref: "master"}
-	if gwData.Commit != "" {
-		revision.Commit = gwData.Commit
-	}
-	if gwData.Ref != "" {
-		revision.Ref = gwData.Ref
-	}
 
-	// get brigade.js for revision.Ref
+	revision := &brigade.Revision{}
+	revision.Commit = gwData.Commit
+	revision.Ref = gwData.Ref
+
+	// get brigade.js
 	script, err := GetFileContents(proj, revision.Ref, "brigade.js")
 	if err != nil {
 		log.Printf("Error getting file: %s", err)
