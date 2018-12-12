@@ -153,16 +153,14 @@ func createProject(out io.Writer) error {
 	// brig project create --replace
 	if projectCreateReplace {
 		if _, err = store.GetProject(proj.ID); err != nil {
-			fmt.Printf("project %s could not be found (error: %s). Cannot replace, exiting\n", proj.Name, err.Error())
-			return nil
+			return fmt.Errorf("project %s could not be found (error: %s). Cannot replace, exiting", proj.Name, err.Error())
 		}
 		return store.ReplaceProject(proj)
 	}
 
 	// brig project create # no replace
 	if _, err = store.GetProject(proj.ID); err == nil {
-		fmt.Printf("project %s already exists. Refusing to overwrite\n", proj.Name)
-		return nil
+		return fmt.Errorf("project %s already exists. Refusing to overwrite", proj.Name)
 	}
 	// Store the project
 	return store.CreateProject(proj)
