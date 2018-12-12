@@ -34,6 +34,8 @@
 rbac:
   enabled: true
 
+generic-gateway: false
+
 # controller is the main event processor in Brigade.
 controller:
   enabled: true
