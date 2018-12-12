@@ -13,11 +13,11 @@ into an existing Kubernetes cluster.
 
 ### Option 1: Install from the Chart Repository
 
-Each time the Brigade team cuts a new release, we update the Helm charts. Installing
+Each time the Brigade team cuts a new release, we update the Helm [charts][brigade-charts]. Installing
 with Helm is the best way to get a working release of Brigade.
 
 ```console
-$ helm repo add brigade https://azure.github.io/brigade
+$ helm repo add brigade https://azure.github.io/brigade-charts
 $ helm install brigade/brigade
 ```
 
@@ -31,8 +31,9 @@ This example shows how to check out the latest Brigade release:
 ```console
 $ git clone https://github.com/azure/brigade.git
 $ cd brigade
-$ git checkout $(git tag -l | tail -n 1)
-$ helm install ./charts/brigade
+$ latest_tag=$(git describe --tags --abbrev=0)
+$ git checkout ${latest_tag}
+$ helm install brigade/brigade --version ${latest_tag}
 ```
 
 (If you are interested in building from `master`, see the [developer docs](developer.md).)
@@ -50,13 +51,13 @@ The remainder of this guide covers special configurations of Brigade.
 Both of these options use the latest Brigade release from DockerHub. But you can override
 this behavior by supplying alternate images during installation.
 
-For each component of Brigade, you can set it's image and tag separately:
+For each component of Brigade, you can set its image and tag separately:
 
 ```console
 $ helm install brigade/brigade --set controller.name=my-image --set controller.tag=1.2.3
 ```
 
-There are a variety of other configuration options for Brigade. Run `helm fetch values ./charts/brigade`
+There are a variety of other configuration options for Brigade. Run `helm inspect values brigade/brigade`
 to see them all.
 
 ### Disabling RBAC
@@ -194,4 +195,4 @@ Implementation details of note:
   NFS-Ganesha may not work. You may need to do something like `apt-get install nfs-common`
   on the nodes to install the appropriate libraris.
 
-
+[brigade-charts]: https://github.com/Azure/brigade-charts
