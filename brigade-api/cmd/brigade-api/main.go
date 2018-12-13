@@ -33,7 +33,7 @@ func init() {
 	flag.StringVar(&namespace, "namespace", defaultNamespace(), "kubernetes namespace")
 	flag.StringVar(&apiPort, "api-port", defaultAPIPort(), "TCP port to use for brigade-api")
 	flag.BoolVar(&verbose, "verbose", false, "enables detailed logging of http request matching and filter invocation")
-	flag.BoolVar(&genericGateway, "generic-gateway", false, "enables the generic webhook server")
+	flag.BoolVar(&genericGateway, "genericGateway", false, "enables the generic webhook server")
 }
 
 type jobService struct {

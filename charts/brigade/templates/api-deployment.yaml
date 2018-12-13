@@ -23,10 +23,8 @@ spec:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.api.registry }}/{{ .Values.api.name }}:{{ default .Chart.AppVersion .Values.api.tag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.api.pullPolicy }}
-{{ if .Values.generic-gateway }}        
         args:
-          ["--generic-gateway", "true"]
-{{ end }}
+          ["--genericGateway", "{{ .Values.genericGateway.enabled }}"]
         ports:
         - containerPort: {{ .Values.api.service.internalPort }}
         livenessProbe:
