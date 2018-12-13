@@ -131,16 +131,13 @@ class Notification {
 }
 
 // Helper to wrap a job execution between two notifications.
-async function notificationWrap(job, note, conclusion) {
-  if (conclusion == null) {
-    conclusion = "success";
-  }
+async function notificationWrap(job, note) {
   await note.run();
   try {
     let res = await job.run();
     const logs = await job.logs();
 
-    note.conclusion = conclusion;
+    note.conclusion = "success";
     note.summary = `Task "${ job.name }" passed`;
     note.text = note.text = "```" + res.toString() + "```\nComplete";
     return await note.run();
