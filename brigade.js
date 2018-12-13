@@ -2,25 +2,25 @@
 // NOTE: This is the actual brigade.js file for testing the Brigade project.
 // Be careful when editing!
 // ============================================================================
-const { events, Job, Group } = require("brigadier")
+const { events, Job, Group } = require("brigadier");
 
-const projectName = "brigade"
-const projectOrg = "Azure"
+const projectName = "brigade";
+const projectOrg = "Azure";
 
 // Go build defaults
-const goImg = "golang:1.11"
-const gopath = "/go"
-const localPath = gopath + `/src/github.com/${projectOrg}/${projectName}`
+const goImg = "golang:1.11";
+const gopath = "/go";
+const localPath = gopath + `/src/github.com/${projectOrg}/${projectName}`;
 const goEnv = {
   "DEST_PATH": localPath,
   "GOPATH": gopath
-}
+};
 
 // Used by Docker image build/publish jobs
-const sharedMountPrefix = `/mnt/${projectName}/share/`
+const sharedMountPrefix = `/mnt/${projectName}/share/`;
 const addMake =
   "apk upgrade 1>/dev/null && \
-  apk add --update --no-cache make 1>/dev/null"
+  apk add --update --no-cache make 1>/dev/null";
 
 function goTest(e, project) {
   // Create a new job to run Go tests
@@ -37,7 +37,7 @@ function goTest(e, project) {
     "make test-unit"
   ];
 
-  return goTest
+  return goTest;
 }
 
 function jsTest(e, project) {
@@ -49,7 +49,7 @@ function jsTest(e, project) {
     "make test-js"
   ];
 
-  return jsTest
+  return jsTest;
 }
 
 function helmTest(e, project) {
@@ -62,7 +62,7 @@ function helmTest(e, project) {
     "make test-chart"
   ];
 
-  return helmTest
+  return helmTest;
 }
 
 // Here we can add additional Check Runs, which will run in parallel and
@@ -78,17 +78,17 @@ function runSuite(e, p) {
 // checkRun is a GitHub Check Run that is ran as part of a Checks Suite,
 // running the provided runFunc with language-based messaging
 function checkRun(e, p, runFunc, language) {
-  console.log("Check requested")
+  console.log("Check requested");
 
   // Create Notification object (which is just a Job to update GH using the Checks API)
   var note = new Notification(`test-${language}`, e, p);
   note.conclusion = "";
   note.title = `Run ${language} tests`;
   note.summary = `Running the ${language} build/test targets for ${e.revision.commit}`;
-  note.text = "This task will ensure build, linting and tests all pass."
+  note.text = "This task will ensure build, linting and tests all pass.";
 
   // Send notification, then run, then send pass/fail notification
-  return notificationWrap(runFunc(e, p), note)
+  return notificationWrap(runFunc(e, p), note);
 }
 
 // A GitHub Check Suite notification
@@ -113,7 +113,7 @@ class Notification {
 
   // Send a new notification, and return a Promise<result>.
   run() {
-    this.count++
+    this.count++;
     var j = new Job(`${ this.name }-${ this.count }`, "deis/brigade-github-check-run:latest");
     j.imageForcePull = true;
     j.env = {
@@ -125,7 +125,7 @@ class Notification {
       CHECK_TEXT: this.text,
       CHECK_DETAILS_URL: this.detailsURL,
       CHECK_EXTERNAL_ID: this.externalID
-    }
+    };
     return j.run();
   }
 }
@@ -133,11 +133,11 @@ class Notification {
 // Helper to wrap a job execution between two notifications.
 async function notificationWrap(job, note, conclusion) {
   if (conclusion == null) {
-    conclusion = "success"
+    conclusion = "success";
   }
   await note.run();
   try {
-    let res = await job.run()
+    let res = await job.run();
     const logs = await job.logs();
 
     note.conclusion = conclusion;
@@ -161,20 +161,20 @@ async function notificationWrap(job, note, conclusion) {
 
 function release(p, tag) {
   if (!p.secrets.ghToken) {
-    throw new Error("Project must have 'secrets.ghToken' set")
+    throw new Error("Project must have 'secrets.ghToken' set");
   }
 
   // Cross-compile binaries for a given release and upload them to GitHub.
-  var cx = new Job("release", goImg)
+  var cx = new Job("release", goImg);
 
-  cx.storage.enabled = true
-  parts = p.repo.name.split("/", 2)
+  cx.storage.enabled = true;
+  parts = p.repo.name.split("/", 2);
   cx.env = {
     GITHUB_USER: parts[0],
     GITHUB_REPO: parts[1],
     GITHUB_TOKEN: p.secrets.ghToken,
     GOPATH: gopath
-  }
+  };
 
   cx.tasks = [
     "go get github.com/aktau/github-release",
@@ -252,10 +252,10 @@ function dockerhubPublish(project, tag) {
 }
 
 function acrBuild(project, tag) {
-  const acrImagePrefix = "public/deis/"
+  const acrImagePrefix = "public/deis/";
 
-  let registry = project.secrets.acrRegistry || projectName
-  var acrBuilder = new Job("az-build", "microsoft/azure-cli:latest")
+  let registry = project.secrets.acrRegistry || projectName;
+  var acrBuilder = new Job("az-build", "microsoft/azure-cli:latest");
 
   acrBuilder.imageForcePull = true;
   acrBuilder.storage.enabled = true;
@@ -274,14 +274,14 @@ function acrBuild(project, tag) {
       echo '<======== Finished ${i}' ; \
       cd .. ; \
      done"
-  ]
+  ];
 
   return acrBuilder;
 }
 
 function slackNotify(title, msg, project) {
   if (project.secrets.SLACK_WEBHOOK) {
-    var slack = new Job(`${projectName}-slack-notify`, "technosophos/slack-notify:latest")
+    var slack = new Job(`${projectName}-slack-notify`, "technosophos/slack-notify:latest");
 
     slack.env = {
       SLACK_WEBHOOK: project.secrets.SLACK_WEBHOOK,
@@ -289,13 +289,13 @@ function slackNotify(title, msg, project) {
       SLACK_TITLE: title,
       SLACK_MESSAGE: msg,
       SLACK_COLOR: "#00ff00"
-    }
-    slack.tasks = ["/slack-notify"]
+    };
+    slack.tasks = ["/slack-notify"];
 
-    return slack
+    return slack;
   } else {
-    console.log(`Slack Notification for '${title}' not sent; no SLACK_WEBHOOK secret found.`)
-    return noop
+    console.log(`Slack Notification for '${title}' not sent; no SLACK_WEBHOOK secret found.`);
+    return noop;
   }
 }
 
@@ -305,7 +305,7 @@ events.on("exec", (e, p) => {
     jsTest(e, p),
     helmTest(e, p)
   ]);
-})
+});
 
 // Although a GH App will trigger 'check_suite:requested' on a push to master event,
 // it will not for a tag push, hence the need for this handler
@@ -317,12 +317,12 @@ events.on("push", (e, p) => {
 
   if (e.revision.ref.includes("refs/heads/master")) {
     doPublish = true;
-    tag = "latest"
+    tag = "latest";
   } else if (e.revision.ref.startsWith("refs/tags/")) {
     doPublish = true;
     doRelease = true;
-    let parts = e.revision.ref.split("/", 3)
-    tag = parts[2]
+    let parts = e.revision.ref.split("/", 3);
+    tag = parts[2];
   }
 
   if (doPublish) {
@@ -330,51 +330,56 @@ events.on("push", (e, p) => {
       goDockerBuild(e, p),
       dockerhubPublish(p, tag),
       acrBuild(p, tag)
-    )
+    );
   }
 
   if (doRelease) {
     jobs.push(
       release(p, tag),
-      slackNotify("Brigade Release", `${tag} release now on GitHub! <https://github.com/${p.repo.name}/releases/tag/${tag}>`, p)
-    )
+      slackNotify(
+        "Brigade Release", 
+        `${tag} release now on GitHub! <https://github.com/${p.repo.name}/releases/tag/${tag}>`, 
+        p
+      )
+    );
   }
 
   if (jobs.length) {
-    Group.runEach(jobs)
+    Group.runEach(jobs);
   }
-})
+});
 
-events.on("check_suite:requested", runSuite)
-events.on("check_suite:rerequested", runSuite)
-events.on("check_run:rerequested", runSuite)
+events.on("check_suite:requested", runSuite);
+events.on("check_suite:rerequested", runSuite);
+events.on("check_run:rerequested", runSuite);
 
 events.on("release", (e, p) => {
   /*
    * Expects JSON of the form {'tag': 'v1.2.3'}
    */
-  payload = JSON.parse(e.payload)
+  payload = JSON.parse(e.payload);
   if (!payload.tag) {
-    throw error("No tag specified")
+    throw error("No tag specified");
   }
 
-  release(p, payload.tag)
-})
+  release(p, payload.tag);
+});
 
 events.on("publish", (e, p) => {
   /*
    * Expects JSON of the form {'tag': 'v1.2.3'}
    */
-  payload = JSON.parse(e.payload)
+  payload = JSON.parse(e.payload);
   if (!payload.tag) {
-    throw error("No tag specified")
+    throw error("No tag specified");
   }
 
-  goDockerBuild(p, payload.tag).run()
+  goDockerBuild(p, payload.tag)
+    .run()
     .then(() => {
       Group.runAll([
         acrBuild(p, payload.tag),
         dockerhubPublish(p, payload.tag)
-      ])
+      ]);
     });
-})
+});
