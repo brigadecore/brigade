@@ -85,19 +85,58 @@ func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 
 	image, pullPolicy := workerImageConfig(project, config)
 
-	buildVolume := v1.VolumeMount{
+	volumeMounts := []v1.VolumeMount{}
+	buildVolumeMount := v1.VolumeMount{
 		Name:      "brigade-build",
 		MountPath: "/etc/brigade",
 		ReadOnly:  true,
 	}
-	projectVolume := v1.VolumeMount{
+	projectVolumeMount := v1.VolumeMount{
 		Name:      "brigade-project",
 		MountPath: "/etc/brigade-project",
 		ReadOnly:  true,
 	}
-	sidecarVolume := v1.VolumeMount{
+	sidecarVolumeMount := v1.VolumeMount{
 		Name:      "vcs-sidecar",
 		MountPath: "/vcs",
+	}
+	volumeMounts = append(volumeMounts, buildVolumeMount, projectVolumeMount)
+
+	volumes := []v1.Volume{}
+	buildVolume := v1.Volume{
+		Name: buildVolumeMount.Name,
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{SecretName: build.Name},
+		},
+	}
+	projectVolume := v1.Volume{
+		Name: projectVolumeMount.Name,
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{SecretName: project.Name},
+		},
+	}
+	sidecarVolume := v1.Volume{
+		Name: sidecarVolumeMount.Name,
+		VolumeSource: v1.VolumeSource{
+			EmptyDir: &v1.EmptyDirVolumeSource{},
+		},
+	}
+	volumes = append(volumes, buildVolume, projectVolume)
+
+	initContainers := []v1.Container{}
+	// Only add the sidecar resources if sidecar pod image is supplied.
+	if image := project.Data["vcsSidecar"]; len(image) > 0 {
+		volumeMounts = append(volumeMounts, sidecarVolumeMount)
+		volumes = append(volumes, sidecarVolume)
+		initContainers = append(initContainers,
+			v1.Container{
+				Name:            "vcs-sidecar",
+				Image:           string(image),
+				ImagePullPolicy: v1.PullPolicy(pullPolicy),
+				VolumeMounts:    []v1.VolumeMount{sidecarVolumeMount},
+				Env:             env,
+				Resources:       vcsSidecarResources(project),
+			})
 	}
 
 	spec := v1.PodSpec{
@@ -110,47 +149,17 @@ func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 			Image:           image,
 			ImagePullPolicy: v1.PullPolicy(pullPolicy),
 			Command:         cmd,
-			VolumeMounts: []v1.VolumeMount{
-				buildVolume,
-				projectVolume,
-				sidecarVolume,
-			},
-			Env:       env,
-			Resources: workerResources(config),
+			VolumeMounts:    volumeMounts,
+			Env:             env,
+			Resources:       workerResources(config),
 		}},
-		Volumes: []v1.Volume{{
-			Name: buildVolume.Name,
-			VolumeSource: v1.VolumeSource{
-				Secret: &v1.SecretVolumeSource{SecretName: build.Name},
-			},
-		}, {
-			Name: projectVolume.Name,
-			VolumeSource: v1.VolumeSource{
-				Secret: &v1.SecretVolumeSource{SecretName: project.Name},
-			},
-		}, {
-			Name: sidecarVolume.Name,
-			VolumeSource: v1.VolumeSource{
-				EmptyDir: &v1.EmptyDirVolumeSource{},
-			},
-		}},
-		RestartPolicy: v1.RestartPolicyNever,
+		InitContainers: initContainers,
+		Volumes:        volumes,
+		RestartPolicy:  v1.RestartPolicyNever,
 	}
 
 	if scriptName := project.Data["defaultScriptName"]; len(scriptName) > 0 {
 		attachConfigMap(&spec, string(scriptName), "/etc/brigade-default-script")
-	}
-
-	// Skip adding the sidecar pod if no sidecar pod image is supplied.
-	if image := project.Data["vcsSidecar"]; len(image) > 0 {
-		spec.InitContainers = []v1.Container{{
-			Name:            "vcs-sidecar",
-			Image:           string(image),
-			ImagePullPolicy: v1.PullPolicy(pullPolicy),
-			VolumeMounts:    []v1.VolumeMount{sidecarVolume},
-			Env:             env,
-			Resources:       vcsSidecarResources(project),
-		}}
 	}
 
 	if ips := project.Data["imagePullSecrets"]; len(ips) > 0 {

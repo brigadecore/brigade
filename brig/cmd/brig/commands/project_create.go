@@ -337,8 +337,8 @@ func projectAdvancedPrompts(p *brigade.Project) error {
 		{
 			Name: "vCSSidecar",
 			Prompt: &survey.Input{
-				Message: "Custom VCS sidecar",
-				Help:    "The default sidecar uses Git to fetch your repository (enter 'NONE' to disable)",
+				Message: "Custom VCS sidecar (enter 'NONE' for no sidecar)",
+				Help:    "The default sidecar uses Git to fetch your repository",
 				Default: p.Kubernetes.VCSSidecar,
 			},
 		},
