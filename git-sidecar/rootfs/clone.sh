@@ -3,6 +3,30 @@ set -euo pipefail
 
 set -x
 
+# retry solution discovered here: https://unix.stackexchange.com/a/137639
+
+function fail {
+  echo $1 >&2
+  exit 1
+}
+
+function retry {
+  local n=1
+  local max=5
+  local delay=5
+  while true; do
+    "$@" && break || {
+      if test "$n" -lt "$max" ; then
+        echo "Command failed. Attempt $n/$max. Waiting for $(($delay*$n)) seconds before retrying."
+        sleep $(($delay*$n));
+        n=$((n+1))
+      else
+        fail "The command has failed after $n attempts."
+      fi
+    }
+  done
+}
+
 # The Git SHA1 of the revision.
 : "${BRIGADE_COMMIT_ID:=}"
 
@@ -24,10 +48,10 @@ fi
 git init -q "${BRIGADE_WORKSPACE}"
 cd "${BRIGADE_WORKSPACE}"
 
-git fetch -q --force --update-head-ok "${BRIGADE_REMOTE_URL}" "${refspec}"
+retry git fetch -q --force --update-head-ok "${BRIGADE_REMOTE_URL}" "${refspec}"
 
-git checkout -q --force "${BRIGADE_COMMIT_REF}"
+retry git checkout -q --force "${BRIGADE_COMMIT_REF}"
 
 if [ "${BRIGADE_SUBMODULES:=}" = "true" ]; then
-    git submodule update --init --recursive
+    retry git submodule update --init --recursive
 fi
