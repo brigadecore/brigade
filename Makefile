@@ -8,7 +8,11 @@ LDFLAGS            :=
 BINS        = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig
 IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig brigade-worker git-sidecar
 
-GIT_TAG   = $(shell git describe --tags --always 2>/dev/null)
+.PHONY: echo-images
+echo-images:
+	@echo $(IMAGES)
+
+GIT_TAG   = $(shell git describe --tags --always)
 VERSION   ?= ${GIT_TAG}
 IMAGE_TAG ?= ${VERSION}
 LDFLAGS   += -X github.com/Azure/brigade/pkg/version.Version=$(VERSION)
@@ -54,7 +58,7 @@ docker-push: $(addsuffix -push,$(IMAGES))
 		for arch in $(CX_ARCHS); do \
 			GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./bin/$*-$$os-$$arch ./$*/cmd/$*; \
 		done; \
-		if [ $$os == 'windows' ]; then \
+		if [ $$os = 'windows' ]; then \
 			mv ./bin/$*-$$os-$$arch ./bin/$*-$$os-$$arch.exe; \
 		fi; \
 	done

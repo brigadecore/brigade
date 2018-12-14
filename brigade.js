@@ -2,43 +2,32 @@
 // NOTE: This is the actual brigade.js file for testing the Brigade project.
 // Be careful when editing!
 // ============================================================================
-const { events, Job, Group} = require("brigadier")
+const { events, Job, Group } = require("brigadier");
 
-const goImg = "golang:1.11"
+const projectName = "brigade";
+const projectOrg = "Azure";
 
-// TODO: Possible/preferred to use canonical image list in Makefile?
-// Would necessitate looping inside of Job, i.e., within one shell task
-const images = [
-  "brig",
-  "brigade-api",
-  "brigade-controller",
-  "brigade-cr-gateway",
-  "brigade-vacuum",
-  "brigade-worker", // brigade-worker does not have a rootfs. Could probably minify src into one and save space
-  "git-sidecar",
-  "brigade-github-gateway"
-]
+// Go build defaults
+const goImg = "golang:1.11";
+const gopath = "/go";
+const localPath = gopath + `/src/github.com/${projectOrg}/${projectName}`;
+const goEnv = {
+  "DEST_PATH": localPath,
+  "GOPATH": gopath
+};
 
-function build(e, project) {
-  // This is a Go project, so we want to set it up for Go.
-  var gopath = "/go"
+// Used by Docker image build/publish jobs
+const sharedMountPrefix = `/mnt/${projectName}/share/`;
+const addMake =
+  "apk upgrade 1>/dev/null && \
+  apk add --update --no-cache make 1>/dev/null";
 
-  // To set GOPATH correctly, we have to override the default
-  // path that Brigade sets.
-
-  var localPath = gopath + "/src/github.com/" + project.repo.name;
-
+function goTest(e, project) {
   // Create a new job to run Go tests
-  var goBuild = new Job("brigade-test", goImg);
+  var goTest = new Job("go-test", goImg);
 
-  // Set a few environment variables.
-  goBuild.env = {
-      "DEST_PATH": localPath,
-      "GOPATH": gopath
-  };
-
-  // Run Go unit tests
-  goBuild.tasks = [
+  goTest.env = goEnv;
+  goTest.tasks = [
     // Need to move the source into GOPATH so vendor/ works as desired.
     "mkdir -p " + localPath,
     "mv /src/* " + localPath,
@@ -48,79 +37,141 @@ function build(e, project) {
     "make test-unit"
   ];
 
-  // Run the brigade worker tests
-  var jsTest = new Job("brigade-js-build", "node:8");
-  jsTest.tasks = [
-    "cd /src/brigade-worker",
-    "yarn install",
-    "yarn test"
-  ];
-
-  start = ghNotify("pending", `Build started as ${ e.buildID }`, e, project)
-
-  // Run tests in parallel. Then if it's a release, push binaries.
-  // Then send GitHub a notification on the status.
-  Group.runAll([start, jsTest, goBuild])
-  .then(() => {
-      return ghNotify("success", `Build ${ e.buildID } passed`, e, project).run()
-   }).then( () => {
-    var runRelease = false
-    if (e.type == "push") {
-      // Push to master: run "latest" release, don't release brig
-      if (e.revision.ref.includes("refs/heads/master")) {
-        runRelease = true
-        return goDockerBuild(project, e.revision.ref).run()
-          .then(() => {
-            Group.runAll([
-              acrBuild(project, "latest"),
-              dockerhubPublish(project, "latest")
-            ])
-          })
-      }
-      // Tag pushed: run tag release, release brig
-      if (e.revision.ref.startsWith("refs/tags/")) {
-        runRelease = true
-        let parts = e.revision.ref.split("/", 3)
-        let tag = parts[2]
-        return goDockerBuild(project, tag).run()
-          .then(() => {
-            Group.runAll([
-              acrBuild(project, tag),
-              dockerhubPublish(project, tag)
-            ])
-          })
-          .then(() => {
-            releaseBrig(project, tag)
-          })
-      }
-    }
-    return Promise.resolve(runRelease)
-  }).catch(err => {
-    return ghNotify("failure", `failed build ${ e.buildID }`, e, project).run()
-  });
+  return goTest;
 }
 
-function releaseBrig(p, tag) {
-  if (!p.secrets.ghToken) {
-    throw new Error("Project must have 'secrets.ghToken' set")
+function jsTest(e, project) {
+  // Run the javascript-based brigade worker tests
+  var jsTest = new Job("js-test", "node:8");
+
+  jsTest.tasks = [
+    "cd /src",
+    "make test-js"
+  ];
+
+  return jsTest;
+}
+
+function helmTest(e, project) {
+  // Create a new job to run Helm chart tests
+  var helmTest = new Job("helm-test", "dtzar/helm-kubectl:latest");
+
+  helmTest.tasks = [
+    addMake,
+    "cd /src",
+    "make test-chart"
+  ];
+
+  return helmTest;
+}
+
+// Here we can add additional Check Runs, which will run in parallel and
+// report their results independently to GitHub
+function runSuite(e, p) {
+  // Note: as provided language string is used in job naming, it must consist
+  // of lowercase letters and hyphens only (per Brigade/K8s restrictions)
+  checkRun(e, p, goTest, "go").catch(e  => {console.error(e.toString())});
+  checkRun(e, p, jsTest, "javascript").catch(e  => {console.error(e.toString())});
+  checkRun(e, p, helmTest, "helm").catch(e => {console.error(e.toString())});
+}
+
+// checkRun is a GitHub Check Run that is ran as part of a Checks Suite,
+// running the provided runFunc with language-based messaging
+function checkRun(e, p, runFunc, language) {
+  console.log("Check requested");
+
+  // Create Notification object (which is just a Job to update GH using the Checks API)
+  var note = new Notification(`test-${language}`, e, p);
+  note.conclusion = "";
+  note.title = `Run ${language} tests`;
+  note.summary = `Running the ${language} build/test targets for ${e.revision.commit}`;
+  note.text = "This task will ensure build, linting and tests all pass.";
+
+  // Send notification, then run, then send pass/fail notification
+  return notificationWrap(runFunc(e, p), note);
+}
+
+// A GitHub Check Suite notification
+class Notification {
+  constructor(name, e, p) {
+    this.proj = p;
+    this.payload = e.payload;
+    this.name = name;
+    this.externalID = e.buildID;
+    this.detailsURL = `https://azure.github.io/kashti/builds/${ e.buildID }`;
+    this.title = "running check";
+    this.text = "";
+    this.summary = "";
+
+    // count allows us to send the notification multiple times, with a distinct pod name
+    // each time.
+    this.count = 0;
+
+    // One of: "success", "failure", "neutral", "cancelled", or "timed_out".
+    this.conclusion = "neutral";
   }
 
-  const binName = "brig"
-  const gopath = "/go"
-  const localPath = gopath + "/src/github.com/" + p.repo.name;
+  // Send a new notification, and return a Promise<result>.
+  run() {
+    this.count++;
+    var j = new Job(`${ this.name }-${ this.count }`, "deis/brigade-github-check-run:latest");
+    j.imageForcePull = true;
+    j.env = {
+      CHECK_CONCLUSION: this.conclusion,
+      CHECK_NAME: this.name,
+      CHECK_TITLE: this.title,
+      CHECK_PAYLOAD: this.payload,
+      CHECK_SUMMARY: this.summary,
+      CHECK_TEXT: this.text,
+      CHECK_DETAILS_URL: this.detailsURL,
+      CHECK_EXTERNAL_ID: this.externalID
+    };
+    return j.run();
+  }
+}
+
+// Helper to wrap a job execution between two notifications.
+async function notificationWrap(job, note) {
+  await note.run();
+  try {
+    let res = await job.run();
+    const logs = await job.logs();
+
+    note.conclusion = "success";
+    note.summary = `Task "${ job.name }" passed`;
+    note.text = note.text = "```" + res.toString() + "```\nComplete";
+    return await note.run();
+  } catch (e) {
+    const logs = await job.logs();
+    note.conclusion = "failure";
+    note.summary = `Task "${ job.name }" failed for ${ e.buildID }`;
+    note.text = "```" + logs + "```\nFailed with error: " + e.toString();
+    try {
+      return await note.run();
+    } catch (e2) {
+      console.error("failed to send notification: " + e2.toString());
+      console.error("original error: " + e.toString());
+      return e2;
+    }
+  }
+}
+
+function release(p, tag) {
+  if (!p.secrets.ghToken) {
+    throw new Error("Project must have 'secrets.ghToken' set");
+  }
 
   // Cross-compile binaries for a given release and upload them to GitHub.
-  var cx = new Job("cross-compile", goImg)
-  cx.storage.enabled = true
+  var cx = new Job("release", goImg);
 
-  parts = p.repo.name.split("/", 2)
-
+  cx.storage.enabled = true;
+  parts = p.repo.name.split("/", 2);
   cx.env = {
     GITHUB_USER: parts[0],
     GITHUB_REPO: parts[1],
     GITHUB_TOKEN: p.secrets.ghToken,
     GOPATH: gopath
-  }
+  };
 
   cx.tasks = [
     "go get github.com/aktau/github-release",
@@ -133,68 +184,47 @@ function releaseBrig(p, tag) {
     `cd ${localPath}`,
     "make vendor",
     "make build-release",
-    `github-release release -t ${tag} -n "${parts[1]} ${tag}" || echo "release ${tag} exists"`
+    `last_tag=$(git describe --tags ${tag}^ --abbrev=0 --always)`,
+    `github-release release \
+      -t ${tag} \
+      -n "${parts[1]} ${tag}" \
+      -d "$(git log --no-merges --pretty=format:'- %s %H (%aN)' HEAD ^$last_tag)" \
+      || echo "release ${tag} exists"`,
+    "for bin in ./bin/*; do github-release upload -f ${bin} -n $(basename ${bin}) -t " + tag + "; done"
   ];
 
-  // Upload for each target that we support
-  for (const f of ["linux-amd64", "windows-amd64.exe", "darwin-amd64"]) {
-    var name = binName + "-" + f;
-    var outname = name;
-    cx.tasks.push(`github-release upload -f ./bin/${name} -n ${outname} -t ${tag}`)  
-  }
   console.log(cx.tasks);
   console.log(`releases at https://github.com/${p.repo.name}/releases/tag/${tag}`);
   return cx.run();
 }
 
-function ghNotify(state, msg, e, project) {
-  const gh = new Job(`notify-${ state }`, "technosophos/github-notify:latest")
-  gh.imageForcePull = true;
-  gh.env = {
-    GH_REPO: project.repo.name,
-    GH_STATE: state,
-    GH_DESCRIPTION: msg,
-    GH_CONTEXT: "brigade",
-    GH_TOKEN: project.secrets.ghToken,
-    GH_COMMIT: e.revision.commit,
-    GH_TARGET_URL: `https://azure.github.io/kashti/builds/${ e.buildID }`,
-  }
-  return gh
-}
-
+// Separate docker build stage as there may be multiple consumers/publishers,
+// For example, publishing to Dockerhub and ACR below
 function goDockerBuild(project, tag) {
   // We build in a separate pod b/c AKS's Docker is too old to do multi-stage builds.
-  const goBuild = new Job("brigade-docker-build", goImg);
-  const gopath = "/go"
-  const localPath = gopath + "/src/github.com/" + project.repo.name;
+  const builder = new Job(`${projectName}-docker-build`, goImg);
 
-  goBuild.storage.enabled = true;
-  goBuild.env = {
-    "DEST_PATH": localPath,
-    "GOPATH": gopath
-  };
-  goBuild.tasks = [
+  builder.storage.enabled = true;
+  builder.env = goEnv;
+  builder.tasks = [
     `cd /src && git checkout ${tag}`,
     `mkdir -p ${localPath}/bin`,
-    `mv /src/* ${localPath}`,
+    `cp -a /src/* ${localPath}`,
+    `cp -a /src/.git ${localPath}`,
     `cd ${localPath}`,
     "make vendor",
-    "make build-docker-bins"
+    "make build-docker-bins",
+    // Copy the Docker rootfs of each binary into shared storage. This is
+    // a little tricky because worker is non-Go, so later we will have
+    // to copy them back.
+    "for i in $(make echo-images); do \
+        mkdir -p " + sharedMountPrefix + "${i}/rootfs; \
+        [ ! -d ${i}/rootfs ] || cp -a ./${i}/rootfs/* " + sharedMountPrefix + "${i}/rootfs/; \
+      done",
+    `ls -lah ${sharedMountPrefix}`
   ];
 
-  for (let i of images) {
-    goBuild.tasks.push(
-      // Copy the Docker rootfs of each binary into shared storage. This is
-      // a little tricky because worker is non-Go, so later we will have
-      // to copy them back.
-      `mkdir -p /mnt/brigade/share/${i}/rootfs`,
-      // If there's no rootfs, we're done. Otherwise, copy it.
-      `[ ! -d ${i}/rootfs ] || cp -a ./${i}/rootfs/* /mnt/brigade/share/${i}/rootfs/`,
-    );
-  }
-  goBuild.tasks.push("ls -lah /mnt/brigade/share");
-
-  return goBuild;
+  return builder;
 }
 
 function dockerhubPublish(project, tag) {
@@ -205,105 +235,148 @@ function dockerhubPublish(project, tag) {
   publisher.docker.enabled = true;
   publisher.storage.enabled = true;
   publisher.tasks = [
-    "apk add --update --no-cache make",
+    addMake,
     `docker login ${dockerRegistry} -u ${project.secrets.dockerhubUsername} -p ${project.secrets.dockerhubPassword}`,
-    "cd /src"
+    "cd /src",
+    "for i in $(make echo-images); do \
+       cp -av " + sharedMountPrefix + "${i}/rootfs ./${i}; \
+       DOCKER_REGISTRY=" + dockerOrg + " VERSION=" + tag + " make ${i}-image ${i}-push; \
+     done",
+    `docker logout ${dockerRegistry}`
   ];
-
-  for (let i of images) {
-      publisher.tasks.push(
-        `cp -av /mnt/brigade/share/${i}/rootfs ./${i}`,
-        `DOCKER_REGISTRY=${dockerOrg} VERSION=${tag} make ${i}-image ${i}-push`
-      );
-  }
-  publisher.tasks.push(`docker logout ${dockerRegistry}`);
 
   return publisher;
 }
 
 function acrBuild(project, tag) {
-  const acrImagePrefix = "public/deis/"
+  const acrImagePrefix = "public/deis/";
 
-  let registry = project.secrets.acrRegistry || "brigade"
-  var builder = new Job("az-build", "microsoft/azure-cli:latest")
-  builder.imageForcePull = true;
-  builder.storage.enabled = true;
-  builder.tasks = [
+  let registry = project.secrets.acrRegistry || projectName;
+  var acrBuilder = new Job("az-build", "microsoft/azure-cli:latest");
+
+  acrBuilder.imageForcePull = true;
+  acrBuilder.storage.enabled = true;
+
+  acrBuilder.tasks = [
+    addMake,
     // Create a service principal and assign it proper perms on the ACR.
     `az login --service-principal -u ${project.secrets.acrName} -p '${project.secrets.acrToken}' --tenant ${project.secrets.acrTenant}`,
     `cd /src`,
-    `mkdir -p ./bin`
-  ]
+    `mkdir -p ./bin`,
+    "for i in $(make echo-images); do \
+      cd ${i} ; \
+      echo '========> Building ${i}' ; \
+      cp -av " + sharedMountPrefix + "${i}/rootfs ./ ; \
+      az acr build -r " + registry + " -t " + acrImagePrefix + "${i}:" + tag + " . ; \
+      echo '<======== Finished ${i}' ; \
+      cd .. ; \
+     done"
+  ];
 
-  // For each image, build, tag and finally push to registry
-  for (let i of images) {
-    let imgName = acrImagePrefix+i;
-    let tagged = imgName+":"+tag;
-
-    builder.tasks.push(
-      `cd ${i}`,
-      `echo '========> Building ${i}'`,
-      `cp -av /mnt/brigade/share/${i}/rootfs ./`,
-      `az acr build -r ${registry} -t ${tagged} .`,
-      `echo '<======== Finished ${i}'`,
-      `cd ..`
-    );
-  }
-  return builder;
+  return acrBuilder;
 }
 
-events.on("push", build)
-events.on("pull_request", build)
+function slackNotify(title, msg, project) {
+  if (project.secrets.SLACK_WEBHOOK) {
+    var slack = new Job(`${projectName}-slack-notify`, "technosophos/slack-notify:latest");
 
-events.on("release_brig", (e, p) => {
+    slack.env = {
+      SLACK_WEBHOOK: project.secrets.SLACK_WEBHOOK,
+      SLACK_USERNAME: "brigade-ci",
+      SLACK_TITLE: title,
+      SLACK_MESSAGE: msg,
+      SLACK_COLOR: "#00ff00"
+    };
+    slack.tasks = ["/slack-notify"];
+
+    return slack;
+  } else {
+    console.log(`Slack Notification for '${title}' not sent; no SLACK_WEBHOOK secret found.`);
+    return noop;
+  }
+}
+
+events.on("exec", (e, p) => {
+  return Group.runAll([
+    goTest(e, p),
+    jsTest(e, p),
+    helmTest(e, p)
+  ]);
+});
+
+// Although a GH App will trigger 'check_suite:requested' on a push to master event,
+// it will not for a tag push, hence the need for this handler
+events.on("push", (e, p) => {
+  let doPublish = false;
+  let doRelease = false;
+  let tag = "";
+  let jobs = [];
+
+  if (e.revision.ref.includes("refs/heads/master")) {
+    doPublish = true;
+    tag = "latest";
+  } else if (e.revision.ref.startsWith("refs/tags/")) {
+    doPublish = true;
+    doRelease = true;
+    let parts = e.revision.ref.split("/", 3);
+    tag = parts[2];
+  }
+
+  if (doPublish) {
+    jobs.push(
+      goDockerBuild(e, p),
+      dockerhubPublish(p, tag),
+      acrBuild(p, tag)
+    );
+  }
+
+  if (doRelease) {
+    jobs.push(
+      release(p, tag),
+      slackNotify(
+        "Brigade Release", 
+        `${tag} release now on GitHub! <https://github.com/${p.repo.name}/releases/tag/${tag}>`, 
+        p
+      )
+    );
+  }
+
+  if (jobs.length) {
+    Group.runEach(jobs);
+  }
+});
+
+events.on("check_suite:requested", runSuite);
+events.on("check_suite:rerequested", runSuite);
+events.on("check_run:rerequested", runSuite);
+
+events.on("release", (e, p) => {
   /*
    * Expects JSON of the form {'tag': 'v1.2.3'}
    */
-  payload = JSON.parse(e.payload)
+  payload = JSON.parse(e.payload);
   if (!payload.tag) {
-    throw error("No tag specified")
+    throw error("No tag specified");
   }
 
-  releaseBrig(p, payload.tag)
-})
+  release(p, payload.tag);
+});
 
-events.on("release_images", (e, p) => {
+events.on("publish", (e, p) => {
   /*
    * Expects JSON of the form {'tag': 'v1.2.3'}
    */
-  payload = JSON.parse(e.payload)
+  payload = JSON.parse(e.payload);
   if (!payload.tag) {
-    throw error("No tag specified")
+    throw error("No tag specified");
   }
 
-  goDockerBuild(p, payload.tag).run()
+  goDockerBuild(p, payload.tag)
+    .run()
     .then(() => {
       Group.runAll([
         acrBuild(p, payload.tag),
         dockerhubPublish(p, payload.tag)
-      ])
+      ]);
     });
-})
-
-events.on("image_push", (e, p) => {
-  console.log(e.payload)
-  var m = "New image pushed"
-
-  if (project.secrets.SLACK_WEBHOOK) {
-    var slack = new Job("slack-notify")
-
-    slack.image = "technosophos/slack-notify:latest"
-    slack.env = {
-      SLACK_WEBHOOK: project.secrets.SLACK_WEBHOOK,
-      SLACK_USERNAME: "BrigadeBot",
-      SLACK_TITLE: "DockerHub Image",
-      SLACK_MESSAGE: m + " <https://" + project.repo.name + ">",
-      SLACK_COLOR: "#00ff00"
-    }
-
-    slack.tasks = ["/slack-notify"]
-    slack.run()
-  } else {
-    console.log(m)
-  }
-})
+});
