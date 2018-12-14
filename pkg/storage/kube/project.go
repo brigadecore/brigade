@@ -122,6 +122,23 @@ func (s *store) CreateProject(project *brigade.Project) error {
 	return err
 }
 
+// ReplaceProject replaces an existing project.
+//
+// Project ID is a required field. If empty, function will exit
+func (s *store) ReplaceProject(project *brigade.Project) error {
+	if project.ID == "" {
+		return fmt.Errorf("Project ID is empty")
+	}
+	secret, err := SecretFromProject(project)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.CoreV1().Secrets(s.namespace).Update(&secret)
+
+	return err
+}
+
 // DeleteProject deletes a project from storage.
 func (s *store) DeleteProject(id string) error {
 	return s.client.CoreV1().Secrets(s.namespace).Delete(id, &meta.DeleteOptions{})
@@ -136,13 +153,13 @@ func (s *store) loadProjectConfig(id string) (*brigade.Project, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return NewProjectFromSecret(secret, s.namespace)
 }
 
 // NewProjectFromSecret creates a new project from a secret.
 func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project, error) {
 	sv := SecretValues(secret.Data)
+
 	proj := new(brigade.Project)
 	proj.ID = secret.ObjectMeta.Name
 	proj.Name = secret.Annotations["projectName"]
