@@ -46,7 +46,7 @@ const wrapClient = fns => {
   // wrap client methods with retry logic
   for (let fn of fns) {
     let originalFn = defaultClient[fn.name];
-    defaultClient[fn.name] = function() {
+    defaultClient[fn.name] = function () {
       return retry(originalFn, arguments, 4000, 5);
     };
   }
@@ -439,7 +439,7 @@ export class JobRunner implements jobs.JobRunner {
     // appended to job name.
     return `${this.project.name.replace(/[.\/]/g, "-")}-${
       this.job.name
-    }`.toLowerCase();
+      }`.toLowerCase();
   }
 
   public logs(): Promise<string> {
@@ -448,6 +448,13 @@ export class JobRunner implements jobs.JobRunner {
     let ns = this.project.kubernetes.namespace;
     return Promise.resolve<string>(
       k.readNamespacedPodLog(podName, ns).then(result => {
+        if (this.job.displayLogs) {
+          result.body.split("\n").forEach(line => {
+            if (line != "\n" && line != "") {
+              console.log(`[brigade:k8s:${podName}] ${line}`);
+            }
+          });
+        }
         return result.body;
       })
     );
@@ -543,7 +550,7 @@ export class JobRunner implements jobs.JobRunner {
   private startUpdatingPod(): request.Request {
     const url = `${kc.getCurrentCluster().server}/api/v1/namespaces/${
       this.project.kubernetes.namespace
-    }/pods`;
+      }/pods`;
     const requestOptions = {
       qs: {
         watch: true,
@@ -565,7 +572,7 @@ export class JobRunner implements jobs.JobRunner {
         } else {
           obj = JSON.parse(data);
         }
-      } catch (e) {} //let it stay connected.
+      } catch (e) { } //let it stay connected.
       if (obj && obj.object) {
         this.pod = obj.object as kubernetes.V1Pod;
       }
@@ -654,7 +661,7 @@ export class JobRunner implements jobs.JobRunner {
         }
         this.logger.log(
           `${this.pod.metadata.namespace}/${this.pod.metadata.name} phase ${
-            this.pod.status.phase
+          this.pod.status.phase
           }`
         );
         // In all other cases we fall through and let the fn be run again.
