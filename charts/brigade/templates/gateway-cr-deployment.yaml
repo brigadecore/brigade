@@ -1,5 +1,6 @@
 {{ if .Values.cr.enabled }}
 {{ $fullname := include "brigade.cr.fullname" . }}
+{{ $serviceAccount := default $fullname .Values.cr.serviceAccount.name }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -20,7 +21,7 @@ spec:
         role: gateway
         type: dockerhub
     spec:
-      serviceAccountName: {{ $fullname }}
+      serviceAccountName: {{ $serviceAccount }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.cr.registry }}/{{ .Values.cr.name }}:{{ default .Chart.AppVersion .Values.cr.tag }}"

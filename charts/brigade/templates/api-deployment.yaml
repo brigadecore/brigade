@@ -1,4 +1,6 @@
 {{ if .Values.api.enabled }}
+{{ $fullname := include "brigade.api.fullname" . }}
+{{ $serviceAccount := default $fullname .Values.api.serviceAccount.name }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -18,7 +20,7 @@ spec:
         app: {{ template "brigade.fullname" . }}-api
         role: api
     spec:
-      serviceAccountName: {{ template "brigade.api.fullname" . }}
+      serviceAccountName: {{ $serviceAccount }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.api.registry }}/{{ .Values.api.name }}:{{ default .Chart.AppVersion .Values.api.tag }}"

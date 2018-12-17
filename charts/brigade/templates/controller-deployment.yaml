@@ -1,4 +1,5 @@
 {{ if .Values.controller.enabled }}{{ $fullname := include "brigade.ctrl.fullname" . }}
+{{ $serviceAccount := default $fullname .Values.controller.serviceAccount.name }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -18,7 +19,7 @@ spec:
         app: {{ $fullname }}
         role: controller
     spec:
-      serviceAccountName: {{ $fullname }}
+      serviceAccountName: {{ $serviceAccount }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.controller.registry }}/{{ .Values.controller.name }}:{{ default .Chart.AppVersion .Values.controller.tag }}"

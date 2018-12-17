@@ -1,5 +1,6 @@
 {{ if .Values.gw.enabled }}
 {{ $fullname := include "brigade.gw.fullname" . }}
+{{ $serviceAccount := default $fullname .Values.gw.serviceAccount.name }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -20,7 +21,7 @@ spec:
         role: gateway
         type: github
     spec:
-      serviceAccountName: {{ $fullname }}
+      serviceAccountName: {{ $serviceAccount }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.gw.registry }}/{{ .Values.gw.name }}:{{ default .Chart.AppVersion .Values.gw.tag }}"
