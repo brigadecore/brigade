@@ -22,6 +22,8 @@ const addMake =
   "apk upgrade 1>/dev/null && \
   apk add --update --no-cache make 1>/dev/null";
 
+const noop = {run: () => {return Promise.resolve()}};
+
 function goTest(e, project) {
   // Create a new job to run Go tests
   var goTest = new Job("go-test", goImg);
@@ -196,19 +198,19 @@ function release(p, tag) {
 
   console.log(cx.tasks);
   console.log(`releases at https://github.com/${p.repo.name}/releases/tag/${tag}`);
-  return cx.run();
+  return cx;
 }
 
 // Separate docker build stage as there may be multiple consumers/publishers,
 // For example, publishing to Dockerhub and ACR below
-function goDockerBuild(project, tag) {
+function goDockerBuild(e, p) {
   // We build in a separate pod b/c AKS's Docker is too old to do multi-stage builds.
   const builder = new Job(`${projectName}-docker-build`, goImg);
 
   builder.storage.enabled = true;
   builder.env = goEnv;
   builder.tasks = [
-    `cd /src && git checkout ${tag}`,
+    `cd /src`,
     `mkdir -p ${localPath}/bin`,
     `cp -a /src/* ${localPath}`,
     `cp -a /src/.git ${localPath}`,
@@ -360,7 +362,7 @@ events.on("release", (e, p) => {
     throw error("No tag specified");
   }
 
-  release(p, payload.tag);
+  release(p, payload.tag).run();
 });
 
 events.on("publish", (e, p) => {
@@ -372,7 +374,7 @@ events.on("publish", (e, p) => {
     throw error("No tag specified");
   }
 
-  goDockerBuild(p, payload.tag)
+  goDockerBuild(e, p)
     .run()
     .then(() => {
       Group.runAll([
