@@ -8,7 +8,11 @@ LDFLAGS            :=
 BINS        = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig
 IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig brigade-worker git-sidecar
 
-GIT_TAG   = $(shell git describe --tags --always 2>/dev/null)
+.PHONY: echo-images
+echo-images:
+	@echo $(IMAGES)
+
+GIT_TAG   = $(shell git describe --tags --always)
 VERSION   ?= ${GIT_TAG}
 IMAGE_TAG ?= ${VERSION}
 LDFLAGS   += -X github.com/Azure/brigade/pkg/version.Version=$(VERSION)
@@ -54,7 +58,7 @@ docker-push: $(addsuffix -push,$(IMAGES))
 		for arch in $(CX_ARCHS); do \
 			GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./bin/$*-$$os-$$arch ./$*/cmd/$*; \
 		done; \
-		if [ $$os == 'windows' ]; then \
+		if [ $$os = 'windows' ]; then \
 			mv ./bin/$*-$$os-$$arch ./bin/$*-$$os-$$arch.exe; \
 		fi; \
 	done
@@ -109,7 +113,7 @@ test-js: bootstrap-js
 
 .PHONY: test-style
 test-style:
-	gometalinter --config ./gometalinter.json ./...
+	golangci-lint run --config ./golangci.yml
 
 .PHONY: test-chart
 test-chart:
@@ -126,7 +130,7 @@ format-go:
 format-js:
 	cd brigade-worker && yarn format
 
-HAS_GOMETALINTER := $(shell command -v gometalinter;)
+HAS_GOLANGCI     := $(shell command -v golangci-lint;)
 HAS_DEP          := $(shell command -v dep;)
 HAS_GIT          := $(shell command -v git;)
 HAS_YARN         := $(shell command -v yarn;)
@@ -145,9 +149,10 @@ endif
 ifndef HAS_DEP
 	go get -u github.com/golang/dep/cmd/dep
 endif
-ifndef HAS_GOMETALINTER
-	go get -u github.com/alecthomas/gometalinter
-	gometalinter --install
+ifndef HAS_GOLANGCI
+	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint && \
+	cd $(GOPATH)/src/github.com/golangci/golangci-lint/cmd/golangci-lint && \
+	go install -ldflags "-X 'main.version=$(git describe --tags)' -X 'main.commit=$(git rev-parse --short HEAD)' -X 'main.date=$(date)'"
 endif
 	dep ensure
 
