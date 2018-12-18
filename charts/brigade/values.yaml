@@ -50,6 +50,9 @@ controller:
   #  requests:
   #    cpu:
   #    memory:
+  serviceAccount:
+    create: true
+    name: 
 
 # api is the API server. It is technically not needed for the operation of the
 # Brigade controller, but it is used by tools to learn about the state of the
@@ -78,6 +81,9 @@ api:
     hosts: []
     paths:
     - /
+  serviceAccount:
+    create: true
+    name: 
 
 # worker is the JavaScript worker. These are created on demand by the controller.
 worker:
@@ -104,6 +110,9 @@ gw:
     - OWNER
     - MEMBER
     - COLLABORATOR
+  serviceAccount:
+    create: true
+    name: 
 
   # DEPRECATED: As of Brigade v0.10.0, this is a no-op. Use allowedAuthorRoles
   # isntead.
@@ -127,6 +136,9 @@ cr:
     type: ClusterIP  # Change to LoadBalancer if you want this externally available.
     externalPort: 80
     internalPort: 8000
+  serviceAccount:
+    create: true
+    name: 
 
 # The vacuum periodically cleans up old builds.
 # Brigade does not delete builds on completion. Instead, it leaves builds around

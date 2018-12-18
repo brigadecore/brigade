@@ -1,15 +1,18 @@
 {{ if .Values.api.enabled }}
 {{ $fname := include "brigade.api.fullname" . }}
+{{ $serviceAccount := default $fname .Values.api.serviceAccount.name }}
+{{ if .Values.api.serviceAccount.create }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ $fname }}
+  name: {{ $serviceAccount }}
   labels:
     app.kubernetes.io/name: {{ template "brigade.fullname" . }}
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     app.kubernetes.io/instance: "{{ .Release.Name }}"
     app.kubernetes.io/managed-by: "{{ .Release.Service }}"
+{{ end }}
 {{ if .Values.rbac.enabled }}
 ---
 kind: Role
@@ -37,7 +40,7 @@ metadata:
     app.kubernetes.io/managed-by: "{{ .Release.Service }}"
 subjects:
 - kind: ServiceAccount
-  name: {{ $fname }}
+  name: {{ $serviceAccount }}
 roleRef:
   kind: Role
   name: {{ $fname }}
