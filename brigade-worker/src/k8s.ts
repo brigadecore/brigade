@@ -661,9 +661,10 @@ export class JobRunner implements jobs.JobRunner {
             reject(new Error(cs[0].state.waiting.message));
           }
         }
-        this.logger.log(
-          `${this.pod.metadata.namespace}/${this.pod.metadata.name} phase ${this.pod.status.phase}`
-        );
+        if (!this.job.displayLogs || (this.job.displayLogs && this.pod.status.phase != "Running")) {
+          // don't display "Running" when we're asked to display job Pod logs
+          this.logger.log(`${this.pod.metadata.namespace}/${this.pod.metadata.name} phase ${this.pod.status.phase}`);
+        }
         // In all other cases we fall through and let the fn be run again.
       };
       let interval = setInterval(() => {
