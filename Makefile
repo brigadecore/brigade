@@ -66,13 +66,6 @@ docker-push: $(addsuffix -push,$(IMAGES))
 .PHONY: build-release
 build-release: brig-cross-compile
 
-# TODO: remove this target once docs/index.yaml is removed
-# This file will continue to be served during the transition period
-# of moving charts to Azure/brigade-charts
-.PHONY: index-chart
-index-chart:
-	helm repo index docs/ --url https://azure.github.io/brigade-charts
-
 # All non-functional tests
 .PHONY: test
 test: test-style
