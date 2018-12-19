@@ -66,19 +66,11 @@ docker-push: $(addsuffix -push,$(IMAGES))
 .PHONY: build-release
 build-release: brig-cross-compile
 
-.PRECIOUS: build-chart
-.PHONY: build-chart
-build-chart:
-	helm package -d docs/ ./charts/brigade
-	helm package -d docs/ ./charts/brigade-project
-	helm repo index docs/
-
 # All non-functional tests
 .PHONY: test
 test: test-style
 test: test-unit
 test: test-js
-test: test-chart
 
 # Unit tests. Local only.
 .PHONY: test-unit
@@ -88,11 +80,13 @@ test-unit: vendor
 # Functional tests assume access to github.com
 # To set this up in your local environment:
 # - Make sure kubectl is pointed to the right cluster
-# - Create "myvals.yaml" and set to something like this:
+# - Run "helm repo add brigade https://azure.github.io/brigade-charts"
+# - Run "helm inspect values brigade/brigade-project > myvals.yaml"
+# - Set the values in myvalues.yaml to something like this:
 #   project: "deis/empty-testbed"
 #   repository: "github.com/deis/empty-testbed"
 #   secret: "MySecret"
-# - Run "helm install ./charts/brigade-project -f myvals.yaml
+# - Run "helm install brigade/brigade-project -f myvals.yaml"
 # - Run "make run" in one terminal
 # - Run "make test-functional" in another terminal
 #
@@ -114,10 +108,6 @@ test-js: bootstrap-js
 .PHONY: test-style
 test-style:
 	golangci-lint run --config ./golangci.yml
-
-.PHONY: test-chart
-test-chart:
-	helm lint ./charts/*
 
 .PHONY: format
 format: format-go format-js
