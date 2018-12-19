@@ -1,0 +1,354 @@
+apiVersion: v1
+entries:
+  brigade:
+  - apiVersion: v1
+    appVersion: v0.19.0
+    created: 2018-12-19T12:14:05.713242-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 7966ce98cc519eb1b6bdc59298a8bca6850a03fc8dad2e5b927d54d7980695c1
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.19.1.tgz
+    version: 0.19.1
+  - apiVersion: v1
+    appVersion: v0.19.0
+    created: 2018-12-19T12:14:05.712596-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 1da70bc8983b607ed6e958209dc0f37f76fbc728fe6ba72d22b33b3fe1594974
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.19.0.tgz
+    version: 0.19.0
+  - apiVersion: v1
+    appVersion: v0.18.0
+    created: 2018-12-19T12:14:05.711908-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 8adf138f0c9123da535794301cdd0cf7a26ba69673cc9cb3674e17e36a62aeb5
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.18.0.tgz
+    version: 0.18.0
+  - apiVersion: v1
+    appVersion: v0.17.0
+    created: 2018-12-19T12:14:05.711333-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: d1f0f0c673fb7ca9350e0ce7d2f33e4e2194fa73efdcf9012b1aac331263decc
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.17.0.tgz
+    version: 0.17.0
+  - apiVersion: v1
+    appVersion: v0.16.0
+    created: 2018-12-19T12:14:05.710833-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 67b1954fd956973e960e21612cd7e40dacf7a65dcef5e752e3f7be8840cefe50
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.16.0.tgz
+    version: 0.16.0
+  - apiVersion: v1
+    appVersion: v0.15.0
+    created: 2018-12-19T12:14:05.710337-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 892173390fe6be0e9054525c69acc15c49841c97bb715a08e21548645e6ce02e
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.15.0.tgz
+    version: 0.15.0
+  - apiVersion: v1
+    appVersion: v0.14.0
+    created: 2018-12-19T12:14:05.70983-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 1c15aa023a8e3d33efb0c6239318e1d956d714d5f23616d0a68a67993b411820
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.14.0.tgz
+    version: 0.14.0
+  - apiVersion: v1
+    appVersion: v0.13.1
+    created: 2018-12-19T12:14:05.709331-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 11869f3ea5d093098f859bbdc171be960f73bf5054bdf6a8aa086c3d69495f75
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.13.1.tgz
+    version: 0.13.1
+  - apiVersion: v1
+    appVersion: v0.13.0
+    created: 2018-12-19T12:14:05.708767-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 86acb511ffd5083e4957479f608411e711eaa1d0ca3da8a50e67a523f2a7a871
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.13.0.tgz
+    version: 0.13.0
+  - apiVersion: v1
+    appVersion: v0.12.0
+    created: 2018-12-19T12:14:05.708347-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 90e1cdef4303e39fb105c3a0f745a2d802bb44deaffa29f9c25933fcd53ab262
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.12.0.tgz
+    version: 0.12.0
+  - apiVersion: v1
+    appVersion: v0.11.0
+    created: 2018-12-19T12:14:05.70782-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 40bc429edc50b66cd8ab51f419d0652b51d2aed5804fc2769b781b833168c582
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.11.0.tgz
+    version: 0.11.0
+  - apiVersion: v1
+    appVersion: v0.10.0
+    created: 2018-12-19T12:14:05.707304-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 16d6257160bb2d918a177fe8a6bc2fea97503360e79f3038052d29a7ffa1db0a
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.10.0.tgz
+    version: 0.10.0
+  - apiVersion: v1
+    appVersion: v0.9.0
+    created: 2018-12-19T12:14:05.718178-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: c412e81afb4d412ce13390552d8d13bc8844138801e75a3b135fb368513e4fc0
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.9.0.tgz
+    version: 0.9.0
+  - apiVersion: v1
+    appVersion: v0.8.0
+    created: 2018-12-19T12:14:05.717671-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 60a1094cea6fb6d6446e831e6709a87a8cd1e5ae61aff79508244fda07b526fd
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.8.0.tgz
+    version: 0.8.0
+  - apiVersion: v1
+    appVersion: v0.7.0
+    created: 2018-12-19T12:14:05.717194-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 9eba7bb5f2ec83ebf6b56a58773ecf7d5d9f0bb04b54c8775b06f031d452c956
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.7.0.tgz
+    version: 0.7.0
+  - apiVersion: v1
+    appVersion: v0.6.0
+    created: 2018-12-19T12:14:05.716642-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 1c8ab3ee88a99c6e5cd5fc91bf645d1a267634b7bc73fe03e0f4b9775c1aae0c
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.6.0.tgz
+    version: 0.6.0
+  - apiVersion: v1
+    appVersion: v0.5.0
+    created: 2018-12-19T12:14:05.715523-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 515903c641fd1bc720db8d32c1e37d9550b5144b426c61805a953eada012ac53
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.5.0.tgz
+    version: 0.5.0
+  - apiVersion: v1
+    appVersion: v0.4.0
+    created: 2018-12-19T12:14:05.714939-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 13a89ce5c3d78558ed9d318bed188f117fe0383570ab68d6d9cdd2b1ee76434b
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v1
+    appVersion: v0.3.0
+    created: 2018-12-19T12:14:05.714484-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 75369780f6354af84cef79e1c2baa386f2862c149ac779edb0cbcc5b65c690ed
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.3.1.tgz
+    version: 0.3.1
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.714047-07:00
+    description: Brigade provides event-driven scripting of Kubernetes pipelines.
+    digest: 2e8d80d6a029b52e6412cf6931fc0622f98aca6f62666ab759158c415a6d0eb8
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.3.0.tgz
+    version: 0.3.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.713659-07:00
+    description: A Helm chart for Kubernetes
+    digest: 840b801a258a070bbcb6ff0ea7194202f6db2b40a9a10ff28fef5de9c1813b20
+    name: brigade
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-0.2.0.tgz
+    version: 0.2.0
+  brigade-project:
+  - apiVersion: v1
+    appVersion: v0.19.0
+    created: 2018-12-19T12:14:05.721987-07:00
+    description: Create a Brigade project
+    digest: fc723de36d28bd561a7344b764dfa8150886e5da59ba2f1bba929ebe23719f76
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.19.1.tgz
+    version: 0.19.1
+  - apiVersion: v1
+    appVersion: v0.19.0
+    created: 2018-12-19T12:14:05.721644-07:00
+    description: Create a Brigade project
+    digest: 51b9de023ce11749cd961835a161fe6a2739d4b5d74132f311d47649f6131433
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.19.0.tgz
+    version: 0.19.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.72128-07:00
+    description: Create a Brigade project
+    digest: e98cb2fcb51da05a431e04387a7669d3b2ee7591338644582751049918719a58
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.18.0.tgz
+    version: 0.18.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.720968-07:00
+    description: Create a Brigade project
+    digest: 1bcbcae430561cd7be8981621261bb6c25d045038ca41d0df708fdb5704233a6
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.17.0.tgz
+    version: 0.17.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.720658-07:00
+    description: Create a Brigade project
+    digest: 72737ce6ce8ac8f8c61694462cb2f9ba352a4bc580bed2ed453528e96a4f5a68
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.16.0.tgz
+    version: 0.16.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.720347-07:00
+    description: Create a Brigade project
+    digest: 22ea07b9e93a148624483bb83dc877b956a190542444db4ad0ee95bcf70d5d70
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.15.0.tgz
+    version: 0.15.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.720021-07:00
+    description: Create a Brigade project
+    digest: 047435955397ff1ae4a9987fa789ebc6ed6a1089bcc11301d27f15a5e3b52c31
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.14.0.tgz
+    version: 0.14.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.719695-07:00
+    description: Create a Brigade project
+    digest: 3071801fa41efd910b682df60795db973127553f1d27802acc538a80a7db870a
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.13.1.tgz
+    version: 0.13.1
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.719387-07:00
+    description: Create a Brigade project
+    digest: 19cf93b6a139f38d64f76d86e30866b8229c9687f77757355416c620288adf58
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.13.0.tgz
+    version: 0.13.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.719133-07:00
+    description: Create a Brigade project
+    digest: 14f9ccbb3addb739efe873c7709571763a6d1b803e6c9b0377e59c928475e16d
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.12.0.tgz
+    version: 0.12.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.718825-07:00
+    description: Create a Brigade project
+    digest: 9cefccdca47ce309cd0813aed9bd17cda27a3bbfa56b1634566e1a575e2c9e66
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.11.0.tgz
+    version: 0.11.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.718518-07:00
+    description: Create a Brigade project
+    digest: 054a76ffb2fa1cb5aec3b55693905d60454bbd3971c7e7786734ae6190fa7db0
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.10.0.tgz
+    version: 0.10.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.724257-07:00
+    description: Create a Brigade project
+    digest: 0dfad2f8d2291acfcdace0ad8daa3738a9e4e13f12cab20b29e26ee28fc09b44
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.9.0.tgz
+    version: 0.9.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.723978-07:00
+    description: Create a Brigade project
+    digest: 6c2be2b1d3214c1b06cb18499b413647ac60701b6c12c868e8e857de28eb968b
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.8.0.tgz
+    version: 0.8.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.723651-07:00
+    description: Create a Brigade project
+    digest: 042b85f0701d3a0083bc08527b67bf4828874a0726cfc5afc07e169eb1865258
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.7.0.tgz
+    version: 0.7.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.723368-07:00
+    description: Create a Brigade project
+    digest: c3e3b65091ece3aec5f52df2a6625b95de8eaf4d47d327706671ec9d7afa015a
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.6.0.tgz
+    version: 0.6.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.723093-07:00
+    description: Create a Brigade project
+    digest: bb59a0fee70f037973623f38c6bc40dccee0634f2672096f172b294583ce33d7
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.5.0.tgz
+    version: 0.5.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.722825-07:00
+    description: Create a Brigade project
+    digest: bb5c51cb903c3b70602505fb7234afd18bb521398b1f0f1cd0b0b2811843522c
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.722542-07:00
+    description: Create a Brigade project
+    digest: ccd6d193fb012cd41d74ce1255dbce296acbc0f12af3099e5ac0d31985e26118
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.3.0.tgz
+    version: 0.3.0
+  - apiVersion: v1
+    created: 2018-12-19T12:14:05.722267-07:00
+    description: Create an Brigade project
+    digest: 637d46ff4f147f8490806a49251a851aa8db3c2c181056f91191dd06d94d4f78
+    name: brigade-project
+    urls:
+    - https://azure.github.io/brigade-charts/brigade-project-0.2.0.tgz
+    version: 0.2.0
+generated: 2018-12-19T12:14:05.706522-07:00
