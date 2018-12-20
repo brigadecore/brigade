@@ -138,6 +138,52 @@ func TestCreateProject(t *testing.T) {
 	}
 }
 
+func TestReplaceProject(t *testing.T) {
+	k, s := fakeStore()
+	p := &brigade.Project{Name: "fakeName", ID: "brigade-fakeID", Github: brigade.Github{
+		Token:     "half-a-league",
+		BaseURL:   "http://example.com",
+		UploadURL: "http://up.example.com",
+	}}
+	// create the project
+	if err := s.CreateProject(p); err != nil {
+		t.Fatal(err)
+	}
+	// make sure it's there
+	if _, err := k.CoreV1().Secrets("default").Get("brigade-fakeID", meta.GetOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	// create another one with different ID
+	pNonExistent := &brigade.Project{Name: "fakeName", ID: "brigade-fakeIDNotExistent"}
+	// try to replace it, this will throw an error since it does not already exists
+	if err := s.ReplaceProject(pNonExistent); err == nil {
+		t.Fatal("Err should not be nil, since project does not exist")
+	}
+	// create another one, this time using same ID and a couple of added/changed properties
+	p2 := &brigade.Project{Name: "fakeName", ID: "brigade-fakeID", DefaultScript: "new.js", Github: brigade.Github{
+		Token:     "half-a-league2",
+		BaseURL:   "http://example2.com",
+		UploadURL: "http://up.example2.com",
+	}}
+	// replace it
+	if err := s.ReplaceProject(p2); err != nil {
+		t.Fatal(err)
+	}
+	// make sure it worked, get it as well
+	updatedSecret, err := k.CoreV1().Secrets("default").Get("brigade-fakeID", meta.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// check for new/added properties
+	if updatedSecret.StringData["defaultScript"] != "new.js" {
+		t.Fatalf("Wrong value in DefaultScript. It's %s whereas it should be 'new.js'", updatedSecret.StringData["defaultScript"])
+	}
+
+	if updatedSecret.StringData["github.baseURL"] != "http://example2.com" {
+		t.Fatalf("Wrong value in Github.BaseURL. It's %s whereas it should be 'http://example2.com'", updatedSecret.StringData["github.baseURL"])
+	}
+}
+
 func TestDeleteProject(t *testing.T) {
 	k, s := fakeStore()
 	p := &brigade.Project{ID: "fake", Name: "fake"}

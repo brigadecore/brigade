@@ -8,7 +8,11 @@ LDFLAGS            :=
 BINS        = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig
 IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig brigade-worker git-sidecar
 
-GIT_TAG   = $(shell git describe --tags --always 2>/dev/null)
+.PHONY: echo-images
+echo-images:
+	@echo $(IMAGES)
+
+GIT_TAG   = $(shell git describe --tags --always)
 VERSION   ?= ${GIT_TAG}
 IMAGE_TAG ?= ${VERSION}
 LDFLAGS   += -X github.com/Azure/brigade/pkg/version.Version=$(VERSION)
@@ -54,7 +58,7 @@ docker-push: $(addsuffix -push,$(IMAGES))
 		for arch in $(CX_ARCHS); do \
 			GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./bin/$*-$$os-$$arch ./$*/cmd/$*; \
 		done; \
-		if [ $$os == 'windows' ]; then \
+		if [ $$os = 'windows' ]; then \
 			mv ./bin/$*-$$os-$$arch ./bin/$*-$$os-$$arch.exe; \
 		fi; \
 	done
@@ -62,19 +66,11 @@ docker-push: $(addsuffix -push,$(IMAGES))
 .PHONY: build-release
 build-release: brig-cross-compile
 
-.PRECIOUS: build-chart
-.PHONY: build-chart
-build-chart:
-	helm package -d docs/ ./charts/brigade
-	helm package -d docs/ ./charts/brigade-project
-	helm repo index docs/
-
 # All non-functional tests
 .PHONY: test
 test: test-style
 test: test-unit
 test: test-js
-test: test-chart
 
 # Unit tests. Local only.
 .PHONY: test-unit
@@ -84,11 +80,13 @@ test-unit: vendor
 # Functional tests assume access to github.com
 # To set this up in your local environment:
 # - Make sure kubectl is pointed to the right cluster
-# - Create "myvals.yaml" and set to something like this:
+# - Run "helm repo add brigade https://azure.github.io/brigade-charts"
+# - Run "helm inspect values brigade/brigade-project > myvals.yaml"
+# - Set the values in myvalues.yaml to something like this:
 #   project: "deis/empty-testbed"
 #   repository: "github.com/deis/empty-testbed"
 #   secret: "MySecret"
-# - Run "helm install ./charts/brigade-project -f myvals.yaml
+# - Run "helm install brigade/brigade-project -f myvals.yaml"
 # - Run "make run" in one terminal
 # - Run "make test-functional" in another terminal
 #
@@ -109,11 +107,7 @@ test-js: bootstrap-js
 
 .PHONY: test-style
 test-style:
-	gometalinter --config ./gometalinter.json ./...
-
-.PHONY: test-chart
-test-chart:
-	helm lint ./charts/*
+	golangci-lint run --config ./golangci.yml
 
 .PHONY: format
 format: format-go format-js
@@ -126,7 +120,7 @@ format-go:
 format-js:
 	cd brigade-worker && yarn format
 
-HAS_GOMETALINTER := $(shell command -v gometalinter;)
+HAS_GOLANGCI     := $(shell command -v golangci-lint;)
 HAS_DEP          := $(shell command -v dep;)
 HAS_GIT          := $(shell command -v git;)
 HAS_YARN         := $(shell command -v yarn;)
@@ -145,9 +139,10 @@ endif
 ifndef HAS_DEP
 	go get -u github.com/golang/dep/cmd/dep
 endif
-ifndef HAS_GOMETALINTER
-	go get -u github.com/alecthomas/gometalinter
-	gometalinter --install
+ifndef HAS_GOLANGCI
+	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint && \
+	cd $(GOPATH)/src/github.com/golangci/golangci-lint/cmd/golangci-lint && \
+	go install -ldflags "-X 'main.version=$(git describe --tags)' -X 'main.commit=$(git rev-parse --short HEAD)' -X 'main.date=$(date)'"
 endif
 	dep ensure
 

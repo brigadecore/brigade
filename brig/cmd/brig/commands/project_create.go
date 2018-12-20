@@ -155,12 +155,18 @@ func createProject(out io.Writer) error {
 		return nil
 	}
 
-	if !projectCreateReplace {
-		if _, err = store.GetProject(proj.Name); err == nil {
-			return fmt.Errorf("project %s already exists. Refusing to overwrite", proj.Name)
+	// brig project create --replace
+	if projectCreateReplace {
+		if _, err = store.GetProject(proj.ID); err != nil {
+			return fmt.Errorf("project %s could not be found (error: %s). Cannot replace, exiting", proj.Name, err.Error())
 		}
+		return store.ReplaceProject(proj)
 	}
 
+	// brig project create # no replace
+	if _, err = store.GetProject(proj.ID); err == nil {
+		return fmt.Errorf("project %s already exists. Refusing to overwrite", proj.Name)
+	}
 	// Store the project
 	return store.CreateProject(proj)
 }
@@ -173,9 +179,14 @@ func projectCreatePrompts(p *brigade.Project) error {
 	// We always set this to the globalNamespace, otherwise things will break.
 	p.Kubernetes.Namespace = globalNamespace
 
+	message := "Project Name"
+	if projectCreateReplace {
+		message = "Existing " + message
+	}
+
 	initialName := p.Name
 	if err := survey.AskOne(&survey.Input{
-		Message: "Project name",
+		Message: message,
 		Help:    "By convention, this is user/project or org/project",
 		Default: p.Name,
 	}, &p.Name, survey.Required); err != nil {

@@ -23,7 +23,7 @@ import app
 
 def bytes_to_str(b):
     return ''.join(chr(x) for x in (b))
-    
+
 class AppTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -164,8 +164,7 @@ $ git commit -m "add brigade.js"
 $ git push origin add-brigade
 ```
 
-Open up a new pull request on your repository using the branch. You should see a status icon for your new commit. Assuming all is set up, you should see a shiny green checkmark next to your commit.
-
+Open up a new pull request on your repository using the branch:
 <img src="img/img5.png" style="height: 500px;" />
 
 This concludes the basic tutorial. If you are familiar with Brigade and are interested in learning how to refactor brigade.js into a more efficient test pipeline, check out [Advanced tutorial: Writing efficient pipelines][efficient-pipelines].

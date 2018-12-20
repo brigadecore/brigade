@@ -10,7 +10,7 @@ Brigade is composed of numerous parts:
 - brigade-worker: The JavaScript runtime for executing `brigade.js` files. The
   controller spawns these, though you can run one directly as well.
 - brigade-api: The REST API server for user interfaces
-- brigade-project: The Helm chart for installing Brigade projects
+- brigade-project: The Helm [chart][brigade-project-chart] for installing Brigade projects
 - git-sidecar: The code that runs as a sidecar in cluster to fetch Git repositories
 
 This document covers development of `brigade-controller`, `brigade-server`, and
@@ -126,21 +126,29 @@ Running `VERSION=latest make docker-build` will push the Brigade images to the M
 daemon. You can verify this by running `docker images`. You should see the `latest` tags for
 the brigade images.
 
+Brigade charts are hosted in the separate [Azure/brigade-charts][brigade-charts]
+repo, so we'll need to add the corresponding Helm repo locally:
+
+```
+$ helm repo add brigade https://azure.github.io/brigade-charts
+"brigade" has been added to your repositories
+```
+
 Now create a custom `values.yaml` file for the chart, and set the images to all
 pull the `latest` image:
 
 ```
-$ helm inspect values ./charts/brigade > myvalues.yaml
+$ helm inspect values brigade/brigade > myvalues.yaml
 $ open myvalues.yaml    # Change all `tag:` fields to be `tag: latest`
 ```
 
 From here, you can install Brigade into Minikube using the Helm chart:
 
 ```
-$ helm install -n brigade ./charts/brigade -f myvalues.yaml # if this command fails run `helm init`
+$ helm install -n brigade brigade/brigade -f myvalues.yaml # if this command fails run `helm init`
 ```
 
-Don't forget to also create a project (`$ helm install -n empty-testbed charts/brigade-project`).
+Don't forget to also create a project (`$ helm install -n empty-testbed brigade/brigade-project`).
 
 ## Running Brigade inside remote Kubernetes
 
@@ -150,7 +158,7 @@ To run a development version of Brigade inside of a remote Kubernetes,
 you will need to do two things:
 
 - Make sure you push your `brigade` docker images to a registry the cluster can access
-- Set the image when you do a `helm install ./chart` on the Brigade chart.
+- Set the image when you do a `helm install brigade/<chart>` on the Brigade chart.
 
 ## Running Brigade (brigade-server) Locally (against Minikube)
 
@@ -173,12 +181,12 @@ Once you have Brigade running in Minikube or a comparable alternative, you shoul
 able to run the functional tests.
 
 First, create a project that points to the `deis/empty-testbed` project. The most
-flexible way of doing this is via the `./charts/brigade-project` Helm chart:
+flexible way of doing this is via the `brigade/brigade-project` Helm [chart][brigade-project-chart]:
 
 ```console
-$ helm inspect ./charts/brigade-project > functional-test-project.yaml
+$ helm inspect brigade/brigade-project > functional-test-project.yaml
 $ # edit the functional-test-project.yaml file
-$ helm install -f functional-test-project.yaml -n brigade-functional-tests ./charts/brigade-project
+$ helm install -f functional-test-project.yaml -n brigade-functional-tests brigade/brigade-project
 ```
 
 At the very least, you will want a config that looks like this:
@@ -225,3 +233,6 @@ yarn start
 ```
 
 You may change the variables above to point to the desired project.
+
+[brigade-charts]: https://github.com/Azure/brigade-charts
+[brigade-project-chart]: https://github.com/Azure/brigade-charts/tree/master/charts/brigade-project

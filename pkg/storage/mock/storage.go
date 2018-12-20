@@ -96,6 +96,24 @@ func (s *Store) CreateProject(p *brigade.Project) error {
 	return nil
 }
 
+// ReplaceProject replaces a project in the internal mock
+func (s *Store) ReplaceProject(p *brigade.Project) error {
+	found := false
+	for _, pr := range s.ProjectList {
+		if pr.Name == p.Name {
+			pr = p
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("Project with ID %s was not found", p.ID)
+	}
+
+	return nil
+}
+
 // DeleteProject deletes a project from the internal mock
 func (s *Store) DeleteProject(id string) error {
 	tmp := []*brigade.Project{}

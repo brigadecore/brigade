@@ -258,7 +258,7 @@ export abstract class Job {
   ) {
     if (!jobNameIsValid(name)) {
       throw new Error(
-        "job name must be letters, numbers, and '-', and must not start or end with '-', having max length " +
+        "job name must be lowercase letters, numbers, and '-', and must not start or end with '-', having max length " +
           Job.MAX_JOB_NAME_LENGTH
       );
     }
