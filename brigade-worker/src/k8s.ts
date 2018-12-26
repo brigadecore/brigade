@@ -46,7 +46,7 @@ const wrapClient = fns => {
   // wrap client methods with retry logic
   for (let fn of fns) {
     let originalFn = defaultClient[fn.name];
-    defaultClient[fn.name] = function() {
+    defaultClient[fn.name] = function () {
       return retry(originalFn, arguments, 4000, 5);
     };
   }
@@ -439,7 +439,7 @@ export class JobRunner implements jobs.JobRunner {
     // appended to job name.
     return `${this.project.name.replace(/[.\/]/g, "-")}-${
       this.job.name
-    }`.toLowerCase();
+      }`.toLowerCase();
   }
 
   public logs(): Promise<string> {
@@ -461,7 +461,7 @@ export class JobRunner implements jobs.JobRunner {
    */
   public run(): Promise<jobs.Result> {
     return this.start()
-      .then(r => r.wait())
+      .then(r => this.wait())
       .then(r => {
         return this.logs();
       })
@@ -543,7 +543,7 @@ export class JobRunner implements jobs.JobRunner {
   private startUpdatingPod(): request.Request {
     const url = `${kc.getCurrentCluster().server}/api/v1/namespaces/${
       this.project.kubernetes.namespace
-    }/pods`;
+      }/pods`;
     const requestOptions = {
       qs: {
         watch: true,
@@ -565,7 +565,7 @@ export class JobRunner implements jobs.JobRunner {
         } else {
           obj = JSON.parse(data);
         }
-      } catch (e) {} //let it stay connected.
+      } catch (e) { } //let it stay connected.
       if (obj && obj.object) {
         this.pod = obj.object as kubernetes.V1Pod;
       }
@@ -583,6 +583,8 @@ export class JobRunner implements jobs.JobRunner {
     return req;
   }
 
+
+
   /** wait listens for the running job to complete.*/
   public wait(): Promise<jobs.Result> {
     // Should probably protect against the case where start() was not called
@@ -594,6 +596,8 @@ export class JobRunner implements jobs.JobRunner {
 
     // This is a handle to clear the setTimeout when the promise is fulfilled.
     let waiter;
+    // Handle to abort the request on completion and only to ensure that we hook the 'follow logs' events only once
+    let followLogsRequest: request.Request = null;
 
     this.logger.log(`Timeout set at ${timeout}`);
 
@@ -626,11 +630,16 @@ export class JobRunner implements jobs.JobRunner {
           this.logger.log("Pod not yet scheduled");
           return;
         }
+
         let phase = this.pod.status.phase;
         if (phase == "Succeeded") {
           clearTimers();
           let result = new K8sResult(phase);
           resolve(result);
+        } else if (phase == "Running") { // make sure Pod is running before we start following its logs
+          if (followLogsRequest == null && this.job.displayLogs) { // do that only if we haven't hooked up the follow request before
+            followLogsRequest = followLogs(this.pod.metadata.namespace, this.pod.metadata.name);
+          }
         } else if (phase == "Failed") {
           clearTimers();
           reject(new Error(`Pod ${name} failed to run to completion`));
@@ -652,11 +661,10 @@ export class JobRunner implements jobs.JobRunner {
             reject(new Error(cs[0].state.waiting.message));
           }
         }
-        this.logger.log(
-          `${this.pod.metadata.namespace}/${this.pod.metadata.name} phase ${
-            this.pod.status.phase
-          }`
-        );
+        if (!this.job.displayLogs || (this.job.displayLogs && this.pod.status.phase != "Running")) {
+          // don't display "Running" when we're asked to display job Pod logs
+          this.logger.log(`${this.pod.metadata.namespace}/${this.pod.metadata.name} phase ${this.pod.status.phase}`);
+        }
         // In all other cases we fall through and let the fn be run again.
       };
       let interval = setInterval(() => {
@@ -672,7 +680,49 @@ export class JobRunner implements jobs.JobRunner {
         podUpdater.abort();
         clearInterval(interval);
         clearTimeout(waiter);
+        if (followLogsRequest != null) {
+          followLogsRequest.abort();
+        }
       };
+
+      // follows logs for the specified namespace/Pod combination
+      let followLogs = (namespace: string, podName: string): request.Request => {
+        const url = `${kc.getCurrentCluster().server}/api/v1/namespaces/${namespace}/pods/${podName}/log`;
+        //https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#pod-v1-core
+        const requestOptions = {
+          qs: {
+            follow: true,
+            timeoutSeconds: 200,
+          },
+          method: "GET",
+          uri: url,
+          useQuerystring: true
+        };
+        kc.applyToRequest(requestOptions);
+        const stream = new byline_1.LineStream();
+        stream.on("data", data => {
+          let logs = null;
+          try {
+            if (data instanceof Buffer) {
+              logs = data.toString();
+            } else {
+              logs = data;
+            }
+            this.logger.log(
+              `${this.pod.metadata.namespace}/${this.pod.metadata.name} logs ${logs}`
+            );
+          } catch (e) { } //let it stay connected.
+        });
+        const req = request(requestOptions, (error, response, body) => {
+          if (error) {
+            this.logger.error(error);
+            this.reconnect = true; //reconnect unless aborted
+          }
+        });
+        req.pipe(stream);
+        return req;
+      }
+
     });
 
     // This will fail if the timelimit is reached.

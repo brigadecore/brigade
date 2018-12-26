@@ -245,6 +245,9 @@ export abstract class Job {
     return this._podName;
   }
 
+  /** displayLogs controls whether logs from the job Pod will be sent to output */
+  public displayLogs : boolean = false;
+
   /** Create a new Job
    * name is the name of the job.
    * image is the container image to use
