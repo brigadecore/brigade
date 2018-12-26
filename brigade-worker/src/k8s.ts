@@ -637,7 +637,7 @@ export class JobRunner implements jobs.JobRunner {
           let result = new K8sResult(phase);
           resolve(result);
         } else if (phase == "Running") { // make sure Pod is running before we start following its logs
-          if (followLogsRequest == null && this.job.displayLogs) { // do that only if we haven't hooked up the follow request before
+          if (followLogsRequest == null && this.job.streamLogs) { // do that only if we haven't hooked up the follow request before
             followLogsRequest = followLogs(this.pod.metadata.namespace, this.pod.metadata.name);
           }
         } else if (phase == "Failed") {
@@ -661,7 +661,7 @@ export class JobRunner implements jobs.JobRunner {
             reject(new Error(cs[0].state.waiting.message));
           }
         }
-        if (!this.job.displayLogs || (this.job.displayLogs && this.pod.status.phase != "Running")) {
+        if (!this.job.streamLogs || (this.job.streamLogs && this.pod.status.phase != "Running")) {
           // don't display "Running" when we're asked to display job Pod logs
           this.logger.log(`${this.pod.metadata.namespace}/${this.pod.metadata.name} phase ${this.pod.status.phase}`);
         }

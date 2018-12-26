@@ -141,7 +141,7 @@ events.on("push", function(e, project) {
   ]
 
   // Display logs from the job Pod
-  node.displayLogs = true;
+  node.streamLogs = true;
 
   // We're done configuring, so we run the job
   node.run()

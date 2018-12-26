@@ -199,7 +199,7 @@ Properties of `Job`
 - `annotations: {[key: string]:string}`: Name/value pairs of annotations to add to the job's pod
 - `resourceRequests: JobResourceRequest`: CPU and memory request resources for the job pod container.
 - `resourceLimits: JobResourceLimit`: CPU and memory limit resources for the job pod container.
-- `displayLogs: boolean`: controls whether logs from the job Pod will be sent to output.
+- `streamLogs: boolean`: controls whether logs from the job Pod will be streamed to output (similar functionality to `kubectl logs PODNAME -f`).
 
 #### Setting execution resources to a job
 
