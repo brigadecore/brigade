@@ -1,8 +1,12 @@
 # Managing Projects in Brigade
 
-In Brigade, a project is just a special Kubernetes secret. The Brigade project
-provides a Helm chart that makes it easy to manage projects. This document
-explains how to use that chart to manage your Brigade projects.
+In Brigade, a project is just a special Kubernetes secret. The Brigade project currently offers
+two methods to create a project: via the `brig` cli and via the [brigade-project][brigade-project-chart]
+Helm chart.  The latter is managed in the [Azure/brigade-charts][brigade-charts] repo
+and an in-depth overview of its configuration can be seen in the chart
+[README](https://github.com/Azure/brigade-charts/blob/master/chart/brigade-project/README.md).
+
+This document explains how to use both methods for managing your Brigade projects.
 
 ## An Introduction to Projects
 
@@ -59,14 +63,14 @@ If you have already created the secret, you can fetch it from Kubernetes by runn
 
 ## The Brigade Project Chart (Brigade <= 0.15)
 
-The Brigade Project chart is located in the Brigade source tree at
-`brigade-project`. You can also install it out of the Brigade chart repository.
+The Brigade Project chart is located in the [Azure/brigade-charts][brigade-charts] source tree at
+`charts/brigade-project`. You can also install it out of the Brigade chart repository.
 
 ```console
-$ helm repo add brigade https://azure.github.io/brigade
-$ helm search brigade-project
-NAME                   	VERSION	DESCRIPTION
-brigade/brigade-project	0.2.0  	Create a Brigade project
+$ helm repo add brigade https://azure.github.io/brigade-charts
+$ helm search brigade/brigade-project
+NAME                   	CHART VERSION	APP VERSION	DESCRIPTION
+brigade/brigade-project	0.19.0       	v0.19.0    	Create a Brigade project
 ```
 
 ### Creating and Managing a Project (The Old Way)
@@ -84,8 +88,8 @@ $ cd brigade-projects/myproject
 ```
 
 > You can store project configs in Git repos, but we don't recommend GitHub for
-> this. Keybase has free encrypted private Git repos, which are great for this
-> sort of thing.
+> this. Keybase has [free encrypted private Git repos](https://keybase.io/blog/encrypted-git-for-everyone),
+> which are great for this sort of thing.
 
 #### 2. Create a `values.yaml` file for your project
 
@@ -232,3 +236,6 @@ Mercurial, Bazaar, or Subversion. Essentially, a VCS sidecar need only be able
 to take the given information from the project and use it to create a local snapshot
 of the project in an appointed location. See the [Git sidecar](https://github.com/Azure/brigade/tree/master/git-sidecar)
 for an example.
+
+[brigade-charts]: https://github.com/Azure/brigade-charts
+[brigade-project-chart]: https://github.com/Azure/brigade-charts/tree/master/charts/brigade-project

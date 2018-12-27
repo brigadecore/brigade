@@ -58,7 +58,7 @@ To create a new project, use `brig project create` and answer the prompts. Make
 sure you are pointing to the same Kubernetes cluster and namespace that you
 installed Brigade into.
 
-**For Brigade 0.15 and earlier**: To create new projects, use the `brigade-project` Helm chart. While inside the Git
+**For Brigade 0.15 and earlier**: To create new projects, use the `brigade-project` Helm [chart][brigade-project-chart]. While inside the Git
 repository cloned above, run these commands:
 
 ```console
@@ -137,3 +137,9 @@ provided by the bot. You will only need to do this once across all repos using o
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+# Support & Feedback
+
+We have a slack channel! [Kubernetes/#brigade](https://kubernetes.slack.com/messages/C87MF1RFD) Feel free to join for any support questions or feedback, we are happy to help. To report an issue or to request a feature open an issue [here](https://github.com/Azure/brigade/issues)
+
+[brigade-project-chart]: https://github.com/Azure/brigade-charts/tree/master/charts/brigade-project

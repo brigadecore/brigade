@@ -55,19 +55,6 @@ function jsTest(e, project) {
   return jsTest;
 }
 
-function helmTest(e, project) {
-  // Create a new job to run Helm chart tests
-  var helmTest = new Job("helm-test", "dtzar/helm-kubectl:latest");
-
-  helmTest.tasks = [
-    addMake,
-    "cd /src",
-    "make test-chart"
-  ];
-
-  return helmTest;
-}
-
 // Here we can add additional Check Runs, which will run in parallel and
 // report their results independently to GitHub
 function runSuite(e, p) {
@@ -75,7 +62,6 @@ function runSuite(e, p) {
   // of lowercase letters and hyphens only (per Brigade/K8s restrictions)
   checkRun(e, p, goTest, "go").catch(e  => {console.error(e.toString())});
   checkRun(e, p, jsTest, "javascript").catch(e  => {console.error(e.toString())});
-  checkRun(e, p, helmTest, "helm").catch(e => {console.error(e.toString())});
 }
 
 // checkRun is a GitHub Check Run that is ran as part of a Checks Suite,
@@ -302,8 +288,7 @@ function slackNotify(title, msg, project) {
 events.on("exec", (e, p) => {
   return Group.runAll([
     goTest(e, p),
-    jsTest(e, p),
-    helmTest(e, p)
+    jsTest(e, p)
   ]);
 });
 
