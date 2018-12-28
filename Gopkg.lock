@@ -89,7 +89,7 @@
 
 [[projects]]
   digest = "1:8a34d7a37b8f07239487752e14a5faafcbbc718fc385ad429a2c4ac6f27a207f"
-  name = "github.com/emicklei/go-restful" 
+  name = "github.com/emicklei/go-restful"
   packages = [
     ".",
     "log",
@@ -700,7 +700,7 @@
     "github.com/Masterminds/goutils",
     "github.com/Masterminds/kitt/progress",
     "github.com/bacongobbler/browser",
-    "github.com/emicklei/go-restful" ,
+    "github.com/emicklei/go-restful",
     "github.com/emicklei/go-restful-openapi",
     "github.com/go-openapi/spec",
     "github.com/google/go-github/github",
