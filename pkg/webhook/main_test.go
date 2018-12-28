@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"gopkg.in/gin-gonic/gin.v1"
+	gin "gopkg.in/gin-gonic/gin.v1"
 )
 
 func TestMain(m *testing.M) {

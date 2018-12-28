@@ -40,7 +40,7 @@
   name = "github.com/Masterminds/kitt"
 
 [[constraint]]
-  name = "github.com/emicklei/go-restful"
+  name = restful "github.com/emicklei/go-restful" 
   version = "2.7.1"
 
 [[constraint]]
