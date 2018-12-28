@@ -21,10 +21,10 @@ If you'd like to add links to this list, open a pull request on
 
 ### Articles and Videos
 
-- [Video: Brigade, Trello, MongoDB/CosmosDB, and Slack](https://osseu2017.blob.core.windows.net/videos/trello-brigade-demo.mp4)
+- [Video: Intro to Brigade on Azure Friday](https://www.youtube.com/watch?v=aZMna3VuoAg)
 - [Announcing Brigade](https://open.microsoft.com/2017/10/23/announcing-brigade-event-driven-scripting-kubernetes/) - Microsoft
 - [Microsoft Launches Brigade](https://thenewstack.io/microsoft-launches-brigade-event-driven-scripting-tool-kubernetes) - The New Stack
-- [Video: Helm, Draft, and Brigade](https://osseu2017.blob.core.windows.net/videos/OSSEU-2017.mp4)
+- [Video: Building Event-Driven Pipelines with Brigade (KubeCon Europe 2018)](https://www.youtube.com/watch?v=yhfc0FKdFc8)
 - [Video: Brigade Basics](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG)
 
 ### Technical

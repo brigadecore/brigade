@@ -6,10 +6,10 @@ import (
 	"log"
 	"net/http"
 
-	"gopkg.in/gin-gonic/gin.v1"
-
 	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage"
+
+	gin "gopkg.in/gin-gonic/gin.v1"
 )
 
 type dockerPushHook struct {
