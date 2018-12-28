@@ -11,12 +11,11 @@ import (
 	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage/kube"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 	restfulspec "github.com/emicklei/go-restful-openapi"
-
 	"github.com/go-openapi/spec"
 
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 )
 
 var (

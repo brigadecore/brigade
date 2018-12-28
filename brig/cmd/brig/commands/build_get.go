@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/Azure/brigade/pkg/storage/kube"
 )

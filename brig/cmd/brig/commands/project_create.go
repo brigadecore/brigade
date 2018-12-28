@@ -11,9 +11,9 @@ import (
 
 	"github.com/Masterminds/goutils"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/Azure/brigade/pkg/brigade"

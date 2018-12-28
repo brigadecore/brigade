@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	gin "gopkg.in/gin-gonic/gin.v1"
+	"gopkg.in/gin-gonic/gin.v1"
 
 	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage"
