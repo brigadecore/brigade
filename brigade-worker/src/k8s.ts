@@ -46,7 +46,7 @@ const wrapClient = fns => {
   // wrap client methods with retry logic
   for (let fn of fns) {
     let originalFn = defaultClient[fn.name];
-    defaultClient[fn.name] = function () {
+    defaultClient[fn.name] = function() {
       return retry(originalFn, arguments, 4000, 5);
     };
   }
@@ -439,7 +439,7 @@ export class JobRunner implements jobs.JobRunner {
     // appended to job name.
     return `${this.project.name.replace(/[.\/]/g, "-")}-${
       this.job.name
-      }`.toLowerCase();
+    }`.toLowerCase();
   }
 
   public logs(): Promise<string> {
@@ -461,7 +461,7 @@ export class JobRunner implements jobs.JobRunner {
    */
   public run(): Promise<jobs.Result> {
     return this.start()
-      .then(r => this.wait())
+      .then(r => r.wait())
       .then(r => {
         return this.logs();
       })
@@ -583,8 +583,6 @@ export class JobRunner implements jobs.JobRunner {
     return req;
   }
 
-
-
   /** wait listens for the running job to complete.*/
   public wait(): Promise<jobs.Result> {
     // Should probably protect against the case where start() was not called
@@ -636,8 +634,11 @@ export class JobRunner implements jobs.JobRunner {
           clearTimers();
           let result = new K8sResult(phase);
           resolve(result);
-        } else if (phase == "Running") { // make sure Pod is running before we start following its logs
-          if (followLogsRequest == null && this.job.streamLogs) { // do that only if we haven't hooked up the follow request before
+        } 
+        // make sure Pod is running before we start following its logs
+        else if (phase == "Running") { 
+          // do that only if we haven't hooked up the follow request before
+          if (followLogsRequest == null && this.job.streamLogs) { 
             followLogsRequest = followLogs(this.pod.metadata.namespace, this.pod.metadata.name);
           }
         } else if (phase == "Failed") {
