@@ -140,6 +140,9 @@ events.on("push", function(e, project) {
     "python setup.py test"
   ]
 
+  // Display logs from the job Pod
+  node.streamLogs = true;
+
   // We're done configuring, so we run the job
   node.run()
 })

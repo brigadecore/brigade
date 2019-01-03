@@ -245,6 +245,11 @@ export abstract class Job {
     return this._podName;
   }
 
+  /** streamLogs controls whether logs from the job Pod will be streamed to output
+   * this is similar to using `kubectl logs PODNAME -f`
+   */
+  public streamLogs : boolean = false;
+
   /** Create a new Job
    * name is the name of the job.
    * image is the container image to use
