@@ -325,15 +325,14 @@ export class JobRunner implements jobs.JobRunner {
 
     // Add secret volume
     this.runner.spec.volumes = [
-      { name: secName, secret: { secretName: secName } } as kubernetes.V1Volume,
-      { name: "vcs-sidecar", emptyDir: {} } as kubernetes.V1Volume
+      { name: secName, secret: { secretName: secName } } as kubernetes.V1Volume
     ];
     this.runner.spec.containers[0].volumeMounts = [
-      { name: secName, mountPath: "/hook" } as kubernetes.V1VolumeMount,
-      { name: "vcs-sidecar", mountPath: mountPath } as kubernetes.V1VolumeMount
+      { name: secName, mountPath: "/hook" } as kubernetes.V1VolumeMount
     ];
 
-    if (job.useSource && project.repo.cloneURL) {
+    this.runner.spec.initContainers = [];
+    if (job.useSource && project.repo.cloneURL && project.kubernetes.vcsSidecar) {
       // Add the sidecar.
       let sidecar = sidecarSpec(
         e,
@@ -342,6 +341,14 @@ export class JobRunner implements jobs.JobRunner {
         project
       );
       this.runner.spec.initContainers = [sidecar];
+
+      // Add volume/volume mounts
+      this.runner.spec.volumes.push(
+        { name: "vcs-sidecar", emptyDir: {} } as kubernetes.V1Volume
+      );
+      this.runner.spec.containers[0].volumeMounts.push(
+        { name: "vcs-sidecar", mountPath: mountPath } as kubernetes.V1VolumeMount
+      );
     }
 
     if (job.imagePullSecrets) {

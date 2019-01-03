@@ -261,6 +261,29 @@ describe("k8s", function() {
           assert.isTrue(hasBrigadeRepoKey, "Has BRIGADE REPO KEY as param");
         });
       });
+      context("when sidecar is disabled", function() {
+        beforeEach(function() {
+          p.kubernetes.vcsSidecar = "";
+        });
+        it("job runner should have no init containers", function() {
+          let jr = new k8s.JobRunner(j, e, p);
+          assert.equal(jr.runner.spec.initContainers.length, 0);
+        });
+        it("job runner should have no sidecar volumes", function() {
+          let jr = new k8s.JobRunner(j, e, p);
+          assert.notDeepInclude(
+            jr.runner.spec.volumes,
+            { name: "vcs-sidecar", emptyDir: {} } as kubernetes.V1Volume
+          );
+        });
+        it("job runner should have no sidecar volume mounts", function() {
+          let jr = new k8s.JobRunner(j, e, p);
+          assert.notDeepInclude(
+            jr.runner.spec.containers[0].volumeMounts,
+            { name: "vcs-sidecar", mountPath: j.mountPath } as kubernetes.V1VolumeMount
+          );
+        });
+      });
       context("when mount path is supplied", function() {
         beforeEach(function() {
           j.mountPath = "/ahab";

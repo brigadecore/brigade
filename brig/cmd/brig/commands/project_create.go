@@ -126,6 +126,11 @@ func createProject(out io.Writer) error {
 		}
 	}
 
+	// Disable sidecar container if set to NONE
+	if proj.Kubernetes.VCSSidecar == "NONE" {
+		proj.Kubernetes.VCSSidecar = ""
+	}
+
 	secret, err := kube.SecretFromProject(proj)
 	if err != nil {
 		return err
@@ -343,7 +348,7 @@ func projectAdvancedPrompts(p *brigade.Project) error {
 		{
 			Name: "vCSSidecar",
 			Prompt: &survey.Input{
-				Message: "Custom VCS sidecar",
+				Message: "Custom VCS sidecar (enter 'NONE' for no sidecar)",
 				Help:    "The default sidecar uses Git to fetch your repository",
 				Default: p.Kubernetes.VCSSidecar,
 			},
