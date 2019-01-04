@@ -117,6 +117,7 @@ This will show you the detailed output of running your `brigade.js` script's
   - [Cron Gateway](https://github.com/technosophos/brigade-cron): Schedule events to run at a particular time
   - [Trello and Generic Webhooks](https://github.com/technosophos/brigade-trello): Experimental gateway for Trello and for generic webhooks
   - [Draft Pack for Building Custom Gateways](https://github.com/technosophos/draft-brigade): Build your own gateway [in 5 minutes](http://technosophos.com/2018/04/23/building-brigade-gateways-the-easy-way.html)
+  - [Azure DevOps / VSTS gateway](https://github.com/radu-matei/brigade-vsts-gateway): Gateway for Azure DevOps / VSTS events
 
 ## Brigade :heart: Developers
 
