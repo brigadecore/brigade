@@ -11,6 +11,7 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
 - Using Brigade (brigade.js, webhooks)
   - [Scripting Guide](scripting.md): How to write JavaScript for `brigade.js` files.
   - [Brigade.js Reference](javascript.md): The API for brigade.js files.
+  - [Scripting Guide - Advanced](scripting_advanced.md): Advanced examples for `brigade.js` files.
   - [GitHub Integration](github.md): A guide for configuring GitHub integration.
   - [Container Registry Integration](dockerhub.md): A guide for configuring integration with DockerHub or Azure Container Registry.
   - [Using Secrets](secrets.md): How to pass sensitive data into builds.
@@ -18,6 +19,8 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
 - Configuring and Running Brigade
   - [Projects](projects.md): Install, upgrade, and use Brigade Projects.
   - [Securing Brigade](security.md): Things to consider when configuring Brigade.
+  - [Storage](storage.md): How Brigade uses Kubernetes Persistent Storage
+  - [Workers](workers.md): More information regarding Brigade Worker
   - [Example Projects](../index.md#technical): Brigade-related projects
 - Contributing to Brigade Development
   - [Brigade Developers Guide](developers.md): A guide for people who want to modify Brigade's

@@ -1329,6 +1329,6 @@ This particular feature can be useful when writing `after` and `error` handlers
 This guide covers the basics of working with `brigade.js` files. If you are not sure how to
 get started with Brigade now, you might want to take a look at the [tutorial](../intro). If
 you want more details about the Brigade JS API, you can look at the [API
-documentation](javascript.md).
+documentation](javascript.md). For a more advanced scripting guide, check [here](scripting_advanced.md).
 
 Happy Scripting!
