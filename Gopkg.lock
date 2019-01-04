@@ -55,12 +55,12 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
-  digest = "1:9d013c04ff3012769abc7ea289948bf93bf82e8b22c5909f031127647609523f"
+  digest = "1:9cbedb548e7738c625eea4b4ca0f8f448a1254d5099b89dccf5a7e75ca07c1ee"
   name = "github.com/bacongobbler/browser"
   packages = ["."]
   pruneopts = ""
-  revision = "792d0443b3e34e0a99a68e254084079ad9356db5"
-  version = "v1.0.1"
+  revision = "35431d848dcddf136bfeee424c6a1ab2ea539646"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:9a62b6bb832d61f198b4301a6ecb4fbef21a731596bb21c27e27f79b1e8260d7"
@@ -713,6 +713,7 @@
     "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",
+    "k8s.io/apimachinery/pkg/api/resource",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/labels",
     "k8s.io/apimachinery/pkg/runtime",
