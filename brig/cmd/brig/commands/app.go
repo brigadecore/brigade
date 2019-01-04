@@ -1,8 +1,11 @@
 package commands
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 
+	v1 "k8s.io/api/core/v1"
 	// Kube client doesn't support all auth providers by default.
 	// this ensures we include all backends supported by the client.
 	"k8s.io/client-go/kubernetes"
@@ -12,7 +15,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-const mainUsage = `Interact with the Brigade cluster service.
+const (
+	mainUsage = `Interact with the Brigade cluster service.
 
 Brigade is a tool for scripting cluster workflows, and 'brig' is the command
 line client for interacting with Brigade.
@@ -28,6 +32,8 @@ builds as well.
 By default, Brigade learns about your Kubernetes cluster by inspect the $KUBECONFIG
 environment variable.
 `
+	envNamespace = "BRIGADE_NAMESPACE"
+)
 
 var (
 	globalNamespace   string
@@ -38,7 +44,7 @@ var (
 
 func init() {
 	f := Root.PersistentFlags()
-	f.StringVarP(&globalNamespace, "namespace", "n", "default", "The Kubernetes namespace for Brigade")
+	f.StringVarP(&globalNamespace, "namespace", "n", ns(), "The Kubernetes namespace for Brigade, overrides $BRIGADE_NAMESPACE.")
 	f.StringVar(&globalKubeConfig, "kubeconfig", "", "The path to a KUBECONFIG file, overrides $KUBECONFIG.")
 	f.StringVar(&globalKubeContext, "kube-context", "", "The name of the kubeconfig context to use.")
 	f.BoolVarP(&globalVerbose, "verbose", "v", false, "Turn on verbose output")
@@ -72,4 +78,12 @@ func getKubeConfig() (*rest.Config, error) {
 	}
 
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, overrides).ClientConfig()
+}
+
+func ns() string {
+	if v, ok := os.LookupEnv(envNamespace); ok {
+		return v
+	}
+
+	return v1.NamespaceDefault
 }
