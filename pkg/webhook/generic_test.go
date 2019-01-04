@@ -10,7 +10,7 @@ import (
 	"github.com/Azure/brigade/pkg/storage"
 	"github.com/Azure/brigade/pkg/storage/mock"
 
-	"github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful"
 )
 
 func newTestGenericWebhookHandler(store storage.Store) *genericWebhook {
