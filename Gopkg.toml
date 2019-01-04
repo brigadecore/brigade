@@ -1,6 +1,6 @@
 [[constraint]]
   name = "github.com/bacongobbler/browser"
-  version = "v1.0.1"
+  version = "v1.1.0"
 
 [[constraint]]
   name = "github.com/google/go-github"
