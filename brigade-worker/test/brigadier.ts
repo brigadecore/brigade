@@ -2,7 +2,7 @@ import "mocha";
 import { assert } from "chai";
 
 import * as brigade from "../src/brigadier";
-import * as jobImpl from "../src/job";
+import * as jobImpl from "@azure/brigadier/out/job";
 
 import * as mock from "./mock";
 
