@@ -80,6 +80,7 @@ func SecretFromProject(project *brigade.Project) (v1.Secret, error) {
 
 			"vcsSidecar":        project.Kubernetes.VCSSidecar,
 			"namespace":         project.Kubernetes.Namespace,
+			"serviceAccount":    project.Kubernetes.ServiceAccount,
 			"buildStorageSize":  project.Kubernetes.BuildStorageSize,
 			"defaultScript":     project.DefaultScript,
 			"defaultScriptName": project.DefaultScriptName,
@@ -179,6 +180,7 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 	proj.Kubernetes.BuildStorageSize = def(sv.String("buildStorageSize"), "50Mi")
 	proj.Kubernetes.BuildStorageClass = sv.String("kubernetes.buildStorageClass")
 	proj.Kubernetes.CacheStorageClass = sv.String("kubernetes.cacheStorageClass")
+	proj.Kubernetes.ServiceAccount = sv.String("serviceAccount")
 
 	if sv.String("kubernetes.allowSecretKeyRef") != "" {
 		if allowSecretKeyRef, err := strconv.ParseBool(sv.String("kubernetes.allowSecretKeyRef")); err == nil {

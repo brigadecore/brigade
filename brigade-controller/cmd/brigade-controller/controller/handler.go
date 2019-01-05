@@ -236,6 +236,12 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 
 	psv := kube.SecretValues(project.Data)
 	bsv := kube.SecretValues(build.Data)
+
+	serviceAccount := config.ProjectServiceAccount
+	if string(project.Data["serviceAccount"]) != "" {
+		serviceAccount = string(project.Data["serviceAccount"])
+	}
+
 	envs := []v1.EnvVar{
 		{Name: "CI", Value: "true"},
 		{Name: "BRIGADE_BUILD_ID", Value: build.Labels["build"]},
@@ -249,7 +255,7 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 		{Name: "BRIGADE_REMOTE_URL", Value: string(project.Data["cloneURL"])},
 		{Name: "BRIGADE_WORKSPACE", Value: "/vcs"},
 		{Name: "BRIGADE_PROJECT_NAMESPACE", Value: build.Namespace},
-		{Name: "BRIGADE_SERVICE_ACCOUNT", Value: config.WorkerServiceAccount},
+		{Name: "BRIGADE_SERVICE_ACCOUNT", Value: serviceAccount},
 		{Name: "BRIGADE_SECRET_KEY_REF", Value: strconv.FormatBool(allowSecretKeyRef)},
 		{
 			Name:      "BRIGADE_REPO_KEY",
@@ -258,6 +264,10 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 			Name:      "BRIGADE_REPO_AUTH_TOKEN",
 			ValueFrom: secretRef("github.token", project),
 		},
+	}
+
+	if config.ProjectServiceAccountRegex != "" {
+		envs = append(envs, v1.EnvVar{Name: "BRIGADE_SERVICE_ACCOUNT_REGEX", Value: config.ProjectServiceAccountRegex})
 	}
 
 	brigadejsPath := psv.String("brigadejsPath")

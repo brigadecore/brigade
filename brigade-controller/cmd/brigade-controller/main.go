@@ -13,6 +13,7 @@ import (
 )
 
 const defaultWorkerServiceAccountName = "brigade-worker"
+const defaultJobServiceAccountName = "brigade-worker"
 
 func init() {
 	log.SetFlags(log.Lshortfile)
@@ -31,11 +32,18 @@ func main() {
 	flag.StringVar(&ctrConfig.WorkerImage, "worker-image", defaultWorkerImage(), "kubernetes worker image")
 	flag.StringVar(&ctrConfig.WorkerPullPolicy, "worker-pull-policy", defaultWorkerPullPolicy(), "kubernetes worker image pull policy")
 	flag.StringVar(&ctrConfig.WorkerServiceAccount, "worker-service-account", defaultWorkerServiceAccount(), "kubernetes worker service account name")
+	flag.StringVar(&ctrConfig.ProjectServiceAccount, "project-service-account", defaultProjectServiceAccount(), "default brigade project service account name")
+	flag.StringVar(&ctrConfig.ProjectServiceAccountRegex, "project-service-account-regex", "", "regex to validate project service accounts, if not given will be set to match the default project service account")
 	flag.StringVar(&ctrConfig.WorkerRequestsCPU, "worker-requests-cpu", "", "kubernetes worker cpu requests")
 	flag.StringVar(&ctrConfig.WorkerRequestsMemory, "worker-requests-memory", "", "kubernetes worker memory requests")
 	flag.StringVar(&ctrConfig.WorkerLimitsCPU, "worker-limits-cpu", "", "kubernetes worker cpu limits")
 	flag.StringVar(&ctrConfig.WorkerLimitsMemory, "worker-limits-memory", "", "kubernetes worker memory limits")
 	flag.Parse()
+
+	if ctrConfig.ProjectServiceAccountRegex == "" {
+		// No regex was given so only allow the default project service account
+		ctrConfig.ProjectServiceAccountRegex = ctrConfig.ProjectServiceAccount
+	}
 
 	// creates the connection
 	config, err := clientcmd.BuildConfigFromFlags(master, kubeconfig)
@@ -80,6 +88,13 @@ func defaultWorkerServiceAccount() string {
 		return pp
 	}
 	return defaultWorkerServiceAccountName
+}
+
+func defaultProjectServiceAccount() string {
+	if pp, ok := os.LookupEnv("BRIGADE_JOB_SERVICE_ACCOUNT"); ok {
+		return pp
+	}
+	return defaultJobServiceAccountName
 }
 
 func defaultNamespace() string {

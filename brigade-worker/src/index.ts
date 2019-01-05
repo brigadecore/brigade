@@ -77,5 +77,12 @@ if (process.env.BRIGADE_SERVICE_ACCOUNT) {
   options.serviceAccount = process.env.BRIGADE_SERVICE_ACCOUNT;
 }
 
+if (process.env.BRIGADE_SERVICE_ACCOUNT_REGEX) {
+  if (!options.serviceAccount.match(`/${process.env.BRIGADE_SERVICE_ACCOUNT_REGEX}/`)) {
+      logger.log(`Service Account ${options.serviceAccount} does not match regex /${process.env.BRIGADE_SERVICE_ACCOUNT_REGEX}/`);
+      process.exit(1);
+  }
+}
+
 // Run the app.
 new App(projectID, projectNamespace).run(e);
