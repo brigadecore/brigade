@@ -117,4 +117,6 @@ type Kubernetes struct {
 	BuildStorageClass string `json:"buildStorageClass"`
 	// CacheStorageClass is the storage class used for caching jobs.
 	CacheStorageClass string `json:"cacheStorageClass"`
+	// AllowSecretKeyRef controls if secretKeyRefs can be used in the job's environment
+	AllowSecretKeyRef bool `json:"allowSecretKeyRef"`
 }

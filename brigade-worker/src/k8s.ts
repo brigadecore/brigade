@@ -246,8 +246,9 @@ export class JobRunner implements jobs.JobRunner {
    * @param job The Job object
    * @param e  The event that was fired
    * @param project  The project in which this job runs
+   * @param allowSecretKeyRef  Allow secretKeyRef in the job's environment
    */
-  public init<T extends jobs.Job>(job: T, e: BrigadeEvent, project: Project) {
+  public init<T extends jobs.Job>(job: T, e: BrigadeEvent, project: Project, allowSecretKeyRef: boolean = true) {
     this.options = Object.assign({}, options);
     this.event = e;
     this.logger = new ContextLogger("k8s", e.logLevel);
@@ -318,6 +319,11 @@ export class JobRunner implements jobs.JobRunner {
       } else {
         // For environmental variables that are directly references,
         // add the reference to the env var list.
+
+        if (val.secretKeyRef != null && !allowSecretKeyRef) {
+         // allowSecretKeyRef is not to true so disallow setting secrets in the environment
+         continue
+        }
 
         envVars.push({
           name: key,

@@ -377,6 +377,14 @@ func projectAdvancedPrompts(p *brigade.Project) error {
 				Default: p.Kubernetes.CacheStorageClass,
 			},
 		},
+		{
+			Name: "allowSecretKeyRef",
+			Prompt: &survey.Confirm{
+				Message: "SecretKeyRef usage",
+				Help:    "Allow or disallow usage of secretKeyRef in job environments.",
+				Default: p.Kubernetes.AllowSecretKeyRef,
+			},
+		},
 	}, &p.Kubernetes); err != nil {
 		return fmt.Errorf(abort, err)
 	}

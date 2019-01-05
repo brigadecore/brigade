@@ -9,6 +9,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"strconv"
+
 	"github.com/Azure/brigade/pkg/brigade"
 )
 
@@ -102,6 +104,7 @@ func SecretFromProject(project *brigade.Project) (v1.Secret, error) {
 
 			"kubernetes.cacheStorageClass": project.Kubernetes.CacheStorageClass,
 			"kubernetes.buildStorageClass": project.Kubernetes.BuildStorageClass,
+			"kubernetes.allowSecretKeyRef": strconv.FormatBool(project.Kubernetes.AllowSecretKeyRef),
 		},
 	}
 	return secret, nil
@@ -174,6 +177,14 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 	proj.Kubernetes.BuildStorageSize = def(sv.String("buildStorageSize"), "50Mi")
 	proj.Kubernetes.BuildStorageClass = sv.String("kubernetes.buildStorageClass")
 	proj.Kubernetes.CacheStorageClass = sv.String("kubernetes.cacheStorageClass")
+
+	if sv.String("kubernetes.allowSecretKeyRef") != "" {
+		if allowSecretKeyRef, err := strconv.ParseBool(sv.String("kubernetes.allowSecretKeyRef")); err == nil {
+			proj.Kubernetes.AllowSecretKeyRef = allowSecretKeyRef
+		} else {
+			return nil, fmt.Errorf("error parsing 'kubernetes.allowSecretKeyRef': %s", err.Error())
+		}
+	}
 
 	proj.DefaultScript = sv.String("defaultScript")
 	proj.DefaultScriptName = sv.String("defaultScriptName")

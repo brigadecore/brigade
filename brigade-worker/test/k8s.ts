@@ -147,6 +147,38 @@ describe("k8s", function() {
             assert.equal(found, 2);
           });
         });
+        context("as references with allowSecretKeyRef false", function() {
+          beforeEach(function() {
+            j.env = {
+              one: {
+                secretKeyRef: {
+                  name: "secret-name",
+                  key: "secret-key"
+                }
+              } as kubernetes.V1EnvVarSource,
+              two: {
+                configMapKeyRef: {
+                  name: "configmap-name",
+                  key: "configmap-key"
+                }
+              } as kubernetes.V1EnvVarSource
+            };
+          });
+          it("sets them on the pod", function() {
+            let jr = new k8s.JobRunner().init(j, e, p, false);
+            let found = 0;
+
+            for (let k in j.env) {
+              for (let env of jr.runner.spec.containers[0].env) {
+                if (env.name == k) {
+                  assert.equal(env.valueFrom, j.env[k]);
+                  found++;
+                }
+              }
+            }
+            assert.equal(found, 1);
+          });
+        });
       });
       context("when resources are specified", function() {
         beforeEach(function() {

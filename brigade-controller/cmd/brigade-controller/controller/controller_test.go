@@ -13,6 +13,8 @@ import (
 	core "k8s.io/client-go/testing"
 )
 
+const expectedEnvironmentLength = 16
+
 func TestController(t *testing.T) {
 	createdPod := false
 	client := fake.NewSimpleClientset()
@@ -94,8 +96,8 @@ func TestController(t *testing.T) {
 	if c.Name != "brigade-runner" {
 		t.Error("Container.Name is not correct")
 	}
-	if envlen := len(c.Env); envlen != 15 {
-		t.Errorf("expected 15 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != expectedEnvironmentLength {
+		t.Errorf("expected %d items in Container.Env, got %d", expectedEnvironmentLength, envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
@@ -127,8 +129,8 @@ func TestController(t *testing.T) {
 		t.Fatalf("Expected 1 init container, got %d", l)
 	}
 	ic := pod.Spec.InitContainers[0]
-	if envlen := len(ic.Env); envlen != 15 {
-		t.Errorf("expected 15 env vars, got %d", envlen)
+	if envlen := len(ic.Env); envlen != expectedEnvironmentLength {
+		t.Errorf("expected %d env vars, got %d", expectedEnvironmentLength, envlen)
 	}
 
 	if ic.Image != sidecarImage {
@@ -233,8 +235,8 @@ func TestController_WithScript(t *testing.T) {
 	if c.Name != "brigade-runner" {
 		t.Error("Container.Name is not correct")
 	}
-	if envlen := len(c.Env); envlen != 15 {
-		t.Errorf("expected 15 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != expectedEnvironmentLength {
+		t.Errorf("expected %d items in Container.Env, got %d", expectedEnvironmentLength, envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
@@ -309,8 +311,8 @@ func TestController_NoSidecar(t *testing.T) {
 	}
 
 	c := pod.Spec.Containers[0]
-	if envlen := len(c.Env); envlen != 15 {
-		t.Errorf("expected 15 items in Container.Env, got %d", envlen)
+	if envlen := len(c.Env); envlen != expectedEnvironmentLength {
+		t.Errorf("expected %d items in Container.Env, got %d", expectedEnvironmentLength, envlen)
 	}
 	if c.Image != config.WorkerImage {
 		t.Error("Container.Image is not correct")
@@ -538,8 +540,8 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 			if c.Name != "brigade-runner" {
 				t.Error("Container.Name is not correct")
 			}
-			if envlen := len(c.Env); envlen != 15 {
-				t.Errorf("expected 15 items in Container.Env, got %d", envlen)
+			if envlen := len(c.Env); envlen != expectedEnvironmentLength {
+				t.Errorf("expected %d items in Container.Env, got %d", expectedEnvironmentLength, envlen)
 			}
 			if c.Image != test.expWorkerImage {
 				t.Errorf("Container.Image is not correct, got %s; want %s", c.Image, test.expWorkerImage)
@@ -555,8 +557,8 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 				t.Fatalf("Expected 1 init container, got %d", l)
 			}
 			ic := pod.Spec.InitContainers[0]
-			if envlen := len(ic.Env); envlen != 15 {
-				t.Errorf("expected 15 env vars, got %d", envlen)
+			if envlen := len(ic.Env); envlen != expectedEnvironmentLength {
+				t.Errorf("expected %d env vars, got %d", expectedEnvironmentLength, envlen)
 			}
 
 			if ic.Image != sidecarImage {
