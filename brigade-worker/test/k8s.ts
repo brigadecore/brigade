@@ -508,6 +508,21 @@ describe("k8s", function() {
           );
         });
       });
+      context("when no job shell is specified", function() {
+        it("default shell is /bin/sh", function() {
+          let jr = new k8s.JobRunner().init(j, e, p);
+          assert.deepEqual(jr.runner.spec.containers[0].command, [ '/bin/sh', '/hook/main.sh' ]);
+        });
+      });
+      context("when job shell is specified", function() {
+        beforeEach(function() {
+          j.shell = "/bin/bash"
+        });
+        it("shell is /bin/bash", function() {
+          let jr = new k8s.JobRunner().init(j, e, p);
+          assert.deepEqual(jr.runner.spec.containers[0].command, [ '/bin/bash', '/hook/main.sh' ]);
+        });
+      });
     });
   });
 });

@@ -238,7 +238,7 @@ export class JobRunner implements jobs.JobRunner {
   pod: kubernetes.V1Pod;
   cancel: boolean;
   reconnect: boolean;
-  
+
   constructor() {}
 
   /**
@@ -273,7 +273,8 @@ export class JobRunner implements jobs.JobRunner {
       this.serviceAccount,
       job.resourceRequests,
       job.resourceLimits,
-      job.annotations
+      job.annotations,
+      job.shell
     );
 
     // Experimenting with setting a deadline field after which something
@@ -454,7 +455,7 @@ export class JobRunner implements jobs.JobRunner {
     // appended to job name.
     return `${this.project.name.replace(/[.\/]/g, "-")}-${
       this.job.name
-    }`.toLowerCase();
+      }`.toLowerCase();
   }
 
   public logs(): Promise<string> {
@@ -558,7 +559,7 @@ export class JobRunner implements jobs.JobRunner {
   private startUpdatingPod(): request.Request {
     const url = `${kc.getCurrentCluster().server}/api/v1/namespaces/${
       this.project.kubernetes.namespace
-    }/pods`;
+      }/pods`;
     const requestOptions = {
       qs: {
         watch: true,
@@ -649,11 +650,11 @@ export class JobRunner implements jobs.JobRunner {
           clearTimers();
           let result = new K8sResult(phase);
           resolve(result);
-        } 
+        }
         // make sure Pod is running before we start following its logs
-        else if (phase == "Running") { 
+        else if (phase == "Running") {
           // do that only if we haven't hooked up the follow request before
-          if (followLogsRequest == null && this.job.streamLogs) { 
+          if (followLogsRequest == null && this.job.streamLogs) {
             followLogsRequest = followLogs(this.pod.metadata.namespace, this.pod.metadata.name);
           }
         } else if (phase == "Failed") {
@@ -870,7 +871,8 @@ function newRunnerPod(
   serviceAccount: string,
   resourceRequests: jobs.JobResourceRequest,
   resourceLimits: jobs.JobResourceLimit,
-  jobAnnotations: { [key: string]: string }
+  jobAnnotations: { [key: string]: string },
+  jobShell: string
 ): kubernetes.V1Pod {
   let pod = new kubernetes.V1Pod();
   pod.metadata = new kubernetes.V1ObjectMeta();
@@ -884,7 +886,12 @@ function newRunnerPod(
   let c1 = new kubernetes.V1Container();
   c1.name = "brigaderun";
   c1.image = brigadeImage;
-  c1.command = ["/bin/sh", "/hook/main.sh"];
+
+  if (jobShell == "") {
+    jobShell = "/bin/sh";
+  }
+  c1.command = [jobShell, "/hook/main.sh"];
+  
   c1.imagePullPolicy = imageForcePull ? "Always" : "IfNotPresent";
   c1.securityContext = new kubernetes.V1SecurityContext();
 
