@@ -28,7 +28,8 @@
     "rimraf": "^2.6.2",
     "ts-node": "^7.0.0",
     "typedoc": "^0.8.0",
-    "typescript": "^3.0.1"
+    "typescript": "^3.2.2",
+    "@types/ws": "6.0.1"
   },
   "dependencies": {
     "@kubernetes/client-node": "^0.7.2",
