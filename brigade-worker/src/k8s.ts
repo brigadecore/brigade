@@ -322,6 +322,7 @@ export class JobRunner implements jobs.JobRunner {
 
         if (val.secretKeyRef != null && !allowSecretKeyRef) {
          // allowSecretKeyRef is not to true so disallow setting secrets in the environment
+         this.logger.warn(`Using secretKeyRef is not allowed in this project, not setting environment variable ${key}`);
          continue
         }
 
