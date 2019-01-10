@@ -52,7 +52,7 @@ export class Job extends jobImpl.Job {
   jr: JobRunner;
 
   run(): Promise<jobImpl.Result> {
-    this.jr = new JobRunner().init(this, currentEvent, currentProject);
+    this.jr = new JobRunner().init(this, currentEvent, currentProject, process.env.BRIGADE_SECRET_KEY_REF == 'true');
     this._podName = this.jr.name;
     return this.jr.run().catch(err => {
       // Wrap the message to give clear context.

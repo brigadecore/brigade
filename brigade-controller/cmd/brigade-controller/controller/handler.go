@@ -12,6 +12,8 @@ import (
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"strconv"
+
 	"github.com/Azure/brigade/pkg/storage/kube"
 )
 
@@ -220,6 +222,18 @@ func workerImageConfig(project *v1.Secret, config *Config) (string, string) {
 }
 
 func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
+
+	allowSecretKeyRef := false
+	// older projects won't have allowSecretKeyRef set so just check for it
+	if string(project.Data["kubernetes.allowSecretKeyRef"]) != "" {
+		var err error
+		allowSecretKeyRef, err = strconv.ParseBool(string(project.Data["kubernetes.allowSecretKeyRef"]))
+		if err != nil {
+			// if we errored parsing the bool something is wrong so just log it and ignore what the project set
+			log.Printf("error parsing allowSecretKeyRef in project %s: %s", project.Annotations["projectName"], err)
+		}
+	}
+
 	sv := kube.SecretValues(build.Data)
 	return []v1.EnvVar{
 		{Name: "CI", Value: "true"},
@@ -235,6 +249,7 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 		{Name: "BRIGADE_WORKSPACE", Value: "/vcs"},
 		{Name: "BRIGADE_PROJECT_NAMESPACE", Value: build.Namespace},
 		{Name: "BRIGADE_SERVICE_ACCOUNT", Value: config.WorkerServiceAccount},
+		{Name: "BRIGADE_SECRET_KEY_REF", Value: strconv.FormatBool(allowSecretKeyRef)},
 		{
 			Name:      "BRIGADE_REPO_KEY",
 			ValueFrom: secretRef("sshKey", project),
