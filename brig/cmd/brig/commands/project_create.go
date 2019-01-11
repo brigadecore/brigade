@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/Masterminds/goutils"
@@ -410,7 +411,7 @@ func projectAdvancedPrompts(p *brigade.Project) error {
 			Name: "tag",
 			Prompt: &survey.Input{
 				Message: "Custom worker image tag",
-				Help:    "The woerker image tag to pull, e.g. 1.2.3 or latest",
+				Help:    "The worker image tag to pull, e.g. 1.2.3 or latest",
 				Default: p.Worker.Tag,
 			},
 		},
@@ -477,6 +478,21 @@ func projectAdvancedPrompts(p *brigade.Project) error {
 				Message: "Default script ConfigMap name",
 				Help:    "EXPERT: It is possible to store a default script in a ConfigMap. Supply the name of that ConfigMap to use the script.",
 				Default: p.DefaultScriptName,
+			},
+		},
+		{
+			Name: "brigadejsPath",
+			Prompt: &survey.Input{
+				Message: "brigade.js file path relative to the repository root",
+				Help:    "brigade.js file path relative to the repository root, e.g. 'mypath/brigade.js'",
+				Default: p.BrigadejsPath,
+			},
+			Validate: func(ans interface{}) error {
+				sans := fmt.Sprintf("%v", ans)
+				if filepath.IsAbs(sans) {
+					return errors.New("Path must be relative")
+				}
+				return nil
 			},
 		},
 	}, p); err != nil {

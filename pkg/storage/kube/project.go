@@ -101,6 +101,7 @@ func SecretFromProject(project *brigade.Project) (v1.Secret, error) {
 			"allowPrivilegedJobs": bfmt(project.AllowPrivilegedJobs),
 			"allowHostMounts":     bfmt(project.AllowHostMounts),
 			"workerCommand":       project.WorkerCommand,
+			"brigadejsPath":       project.BrigadejsPath,
 
 			"kubernetes.cacheStorageClass": project.Kubernetes.CacheStorageClass,
 			"kubernetes.buildStorageClass": project.Kubernetes.BuildStorageClass,
@@ -216,6 +217,7 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 	proj.AllowPrivilegedJobs = strings.ToLower(def(sv.String("allowPrivilegedJobs"), "true")) == "true"
 	proj.AllowHostMounts = strings.ToLower(def(sv.String("allowHostMounts"), "false")) == "true"
 
+	proj.BrigadejsPath = sv.String("brigadejsPath")
 	proj.WorkerCommand = sv.String("workerCommand")
 	return proj, nil
 }

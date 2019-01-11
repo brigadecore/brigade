@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -222,7 +223,6 @@ func workerImageConfig(project *v1.Secret, config *Config) (string, string) {
 }
 
 func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
-
 	allowSecretKeyRef := false
 	// older projects won't have allowSecretKeyRef set so just check for it
 	if string(project.Data["kubernetes.allowSecretKeyRef"]) != "" {
@@ -234,17 +234,18 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 		}
 	}
 
-	sv := kube.SecretValues(build.Data)
-	return []v1.EnvVar{
+	psv := kube.SecretValues(project.Data)
+	bsv := kube.SecretValues(build.Data)
+	envs := []v1.EnvVar{
 		{Name: "CI", Value: "true"},
 		{Name: "BRIGADE_BUILD_ID", Value: build.Labels["build"]},
-		{Name: "BRIGADE_BUILD_NAME", Value: sv.String("build_name")},
-		{Name: "BRIGADE_COMMIT_ID", Value: sv.String("commit_id")},
-		{Name: "BRIGADE_COMMIT_REF", Value: sv.String("commit_ref")},
-		{Name: "BRIGADE_EVENT_PROVIDER", Value: sv.String("event_provider")},
-		{Name: "BRIGADE_EVENT_TYPE", Value: sv.String("event_type")},
-		{Name: "BRIGADE_PROJECT_ID", Value: sv.String("project_id")},
-		{Name: "BRIGADE_LOG_LEVEL", Value: sv.String("log_level")},
+		{Name: "BRIGADE_BUILD_NAME", Value: bsv.String("build_name")},
+		{Name: "BRIGADE_COMMIT_ID", Value: bsv.String("commit_id")},
+		{Name: "BRIGADE_COMMIT_REF", Value: bsv.String("commit_ref")},
+		{Name: "BRIGADE_EVENT_PROVIDER", Value: bsv.String("event_provider")},
+		{Name: "BRIGADE_EVENT_TYPE", Value: bsv.String("event_type")},
+		{Name: "BRIGADE_PROJECT_ID", Value: bsv.String("project_id")},
+		{Name: "BRIGADE_LOG_LEVEL", Value: bsv.String("log_level")},
 		{Name: "BRIGADE_REMOTE_URL", Value: string(project.Data["cloneURL"])},
 		{Name: "BRIGADE_WORKSPACE", Value: "/vcs"},
 		{Name: "BRIGADE_PROJECT_NAMESPACE", Value: build.Namespace},
@@ -258,6 +259,17 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 			ValueFrom: secretRef("github.token", project),
 		},
 	}
+
+	brigadejsPath := psv.String("brigadejsPath")
+	if brigadejsPath != "" {
+		if filepath.IsAbs(brigadejsPath) {
+			log.Printf("Warning: 'brigadejsPath' is set on Project Secret but will be ignored because provided path '%s' is an absolute path", brigadejsPath)
+		} else {
+			envs = append(envs, v1.EnvVar{Name: "BRIGADE_SCRIPT", Value: filepath.Join("/vcs", brigadejsPath)})
+		}
+	}
+
+	return envs
 }
 
 // workerResources generates the resources for the worker, given in the cofiguration
