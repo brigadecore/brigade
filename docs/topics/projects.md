@@ -44,14 +44,33 @@ $ brig project create
 ? Full repository name github.com/deis/empty-testbed
 ? Clone URL (https://github.com/your/repo.git) https://github.com/deis/empty-testbed.git
 ? Add secrets? No
-? Configure GitHub Enterprise or OAuth? No
-? Configure advanced Kubernetes options? No
-? Configure Brigade worker? No
-? Configure Advanced Brigade Settings? No
+Auto-generated a Shared Secret: "FweBxcwJvcbTTuW5CquyPtHM"
+? Configure GitHub Access? No
+? Configure advanced options No
 ```
 
 You can use `--dry-run --verbose` to see the answers to the question without creating
 a new release. For more, see `brig project create --help`.
+
+You can optionally customize a bunch of advanced options during `brig project create`:
+
+- *Custom VCS sidecar*: The default sidecar uses Git to fetch your repository
+- *Build storage size*: By default, 50Mi of shared temp space is allocated per build. Larger values slow down build startup. Units are Ki, Mi, or Gi
+- *Build storage class*: Kubernetes provides named storage classes. If you want to use a custom storage class for Builds, set the class name here
+- *Job cache storage class*: Same as before, the custom storage class that will be used for job caches
+- *SecretKeyRef usage*: Allow or disallow usage of secretKeyRef in job environments
+- *Worker image registry or DockerHub org*: For non-DockerHub, this is the root URL. For DockerHub, it is the org
+- *Worker image name*: The name of the worker image, e.g. workerImage
+- *Custom worker image tag*: The worker image tag to pull, e.g. 1.2.3 or latest
+- *Worker image pull policy*: The image pull policy determines how often Kubernetes will try to refresh this image
+- *Worker command*: Override the worker's default command (yarn -s start)
+- *Initialize Git submodules*: For repos that have submodules, initialize them on each clone. Not recommended on public repos
+- *Allow host mounts*: Allow host-mounted volumes for worker and jobs. Not recommended in multi-tenant clusters
+- *Allow privileged jobs*: Allow jobs to mount the Docker socket or perform other privileged operations. Not recommended for multi-tenant clusters
+- *Image pull secrets*: Comma-separated list of image pull secret names that will be supplied to workers and jobs
+- *Default script ConfigMap name*: It is possible to store a default script in a ConfigMap. Supply the name of that ConfigMap to use the script
+- *brigade.js file path*: brigade.js file path relative to the repository root, e.g. 'mypath/brigade.js'. Absolute paths will not be accepted
+- *Upload a default brigade.js script*: The local path to a default brigade.js file that will be run if none exists in the repo. Overrides the ConfigMap script
 
 ### Managing Your Projects
 

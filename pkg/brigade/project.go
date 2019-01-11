@@ -48,6 +48,9 @@ type Project struct {
 	// WorkerCommand is a string command that can be issued to the worker image.
 	// This is an alternative to the 'yarn start' command usually issued.
 	WorkerCommand string `json:"workerCommand"`
+
+	// BrigadejsPath contains the path for the Brigade.js file in the source repo
+	BrigadejsPath string `json:"brigadejsPath"`
 }
 
 // SecretsMap is a map[string]string for storing secrets.
