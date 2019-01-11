@@ -56,4 +56,6 @@ type Store interface {
 	GetWorkerLogStream(job *brigade.Worker) (io.ReadCloser, error)
 	// GetWorkerLogStreamFollow retrieve a followed stream of all logs for a worker from storage.
 	GetWorkerLogStreamFollow(job *brigade.Worker) (io.ReadCloser, error)
+	// GetStorageClassNames returns the names of the StorageClass instances in the cluster
+	GetStorageClassNames() ([]string, error)
 }

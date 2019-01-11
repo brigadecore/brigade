@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/Azure/brigade/pkg/brigade"
+	"github.com/Azure/brigade/pkg/storage"
 	"github.com/Azure/brigade/pkg/storage/kube"
 )
 
@@ -121,7 +122,7 @@ func createProject(out io.Writer) error {
 	}
 
 	if !projectCreateNoPrompts {
-		if err := projectCreatePrompts(proj); err != nil {
+		if err := projectCreatePrompts(proj, store); err != nil {
 			return err
 		}
 	}
@@ -175,7 +176,7 @@ func createProject(out io.Writer) error {
 //
 // Default values are read from the given project. Values are then
 // replaced on that object.
-func projectCreatePrompts(p *brigade.Project) error {
+func projectCreatePrompts(p *brigade.Project, store storage.Store) error {
 	// We always set this to the globalNamespace, otherwise things will break.
 	p.Kubernetes.Namespace = globalNamespace
 
@@ -338,13 +339,13 @@ func projectCreatePrompts(p *brigade.Project) error {
 	}, &doAdvanced, nil); err != nil {
 		return fmt.Errorf(abort, err)
 	} else if doAdvanced {
-		return projectAdvancedPrompts(p)
+		return projectAdvancedPrompts(p, store)
 	}
 	return nil
 }
 
-func projectAdvancedPrompts(p *brigade.Project) error {
-	if err := survey.Ask([]*survey.Question{
+func projectAdvancedPrompts(p *brigade.Project, store storage.Store) error {
+	questions := []*survey.Question{
 		{
 			Name: "vCSSidecar",
 			Prompt: &survey.Input{
@@ -362,22 +363,6 @@ func projectAdvancedPrompts(p *brigade.Project) error {
 			},
 		},
 		{
-			Name: "buildStorageClass",
-			Prompt: &survey.Input{
-				Message: "Build storage class",
-				Help:    "Kubernetes provides named storage classes. If you want to use a custom storage class, set the class name here.",
-				Default: p.Kubernetes.BuildStorageClass,
-			},
-		},
-		{
-			Name: "cacheStorageClass",
-			Prompt: &survey.Input{
-				Message: "Job cache storage class",
-				Help:    "Kubernetes provides named storage classes. If you want to use a custom storage class, set the class name here.",
-				Default: p.Kubernetes.CacheStorageClass,
-			},
-		},
-		{
 			Name: "allowSecretKeyRef",
 			Prompt: &survey.Confirm{
 				Message: "SecretKeyRef usage",
@@ -385,7 +370,41 @@ func projectAdvancedPrompts(p *brigade.Project) error {
 				Default: p.Kubernetes.AllowSecretKeyRef,
 			},
 		},
-	}, &p.Kubernetes); err != nil {
+	}
+
+	// get the StorageClass.Name for the storage classes in the cluster
+	scn, err := store.GetStorageClassNames()
+	if err != nil {
+		// this error indicates a cluster communication problem, so exit now since project creation will probably fail as well
+		return err
+	}
+
+	// in the unlikely event that there are no storage classes installed, let the user know
+	if len(scn) == 0 {
+		fmt.Println("Warning: there are 0 StorageClasses in the cluster. Will not set StorageClasses for this Brigade Project")
+	} else {
+		storageClassQuestions := []*survey.Question{
+			{
+				Name: "buildStorageClass",
+				Prompt: &survey.Select{
+					Message: "Build storage class",
+					Help:    "Kubernetes provides named storage classes. If you want to use a custom storage class, set the class name here.",
+					Options: scn,
+				},
+			},
+			{
+				Name: "cacheStorageClass",
+				Prompt: &survey.Select{
+					Message: "Job cache storage class",
+					Help:    "Kubernetes provides named storage classes. If you want to use a custom storage class, set the class name here.",
+					Options: scn,
+				},
+			},
+		}
+		questions = append(questions, storageClassQuestions...)
+	}
+
+	if err := survey.Ask(questions, &p.Kubernetes); err != nil {
 		return fmt.Errorf(abort, err)
 	}
 
@@ -483,7 +502,7 @@ func projectAdvancedPrompts(p *brigade.Project) error {
 		return fmt.Errorf(abort, err)
 	}
 	var fname string
-	err := survey.AskOne(&survey.Input{
+	err = survey.AskOne(&survey.Input{
 		Message: "Upload a default brigade.js script",
 		Help:    "The local path to a default brigade.js file that will be run if none exists in the repo. Overrides the ConfigMap script.",
 	}, &fname, loadFileValidator)
