@@ -32,77 +32,164 @@ architecture.
 
 ## Quickstart
 
-1. Install Brigade
-2. Install `brig`
-3. Create a Brigade project
-4. Write and run a Brigade script
+### Install Brigade
 
-The easiest way to install Brigade into your Kubernetes cluster is to install it using Helm.
+The easiest way to install Brigade into your Kubernetes cluster is to install it using [Helm](https://helm.sh/), the Kubernetes Package Manager.
 
-```console
-$ helm repo add brigade https://azure.github.io/brigade
-$ helm install -n brigade brigade/brigade
+```bash
+# add Brigade chart repo
+helm repo add brigade https://azure.github.io/brigade-charts
+# install Brigade - this also installs Kashti
+helm install -n brigade brigade/brigade
 ```
 
-You will now have Brigade installed.
+You will now have Brigade installed. [Kashti](https://github.com/Azure/kashti), the dashboard for your Brigade pipelines, is also installed in the cluster.
 
-In your local environment, install `brig`, the Brigade commandline client. To get
-the latest version, go to the [releases page](https://github.com/Azure/brigade/releases/)
-and download the binary for your platform. Alternatively, you can use
-[asdf-brig](https://github.com/Ibotta/asdf-brig) to install & manage multiple
-versions of `brig`.
+### Install brig
+
+Brig is the Brigade command line client. You can use `brig` to create/update/delete new brigade Projects, run Builds, etc. To get `brig`, navigate to the [Releases page](https://github.com/Azure/brigade/releases/) and then download the appropriate client for your platform. For example, if you're using Linux or WSL, you can get the 0.19.0 version in this way:
+
+```bash
+wget -O brig https://github.com/Azure/brigade/releases/download/v0.19.0/brig-linux-amd64
+chmod +x brig
+mv brig ~/bin
+``` 
+
+Alternatively, you can use [asdf-brig](https://github.com/Ibotta/asdf-brig) to install & manage multiple versions of `brig`.
 
 ### Creating A New Project
 
-To create a new project, use `brig project create` and answer the prompts. Make
-sure you are pointing to the same Kubernetes cluster and namespace that you
-installed Brigade into.
+To create a new project, use `brig project create` and answer the prompts. Feel free to modify or leave all options at their defaults (just press Enter on every interactive prompt).
 
-**For Brigade 0.15 and earlier**: To create new projects, use the `brigade-project` Helm [chart][brigade-project-chart]. While inside the Git
-repository cloned above, run these commands:
-
-```console
-$ helm inspect values brigade/brigade-project > myvalues.yaml
-$ # edit myvalues.yaml
+```bash
+brig project create
 ```
 
-When editing `myvalues.yaml`, follow the instructions in that file for configuring
-your new project. Once you have customized that file, you can install the project
-based on your new configuration by passing it with `-f myvalues.yaml`.
-
-```console
-$ helm install --name my-project brigade/brigade-project -f myvalues.yaml
+Output would be similar to this:
+```
+? Project name deis/empty-testbed
+? Full repository name github.com/deis/empty-testbed
+? Clone URL (https://github.com/your/repo.git) https://github.com/deis/empty-testbed.git
+? Add secrets? No
+Auto-generated a Shared Secret: "novxKi64FKWyvU4EPZulyo0o"
+? Configure GitHub Access? No
+? Configure advanced options No
+Project ID: brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
 ```
 
-The Helm chart will be removed before Brigade 1.0.0, so we recommend using
-`brig project create` instead. Note that the projects created with the Helm chart
-remain compatible with Brigade.
+Here we're using the name 'deis/empty-testbed' for our project, which points to a test repo on 'https://github.com/deis/empty-testbed'. Of course, don't forget to give a proper name to your project, as well as set the 'Clone URL' correctly. If it's wrong, your subsequent Builds will fail! For documentation on project creation, check [here](https://azure.github.io/brigade/topics/projects.html).
 
-### Creating Your First `brigade.js`
+Now we can view the newly created project:
+```bash
+brig project list
+```
 
-Creating your first `brigade.js` is as easy as this:
+Output would be something like:
+```
+NAME                    ID                                                              REPO
+myusername/myproject    brigade-2e9bb93bf149536a951d236772ae8be77a3cef9335c82bf39fc18c  github.com/myusername/myproject
+```
+
+You can also do a `kubectl get secret` to view the [Kubernetes Secret](https://kubernetes.io/docs/concepts/configuration/secret/) that was created for this Project. Bear in mind that Brigade stores information about its entities (Project/Build) in Secrets.
+
+```
+NAME                                                             TYPE                                  DATA   AGE
+brigade-2e9bb93bf149536a951d236772ae8be77a3cef9335c82bf39fc18c   brigade.sh/project                    24     2m
+...other cluster Secrets...
+```
+
+### Creating Your First Brigade Build
+
+Conceptually, a Brigade Build is a set of instructions (written in JavaScript, in a file called `brigade.js`) that will run upon a triggering of an event. Events can be something like a git push, a Docker push or just a webhook. In this way, you can think of Builds as jobs/tasks/pipelines.
+
+Let's now create a new file called `brigade.js` with the following content:
 
 ```javascript
-const { events } = require("brigadier");
+const { events, Job } = require("brigadier");
+events.on("exec", () => {
+  var job = new Job("do-nothing", "alpine:3.8");
+  job.tasks = [
+    "echo Hello",
+    "echo World"
+  ];
 
-events.on("exec", (brigadeEvent, project) => {
-  console.log("Hello world!");
+  job.run();
 });
 ```
 
-Check out [the tutorial](https://azure.github.io/brigade/intro/) for more on creating scripts.
+When the `exec` event is triggered, Brigade will create a Build based on this brigade.js file. This Build will create a single job that will start an image based on `alpine:3.8` which will simply do a couple of echoes. The Kubernetes Pod that will be created to run this Build job will have a name starting with 'do-nothing'. As you can probably guess, a new Kubernetes Secret will also be created to store information about this Build.
 
-Assuming you named your project `deis/empty-testbed`, you can run a `brigade.js`
-file like this:
+Moreover, you can check out [this tutorial](https://azure.github.io/brigade/intro/) for more on creating scripts.
 
-```console
-$ brig run -f brigade.js deis/empty-testbed
+### Running a Build
+
+To create and run a Brigade Build for the brigade.js file we wrote, we will use `brig`.
+
+```bash
+brig run deis/empty-testbed -f brigade.js
 ```
 
-This will show you the detailed output of running your `brigade.js` script's
-`exec` hook.
+This will trigger the `exec` event and show you the detailed output, which will be similar to this:
 
-(To see the names of your projects, run `brig project list`.)
+```
+Event created. Waiting for worker pod named "brigade-worker-01d0y7bcxs6ke0yayrx6nbvm39".
+Build: 01d0y7bcxs6ke0yayrx6nbvm39, Worker: brigade-worker-01d0y7bcxs6ke0yayrx6nbvm39
+prestart: no dependencies file found
+prestart: loading script from /etc/brigade/script
+[brigade] brigade-worker version: 0.19.0
+[brigade:k8s] Creating secret do-nothing-01d0y7bcxs6ke0yayrx6nbvm39
+[brigade:k8s] Creating pod do-nothing-01d0y7bcxs6ke0yayrx6nbvm39
+[brigade:k8s] Timeout set at 900000
+[brigade:k8s] Pod not yet scheduled
+[brigade:k8s] default/do-nothing-01d0y7bcxs6ke0yayrx6nbvm39 phase Pending
+[brigade:k8s] default/do-nothing-01d0y7bcxs6ke0yayrx6nbvm39 phase Succeeded
+done
+```
+
+As you can see, Brigade created a new pod for this Build (called `do-nothing-01d0y7bcxs6ke0yayrx6nbvm39`) that executed our job. Let's get its logs.
+
+```bash
+kubectl logs do-nothing-01d0y7bcxs6ke0yayrx6nbvm39
+```
+
+Output:
+```
+Hello
+world
+```
+
+Moreover, you can get the details for this Build from `brig`.
+
+```bash
+brig build list
+```
+
+Output:
+```
+ID                              TYPE    PROVIDER        PROJECT                                                         STATUS          AGE
+01d0y7bcxs6ke0yayrx6nbvm39      exec    brigade-cli     brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac  Succeeded       4m
+```
+
+You can also see this Project/Build output combination in Kashti. Kashti is by default visible only from within the cluster, so you need a `kubectl port-forward` from your local machine to the Kubernetes Service for Kashti.
+
+```bash
+kubectl port-forward service/brigade-kashti 8000:80
+```
+
+Then, you can navigate to `http://localhost:8000` to see Kashti dashboard with your Project and Build.
+
+Brigade contains a utility (called `vacuum`) that runs as a Kubernetes CronJob and periodically (default: hourly) deletes Builds (i.e. corresponding Secrets and Pods). You can run `kubectl get cronjob` to get its details and possible configure it.
+
+### Cleanup 
+
+To remove created resources:
+
+```bash
+# delete project
+brig  project delete deis/empty-testbed
+# remove Brigade
+helm delete brigade --purge
+```
 
 ## Related Projects
 
@@ -123,7 +210,7 @@ This will show you the detailed output of running your `brigade.js` script's
 
 To get started head to the [developer's guide](https://azure.github.io/brigade/topics/developers.html)
 
-Brigade is well-tested on Minikube and Azure Container Services.
+Brigade is well-tested on Minikube and [Azure Kubernetes Service](https://docs.microsoft.com/en-us/azure/aks/).
 
 # Contributing
 

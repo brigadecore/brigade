@@ -1,7 +1,6 @@
 # Brigade Documentation
 
 Everything you need to know about Brigade.  
-Browse the docs here: [https://azure.github.io/brigade/](https://azure.github.io/brigade/)
 
 ## First Steps
 
