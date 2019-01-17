@@ -51,8 +51,8 @@ type Project struct {
 
 	// BrigadejsPath contains the path for the Brigade.js file in the source repo
 	BrigadejsPath string `json:"brigadejsPath"`
-	// GenericWebHookSecret is a string that contains the access code used by API Server to authenticate generic webhook requests
-	GenericWebhookSecret string `json:"genericWebhookSecret"`
+	// GenericGatewaySecret is a string that contains the access code used by API Server to authenticate generic Gateway requests
+	GenericGatewaySecret string `json:"genericGatewaySecret"`
 }
 
 // SecretsMap is a map[string]string for storing secrets.

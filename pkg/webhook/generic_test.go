@@ -10,7 +10,7 @@ import (
 	"github.com/Azure/brigade/pkg/storage"
 	"github.com/Azure/brigade/pkg/storage/mock"
 
-	restful "github.com/emicklei/go-restful"
+	gin "gopkg.in/gin-gonic/gin.v1"
 )
 
 func newTestGenericWebhookHandler(store storage.Store) *genericWebhook {
@@ -40,7 +40,7 @@ func TestGenericWebhook(t *testing.T) {
 	}
 
 	if err := h.genericWebhookEvent(proj, []byte(exampleGenericWebhook), gwData); err != nil {
-		t.Errorf("failed generic webhook event: %s", err)
+		t.Errorf("failed generic gateway event: %s", err)
 	}
 
 	if payload := string(store.builds[0].Payload); payload != exampleGenericWebhook {
@@ -58,16 +58,14 @@ func TestGenericWebhook(t *testing.T) {
 
 func TestGenericWebhookHandlerBadBody(t *testing.T) {
 	store := newEmptyTestStore()
-	s := newTestGenericWebhookHandler(store)
-	ws := mockWebService(s.Handle)
-	container := restful.NewContainer()
-	container.Add(ws)
+	router := newMockRouter(store)
 
 	httpRequest := httptest.NewRequest("POST", "/webhook/fakeProject/fakeCode", bytes.NewBuffer(nil))
 	httpRequest.Header.Add("Content-Type", "application/json")
 
 	rw := httptest.NewRecorder()
-	container.ServeHTTP(rw, httpRequest)
+
+	router.ServeHTTP(rw, httpRequest)
 
 	if rw.Result().StatusCode != http.StatusBadRequest {
 		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
@@ -77,16 +75,13 @@ func TestGenericWebhookHandlerBadBody(t *testing.T) {
 func TestGenericWebhookHandlerWrongProject(t *testing.T) {
 
 	store := newTestStoreWithFakeProject2()
-	s := newTestGenericWebhookHandler(store)
-	ws := mockWebService(s.Handle)
-	container := restful.NewContainer()
-	container.Add(ws)
+	router := newMockRouter(store)
 
 	httpRequest := httptest.NewRequest("POST", "/webhook/brigade-fakeProject/fakeCode", bytes.NewBuffer([]byte(exampleGenericWebhook)))
 	httpRequest.Header.Add("Content-Type", "application/json")
 
 	rw := httptest.NewRecorder()
-	container.ServeHTTP(rw, httpRequest)
+	router.ServeHTTP(rw, httpRequest)
 
 	if rw.Result().StatusCode != http.StatusBadRequest {
 		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
@@ -94,18 +89,14 @@ func TestGenericWebhookHandlerWrongProject(t *testing.T) {
 }
 
 func TestGenericWebhookHandlerCorrectProjectEmptySecret(t *testing.T) {
-
 	store := newTestStoreWithFakeProject()
-	s := newTestGenericWebhookHandler(store)
-	ws := mockWebService(s.Handle)
-	container := restful.NewContainer()
-	container.Add(ws)
+	router := newMockRouter(store)
 
 	httpRequest := httptest.NewRequest("POST", "/webhook/brigade-fakeProject/fakeCode", bytes.NewBuffer([]byte(exampleGenericWebhook)))
 	httpRequest.Header.Add("Content-Type", "application/json")
 
 	rw := httptest.NewRecorder()
-	container.ServeHTTP(rw, httpRequest)
+	router.ServeHTTP(rw, httpRequest)
 
 	if rw.Result().StatusCode != http.StatusUnauthorized {
 		t.Errorf("expected error 401, got %d", rw.Result().StatusCode)
@@ -114,17 +105,14 @@ func TestGenericWebhookHandlerCorrectProjectEmptySecret(t *testing.T) {
 
 func TestGenericWebhookHandlerCorrectProjectCorrectSecret(t *testing.T) {
 	store := newTestStoreWithFakeProject()
-	store.ProjectList[0].GenericWebhookSecret = "fakeCode"
-	s := newTestGenericWebhookHandler(store)
-	ws := mockWebService(s.Handle)
-	container := restful.NewContainer()
-	container.Add(ws)
+	store.ProjectList[0].GenericGatewaySecret = "fakeCode"
+	router := newMockRouter(store)
 
 	httpRequest := httptest.NewRequest("POST", "/webhook/brigade-fakeProject/fakeCode", bytes.NewBuffer([]byte(exampleGenericWebhook)))
 	httpRequest.Header.Add("Content-Type", "application/json")
 
 	rw := httptest.NewRecorder()
-	container.ServeHTTP(rw, httpRequest)
+	router.ServeHTTP(rw, httpRequest)
 
 	if rw.Result().StatusCode != http.StatusOK {
 		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
@@ -138,20 +126,19 @@ const exampleGenericWebhook = `
 }
 `
 
-func mockWebService(handler restful.RouteFunction) *restful.WebService {
-	ws := new(restful.WebService)
-	ws.Path("/webhook").
-		Consumes(restful.MIME_JSON).
-		Produces(restful.MIME_JSON, restful.MIME_XML, "plain/text", "text/javascript")
+func newMockRouter(store storage.Store) *gin.Engine {
+	router := gin.New()
+	router.Use(gin.Recovery())
 
-	ws.Route(ws.POST("/{projectID}/{secret}").To(handler).
-		Param(ws.PathParameter("projectID", "identifier of the projectID").DataType("string")).
-		Param(ws.PathParameter("secret", "shared secret").DataType("string")).
-		Writes([]byte{}).
-		Returns(200, "OK", []byte{}).
-		Returns(404, "Not Found", nil))
+	handler := NewGenericWebhook(store)
 
-	return ws
+	events := router.Group("/webhook")
+	{
+		events.Use(gin.Logger())
+		events.POST("/:projectID/:secret", handler)
+	}
+
+	return router
 }
 
 func newEmptyTestStore() *mock.Store {

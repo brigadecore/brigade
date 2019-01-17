@@ -101,3 +101,26 @@ func TestReplaceNewlines(t *testing.T) {
 		t.Fatalf("Expected %q, got %q", expect, got)
 	}
 }
+
+func TestGenericGatewaySecretValidator(t *testing.T) {
+	s1 := "asdf"
+	if err := genericGatewaySecretValidator(s1); err != nil {
+		t.Fatal("Expected nil, got error")
+	}
+	s2 := "AsDf1"
+	if err := genericGatewaySecretValidator(s2); err != nil {
+		t.Fatal("Expected nil, got error")
+	}
+	s3 := "jfdkfd^&"
+	if err := genericGatewaySecretValidator(s3); err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+	s4 := ""
+	if err := genericGatewaySecretValidator(s4); err != nil {
+		t.Fatal("Expected nil, got error")
+	}
+	s5 := " "
+	if err := genericGatewaySecretValidator(s5); err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+}

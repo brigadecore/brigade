@@ -5,14 +5,16 @@ DOCKER_REGISTRY    ?= deis
 DOCKER_BUILD_FLAGS :=
 LDFLAGS            :=
 
+
 # Helm chart/release defaults
 BRIGADE_RELEASE            ?= brigade-server
 BRIGADE_NAMESPACE          ?= default
 BRIGADE_GITHUB_GW_SERVICE  := $(BRIGADE_RELEASE)-brigade-github-gw
 BRIGADE_GITHUB_GW_PORT     := 7744
 
-BINS        = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig
-IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig brigade-worker git-sidecar
+BINS        = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig
+IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig brigade-worker git-sidecar
+
 
 .PHONY: echo-images
 echo-images:
