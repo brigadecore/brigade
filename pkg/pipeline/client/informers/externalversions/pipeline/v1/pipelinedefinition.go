@@ -21,15 +21,14 @@ package v1
 import (
 	time "time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtime "k8s.io/apimachinery/pkg/runtime"
-	watch "k8s.io/apimachinery/pkg/watch"
-	cache "k8s.io/client-go/tools/cache"
-
 	versioned "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned"
 	internalinterfaces "github.com/Azure/brigade/pkg/pipeline/client/informers/externalversions/internalinterfaces"
 	v1 "github.com/Azure/brigade/pkg/pipeline/client/listers/pipeline/v1"
 	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	watch "k8s.io/apimachinery/pkg/watch"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // PipelineDefinitionInformer provides access to a shared informer and lister for

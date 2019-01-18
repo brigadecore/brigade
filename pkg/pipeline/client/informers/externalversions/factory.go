@@ -23,14 +23,13 @@ import (
 	sync "sync"
 	time "time"
 
+	versioned "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned"
+	internalinterfaces "github.com/Azure/brigade/pkg/pipeline/client/informers/externalversions/internalinterfaces"
+	pipeline "github.com/Azure/brigade/pkg/pipeline/client/informers/externalversions/pipeline"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
-
-	versioned "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned"
-	internalinterfaces "github.com/Azure/brigade/pkg/pipeline/client/informers/externalversions/internalinterfaces"
-	pipeline "github.com/Azure/brigade/pkg/pipeline/client/informers/externalversions/pipeline"
 )
 
 // SharedInformerOption defines the functional option type for SharedInformerFactory.
@@ -173,23 +172,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	Pipeline() pipeline.Interface
 }
 
 func (f *sharedInformerFactory) Pipeline() pipeline.Interface {
-=======
-	Radix() pipeline.Interface
-}
-
-func (f *sharedInformerFactory) Radix() pipeline.Interface {
->>>>>>> 0d0313d... added crd types
-=======
-	Pipeline() pipeline.Interface
-}
-
-func (f *sharedInformerFactory) Pipeline() pipeline.Interface {
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
 	return pipeline.New(f, f.namespace, f.tweakListOptions)
 }

@@ -19,13 +19,12 @@ limitations under the License.
 package v1
 
 import (
+	scheme "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/scheme"
+	v1 "github.com/Azure/brigade/pkg/pipeline/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
-
-	scheme "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/scheme"
-	v1 "github.com/Azure/brigade/pkg/pipeline/v1"
 )
 
 // PipelineDefinitionsGetter has a method to return a PipelineDefinitionInterface.

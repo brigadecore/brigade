@@ -24,23 +24,12 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 9bf0216... more work on pipeline types
 	// Pipelines returns a PipelineInformer.
 	Pipelines() PipelineInformer
 	// PipelineComponents returns a PipelineComponentInformer.
 	PipelineComponents() PipelineComponentInformer
 	// PipelineDefinitions returns a PipelineDefinitionInformer.
 	PipelineDefinitions() PipelineDefinitionInformer
-<<<<<<< HEAD
-=======
-	// PipelineComponents returns a PipelineComponentInformer.
-	PipelineComponents() PipelineComponentInformer
->>>>>>> 0d0313d... added crd types
-=======
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
 }
 
 type version struct {
@@ -54,35 +43,17 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 9bf0216... more work on pipeline types
 // Pipelines returns a PipelineInformer.
 func (v *version) Pipelines() PipelineInformer {
 	return &pipelineInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-<<<<<<< HEAD
-=======
->>>>>>> 0d0313d... added crd types
-=======
->>>>>>> 9bf0216... more work on pipeline types
 // PipelineComponents returns a PipelineComponentInformer.
 func (v *version) PipelineComponents() PipelineComponentInformer {
 	return &pipelineComponentInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
 
 // PipelineDefinitions returns a PipelineDefinitionInformer.
 func (v *version) PipelineDefinitions() PipelineDefinitionInformer {
 	return &pipelineDefinitionInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
-<<<<<<< HEAD
-=======
->>>>>>> 0d0313d... added crd types
-=======
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.

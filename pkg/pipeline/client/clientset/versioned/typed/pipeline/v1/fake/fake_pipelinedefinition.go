@@ -19,14 +19,13 @@ limitations under the License.
 package fake
 
 import (
+	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
-
-	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/v1"
 )
 
 // FakePipelineDefinitions implements PipelineDefinitionInterface
@@ -35,21 +34,9 @@ type FakePipelineDefinitions struct {
 	ns   string
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 var pipelinedefinitionsResource = schema.GroupVersionResource{Group: "pipeline.brigade.sh", Version: "v1", Resource: "pipelinedefinitions"}
 
 var pipelinedefinitionsKind = schema.GroupVersionKind{Group: "pipeline.brigade.sh", Version: "v1", Kind: "PipelineDefinition"}
-=======
-var pipelinedefinitionsResource = schema.GroupVersionResource{Group: "pipeline.brigade.io", Version: "v1", Resource: "pipelinedefinitions"}
-
-var pipelinedefinitionsKind = schema.GroupVersionKind{Group: "pipeline.brigade.io", Version: "v1", Kind: "PipelineDefinition"}
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
-=======
-var pipelinedefinitionsResource = schema.GroupVersionResource{Group: "pipeline.brigade.sh", Version: "v1", Resource: "pipelinedefinitions"}
-
-var pipelinedefinitionsKind = schema.GroupVersionKind{Group: "pipeline.brigade.sh", Version: "v1", Kind: "PipelineDefinition"}
->>>>>>> 8d8ed70... renamed api group
 
 // Get takes name of the pipelineDefinition, and returns the corresponding pipelineDefinition object, and an error if there is any.
 func (c *FakePipelineDefinitions) Get(name string, options v1.GetOptions) (result *pipelinev1.PipelineDefinition, err error) {

@@ -21,10 +21,9 @@ package externalversions
 import (
 	"fmt"
 
+	v1 "github.com/Azure/brigade/pkg/pipeline/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
-
-	v1 "github.com/Azure/brigade/pkg/pipeline/v1"
 )
 
 // GenericInformer is type of SharedIndexInformer which will locate and delegate to other
@@ -53,9 +52,6 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	// Group=pipeline.brigade.sh, Version=v1
 	case v1.SchemeGroupVersion.WithResource("pipelines"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Pipeline().V1().Pipelines().Informer()}, nil
@@ -63,23 +59,6 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Pipeline().V1().PipelineComponents().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("pipelinedefinitions"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Pipeline().V1().PipelineDefinitions().Informer()}, nil
-=======
-	// Group=radix.equinor.com, Version=v1
-	case v1.SchemeGroupVersion.WithResource("pipelinecomponents"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Radix().V1().PipelineComponents().Informer()}, nil
->>>>>>> 0d0313d... added crd types
-=======
-	// Group=pipeline.brigade.io, Version=v1
-=======
-	// Group=pipeline.brigade.sh, Version=v1
->>>>>>> 8d8ed70... renamed api group
-	case v1.SchemeGroupVersion.WithResource("pipelines"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Pipeline().V1().Pipelines().Informer()}, nil
-	case v1.SchemeGroupVersion.WithResource("pipelinecomponents"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Pipeline().V1().PipelineComponents().Informer()}, nil
-	case v1.SchemeGroupVersion.WithResource("pipelinedefinitions"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Pipeline().V1().PipelineDefinitions().Informer()}, nil
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
 
 	}
 

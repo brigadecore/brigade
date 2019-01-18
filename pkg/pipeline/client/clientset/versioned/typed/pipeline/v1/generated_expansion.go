@@ -18,22 +18,8 @@ limitations under the License.
 
 package v1
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 type PipelineExpansion interface{}
 
 type PipelineComponentExpansion interface{}
 
 type PipelineDefinitionExpansion interface{}
-=======
-=======
-type PipelineExpansion interface{}
-
->>>>>>> 9bf0216... more work on pipeline types
-type PipelineComponentExpansion interface{}
-<<<<<<< HEAD
->>>>>>> 0d0313d... added crd types
-=======
-
-type PipelineDefinitionExpansion interface{}
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.

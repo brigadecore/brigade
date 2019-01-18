@@ -19,14 +19,11 @@ limitations under the License.
 package fake
 
 import (
+	v1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
-
-	v1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1"
 )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 type FakePipelineV1 struct {
 	*testing.Fake
 }
@@ -35,7 +32,6 @@ func (c *FakePipelineV1) Pipelines(namespace string) v1.PipelineInterface {
 	return &FakePipelines{c, namespace}
 }
 
-<<<<<<< HEAD
 func (c *FakePipelineV1) PipelineComponents(namespace string) v1.PipelineComponentInterface {
 	return &FakePipelineComponents{c, namespace}
 }
@@ -47,32 +43,6 @@ func (c *FakePipelineV1) PipelineDefinitions(namespace string) v1.PipelineDefini
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakePipelineV1) RESTClient() rest.Interface {
-=======
-type FakeRadixV1 struct {
-=======
-type FakePipelineV1 struct {
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
-	*testing.Fake
-}
-
-=======
->>>>>>> 9bf0216... more work on pipeline types
-func (c *FakePipelineV1) PipelineComponents(namespace string) v1.PipelineComponentInterface {
-	return &FakePipelineComponents{c, namespace}
-}
-
-func (c *FakePipelineV1) PipelineDefinitions(namespace string) v1.PipelineDefinitionInterface {
-	return &FakePipelineDefinitions{c, namespace}
-}
-
-// RESTClient returns a RESTClient that is used to communicate
-// with API server by this client implementation.
-<<<<<<< HEAD
-func (c *FakeRadixV1) RESTClient() rest.Interface {
->>>>>>> 0d0313d... added crd types
-=======
-func (c *FakePipelineV1) RESTClient() rest.Interface {
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
 	var ret *rest.RESTClient
 	return ret
 }

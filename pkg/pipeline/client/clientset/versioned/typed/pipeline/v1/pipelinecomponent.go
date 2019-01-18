@@ -19,13 +19,12 @@ limitations under the License.
 package v1
 
 import (
+	scheme "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/scheme"
+	v1 "github.com/Azure/brigade/pkg/pipeline/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
-
-	scheme "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/scheme"
-	v1 "github.com/Azure/brigade/pkg/pipeline/v1"
 )
 
 // PipelineComponentsGetter has a method to return a PipelineComponentInterface.
@@ -54,15 +53,7 @@ type pipelineComponents struct {
 }
 
 // newPipelineComponents returns a PipelineComponents
-<<<<<<< HEAD
-<<<<<<< HEAD
 func newPipelineComponents(c *PipelineV1Client, namespace string) *pipelineComponents {
-=======
-func newPipelineComponents(c *RadixV1Client, namespace string) *pipelineComponents {
->>>>>>> 0d0313d... added crd types
-=======
-func newPipelineComponents(c *PipelineV1Client, namespace string) *pipelineComponents {
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
 	return &pipelineComponents{
 		client: c.RESTClient(),
 		ns:     namespace,

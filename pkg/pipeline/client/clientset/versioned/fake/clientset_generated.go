@@ -19,31 +19,14 @@ limitations under the License.
 package fake
 
 import (
-<<<<<<< HEAD
 	clientset "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1"
 	fakepipelinev1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1/fake"
-=======
-	radixv1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1"
-	fakeradixv1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1/fake"
->>>>>>> 0d0313d... added crd types
-=======
-	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1"
-	fakepipelinev1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1/fake"
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
-=======
->>>>>>> 6bb4934... fixed linting issues
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/testing"
-
-	clientset "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned"
-	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1"
-	fakepipelinev1 "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned/typed/pipeline/v1/fake"
 )
 
 // NewSimpleClientset returns a clientset that will respond with the provided objects.
@@ -88,8 +71,6 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 
 var _ clientset.Interface = &Clientset{}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 // PipelineV1 retrieves the PipelineV1Client
 func (c *Clientset) PipelineV1() pipelinev1.PipelineV1Interface {
 	return &fakepipelinev1.FakePipelineV1{Fake: &c.Fake}
@@ -98,24 +79,4 @@ func (c *Clientset) PipelineV1() pipelinev1.PipelineV1Interface {
 // Pipeline retrieves the PipelineV1Client
 func (c *Clientset) Pipeline() pipelinev1.PipelineV1Interface {
 	return &fakepipelinev1.FakePipelineV1{Fake: &c.Fake}
-=======
-// RadixV1 retrieves the RadixV1Client
-func (c *Clientset) RadixV1() radixv1.RadixV1Interface {
-	return &fakeradixv1.FakeRadixV1{Fake: &c.Fake}
-}
-
-// Radix retrieves the RadixV1Client
-func (c *Clientset) Radix() radixv1.RadixV1Interface {
-	return &fakeradixv1.FakeRadixV1{Fake: &c.Fake}
->>>>>>> 0d0313d... added crd types
-=======
-// PipelineV1 retrieves the PipelineV1Client
-func (c *Clientset) PipelineV1() pipelinev1.PipelineV1Interface {
-	return &fakepipelinev1.FakePipelineV1{Fake: &c.Fake}
-}
-
-// Pipeline retrieves the PipelineV1Client
-func (c *Clientset) Pipeline() pipelinev1.PipelineV1Interface {
-	return &fakepipelinev1.FakePipelineV1{Fake: &c.Fake}
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
 }

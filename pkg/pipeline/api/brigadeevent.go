@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	v1 "github.com/Azure/brigade/pkg/pipeline/v1"
 	"github.com/iancoleman/strcase"
 
 	v1 "github.com/Azure/brigade/pkg/pipeline/v1"

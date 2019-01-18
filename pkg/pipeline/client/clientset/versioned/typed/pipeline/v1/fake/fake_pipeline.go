@@ -19,14 +19,13 @@ limitations under the License.
 package fake
 
 import (
+	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
-
-	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/v1"
 )
 
 // FakePipelines implements PipelineInterface
@@ -35,21 +34,9 @@ type FakePipelines struct {
 	ns   string
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 var pipelinesResource = schema.GroupVersionResource{Group: "pipeline.brigade.sh", Version: "v1", Resource: "pipelines"}
 
 var pipelinesKind = schema.GroupVersionKind{Group: "pipeline.brigade.sh", Version: "v1", Kind: "Pipeline"}
-=======
-var pipelinesResource = schema.GroupVersionResource{Group: "pipeline.brigade.io", Version: "v1", Resource: "pipelines"}
-
-var pipelinesKind = schema.GroupVersionKind{Group: "pipeline.brigade.io", Version: "v1", Kind: "Pipeline"}
->>>>>>> 9bf0216... more work on pipeline types
-=======
-var pipelinesResource = schema.GroupVersionResource{Group: "pipeline.brigade.sh", Version: "v1", Resource: "pipelines"}
-
-var pipelinesKind = schema.GroupVersionKind{Group: "pipeline.brigade.sh", Version: "v1", Kind: "Pipeline"}
->>>>>>> 8d8ed70... renamed api group
 
 // Get takes name of the pipeline, and returns the corresponding pipeline object, and an error if there is any.
 func (c *FakePipelines) Get(name string, options v1.GetOptions) (result *pipelinev1.Pipeline, err error) {

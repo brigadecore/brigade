@@ -19,7 +19,7 @@ type PipelineDefinition struct {
 type PipelineDefinitionSpec struct {
 	Description string                    `json:"description,omitempty"`
 	Params      []ParameterDefinition     `json:"params"`
-	Pipeline    []PipelineComponentSource `json:"pipeline"`
+	Phases      []PipelineComponentSource `json:"phases"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -21,15 +21,14 @@ package v1
 import (
 	time "time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtime "k8s.io/apimachinery/pkg/runtime"
-	watch "k8s.io/apimachinery/pkg/watch"
-	cache "k8s.io/client-go/tools/cache"
-
 	versioned "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned"
 	internalinterfaces "github.com/Azure/brigade/pkg/pipeline/client/informers/externalversions/internalinterfaces"
 	v1 "github.com/Azure/brigade/pkg/pipeline/client/listers/pipeline/v1"
 	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	watch "k8s.io/apimachinery/pkg/watch"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // PipelineComponentInformer provides access to a shared informer and lister for
@@ -62,29 +61,13 @@ func NewFilteredPipelineComponentInformer(client versioned.Interface, namespace 
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-<<<<<<< HEAD
-<<<<<<< HEAD
 				return client.PipelineV1().PipelineComponents(namespace).List(options)
-=======
-				return client.RadixV1().PipelineComponents(namespace).List(options)
->>>>>>> 0d0313d... added crd types
-=======
-				return client.PipelineV1().PipelineComponents(namespace).List(options)
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-<<<<<<< HEAD
-<<<<<<< HEAD
 				return client.PipelineV1().PipelineComponents(namespace).Watch(options)
-=======
-				return client.RadixV1().PipelineComponents(namespace).Watch(options)
->>>>>>> 0d0313d... added crd types
-=======
-				return client.PipelineV1().PipelineComponents(namespace).Watch(options)
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
 			},
 		},
 		&pipelinev1.PipelineComponent{},

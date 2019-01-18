@@ -18,10 +18,6 @@ limitations under the License.
 
 package v1
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 9bf0216... more work on pipeline types
 // PipelineListerExpansion allows custom methods to be added to
 // PipelineLister.
 type PipelineListerExpansion interface{}
@@ -30,11 +26,6 @@ type PipelineListerExpansion interface{}
 // PipelineNamespaceLister.
 type PipelineNamespaceListerExpansion interface{}
 
-<<<<<<< HEAD
-=======
->>>>>>> 0d0313d... added crd types
-=======
->>>>>>> 9bf0216... more work on pipeline types
 // PipelineComponentListerExpansion allows custom methods to be added to
 // PipelineComponentLister.
 type PipelineComponentListerExpansion interface{}
@@ -42,10 +33,6 @@ type PipelineComponentListerExpansion interface{}
 // PipelineComponentNamespaceListerExpansion allows custom methods to be added to
 // PipelineComponentNamespaceLister.
 type PipelineComponentNamespaceListerExpansion interface{}
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
 
 // PipelineDefinitionListerExpansion allows custom methods to be added to
 // PipelineDefinitionLister.
@@ -54,8 +41,3 @@ type PipelineDefinitionListerExpansion interface{}
 // PipelineDefinitionNamespaceListerExpansion allows custom methods to be added to
 // PipelineDefinitionNamespaceLister.
 type PipelineDefinitionNamespaceListerExpansion interface{}
-<<<<<<< HEAD
-=======
->>>>>>> 0d0313d... added crd types
-=======
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.

@@ -19,40 +19,20 @@ limitations under the License.
 package fake
 
 import (
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/v1"
-=======
-	radixv1 "github.com/Azure/brigade/pkg/pipeline/v1"
->>>>>>> 0d0313d... added crd types
-=======
-	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/v1"
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
-=======
->>>>>>> 6bb4934... fixed linting issues
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-
-	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/v1"
 )
 
 var scheme = runtime.NewScheme()
 var codecs = serializer.NewCodecFactory(scheme)
 var parameterCodec = runtime.NewParameterCodec(scheme)
-var localSchemeBuilder = runtime.SchemeBuilder{
-<<<<<<< HEAD
-<<<<<<< HEAD
-	pipelinev1.AddToScheme,
-=======
-	radixv1.AddToScheme,
->>>>>>> 0d0313d... added crd types
-=======
-	pipelinev1.AddToScheme,
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
+
+func init() {
+	v1.AddToGroupVersion(scheme, schema.GroupVersion{Version: "v1"})
+	AddToScheme(scheme)
 }
 
 // AddToScheme adds all types of this clientset into the given scheme. This allows composition
@@ -65,13 +45,10 @@ var localSchemeBuilder = runtime.SchemeBuilder{
 //   )
 //
 //   kclientset, _ := kubernetes.NewForConfig(c)
-//   _ = aggregatorclientsetscheme.AddToScheme(clientsetscheme.Scheme)
+//   aggregatorclientsetscheme.AddToScheme(clientsetscheme.Scheme)
 //
 // After this, RawExtensions in Kubernetes types will serialize kube-aggregator types
 // correctly.
-var AddToScheme = localSchemeBuilder.AddToScheme
-
-func init() {
-	v1.AddToGroupVersion(scheme, schema.GroupVersion{Version: "v1"})
-	utilruntime.Must(AddToScheme(scheme))
+func AddToScheme(scheme *runtime.Scheme) {
+	pipelinev1.AddToScheme(scheme)
 }

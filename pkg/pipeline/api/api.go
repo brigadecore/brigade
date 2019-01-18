@@ -5,8 +5,6 @@ import (
 
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	pipeclient "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned"
-	v1 "github.com/Azure/brigade/pkg/pipeline/v1"
 	"k8s.io/client-go/rest"
 
 	pipeclient "github.com/Azure/brigade/pkg/pipeline/client/clientset/versioned"

@@ -19,48 +19,24 @@ limitations under the License.
 package fake
 
 import (
+	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
-
-	pipelinev1 "github.com/Azure/brigade/pkg/pipeline/v1"
 )
 
 // FakePipelineComponents implements PipelineComponentInterface
 type FakePipelineComponents struct {
-<<<<<<< HEAD
-<<<<<<< HEAD
 	Fake *FakePipelineV1
 	ns   string
 }
 
 var pipelinecomponentsResource = schema.GroupVersionResource{Group: "pipeline.brigade.sh", Version: "v1", Resource: "pipelinecomponents"}
-<<<<<<< HEAD
 
 var pipelinecomponentsKind = schema.GroupVersionKind{Group: "pipeline.brigade.sh", Version: "v1", Kind: "PipelineComponent"}
-=======
-	Fake *FakeRadixV1
-=======
-	Fake *FakePipelineV1
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
-	ns   string
-}
-
-var pipelinecomponentsResource = schema.GroupVersionResource{Group: "pipeline.brigade.io", Version: "v1", Resource: "pipelinecomponents"}
-
-<<<<<<< HEAD
-var pipelinecomponentsKind = schema.GroupVersionKind{Group: "radix.equinor.com", Version: "v1", Kind: "PipelineComponent"}
->>>>>>> 0d0313d... added crd types
-=======
-var pipelinecomponentsKind = schema.GroupVersionKind{Group: "pipeline.brigade.io", Version: "v1", Kind: "PipelineComponent"}
->>>>>>> ccd1e53... started on brig pipeline functionality. more types work.
-=======
-
-var pipelinecomponentsKind = schema.GroupVersionKind{Group: "pipeline.brigade.sh", Version: "v1", Kind: "PipelineComponent"}
->>>>>>> 8d8ed70... renamed api group
 
 // Get takes name of the pipelineComponent, and returns the corresponding pipelineComponent object, and an error if there is any.
 func (c *FakePipelineComponents) Get(name string, options v1.GetOptions) (result *pipelinev1.PipelineComponent, err error) {
