@@ -99,12 +99,12 @@
   version = "v2.8.0"
 
 [[projects]]
-  digest = "1:4686dac58ca038b57a4dfd785f4d1d0548b21c4e61d2f2dd51a20073c89aaf38"
+  digest = "1:82f15f36b4d80e192f14a49b8400b929523ed94f16ea420b30d6f13e23809edf"
   name = "github.com/emicklei/go-restful-openapi"
   packages = ["."]
   pruneopts = ""
-  revision = "51bf251d405ad1e23511fef0a2dbe40bc70ce2c6"
-  version = "v0.11.0"
+  revision = "b7062368c258c9e8f8cbe9dd2e6aebfa1b747be6"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:a31fbb19d2b38d50bc125d97b7c3e7a286d3f6f37d18756011eb6e7d1a9fa7d0"
@@ -195,12 +195,12 @@
   revision = "4bd1920723d7b7c925de087aa32e2187708897f7"
 
 [[projects]]
-  branch = "master"
-  digest = "1:0022cff7d0dd79dbfa78ce16fea20fb29d6fdfcfae67ee55cada2e422cedf8ee"
+  digest = "1:73ad2c6ea4dfacaf6fcb3cc1595b93bf2698380d95e10ead5b607abbdf8d0b7d"
   name = "github.com/google/go-github"
   packages = ["github"]
   pruneopts = ""
-  revision = "e48060a28fac52d0f1cb758bc8b87c07bac4a87d"
+  revision = "a5cb647b1fac8ba77e1cf25af2f9526658ab63e3"
+  version = "v21.0.0"
 
 [[projects]]
   branch = "master"
@@ -341,12 +341,12 @@
   revision = "9520e82c474b0a04dd04f8a40959027271bab992"
 
 [[projects]]
-  digest = "1:ef57aecdf87b09455aeab4413d7e2cd15a0021fddfaa654ffb74cf266068788b"
+  digest = "1:897c63c623dce2d2da94aeeb096c829b63b9feeb7f53f624cadce596e3893e01"
   name = "github.com/oklog/ulid"
   packages = ["."]
   pruneopts = ""
-  revision = "d311cb43c92434ec4072dfbbda3400741d0a6337"
-  version = "v0.3.0"
+  revision = "02a8604050d8466dd915307496174adb9be4593a"
+  version = "v1.3.1"
 
 [[projects]]
   digest = "1:a1403cc8a94b8d7956ee5e9694badef0e7b051af289caad1cf668331e3ffa4f6"
@@ -393,7 +393,8 @@
   revision = "1c05540f6879653db88113bc4a2b70aec4bd491f"
 
 [[projects]]
-  digest = "1:17714ac6482dac2cbc92c7fa82a30812b27c79c6fcaaff5784df4f583ac439a4"
+  branch = "master"
+  digest = "1:f059b0adae6e4630f111d471f127fe69de1f5689ce35465bab387d646c17eb97"
   name = "golang.org/x/oauth2"
   packages = [
     ".",
@@ -403,7 +404,7 @@
     "jwt",
   ]
   pruneopts = ""
-  revision = "a6bd8cefa1811bd24b86f8902872e4e8225f74c4"
+  revision = "5dab4167f31cbd76b407f1486c86b40748bc5073"
 
 [[projects]]
   digest = "1:19adc71218d62052cd18b83ebaab77961378876094081f4b1581ca28ef80395d"
@@ -496,11 +497,12 @@
   version = "v0.9.0"
 
 [[projects]]
-  digest = "1:10cf86195bddd2e0d686eec4fb35f35510baf6ce8393cbcfb664b9b88db7d747"
+  digest = "1:cedccf16b71e86db87a24f8d4c70b0a855872eb967cb906a66b95de56aefbd0d"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = ""
-  revision = "53feefa2559fb8dfa8d81baad31be332c97d6c77"
+  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
+  version = "v2.2.2"
 
 [[projects]]
   branch = "release-1.10"
@@ -712,6 +714,7 @@
     "gopkg.in/gin-gonic/gin.v1",
     "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
+    "k8s.io/api/storage/v1",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/api/resource",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
