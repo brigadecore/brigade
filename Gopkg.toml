@@ -27,15 +27,15 @@ required = ["k8s.io/code-generator/cmd/client-gen"]
 
 [[constraint]]
   name = "k8s.io/api"
-  branch = "release-1.10"
+  branch = "release-1.11"
 
 [[constraint]]
   name = "k8s.io/apimachinery"
-  branch = "release-1.10"
+  branch = "release-1.11"
 
 [[constraint]]
   name = "k8s.io/client-go"
-  branch = "release-7.0"
+  branch = "release-8.0"
 
 [[constraint]]
   branch = "master"
@@ -54,6 +54,11 @@ required = ["k8s.io/code-generator/cmd/client-gen"]
 
 [[constraint]]
   name = "k8s.io/code-generator"
+  branch = "release-1.11"
 
 [[constraint]]
   name = "github.com/iancoleman/strcase"
+
+[[override]]
+  name = "github.com/Azure/go-autorest"
+  revision = "1ff28809256a84bb6966640ff3d0371af82ccba4"
