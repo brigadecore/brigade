@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"sort"
 
 	restful "github.com/emicklei/go-restful"
 
@@ -37,17 +38,28 @@ func (api Project) ListWithLatestBuild(request *restful.Request, response *restf
 		response.WriteErrorString(http.StatusNotFound, "No Projects found.")
 		return
 	}
+	res := api.getBuildSummariesForProjects(projects)
 
+	response.WriteHeaderAndEntity(http.StatusOK, res)
+}
+
+func (api Project) getBuildSummariesForProjects(projects []*brigade.Project) []*ProjectBuildSummary {
 	res := []*ProjectBuildSummary{}
 	for _, p := range projects {
 		pbs := &ProjectBuildSummary{Project: p}
 		builds, err := api.store.GetProjectBuilds(p)
 		if err == nil && len(builds) > 0 {
+			sort.Slice(builds, func(i, j int) bool {
+				if builds[i].Worker == nil || builds[j].Worker == nil {
+					return false
+				}
+				return builds[i].Worker.StartTime.Before(builds[j].Worker.StartTime)
+			})
 			pbs.LastBuild = builds[len(builds)-1]
 		}
 		res = append(res, pbs)
 	}
-	response.WriteHeaderAndEntity(http.StatusOK, res)
+	return res
 }
 
 // Get creates a new gin handler for the GET /project/:id endpoint

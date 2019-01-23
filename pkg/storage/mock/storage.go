@@ -21,28 +21,51 @@ var (
 		SharedSecret: "shared-secre3t",
 		Secrets:      map[string]string{"key": "value"},
 	}
-	// StubWorker is a stub Worker. It is used in StubBuild, too.
-	StubWorker = &brigade.Worker{
-		ID:        "worker-id",
-		BuildID:   "build-id",
+	// StubWorker1 is a stub Worker. It is used in StubBuild1, too.
+	StubWorker1 = &brigade.Worker{
+		ID:        "worker-id1",
+		BuildID:   "build-id1",
 		ProjectID: "project-id",
 		StartTime: Now,
 		EndTime:   Now,
 		ExitCode:  0,
 		Status:    brigade.JobSucceeded,
 	}
-	// StubBuild is a stub Build.
-	StubBuild = &brigade.Build{
-		ID:        "build-id",
+	// StubWorker2 is a stub Worker. It is used in StubBuild2, too.
+	StubWorker2 = &brigade.Worker{
+		ID:        "worker-id2",
+		BuildID:   "build-id2",
+		ProjectID: "project-id",
+		StartTime: Now.AddDate(0, 0, -1),
+		EndTime:   Now,
+		ExitCode:  0,
+		Status:    brigade.JobSucceeded,
+	}
+	// StubBuild1 is a stub Build.
+	StubBuild1 = &brigade.Build{
+		ID:        "build-id1", // do not change this as it's used in LastBuild related tests on Brigade API
 		ProjectID: "project-id",
 		Revision: &brigade.Revision{
-			Commit: "commit",
+			Commit: "commit1",
 		},
 		Type:     "type",
 		Provider: "provider",
 		Payload:  []byte("payload"),
 		Script:   []byte("script"),
-		Worker:   StubWorker,
+		Worker:   StubWorker1,
+	}
+	// StubBuild2 is another stub Build.
+	StubBuild2 = &brigade.Build{
+		ID:        "build-id2",
+		ProjectID: "project-id",
+		Revision: &brigade.Revision{
+			Commit: "commit2",
+		},
+		Type:     "type",
+		Provider: "provider",
+		Payload:  []byte("payload"),
+		Script:   []byte("script"),
+		Worker:   StubWorker2,
 	}
 	// StubJob is a stub Job.
 	StubJob = &brigade.Job{
@@ -63,8 +86,8 @@ var (
 func New() *Store {
 	return &Store{
 		ProjectList: []*brigade.Project{StubProject},
-		Worker:      StubWorker,
-		Build:       StubBuild,
+		Workers:     []*brigade.Worker{StubWorker1, StubWorker2},
+		Builds:      []*brigade.Build{StubBuild1, StubBuild2},
 		Job:         StubJob,
 		LogData:     StubLogData,
 	}
@@ -72,12 +95,12 @@ func New() *Store {
 
 // Store implements the storage.Storage interface, but returns mock data.
 type Store struct {
-	// Build is the build you want returned.
-	Build *brigade.Build
+	// Builds is a slice of Builds.
+	Builds []*brigade.Build
 	// Job is the job you want returned.
 	Job *brigade.Job
-	// Worker is the worker you want returned.
-	Worker *brigade.Worker
+	// Workers is a slice of workers.
+	Workers []*brigade.Worker
 	// LogData is the log data you want returned.
 	LogData string
 	// ProjectList on this mock
@@ -142,12 +165,12 @@ func (s *Store) GetProjectBuilds(p *brigade.Project) ([]*brigade.Build, error) {
 
 // GetBuilds returns the mock build wrapped in a slice.
 func (s *Store) GetBuilds() ([]*brigade.Build, error) {
-	return []*brigade.Build{s.Build}, nil
+	return s.Builds, nil
 }
 
-// GetBuild gets the mock Build.
+// GetBuild gets the first mock Build.
 func (s *Store) GetBuild(id string) (*brigade.Build, error) {
-	return s.Build, nil
+	return s.Builds[0], nil
 }
 
 // GetBuildJobs gets the mock job wrapped in a slice.
@@ -155,9 +178,9 @@ func (s *Store) GetBuildJobs(b *brigade.Build) ([]*brigade.Job, error) {
 	return []*brigade.Job{s.Job}, nil
 }
 
-// GetWorker gets the mock worker.
+// GetWorker gets the first mock worker.
 func (s *Store) GetWorker(bid string) (*brigade.Worker, error) {
-	return s.Worker, nil
+	return s.Workers[0], nil
 }
 
 // GetJob gets the mock job.
@@ -197,7 +220,7 @@ func (s *Store) GetWorkerLogStreamFollow(w *brigade.Worker) (io.ReadCloser, erro
 
 // CreateBuild fakes a new build.
 func (s *Store) CreateBuild(b *brigade.Build) error {
-	s.Build = b
+	s.Builds[0] = b
 	return nil
 }
 
