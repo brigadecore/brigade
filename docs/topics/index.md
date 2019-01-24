@@ -21,10 +21,11 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
   - [Securing Brigade](security.md): Things to consider when configuring Brigade.
   - [Storage](storage.md): How Brigade uses Kubernetes Persistent Storage
   - [Workers](workers.md): More information regarding Brigade Worker
-  - [Example Projects](../index.md#technical): Brigade-related projects
 - Contributing to Brigade Development
   - [Brigade Developers Guide](developers.md): A guide for people who want to modify Brigade's
     code.
+- Examples
+  - [Example Projects](../index.md#technical): Brigade-related projects
 
 
 

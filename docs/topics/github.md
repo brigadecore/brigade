@@ -207,3 +207,9 @@ $ helm install -n my-project brigade/brigade-project -f myvalues.yaml
 ```
 
 Now your project is configured to clone via SSH using the deployment key we generated.
+
+---
+
+Prev: [Scripting Guide - Advanced](scripting_advanced.md) `|` Next: [Container Registry Integration](dockerhub.md)
+
+Return to the [Table of Contents](index.md)

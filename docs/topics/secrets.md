@@ -125,3 +125,9 @@ Kubernetes cluster.
 Yes. Helm is there to make your life easier, but you can manage project secrets manually.
 You cannot, however, make manual modifications and then go back to using Helm. Doing so
 may result in lost data.
+
+---
+
+Prev: [Container Registry Integration](dockerhub.md) `|` Next: [Brigade Gateways](gateways.md)
+
+Return to the [Table of Contents](index.md)

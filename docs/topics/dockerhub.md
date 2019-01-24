@@ -127,4 +127,8 @@ The above answers an ACR webhook. The data sent by DockerHub's webhook is
 is not new or updated. If you push both a `latest` and a versioned tag for a
 single image, you will get two webhook invocations.
 
+---
 
+Prev: [GitHub Integration](github.md) `|` Next: [Using Secrets](secrets.md)
+
+Return to the [Table of Contents](index.md)

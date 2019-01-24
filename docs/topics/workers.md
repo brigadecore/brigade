@@ -297,3 +297,9 @@ own containers, and use workers to control the execution of a series of Jobs.
 We strongly discourage attempting to turn a worker into a long-running server.
 This violates the design assumptions of Brigade, and can result in unintended
 side effects.
+
+---
+
+Prev: [Storage](storage.md) `|` Next: [Development Guide](developers.md)
+
+Return to the [Table of Contents](index.md)
