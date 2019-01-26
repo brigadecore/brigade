@@ -5,6 +5,12 @@ DOCKER_REGISTRY    ?= deis
 DOCKER_BUILD_FLAGS :=
 LDFLAGS            :=
 
+# Helm chart/release defaults
+BRIGADE_RELEASE            ?= brigade-server
+BRIGADE_NAMESPACE          ?= default
+BRIGADE_GITHUB_GW_SERVICE  := $(BRIGADE_RELEASE)-brigade-github-gw
+BRIGADE_GITHUB_GW_PORT     := 7744
+
 BINS        = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig
 IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-vacuum brig brigade-worker git-sidecar
 
@@ -66,6 +72,20 @@ docker-push: $(addsuffix -push,$(IMAGES))
 .PHONY: build-release
 build-release: brig-cross-compile
 
+.PHONY: helm-install
+helm-install: helm-upgrade
+
+.PHONY: helm-upgrade
+helm-upgrade:
+	helm upgrade --install $(BRIGADE_RELEASE) brigade/brigade --namespace $(BRIGADE_NAMESPACE) \
+		--set gw.service.type=ClusterIP \
+		--set controller.tag=$(VERSION) \
+		--set api.tag=$(VERSION) \
+		--set worker.tag=$(VERSION) \
+		--set gw.tag=$(VERSION) \
+		--set cr.tag=$(VERSION) \
+		--set vacuum.tag=$(VERSION)
+
 # All non-functional tests
 .PHONY: test
 test: test-style
@@ -87,8 +107,7 @@ test-unit: vendor
 #   repository: "github.com/deis/empty-testbed"
 #   secret: "MySecret"
 # - Run "helm install brigade/brigade-project -f myvals.yaml"
-# - Run "make run" in one terminal
-# - Run "make test-functional" in another terminal
+# - Run "make test-functional"
 #
 # This will clone the github.com/deis/empty-testbed repo and run the brigade.js
 # file found there.
@@ -98,7 +117,10 @@ KUBECONFIG       ?= ${HOME}/.kube/config
 .PHONY: test-functional
 test-functional: vendor
 test-functional:
+	@kubectl port-forward service/$(BRIGADE_GITHUB_GW_SERVICE) $(BRIGADE_GITHUB_GW_PORT) &>/dev/null & \
+		echo $$! > /tmp/$(BRIGADE_GITHUB_GW_SERVICE).PID
 	go test --tags integration ./tests -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
+	@kill -TERM $$(cat /tmp/$(BRIGADE_GITHUB_GW_SERVICE).PID)
 
 # JS test is local only
 .PHONY: test-js
