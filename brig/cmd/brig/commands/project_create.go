@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/Masterminds/goutils"
@@ -529,7 +530,38 @@ func projectAdvancedPrompts(p *brigade.Project, store storage.Store) error {
 		p.DefaultScript = loadFileStr(fname)
 	}
 
+	err = survey.AskOne(&survey.Input{
+		Message: "Secret for the Generic Gateway (alphanumeric characters only). Press Enter if you want it to be auto-generated",
+		Help:    "This is the secret that secures the Generic Gateway. Only alphanumeric characters are accepted. Provide an empty string if you want an auto-generated one",
+	}, &p.GenericGatewaySecret, genericGatewaySecretValidator)
+	if err != nil {
+		return fmt.Errorf(abort, err)
+	}
+
+	// user pressed Enter key, so let's auto-generate a GenericGateway secret
+	if p.GenericGatewaySecret == "" {
+		var err error
+		p.GenericGatewaySecret, err = goutils.RandomAlphaNumeric(5)
+		if err != nil {
+			return fmt.Errorf("Error in generating Generic Gateway Secret: %s", err.Error())
+		}
+		fmt.Printf("Auto-generated Generic Gateway Secret: %s\n", p.GenericGatewaySecret)
+	}
+
 	return nil
+}
+
+// genericGatewaySecretValidator validates the secret provided by user for the Generic Gateway
+// this can be either "" (so it will be auto-generated) or alphanumeric
+func genericGatewaySecretValidator(val interface{}) error {
+	re := regexp.MustCompile("^[a-zA-Z0-9]*$")
+	if val.(string) == "" {
+		return nil
+	}
+	if re.MatchString(val.(string)) {
+		return nil
+	}
+	return fmt.Errorf("Generic Gateway secret should only contain alphanumeric characters")
 }
 
 // loadFileValidator validates that a file exists and can be read.

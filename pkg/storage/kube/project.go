@@ -96,12 +96,13 @@ func SecretFromProject(project *brigade.Project) (v1.Secret, error) {
 			"worker.pullPolicy": project.Worker.PullPolicy,
 
 			// These exist in the chart, but not in the brigade.Project
-			"initGitSubmodules":   bfmt(project.InitGitSubmodules),
-			"imagePullSecrets":    project.ImagePullSecrets,
-			"allowPrivilegedJobs": bfmt(project.AllowPrivilegedJobs),
-			"allowHostMounts":     bfmt(project.AllowHostMounts),
-			"workerCommand":       project.WorkerCommand,
-			"brigadejsPath":       project.BrigadejsPath,
+			"initGitSubmodules":    bfmt(project.InitGitSubmodules),
+			"imagePullSecrets":     project.ImagePullSecrets,
+			"allowPrivilegedJobs":  bfmt(project.AllowPrivilegedJobs),
+			"allowHostMounts":      bfmt(project.AllowHostMounts),
+			"workerCommand":        project.WorkerCommand,
+			"brigadejsPath":        project.BrigadejsPath,
+			"genericGatewaySecret": project.GenericGatewaySecret,
 
 			"kubernetes.cacheStorageClass": project.Kubernetes.CacheStorageClass,
 			"kubernetes.buildStorageClass": project.Kubernetes.BuildStorageClass,
@@ -204,6 +205,8 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 		}
 	}
 	proj.Secrets = envVars
+
+	proj.GenericGatewaySecret = sv.String("genericGatewaySecret")
 
 	proj.Worker = brigade.WorkerConfig{
 		Registry:   sv.String("worker.registry"),
