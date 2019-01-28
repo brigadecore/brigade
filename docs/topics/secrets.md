@@ -12,8 +12,8 @@ must authenticate to a remote service.
 
 We do this by storing the secret inside of the project definition.
 
-Project definitions are typically managed by Helm. As you may recall from the installation
-manual, a new project is created like this:
+Project definitions are typically managed by Helm. As you may recall from the [installation
+manual](../intro/install.md), a new project is created like this:
 
 ```console
 $ helm install brigade/brigade-project -n my-project -f my-values.yaml
@@ -115,16 +115,138 @@ adopted into Kubernetes, we plan to support them. However, the present stable
 version of Kubernetes Secrets only Base64-encodes data.
 
 Our present recommendation is for Brigade developers to fetch the secret directly from a
-trusted key store such as Vault.
+trusted key store such as Vault.  See the [example](#fetching-secrets-from-a-remote-store) below.
 
 Alternatively, you could use `secretKeyRef` to reference existing secrets already in your
-Kubernetes cluster.
+Kubernetes cluster.  See the [example](#using-kubernetes-secrets) below.
 
 **I don't want to use Helm to manage my project/secrets. Can I do it manually?**
 
 Yes. Helm is there to make your life easier, but you can manage project secrets manually.
 You cannot, however, make manual modifications and then go back to using Helm. Doing so
 may result in lost data.
+
+## Examples
+
+---
+
+## Fetching secrets from a remote store
+
+Here is an example where we fetch secrets from a remote store
+([Azure Key Vault](https://azure.microsoft.com/en-us/services/key-vault/))
+for use by one or more Jobs.
+
+To do so, we first run a Job to authenticate with the remote store, fetch all needed secrets
+and save these secret values to a shared directory.  Then, we run a Job that consumes these values.
+
+Here's what our `brigade.js` file looks like:
+
+```javascript
+const { events, Job, Group } = require("brigadier");
+
+const sharedMountPrefix = `/mnt/brigade/share`;
+const secrets = [
+  "foo",
+  "bar"
+]
+
+events.on("exec", (event, project) => {
+  // Create Job to fetch secrets
+  secretfetcher = new Job("secretfetcher", "microsoft/azure-cli:latest");
+  secretfetcher.storage.enabled = true;
+
+  // Login as an Azure Service Principal
+  secretfetcher.tasks.push(
+    `az login --service-principal \
+    -u ${project.secrets.spID} \
+    -p '${project.secrets.spPW}' \
+    --tenant ${project.secrets.spTenant}`)
+
+  // Fetch all secrets from the Azure Key Vault
+  for (i in secrets) {
+    secretfetcher.tasks.push(
+      `az keyvault secret show --vault-name ${project.secrets.keyvault} \
+      -n ${secrets[i]} --query value > ${sharedMountPrefix}/${secrets[i]}`);
+  }
+
+  // Create Job to consume secrets
+  secretconsumer = new Job("secretconsumer", "alpine");
+  secretconsumer.storage.enabled = true;
+
+  // Consume all secrets
+  for (i in secrets) {
+    secretconsumer.tasks.push(
+      `ls -haltr ${sharedMountPrefix}/${secrets[i]}`);
+  }
+
+  // Run jobs sequentially
+  Group.runEach([secretfetcher, secretconsumer]);
+})
+```
+
+To run this example, we replace `BRIGADE_PROJECT_NAME` with our Brigade project name and run:
+
+```console
+brig run BRIGADE_PROJECT_NAME -f brigade.js
+```
+
+When we check the logs of the `secretconsumer` job pod, we see:
+
+```console
+ $ kubectl logs secretconsumer-01d23ch2n6d1847ys6x48x1rez
+-rwxrwxrwx    1 root     root           6 Jan 25 20:52 /mnt/brigade/share/foo
+-rwxrwxrwx    1 root     root           6 Jan 25 20:52 /mnt/brigade/share/bar
+```
+
+## Using Kubernetes secrets
+
+Kubernetes secrets can also be used for consuming secret data.
+
+For this example, we first create the Kubernetes secret:
+
+```console
+kubectl create secret generic mysecret --from-literal=hello=world
+```
+
+This Kubernetes Secret has a name of `mysecret` and a single key-value pair as its data (key: hello, value: world).
+
+Then, we create a `brigade.js` file with the following contents:
+
+```javascript
+const { events, Job } = require("brigadier");
+
+events.on("exec", () => {
+  var job = new Job("echo", "alpine");
+
+  job.env = {
+    mySecretReference: {
+      secretKeyRef: {
+        name: "mysecret",
+        key: "hello"
+      }
+    }
+  };
+
+  job.tasks = [
+    "echo hello ${mySecretReference}"
+  ];
+
+  job.run();
+});
+```
+
+To recap, `mySecretReference` is the name of the variable in the job's environment, `secretKeyRef.name` is the name
+of the Kubernetes secret, and `secretKeyRef.key` is the key pointing to the actual secret value (`world` in this example.)
+
+As a result, `mySecretReference` points directly to this secret value in this job's environment.
+
+To run this example, we replace `BRIGADE_PROJECT_NAME` with our Brigade project name and run:
+
+```console
+brig run BRIGADE_PROJECT_NAME -f brigade.js
+```
+
+We will then see `"hello world"` displayed in the logs.
 
 ---
 
