@@ -5,15 +5,17 @@ This document explains how to get started developing Brigade.
 Brigade is composed of numerous parts:
 
 - brigade-controller: The Kubernetes controller for delegating Brigade events
-- brigade-server: The implementation of the GitHub web hooks. It requires
+- brigade-github-gateway: The implementation of the GitHub web hooks. It requires
   the controller.
 - brigade-worker: The JavaScript runtime for executing `brigade.js` files. The
   controller spawns these, though you can run one directly as well.
 - brigade-api: The REST API server for user interfaces
 - brigade-project: The Helm [chart][brigade-project-chart] for installing Brigade projects
-- git-sidecar: The code that runs as a sidecar in cluster to fetch Git repositories
+- brigade-vacuum: The stale build cleaner-upper (optional; enabled by default)
+- brig: The Brigade CLI
+- git-sidecar: The code that runs as a sidecar in cluster to fetch Git repositories (optional; enabled by default)
 
-This document covers development of `brigade-controller`, `brigade-server`, and
+This document covers development of `brigade-controller`, `brigade-github-gateway`, and
 `brigade-worker`.
 
 ## Prerequisites
@@ -35,7 +37,6 @@ mkdir -p $GOPATH/src/github.com/Azure
 git clone https://github.com/Azure/brigade $GOPATH/src/github.com/Azure/brigade
 cd $GOPATH/src/github.com/Azure/brigade
 ```
-
 
 **Note**: this leaves you at the tip of **master** in the repository where active development
 is happening. You might prefer to checkout the most recent stable tag:
@@ -122,9 +123,10 @@ Docker daemon:
 $ eval $(minikube docker-env)
 ```
 
-Running `VERSION=latest make docker-build` will push the Brigade images to the Minikube Docker
-daemon. You can verify this by running `docker images`. You should see the `latest` tags for
-the brigade images.
+Running `make docker-build` will push the Brigade images to the Minikube Docker
+daemon. The image tag (set by `VERSION` in the [Makefile](../../Makefile)) will default
+to a unique value such as `v0.19.0-80-g6721dd8`.  You can verify this by running `docker images`
+and affirming these tagged images are listed.
 
 Brigade charts are hosted in the separate [Azure/brigade-charts][brigade-charts]
 repo, so we'll need to add the corresponding Helm repo locally:
@@ -134,18 +136,39 @@ $ helm repo add brigade https://azure.github.io/brigade-charts
 "brigade" has been added to your repositories
 ```
 
-Now create a custom `values.yaml` file for the chart, and set the images to all
-pull the `latest` image:
+If you just want to roll with the default chart values and let the Makefile set
+the image tags appropriately, simply run:
+
+```console
+$ make helm-install
+```
+
+This will issue the appropriate command to create a new Brigade chart release on this cluster.
+
+(Note: `helm init` may be needed to get tiller up and running on the cluster, if not already started.)
+
+During active development, the flow might then look like:
+
+```console
+$ # make code changes, commit
+$ make docker-build
+$ make helm-upgrade
+$ # (repeat)
+$ # push to fork and create pull request
+```
+
+For finer-grained control, you may wish to create a custom `values.yaml` file for the chart
+and set various values in addition to the latest image tags:
 
 ```
 $ helm inspect values brigade/brigade > myvalues.yaml
-$ open myvalues.yaml    # Change all `tag:` fields to be `tag: latest`
+$ open myvalues.yaml    # Change all `tag:` fields to be `tag: <tag>`, etc.
 ```
 
 From here, you can install Brigade into Minikube using the Helm chart:
 
 ```
-$ helm install -n brigade brigade/brigade -f myvalues.yaml # if this command fails run `helm init`
+$ helm install -n brigade brigade/brigade -f myvalues.yaml
 ```
 
 Don't forget to also create a project (`$ helm install -n empty-testbed brigade/brigade-project`).
@@ -160,9 +183,9 @@ you will need to do two things:
 - Make sure you push your `brigade` docker images to a registry the cluster can access
 - Set the image when you do a `helm install brigade/<chart>` on the Brigade chart.
 
-## Running Brigade (brigade-server) Locally (against Minikube)
+## Running Brigade (brigade-controller) Locally (against Minikube)
 
-Assuing you have Brigade installed (either on minikube or another cluster) and
+Assuming you have Brigade installed (either on minikube or another cluster) and
 your `$KUBECONFIG` is pointing to that cluster, you can run `brigade-controller`
 locally.
 
@@ -198,6 +221,7 @@ repository: "github.com/deis/empty-testbed"
 cloneURL: "https://github.com/deis/empty-testbed.git"
 namespace: "default"
 ```
+
 It is possible to run the functional tests against a clone of the repo above,
 but there's no need to. Basically we are testing GitHub connectivity and transactions
 in these tests.
