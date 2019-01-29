@@ -129,6 +129,6 @@ single image, you will get two webhook invocations.
 
 ---
 
-Prev: [GitHub Integration](github.md) `|` Next: [Using Secrets](secrets.md)
+Prev: [GitHub Integration](github.md) `|` Next: [Generic Gateway Integration](genericgateway.md)
 
 Return to the [Table of Contents](index.md)
