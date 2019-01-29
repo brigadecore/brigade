@@ -13,6 +13,10 @@ writing advanced Brigade scripts.
 
 [Dive deep into what makes Brigade, Brigade](topics/index.md).
 
+## Releasing Brigade
+
+For maintainers of this project, steps on cutting a new release of Brigade can be found [here](topics/releasing.md).
+
 ## Related Resources
 
 If you'd like to add links to this list, open a pull request on 

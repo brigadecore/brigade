@@ -89,7 +89,7 @@ The Brigade Project chart is located in the [Azure/brigade-charts][brigade-chart
 $ helm repo add brigade https://azure.github.io/brigade-charts
 $ helm search brigade/brigade-project
 NAME                   	CHART VERSION	APP VERSION	DESCRIPTION
-brigade/brigade-project	0.19.0       	v0.19.0    	Create a Brigade project
+brigade/brigade-project	0.20.0       	v0.20.0    	Create a Brigade project
 ```
 
 ### Creating and Managing a Project (The Old Way)

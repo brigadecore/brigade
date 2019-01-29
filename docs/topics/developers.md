@@ -41,7 +41,7 @@ cd $GOPATH/src/github.com/Azure/brigade
 **Note**: this leaves you at the tip of **master** in the repository where active development
 is happening. You might prefer to checkout the most recent stable tag:
 
-- `$ git checkout v0.19.0`
+- `$ git checkout v0.20.0`
 
 After cloning the project locally, you should run this command to [configure the remote](https://help.github.com/articles/configuring-a-remote-for-a-fork/): 
 
@@ -125,7 +125,7 @@ $ eval $(minikube docker-env)
 
 Running `make docker-build` will push the Brigade images to the Minikube Docker
 daemon. The image tag (set by `VERSION` in the [Makefile](../../Makefile)) will default
-to a unique value such as `v0.19.0-80-g6721dd8`.  You can verify this by running `docker images`
+to a unique value such as `v0.20.0-80-g6721dd8`.  You can verify this by running `docker images`
 and affirming these tagged images are listed.
 
 Brigade charts are hosted in the separate [Azure/brigade-charts][brigade-charts]
