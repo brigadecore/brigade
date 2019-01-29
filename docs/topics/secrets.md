@@ -250,6 +250,6 @@ We will then see `"hello world"` displayed in the logs.
 
 ---
 
-Prev: [Container Registry Integration](dockerhub.md) `|` Next: [Brigade Gateways](gateways.md)
+Prev: [Generic Gateway Integration](genericgateway.md) `|` Next: [Brigade Gateways](gateways.md)
 
 Return to the [Table of Contents](index.md)
