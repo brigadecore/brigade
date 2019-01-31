@@ -10,13 +10,16 @@ scripts run as a response to one or more events. In Brigade, a _gateway_ is an
 entity that generates events. Often times, it translates some external trigger
 into a Brigade event.
 
-Brigade ships with two gateways that translate webhook requests into Brigade
+Brigade ships with two default gateways that translate webhook requests into Brigade
 events: The [GitHub gateway](github.md) and the
 [container registry gateway](dockerhub.md).
 These both provide HTTP-based listeners that receive incoming requests
 and generate Brigade events as a result.
 
-But the gateway system works with more than just webhooks.
+Note: There also exists an optional [Generic Gateway](./genericgateway.md) that can handle
+requests from other platforms or systems and generate appropriate Brigade events.
+
+The gateway system works with more than just webhooks.
 
 For example, the `brig` client also acts as a gateway. When you execute a `brig run`
 command, `brig` creates a Brigade event. By default, it emits an `exec` event. And
@@ -45,8 +48,7 @@ Secrets have several characteristics that make them a great fit for this role:
 - The payload of a secret is flexible
 - Secrets have been a stable part of the Kubernetes ecosystem since Kubernetes 1.2
 
-Because of these features, the Brigade system uses features as containers for
-bearing event information.
+Because of these features, the Brigade system uses secrets for bearing event information.
 
 ### The Anatomy of a Brigade Event Secret
 
@@ -215,8 +217,9 @@ input from just about anything and use it to trigger a new event.
 ## Creating A Cron Job Gateway
 
 Beginning with the code above, we can build a gateway that runs as a scheduled
-job in Kubernetes. In this example, we use a Kubernetes CronJob object to create
-the secret.
+job in Kubernetes. In this example, we use a Kubernetes
+[CronJob](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) object
+to create the secret.
 
 First we can begin with a simplified version of the script above. This one does not
 run in a loop. It just runs once to completion.

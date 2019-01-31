@@ -12,44 +12,29 @@ must authenticate to a remote service.
 
 We do this by storing the secret inside of the project definition.
 
-Project definitions are typically managed by Helm. As you may recall from the [installation
-manual](../intro/install.md), a new project is created like this:
+Project definitions are typically managed by `brig`. As you may recall from the [installation
+manual](../intro/install.md), a new project is created like via `brig project create`.
+
+During the creation process, we are able to add secrets when prompted. If we'd forgotten to
+add a secret and/or additional secrets need to be added to this existing project, we can do so via
+`brig project create --replace -p <existing project name>`.
+
+Here we add a new secret with key `dbPassword` and value `supersecret` to our existing
+`deis/empty-testbed` project:
 
 ```console
-$ helm install brigade/brigade-project -n my-project -f my-values.yaml
-```
-
-The `my-values.yaml` file looks something like this:
-
-```yaml
-project: "deis/empty-testbed"
-repository: "github.com/deis/empty-testbed"
-cloneURL: "https://github.com/deis/empty-testbed.git"
-sharedSecret: "aaaaaaaaaaaaaa"
-namespace: "default"
-secrets: {}
-```
-
-Note the empty `secrets` object at the end. That is the place for you to put your own
-secrets.
-
-For example, we can add a database password like this:
-
-```yaml
-project: "deis/empty-testbed"
-repository: "github.com/deis/empty-testbed"
-cloneURL: "https://github.com/deis/empty-testbed.git"
-sharedSecret: "aaaaaaaaaaaaaa"
-namespace: "default"
-secrets:
-  dbPassword: supersecret
-```
-
-As usual, you can use `helm upgrade` to update the values. Everything in the `secrets`
-section will be stored inside of your project's Kubernetes Secret.
-
-```console
-$ helm upgrade my-project brigade/brigade-project -f my-values.yaml
+$ brig project create --replace -p deis/empty-testbed
+? Existing Project Name deis/empty-testbed
+? Full repository name github.com/deis/empty-testbed
+? Clone URL (https://github.com/your/repo.git) https://github.com/deis/empty-testbed.git
+? Add secrets? Yes
+? 	Secret 1 dbPassword
+? 	Value supersecret
+? ===> Add another? No
+Auto-generated a Shared Secret: "9qQvuplBx39r04Wd9EmyxjGA"
+? Configure GitHub Access? No
+? Configure advanced options No
+Project ID: brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
 ```
 
 ## Accessing a Secret within `brigade.js`

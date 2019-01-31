@@ -24,39 +24,18 @@ it available to GitHub. (For example, assign it a publicly routable IP and domai
 
 ## Configuring Your Project
 
-Brigade uses projects to tie repositories to builds. You may want to check out
-the [project documentation](projects.md) if you haven't already. This section
-explains what parts of your project are required for GitHub integration to function.
+Brigade uses projects to tie repositories to builds. Check out
+the [project documentation](projects.md) if you haven't already.
 
-In your project's `values.yaml` file, you should make sure the following are set for
-GitHub integration to work:
+When creating a project with `brig project create`, the following information is required for
+GitHub integration to function:
 
-```yaml
-# Set to your github user/project or org/project
-project: "technosophos/coffeesnob"
+1. Repository name, e.g. `github.com/technosophos/coffeesnob`
+1. Clone URL, e.g. `https://github.com/technosophos/coffeesnob.git`
+1. A shared secret for GitHub Webhooks (this will be auto-generated if not provided)
+1. A [GitHub Oauth2 token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
 
-# The full name of the repository
-repository: "github.com/technosophos/coffeesnob"
-
-# The URL to use to clone. You can use any supported GitHub URL scheme
-cloneURL: "https://github.com/technosophos/coffeesnob.git"
-
-# A long shared secret. In the "Configuring GitHub" section, this is simply called
-# Secret.
-# You get to make this up. It should be a long string of arbitrary alphanumeric
-# characters.
-sharedSecret: 09879879879879879879879871
-
-# Your GitHub OAuth2 token.
-github:
-   token: "1111111111111111111112222222222222111111"
-```
-
-You can learn more about generating OAuth2 tokens from the
-[official GitHub documentation](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/).
-
-Make sure you run `helm upgrade` if you changed any parameters above (or `helm install`
-if you are creating a new project).
+Assuming these values have been entered, the resulting project should be good to go.
 
 ## Configuring GitHub
 
@@ -67,7 +46,7 @@ To add a Brigade project to GitHub:
 3. Click the "Add webhook" button
 4. For "Payload URL", add the URL: "http://YOUR_HOSTNAME:7744/events/github"
 5. For "Content type", choose "application/json"
-6. For "Secret", use the secret you configured in your Helm config.
+6. For "Secret", use the shared secret configured via `brig` above.
 7. Choose "Just the push event" or choose  specific events you want to receive,
   such as "push" and "pull_request".
 

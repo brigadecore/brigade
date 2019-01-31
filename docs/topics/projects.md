@@ -32,11 +32,12 @@ other Git services, and how to extend Brigade to work with other VCS systems.
   repo private. Put them in your `values.yaml` file for your project (and don't
   put that in GitHub).
 
-## The `brig project create` Command (Brigade 0.16 and on)
+## Creating and Managing a Project
 
-In Brigade 0.16, a new `brig project create` command has been added. To create a
-new Brigade project with it, simply run `brig project create` and you will be
-prompted to answer a few questions:
+### The `brig project create` Command
+
+The preferred default for project creation and maintenance is via `brig`.  To create a
+new Brigade project, simply run `brig project create` and you will be prompted to answer a few questions:
 
 ```console
 $ brig project create
@@ -80,7 +81,11 @@ can save a local copy of that secret using `brigade project create --out=myproje
 If you have already created the secret, you can fetch it from Kubernetes by running
 `brig project get my/project` where `my/project` is the project name you assigned.
 
-## The Brigade Project Chart (Brigade <= 0.15)
+## Creating and Managing a Project (The Old Way)
+
+Note: Managing Brigade projects via Helm chart is being deprecated in favor of using `brig`.
+
+### The Brigade Project Chart
 
 The Brigade Project chart is located in the [Azure/brigade-charts][brigade-charts] source tree at
 `charts/brigade-project`. You can also install it out of the Brigade chart repository.
@@ -91,8 +96,6 @@ $ helm search brigade/brigade-project
 NAME                   	CHART VERSION	APP VERSION	DESCRIPTION
 brigade/brigade-project	0.20.0       	v0.20.0    	Create a Brigade project
 ```
-
-### Creating and Managing a Project (The Old Way)
 
 We recommend using the following pattern to create your project:
 
@@ -176,7 +179,7 @@ Use `helm delete $MY_PROJECT` to delete a project. Note that once you have done
 this, Brigade will no longer execute brigade scripts for this project.
 
 
-## Listing and inspectecting projects with `brig`
+## Listing and inspecting projects with `brig`
 
 If you have the `brig` client installed, you can use it to list and interact with
 your projects:
