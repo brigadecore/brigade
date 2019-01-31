@@ -2,11 +2,13 @@
 
 _This part is a work-in-progress because Brigade is still developer-oriented_
 
-Brigade is deployed via Helm. Here are the steps:
+The Brigade server is deployed via its [Helm](https://github.com/helm/helm) chart and
+Brigade projects are managed via [brig](#brig). Here are the steps:
 
 1. Make sure `helm` is installed, and `helm version` returns the correct server.
-2. Add the Brigade repo: `helm repo add brigade https://azure.github.io/brigade`
+2. Add the Brigade repo: `helm repo add brigade https://azure.github.io/brigade-charts`
 3. Install Brigade: `helm install brigade/brigade --name brigade-server`
+4. Create a Brigade project: `brig project create`
 
 At this point, you have a running Brigade service. You can use `helm get brigade-server` and other Helm tools to examine your running Brigade server.
 
@@ -49,6 +51,7 @@ Brigade is well-tested on [AKS Kubernetes](https://docs.microsoft.com/en-us/azur
   an Azure load balancer for you.
 - For caching and storage, we recommend creating an Azure Storage instance and
   creating a Persistent Volume and Storage Class that use the `AzureFile` driver.
+  (For an example, see the `Azure File Setup` section in the [storage document](../topics/storage.md#azure-file-setup).)
 - You can use Azure Container Registry for private images, provided that you
   add the ACR instance to the same Resource Group that AKS belongs to.
 - ACR's webhooks can be used to trigger events, as they follow the DockerHub

@@ -171,7 +171,7 @@ From here, you can install Brigade into Minikube using the Helm chart:
 $ helm install -n brigade brigade/brigade -f myvalues.yaml
 ```
 
-Don't forget to also create a project (`$ helm install -n empty-testbed brigade/brigade-project`).
+Don't forget to also create a project.  Check out [projects](./projects.md) to see how it's done.
 
 ## Running Brigade inside remote Kubernetes
 
@@ -204,29 +204,16 @@ Once you have Brigade running in Minikube or a comparable alternative, you shoul
 able to run the functional tests.
 
 First, create a project that points to the `deis/empty-testbed` project. The most
-flexible way of doing this is via the `brigade/brigade-project` Helm [chart][brigade-project-chart]:
+flexible way of doing this is via the `brig` cli.  Here we supply `-x` to forgo
+interactive prompts.  All the defaults will therefore be set to the
+[deis/empty-testbed](https://github.com/deis/empty-testbed) project.
 
 ```console
-$ helm inspect brigade/brigade-project > functional-test-project.yaml
-$ # edit the functional-test-project.yaml file
-$ helm install -f functional-test-project.yaml -n brigade-functional-tests brigade/brigade-project
+ $ brig project create -x
+Project ID: brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
 ```
 
-At the very least, you will want a config that looks like this:
-
-```yaml
-project: "deis/empty-testbed"
-project: deis/empty-testbed
-repository: "github.com/deis/empty-testbed"
-cloneURL: "https://github.com/deis/empty-testbed.git"
-namespace: "default"
-```
-
-It is possible to run the functional tests against a clone of the repo above,
-but there's no need to. Basically we are testing GitHub connectivity and transactions
-in these tests.
-
-Once Helm installs the project, you can test it with `helm get brigade-functional-tests`.
+You can check this project configuration out via `brig project get deis/empty-testbed`.
 
 With this setup, you should be able to run `make test-functional` and see the
 tests run against your local Brigade binary.

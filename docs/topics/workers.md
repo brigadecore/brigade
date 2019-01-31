@@ -165,21 +165,23 @@ You can then use `helm upgrade` to load those new values to Brigade.
 ### Project Overrides
 
 To configure the worker image per-project, you can set up a custom `worker` section
-in your `brigade/brigade-project` values file:
+via `brig` during the `Configure advanced options` section.  (If the project has
+already been created, use `brig project create --replace -p <pre-existing-project>`).
 
-myvalues.yaml
-```yaml
-# OPTIONAL: Project-specific worker settings which takes precedence over brigade-wide settings
-# Useful when you want a specific brigade-worker image for running brigade.js of this project.
-worker:
-  registry: myregistry
-  name: myworker
-  tag: latest
-  pullPolicy: IfNotPresent
+Here we supply our custom worker image registry (`myregistry`), image name
+(`myworker`), image tag (`latest`), pull policy (`IfNotPresent`) and command (`yarn -s start`):
+
+```console
+$ brig project create
+...
+? Configure advanced options Yes
+...
+? Worker image registry or DockerHub org myregistry
+? Worker image name myworker
+? Custom worker image tag latest
+? Worker image pull policy IfNotPresent
+? Worker command yarn -s start
 ```
-
-The above will set the worker image to `myregistry/myworker:latest`. Now you
-can create a project that uses that worker by running `helm install -f myvalues.yaml brigade/brigade-project`
 
 ## Using Your New Image
 

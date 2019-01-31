@@ -6,6 +6,29 @@ to execute scripts.
 
 ## Basic Usage
 
+### Creating a project
+
+To create a project with brig, run `brig project create` and follow the interactive prompts,
+supplying project name, GitHub repo details (if not derived from project name), optional secrets
+and optional advanced configuration.
+
+An example setup might look like the following:
+
+```console
+$ brig project create
+? Project name deis/empty-testbed
+? Full repository name github.com/deis/empty-testbed
+? Clone URL (https://github.com/your/repo.git) https://github.com/deis/empty-testbed.git
+? Add secrets? No
+Auto-generated a Shared Secret: "FweBxcwJvcbTTuW5CquyPtHM"
+? Configure GitHub Access? No
+? Configure advanced options No
+```
+
+To read more about project configuration, see [projects](../docs/topics/projects.md).
+
+### Running scripts
+
 Brig has built-in help text that you can access easily by adding `-h` or `--help`
 to any command (e.g. `brig -h` or `brig project -h`). One of the most frequent
 usages of Brig is to send a script to the server.
