@@ -23,12 +23,13 @@ we can follow these steps to release Brigade:
     [GitHub release](https://github.com/Azure/brigade/releases).
 
 1. Lastly, issue a pull request in [Azure/brigade-charts][brigade-charts]
-bumping the `version` and `appVersion` values in the Brigade
-[chart](https://github.com/Azure/brigade-charts/blob/master/charts/brigade/Chart.yaml) and then
-re-building and re-indexing the charts.
+bumping the `version` and `appVersion` values in both the Brigade
+[chart](https://github.com/Azure/brigade-charts/blob/master/charts/brigade/Chart.yaml) and
+the Brigade Project [chart](https://github.com/Azure/brigade-charts/blob/master/charts/brigade-project/Chart.yaml)
+and then re-building and re-indexing the charts.
 
     ```console
-    $ # bump version and appVersion in charts/brigade/Chart.yaml
+    $ # bump version and appVersion in charts/{brigade,brigade-project}/Chart.yaml
     $ make build index
     $ # commit changes, issue PR
     ```
