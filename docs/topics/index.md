@@ -20,13 +20,14 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
 - Configuring and Running Brigade
   - [Projects](projects.md): Install, upgrade, and use Brigade Projects.
   - [Securing Brigade](security.md): Things to consider when configuring Brigade.
-  - [Storage](storage.md): How Brigade uses Kubernetes Persistent Storage
-  - [Workers](workers.md): More information regarding Brigade Worker
+  - [Storage](storage.md): How Brigade uses Kubernetes Persistent Storage.
+  - [Workers](workers.md): More information regarding Brigade Worker.
+  - [Testing Brigade](testing.md): How to test Brigade.
 - Contributing to Brigade Development
   - [Brigade Developers Guide](developers.md): A guide for people who want to modify Brigade's
     code.
 - Examples
-  - [Example Projects](../index.md#technical): Brigade-related projects
+  - [Example Projects](../index.md#technical): Brigade-related projects.
 
 
 

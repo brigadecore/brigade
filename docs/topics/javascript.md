@@ -25,7 +25,7 @@ event handler will be called.
 ## The `brigadier` Library
 
 The main library for Brigade is called `brigadier`. The Brigade runtime grants access to
-this library.
+this library.  The source code for this library is located in [Azure/brigadier](https://github.com/Azure/brigadier).
 
 ```
 const brigadier = require('brigadier')
@@ -238,7 +238,7 @@ Properties:
 - `size: string`: The size, defaults to `5Mi`. This value is only evaluated the first
   time a job is cached. To resize, the cache must be destroyed manually.
 - `path: string`: A read-only attribute returning path (in the container) in which the cache
-  is available. EXPERIMENTAL: Support for setting the path was added in Brigade 0.15.
+  is available.
 
 ### The `JobDockerMount` class
 
@@ -266,7 +266,6 @@ A `JobHost` object provides preferences for the host upon which the job is execu
   Build storage exposes a mounted volume at `/mnt/brigade/share` with storage that
   can be shared across jobs.
 - `path: string`: The read-only path to the shared storage from within the container.
-  EXPERIMENTAL: Support for setting the `path` was added in Brigade 0.15.
 
 ### The `KubernetesConfig` class
 
