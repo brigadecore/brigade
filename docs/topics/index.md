@@ -12,6 +12,7 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
   - [Scripting Guide](scripting.md): How to write JavaScript for `brigade.js` files.
   - [Brigade.js Reference](javascript.md): The API for brigade.js files.
   - [Scripting Guide - Advanced](scripting_advanced.md): Advanced examples for `brigade.js` files.
+  - [Adding dependencies to `brigade.js`](dependencies.md): How to add local dependencies and NPM packages to your `brigade.js` files.
   - [GitHub Integration](github.md): A guide for configuring GitHub integration.
   - [Container Registry Integration](dockerhub.md): A guide for configuring integration with DockerHub or Azure Container Registry.
   - [Generic Gateway](genericgateway.md): How to use Brigade's Generic Gateway functionality.
