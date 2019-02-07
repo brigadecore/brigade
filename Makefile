@@ -78,13 +78,10 @@ build-release: brig-cross-compile
 .PHONY: helm-install
 helm-install: helm-upgrade
 
-# TODO: change chart back to brigade/brigade
-# TODO: remove brigade-github-app.rbac.enabled=true
 .PHONY: helm-upgrade
 helm-upgrade:
-	helm upgrade --install $(BRIGADE_RELEASE) ../brigade-charts/charts/brigade --namespace $(BRIGADE_NAMESPACE) \
+	helm upgrade --install $(BRIGADE_RELEASE) brigade/brigade --namespace $(BRIGADE_NAMESPACE) \
 		--set brigade-github-app.enabled=true \
-		--set brigade-github-app.rbac.enabled=true \
 		--set controller.tag=$(VERSION) \
 		--set api.tag=$(VERSION) \
 		--set worker.tag=$(VERSION) \

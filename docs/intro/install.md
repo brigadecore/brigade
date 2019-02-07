@@ -31,7 +31,7 @@ We'd then locate the external IP as follows:
 ```console
 $ kubectl get svc brigade-server-brigade-github-app
 NAME                                TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)          AGE
-brigade-server-brigade-github-app   LoadBalancer   10.0.110.59   135.15.52.20   7744:32394/TCP   45d
+brigade-server-brigade-github-app   LoadBalancer   10.0.110.59   135.15.52.20   80:30758/TCP     45d
 ```
 
 (Note that `brigade-server-brigade-github-app` is just the name of the Helm release (`brigade-server`) with `-brigade-github-app` appended)

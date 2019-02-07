@@ -3,10 +3,8 @@
 Brigade can optionally provide GitHub integration for triggering Brigade builds from GitHub events
 via the [Brigade Github App][brigade-github-app] project.  By default, this gateway is disabled.
 
-To get set up, follow the [instructions][brigade-github-app-readme]
-to create and configure a GitHub App.  This App can then be used across one or more repositories,
-as opposed to the older, [OAuth approach](https://github.com/brigadecore/github-gateway-oauth)
-requiring configuration for each individual respository.
+To get set up, follow the [instructions][brigade-github-app-readme] to create and configure a GitHub App.
+This App can then be used across one or more repositories, as opposed to the older, [OAuth approach](https://github.com/brigadecore/github-gateway-oauth) requiring configuration for each individual respository.
 
 Next, to enable this gateway for a Brigade installation, set the `brigade-github-app.enabled` to `true`:
 
@@ -15,9 +13,9 @@ $ helm install -n brigade brigade/brigade -f brigade-values.yaml --set brigade-g
 ```
 
 The rest of the `brigade-github-app` chart values can either be placed under the key of the same
-name in the main `brigade-values.yaml` file for the Brigade chart, or they can be placed in a separate yaml
-file.  Though, if the latter, be sure all of the configuration is still under this sub-chart's name,
-like this:
+name in the main values file for the Brigade chart (here called `brigade-values.yaml`), or they can be
+placed in a separate yaml file.  If the latter, be sure all of the configuration is still under this
+sub-chart's name, like this:
 
 ```
 $ cat brigade-github-app-values.yaml
