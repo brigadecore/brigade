@@ -50,7 +50,7 @@ docker-build: build-docker-bins
 docker-build: $(addsuffix -image,$(IMAGES))
 
 %-image:
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG) $*
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/$*:amd64-$(IMAGE_TAG) $*
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/$*:arm64v8-$(IMAGE_TAG) -f $*/Dockerfile.arm64v8 $*
 
 # You must be logged into DOCKER_REGISTRY before you can push.
@@ -58,7 +58,17 @@ docker-build: $(addsuffix -image,$(IMAGES))
 docker-push: $(addsuffix -push,$(IMAGES))
 
 %-push:
-	docker push $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG)
+	docker push $(DOCKER_REGISTRY)/$*:amd64-$(IMAGE_TAG)
+	docker push $(DOCKER_REGISTRY)/$*:arm64v8-$(IMAGE_TAG)
+
+	# Manifest creation
+	@if [ -d $(HOME)/.docker/manifests/docker.io_$(DOCKER_REGISTRY)_$*-$(IMAGE_VERSION) ]; then \
+		rm -rf $(HOME)/.docker/manifests/docker.io_$(DOCKER_REGISTRY)_$*-$(IMAGE_VERSION); \
+	fi
+
+	docker manifest create $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG) $(DOCKER_REGISTRY)/$*:amd64-$(IMAGE_TAG) $(DOCKER_REGISTRY)/$*:arm64v8-$(IMAGE_TAG)
+	docker manifest annotate --os linux --arch amd64 $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG) $(DOCKER_REGISTRY)/$*:amd64-$(IMAGE_TAG)
+	docker manifest annotate --os linux --arch arm64 --variant v8 $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG) $(DOCKER_REGISTRY)/$*:arm64v8-$(IMAGE_TAG)
 
 # Cross-compile binaries for our CX targets.
 # Mainly, this is for brig-cross-compile
