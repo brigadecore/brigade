@@ -40,7 +40,8 @@ $(BINS): vendor
 build-docker-bins: $(addsuffix -docker-bin,$(BINS))
 
 %-docker-bin: vendor
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$*/rootfs/$* ./$*/cmd/$*
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$*/rootfs/amd64/$* ./$*/cmd/$*
+	GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$*/rootfs/arm64/$* ./$*/cmd/$*
 
 # To use docker-build, you need to have Docker installed and configured. You should also set
 # DOCKER_REGISTRY to your own personal registry if you are not pushing to the official upstream.
@@ -50,6 +51,7 @@ docker-build: $(addsuffix -image,$(IMAGES))
 
 %-image:
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG) $*
+	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/$*:arm64v8-$(IMAGE_TAG) -f $*/Dockerfile.arm64v8 $*
 
 # You must be logged into DOCKER_REGISTRY before you can push.
 .PHONY: docker-push

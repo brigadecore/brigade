@@ -5,6 +5,6 @@ RUN apk update && apk add --no-cache \
     git \
     && update-ca-certificates
 
-COPY rootfs/brigade-cr-gateway /usr/bin/brigade-cr-gateway
+COPY rootfs/amd64/brigade-cr-gateway /usr/bin/brigade-cr-gateway
 
 CMD /usr/bin/brigade-cr-gateway

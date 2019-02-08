@@ -1,17 +1,17 @@
 /bin/
-/brig/rootfs/brig
-/brigade-api/rootfs/brigade-api
-/brigade-controller/rootfs/brigade-controller
-/brigade-cr-gateway/rootfs/brigade-cr-gateway
-/brigade-github-gateway/rootfs/brigade-github-gateway
-/brigade-generic-gateway/rootfs/brigade-generic-gateway
-/brigade-vacuum/rootfs/brigade-vacuum
+/brig/rootfs/*/brig
+/brigade-api/rootfs/*/brigade-api
+/brigade-controller/rootfs/*/brigade-controller
+/brigade-cr-gateway/rootfs/*/brigade-cr-gateway
+/brigade-github-gateway/rootfs/*/brigade-github-gateway
+/brigade-generic-gateway/rootfs/*/brigade-generic-gateway
+/brigade-vacuum/rootfs/*/brigade-vacuum
 /brigade-worker/dist/
 /brigade-worker/doc/
 /tests/testdata/*-generated.*
 /vendor/
+/qemu/
 node_modules/
-
 
 # IDEs
 .vscode/
