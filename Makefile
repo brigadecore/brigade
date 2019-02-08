@@ -69,6 +69,7 @@ docker-push: $(addsuffix -push,$(IMAGES))
 	docker manifest create $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG) $(DOCKER_REGISTRY)/$*:amd64-$(IMAGE_TAG) $(DOCKER_REGISTRY)/$*:arm64v8-$(IMAGE_TAG)
 	docker manifest annotate --os linux --arch amd64 $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG) $(DOCKER_REGISTRY)/$*:amd64-$(IMAGE_TAG)
 	docker manifest annotate --os linux --arch arm64 --variant v8 $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG) $(DOCKER_REGISTRY)/$*:arm64v8-$(IMAGE_TAG)
+	docker manifest push $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG)
 
 # Cross-compile binaries for our CX targets.
 # Mainly, this is for brig-cross-compile
