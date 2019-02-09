@@ -1,5 +1,5 @@
 FROM arm64v8/alpine:3.8
 ADD https://github.com/multiarch/qemu-user-static/releases/download/v3.1.0-2/x86_64_qemu-aarch64-static.tar.gz /usr/bin
 
-COPY rootfs/amd64/brigade-vacuum /usr/bin/brigade-vacuum
+COPY rootfs/arm64/brigade-vacuum /usr/bin/brigade-vacuum
 CMD /usr/bin/brigade-vacuum
