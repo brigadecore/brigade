@@ -1,6 +1,6 @@
 # Generic Gateway
 
-Brigade contains a Generic Gateway that can be used to accept requests from other platforms or systems. Generic Gateway is a separate component in the Brigade system, like Github and Container Registry (CR) Gateways.
+Brigade contains a Generic Gateway that can be used to accept requests from other platforms or systems. Generic Gateway is a separate component in the Brigade system, like Github and Container Registry (CR) Gateways. For the time being, Generic Gateway supports triggering Builds in Projects that have been configured with a `GitHub` repo. Support for additional Version Control Systems will come in future releases.
 
 Generic Gateway is _not enabled by default_.
 
