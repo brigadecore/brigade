@@ -760,3 +760,274 @@ func TestController_WithSidecarResources(t *testing.T) {
 		t.Errorf("Sidecar resources limit memory is not the expected one. Got: %s, Expected: %s", mem, sidecarRequestsMemory)
 	}
 }
+
+func TestController_WithDefaultServiceAccount(t *testing.T) {
+	createdPod := false
+	client := fake.NewSimpleClientset()
+	client.PrependReactor("create", "pods", func(action core.Action) (bool, runtime.Object, error) {
+		createdPod = true
+		t.Log("creating pod")
+		return false, nil, nil
+	})
+
+	config := &Config{
+		Namespace:             v1.NamespaceDefault,
+		WorkerImage:           "deis/brigade-worker:latest",
+		WorkerPullPolicy:      string(v1.PullIfNotPresent),
+		ProjectServiceAccount: "brigade-worker",
+	}
+	controller := NewController(client, config)
+
+	secret := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "moby",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "build",
+				"project":   "ahab",
+				"build":     "queequeg",
+			},
+		},
+		Data: map[string][]byte{
+			"script": []byte("hello"),
+		},
+	}
+
+	sidecarImage := "fake/sidecar:latest"
+	sidecarLimitsCPU := "100m"
+	sidecarLimitsMemory := "100Mi"
+	sidecarRequestsCPU := "50m"
+	sidecarRequestsMemory := "50Mi"
+	project := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "ahab",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "project",
+			},
+		},
+		// This and the missing 'script' will trigger an initContainer
+		Data: map[string][]byte{
+			"vcsSidecar":                          []byte(sidecarImage),
+			"vcsSidecarResources.limits.cpu":      []byte(sidecarLimitsCPU),
+			"vcsSidecarResources.limits.memory":   []byte(sidecarLimitsMemory),
+			"vcsSidecarResources.requests.cpu":    []byte(sidecarRequestsCPU),
+			"vcsSidecarResources.requests.memory": []byte(sidecarRequestsMemory),
+		},
+	}
+
+	// Now let's start the controller
+	stop := make(chan struct{})
+	defer close(stop)
+	go controller.Run(1, stop)
+
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+
+	// Let's wait for the controller to create the pod
+	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
+		return createdPod, nil
+	})
+
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	saEnvFound := false
+	for _, env := range pod.Spec.Containers[0].Env {
+		if env.Name == "BRIGADE_SERVICE_ACCOUNT" {
+			if env.Value != config.ProjectServiceAccount {
+				t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT")
+			}
+			saEnvFound = true
+		}
+	}
+
+	if !saEnvFound {
+		t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT")
+	}
+}
+
+func TestController_WithRegexServiceAccount(t *testing.T) {
+	createdPod := false
+	client := fake.NewSimpleClientset()
+	client.PrependReactor("create", "pods", func(action core.Action) (bool, runtime.Object, error) {
+		createdPod = true
+		t.Log("creating pod")
+		return false, nil, nil
+	})
+
+	config := &Config{
+		Namespace:                  v1.NamespaceDefault,
+		WorkerImage:                "deis/brigade-worker:latest",
+		WorkerPullPolicy:           string(v1.PullIfNotPresent),
+		ProjectServiceAccountRegex: "sa-*",
+	}
+	controller := NewController(client, config)
+
+	secret := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "moby",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "build",
+				"project":   "ahab",
+				"build":     "queequeg",
+			},
+		},
+		Data: map[string][]byte{
+			"script": []byte("hello"),
+		},
+	}
+
+	sidecarImage := "fake/sidecar:latest"
+	sidecarLimitsCPU := "100m"
+	sidecarLimitsMemory := "100Mi"
+	sidecarRequestsCPU := "50m"
+	sidecarRequestsMemory := "50Mi"
+	project := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "ahab",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "project",
+			},
+		},
+		// This and the missing 'script' will trigger an initContainer
+		Data: map[string][]byte{
+			"vcsSidecar":                          []byte(sidecarImage),
+			"vcsSidecarResources.limits.cpu":      []byte(sidecarLimitsCPU),
+			"vcsSidecarResources.limits.memory":   []byte(sidecarLimitsMemory),
+			"vcsSidecarResources.requests.cpu":    []byte(sidecarRequestsCPU),
+			"vcsSidecarResources.requests.memory": []byte(sidecarRequestsMemory),
+		},
+	}
+
+	// Now let's start the controller
+	stop := make(chan struct{})
+	defer close(stop)
+	go controller.Run(1, stop)
+
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+
+	// Let's wait for the controller to create the pod
+	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
+		return createdPod, nil
+	})
+
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	regexEnvFound := false
+	for _, env := range pod.Spec.Containers[0].Env {
+		if env.Name == "BRIGADE_SERVICE_ACCOUNT_REGEX" {
+			if env.Value != config.ProjectServiceAccountRegex {
+				t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT_REGEX")
+			}
+			regexEnvFound = true
+		}
+	}
+
+	if !regexEnvFound {
+		t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT_REGEX")
+	}
+}
+
+func TestController_WithOverrideServiceAccount(t *testing.T) {
+	createdPod := false
+	client := fake.NewSimpleClientset()
+	client.PrependReactor("create", "pods", func(action core.Action) (bool, runtime.Object, error) {
+		createdPod = true
+		t.Log("creating pod")
+		return false, nil, nil
+	})
+
+	config := &Config{
+		Namespace:             v1.NamespaceDefault,
+		WorkerImage:           "deis/brigade-worker:latest",
+		WorkerPullPolicy:      string(v1.PullIfNotPresent),
+		ProjectServiceAccount: "brigade-worker",
+	}
+	controller := NewController(client, config)
+
+	secret := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "moby",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "build",
+				"project":   "ahab",
+				"build":     "queequeg",
+			},
+		},
+		Data: map[string][]byte{
+			"script": []byte("hello"),
+		},
+	}
+
+	sidecarImage := "fake/sidecar:latest"
+	sidecarLimitsCPU := "100m"
+	sidecarLimitsMemory := "100Mi"
+	sidecarRequestsCPU := "50m"
+	sidecarRequestsMemory := "50Mi"
+	project := v1.Secret{
+		ObjectMeta: meta.ObjectMeta{
+			Name:      "ahab",
+			Namespace: v1.NamespaceDefault,
+			Labels: map[string]string{
+				"heritage":  "brigade",
+				"component": "project",
+			},
+		},
+		// This and the missing 'script' will trigger an initContainer
+		Data: map[string][]byte{
+			"vcsSidecar":                          []byte(sidecarImage),
+			"vcsSidecarResources.limits.cpu":      []byte(sidecarLimitsCPU),
+			"vcsSidecarResources.limits.memory":   []byte(sidecarLimitsMemory),
+			"vcsSidecarResources.requests.cpu":    []byte(sidecarRequestsCPU),
+			"vcsSidecarResources.requests.memory": []byte(sidecarRequestsMemory),
+			"serviceAccount":                      []byte("my-serviceaccount"),
+		},
+	}
+
+	// Now let's start the controller
+	stop := make(chan struct{})
+	defer close(stop)
+	go controller.Run(1, stop)
+
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+
+	// Let's wait for the controller to create the pod
+	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
+		return createdPod, nil
+	})
+
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	saEnvFound := false
+	for _, env := range pod.Spec.Containers[0].Env {
+		if env.Name == "BRIGADE_SERVICE_ACCOUNT" {
+			if env.Value != string(project.Data["serviceAccount"]) {
+				t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT")
+			}
+			saEnvFound = true
+		}
+	}
+
+	if !saEnvFound {
+		t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT")
+	}
+}
