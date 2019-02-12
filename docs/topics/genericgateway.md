@@ -2,11 +2,12 @@
 
 Brigade contains a Generic Gateway that can be used to accept requests from other platforms or systems. Generic Gateway is a separate component in the Brigade system, like Github and Container Registry (CR) Gateways.
 
-Generic Gateway is _not enabled by default_.
+Generic Gateway is _not enabled by default_ and provides Brigade developers with the ability to trigger scripts based on messages received from any platform that can send a POST HTTP request.
+
 
 ## Intro to Generic Gateway 
 
-Generic Gateway can optionally be activated to accept `POST` webhook requests at `/webhook/:projectID/:secret` path. When this endpoint is called, Brigade will respond by creating a Build with a `webhook` event. This provides Brigade developers with the ability to trigger scripts based on messages received from any platform that can send a POST HTTP request.
+Generic Gateway accepts `POST` JSON messages at `/simpleevent/:projectID/:secret` path. When this endpoint is called, Brigade will respond by creating a Build with a `simpleevent` event. 
 
 ## Generic Gateway
 
@@ -26,7 +27,7 @@ Alternatively, for enhanced security, you can install an SSL proxy (like `cert-m
 
 ## Using the Generic Gateway
 
-As mentioned, Generic Gateway accepts POST requests at `/webhook/:projectID/:secret` endpoint. These requests should also carry a JSON payload.
+As mentioned, Generic Gateway accepts POST requests at `/simpleevent/:projectID/:secret` endpoint. These requests should also carry a JSON payload.
 
 - `projectID` is the Brigade Project ID
 - `secret` is a custom secret for this specific project's Generic Gateway webhook support. In other words, each project that wants to accept Generic Gateway events should have its own Generic Gateway secret. This secret serves as a simple authentication mechanism.
@@ -35,22 +36,24 @@ When you create a new Brigade Project via Brig CLI, you can optionally create su
 
 *Important*: If you do not go into "Advanced Options" during `brig project create`, a secret will not be created and you will not be able to use Generic Gateway for your project. However, you can always use `brig project create --replace` (or just `kubectl edit` your project Secret) to update your project and include a `genericGatewaySecret` string value.
 
-When calling the Generic Gateway webhook endpoint, you can include a custom JSON payload such as:
+When calling the Generic Gateway `simpleevent` endpoint, you must include a custom JSON payload such as:
 
 ```json
 {
-	"ref": "refs/heads/changes",
-	"commit": "b60ad9543b2ddbbe73430dd6898b75883306cecc"
+    "ref": "refs/heads/changes",
+    "commit": "b60ad9543b2ddbbe73430dd6898b75883306cecc",
+    "key1": "value1",
+    "key2": "value2"
 }
 ```
 
-`Ref` and `commit` values would be used to configure the specific revision that Brigade will pull from your repository.
+`Ref` and `commit` values are used to configure the specific revision that Brigade will pull from your repository, if you're using one. If both values are missing, then your Build's `ref` will be set to `master`. If you do not wish to provide any payload, just include an empty JSON object (like `{}`).
 
 Last but not least, here is a sample Brigade.js file that could be used as a base for your own scripts that respond to Generic Gateway's `webhook` event. This script will echo the name of your project and 'webhook'.
 
 ```javascript
 const { events, Job } = require("brigadier");
-events.on("webhook", (e, p) => {
+  events.on("simpleevent", (e, p) => {
   var echo = new Job("echo", "alpine:3.8");
   echo.storage.enabled = false;
   echo.tasks = [
