@@ -2,11 +2,9 @@
 
 This document explains how to get started developing Brigade.
 
-Brigade is composed of numerous parts:
+Brigade is composed of numerous parts.  The following represent the core components:
 
 - brigade-controller: The Kubernetes controller for delegating Brigade events
-- brigade-github-gateway: The implementation of the GitHub web hooks. It requires
-  the controller.
 - brigade-worker: The JavaScript runtime for executing `brigade.js` files. The
   controller spawns these, though you can run one directly as well.
 - brigade-api: The REST API server for user interfaces
@@ -15,8 +13,19 @@ Brigade is composed of numerous parts:
 - brig: The Brigade CLI
 - git-sidecar: The code that runs as a sidecar in cluster to fetch Git repositories (optional; enabled by default)
 
-This document covers development of `brigade-controller`, `brigade-github-gateway`, and
-`brigade-worker`.
+Additionally, there are several opt-in gateways that can be enabled via Helm chart values.  These are:
+
+ - Brigade GitHub App Gateway: The implementation of the GitHub App web hooks. It requires
+  the controller.
+ - Generic Gateway: A generic gateway offering flexibility to create Brigade events from webhooks
+  originating from an arbitrary service/platform.
+- Container Registry Gateway: A gateway supporting container registry webhooks such as the ones emitted by
+DockerHub and ACR.
+
+Read up on all the gateways above, as well as others, in the [Gateways doc](./gateways.md).
+
+This document covers environment setup, how to run functional tests and development of
+`brigade-controller` and `brigade-worker` components.
 
 ## Prerequisites
 

@@ -7,13 +7,14 @@ LDFLAGS            :=
 
 
 # Helm chart/release defaults
-BRIGADE_RELEASE            ?= brigade-server
-BRIGADE_NAMESPACE          ?= default
-BRIGADE_GITHUB_GW_SERVICE  := $(BRIGADE_RELEASE)-brigade-github-gw
-BRIGADE_GITHUB_GW_PORT     := 7744
+BRIGADE_RELEASE                 ?= brigade-server
+BRIGADE_NAMESPACE               ?= default
+BRIGADE_GITHUB_GW_SERVICE       := $(BRIGADE_RELEASE)-brigade-github-app
+BRIGADE_GITHUB_GW_INTERNAL_PORT := 80
+BRIGADE_GITHUB_GW_EXTERNAL_PORT := 7744
 
-BINS        = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig
-IMAGES      = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig brigade-worker git-sidecar
+BINS        = brigade-api brigade-controller brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig
+IMAGES      = brigade-api brigade-controller brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig brigade-worker git-sidecar
 
 
 .PHONY: echo-images
@@ -80,11 +81,10 @@ helm-install: helm-upgrade
 .PHONY: helm-upgrade
 helm-upgrade:
 	helm upgrade --install $(BRIGADE_RELEASE) brigade/brigade --namespace $(BRIGADE_NAMESPACE) \
-		--set gw.service.type=ClusterIP \
+		--set brigade-github-app.enabled=true \
 		--set controller.tag=$(VERSION) \
 		--set api.tag=$(VERSION) \
 		--set worker.tag=$(VERSION) \
-		--set gw.tag=$(VERSION) \
 		--set cr.tag=$(VERSION) \
 		--set vacuum.tag=$(VERSION)
 
@@ -100,6 +100,8 @@ test-unit: vendor
 	go test -v ./...
 
 # Functional tests assume access to github.com
+# and Brigade chart installed with `--set brigade-github-app.enabled=true`
+#
 # To set this up in your local environment:
 # - Make sure kubectl is pointed to the right cluster
 # - Run "helm repo add brigade https://azure.github.io/brigade-charts"
@@ -119,7 +121,7 @@ KUBECONFIG       ?= ${HOME}/.kube/config
 .PHONY: test-functional
 test-functional: vendor
 test-functional:
-	@kubectl port-forward service/$(BRIGADE_GITHUB_GW_SERVICE) $(BRIGADE_GITHUB_GW_PORT) &>/dev/null & \
+	@kubectl port-forward service/$(BRIGADE_GITHUB_GW_SERVICE) $(BRIGADE_GITHUB_GW_EXTERNAL_PORT):80 &>/dev/null & \
 		echo $$! > /tmp/$(BRIGADE_GITHUB_GW_SERVICE).PID
 	go test --tags integration ./tests -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
 	@kill -TERM $$(cat /tmp/$(BRIGADE_GITHUB_GW_SERVICE).PID)
