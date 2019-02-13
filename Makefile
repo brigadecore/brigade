@@ -49,10 +49,6 @@ amd64_DOCKER_ANNOTATIONS = --os linux --arch amd64
 arm64_DOCKER_ANNOTATIONS = --os linux --arch arm64 --variant v8
 arm32_DOCKER_ANNOTATIONS = --os linux --arch arm
 
-# AMD64_BINS = $(shell echo "$(BIN_NAMES)" | sed 's/[a-z-]*/&\/rootfs\/amd64\/&/g')
-# ARM64_BINS = $(shell echo "$(BIN_NAMES)" | sed 's/[a-z-]*/&\/rootfs\/arm64\/&/g')
-# ARM32_BINS = $(shell echo "$(BIN_NAMES)" | sed 's/[a-z-]*/&\/rootfs\/arm32\/&/g')
-
 .PHONY: build build-images push-images dockerfiles
 
 define GO_CMD_TARGETS
@@ -98,38 +94,45 @@ create-$1-manifest: push-$1-images
 	docker manifest push $(DOCKER_REGISTRY)/$1:$(IMAGE_TAG)
 endef
 
-define BRIG_BUILD_TARGETS
+define BRIG_STATIC_ARCH_TARGETS
+.PHONY: build-$3-static
+build: build-$3-static
+
 ifeq ($1,windows)
 ifeq ($2,amd64)
-build-brig-static: bin/brig-$1-$2.exe
-bin/brig-$1-$2.exe: vendor $(shell find brig -type f -name '*.go')
-	GOOS=$1 GOARCH=$2 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$$@ ./brig/cmd/brig
+build-$3-static: bin/$3-$1-$2.exe
+bin/$3-$1-$2.exe: vendor $(shell find $3 -type f -name '*.go')
+	GOOS=$1 GOARCH=$2 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$$@ ./$3/cmd/$3
 endif
 endif
 
 ifeq ($1,darwin)
 ifeq ($2,amd64)
-build-brig-static: bin/brig-$1-$2
-bin/brig-$1-$2: vendor $(shell find brig -type f -name '*.go')
-	GOOS=$1 GOARCH=$2 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$$@ ./brig/cmd/brig
+build-$3-static: bin/$3-$1-$2
+bin/$3-$1-$2: vendor $(shell find $3 -type f -name '*.go')
+	GOOS=$1 GOARCH=$2 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$$@ ./$3/cmd/$3
 endif
 endif
 
 ifeq ($1,linux)
-build-brig-static: bin/brig-$1-$2
-bin/brig-$1-$2: vendor $(shell find brig -type f -name '*.go')
-	GOOS=$1 GOARCH=$$($2_GOARCH) CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$$@ ./brig/cmd/brig
+build-$3-static: bin/$3-$1-$2
+bin/$3-$1-$2: vendor $(shell find $3 -type f -name '*.go')
+	GOOS=$1 GOARCH=$$($2_GOARCH) CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$$@ ./$3/cmd/$3
 endif
 endef
 
+define BRIG_STATIC_TARGETS
+$(foreach cmd,$(BINS),$(eval $(call BRIG_STATIC_ARCH_TARGETS,$2,$1,$(cmd))))
+endef
+
 define GO_ARCH_TARGETS
-.PHONY: build-$1 build-$1-images push-$1-images build-brig-static
-build: build-$1 build-brig-static
+.PHONY: build-$1 build-$1-images push-$1-images
+build: build-$1
 build-images: build-$1-images
 push-images: push-$1-images
 
-$(foreach os,$(CX_OSES),$(eval $(call BRIG_BUILD_TARGETS,$(os),$1)))
-$(foreach cmd,$(BIN_NAMES),$(eval $(call GO_CMD_TARGETS,$(cmd),$1)))
+$(foreach os,$(CX_OSES),$(eval $(call BRIG_STATIC_TARGETS,$1,$(os))))
+$(foreach cmd,$(BINS),$(eval $(call GO_CMD_TARGETS,$(cmd),$1)))
 $(foreach img,$(IMAGES),$(eval $(call DOCKER_IMAGE_TARGETS,$(img),$1)))
 endef
 
