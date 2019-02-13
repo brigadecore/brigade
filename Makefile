@@ -6,13 +6,14 @@ DOCKER_BUILD_FLAGS :=
 LDFLAGS            :=
 
 # Helm chart/release defaults
-BRIGADE_RELEASE            ?= brigade-server
-BRIGADE_NAMESPACE          ?= default
-BRIGADE_GITHUB_GW_SERVICE  := $(BRIGADE_RELEASE)-brigade-github-gw
-BRIGADE_GITHUB_GW_PORT     := 7744
+BRIGADE_RELEASE                 ?= brigade-server
+BRIGADE_NAMESPACE               ?= default
+BRIGADE_GITHUB_GW_SERVICE       := $(BRIGADE_RELEASE)-brigade-github-app
+BRIGADE_GITHUB_GW_INTERNAL_PORT := 80
+BRIGADE_GITHUB_GW_EXTERNAL_PORT := 7744
 
-BIN_NAMES        = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig
-IMAGES           = brigade-api brigade-controller brigade-github-gateway brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig brigade-worker git-sidecar
+BINS        = brigade-api brigade-controller brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig
+IMAGES      = brigade-api brigade-controller brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig brigade-worker git-sidecar
 
 .PHONY: list
 list:
@@ -133,6 +134,20 @@ endef
 
 $(foreach arch,$(ARCHS),$(eval $(call GO_ARCH_TARGETS,$(arch))))
 $(foreach img,$(IMAGES),$(eval $(call DOCKER_MANIFEST_TARGETS,$(img))))
+
+.PHONY: helm-install
+helm-install: helm-upgrade
+
+.PHONY: helm-upgrade
+helm-upgrade:
+	helm upgrade --install $(BRIGADE_RELEASE) brigade/brigade --namespace $(BRIGADE_NAMESPACE) \
+		--set gw.service.type=ClusterIP \
+		--set controller.tag=$(VERSION) \
+		--set api.tag=$(VERSION) \
+		--set worker.tag=$(VERSION) \
+		--set gw.tag=$(VERSION) \
+		--set cr.tag=$(VERSION) \
+		--set vacuum.tag=$(VERSION)
 
 # All non-functional tests
 .PHONY: test

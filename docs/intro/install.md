@@ -14,17 +14,32 @@ At this point, you have a running Brigade service. You can use `helm get brigade
 
 ## Cluster Ingress
 
-By default, Brigade is configured to set up a service as a load balancer for your Brigade build system. To find out your IP address, run:
+By default, Brigade is not configured with a load balancer service for incoming requests.  Rather, cluster ingress
+comes in the form of one or more [Gateways](../topics/gateways.md) that provide configurable services, usually in tandem
+with ingress resources.
 
-```console
-$ kubectl get svc brigade-server-brigade-github-gw
-NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)          AGE
-brigade-server-brigade-github-gw   LoadBalancer   10.0.110.59   135.15.52.20   7744:32394/TCP   45d
+Let's take the example of enabling the [GitHub App Gateway](../topics/github.md).
+
+We would upgrade our `brigade-server` release like so:
+
+```
+$ helm upgrade -n brigade-server brigade/brigade --set brigade-github-app.enabled=true
 ```
 
-(Note that `brigade-server-brigade-github-gw` is just the name of the Helm release (`brigade-server`) with `-brigade-github-gw` appended)
+We'd then locate the external IP as follows:
 
-The `EXTERNAL-IP` field is the IP address that external services, such as GitHub, will use to trigger actions.
+```console
+$ kubectl get svc brigade-server-brigade-github-app
+NAME                                TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)          AGE
+brigade-server-brigade-github-app   LoadBalancer   10.0.110.59   135.15.52.20   80:30758/TCP     45d
+```
+
+(Note that `brigade-server-brigade-github-app` is just the name of the Helm release (`brigade-server`) with `-brigade-github-app` appended)
+
+The `EXTERNAL-IP` field is the IP address that external services, such as GitHub in this example, will use to trigger actions.
+
+There will be more configuration needed for the `brigade-github-app` sub-chart for GitHub events to reach a Brigade project.
+See more at [GitHub App Gateway](../topics/github.md).
 
 Note that this is just one way of configuring Brigade to receive inbound connections. Brigade itself does not care how traffic is routed to it. Those with operational knowledge of Kubernetes may wish to use another method of ingress routing.
 

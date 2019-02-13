@@ -124,4 +124,6 @@ type Kubernetes struct {
 	CacheStorageClass string `json:"cacheStorageClass"`
 	// AllowSecretKeyRef controls if secretKeyRefs can be used in the job's environment
 	AllowSecretKeyRef bool `json:"allowSecretKeyRef"`
+	// ServiceAccount is the service account to use for this project
+	ServiceAccount string `json:"serviceAccount"`
 }

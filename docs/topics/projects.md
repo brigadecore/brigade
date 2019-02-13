@@ -246,7 +246,7 @@ for (optionally) adding an SSH key.
 ## Using other Git providers
 
 Git providers like BitBucket or GitLab should work fine as Brigade _projects_. However,
-the Brigade Gateway does not necessarily support them (yet).
+the [Brigade GitHub Gateway](./github.md) does not necessarily support them (yet).
 
 You must ensure, however, that your Kubernetes cluster can access the Git repository
 over the network via the URL provided in `cloneURL`.

@@ -372,6 +372,14 @@ func projectAdvancedPrompts(p *brigade.Project, store storage.Store) error {
 				Default: p.Kubernetes.AllowSecretKeyRef,
 			},
 		},
+		{
+			Name: "serviceAccount",
+			Prompt: &survey.Input{
+				Message: "Project Service Account",
+				Help:    "The kubernetes service account that the project should use. If not given the controller's default will be used",
+				Default: "",
+			},
+		},
 	}
 
 	// get the StorageClass.Name for the storage classes in the cluster

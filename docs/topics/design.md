@@ -20,8 +20,6 @@ scripting of Kubernetes pipelines.
 - **Brigade** is the name of the project. Often, the term is used generically to
   refer to the in-cluster Brigade components.
   - **Brigade Controller** is the name of the central controller.
-  - **Brigade Gateway** is the default gateway that ships with Brigade. It provides
-    GitHub hook implementations.
   - **Brigade API** is an API server used to access information about Brigade's
     current and past workloads.
 - **Brig** is a command line client for Brigade.
@@ -154,13 +152,13 @@ Brigade has several functional concepts.
 
 A Gateway is a workload, typically a Kubernetes Deployment fronted by a Service
 or Ingress, that transforms a trigger (inbound webhook, item on queue) into a
-Brigade event. The default `brigade-gw` gateway provides HTTP(S) endpoints that
-GitHub webhooks can target.
+Brigade event.
 
 ![Service, Trigger, Gateway, Event](img/design-trigger-gateway.png)
 
 The illustration above shows how GitHub translates a Git event into a webhook, which
-the Brigade Gateway translates into an event to be consumed by the Brigade controller.
+the optional [Brigade GitHub Gateway](./github.md) translates into an event to be
+consumed by the Brigade controller.
 
 In Brigade, all scripts are executed in the context of a _project_. Projects are
 represented as Kubernetes Secrets.

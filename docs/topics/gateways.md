@@ -10,16 +10,17 @@ scripts run as a response to one or more events. In Brigade, a _gateway_ is an
 entity that generates events. Often times, it translates some external trigger
 into a Brigade event.
 
-Brigade ships with two default gateways that translate webhook requests into Brigade
-events: The [GitHub gateway](github.md) and the
-[container registry gateway](dockerhub.md).
-These both provide HTTP-based listeners that receive incoming requests
-and generate Brigade events as a result.
+Brigade ships with the ability to enable various gateways that are ready to go.
 
-Note: There also exists an optional [Generic Gateway](./genericgateway.md) that can handle
-requests from other platforms or systems and generate appropriate Brigade events.
+These include the [Container Registry Gateway](dockerhub.md), the [Github Gateway](./github.md)
+and the [Generic Gateway](./genericgateway.md).  They can all be enabled via top-level
+Helm [chart flags](https://github.com/Azure/brigade-charts/blob/master/charts/brigade/values.yaml).
 
-The gateway system works with more than just webhooks.
+All of these provide HTTP-based listeners that receive incoming requests
+(from a container registry, Github or other platforms and systems) and generate
+Brigade events as a result.
+
+However, Brigade's gateway system works with more than just webhooks.
 
 For example, the `brig` client also acts as a gateway. When you execute a `brig run`
 command, `brig` creates a Brigade event. By default, it emits an `exec` event. And

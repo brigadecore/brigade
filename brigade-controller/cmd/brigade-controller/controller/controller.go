@@ -15,14 +15,16 @@ import (
 
 // Config is config for setting Controller
 type Config struct {
-	Namespace            string
-	WorkerImage          string
-	WorkerPullPolicy     string
-	WorkerServiceAccount string
-	WorkerRequestsCPU    string
-	WorkerRequestsMemory string
-	WorkerLimitsCPU      string
-	WorkerLimitsMemory   string
+	Namespace                  string
+	WorkerImage                string
+	WorkerPullPolicy           string
+	WorkerServiceAccount       string
+	ProjectServiceAccount      string
+	ProjectServiceAccountRegex string
+	WorkerRequestsCPU          string
+	WorkerRequestsMemory       string
+	WorkerLimitsCPU            string
+	WorkerLimitsMemory         string
 }
 
 // Controller listens for new brigade builds and starts the worker pods.
