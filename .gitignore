@@ -13,6 +13,11 @@
 /qemu/
 node_modules/
 
+# Built dockerfiles
+*/Dockerfile.amd64
+*/Dockerfile.arm64
+*/Dockerfile.arm32
+
 # IDEs
 .vscode/
 .idea/

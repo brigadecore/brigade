@@ -1,7 +1,8 @@
-FROM alpine:3.8
+FROM ${DOCKER_ARCH}/alpine:3.8
+${QEMU_IMPORT}
 
 RUN apk add --no-cache ca-certificates && update-ca-certificates
 
-COPY rootfs/amd64/brigade-controller /usr/bin/brigade-controller
+COPY rootfs/${ARCH}/brigade-controller /usr/bin/brigade-controller
 
 CMD /usr/bin/brigade-controller

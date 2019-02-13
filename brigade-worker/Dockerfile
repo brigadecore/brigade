@@ -1,4 +1,5 @@
-FROM node:8-alpine
+FROM ${DOCKER_ARCH}/node:8-alpine
+${QEMU_IMPORT}
 
 WORKDIR /home/src
 COPY . /home/src
