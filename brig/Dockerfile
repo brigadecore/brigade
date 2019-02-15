@@ -1,8 +1,8 @@
-FROM ${DOCKER_ARCH}/alpine:3.8
-${QEMU_IMPORT}
+FROM {{.docker}}/alpine:3.8
+{{.qemu}}
 
 RUN apk add --no-cache ca-certificates && update-ca-certificates
 
-COPY rootfs/${ARCH}/brig /usr/bin/brig
+COPY rootfs/{{.arch}}/brig /usr/bin/brig
 
 CMD /usr/bin/brig

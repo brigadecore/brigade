@@ -1,8 +1,8 @@
-FROM ${DOCKER_ARCH}/node:8-alpine
-${QEMU_IMPORT}
+FROM {{.docker}}/node:8-alpine
+{{.qemu}}
 
 WORKDIR /home/src
 COPY . /home/src
-RUN yarn install && yarn build
+RUN yarn install && yarn build && yarn cache clean
 
 CMD yarn run test
