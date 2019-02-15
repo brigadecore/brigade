@@ -355,7 +355,7 @@ define IMAGE_BIN_ARCH_TARGETS
 build-image-bins-$1-$2: $1/rootfs/$2/$1 _vendor
 	$$(call echo_invocation)
 
-$1/rootfs/$2/$1: $(shell find $1 -type f -name '*.go') _vendor
+$1/rootfs/$2/$1: $(shell find $1 -type f -name '*.go') | _vendor
 	$$(call echo_invocation)
 	GOOS=linux GOARCH=$$($2_GOARCH) CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$$@ ./$1/cmd/$1
 endef
@@ -408,7 +408,7 @@ build-$1-images: build-$1-$2-images
 push-$1-images: push-$1-$2-images
 
 .PHONY: build-$1-$2-images
-build-$1-$2-images: $1/Dockerfile.$2
+build-$1-$2-images: $1/Dockerfile.$2 $(if $(filter $1,$(BINS)),$1/rootfs/$2/$1)
 	$$(call echo_invocation)
 	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/$1:$2-$(IMAGE_TAG) -f $1/Dockerfile.$2 $1
 
@@ -420,7 +420,7 @@ endif
 	$$(call echo_invocation)
 	docker push $(DOCKER_REGISTRY)/$1:$2-$(IMAGE_TAG)
 
-$1/Dockerfile.$2: $1/Dockerfile _vendor
+$1/Dockerfile.$2: $1/Dockerfile | _vendor
 	$$(call echo_invocation)
 	@echo "arch=\"$2\"\ndocker=\"$$($2_DOCKER_ARCH)\"\nqemu=\"$$($2_QEMU_IMPORT)\"" | gomplate -f $1/Dockerfile -c .=stdin:///context.env > ./$$@
 endef
@@ -444,9 +444,10 @@ _COLOR_RESET  := $(shell echo "\033[0m")
 _TARGET_NAME        = $(_COLOR_CYAN)$@$(_COLOR_RESET)
 _DEPENDENCIES       = $(_COLOR_GREEN)$(filter-out $?,$^)$(_COLOR_RESET)
 _NEWER_TRIGGERS     = $(if $?, $(_COLOR_RED)$?$(_COLOR_RESET))
+_RUN_BEFORE_DEPS    = $(if $|, $(_COLOR_GRAY)|$(_COLOR_RESET)$(_COLOR_YELLOW)$|$(_COLOR_RESET))
 _INVOCATION         = $(_COLOR_GRAY)[$(_COLOR_RESET)$(_TARGET_NAME)$(_COLOR_GRAY)]$(_COLOR_RESET)
 define echo_invocation
-$(if $(DEBUG_MAKE),@echo "$(_INVOCATION) $(_DEPENDENCIES)$(_NEWER_TRIGGERS)")
+$(if $(DEBUG_MAKE),@echo "$(_INVOCATION) $(_DEPENDENCIES)$(_NEWER_TRIGGERS)$(_RUN_BEFORE_DEPS)")
 endef
 
 ifdef DEBUG_MAKE
