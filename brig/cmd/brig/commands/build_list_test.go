@@ -66,10 +66,10 @@ func TestGetBuildList(t *testing.T) {
 	if bls[0].since != "???" || bls[0].ID != stubBuild2ID {
 		t.Error("Error in build2 time")
 	}
-	if bls[1].since != "1m" || bls[1].ID != stubBuild3ID {
+	if bls[1].since != "3m" || bls[1].ID != stubBuild3ID {
 		t.Error("Error in build3 time")
 	}
-	if bls[2].since != "2m" || bls[2].ID != stubBuild1ID {
+	if bls[2].since != "5m" || bls[2].ID != stubBuild1ID {
 		t.Error("Error in build1 time")
 	}
 }
@@ -90,7 +90,7 @@ func TestGetBuildListWithProject(t *testing.T) {
 	if bls[0].since != "???" || bls[0].ID != stubBuild2ID {
 		t.Error("Error in build2")
 	}
-	if bls[1].since != "2m" || bls[1].ID != stubBuild1ID {
+	if bls[1].since != "5m" || bls[1].ID != stubBuild1ID {
 		t.Error("Error in build1")
 	}
 
@@ -112,7 +112,7 @@ func TestGetBuildListCountTwo(t *testing.T) {
 	if bls[0].since != "???" || bls[0].ID != stubBuild2ID {
 		t.Error("Error in build2 time")
 	}
-	if bls[1].since != "1m" || bls[1].ID != stubBuild3ID {
+	if bls[1].since != "3m" || bls[1].ID != stubBuild3ID {
 		t.Error("Error in build3 time")
 	}
 

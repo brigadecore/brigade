@@ -109,7 +109,7 @@ func getBuilds(project string, client kubernetes.Interface, count int) ([]*build
 		if b.Worker != nil {
 			bfs.status = b.Worker.Status.String()
 			if b.Worker.Status == brigade.JobSucceeded || b.Worker.Status == brigade.JobFailed {
-				bfs.since = duration.ShortHumanDuration(time.Since(b.Worker.EndTime))
+				bfs.since = duration.ShortHumanDuration(time.Since(b.Worker.StartTime))
 			}
 		}
 		bfss = append(bfss, bfs)
