@@ -128,7 +128,7 @@ func TestGenericWebhookHandlerCorrectProjectCorrectSecretSimpleEvent(t *testing.
 	store, router, rw, httpRequest := getTestInfra(exampleSimpleEvent)
 	router.ServeHTTP(rw, httpRequest)
 	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
+		t.Errorf("expected 200, got %d", rw.Result().StatusCode)
 	}
 	checkBuild(t, store, "refs/heads/changes", "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28", []byte(exampleSimpleEvent))
 
@@ -141,7 +141,7 @@ func TestGenericWebhookHandlerCorrectProjectCorrectSecretSimpleEvent(t *testing.
 	store, router, rw, httpRequest = getTestInfra(exampleSimpleEvent2)
 	router.ServeHTTP(rw, httpRequest)
 	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
+		t.Errorf("expected 200, got %d", rw.Result().StatusCode)
 	}
 	checkBuild(t, store, "refs/heads/changes", "", []byte(exampleSimpleEvent2))
 
@@ -154,7 +154,7 @@ func TestGenericWebhookHandlerCorrectProjectCorrectSecretSimpleEvent(t *testing.
 	store, router, rw, httpRequest = getTestInfra(exampleSimpleEvent3)
 	router.ServeHTTP(rw, httpRequest)
 	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
+		t.Errorf("expected 200, got %d", rw.Result().StatusCode)
 	}
 	checkBuild(t, store, "", "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28", []byte(exampleSimpleEvent3))
 
@@ -167,7 +167,7 @@ func TestGenericWebhookHandlerCorrectProjectCorrectSecretSimpleEvent(t *testing.
 	store, router, rw, httpRequest = getTestInfra(exampleSimpleEvent4)
 	router.ServeHTTP(rw, httpRequest)
 	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
+		t.Errorf("expected 200, got %d", rw.Result().StatusCode)
 	}
 	checkBuild(t, store, "master", "", []byte(exampleSimpleEvent4))
 
@@ -181,14 +181,14 @@ func TestGenericWebhookHandlerCorrectProjectCorrectSecretSimpleEvent(t *testing.
 	_, router, rw, httpRequest = getTestInfra(exampleSimpleEvent5)
 	router.ServeHTTP(rw, httpRequest)
 	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
+		t.Errorf("expected 400, got %d", rw.Result().StatusCode)
 	}
 
 	exampleSimpleEvent6 := `{}`
 	store, router, rw, httpRequest = getTestInfra(exampleSimpleEvent6)
 	router.ServeHTTP(rw, httpRequest)
 	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
+		t.Errorf("expected 200, got %d", rw.Result().StatusCode)
 	}
 	checkBuild(t, store, "master", "", []byte(exampleSimpleEvent6))
 
@@ -196,7 +196,7 @@ func TestGenericWebhookHandlerCorrectProjectCorrectSecretSimpleEvent(t *testing.
 	_, router, rw, httpRequest = getTestInfra(exampleSimpleEvent7)
 	router.ServeHTTP(rw, httpRequest)
 	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
+		t.Errorf("expected 400, got %d", rw.Result().StatusCode)
 	}
 }
 

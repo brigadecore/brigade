@@ -35,18 +35,9 @@ func (g *genericWebhookSimpleEvent) Handle(c *gin.Context) {
 		return
 	}
 
-	// if the secret is "" (probably due to a Brigade upgrade or user did not create a Generic Gateway secret during `brig project create`)
-	// refuse to serve it, so Brigade admin will be forced to update the project with a non-empty secret
-	if proj.GenericGatewaySecret == "" {
-		log.Printf("Secret for project %s is empty, please update it and try again", projectID)
-		c.JSON(http.StatusUnauthorized, gin.H{"status": "secret for this Brigade Project is empty, refusing to serve, please inform your Brigade admin"})
-		return
-	}
-
-	// compare secrets
-	if secret != proj.GenericGatewaySecret {
-		log.Printf("Secret %s for project %s is wrong", secret, projectID)
-		c.JSON(http.StatusUnauthorized, gin.H{"status": "secret is wrong"})
+	err = validateGenericGatewaySecret(proj, secret)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": err.Error()})
 		return
 	}
 

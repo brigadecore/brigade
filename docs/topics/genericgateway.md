@@ -7,7 +7,22 @@ Generic Gateway is _not enabled by default_ and provides Brigade developers with
 
 ## Intro to Generic Gateway 
 
-Generic Gateway accepts `POST` JSON messages at `/simpleevent/:projectID/:secret` path. When this endpoint is called, Brigade will respond by creating a Build with a `simpleevent` event. 
+Generic Gateway listens and accepts `POST` JSON messages at two different endpoints, `/simpleevent/:projectID/:secret` and `/cloudevent/:projectID/:secret`. When one of these endpoints is called, Brigade will respond by creating a Build with a `simpleevent` event or a `cloudevent` one, respectively. 
+
+### SimpleEvent
+
+Generic Gateway accepts valid JSON objects (thereafter called `SimpleEvent`) at the `/simpleevent/:projectID/:secret` endpoint. Here's a sample JSON object:
+
+```json
+{
+    "ref": "refs/heads/changes",
+    "commit": "b60ad9543b2ddbbe73430dd6898b75883306cecc"
+}
+```
+
+### CloudEvent
+
+Generic Gateway accepts [CloudEvents](https://cloudevents.io/) messages at the `/cloudevent/:projectID/:secret` endpoint. We currently support [version 0.2](https://github.com/cloudevents/spec/blob/v0.2/spec.md) of the [CloudEvents specification](https://github.com/cloudevents/spec), using the [CloudEvents Go SDK](https://github.com/cloudevents/sdk-go). CloudEvent messages should be JSON encoded and transferred via HTTP(S).
 
 ## Generic Gateway
 
@@ -27,7 +42,7 @@ Alternatively, for enhanced security, you can install an SSL proxy (like `cert-m
 
 ## Using the Generic Gateway
 
-As mentioned, Generic Gateway accepts POST requests at `/simpleevent/:projectID/:secret` endpoint. These requests should also carry a JSON payload.
+As mentioned, Generic Gateway accepts POST requests at `/simpleevent/:projectID/:secret` and `/cloudevent/:projectID/:secret` endpoint. These requests should also carry a JSON payload (either a SimpleEvent or a CloudEvent).
 
 - `projectID` is the Brigade Project ID
 - `secret` is a custom secret for this specific project's Generic Gateway webhook support. In other words, each project that wants to accept Generic Gateway events should have its own Generic Gateway secret. This secret serves as a simple authentication mechanism.
@@ -36,7 +51,9 @@ When you create a new Brigade Project via Brig CLI, you can optionally create su
 
 *Important*: If you do not go into "Advanced Options" during `brig project create`, a secret will not be created and you will not be able to use Generic Gateway for your project. However, you can always use `brig project create --replace` (or just `kubectl edit` your project Secret) to update your project and include a `genericGatewaySecret` string value.
 
-When calling the Generic Gateway `simpleevent` endpoint, you must include a custom JSON payload such as:
+### Calling the SimpleEvent endpoint
+
+When calling the Generic Gateway `simpleevent` endpoint, you must include a SimpleEvent with a custom JSON payload such as:
 
 ```json
 {
@@ -47,18 +64,60 @@ When calling the Generic Gateway `simpleevent` endpoint, you must include a cust
 }
 ```
 
-`Ref` and `commit` values are used to configure the specific revision that Brigade will pull from your repository, if you're using one. If both values are missing, then your Build's `ref` will be set to `master`. If you do not wish to provide any payload, just include an empty JSON object (like `{}`).
+`ref` and `commit` values are used to configure the specific revision that Brigade will pull from your repository, if you're using one. If both values are missing, your Build's `ref` will be set to `master`. Of course, you can also provide any other values you need.
+If you do not wish to provide any payload, just send an empty JSON object (`{}`). 
 
-Last but not least, here is a sample Brigade.js file that could be used as a base for your own scripts that respond to Generic Gateway's `webhook` event. This script will echo the name of your project and 'webhook'.
+### Calling the CloudEvent endpoint
+
+When calling the Generic Gateway `cloudevent` endpoint, you must include a valid [0.2 CloudEvent](https://github.com/cloudevents/spec/blob/v0.2/spec.md) message such as:
+
+```json
+{
+    "type":   "com.example.file.created",
+    "source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
+    "id":     "ea35b24ede421",
+    "specversion": "0.2",
+    "data": {
+        "ref": "refs/heads/changes",
+        "commit": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28",
+        "key1": "value1",
+        "key2": "value2"
+  }
+}
+```
+
+Bear in mind that 0.2 Cloud Events specification requires non-empty and proper values for "type","source","id" and "specversion".
+
+A CloudEvent may include domain-specific information in the `data` field ([source](https://github.com/cloudevents/spec/blob/v0.2/spec.md#data-attribute)). Consequently, Brigade tries to read `ref` and `commit` values in the `data` field to configure the specific revision that Brigade will pull from your repository, if you're using one. If both values are missing, your Build's `ref` will be set to `master`.
+
+## Sample Brigade.js
+
+Here is a sample Brigade.js file that could be used as a base for your own scripts that respond to both Generic Gateway's event. 
 
 ```javascript
 const { events, Job } = require("brigadier");
-  events.on("simpleevent", (e, p) => {
-  var echo = new Job("echo", "alpine:3.8");
+  events.on("simpleevent", (e, p) => { 
+  var echo = new Job("echosimpleevent", "alpine:3.8");
   echo.storage.enabled = false;
   echo.tasks = [
     "echo Project " + p.name,
-    "echo Event $EVENT_NAME"
+    "echo SimpleEvent $EVENT_NAME"
+  ];
+
+  echo.env = {
+    "EVENT_NAME": e.type
+  };
+
+  echo.run();
+});
+
+const { events, Job } = require("brigadier");
+  events.on("cloudevent", (e, p) => { 
+  var echo = new Job("echocloudevent", "alpine:3.8");
+  echo.storage.enabled = false;
+  echo.tasks = [
+    "echo Project " + p.name,
+    "echo CloudEvent $EVENT_NAME"
   ];
 
   echo.env = {

@@ -49,13 +49,15 @@ func newRouter(store storage.Store) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Recovery())
 
-	handler := webhook.NewGenericWebhookSimpleEvent(store)
+	handlerSE := webhook.NewGenericWebhookSimpleEvent(store)
+	eventsSE := router.Group("/simpleevent")
+	eventsSE.Use(gin.Logger())
+	eventsSE.POST("/:projectID/:secret", handlerSE)
 
-	events := router.Group("/simpleevent")
-	{
-		events.Use(gin.Logger())
-		events.POST("/:projectID/:secret", handler)
-	}
+	handlerCE := webhook.NewGenericWebhookCloudEvent(store)
+	eventsCE := router.Group("/cloudevent")
+	eventsCE.Use(gin.Logger())
+	eventsCE.POST("/:projectID/:secret", handlerCE)
 
 	router.GET("/healthz", healthz)
 	return router
