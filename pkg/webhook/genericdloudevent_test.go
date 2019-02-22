@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/Azure/brigade/pkg/brigade"
 	"github.com/Azure/brigade/pkg/storage"
 	"github.com/Azure/brigade/pkg/storage/mock"
 
@@ -19,7 +20,7 @@ func newTestGenericWebhookHandlerCloudEvent(store storage.Store) *genericWebhook
 	return &genericWebhookCloudEvent{store}
 }
 
-func TestGenericWebhookCloudEvent(t *testing.T) {
+func TestGenericWebhookCloudEventHandler(t *testing.T) {
 	proj := newGenericProject()
 	store := newTestStore()
 	h := newTestGenericWebhookHandlerCloudEvent(store)
@@ -47,323 +48,250 @@ func TestGenericWebhookCloudEvent(t *testing.T) {
 	}
 }
 
-func TestGenericWebhookHandlerCloudEventBadBody(t *testing.T) {
-	store := newEmptyTestStore()
-	router := newMockRouterCloudEvent(store)
+func TestGenericWebhookHandlerCloudEvent(t *testing.T) {
+	t.Parallel()
 
-	httpRequest := httptest.NewRequest("POST", "/cloudevent/fakeProject/fakeCode", bytes.NewBuffer(nil))
-	httpRequest.Header.Add("Content-Type", "application/json")
-
-	rw := httptest.NewRecorder()
-
-	router.ServeHTTP(rw, httpRequest)
-
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
+	tests := []struct {
+		description    string
+		url            string
+		statusExpected int
+		store          *mock.Store
+		payload        string
+		revision       *brigade.Revision
+	}{
+		{
+			description:    "Wrong project",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusBadRequest,
+			store:          newTestStoreWithFakeProject2(),
+			payload:        exampleCloudEvent,
+		},
+		{
+			description:    "Correct project, empty secret",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusUnauthorized,
+			store:          newTestStoreWithFakeProject(),
+			payload:        exampleCloudEvent,
+		},
+		{
+			description:    "both ref and commit in JSON payload",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusOK,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload: `
+			{
+				"type":   "com.example.file.created",
+				"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
+				"id":     "ea35b24ede421",
+				"specversion": "0.2",
+				"data": {
+					"ref": "refs/heads/changes",
+					"commit": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"
+				}
+			}`,
+			revision: &brigade.Revision{Ref: "refs/heads/changes", Commit: "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"},
+		},
+		{
+			description:    "only ref in JSON payload",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusOK,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload: `
+			{
+				"type":   "com.example.file.created",
+				"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
+				"id":     "ea35b24ede421",
+				"specversion": "0.2",
+				"data": {
+					"ref": "refs/heads/changes"
+				}
+			}`,
+			revision: &brigade.Revision{Ref: "refs/heads/changes"},
+		},
+		{
+			description:    "only commit in JSON payload",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusOK,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload: `
+			{
+				"type":   "com.example.file.created",
+				"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
+				"id":     "ea35b24ede421",
+				"specversion": "0.2",
+				"data": {
+					"commit": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"
+				}
+			}`,
+			revision: &brigade.Revision{Commit: "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"},
+		},
+		{
+			description:    "custom JSON object inside commit",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusOK,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload: `
+			{
+				"type":   "com.example.file.created",
+				"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
+				"id":     "ea35b24ede421",
+				"specversion": "0.2",
+				"data": {
+					"commit": {
+						"hello": "another JSON object! hooray!"
+					}
+				}
+			}`,
+			revision: &brigade.Revision{Ref: "master"},
+		},
+		{
+			description:    "custom JSON object inside ref",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusOK,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload: `
+			{
+				"type":   "com.example.file.created",
+				"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
+				"id":     "ea35b24ede421",
+				"specversion": "0.2",
+				"data": {
+					"ref": {
+						"hello": "another JSON object! hooray!"
+					}
+				}
+			}`,
+			revision: &brigade.Revision{Ref: "master"},
+		},
+		{
+			description:    "random values inside data",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusOK,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload: `
+			{
+				"type":   "com.example.file.created",
+				"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
+				"id":     "ea35b24ede421",
+				"specversion": "0.2",
+				"data": {
+					"val1": "refs/heads/changes",
+					"val2": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"
+				}
+			}`,
+			revision: &brigade.Revision{Ref: "master"},
+		},
+		{
+			description:    "corrupt JSON",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusBadRequest,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload: `
+			{
+				"type":   "com.example.file.created",
+				"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
+				"id":     "ea35b24ede421",
+				"specversion": "0.2",
+				"data": {
+					"val1": "refs/heads/changes",
+					"val2": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"
+				}CORRUPT
+			}`,
+			revision: nil,
+		},
+		{
+			description:    "missing Spec version",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusBadRequest,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload: `
+			{
+				"type":   "com.example.file.created",
+				"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
+				"id":     "ea35b24ede421"
+			}`,
+			revision: nil,
+		},
+		{
+			description:    "empty POST data",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusBadRequest,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload:        ``,
+			revision:       nil,
+		},
+		{
+			description:    "wrong spec version",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusBadRequest,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload: `
+			{
+				"type":   "com.example.file.created",
+				"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
+				"id":     "ea35b24ede421",
+				"specversion": "0.1"
+			}`,
+			revision: nil,
+		},
+		{
+			description:    "missing type",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusBadRequest,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload: `
+			{
+				"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
+				"id":     "ea35b24ede421",
+				"specversion": "0.2"
+			}`,
+			revision: nil,
+		},
+		{
+			description:    "missing source",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusBadRequest,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload: `
+			{
+				"type":   "com.example.file.created",
+				"id":     "ea35b24ede421",
+				"specversion": "0.2"
+			}`,
+			revision: nil,
+		},
+		{
+			description:    "missing id",
+			url:            "/cloudevents/v02/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusBadRequest,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload: `
+			{
+				"type":   "com.example.file.created",
+				"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
+				"specversion": "0.2"
+			}`,
+			revision: nil,
+		},
 	}
-}
 
-func TestGenericWebhookHandlerCloudEventWrongProject(t *testing.T) {
-
-	store := newTestStoreWithFakeProject2()
-	router := newMockRouterCloudEvent(store)
-
-	httpRequest := httptest.NewRequest("POST", "/cloudevent/brigade-fakeProject/fakeCode", bytes.NewBuffer([]byte(exampleCloudEvent)))
-	httpRequest.Header.Add("Content-Type", "application/json")
-
-	rw := httptest.NewRecorder()
-	router.ServeHTTP(rw, httpRequest)
-
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
-	}
-}
-
-func TestGenericWebhookHandlerCloudEventCorrectProjectEmptySecret(t *testing.T) {
-	store := newTestStoreWithFakeProject()
-	router := newMockRouterCloudEvent(store)
-
-	httpRequest := httptest.NewRequest("POST", "/cloudevent/brigade-fakeProject/fakeCode", bytes.NewBuffer([]byte(exampleCloudEvent)))
-	httpRequest.Header.Add("Content-Type", "application/json")
-
-	rw := httptest.NewRecorder()
-	router.ServeHTTP(rw, httpRequest)
-
-	if rw.Result().StatusCode != http.StatusUnauthorized {
-		t.Errorf("expected error 401, got %d", rw.Result().StatusCode)
-	}
-}
-
-func TestGenericWebhookHandlerCorrectProjectCorrectSecretCloudEvent(t *testing.T) {
-	getTestInfra := func(postdata string) (*mock.Store, *gin.Engine, *httptest.ResponseRecorder, *http.Request) {
-		store := newTestStoreWithFakeProject()
-		store.ProjectList[0].GenericGatewaySecret = "fakeCode"
-		router := newMockRouterCloudEvent(store)
-		rw := httptest.NewRecorder()
-		httpRequest := httptest.NewRequest("POST", "/cloudevent/brigade-fakeProject/fakeCode", bytes.NewBuffer([]byte(postdata)))
-		httpRequest.Header.Add("Content-Type", "application/json")
-		return store, router, rw, httpRequest
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////
-
-	exampleCloudEvent1 := `
-	{
-		"type":   "com.example.file.created",
-		"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
-		"id":     "ea35b24ede421",
-		"specversion": "0.2",
-		"data": {
-			"ref": "refs/heads/changes",
-			"commit": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"
-		}
-	}
-	`
-
-	// this test checks both ref and commit in JSON payload
-	store, router, rw, httpRequest := getTestInfra(exampleCloudEvent1)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected 200, got %d", rw.Result().StatusCode)
-	}
-	checkBuild(t, store, "refs/heads/changes", "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28", []byte(exampleCloudEvent1))
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	// this test checks only ref in JSON payload
-
-	exampleCloudEvent2 := `
-	{
-		"type":   "com.example.file.created",
-		"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
-		"id":     "ea35b24ede421",
-		"specversion": "0.2",
-		"data": {
-			"ref": "refs/heads/changes"
-		}
-	}
-	`
-	store, router, rw, httpRequest = getTestInfra(exampleCloudEvent2)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected 200, got %d", rw.Result().StatusCode)
-	}
-	checkBuild(t, store, "refs/heads/changes", "", []byte(exampleCloudEvent2))
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	// this test checks only commit in JSON payload
-
-	exampleCloudEvent3 := `
-	{
-		"type":   "com.example.file.created",
-		"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
-		"id":     "ea35b24ede421",
-		"specversion": "0.2",
-		"data": {
-			"commit": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"
-		}
-	}
-	`
-	store, router, rw, httpRequest = getTestInfra(exampleCloudEvent3)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected 200, got %d", rw.Result().StatusCode)
-	}
-	checkBuild(t, store, "", "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28", []byte(exampleCloudEvent3))
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	// this test checks for a JSON object inside commit
-
-	exampleCloudEvent4 := `
-	{
-		"type":   "com.example.file.created",
-		"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
-		"id":     "ea35b24ede421",
-		"specversion": "0.2",
-		"data": {
-			"commit": {
-				"hello": "another JSON object! hooray!"
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			router := newMockRouterCloudEvent(test.store)
+			httpRequest := httptest.NewRequest("POST", test.url, bytes.NewBuffer([]byte(test.payload)))
+			httpRequest.Header.Add("Content-Type", "application/json")
+			rw := httptest.NewRecorder()
+			router.ServeHTTP(rw, httpRequest)
+			if rw.Result().StatusCode != test.statusExpected {
+				t.Errorf("expected error %d, got %d", test.statusExpected, rw.Result().StatusCode)
 			}
-		}
+
+			// we got a 200, so let's make sure we got a proper Build created
+			if rw.Result().StatusCode == http.StatusOK {
+				checkBuild(t, test.store, test.revision.Ref, test.revision.Commit, []byte(test.payload))
+			}
+		})
 	}
-	`
-	store, router, rw, httpRequest = getTestInfra(exampleCloudEvent4)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
-	}
-	checkBuild(t, store, "master", "", []byte(exampleCloudEvent4))
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	// this test checks for a JSON object inside ref
-
-	exampleCloudEvent5 := `
-	{
-		"type":   "com.example.file.created",
-		"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
-		"id":     "ea35b24ede421",
-		"specversion": "0.2",
-		"data": {
-			"ref": {
-				"hello": "another JSON object! hooray!"
-			},
-			"commit": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"
-		}
-	}
-	`
-	store, router, rw, httpRequest = getTestInfra(exampleCloudEvent5)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
-	}
-	checkBuild(t, store, "", "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28", []byte(exampleCloudEvent5))
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	//this test tests for random values inside Data
-
-	exampleCloudEvent6 := `
-	{
-		"type":   "com.example.file.created",
-		"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
-		"id":     "ea35b24ede421",
-		"specversion": "0.2",
-		"data": {
-			"val1": "refs/heads/changes",
-			"val2": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"
-		}
-	}
-	`
-
-	store, router, rw, httpRequest = getTestInfra(exampleCloudEvent6)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
-	}
-	checkBuild(t, store, "master", "", []byte(exampleCloudEvent6))
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	//corrupt JSON
-
-	exampleCloudEvent7 := `
-	{
-		"type":   "com.example.file.created",
-		"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
-		"id":     "ea35b24ede421",
-		"specversion": "0.2",
-		"data": {
-			"val1": "refs/heads/changes",
-			"val2": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"
-			CORRUPT
-		}
-	}
-	`
-
-	_, router, rw, httpRequest = getTestInfra(exampleCloudEvent7)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	//missing specversion
-
-	exampleCloudEvent8 := `
-	{
-		"type":   "com.example.file.created",
-		"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
-		"id":     "ea35b24ede421"
-	}
-	`
-	_, router, rw, httpRequest = getTestInfra(exampleCloudEvent8)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	//empty POST data
-
-	exampleCloudEvent9 := ``
-	_, router, rw, httpRequest = getTestInfra(exampleCloudEvent9)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	//empty JSON
-
-	exampleCloudEvent10 := ``
-	_, router, rw, httpRequest = getTestInfra(exampleCloudEvent10)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	//wrong specversion
-
-	exampleCloudEvent11 := `
-	{
-		"type":   "com.example.file.created",
-		"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
-		"id":     "ea35b24ede421",
-		"specversion": "0.1"
-	}
-	`
-	_, router, rw, httpRequest = getTestInfra(exampleCloudEvent11)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	// missing type
-
-	exampleCloudEvent12 := `
-	{
-		"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
-		"id":     "ea35b24ede421",
-		"specversion": "0.2"
-	}
-	`
-	_, router, rw, httpRequest = getTestInfra(exampleCloudEvent12)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	//missing source
-
-	exampleCloudEvent13 := `
-	{
-		"type":   "com.example.file.created",
-		"id":     "ea35b24ede421",
-		"specversion": "0.2"
-	}
-	`
-	_, router, rw, httpRequest = getTestInfra(exampleCloudEvent13)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////
-	//missing id
-
-	exampleCloudEvent14 := `
-	{
-		"source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
-		"type":   "com.example.file.created",
-		"specversion": "0.2"
-	}
-	`
-	_, router, rw, httpRequest = getTestInfra(exampleCloudEvent14)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
-	}
-
 }
 
 const exampleCloudEvent = `
@@ -381,7 +309,7 @@ func newMockRouterCloudEvent(store storage.Store) *gin.Engine {
 
 	handler := NewGenericWebhookCloudEvent(store)
 
-	events := router.Group("/cloudevent")
+	events := router.Group("/cloudevents/v02")
 	events.Use(gin.Logger())
 	events.POST("/:projectID/:secret", handler)
 

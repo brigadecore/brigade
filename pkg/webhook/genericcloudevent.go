@@ -97,6 +97,7 @@ func (g *genericWebhookCloudEvent) genericWebhookCloudEvent(proj *brigade.Projec
 
 	// set a default Revision if user has not provided any information about commit or ref
 	// otherwise, sidecar fails with 'fatal: empty string is not a valid pathspec. please use . instead if you meant to match all paths'
+	// if the project has no VCS integration (e.g. the sidecar is set to 'NONE'), then this "master" will just be ignored by the worker
 	if revision.Commit == "" && revision.Ref == "" {
 		revision.Ref = "master"
 	}
