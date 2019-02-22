@@ -220,7 +220,7 @@ func (s *Store) GetWorkerLogStreamFollow(w *brigade.Worker) (io.ReadCloser, erro
 
 // CreateBuild fakes a new build.
 func (s *Store) CreateBuild(b *brigade.Build) error {
-	s.Builds[0] = b
+	s.Builds = append(s.Builds, b)
 	return nil
 }
 

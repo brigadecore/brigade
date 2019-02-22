@@ -32,12 +32,12 @@ func TestNewRouter(t *testing.T) {
 		t.Fatalf("Unexpected status on healthz: %s", res.Status)
 	}
 
-	body, err := ioutil.ReadFile("./testdata/genericwebhook.json")
+	body, err := ioutil.ReadFile("./testdata/simpleevent.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	route400 := "/webhook/brigade-4625a05cf6914e556aa254cb2af234203744de2f_WRONG_URL/mysecret"
+	route400 := "/simpleevent/brigade-4625a05cf6914e556aa254cb2af234203744de2f_WRONG_URL/mysecret"
 	res, err = http.Post(ts.URL+route400, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		t.Fatal(err)
@@ -46,7 +46,7 @@ func TestNewRouter(t *testing.T) {
 		t.Fatalf("Expected 400 status, got: %s", res.Status)
 	}
 
-	route401 := "/webhook/brigade-4625a05cf6914e556aa254cb2af234203744de2f/mysecret2"
+	route401 := "/simpleevent/brigade-4625a05cf6914e556aa254cb2af234203744de2f/mysecret2"
 	res, err = http.Post(ts.URL+route401, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		t.Fatal(err)
@@ -54,19 +54,4 @@ func TestNewRouter(t *testing.T) {
 	if res.StatusCode != 401 {
 		t.Fatalf("Expected 401 status, got: %s", res.Status)
 	}
-
-	corruptbody, err := ioutil.ReadFile("./testdata/genericwebhook.json.corrupt")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	routeCorruptBody := "/webhook/brigade-4625a05cf6914e556aa254cb2af234203744de2f/mysecret"
-	res, err = http.Post(ts.URL+routeCorruptBody, "application/json", bytes.NewBuffer(corruptbody))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.StatusCode != 400 {
-		t.Fatalf("Expected 400 status, got: %s", res.Status)
-	}
-
 }
