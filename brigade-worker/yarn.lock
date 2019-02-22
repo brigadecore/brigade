@@ -2,9 +2,10 @@
 # yarn lockfile v1
 
 
-"@azure/brigadier@^0.2.1":
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/@azure/brigadier/-/brigadier-0.2.1.tgz#f1e38e6764e97d3ae53965f4947bb008b1d262e0"
+"@azure/brigadier@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@azure/brigadier/-/brigadier-0.4.0.tgz#6fa24b6fc2dd85ae8a81f1b2cf57c7604597cf5d"
+  integrity sha512-ApMy7Pcu7+XDJS/2oTS1hpjCgYGNAXRdBubSpX0uipsv5sA8Drj7aB7Q/7EZUxpLmETgI4ZxQs/4l7Bm6c4qZQ==
   dependencies:
     "@kubernetes/client-node" "^0.7.2"
     child-process-promise "^2.2.1"

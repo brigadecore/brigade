@@ -78,8 +78,9 @@ if (process.env.BRIGADE_SERVICE_ACCOUNT) {
 }
 
 if (process.env.BRIGADE_SERVICE_ACCOUNT_REGEX) {
-  if (!options.serviceAccount.match(`${process.env.BRIGADE_SERVICE_ACCOUNT_REGEX}`)) {
-      logger.log(`Service Account ${options.serviceAccount} does not match regex /${process.env.BRIGADE_SERVICE_ACCOUNT_REGEX}/`);
+  let regex = RegExp(`${process.env.BRIGADE_SERVICE_ACCOUNT_REGEX}`);
+  if (!regex.test(options.serviceAccount)) {
+      logger.log(`Service Account ${options.serviceAccount} does not match regex ${process.env.BRIGADE_SERVICE_ACCOUNT_REGEX}`);
       process.exit(1);
   }
 }
