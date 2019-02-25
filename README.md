@@ -13,7 +13,7 @@ for Kubernetes.
 - Easy construction of pipelines
 - Check out the [docs](https://azure.github.io/brigade/) to get started.
 
-[![asciicast](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG.png)](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG)
+ <!-- [![asciicast](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG.png)](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG) -->
 
 ## The Brigade Technology Stack
 
@@ -53,7 +53,7 @@ Brig is the Brigade command line client. You can use `brig` to create/update/del
 wget -O brig https://github.com/Azure/brigade/releases/download/v0.20.0/brig-linux-amd64
 chmod +x brig
 mv brig ~/bin
-``` 
+```
 
 Alternatively, you can use [asdf-brig](https://github.com/Ibotta/asdf-brig) to install & manage multiple versions of `brig`.
 
@@ -180,7 +180,7 @@ Then, you can navigate to `http://localhost:8000` to see Kashti dashboard with y
 
 Brigade contains a utility (called `vacuum`) that runs as a Kubernetes CronJob and periodically (default: hourly) deletes Builds (i.e. corresponding Secrets and Pods). You can run `kubectl get cronjob` to get its details and possible configure it.
 
-### Cleanup 
+### Cleanup
 
 To remove created resources:
 
