@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -35,18 +36,9 @@ func (g *genericWebhookSimpleEvent) Handle(c *gin.Context) {
 		return
 	}
 
-	// if the secret is "" (probably due to a Brigade upgrade or user did not create a Generic Gateway secret during `brig project create`)
-	// refuse to serve it, so Brigade admin will be forced to update the project with a non-empty secret
-	if proj.GenericGatewaySecret == "" {
-		log.Printf("Secret for project %s is empty, please update it and try again", projectID)
-		c.JSON(http.StatusUnauthorized, gin.H{"status": "secret for this Brigade Project is empty, refusing to serve, please inform your Brigade admin"})
-		return
-	}
-
-	// compare secrets
-	if secret != proj.GenericGatewaySecret {
-		log.Printf("Secret %s for project %s is wrong", secret, projectID)
-		c.JSON(http.StatusUnauthorized, gin.H{"status": "secret is wrong"})
+	err = validateGenericGatewaySecret(proj, secret)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": err.Error()})
 		return
 	}
 
@@ -58,13 +50,16 @@ func (g *genericWebhookSimpleEvent) Handle(c *gin.Context) {
 	}
 	defer c.Request.Body.Close()
 
-	// try to unmarshal Revision data, if they do exist
 	revision := &brigade.Revision{}
-	err = json.Unmarshal(payload, &revision)
-	if err != nil {
-		log.Printf("Failed to convert POST data into JSON: %s", err)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "Malformed POST data - Invalid JSON"})
-		return
+
+	// try to unmarshal Revision data, if payload string is not empty
+	if string(payload) != "" {
+		err = json.Unmarshal(payload, &revision)
+		if err != nil {
+			log.Printf("Failed to convert POST data into JSON: %s", err)
+			c.JSON(http.StatusBadRequest, gin.H{"status": "Malformed POST data - Invalid JSON"})
+			return
+		}
 	}
 
 	go g.notifyGenericWebhookSimpleEvent(proj, payload, revision)
@@ -88,9 +83,29 @@ func (g *genericWebhookSimpleEvent) genericWebhookSimpleEvent(proj *brigade.Proj
 
 	// set a default Revision if user has not provided any information about commit or ref
 	// otherwise, sidecar fails with 'fatal: empty string is not a valid pathspec. please use . instead if you meant to match all paths'
+	// if the project has no VCS integration (e.g. the sidecar is set to 'NONE'), then this "master" will just be ignored by the worker
 	if b.Revision == nil || (b.Revision.Commit == "" && b.Revision.Ref == "") {
 		b.Revision = &brigade.Revision{Ref: "master"}
 	}
 
 	return g.store.CreateBuild(b)
+}
+
+// validateGenericGatewaySecret will return an error if given Project does not have a GenericGatewaySecret or if the provided secret is wrong
+// Otherwise, it will simply return nil
+func validateGenericGatewaySecret(proj *brigade.Project, secret string) error {
+	// if the secret is "" (probably i) due to a Brigade upgrade or ii) user did not create a Generic Gateway secret during `brig project create`)
+	// refuse to serve it, so Brigade admin will be forced to update the project with a non-empty secret
+	if proj.GenericGatewaySecret == "" {
+		log.Printf("Secret for project %s is empty, please update it and try again", proj.ID)
+		return fmt.Errorf("secret for this Brigade Project is empty, refusing to serve, please inform your Brigade admin")
+	}
+
+	// compare secrets
+	if secret != proj.GenericGatewaySecret {
+		log.Printf("Secret %s for project %s is wrong", secret, proj.ID)
+		return fmt.Errorf("secret is wrong")
+	}
+
+	return nil
 }

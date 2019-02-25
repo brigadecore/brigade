@@ -63,6 +63,17 @@
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:64f6210405dce72b1218496fc46b1392eef4b7c1621f25d6ec05313cd13e6a0f"
+  name = "github.com/cloudevents/sdk-go"
+  packages = [
+    ".",
+    "v02",
+  ]
+  pruneopts = ""
+  revision = "feec6e002535db7561a364f82f67d2c9ebe4596a"
+  version = "0.2"
+
+[[projects]]
   digest = "1:9a62b6bb832d61f198b4301a6ecb4fbef21a731596bb21c27e27f79b1e8260d7"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -702,6 +713,7 @@
     "github.com/Masterminds/goutils",
     "github.com/Masterminds/kitt/progress",
     "github.com/bacongobbler/browser",
+    "github.com/cloudevents/sdk-go/v02",
     "github.com/emicklei/go-restful",
     "github.com/emicklei/go-restful-openapi",
     "github.com/go-openapi/spec",

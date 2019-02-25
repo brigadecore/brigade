@@ -41,7 +41,7 @@ func newGenericProject() *brigade.Project {
 	}
 }
 
-func TestGenericWebhook(t *testing.T) {
+func TestGenericWebhookSimpleEventHandler(t *testing.T) {
 	proj := newGenericProject()
 	store := newTestStore()
 	h := newTestGenericWebhookSimpleEventHandler(store)
@@ -67,164 +67,150 @@ func TestGenericWebhook(t *testing.T) {
 	}
 }
 
-func TestGenericWebhookHandlerBadBody(t *testing.T) {
-	store := newEmptyTestStore()
-	router := newMockRouterSimpleEvent(store)
-
-	httpRequest := httptest.NewRequest("POST", "/simpleevent/fakeProject/fakeCode", bytes.NewBuffer(nil))
-	httpRequest.Header.Add("Content-Type", "application/json")
-
-	rw := httptest.NewRecorder()
-
-	router.ServeHTTP(rw, httpRequest)
-
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
-	}
-}
-
-func TestGenericWebhookHandlerWrongProject(t *testing.T) {
-	store := newTestStoreWithFakeProject2()
-	router := newMockRouterSimpleEvent(store)
-
-	httpRequest := httptest.NewRequest("POST", "/simpleevent/brigade-fakeProject/fakeCode", bytes.NewBuffer([]byte(exampleSimpleEvent)))
-	httpRequest.Header.Add("Content-Type", "application/json")
-
-	rw := httptest.NewRecorder()
-	router.ServeHTTP(rw, httpRequest)
-
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
-	}
-}
-
-func TestGenericWebhookHandlerCorrectProjectEmptySecret(t *testing.T) {
-	store := newTestStoreWithFakeProject()
-	router := newMockRouterSimpleEvent(store)
-
-	httpRequest := httptest.NewRequest("POST", "/simpleevent/brigade-fakeProject/fakeCode", bytes.NewBuffer([]byte(exampleSimpleEvent)))
-	httpRequest.Header.Add("Content-Type", "application/json")
-
-	rw := httptest.NewRecorder()
-	router.ServeHTTP(rw, httpRequest)
-
-	if rw.Result().StatusCode != http.StatusUnauthorized {
-		t.Errorf("expected error 401, got %d", rw.Result().StatusCode)
-	}
-}
-
-func TestGenericWebhookHandlerCorrectProjectCorrectSecretSimpleEvent(t *testing.T) {
-	getTestInfra := func(postdata string) (*mock.Store, *gin.Engine, *httptest.ResponseRecorder, *http.Request) {
-		store := newTestStoreWithFakeProject()
-		store.ProjectList[0].GenericGatewaySecret = "fakeCode"
-		router := newMockRouterSimpleEvent(store)
-		rw := httptest.NewRecorder()
-		httpRequest := httptest.NewRequest("POST", "/simpleevent/brigade-fakeProject/fakeCode", bytes.NewBuffer([]byte(postdata)))
-		httpRequest.Header.Add("Content-Type", "application/json")
-		return store, router, rw, httpRequest
-	}
-
-	// this test checks both ref and commit in JSON payload
-	store, router, rw, httpRequest := getTestInfra(exampleSimpleEvent)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
-	}
-	checkBuild(t, store, "refs/heads/changes", "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28", []byte(exampleSimpleEvent))
-
-	// this test checks only ref in JSON payload
-	exampleSimpleEvent2 := `
-	{
-		"ref": "refs/heads/changes"
-	}
-	`
-	store, router, rw, httpRequest = getTestInfra(exampleSimpleEvent2)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
-	}
-	checkBuild(t, store, "refs/heads/changes", "", []byte(exampleSimpleEvent2))
-
-	// this test checks only commit in JSON payload
-	exampleSimpleEvent3 := `
-	{
-		"commit": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"
-	}
-	`
-	store, router, rw, httpRequest = getTestInfra(exampleSimpleEvent3)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
-	}
-	checkBuild(t, store, "", "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28", []byte(exampleSimpleEvent3))
-
-	exampleSimpleEvent4 := `
-	{
-		"val1": "refs/heads/changes",
-		"val2": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"
-	}
-	`
-	store, router, rw, httpRequest = getTestInfra(exampleSimpleEvent4)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
-	}
-	checkBuild(t, store, "master", "", []byte(exampleSimpleEvent4))
-
-	exampleSimpleEvent5 := `
-	{
-		"val1": "refs/heads/changes",
-		"val2": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"
-		CORRUPT
-	}
-	`
-	_, router, rw, httpRequest = getTestInfra(exampleSimpleEvent5)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
+func TestGenericWebHookSimpleEvent(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		description    string
+		url            string
+		statusExpected int
+		store          *mock.Store
+		payload        string
+		revision       *brigade.Revision
+	}{
+		{
+			description:    "Wrong project",
+			url:            "/simpleevents/v1/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusBadRequest,
+			store:          newTestStoreWithFakeProject2(),
+			payload:        exampleSimpleEvent,
+		},
+		{
+			description:    "Correct project, empty secret",
+			url:            "/simpleevents/v1/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusUnauthorized,
+			store:          newTestStoreWithFakeProject(),
+			payload:        exampleSimpleEvent,
+		},
+		{
+			description:    "Both ref and commit in JSON payload",
+			url:            "/simpleevents/v1/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusOK,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload:        exampleSimpleEvent,
+			revision: &brigade.Revision{
+				Ref:    "refs/heads/changes",
+				Commit: "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28",
+			},
+		},
+		{
+			description:    "Only ref in JSON payload",
+			url:            "/simpleevents/v1/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusOK,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload:        `{"ref": "refs/heads/changes"}`,
+			revision: &brigade.Revision{
+				Ref: "refs/heads/changes",
+			},
+		},
+		{
+			description:    "Only commit in JSON payload",
+			url:            "/simpleevents/v1/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusOK,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload:        `{"commit": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"}`,
+			revision: &brigade.Revision{
+				Commit: "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28",
+			},
+		},
+		{
+			description:    "Random values in JSON payload",
+			url:            "/simpleevents/v1/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusOK,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload:        `{"val1": "refs/heads/changes", "val2": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28"}`,
+			revision: &brigade.Revision{
+				Ref: "master",
+			},
+		},
+		{
+			description:    "Corrupt values in JSON payload",
+			url:            "/simpleevents/v1/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusBadRequest,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload:        `{"val1": "refs/heads/changes", "val2": "63c09efb6eb544f41a48901a6d0cc6ddfa4adb28" CORRUPT}`,
+			revision:       nil,
+		},
+		{
+			description:    "Empty POST data",
+			url:            "/simpleevents/v1/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusOK,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload:        ``,
+			revision:       &brigade.Revision{Ref: "master"},
+		},
+		{
+			description:    "POST data is an empty JSON object",
+			url:            "/simpleevents/v1/brigade-fakeProject/fakeCode",
+			statusExpected: http.StatusOK,
+			store:          newTestStoreWithFakeProjectAndSecret("fakeCode"),
+			payload:        `{}`,
+			revision:       &brigade.Revision{Ref: "master"},
+		},
 	}
 
-	exampleSimpleEvent6 := `{}`
-	store, router, rw, httpRequest = getTestInfra(exampleSimpleEvent6)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusOK {
-		t.Errorf("expected error 200, got %d", rw.Result().StatusCode)
-	}
-	checkBuild(t, store, "master", "", []byte(exampleSimpleEvent6))
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			router := newMockRouterSimpleEvent(test.store)
+			httpRequest := httptest.NewRequest("POST", test.url, bytes.NewBuffer([]byte(test.payload)))
+			httpRequest.Header.Add("Content-Type", "application/json")
+			rw := httptest.NewRecorder()
+			router.ServeHTTP(rw, httpRequest)
+			if rw.Result().StatusCode != test.statusExpected {
+				t.Errorf("expected error %d, got %d", test.statusExpected, rw.Result().StatusCode)
+			}
 
-	exampleSimpleEvent7 := ``
-	_, router, rw, httpRequest = getTestInfra(exampleSimpleEvent7)
-	router.ServeHTTP(rw, httpRequest)
-	if rw.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("expected error 400, got %d", rw.Result().StatusCode)
+			// we got a 200, so let's make sure we got a proper Build created
+			if rw.Result().StatusCode == http.StatusOK {
+				checkBuild(t, test.store, test.revision.Ref, test.revision.Commit, []byte(test.payload))
+			}
+		})
 	}
 }
 
 func checkBuild(t *testing.T, store *mock.Store, expectedRef string, expectedCommit string, payload []byte) {
-	// timeout check here is necessary because handler ultimately runs in a goroutine
+	// timeout check in the method is necessary because handler ultimately runs in a goroutine
+	// we might get rid of this as soon as we switch to synchronous handlers
 	c := make(chan struct{})
+	stopChan := make(chan struct{})
+
 	go func() {
 		for {
-			if len(store.Builds) == 0 {
-				time.Sleep(50 * time.Millisecond)
-			} else {
-				c <- struct{}{}
-				break
+			select {
+			default:
+				if len(store.Builds) == 0 {
+					time.Sleep(50 * time.Millisecond)
+				} else {
+					c <- struct{}{} // signal that we do have a Build
+					break
+				}
+			case <-stopChan: // calling goroutine signals that we should exit, so return
+				return
 			}
 		}
 	}()
 
 	select {
-	case <-c:
+	case <-c: // we do have a Build, so exit select and continue on checking the Builds
 		break
 	case <-time.After(3 * time.Second):
 		t.Errorf("No new Builds were created, expectedRef %s and expectedCommit %s", expectedRef, expectedCommit)
+		stopChan <- struct{}{} // signal that infinite loop goroutine should be stopped
 		return
 	}
 
 	build := store.Builds[0]
 	if build.Revision.Ref != expectedRef || build.Revision.Commit != expectedCommit {
-		t.Errorf("Wrong Revision, expected %#v got %v#", exampleSimpleEvent, build.Revision)
+		t.Errorf("Wrong Revision, expected %#v got %#v", exampleSimpleEvent, build.Revision)
 	}
 
 	if !bytes.Equal(build.Payload, payload) {
@@ -245,23 +231,26 @@ func newMockRouterSimpleEvent(store storage.Store) *gin.Engine {
 
 	handler := NewGenericWebhookSimpleEvent(store)
 
-	events := router.Group("/simpleevent")
-	{
-		events.Use(gin.Logger())
-		events.POST("/:projectID/:secret", handler)
-	}
+	events := router.Group("/simpleevents/v1")
+	events.Use(gin.Logger())
+	events.POST("/:projectID/:secret", handler)
 
 	return router
-}
-
-func newEmptyTestStore() *mock.Store {
-	return &mock.Store{}
 }
 
 func newTestStoreWithFakeProject() *mock.Store {
 	return &mock.Store{
 		ProjectList: []*brigade.Project{{
 			ID: "brigade-fakeProject",
+		}},
+	}
+}
+
+func newTestStoreWithFakeProjectAndSecret(secret string) *mock.Store {
+	return &mock.Store{
+		ProjectList: []*brigade.Project{{
+			ID:                   "brigade-fakeProject",
+			GenericGatewaySecret: secret,
 		}},
 	}
 }
