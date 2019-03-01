@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Tutorial 1: Writing a CI pipeline - Brigade</title>
+<meta name="description" content="Writing your first CI pipeline, Part 1">
+<meta name="generator" content="Hugo 0.54.0" />
+<link href="/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/intro/tutorial01/">
+<link rel="stylesheet" href="/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="/js/functions.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/js/jquery.backtothetop/jquery.backtothetop.min.js"></script></head>
+<body>
+<div class="container"><header>
+<h1>Brigade</h1>
+
+<p class="description">Brigade - Event-driven scripting for Kubernetes.</p>
+
+</header>
+
+<div class="content-container">
+<main><h1>Tutorial 1: Writing a CI pipeline</h1>
+
+<h1 id="writing-your-first-ci-pipeline-part-1">Writing your first CI pipeline, Part 1</h1>
+
+<p>Let’s learn by example.</p>
+
+<p>Throughout this tutorial, we’ll walk you through the creation of a basic web application with a Brigade CI pipeline for testing the application.</p>
+
+<p>It’ll consist of two parts:</p>
+
+<ul>
+<li>A public site that lets people generate UUIDs.</li>
+<li>A brigade.js that tests the site</li>
+</ul>
+
+<p>We’ll assume you have Brigade, git (a version control system), and pip (a package management system for Python) installed already.</p>
+
+<p>You can tell Brigade is installed and which version by running the following command in a shell prompt (indicated by the $ prefix):</p>
+
+<pre><code>$ helm status brigade-server
+</code></pre>
+
+<p>If Brigade is installed, you should see the deployment status of your installation. If it isn’t, you’ll get an error telling &ldquo;Error: getting deployed release &ldquo;brigade-server&rdquo;: release: &ldquo;brigade-server&rdquo; not found&rdquo;.</p>
+
+<p>See <a href="install.md">Installing Brigade</a> for advice on how to install Brigade.</p>
+
+<p>For pip, it is already installed if you&rsquo;re using Python 2 &gt;=2.7.9 or Python 3 &gt;=3.4 binaries downloaded from python.org.</p>
+
+<p>You can tell pip is installed and which version by running the following command in a shell prompt:</p>
+
+<pre><code>$ pip --version
+</code></pre>
+
+<p>If you see &ldquo;command not found&rdquo;, see <a href="https://pip.pypa.io/en/stable/installing/">how to install pip</a> for advice on how to install pip.</p>
+
+<p>If you&rsquo;re having trouble going through this tutorial, please post an issue to <a href="https://github.com/Azure/brigade">Azure/brigade</a> to chat with other Brigade users who might be able to help.</p>
+
+<h2 id="creating-your-first-application">Creating your first application</h2>
+
+<p>For this tutorial, we&rsquo;ll be creating an example application written in Python which uses <a href="http://flask.pocoo.org/">Flask</a> to provide a very simple UUID generator web server. Flask is a microframework for Python based on Werkzeug, Jinja 2 and good intentions.  (Note that this application is written for <a href="https://docs.python.org/3/">Python 3</a>, specifically.)</p>
+
+<p>Let&rsquo;s write the web server. To create your app, type this command:</p>
+
+<pre><code>$ mkdir -p uuid-generator/app
+</code></pre>
+
+<p>Open the file <code>uuid-generator/app/__init__.py</code> and put the following Python code into it:</p>
+
+<pre><code class="language-python">from flask import Flask, Response
+app = Flask(__name__)
+
+
+@app.route(&quot;/&quot;)
+def hello():
+    return &quot;Hello World!&quot;
+</code></pre>
+
+<p>This is the simplest application possible in Flask. To call <code>hello()</code>, we need to map it to a URL - in this case we want to map it to the root path (<code>/</code>).</p>
+
+<h2 id="start-the-development-server">Start the development server</h2>
+
+<p>Now that we&rsquo;ve written the app, let&rsquo;s run it!</p>
+
+<pre><code>$ echo &quot;Flask&quot; &gt; requirements.txt
+$ pip install -r requirements.txt
+$ FLASK_APP=uuid-generator/app/__init__.py flask run
+ * Serving Flask app &quot;app&quot;
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+</code></pre>
+
+<p>Now, open a Web browser and go to “/” on your local domain – e.g., <a href="http://127.0.0.1:5000/">http://127.0.0.1:5000/</a>. You should see &ldquo;Hello World!&rdquo;:</p>
+
+<p><img src="img/img1.png" style="height: 500px;" /></p>
+
+<p>If you look back to the running flask app&rsquo;s logs, you should see new logs pop up:</p>
+
+<pre><code class="language-bash">127.0.0.1 - - [18/Aug/2017 12:56:16] &quot;GET / HTTP/1.1&quot; 200 -
+</code></pre>
+
+<h2 id="generating-uuids">Generating UUIDs</h2>
+
+<p>Let&rsquo;s make the application generate a random UUID on every request. Edit the <code>uuid-generator/app/__init__.py</code> file so it looks like this:</p>
+
+<pre><code class="language-python">from flask import Flask, Response
+import uuid
+
+app = Flask(__name__)
+
+
+@app.route(&quot;/&quot;)
+def hello():
+    return Response(str(uuid.uuid4()), status=200, mimetype='text/plain')
+</code></pre>
+
+<p>Re-run the web server and open the browser back to <a href="http://127.0.0.1:5000/">http://127.0.0.1:5000/</a>. You should now see a random UUID:</p>
+
+<p><img src="img/img2.png" style="height: 500px;" /></p>
+
+<p>Keep refreshing the page. You should see new UUIDs being generated every time you refresh the page.</p>
+
+<p>When you’re comfortable with the application, read <a href="tutorial02.md">part 2 of this tutorial</a> to learn about pushing our application to GitHub.</p>
+
+<hr />
+
+<p>Prev: <a href="tutorial01.md">Quickstart Guide</a> <code>|</code> Next: <a href="tutorial02.md">Writing your first CI pipeline, Part 2</a></p>
+<div class="edit-meta">Last updated on 1 Jan 0001 / Published on 1 Jan 0001<br></div><nav class="pagination"><a class="nav nav-prev" href="/intro/install/" title="Installing Brigade"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Installing Brigade</a>
+<a class="nav nav-next" href="/intro/tutorial02/" title="Tutorial 2: Setup GitHub">Next - Tutorial 2: Setup GitHub <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+<nav>
+<ul>
+<li class=""><a href="/">Home</a></li>
+
+<li class="parent"><a href="/intro/">Getting Started</a>
+<ul class="sub-menu">
+<li class=""><a href="/intro/overview/">Brigade Overview</a></li>
+<li class=""><a href="/intro/install/">Installing Brigade</a></li>
+<li class="active"><a href="/intro/tutorial01/">Tutorial 1: Writing a CI pipeline</a></li>
+<li class=""><a href="/intro/tutorial02/">Tutorial 2: Setup GitHub</a></li>
+<li class=""><a href="/intro/tutorial03/">Tutorial 3: Projects &amp; Events</a></li>
+<li class=""><a href="/intro/tutorial04/">Tutorial 4: Writing and Testing an App</a></li>
+<li class=""><a href="/intro/writing-efficient-pipelines/">Tutorial 5: Writing Efficient Pipelines</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="/topics/">Topic Guides</a>
+<ul class="">
+<li class=""><a href="/topics/scripting_advanced/">Advanced Scripting Guide</a></li>
+<li class=""><a href="/topics/dockerhub/">Container Registry Integration</a></li>
+<li class=""><a href="/topics/dependencies/">Dependencies</a></li>
+<li class=""><a href="/topics/design/">Design</a></li>
+<li class=""><a href="/topics/developers/">Developer Guide</a></li>
+<li class=""><a href="/topics/gateways/">Gateways</a></li>
+<li class=""><a href="/topics/genericgateway/">Generic Gateway</a></li>
+<li class=""><a href="/topics/github/">GitHub Integration</a></li>
+<li class=""><a href="/topics/ingress/">Ingress</a></li>
+<li class=""><a href="/topics/projects/">Managing Projects in Brigade</a></li>
+<li class=""><a href="/topics/releasing/">Releasing Brigade</a></li>
+<li class=""><a href="/topics/scripting/">Scripting Guide</a></li>
+<li class=""><a href="/topics/secrets/">Secret Management</a></li>
+<li class=""><a href="/topics/security/">Securing Brigade</a></li>
+<li class=""><a href="/topics/storage/">Storage</a></li>
+<li class=""><a href="/topics/testing/">Testing</a></li>
+<li class=""><a href="/topics/javascript/">The Brigade.js API</a></li>
+<li class=""><a href="/topics/readnext/">What to Read Next</a></li>
+<li class=""><a href="/topics/workers/">Workers</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

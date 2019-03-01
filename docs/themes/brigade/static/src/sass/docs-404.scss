@@ -1,0 +1,17 @@
+.section-404 {
+  position: relative;
+  min-height: 670px;
+
+  #particles-js {
+    position: absolute;
+    width: 100%;
+  }
+
+  h1 {
+    text-transform: none;
+    font-size: $scalex8;
+    letter-spacing: 0.05em;
+    margin: 5em 7.5% 2.5em;
+    position: relative;
+  }
+}

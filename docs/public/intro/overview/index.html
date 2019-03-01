@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Brigade Overview - Brigade</title>
+<meta name="description" content="High level view of the Brigade tool.">
+<meta name="generator" content="Hugo 0.54.0" />
+<link href="/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/intro/overview/">
+<link rel="stylesheet" href="/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="/js/functions.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/js/jquery.backtothetop/jquery.backtothetop.min.js"></script></head>
+<body>
+<div class="container"><header>
+<h1>Brigade</h1>
+
+<p class="description">Brigade - Event-driven scripting for Kubernetes.</p>
+
+</header>
+
+<div class="content-container">
+<main><h1>Brigade Overview</h1><p>Brigade is a Kubernetes-native tool for doing event-driven scripting. Here&rsquo;s what that means:</p>
+
+<ul>
+<li>Brigade is for running scriptable automated tasks in the cloud.</li>
+<li>Brigade does not require you to manage host servers.</li>
+<li>Brigade is particularly well suited for CI and CD workloads such as:
+
+<ul>
+<li>Automated testing</li>
+<li>GitHub hook integration</li>
+<li>Building artifacts and releases</li>
+<li>Managing deployments</li>
+</ul></li>
+<li>Brigade is built directly on Kubernetes APIs, which means&hellip;
+
+<ul>
+<li>You can deploy Brigade onto any stock Kubernetes system, from Azure to Minikube</li>
+<li>You can monitor Brigade and its jobs using Kubernetes tools (or with Brigade&rsquo;s own tools, of course)</li>
+<li>Brigade uses Kubernetes resource types</li>
+<li>Brigade can be deployed and managed with <code>helm</code>.</li>
+<li>Brigade can easily be integrated with <code>draft</code>.</li>
+</ul></li>
+<li>Brigade uses technologies designed to make builds easy:
+
+<ul>
+<li>Write configuration in basic JavaScript (no need to learn Node.js)</li>
+<li>Encapsulate build steps in Docker images. Or better yet, just use off-the-shelf
+Docker images.</li>
+</ul></li>
+</ul>
+
+<p>Brigade is designed for teams. It is not a SaaS, nor does it require a legion of domain experts to configure and run it. Instead, it should be easy to install, configure, and maintain.</p>
+
+<hr />
+
+<p>Prev: <a href="../index.md">Docs Index</a> <code>|</code> Next: <a href="install.md">Quickstart Guide</a></p>
+<div class="edit-meta">Last updated on 1 Jan 0001 / Published on 1 Jan 0001<br></div><nav class="pagination"><a class="nav nav-prev" href="/intro/" title="Getting Started"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Getting Started</a>
+<a class="nav nav-next" href="/intro/install/" title="Installing Brigade">Next - Installing Brigade <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+<nav>
+<ul>
+<li class=""><a href="/">Home</a></li>
+
+<li class="parent"><a href="/intro/">Getting Started</a>
+<ul class="sub-menu">
+<li class="active"><a href="/intro/overview/">Brigade Overview</a></li>
+<li class=""><a href="/intro/install/">Installing Brigade</a></li>
+<li class=""><a href="/intro/tutorial01/">Tutorial 1: Writing a CI pipeline</a></li>
+<li class=""><a href="/intro/tutorial02/">Tutorial 2: Setup GitHub</a></li>
+<li class=""><a href="/intro/tutorial03/">Tutorial 3: Projects &amp; Events</a></li>
+<li class=""><a href="/intro/tutorial04/">Tutorial 4: Writing and Testing an App</a></li>
+<li class=""><a href="/intro/writing-efficient-pipelines/">Tutorial 5: Writing Efficient Pipelines</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="/topics/">Topic Guides</a>
+<ul class="">
+<li class=""><a href="/topics/scripting_advanced/">Advanced Scripting Guide</a></li>
+<li class=""><a href="/topics/dockerhub/">Container Registry Integration</a></li>
+<li class=""><a href="/topics/dependencies/">Dependencies</a></li>
+<li class=""><a href="/topics/design/">Design</a></li>
+<li class=""><a href="/topics/developers/">Developer Guide</a></li>
+<li class=""><a href="/topics/gateways/">Gateways</a></li>
+<li class=""><a href="/topics/genericgateway/">Generic Gateway</a></li>
+<li class=""><a href="/topics/github/">GitHub Integration</a></li>
+<li class=""><a href="/topics/ingress/">Ingress</a></li>
+<li class=""><a href="/topics/projects/">Managing Projects in Brigade</a></li>
+<li class=""><a href="/topics/releasing/">Releasing Brigade</a></li>
+<li class=""><a href="/topics/scripting/">Scripting Guide</a></li>
+<li class=""><a href="/topics/secrets/">Secret Management</a></li>
+<li class=""><a href="/topics/security/">Securing Brigade</a></li>
+<li class=""><a href="/topics/storage/">Storage</a></li>
+<li class=""><a href="/topics/testing/">Testing</a></li>
+<li class=""><a href="/topics/javascript/">The Brigade.js API</a></li>
+<li class=""><a href="/topics/readnext/">What to Read Next</a></li>
+<li class=""><a href="/topics/workers/">Workers</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

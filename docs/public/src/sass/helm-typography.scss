@@ -1,0 +1,171 @@
+//
+/* Typography & Vertical Rythm
+//
+*/
+
+
+// Typography Variables
+
+  $base-font-size: 16px;
+
+  //scale down
+  $scalex0: $base-font-size * 0.625;     // 11.4  / 10
+  $scalex1: $base-font-size * 0.75;      // 13.7  / 12
+  $scalex2: $base-font-size * 0.8125;    // 14.8  / 14
+  $scalex3: $base-font-size * 0.875;     // 16    / 14 (<p>)
+  $scalex4: $base-font-size * 0.9375;    // 17.1  / 16
+
+  //scale up
+  $scalex5: $base-font-size * 1.12;      // 20.5  / 18
+  $scalex6: $base-font-size * 1.25;      // 22.8  / 20
+  $scalex7: $base-font-size * 1.5;       // 27.4  / 24
+  $scalex8: $base-font-size * 2;         // 36.6  / 32
+  $scalex9: $base-font-size * 2.25;      // 41.1  / 36
+  $scalex10: $base-font-size * 2.95;     // 54.9  / 48
+
+
+$base-line-height: 1.5;
+$base-vertical-space: 2.5rem;
+$base-pad-right: 5%;
+
+
+// Size Modifier Classes
+.x0 { font-size: $scalex0; }
+.x1 { font-size: $scalex1; }
+.x2 { font-size: $scalex2; }
+.x3 { font-size: $scalex3; }
+.x4 { font-size: $scalex4; }
+.x5 { font-size: $scalex5; }
+.x6 { font-size: $scalex6; }
+.x7 { font-size: $scalex7; }
+.x8 { font-size: $scalex8; }
+.x9 { font-size: $scalex9; }
+.x10 { font-size: $scalex10; }
+
+// Ensure Aliasing
+//
+html,
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+// Base Typography Styles
+//
+h1, h2, h3, h4, h5, h6 {
+  @include klinicReg;
+  margin-top: $base-vertical-space / 3;
+  margin-bottom: $base-vertical-space / 3;
+}
+
+h1 {
+  color: $blue4;
+  font-size: $scalex10;
+  @include upperCase;
+  @include klinicBold;
+}
+
+h2 {
+  font-size: $base-font-size * 2.25;
+
+  &.onboard-welcome,
+  .onboard-welcome {
+    color: $blue4;
+    font-size: $scalex10;
+    @include klinicBold;
+  }
+
+  &.onboard-tasks,
+  .onboard-tasks {
+    color: $blue3;
+  }
+
+  &.onboard,
+  .onboard {
+    color: $blue4;
+  }
+
+  &.welcome-text,
+  .welcome-text {
+    color: $blue4;
+    font-size: $base-font-size * 1.75;
+    @include klinicReg;
+  }
+}
+
+h3 {
+  font-size: $base-font-size * 1.5;
+}
+
+.content {
+  h3 {
+    @include upperCase;
+    @include klinicBold;
+    font-size: $scalex2;
+    color: $grey2;
+  }
+}
+
+h4 {
+  font-size: $base-font-size * 0.75;
+  @include klinicBold;
+
+  &.day,
+  .day {
+    color: $grey2;
+  }
+}
+
+h5 {
+  color: $grey4;
+}
+
+.content h5,
+.line-chart-wrap h5 {
+  @include klinicReg;
+  @include upperCase;
+  font-size: $base-font-size * 0.75;
+}
+
+p, ol, ul, dl, blockquote {
+  font-size: $scalex3;
+  padding-right: $base-pad-right;
+  font-family: $base;
+}
+
+p {
+  line-height: 2.15;
+  color: $grey3;
+}
+
+ol, ul {
+  margin-left: 1.8rem;
+  margin-bottom: $base-vertical-space;
+
+  li {
+    margin-bottom: 0.5em;
+  }
+}
+
+a {
+  color: $blue2;
+}
+
+
+.text-upper {
+  @include upperCase;
+}
+
+.regular-text {
+  @include klinicReg;
+}
+
+.prefix, .postfix {
+  @include klinicBold;
+  @include border-radius;
+  @include upperCase;
+  font-size: $scalex3;
+  height: 3.3125rem;
+  line-height: 3.3125rem;
+}

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Storage - Brigade</title>
+<meta name="description" content="How Brigade uses Kubernetes Persistent Storage.">
+<meta name="generator" content="Hugo 0.54.0" />
+<link href="/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/topics/storage/">
+<link rel="stylesheet" href="/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="/js/functions.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/js/jquery.backtothetop/jquery.backtothetop.min.js"></script></head>
+<body>
+<div class="container"><header>
+<h1>Brigade</h1>
+
+<p class="description">Brigade - Event-driven scripting for Kubernetes.</p>
+
+</header>
+
+<div class="content-container">
+<main><h1>Storage</h1>
+
+<h1 id="how-brigade-uses-kubernetes-persistent-storage">How Brigade uses Kubernetes Persistent Storage</h1>
+
+<p>Brigade allows script authors to declare two kinds of storage:</p>
+
+<ul>
+<li>per-job caches, which persist across builds</li>
+<li>per-build shared storage, which exists as long as the build is running</li>
+</ul>
+
+<p>Usage of these is described within the <a href="javascript.md">JavaScript docs</a> and the
+<a href="scripting.md">scripting guide</a>.</p>
+
+<p>This document describes the underlying Kubernetes architecture of these two
+storage types.</p>
+
+<h2 id="brigade-and-persistentvolumeclaims">Brigade and PersistentVolumeClaims</h2>
+
+<p>Brigade provisions storage using Kubernetes PVCs. Both caches and shared storage
+are PVC-backed.</p>
+
+<h3 id="caches">Caches</h3>
+
+<p>For a Cache, the Brigade worker will check to see if a Job asks for a cache. If it
+does, the worker will create a PVC (if it doesn&rsquo;t already exist) and then mount
+it to the cache.</p>
+
+<blockquote>
+<p>A Job, in this case, gains its identity from its name, and the project that
+it belongs to. So two hooks in the same brigade.js can redeclare a job name and
+thus share the cache.</p>
+</blockquote>
+
+<p>That PVC is never removed by Brigade. Each subsequent run of the same Job will
+then mount that same PVC.</p>
+
+<h3 id="shared-storage">Shared Storage</h3>
+
+<p>Shared storage provisioning is markedly different than caches.</p>
+
+<ul>
+<li>The worker will <em>always</em> provision a shared storage PVC <em>per build</em>.</li>
+<li>Each job <em>may</em> mount this shared storage by setting its <code>storage.enabled</code> flag
+to <code>true</code>.</li>
+<li>At the end of a build, the storage will be destroyed.</li>
+</ul>
+
+<p>In the current implementation, both the <code>after</code> and <code>error</code> hooks may attach to
+the shared storage volume.</p>
+
+<h2 id="supporting-brigade-storage">Supporting Brigade Storage</h2>
+
+<p>Only certain volume plugins <em>can</em> support Brigade. Specifically, <strong>a volume driver
+must be readWriteMany</strong> in order for Brigade to use it. At the time of writing
+very few VolumePlugins support the <code>readWriteMany</code> access mode. Ensure that your
+volume plugin can support <code>readWriteMany</code>
+(<a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes">table</a>)
+or that you&rsquo;re able to use <a href="#using-an-nfs-server">NFS</a>.</p>
+
+<p>Only the following volume drivers are tested:</p>
+
+<ul>
+<li>Minikube&rsquo;s 9P implementation</li>
+<li>Azure&rsquo;s AzureFile storage</li>
+<li>NFS</li>
+</ul>
+
+<p>We believe Gluster will work, but it&rsquo;s untested.</p>
+
+<h2 id="examples">Examples</h2>
+
+<h3 id="using-an-nfs-server">Using an NFS Server</h3>
+
+<p>As Brigade uses storage for caching and short-term file sharing, it is often convenient
+to use storage backends that are optimized for short-term ephemeral storage.</p>
+
+<p>NFS (Network File System) is one protocol that works well for Brigade. You can
+use the <a href="https://github.com/IlyaSemenov/nfs-provisioner-chart">NFS Provisioner</a>
+chart to easily install an NFS server.</p>
+
+<pre><code class="language-console">$ helm repo add nfs-provisioner https://raw.githubusercontent.com/IlyaSemenov/nfs-provisioner-chart/master/repo
+$ helm install --name nfs nfs-provisioner/nfs-provisioner --set hostPath=/var/run/nfs-provisioner
+</code></pre>
+
+<p>(Note that RBAC is enabled by default. To turn it off, use <code>--set rbac.enabled=false</code>.)</p>
+
+<p>To use an emptyDir instead of a host mount, set <code>--hostPath=&quot;&quot;</code>, like so:</p>
+
+<pre><code class="language-console">$ helm install --name nfs nfs-provisioner/nfs-provisioner --set hostPath=&quot;&quot;
+</code></pre>
+
+<p>If you have plenty of memory to spare, and are more concerned with fast storage,
+you can configure the provisioner to use a tmpfs in-memory filesystem.</p>
+
+<pre><code class="language-console">$ helm install --name nfs nfs-provisioner/nfs-provisioner --set hostPath=&quot;&quot; --set useTmpfs=true
+</code></pre>
+
+<p>This chart installs a <code>StorageClass</code> named <code>local-nfs</code>. Brigade projects can
+each declare which storage classes they want to use. And there are two storage
+class settings:</p>
+
+<ul>
+<li><code>kubernetes.cacheStorageClass</code>: This is used for the Job cache.</li>
+<li><code>kubernetes.buildStorageClass</code>: This is used for the shared per-build storage.</li>
+</ul>
+
+<p>In your project&rsquo;s <code>values.yaml</code> file, set both of those to <code>local-nfs</code>, and then
+upgrade your project:</p>
+
+<p>values.yaml</p>
+
+<pre><code class="language-yaml"># ...
+kubernetes
+kubernetes:
+  buildStorageClass: local-nfs
+  cacheStorageClass: local-nfs
+</code></pre>
+
+<p>Then:</p>
+
+<pre><code class="language-console">$ helm upgrade my-project brigade/brigade-broject -f values.yaml
+</code></pre>
+
+<p>If you would prefer to use the NFS provisioner as a cluster-wide default volume provider
+(and have Brigade automatically use it), you can do so by making it the default
+storage class:</p>
+
+<pre><code class="language-console">$ helm install --name nfs nfs-provisioner/nfs-provisioner --set hostPath=&quot;&quot; --set defaultClass=true
+</code></pre>
+
+<p>Because Brigade pipelines can set up and tear down an NFS PVC very fast, the easiest
+way to check that the above works is to run a <code>brig run</code> and then check the
+log files for the NFS provisioner:</p>
+
+<pre><code class="language-console">$ kubectl logs nfs-provisioner-0 | grep volume
+I0305 21:20:28.187133       1 controller.go:786] volume &quot;pvc-06e2d938-20bb-11e8-a31a-080027a443a9&quot; for claim &quot;default/brigade-worker-01c7w0jse5grpkzwesz3htnnv5-master&quot; created
+I0305 21:20:28.195955       1 controller.go:803] volume &quot;pvc-06e2d938-20bb-11e8-a31a-080027a443a9&quot; for claim &quot;default/brigade-worker-01c7w0jse5grpkzwesz3htnnv5-master&quot; saved
+I0305 21:20:28.195972       1 controller.go:839] volume &quot;pvc-06e2d938-20bb-11e8-a31a-080027a443a9&quot; provisioned for claim &quot;default/brigade-worker-01c7w0jse5grpkzwesz3htnnv5-master&quot;
+I0305 21:20:34.208355       1 controller.go:1028] volume &quot;pvc-06e2d938-20bb-11e8-a31a-080027a443a9&quot; deleted
+I0305 21:20:34.216852       1 controller.go:1039] volume &quot;pvc-06e2d938-20bb-11e8-a31a-080027a443a9&quot; deleted from database
+I0305 21:21:15.967959       1 controller.go:786] volume &quot;pvc-235dd152-20bb-11e8-a31a-080027a443a9&quot; for claim &quot;default/brigade-worker-01c7w0m8jw1h44vwhvzp4pr2dr-master&quot; created
+I0305 21:21:15.973328       1 controller.go:803] volume &quot;pvc-235dd152-20bb-11e8-a31a-080027a443a9&quot; for claim &quot;default/brigade-worker-01c7w0m8jw1h44vwhvzp4pr2dr-master&quot; saved
+I0305 21:21:15.973358       1 controller.go:839] volume &quot;pvc-235dd152-20bb-11e8-a31a-080027a443a9&quot; provisioned for claim &quot;default/brigade-worker-01c7w0m8jw1h44vwhvzp4pr2dr-master&quot;
+I0305 21:21:26.045133       1 controller.go:1028] volume &quot;pvc-235dd152-20bb-11e8-a31a-080027a443a9&quot; deleted
+I0305 21:21:26.052593       1 controller.go:1039] volume &quot;pvc-235dd152-20bb-11e8-a31a-080027a443a9&quot; deleted from database
+I0305 21:25:40.845601       1 controller.go:786] volume &quot;pvc-c13e95f0-20bb-11e8-a31a-080027a443a9&quot; for claim &quot;default/brigade-worker-01c7w0wbffk3xhmbwwq114g15v-master&quot; created
+I0305 21:25:40.853759       1 controller.go:803] volume &quot;pvc-c13e95f0-20bb-11e8-a31a-080027a443a9&quot; for claim &quot;default/brigade-worker-01c7w0wbffk3xhmbwwq114g15v-master&quot; saved
+I0305 21:25:40.853790       1 controller.go:839] volume &quot;pvc-c13e95f0-20bb-11e8-a31a-080027a443a9&quot; provisioned for claim &quot;default/brigade-worker-01c7w0wbffk3xhmbwwq114g15v-master&quot;
+I0305 21:25:50.974719       1 controller.go:786] volume &quot;pvc-c746f068-20bb-11e8-a31a-080027a443a9&quot; for claim &quot;default/github-com-deis-empty-testbed-three&quot; created
+I0305 21:25:50.994219       1 controller.go:803] volume &quot;pvc-c746f068-20bb-11e8-a31a-080027a443a9&quot; for claim &quot;default/github-com-deis-empty-testbed-three&quot; saved
+I0305 21:25:50.994237       1 controller.go:839] volume &quot;pvc-c746f068-20bb-11e8-a31a-080027a443a9&quot; provisioned for claim &quot;default/github-com-deis-empty-testbed-three&quot;
+I0305 21:25:56.974297       1 controller.go:1028] volume &quot;pvc-c13e95f0-20bb-11e8-a31a-080027a443a9&quot; deleted
+I0305 21:25:56.985432       1 controller.go:1039] volume &quot;pvc-c13e95f0-20bb-11e8-a31a-080027a443a9&quot; deleted from database
+</code></pre>
+
+<p>Implementation details of note:</p>
+
+<ul>
+<li>The NFS server used is <a href="https://github.com/nfs-ganesha/nfs-ganesha">NFS-Ganesha</a></li>
+<li>The Kubernetes provisioner is part of <a href="https://github.com/kubernetes-incubator/external-storage/tree/master/nfs">kubernetes-incubator/external-storage</a></li>
+<li>Some Linux distros may not have the core NFS libraries installed. In such cases,
+NFS-Ganesha may not work. You may need to do something like <code>apt-get install nfs-common</code>
+on the nodes to install the appropriate libraris.</li>
+</ul>
+
+<h3 id="azure-file-setup">Azure File Setup</h3>
+
+<p>If one has a Kubernetes cluster on <a href="https://azure.microsoft.com/en-us/services/kubernetes-service/">Azure</a>,
+and the <code>default</code> storageclass is of the non-<code>readWriteMany</code>-compatible <code>kubernetes.io/azure-disk</code> variety, one can create
+an Azure File storageclass and then configure the Brigade project to use this instead of <code>default</code>.</p>
+
+<p>See the official <a href="https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-file">Azure File storageclass example</a>
+for the yaml to use.  <em>(Hint: The parameters section can be omitted altogether and Azure will use the defaults associated
+with the existing Kubernetes cluster.)</em></p>
+
+<p>Create the resource via <code>kubectl create -f azure-file-storage-class.yaml</code>.</p>
+
+<p>Finally, be sure to set <code>kubernetes.buildStorageClass=azurefile</code> on the Brigade project Helm release, or via the &ldquo;Advanced&rdquo; set up
+if creating via the <code>brig</code> cli.</p>
+
+<h2 id="errata">Errata</h2>
+
+<ul>
+<li>At this point, cache PVCs are never destroyed, even if the project to which
+they belong is destroyed. This behavior may change in the future.</li>
+<li>Killing the worker pod will orphan shared storage PVCs, as the cleanup routine
+is part of the worker&rsquo;s shutdown process. If you manually destroy a worker pod,
+you must also manually destroy the associated PVCs.</li>
+</ul>
+
+<hr />
+
+<p>Prev: <a href="security.md">Securing Brigade</a> <code>|</code> Next: <a href="workers.md">Workers</a></p>
+
+<p>Return to the <a href="index.md">Table of Contents</a></p>
+<div class="edit-meta">Last updated on 1 Jan 0001 / Published on 1 Jan 0001<br></div><nav class="pagination"><a class="nav nav-prev" href="/topics/security/" title="Securing Brigade"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Securing Brigade</a>
+<a class="nav nav-next" href="/topics/testing/" title="Testing">Next - Testing <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+<nav>
+<ul>
+<li class=""><a href="/">Home</a></li>
+
+<li class=""><a href="/intro/">Getting Started</a>
+<ul class="">
+<li class=""><a href="/intro/overview/">Brigade Overview</a></li>
+<li class=""><a href="/intro/install/">Installing Brigade</a></li>
+<li class=""><a href="/intro/tutorial01/">Tutorial 1: Writing a CI pipeline</a></li>
+<li class=""><a href="/intro/tutorial02/">Tutorial 2: Setup GitHub</a></li>
+<li class=""><a href="/intro/tutorial03/">Tutorial 3: Projects &amp; Events</a></li>
+<li class=""><a href="/intro/tutorial04/">Tutorial 4: Writing and Testing an App</a></li>
+<li class=""><a href="/intro/writing-efficient-pipelines/">Tutorial 5: Writing Efficient Pipelines</a></li>
+</ul>
+  
+</li>
+
+<li class="parent"><a href="/topics/">Topic Guides</a>
+<ul class="sub-menu">
+<li class=""><a href="/topics/scripting_advanced/">Advanced Scripting Guide</a></li>
+<li class=""><a href="/topics/dockerhub/">Container Registry Integration</a></li>
+<li class=""><a href="/topics/dependencies/">Dependencies</a></li>
+<li class=""><a href="/topics/design/">Design</a></li>
+<li class=""><a href="/topics/developers/">Developer Guide</a></li>
+<li class=""><a href="/topics/gateways/">Gateways</a></li>
+<li class=""><a href="/topics/genericgateway/">Generic Gateway</a></li>
+<li class=""><a href="/topics/github/">GitHub Integration</a></li>
+<li class=""><a href="/topics/ingress/">Ingress</a></li>
+<li class=""><a href="/topics/projects/">Managing Projects in Brigade</a></li>
+<li class=""><a href="/topics/releasing/">Releasing Brigade</a></li>
+<li class=""><a href="/topics/scripting/">Scripting Guide</a></li>
+<li class=""><a href="/topics/secrets/">Secret Management</a></li>
+<li class=""><a href="/topics/security/">Securing Brigade</a></li>
+<li class="active"><a href="/topics/storage/">Storage</a></li>
+<li class=""><a href="/topics/testing/">Testing</a></li>
+<li class=""><a href="/topics/javascript/">The Brigade.js API</a></li>
+<li class=""><a href="/topics/readnext/">What to Read Next</a></li>
+<li class=""><a href="/topics/workers/">Workers</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

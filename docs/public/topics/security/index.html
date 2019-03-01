@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Securing Brigade - Brigade</title>
+<meta name="description" content="How to configure security for Brigade.">
+<meta name="generator" content="Hugo 0.54.0" />
+<link href="/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/topics/security/">
+<link rel="stylesheet" href="/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="/js/functions.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/js/jquery.backtothetop/jquery.backtothetop.min.js"></script></head>
+<body>
+<div class="container"><header>
+<h1>Brigade</h1>
+
+<p class="description">Brigade - Event-driven scripting for Kubernetes.</p>
+
+</header>
+
+<div class="content-container">
+<main><h1>Securing Brigade</h1>
+
+<h1 id="securing-brigade">Securing Brigade</h1>
+
+<p>The execution of Brigade scripts involves dynamically creating (and destroying) a
+number of Kubernetes objects, including pods, secrets, and persistent volume claims.
+For that reason, it is prudent to configure security.</p>
+
+<ul>
+<li><em>Isolate Brigade in a namespace</em>: It is best to run Brigade in its own namespace. For example,
+in a Helm install, do <code>helm install --namespace brigade ...</code>.</li>
+<li><em>RBAC Enabled</em>: When installing with Helm, role-based access control is enabled by default.
+To disable,<code>--set rbac.enabled=false</code> will turn off role-based access control.</li>
+<li><em>Do not run more than one brigade per namespace</em>: Running multiple installs of Brigade
+in the same namespace can cause naming collisions which could result in
+unauthorized access to pods.</li>
+<li><em>Do not run multiple tenants against the same brigade</em>: Brigade does not implement
+security controls that allow multiple tenants to share the same Brigade instance.
+Brigade supports multiple projects per Brigade server instance, but those projects
+should be owned by the same tenant.</li>
+</ul>
+
+<h2 id="how-rbac-is-configured">How RBAC Is Configured</h2>
+
+<p>The Helm <a href="https://github.com/Azure/brigade-charts/tree/master/charts/brigade">chart</a> for Brigade
+includes an RBAC configuration that is designed to run in an isolated namespace.</p>
+
+<p>The RBAC defines a Service Account for every Deployment (API, Controller, Gateway),
+as well as a Service Account for the Brigade worker.</p>
+
+<p>Each deployment also has a Role, which describes the permissions that the particular
+service needs.</p>
+
+<p>The resulting Role Bindings, then, are a simple one-to-one match between the
+Service Account and the Role.</p>
+
+<p>Workers are an exception. The Service Account for a worker is hard-coded to <code>brigade-worker</code>,
+and all workers are bound to a Role that allows operations on pods, secrets, and
+persistent volume claims.</p>
+
+<h2 id="project-security">Project Security</h2>
+
+<p>Brigade is opinionated about configuring projects and storing data like credentials.
+Because sensitive information is stored in a project&rsquo;s secret, care should be
+taken in preventing unauthorized access to that secret.</p>
+
+<ul>
+<li>Out-of-the-box, the project is the location where credentials should be stored</li>
+<li>A project&rsquo;s credentials are accessible to any script running in that project,
+regardless of event.</li>
+<li>For SSH-based Git clones, the SSH key should be stored on the project.</li>
+</ul>
+
+<p>Note that if Helm is used to create a project, the project&rsquo;s secrets will be cached
+within Helm&rsquo;s release object. Read the <a href="http://helm.sh">Helm docs</a> to learn how
+to secure Helm.</p>
+
+<h2 id="script-security">Script Security</h2>
+
+<p>Brigade scripts can create pods, secrets, and persistent volume claims. Brigade does not
+evaluate the security of the containers that a pod runs. Consequently, it is best
+to avoid using untrusted containers in Brigade scripts. Likewise, it is not recommended
+to inject secrets into a container without first auditing the container.</p>
+
+<h2 id="gateway-security">Gateway Security</h2>
+
+<p>In Brigade, a gateway is any service that translates some external prompt (webhook,
+3rd party API, cron trigger, etc.) into a Brigade event.</p>
+
+<p>Gateways are the most likely service to have an external network connection. We
+suggest the following features of a gateway:</p>
+
+<ul>
+<li>A gateway should use appropriate network-level encryption</li>
+<li>A gateway should implement authentication/authorization with the upstream service
+wherever appropriate.
+
+<ul>
+<li>In most cases, auth requirements should not be passed on to other elements of
+Brigade.</li>
+<li>The exception is alternative VCS implementations, where the git-sidecar may
+be replaced by another sidecar.</li>
+</ul></li>
+</ul>
+
+<h2 id="api-server-security">API Server Security</h2>
+
+<p>Brigade includes an API server which allows external tools to discover state about
+Brigade projects, builds, and jobs.</p>
+
+<p>This service should only be exposed to the outside network when necessary. And
+when exposed, it should use transport layer security (aka SSL) whenever possible.</p>
+
+<hr />
+
+<p>Prev: <a href="projects.md">Projects</a> <code>|</code> Next: <a href="storage.md">Storage</a></p>
+
+<p>Return to the <a href="index.md">Table of Contents</a></p>
+<div class="edit-meta">Last updated on 1 Jan 0001 / Published on 1 Jan 0001<br></div><nav class="pagination"><a class="nav nav-prev" href="/topics/secrets/" title="Secret Management"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Secret Management</a>
+<a class="nav nav-next" href="/topics/storage/" title="Storage">Next - Storage <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+<nav>
+<ul>
+<li class=""><a href="/">Home</a></li>
+
+<li class=""><a href="/intro/">Getting Started</a>
+<ul class="">
+<li class=""><a href="/intro/overview/">Brigade Overview</a></li>
+<li class=""><a href="/intro/install/">Installing Brigade</a></li>
+<li class=""><a href="/intro/tutorial01/">Tutorial 1: Writing a CI pipeline</a></li>
+<li class=""><a href="/intro/tutorial02/">Tutorial 2: Setup GitHub</a></li>
+<li class=""><a href="/intro/tutorial03/">Tutorial 3: Projects &amp; Events</a></li>
+<li class=""><a href="/intro/tutorial04/">Tutorial 4: Writing and Testing an App</a></li>
+<li class=""><a href="/intro/writing-efficient-pipelines/">Tutorial 5: Writing Efficient Pipelines</a></li>
+</ul>
+  
+</li>
+
+<li class="parent"><a href="/topics/">Topic Guides</a>
+<ul class="sub-menu">
+<li class=""><a href="/topics/scripting_advanced/">Advanced Scripting Guide</a></li>
+<li class=""><a href="/topics/dockerhub/">Container Registry Integration</a></li>
+<li class=""><a href="/topics/dependencies/">Dependencies</a></li>
+<li class=""><a href="/topics/design/">Design</a></li>
+<li class=""><a href="/topics/developers/">Developer Guide</a></li>
+<li class=""><a href="/topics/gateways/">Gateways</a></li>
+<li class=""><a href="/topics/genericgateway/">Generic Gateway</a></li>
+<li class=""><a href="/topics/github/">GitHub Integration</a></li>
+<li class=""><a href="/topics/ingress/">Ingress</a></li>
+<li class=""><a href="/topics/projects/">Managing Projects in Brigade</a></li>
+<li class=""><a href="/topics/releasing/">Releasing Brigade</a></li>
+<li class=""><a href="/topics/scripting/">Scripting Guide</a></li>
+<li class=""><a href="/topics/secrets/">Secret Management</a></li>
+<li class="active"><a href="/topics/security/">Securing Brigade</a></li>
+<li class=""><a href="/topics/storage/">Storage</a></li>
+<li class=""><a href="/topics/testing/">Testing</a></li>
+<li class=""><a href="/topics/javascript/">The Brigade.js API</a></li>
+<li class=""><a href="/topics/readnext/">What to Read Next</a></li>
+<li class=""><a href="/topics/workers/">Workers</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

@@ -1,0 +1,104 @@
+.blog-layout {
+  padding-left: 0 !important;
+  background-color: white;
+
+  h1.blog-logo {
+    margin: 0;
+    padding: 0;
+    min-height: 5.125rem;
+    z-index: 1020;
+    text-transform: none;
+    position: fixed;
+    width: 300px;
+    left: 0;
+    top: 0;
+    display: block;
+    background-color: white;
+    border-bottom: 1px solid lighten($blue1, 35%);
+    border-right: 1px solid lighten($blue1, 35%);
+
+    a {
+      padding: 0.333em 2.25rem;
+      background-color: white;
+      display: inline-block;
+      max-height: 4rem;
+      line-height: 4rem;
+      position: absolute;
+      font-size: 1.5rem;
+      color: $blue3;
+      letter-spacing: -0.125rem;
+      text-align: left;
+      @include klinicReg;
+
+      em {
+        font-style: normal;
+      }
+
+      &:first-of-type {
+        min-width: 30%;
+        left: 0;
+      }
+
+      &:last-of-type {
+        min-width: 70%;
+        right: 0;
+      }
+
+      img,
+      svg {
+        display: block;
+        fill: currentColor;
+        @include transition;
+      }
+
+      svg {
+        margin-top: 0.5rem;
+      }
+
+      span {
+        top: 1em;
+        position: absolute;
+        font-size: 1.5rem;
+        color: $blue3;
+        left: 6.5rem;
+        letter-spacing: -0.125rem;
+        @include klinicReg;
+      }
+
+      &:hover {
+        background: $light2;
+
+        svg {
+          color: white !important;
+        }
+      }
+    }
+  }
+
+  .main {
+    padding-top: 2rem;
+
+    &.blog {
+
+      .content-wrap {
+        
+        article {
+          h1 {
+            padding-top: 4rem;
+          }
+        }
+      }
+    }
+
+    &.blog-single {
+      .content-wrap {
+        article {
+          h1 {
+            font-size: 2.667rem;
+            margin-top: 2rem;
+          }
+        }
+      }
+    }
+  }
+}

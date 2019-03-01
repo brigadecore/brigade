@@ -1,0 +1,21 @@
+{{ partial "header.html" . }}
+
+  <div class="container container-full">
+    {{ partial "sidebar.html" . }}
+
+    <div class="main page" id="scrollpane">
+      {{ partial "topbar.html" . }}
+
+      <div class="row">
+        <div class="small-1 columns">&nbsp;</div>
+        <div class="small-10 columns content-wrap">
+          <h3>{{ .Title }}</h3>
+
+          {{ .Content }}
+        </div>
+        <div class="small-1 columns">&nbsp;</div>
+      </div>
+
+    </div>
+
+    {{ partial "footer.html" . }}

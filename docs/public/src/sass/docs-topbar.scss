@@ -1,0 +1,93 @@
+.top-bar {
+  perspective: 800px;
+  min-height: 5.125em;
+  transform-style: preserve-3d;
+  background: white;
+  border-bottom: 1px solid lighten($blue1, 35%);
+  transition: transform 200ms linear;
+  position: fixed;
+  left: 300px;
+  right: 0;
+  top: 0;
+  z-index: 1000;
+
+  ul {
+    min-width: 33.333%;
+    margin-right: 0;
+    margin-top: 0.75em;
+    padding-right: 3.5%;
+
+    li {
+      display: inline-block;
+      margin: 0 0.5rem;
+
+      a {
+        padding: 1em;
+        color: $blue4;
+        font-size: 1.125rem;
+        @include klinicBold;
+
+        img {
+          padding-right: 0.333em;
+          max-height: 1.2rem;
+        }
+      }
+
+      &:last-child,
+      &:nth-last-child(2) {
+        margin-right: -1rem;
+      }
+    }
+  }
+
+  .breadcrumb {
+    position: absolute;
+    top: 0;
+    left: 1em;
+    z-index: 1030;
+    line-height: 1.5;
+    font-size: $scalex3;
+    letter-spacing: 0.05em;
+
+    a {
+      padding: 0.333em 0;
+      margin: 0.575em 0 0.575em 0.5em;
+      float: left;
+      text-transform: capitalize;
+      font-size: 1.5rem;
+      color: $blue3;
+      letter-spacing: -0.125rem;
+      @include klinicReg;
+      @include transition;
+
+      &:hover {
+        color: $blue1;
+      }
+
+      &:before {
+        content: '/';
+        display: inline-block;
+        width: 0.75em;
+        height: 2em;
+        margin: 0 0 0 -0.2em;
+        color: $grey1;
+      }
+
+      &:first-child:before {
+        display: none;
+      }
+    }
+  }
+}
+
+.left-off-canvas-toggle {
+  z-index: 1100;
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  img {
+    padding: 1.425em 0.925em;
+    color: $grey4;
+  }
+}

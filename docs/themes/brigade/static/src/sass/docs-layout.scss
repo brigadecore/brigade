@@ -1,0 +1,39 @@
+html,
+body {
+  min-height: 100%;
+  padding: 0;
+  margin: 0;
+  background: white;
+  background-position: static;
+  background-attachment: fixed;
+}
+
+// .inner-wrap,
+// .off-canvas-wrap,
+// .main {
+//   min-height: 100%;
+// }
+
+.main {
+  min-height: 760px;
+}
+
+.sidebar {
+  min-height: 100%;
+}
+
+.container-full {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  min-height: 100%;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding-left: 300px;
+  width: 100%;
+}
+
+.sidebar {
+  width: 25%;
+  width: 300px;
+}

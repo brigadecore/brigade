@@ -1,0 +1,104 @@
+{{ partial "header.html" . }}
+
+<div class="container container-full docs-home">
+    {{ partial "sidebar.html" . }}
+
+    <div class="main home" id="scrollpane">
+
+      <nav class="top-bar">
+        <ul class="inline right text-right">
+          {{ partial "nav.html" . }}
+        </ul>
+      </nav>
+
+      <div class="row collapse" id="helm">
+        <div class="small-12 columns home-intro-wrap">
+
+          <section class="billboard">
+            <div class="container">
+              <!-- <a href="https://helm.sh"><img src="/src/img/helm-logo.svg" alt="Helm" class="helm-logo"></a> -->
+
+              <h1>The package manager for Kubernetes</h1>
+              <h2>Helm is the best way to find, share, and use software built for Kubernetes.</h2>
+
+              <a href="https://twitter.com/helmpack" class="fa fa-twitter hide-for-small-only" title="Helm on Twitter"></a>
+              <a href="https://github.com/helm/helm" class="fa fa-github hide-for-small-only" title="Helm on Github"></a>
+            </div>
+            <div id="boat"></div>
+          </section>
+
+          <div class="row home-featured">
+            <div class="small-12 medium-10 small-centered medium-centered columns panels">
+              <div class="row">
+
+                <h3 class="text-center">Quicklinks</h3>
+
+                <div class="row">
+                  <div class="small-12 large-4 columns">
+                    <div class="panel">
+                      <a href="using_helm/#quickstart">
+                        <h3>Quickstart Guide</h3>
+                        <p>How to install and get started with Helm including instructions for distros, FAQs, and plugins.</p>
+                      </a>
+                    </div>
+                  </div>
+
+                  <div class="small-12 large-4 columns">
+                    <div class="panel">
+                      <a href="using_helm/#securing-your-helm-installation">
+                        <h3>Securing Helm</h3>
+                        <p>Understand and apply recommendations to ensure the safety of your cluster.</p>
+                      </a>
+                    </div>
+                  </div>
+
+                  <div class="small-12 large-4 columns">
+                    <div class="panel">
+                      <a href="developing_charts/">
+                        <h3>Chart Guide</h3>
+                        <p>Practical steps for building Helm charts - how to structure, sign, and sync your charts.</p>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="small-12 large-4 columns">
+                    <div class="panel">
+                      <a href="developers/">
+                        <h3>Developer Guide</h3>
+
+                        <p>Instructions for setting up your environment for developing on Helm and Tiller.</p>
+                      </a>
+                    </div>
+                  </div>
+
+                  <div class="small-12 large-4 columns">
+                    <div class="panel">
+                      <a href="https://daemonza.github.io/2017/02/20/using-helm-to-deploy-to-kubernetes/" target="_blank">
+                        <h3>Deploying to Kubernetes &nbsp; <small><i class="fa fa-external-link"></i></small></h3>
+
+                        <p>Helm can deploy apps to Kubernetes, with release and rollback versioning - <small>(via deamonza)</small></p>
+                      </a>
+                    </div>
+                  </div>
+
+                  <div class="small-12 large-4 columns">
+                    <div class="panel">
+                      <a href="https://hackernoon.com/the-missing-ci-cd-kubernetes-component-helm-package-manager-1fe002aac680#.691sk2zhu" target="_blank">
+                        <h3>CI/CD for Kubernetes &nbsp; <small><i class="fa fa-external-link"></i></small></h3>
+
+                        <p>Instructions on using Helm as the missing CI/CD Kubernetes component - <small>(via hackernoon)</small></p>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>

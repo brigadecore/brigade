@@ -1,0 +1,34 @@
+{{ partial "header.html" . }}
+
+<div class="container container-full blog-layout">
+
+  <div class="main blog blog-single page" id="scrollpane">
+    <h1 class="blog-logo">
+      <a href="/">
+        {{ partial "logo.html" . }}
+      </a>
+      <a href="/blog">
+        <em>Blog</em>
+      </a>
+    </h1>
+    
+    <nav class="top-bar">
+      <ul class="inline right text-right">
+        {{ partial "nav.html" . }}
+      </ul>
+    </nav>
+
+    <div class="row">
+      <div class="small-1 columns">&nbsp;</div>
+      <div class="small-10 columns content-wrap">
+        <article id="content">
+          <h1>{{ .Title }}</h1>
+          {{ .Content }}
+
+       </article>
+      </div>
+      <div class="small-1 columns">&nbsp;</div>
+    </div>
+  </div>
+
+  {{ partial "footer-blog.html" . }}

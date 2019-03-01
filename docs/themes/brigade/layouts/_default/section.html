@@ -1,0 +1,31 @@
+{{ partial "header.html" . }}
+
+  <div class="container container-full">
+    {{ partial "sidebar.html" . }}
+
+    <div class="main page" id="scrollpane">
+      {{ partial "topbar.html" . }}
+
+      <div class="row">
+        <div class="small-1 columns">&nbsp;</div>
+        <div class="small-10 columns content-wrap">
+          {{ range .Data.Pages.ByDate  }}
+            {{ .Render "article"}}
+          {{ end }}
+        </div>
+        <div class="small-1 columns">&nbsp;</div>
+      </div>
+
+      <div class="row collapse" id="contrib">
+        <div class="contrib-text">
+          <p class="text-center lead">
+            <a href="https://helm.sh">Helm</a> is supported by and built with a community of over 250 developers.
+          </p>
+          <p class="text-center">
+            <a href="https://helm.sh">helm.sh</a> and <a href="https://docs.helm.sh">docs.helm.sh</a> are maintained by <img src="/src/img/microsoft.png" alt="Microsoft" class="">
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {{ partial "footer.html" . }}

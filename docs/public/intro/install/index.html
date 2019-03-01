@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Installing Brigade - Brigade</title>
+<meta name="description" content="Quick install guide for Brigade">
+<meta name="generator" content="Hugo 0.54.0" />
+<link href="/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/intro/install/">
+<link rel="stylesheet" href="/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="/js/functions.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/js/jquery.backtothetop/jquery.backtothetop.min.js"></script></head>
+<body>
+<div class="container"><header>
+<h1>Brigade</h1>
+
+<p class="description">Brigade - Event-driven scripting for Kubernetes.</p>
+
+</header>
+
+<div class="content-container">
+<main><h1>Installing Brigade</h1>
+
+<p><em>This part is a work-in-progress because Brigade is still developer-oriented</em></p>
+
+<p>The Brigade server is deployed via its <a href="https://github.com/helm/helm">Helm</a> chart and
+Brigade projects are managed via <a href="#brig">brig</a>. Here are the steps:</p>
+
+<ol>
+<li>Make sure <code>helm</code> is installed, and <code>helm version</code> returns the correct server.</li>
+<li>Add the Brigade repo: <code>helm repo add brigade https://azure.github.io/brigade-charts</code></li>
+<li>Install Brigade: <code>helm install brigade/brigade --name brigade-server</code></li>
+<li>Create a Brigade project: <code>brig project create</code></li>
+</ol>
+
+<p>At this point, you have a running Brigade service. You can use <code>helm get brigade-server</code> and other Helm tools to examine your running Brigade server.</p>
+
+<h2 id="cluster-ingress">Cluster Ingress</h2>
+
+<p>By default, Brigade is not configured with a load balancer service for incoming requests.  Rather, cluster ingress
+comes in the form of one or more <a href="../topics/gateways.md">Gateways</a> that provide configurable services, usually in tandem
+with ingress resources.</p>
+
+<p>Let&rsquo;s take the example of enabling the <a href="../topics/github.md">GitHub App Gateway</a>.</p>
+
+<p>We would upgrade our <code>brigade-server</code> release like so:</p>
+
+<pre><code>$ helm upgrade -n brigade-server brigade/brigade --set brigade-github-app.enabled=true
+</code></pre>
+
+<p>We&rsquo;d then locate the external IP as follows:</p>
+
+<pre><code class="language-console">$ kubectl get svc brigade-server-brigade-github-app
+NAME                                TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)          AGE
+brigade-server-brigade-github-app   LoadBalancer   10.0.110.59   135.15.52.20   80:30758/TCP     45d
+</code></pre>
+
+<p>(Note that <code>brigade-server-brigade-github-app</code> is just the name of the Helm release (<code>brigade-server</code>) with <code>-brigade-github-app</code> appended)</p>
+
+<p>The <code>EXTERNAL-IP</code> field is the IP address that external services, such as GitHub in this example, will use to trigger actions.</p>
+
+<p>There will be more configuration needed for the <code>brigade-github-app</code> sub-chart for GitHub events to reach a Brigade project.
+See more at <a href="../topics/github.md">GitHub App Gateway</a>.</p>
+
+<p>Note that this is just one way of configuring Brigade to receive inbound connections. Brigade itself does not care how traffic is routed to it. Those with operational knowledge of Kubernetes may wish to use another method of ingress routing.</p>
+
+<h2 id="brig">Brig</h2>
+
+<p>We recommend using <a href="https://github.com/Azure/brigade/tree/master/brig">Brig</a>, a command line tool for interacting with Brigade. Read the <a href="https://github.com/Azure/brigade/tree/master/brig">Brig guide</a> for installation and usage docs.</p>
+
+<h2 id="notes-for-minikube">Notes for Minikube</h2>
+
+<p>You can run Brigade on <a href="https://github.com/kubernetes/minikube">Minikube</a> for easy testing
+and development. Minikube provides built-in support for caching and sharing files during
+builds. However, there are a few things that are much harder to do when running locally:</p>
+
+<ul>
+<li>Listening for GitHub webhooks requires you to route inbound traffic from the internet
+to your Minikube cluster. We do not recommend doing this unless you really understand
+what you are doing.</li>
+<li>Other inbound services may also be limited by the same restriction.</li>
+</ul>
+
+<h2 id="notes-for-azure-container-services-aks">Notes for Azure Container Services (AKS)</h2>
+
+<p>Brigade is well-tested on <a href="https://docs.microsoft.com/en-us/azure/aks/">AKS Kubernetes</a>. We recommend using at least Kubernetes 1.6.</p>
+
+<ul>
+<li>It is recommended to use a Service with type LoadBalancer on AKS, which will generate
+an Azure load balancer for you.</li>
+<li>For caching and storage, we recommend creating an Azure Storage instance and
+creating a Persistent Volume and Storage Class that use the <code>AzureFile</code> driver.
+(For an example, see the <code>Azure File Setup</code> section in the <a href="../topics/storage.md#azure-file-setup">storage document</a>.)</li>
+<li>You can use Azure Container Registry for private images, provided that you
+add the ACR instance to the same Resource Group that AKS belongs to.</li>
+<li>ACR&rsquo;s webhooks can be used to trigger events, as they follow the DockerHub
+webhook format.</li>
+<li>When configuring webhooks, it is recommended that you map a domain (via Azure&rsquo;s
+DNS service or another DNS service) to your Load Balancer IP. GitHub and other
+webhook services seem to work better with DNS names than with IP addresses.</li>
+</ul>
+
+<hr />
+
+<p>Prev: <a href="overview.md">Overview</a> <code>|</code> Next: <a href="tutorial01.md">Writing your first CI pipeline, Part 1</a></p>
+<div class="edit-meta">Last updated on 1 Jan 0001 / Published on 1 Jan 0001<br></div><nav class="pagination"><a class="nav nav-prev" href="/intro/overview/" title="Brigade Overview"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Brigade Overview</a>
+<a class="nav nav-next" href="/intro/tutorial01/" title="Tutorial 1: Writing a CI pipeline">Next - Tutorial 1: Writing a CI pipeline <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+<nav>
+<ul>
+<li class=""><a href="/">Home</a></li>
+
+<li class="parent"><a href="/intro/">Getting Started</a>
+<ul class="sub-menu">
+<li class=""><a href="/intro/overview/">Brigade Overview</a></li>
+<li class="active"><a href="/intro/install/">Installing Brigade</a></li>
+<li class=""><a href="/intro/tutorial01/">Tutorial 1: Writing a CI pipeline</a></li>
+<li class=""><a href="/intro/tutorial02/">Tutorial 2: Setup GitHub</a></li>
+<li class=""><a href="/intro/tutorial03/">Tutorial 3: Projects &amp; Events</a></li>
+<li class=""><a href="/intro/tutorial04/">Tutorial 4: Writing and Testing an App</a></li>
+<li class=""><a href="/intro/writing-efficient-pipelines/">Tutorial 5: Writing Efficient Pipelines</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="/topics/">Topic Guides</a>
+<ul class="">
+<li class=""><a href="/topics/scripting_advanced/">Advanced Scripting Guide</a></li>
+<li class=""><a href="/topics/dockerhub/">Container Registry Integration</a></li>
+<li class=""><a href="/topics/dependencies/">Dependencies</a></li>
+<li class=""><a href="/topics/design/">Design</a></li>
+<li class=""><a href="/topics/developers/">Developer Guide</a></li>
+<li class=""><a href="/topics/gateways/">Gateways</a></li>
+<li class=""><a href="/topics/genericgateway/">Generic Gateway</a></li>
+<li class=""><a href="/topics/github/">GitHub Integration</a></li>
+<li class=""><a href="/topics/ingress/">Ingress</a></li>
+<li class=""><a href="/topics/projects/">Managing Projects in Brigade</a></li>
+<li class=""><a href="/topics/releasing/">Releasing Brigade</a></li>
+<li class=""><a href="/topics/scripting/">Scripting Guide</a></li>
+<li class=""><a href="/topics/secrets/">Secret Management</a></li>
+<li class=""><a href="/topics/security/">Securing Brigade</a></li>
+<li class=""><a href="/topics/storage/">Storage</a></li>
+<li class=""><a href="/topics/testing/">Testing</a></li>
+<li class=""><a href="/topics/javascript/">The Brigade.js API</a></li>
+<li class=""><a href="/topics/readnext/">What to Read Next</a></li>
+<li class=""><a href="/topics/workers/">Workers</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

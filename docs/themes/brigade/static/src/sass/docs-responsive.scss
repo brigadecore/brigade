@@ -1,0 +1,194 @@
+
+// mobile style
+@media only screen and (max-width: 64.063em) {
+  .container-full {
+    padding-left: 0;
+  }
+
+  .left-off-canvas-toggle .fa {
+    padding: 1em 1.25em;
+    line-height: 3;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .top-bar {
+    left: 0;
+  }
+
+  .st-default-autocomplete {
+    width: 90% !important;
+    min-width: 320px !important;
+    left: 5% !important;
+  }
+
+  .home {
+    min-height: 500px;
+
+    .home-featured .panels {
+      min-width: 100%;
+    }
+
+    .fa {
+      display: none;
+    }
+
+    #helm {
+      .billboard {
+        padding-top: 180px;
+
+        .container {
+          margin-left: 5%;
+          margin-right: 5%;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+
+        .helm-logo {
+          max-width: 6rem !important;
+          left: 50% !important;
+          margin-left: -3rem !important;
+        }
+      }
+    }
+  }
+
+  .main .content-wrap h1 {
+    font-size: $scalex8;
+  }
+
+  .main .content-wrap article {
+    padding: 0 0 0.5em;
+
+    h1 {
+      font-size: $scalex8;
+    }
+
+    h2 {
+      font-size: $scalex6;
+    }
+
+    p:first-child {
+      padding-right: 0;
+      font-size: $scalex5;
+    }
+  }
+
+  aside.left-off-canvas-menu {
+    ul {
+      background: $blue2 !important;
+
+      li {
+        @include klinicBold;
+        font-size: 1.25rem;
+
+        a {
+          color: white !important;
+          border-bottom: none !important;
+
+          &:hover {
+            background: $blue2 !important;
+          }
+
+          &.active {
+            color: white !important;
+            background: $blue4 !important;
+          }
+        }
+
+        a + ul {
+          display: none;
+          background: $blue4 !important;
+          margin-left: 0;
+          padding: 0.5em 0 1em 1.5em;
+
+          li {
+            @include helvetica;
+            font-size: 1rem;
+            list-style: none;
+
+            a {
+              padding: 0.1em 0.66667rem;
+              border-bottom: none;
+              color: $light2 !important;
+            }
+          }
+        }
+
+        a.active + ul {
+          display: block;
+        }
+      }
+    }
+
+    .button-wrap {
+      padding: 0.75em 5%;
+
+      .button {
+        margin: 0.4em 0;
+      }
+    }
+  }
+
+  .top-bar {
+    .breadcrumb {
+      left: 2.75rem;
+    }
+    .right {
+      li {
+        display: none;
+
+        &:nth-child(2) {
+          display: inline-block;
+
+          a {
+            position: absolute;
+            right: -4em;
+            top: -0.35em;
+            font-size: 1.75rem;
+          }
+        }
+      }
+    }
+
+  }
+
+  .contrib-text .lead {
+    display: none;
+  }
+
+  .cncf-wrap {
+    .cncf {
+      padding-top: 2rem;
+      padding-bottom: 2rem;
+
+      img,
+      p {
+        float: none;
+        min-width: 80%;
+        margin: 1.5rem auto;
+      }
+
+      img {
+        max-width: 51%;
+      }
+    }
+  }
+}
+
+
+// affix the sidebar buttons, if the screen is tall enough
+@media screen and ( min-height: 575px ){
+  .sidebar {
+    padding-bottom: 0px;
+
+    .sidebar-buttons {
+      position: fixed;
+      bottom: 0;
+    }
+  }
+}

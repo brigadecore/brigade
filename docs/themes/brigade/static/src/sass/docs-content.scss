@@ -1,0 +1,198 @@
+.main .content-wrap {
+  padding-top: 1em;
+  padding-bottom: 10em;
+  font-size: $scalex5;
+  font-weight: normal;
+  line-height: 1.5;
+  z-index: 500;
+  position: relative;
+  @include klinicReg;
+
+  h1 {
+    text-transform: none;
+    letter-spacing: 0.03em;
+    margin-top: 1em;
+    padding-top: 2.5em;
+  }
+
+  article {
+    padding: 2em 0 0;
+    overflow:auto;
+
+    h1 {
+      font-size: $scalex8;
+      color: $blue3;
+      margin: 1em 0 1em;
+      padding-top: 4.5em;
+    }
+  }
+
+  h2 {
+    color: darken($grey3, 5%);
+    font-size: $scalex7;
+    letter-spacing: 0.05em;
+    @include klinicBold;
+    @include upperCase;
+    letter-spacing: 0.125em;
+    margin: 0em 0 0.875em;
+    padding-top: 3.5em;
+  }
+
+  h3 {
+    color: $grey4;
+    @include klinicBold;
+    margin: 1.825em 0 1.825em;
+  }
+
+  h4 {
+    font-size: $scalex5;
+  }
+
+  p {
+    color: $grey4;
+    line-height: 1.725;
+    margin: 0.825rem 0 1.667rem;
+    font-size: $scalex5;
+
+    &:first-child {
+      font-size: $scalex6;
+      color: $grey4;
+      line-height: 1.636;
+      margin-bottom: 1.925rem;
+      padding-right: 7.5%;
+    }
+
+    a {
+      padding-left: 0.25em;
+      padding-right: 0.25em;
+    }
+  }
+
+  &.markdown pre,
+  pre {
+    background-color: #e4f3f9;
+    color: black;
+    border: none;
+    padding: 0.75em 1em;
+    margin: 0.25em 0 2.5em;
+    font-size: 1rem;
+
+    code {
+      padding: 0;
+      background-color: #e4f3f9;
+      font-size: 1rem;
+    }
+  }
+
+  .code-box {
+    margin: 0px;
+    width: 100%;
+    height: 220px;
+    border-bottom: 3px solid $grey1;
+    overflow: auto;
+  }
+
+  strong {
+    letter-spacing: 0.0125em;
+  }
+
+  code {
+    color: black;
+    padding: 0.5em 0.5em;
+    background-color: #e4f3f9;
+    border: none;
+    font-size: 1rem;
+  }
+
+  &.markdown ul,
+  &.markdown ol,
+  ul,
+  ol {
+    padding: 0 0.25rem;
+    margin-bottom: 2em;
+    color: $grey4;
+    font-size: $scalex4;
+    line-height: 1.7;
+
+    li {
+      font-size: 1.125em;
+    }
+  }
+
+  table {
+    margin: 1.5rem 0;
+    border: none;
+    width: 100%;
+
+    th,
+    td {
+      border: none;
+      vertical-align: top;
+      text-align: left;
+      padding: 0.425em 0.75em 0.425em 0.2em;
+      width: auto;
+    }
+
+    td {
+      color: $grey4;
+      font-size: $scalex4;
+    }
+  }
+
+  a {
+    color: darken($blue3, 7.5%);
+    background-color: #f6fbfe;
+    @include transition;
+
+    &:hover {
+      color: darken($blue2, 5%);
+      border-bottom: 2px solid $blue1;
+      background: white;
+    }
+  }
+
+  .header-link {
+    position: absolute;
+    left: -0.4em;
+    opacity: 0;
+    font-size: 1rem;
+    padding-top: 0.333em;
+    @include transition(all, 0.3s, ease-in-out);
+
+    &:hover {
+      border-bottom: none;
+      background-color: transparent;
+    }
+  }
+
+  h2:hover,
+  h3:hover,
+  h4:hover,
+  h5:hover,
+  h6:hover {
+    color: $blue4;
+
+    .header-link {
+      opacity: 1;
+      left: -0.825em;
+    }
+  }
+
+  img {
+    box-shadow: 0 0 3px $grey1;
+    padding: 0.5em;
+    background-color: white;
+    max-width: 100%;
+    margin-bottom: 0.75em;
+
+    &:hover {
+      @include box-shadow(0, 0, 4px, $grey2);
+    }
+  }
+
+  iframe,
+  embed,
+  .youtube-player {
+    min-height: 320px;
+  }
+}

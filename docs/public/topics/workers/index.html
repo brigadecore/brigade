@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Workers - Brigade</title>
+<meta name="description" content="How to add custom libraries to a Brigade worker">
+<meta name="generator" content="Hugo 0.54.0" />
+<link href="/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/topics/workers/">
+<link rel="stylesheet" href="/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="/js/functions.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/js/jquery.backtothetop/jquery.backtothetop.min.js"></script></head>
+<body>
+<div class="container"><header>
+<h1>Brigade</h1>
+
+<p class="description">Brigade - Event-driven scripting for Kubernetes.</p>
+
+</header>
+
+<div class="content-container">
+<main><h1>Workers</h1>
+
+<h1 id="adding-custom-libraries-to-a-brigade-worker">Adding custom libraries to a Brigade worker</h1>
+
+<p>A worker is the component in Brigade that executes a <code>brigade.js</code>. Brigade ships
+with a general purpose worker focused on running jobs. This generic worker
+exposes a host of Node.js libraries to <code>brigade.js</code> files, as well as the
+<code>brigadier</code> Brigade library.</p>
+
+<p>Sometimes, though, it is desirable to include additional libraries &ndash; perhaps even
+custom libraries &ndash; to your workers.
+There are two ways of adding custom dependencies to a Brigade worker:</p>
+
+<ul>
+<li><p>by creating a custom Docker image for the worker that already contains the dependencies
+and which will be used for all Brigade projects.</p></li>
+
+<li><p>without creating a custom container image - check <a href="dependencies.md">the dependencies document</a> for a detailed description for this approach.</p></li>
+</ul>
+
+<p><strong>Note:</strong> This area of Brigade is still evolving. If you have ideas for improving
+it, feel free to <a href="https://github.com/Azure/brigade/issues">file an issue</a> explaining
+your idea.</p>
+
+<h2 id="workers-and-docker-images">Workers and Docker Images</h2>
+
+<p>The Brigade worker (<code>brigade-worker</code>) is captured in a Docker image, and that
+image is then executed in a container on your cluster. Augmenting the worker,
+then, is done by creating a custom Docker image and then configuring Brigade
+to use that image instead of the default <code>brigade-worker</code> image.</p>
+
+<p>Next we will see how to quickly create a custom worker by creating a new
+Docker image based on the base image.</p>
+
+<h2 id="creating-a-custom-worker">Creating a Custom Worker</h2>
+
+<p>As we saw above, workers are Docker images. And the default worker is a Docker
+image that contains the Brigade worker runtime, which can read and execute
+<code>brigade.js</code> files.</p>
+
+<p>At its core, the Brigade worker is just a Node.js application. That means that
+we can use the usual array of Node.js tools and libraries. Here, we&rsquo;ll load an
+extra library from NPM so that it is available inside of our <code>brigade.js</code>
+scripts.</p>
+
+<p>Since the main worker is already tooled to do the main processing, the easiest
+way to add your own libraries is to start with the existing worker and add to
+it. Docker makes this convenient.</p>
+
+<p>Say we want to provide an XML parser to our Brigade scripts. We can do that
+using a <code>Dockerfile</code>:</p>
+
+<pre><code class="language-Dockerfile">FROM deis/brigade-worker:latest
+
+RUN yarn add xml-simple
+</code></pre>
+
+<p>The above will begin with the default Brigade worker and simply add the <code>xml-simple</code>
+library. We can build this into an image and then push it to our Docker registry
+like this:</p>
+
+<pre><code class="language-console">$ docker build -t myregistry/myworker:latest .
+$ docker push myregistry/myworker:latest
+</code></pre>
+
+<blockquote>
+<p>IMPORTANT: Make sure you replace <code>myregistry</code> and <code>myworker</code> with your own
+account and image names.</p>
+</blockquote>
+
+<p><strong>Tip:</strong> If you are running a local Kubernetes cluster with Docker or Minikube,
+you do not need to push the image. Just configure your Docker client
+to point to the same Docker daemon that your Kubernetes cluster is using. (With
+Minikube, you do this by running <code>eval $(minikube docker-env)</code>.)</p>
+
+<p>Now that we have our image pushed to a usable location, we can configure Brigade
+to use this new image.</p>
+
+<h2 id="configuring-brigade-to-use-your-new-worker">Configuring Brigade to Use Your New Worker</h2>
+
+<p>As of Brigade v0.10.0, worker images can be configured <em>globally</em>. Individual
+projects can choose to override the global setting.</p>
+
+<p>To set the version globally, you should override the following values in your
+<code>brigade/brigade</code> chart:</p>
+
+<pre><code class="language-yaml"># worker is the JavaScript worker. These are created on demand by the controller.
+worker:
+  registry: myregistry
+  name: myworker
+  tag: latest
+  #pullPolicy: IfNotPresent # Set this to Always if you are testing and using
+  #                           an upstream registry like Dockerhub or ACR
+</code></pre>
+
+<p>You can then use <code>helm upgrade</code> to load those new values to Brigade.</p>
+
+<h3 id="project-overrides">Project Overrides</h3>
+
+<p>To configure the worker image per-project, you can set up a custom <code>worker</code> section
+via <code>brig</code> during the <code>Configure advanced options</code> section.  (If the project has
+already been created, use <code>brig project create --replace -p &lt;pre-existing-project&gt;</code>).</p>
+
+<p>Here we supply our custom worker image registry (<code>myregistry</code>), image name
+(<code>myworker</code>), image tag (<code>latest</code>), pull policy (<code>IfNotPresent</code>) and command (<code>yarn -s start</code>):</p>
+
+<pre><code class="language-console">$ brig project create
+...
+? Configure advanced options Yes
+...
+? Worker image registry or DockerHub org myregistry
+? Worker image name myworker
+? Custom worker image tag latest
+? Worker image pull policy IfNotPresent
+? Worker command yarn -s start
+</code></pre>
+
+<h2 id="using-your-new-image">Using Your New Image</h2>
+
+<p>Once you have set the Docker image (above), your new Brigade workers will
+automatically switch to using this new image.</p>
+
+<p>Assuming you have configured your project (as explained above) and
+your Kubernetes cluster can see the Docker registry that you pushed your image to,
+you can now simply assume that you are using your new custom image. So now
+we can import our new <code>simple-xml</code> library:</p>
+
+<p><a href="examples/workers/brigade.js">brigade.js</a></p>
+
+<pre><code class="language-javascript">const { events } = require(&quot;brigadier&quot;);
+const XML = require(&quot;simple-xml&quot;);
+
+events.on(&quot;exec&quot;, () =&gt; {
+  var o = XML.parse(&quot;&lt;say&gt;&lt;to&gt;world&lt;/to&gt;&lt;/say&gt;&quot;)
+  console.log(`Saying hello to ${o.say.to}`);
+});
+
+</code></pre>
+
+<p>Running the above with <code>brig run -f brigade.js my/project</code> (where <code>my/project</code>
+is some project you have already created) should result in a successful run.</p>
+
+<p>Here is an example:</p>
+
+<pre><code class="language-console">$ brig run -f brigade.js deis/empty-testbed
+Started build 01c7kmserwyc5y05rrhpvnp5m0 as &quot;brigade-worker-01c7kmserwyc5y05rrhpvnp5m0-master&quot;
+prestart: src/brigade.js written
+[brigade] brigade-worker version: 0.10.0
+[brigade:k8s] Creating PVC named brigade-worker-01c7kmserwyc5y05rrhpvnp5m0-master
+Saying hello to world
+[brigade:app] after: default event fired
+[brigade:app] beforeExit(2): destroying storage
+[brigade:k8s] Destroying PVC named brigade-worker-01c7kmserwyc5y05rrhpvnp5m0-master
+</code></pre>
+
+<p>You can see that <code>Saying hello to ${o.say.to}</code> rendered correctly
+as <code>Saying hello to world</code>.</p>
+
+<h2 id="adding-a-custom-non-npm-library">Adding a Custom (Non-NPM) Library</h2>
+
+<p>Sometimes it is useful to encapsulate commonly used Brigade code into a library
+that can be shared between projects internally. While the NPM model above is
+easier to manage over the longer term, there is a simple method for loading
+custom code into an image. This section illustrates that method.</p>
+
+<p>Here is a small library that adds an <code>alpineJob()</code> helper function:</p>
+
+<p><a href="examples/workers/mylib.js">mylib.js</a></p>
+
+<pre><code class="language-javascript">const {Job} = require(&quot;./brigadier&quot;);
+
+exports.alpineJob = function(name) {
+  j = new Job(name, &quot;alpine:3.7&quot;, [&quot;echo hello&quot;])
+  return j
+}
+</code></pre>
+
+<p><strong>Note:</strong> Because we are loading our code directly into Brigade, we import
+<code>./brigadier</code>, not <code>brigadier</code>. This may change in the future.</p>
+
+<p>We can build this file into our Dockerfile by copying it into the image:</p>
+
+<pre><code>FROM deis/brigade-worker:latest
+
+RUN yarn add xml-simple
+COPY mylib.js /home/src/dist
+</code></pre>
+
+<p>And now we can build the above:</p>
+
+<pre><code class="language-console">$ docker build -t myregistry/myworker:latest .
+$ docker push myregistry/myworker:latest
+</code></pre>
+
+<p>Assuming you have configured Brigade to use your <code>myworker</code> image (explained
+above in &ldquo;Configuring Brigade to Use Your New Worker&rdquo;), you can begin using the
+library:</p>
+
+<pre><code class="language-javascript">const { events } = require(&quot;brigadier&quot;);
+const XML = require(&quot;xml-simple&quot;);
+const { alpineJob } = require(&quot;./mylib&quot;);
+
+events.on(&quot;exec&quot;, () =&gt; {
+  XML.parse(&quot;&lt;say&gt;&lt;to&gt;world&lt;/to&gt;&lt;/say&gt;&quot;, (e, say) =&gt; {
+    console.log(`Saying hello to ${say.to}`);
+  })
+
+  const alpine = alpineJob(&quot;myjob&quot;);
+  alpine.run();
+});
+
+</code></pre>
+
+<p>Now we&rsquo;ve added a few new lines to the script. We import <code>alpineJob</code> from our
+<code>./mylib</code> module at the top. Then, late in the script, we call <code>alpineJob</code> to
+create a new job for us.</p>
+
+<h2 id="best-practices">Best practices</h2>
+
+<p>We strongly discourage attempting to turn a worker into a long-running server.
+This violates the design assumptions of Brigade, and can result in unintended
+side effects.</p>
+
+<hr />
+
+<p>Prev: <a href="storage.md">Storage</a> <code>|</code> Next: <a href="developers.md">Development Guide</a></p>
+
+<p>Return to the <a href="index.md">Table of Contents</a></p>
+<div class="edit-meta">Last updated on 1 Jan 0001 / Published on 1 Jan 0001<br></div><nav class="pagination"><a class="nav nav-prev" href="/topics/readnext/" title="What to Read Next"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - What to Read Next</a>
+<a class="nav nav-next" href="/topics/scripting_advanced/" title="Advanced Scripting Guide">Next - Advanced Scripting Guide <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+<nav>
+<ul>
+<li class=""><a href="/">Home</a></li>
+
+<li class=""><a href="/intro/">Getting Started</a>
+<ul class="">
+<li class=""><a href="/intro/overview/">Brigade Overview</a></li>
+<li class=""><a href="/intro/install/">Installing Brigade</a></li>
+<li class=""><a href="/intro/tutorial01/">Tutorial 1: Writing a CI pipeline</a></li>
+<li class=""><a href="/intro/tutorial02/">Tutorial 2: Setup GitHub</a></li>
+<li class=""><a href="/intro/tutorial03/">Tutorial 3: Projects &amp; Events</a></li>
+<li class=""><a href="/intro/tutorial04/">Tutorial 4: Writing and Testing an App</a></li>
+<li class=""><a href="/intro/writing-efficient-pipelines/">Tutorial 5: Writing Efficient Pipelines</a></li>
+</ul>
+  
+</li>
+
+<li class="parent"><a href="/topics/">Topic Guides</a>
+<ul class="sub-menu">
+<li class=""><a href="/topics/scripting_advanced/">Advanced Scripting Guide</a></li>
+<li class=""><a href="/topics/dockerhub/">Container Registry Integration</a></li>
+<li class=""><a href="/topics/dependencies/">Dependencies</a></li>
+<li class=""><a href="/topics/design/">Design</a></li>
+<li class=""><a href="/topics/developers/">Developer Guide</a></li>
+<li class=""><a href="/topics/gateways/">Gateways</a></li>
+<li class=""><a href="/topics/genericgateway/">Generic Gateway</a></li>
+<li class=""><a href="/topics/github/">GitHub Integration</a></li>
+<li class=""><a href="/topics/ingress/">Ingress</a></li>
+<li class=""><a href="/topics/projects/">Managing Projects in Brigade</a></li>
+<li class=""><a href="/topics/releasing/">Releasing Brigade</a></li>
+<li class=""><a href="/topics/scripting/">Scripting Guide</a></li>
+<li class=""><a href="/topics/secrets/">Secret Management</a></li>
+<li class=""><a href="/topics/security/">Securing Brigade</a></li>
+<li class=""><a href="/topics/storage/">Storage</a></li>
+<li class=""><a href="/topics/testing/">Testing</a></li>
+<li class=""><a href="/topics/javascript/">The Brigade.js API</a></li>
+<li class=""><a href="/topics/readnext/">What to Read Next</a></li>
+<li class="active"><a href="/topics/workers/">Workers</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

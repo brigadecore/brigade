@@ -1,0 +1,264 @@
+/* Helm.sh Styles */
+//
+// Variables
+//
+// 1. Colours
+// 2. Setup Fonts
+// 3. CSS3 & Vendor Prefixes
+
+
+// 1.
+// Helm Colours
+//
+// Primary Colors
+
+$blue1: #2DAFE9;
+$blue2: #2BA0D3;
+$blue3: #2090CD;
+$blue4: #277A9F;
+
+// Shading
+$grey1: #ccc;
+$grey2: #999;
+$grey3: #666;
+$grey4: #333333;
+
+$light2: #EBF7FC;
+$light1: lighten($light2, 2.5%);
+
+
+  // old helm.sh colors, discontinue these
+  $grey           : #E4E4E4;
+  $light1         : #F4F4F4;
+  $light2         : #E4E4E4;
+
+  $black          : #555555;
+  $dark1          : #4E4E4E;
+  $dark2          : #464646;
+
+  $blue           : #3FB1E5;
+  $pink           : #FF2A53;
+  $green          : #38BB4C;
+
+  $darkpink       : #EF637E;
+  $darkblue       : #27759A;
+  $darkgreen      : #44A653;
+
+  $salmon         : #F99EAC;
+
+  $lightpink      : #FF7590;
+  $lightblue      : #7FCCF0;
+  $lightgreen     : #68D478;
+
+
+// 2.
+// Fonts
+//
+
+$base: "Helvetica Neue", Helvetica, Arial, sans-serif;
+$mono: "Lucida Console", "Courier New", monaco, monospace;
+
+@font-face {
+  font-family: 'klinic-reg';
+  src: url('../fonts/klinicslabbook-webfont.eot');
+  src: url('../fonts/klinicslabbook-webfont.eot?#iefix') format('embedded-opentype'),
+   url('../fonts/klinicslabbook-webfont.woff2') format('woff2'),
+   url('../fonts/klinicslabbook-webfont.woff') format('woff'),
+   url('../fonts/klinicslabbook-webfont.ttf') format('truetype'),
+   url('../fonts/klinicslabbook-webfont.svg#klinic_slabbook') format('svg');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'klinic-bold';
+  src: url('../fonts/klinicslabmedium-webfont.eot');
+  src: url('../fonts/klinicslabmedium-webfont.eot?#iefix') format('embedded-opentype'),
+   url('../fonts/klinicslabmedium-webfont.woff2') format('woff2'),
+   url('../fonts/klinicslabmedium-webfont.woff') format('woff'),
+   url('../fonts/klinicslabmedium-webfont.ttf') format('truetype'),
+   url('../fonts/klinicslabmedium-webfont.svg#klinic_slabmedium') format('svg');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@mixin klinicBold {
+  font-family: "klinic-bold", "klinic bold", $base;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  -webkit-font-smoothing: antialiased;
+}
+
+@mixin klinicReg {
+  font-family: "klinic-reg", "klinic", $base;
+  font-weight: 400;
+  letter-spacing: 0.0075em;
+  -webkit-font-smoothing: antialiased;
+}
+@mixin helvetica {
+  font-family: $base;
+  letter-spacing: 0;
+}
+
+@mixin upperCase {
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+}
+
+@mixin normCase {
+  text-transform: none;
+  letter-spacing: 0.015em;
+}
+
+
+// 3.
+// Load CSS & Vendor Prefixes
+//
+// via Compass
+// https://github.com/gruntjs/grunt-contrib-compass
+//
+
+//@import "assets/compass/css3";
+
+@mixin transition($property:all, $duration:0.3s, $easing:ease-in-out) {
+  transition: $property $duration $easing;
+}
+
+@mixin border-radius($radius1:3px, $radius2:3px) {
+  -webkit-border-radius: $radius1 $radius2 $radius1 $radius2;
+  -moz-border-radius: $radius1 $radius2 $radius1 $radius2;
+  border-radius: $radius1 $radius2 $radius1 $radius2;
+}
+
+@mixin box-shadow($xlength:0, $ylength:2px, $size:0, $color:rgba(30,30,30,0.25)) {
+  -webkit-box-shadow: $xlength $ylength $size $color;
+  -moz-box-shadow: $xlength $ylength $size $color;
+  box-shadow: $xlength $ylength $size $color;
+}
+
+@mixin keyframe ($animation_name) {
+  @-webkit-keyframes $animation_name {
+    @content;
+  }
+  @-moz-keyframes $animation_name {
+    @content;
+  }
+  @-o-keyframes $animation_name {
+    @content;
+  }
+  @keyframes $animation_name {
+    @content;
+  }
+}
+
+@mixin animation ($delay, $duration, $animation) {
+  -webkit-animation-delay: $delay;
+  -webkit-animation-duration: $duration;
+  -webkit-animation-name: $animation;
+  -webkit-animation-fill-mode: forwards;
+  -moz-animation-delay: $delay;
+  -moz-animation-duration: $duration;
+  -moz-animation-name: $animation;
+  -moz-animation-fill-mode: forwards;
+  animation-delay: $delay;
+  animation-duration: $duration;
+  animation-name: $animation;
+  animation-fill-mode: forwards;
+}
+
+/**
+ * Media query breakpoints
+ */
+ $desktopFloor: 64.0625em;
+ $tabletFloor: 40.063em;
+ $tabletCeiling: 64.0624em;
+ $mobileCeiling: 40em;
+ 
+ @mixin mobile {
+   @media only screen and (max-width: $mobileCeiling) {
+     @content;
+   }
+ }
+ 
+ @mixin tablet {
+   @media only screen and (min-width: $tabletFloor) {
+     @content;
+   }
+ }
+ 
+ @mixin mobileAndTablet {
+   @media only screen and (max-width: $tabletCeiling) {
+     @content;
+   }
+ }
+ 
+ @mixin desktop {
+   @media only screen and (min-width: $desktopFloor) {
+     @content;
+   }
+ }
+ 
+ @mixin landscape {
+   @media only screen and (min-width: 569px) and (max-width: 736px) and (orientation: landscape) {
+     @content;
+   }
+ }
+ 
+ @mixin smallLandscape {
+   @media only screen and (max-width: 568px) and (orientation: landscape) {
+     @content;
+   }
+ }
+ 
+ // vertical alignment
+ 
+ @mixin fullheight {
+   min-height: 100%;
+   height: 100%;
+ }
+ 
+ @mixin centerer {
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+ }
+ 
+ @mixin topper {
+   position: absolute;
+   top: 0%;
+ }
+ 
+ @mixin bottomer {
+   position: absolute;
+   bottom: 0%;
+ }
+ 
+ // link effect
+ @mixin ripple($color: $salmon) {
+   position: relative;
+   display: inline-block;
+   text-align: center;
+   @include transition;
+ 
+   &::after {
+     display: inline-block;
+     content: "";
+     background: $color;
+     height: 3px;
+     position: absolute;
+     bottom: 0;
+     left: 50%;
+     width: 10%;
+     opacity: 0;
+     margin: 0 0 0 -5%;
+     @include transition;
+   }
+ 
+   &:hover::after {
+     width: 100%;
+     left: 0;
+     margin-left: 0;
+     opacity: 1;
+   }
+ }

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Tutorial 2: Setup GitHub - Brigade</title>
+<meta name="description" content="Writing your first CI pipeline, Part 2">
+<meta name="generator" content="Hugo 0.54.0" />
+<link href="/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/intro/tutorial02/">
+<link rel="stylesheet" href="/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="/js/functions.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/js/jquery.backtothetop/jquery.backtothetop.min.js"></script></head>
+<body>
+<div class="container"><header>
+<h1>Brigade</h1>
+
+<p class="description">Brigade - Event-driven scripting for Kubernetes.</p>
+
+</header>
+
+<div class="content-container">
+<main><h1>Tutorial 2: Setup GitHub</h1>
+
+<h1 id="writing-your-first-ci-pipeline-part-2">Writing your first CI pipeline, Part 2</h1>
+
+<p>This tutorial begins where <a href="tutorial01.md">Tutorial 1</a> left off. We’ll walk through the process for using Git locally on your personal computer, and using Github to back it up. We&rsquo;ll walk through creating your personal Github account, setting up Git on your computer, starting your first Git repository, and connecting that repository to a Github repository.</p>
+
+<h2 id="what-are-git-and-github">What are git and Github?</h2>
+
+<p>Git is a widely-used version control system used to manage code. Git allows you to save drafts of your code so that you can look back at previous versions and potentially undo complicated errors. A project managed with git is called a <em>git repository</em>.</p>
+
+<p>Github is a popular hosting service for git repositories. Github allows you to store your local Git repositories in the cloud. With Github, you can backup your personal files, share your code, and collaborate with others through their site.</p>
+
+<h2 id="create-a-github-account">Create a Github account</h2>
+
+<p>To use Github, you will need a Github account.</p>
+
+<p>In your own browser:</p>
+
+<ol>
+<li>Open a new browser tab</li>
+<li>Navigate to <a href="https://github.com/">https://github.com/</a></li>
+<li>Create an account</li>
+</ol>
+
+<p>If you already have Github account, continue to the next exercise.</p>
+
+<p>After you sign up, you will receive a verification e-mail. Be sure to verify your e-mail address to Github by following the instructions in that e-mail.</p>
+
+<h2 id="initialize-your-repository">Initialize your repository</h2>
+
+<p>Now that you have a Github account and a working application, let&rsquo;s create a git repository and push it up to Github!</p>
+
+<p>Let&rsquo;s first change working directories over to the Flask app we made in <a href="tutorial01.md">Tutorial 1</a>.</p>
+
+<pre><code>$ cd uuid-generator
+</code></pre>
+
+<p>Now, we&rsquo;ll create a git repository and make your first commit.</p>
+
+<pre><code>$ git init
+$ echo -e &quot;*.pyc\n*.egg-info&quot; &gt; .gitignore
+$ git commit -am &quot;initial commit&quot;
+</code></pre>
+
+<p>We created a <em>.gitignore</em> file so all compiled python files and python eggs (noted with the .pyc and .egg-info extensions, respectively) are not added to source control.</p>
+
+<h2 id="push-to-github">Push to Github</h2>
+
+<p>Finally, we&rsquo;ll create a repository on Github and then link it to your local repository on your computer. This will allow you to back up your work safely so you never need to worry about losing your work again!</p>
+
+<ol>
+<li>On Github, create a new repository by navigating to <a href="https://github.com/new">https://github.com/new</a></li>
+<li>On the new repository page, give your repository a name. It&rsquo;s not necessary, but it would be convenient to name it the same as the directory, <strong>uuid-generator</strong></li>
+<li>Add a nice description, leave it as a public repository and do not check the box to initialize this repository with a README</li>
+<li>Click <em>Create repository</em></li>
+<li>After creating a repository, Github displays the repository page. The repository is empty, so it&rsquo;s time to connect it to your existing work. Copy the git commands on the Github page, under the title &ldquo;&hellip;or push an existing repository from the command line&rdquo;, and paste them into your terminal. Running these commands will add a remote repository, and then push your local repository to the remote repository</li>
+<li>Once your terminal reports that the push is complete, refresh the page on Github. You should now see the app uploaded to Github!</li>
+</ol>
+
+<p>Github automatically displays the contents of a file named README if it exists in the repository. The README file is the perfect place to write a description of your project, if you so choose.</p>
+
+<p>There you have it! Your first Github repository, linked to your local git repository.</p>
+
+<p>When you’re comfortable with the git workflow, read <a href="tutorial03.md">part 3 of this tutorial</a> to learn about configuring our Github repository to test new features using Brigade.</p>
+
+<hr />
+
+<p>Prev: <a href="tutorial01.md">Part 1</a> <code>|</code> Next: <a href="tutorial03.md">Part 3</a></p>
+<div class="edit-meta">Last updated on 1 Jan 0001 / Published on 1 Jan 0001<br></div><nav class="pagination"><a class="nav nav-prev" href="/intro/tutorial01/" title="Tutorial 1: Writing a CI pipeline"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Tutorial 1: Writing a CI pipeline</a>
+<a class="nav nav-next" href="/intro/tutorial03/" title="Tutorial 3: Projects &amp; Events">Next - Tutorial 3: Projects &amp; Events <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+<nav>
+<ul>
+<li class=""><a href="/">Home</a></li>
+
+<li class="parent"><a href="/intro/">Getting Started</a>
+<ul class="sub-menu">
+<li class=""><a href="/intro/overview/">Brigade Overview</a></li>
+<li class=""><a href="/intro/install/">Installing Brigade</a></li>
+<li class=""><a href="/intro/tutorial01/">Tutorial 1: Writing a CI pipeline</a></li>
+<li class="active"><a href="/intro/tutorial02/">Tutorial 2: Setup GitHub</a></li>
+<li class=""><a href="/intro/tutorial03/">Tutorial 3: Projects &amp; Events</a></li>
+<li class=""><a href="/intro/tutorial04/">Tutorial 4: Writing and Testing an App</a></li>
+<li class=""><a href="/intro/writing-efficient-pipelines/">Tutorial 5: Writing Efficient Pipelines</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="/topics/">Topic Guides</a>
+<ul class="">
+<li class=""><a href="/topics/scripting_advanced/">Advanced Scripting Guide</a></li>
+<li class=""><a href="/topics/dockerhub/">Container Registry Integration</a></li>
+<li class=""><a href="/topics/dependencies/">Dependencies</a></li>
+<li class=""><a href="/topics/design/">Design</a></li>
+<li class=""><a href="/topics/developers/">Developer Guide</a></li>
+<li class=""><a href="/topics/gateways/">Gateways</a></li>
+<li class=""><a href="/topics/genericgateway/">Generic Gateway</a></li>
+<li class=""><a href="/topics/github/">GitHub Integration</a></li>
+<li class=""><a href="/topics/ingress/">Ingress</a></li>
+<li class=""><a href="/topics/projects/">Managing Projects in Brigade</a></li>
+<li class=""><a href="/topics/releasing/">Releasing Brigade</a></li>
+<li class=""><a href="/topics/scripting/">Scripting Guide</a></li>
+<li class=""><a href="/topics/secrets/">Secret Management</a></li>
+<li class=""><a href="/topics/security/">Securing Brigade</a></li>
+<li class=""><a href="/topics/storage/">Storage</a></li>
+<li class=""><a href="/topics/testing/">Testing</a></li>
+<li class=""><a href="/topics/javascript/">The Brigade.js API</a></li>
+<li class=""><a href="/topics/readnext/">What to Read Next</a></li>
+<li class=""><a href="/topics/workers/">Workers</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

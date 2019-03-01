@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Releasing Brigade - Brigade</title>
+<meta name="description" content="How to cut a new release of Brigade">
+<meta name="generator" content="Hugo 0.54.0" />
+<link href="/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/topics/releasing/">
+<link rel="stylesheet" href="/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="/js/functions.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/js/jquery.backtothetop/jquery.backtothetop.min.js"></script></head>
+<body>
+<div class="container"><header>
+<h1>Brigade</h1>
+
+<p class="description">Brigade - Event-driven scripting for Kubernetes.</p>
+
+</header>
+
+<div class="content-container">
+<main><h1>Releasing Brigade</h1>
+
+<h1 id="releasing-brigade">Releasing Brigade</h1>
+
+<p>Once the intended commit has been tested and we have confidence to cut a release,
+we can follow these steps to release Brigade:</p>
+
+<ol>
+<li><p>Issue a docs pull request with all <code>&lt;current release&gt;</code> strings updated to
+<code>&lt;anticipated release&gt;</code>, e.g. <code>0.19.0</code> becomes <code>0.20.0</code>.</p>
+
+<p><em>(Note: amending <a href="../index.yaml">docs/index.yaml</a> is not required.  This file still exists (as of writing)
+only to serve older chart versions for a period of time after the chart migration to
+<a href="https://github.com/Azure/brigade-charts">Azure/brigade-charts</a> completed.)</em></p></li>
+
+<li><p>Once this pull request is merged, create and push the git tag from the intended commit:</p>
+
+<pre><code class="language-console">$ git tag v0.20.0
+$ git push origin v0.20.0
+</code></pre>
+
+<p>The release pipeline located in our <a href="../../brigade.js">brigade.js</a> then takes over
+and does the heavy lifting of building component images, pushing to designated
+image registries, building the <code>brig</code> cli binaries and finally creating the
+<a href="https://github.com/Azure/brigade/releases">GitHub release</a>.</p></li>
+
+<li><p>Lastly, issue a pull request in <a href="https://github.com/Azure/brigade-charts">Azure/brigade-charts</a>
+bumping the <code>version</code> and <code>appVersion</code> values in both the Brigade
+<a href="https://github.com/Azure/brigade-charts/blob/master/charts/brigade/Chart.yaml">chart</a> and
+the Brigade Project <a href="https://github.com/Azure/brigade-charts/blob/master/charts/brigade-project/Chart.yaml">chart</a>
+and then re-building and re-indexing the charts.</p>
+
+<pre><code class="language-console">$ # bump version and appVersion in charts/{brigade,brigade-project}/Chart.yaml
+$ make build index
+$ # commit changes, issue PR
+</code></pre></li>
+</ol>
+<div class="edit-meta">Last updated on 1 Jan 0001 / Published on 1 Jan 0001<br></div><nav class="pagination"><a class="nav nav-prev" href="/topics/projects/" title="Managing Projects in Brigade"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Managing Projects in Brigade</a>
+<a class="nav nav-next" href="/topics/scripting/" title="Scripting Guide">Next - Scripting Guide <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+<nav>
+<ul>
+<li class=""><a href="/">Home</a></li>
+
+<li class=""><a href="/intro/">Getting Started</a>
+<ul class="">
+<li class=""><a href="/intro/overview/">Brigade Overview</a></li>
+<li class=""><a href="/intro/install/">Installing Brigade</a></li>
+<li class=""><a href="/intro/tutorial01/">Tutorial 1: Writing a CI pipeline</a></li>
+<li class=""><a href="/intro/tutorial02/">Tutorial 2: Setup GitHub</a></li>
+<li class=""><a href="/intro/tutorial03/">Tutorial 3: Projects &amp; Events</a></li>
+<li class=""><a href="/intro/tutorial04/">Tutorial 4: Writing and Testing an App</a></li>
+<li class=""><a href="/intro/writing-efficient-pipelines/">Tutorial 5: Writing Efficient Pipelines</a></li>
+</ul>
+  
+</li>
+
+<li class="parent"><a href="/topics/">Topic Guides</a>
+<ul class="sub-menu">
+<li class=""><a href="/topics/scripting_advanced/">Advanced Scripting Guide</a></li>
+<li class=""><a href="/topics/dockerhub/">Container Registry Integration</a></li>
+<li class=""><a href="/topics/dependencies/">Dependencies</a></li>
+<li class=""><a href="/topics/design/">Design</a></li>
+<li class=""><a href="/topics/developers/">Developer Guide</a></li>
+<li class=""><a href="/topics/gateways/">Gateways</a></li>
+<li class=""><a href="/topics/genericgateway/">Generic Gateway</a></li>
+<li class=""><a href="/topics/github/">GitHub Integration</a></li>
+<li class=""><a href="/topics/ingress/">Ingress</a></li>
+<li class=""><a href="/topics/projects/">Managing Projects in Brigade</a></li>
+<li class="active"><a href="/topics/releasing/">Releasing Brigade</a></li>
+<li class=""><a href="/topics/scripting/">Scripting Guide</a></li>
+<li class=""><a href="/topics/secrets/">Secret Management</a></li>
+<li class=""><a href="/topics/security/">Securing Brigade</a></li>
+<li class=""><a href="/topics/storage/">Storage</a></li>
+<li class=""><a href="/topics/testing/">Testing</a></li>
+<li class=""><a href="/topics/javascript/">The Brigade.js API</a></li>
+<li class=""><a href="/topics/readnext/">What to Read Next</a></li>
+<li class=""><a href="/topics/workers/">Workers</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

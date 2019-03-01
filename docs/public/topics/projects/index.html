@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Managing Projects in Brigade - Brigade</title>
+<meta name="description" content="How to manage Brigade Projects using either the Brig CLI or Helm Charts">
+<meta name="generator" content="Hugo 0.54.0" />
+<link href="/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/topics/projects/">
+<link rel="stylesheet" href="/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="/js/functions.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/js/jquery.backtothetop/jquery.backtothetop.min.js"></script></head>
+<body>
+<div class="container"><header>
+<h1>Brigade</h1>
+
+<p class="description">Brigade - Event-driven scripting for Kubernetes.</p>
+
+</header>
+
+<div class="content-container">
+<main><h1>Managing Projects in Brigade</h1>
+
+<h1 id="managing-projects-in-brigade">Managing Projects in Brigade</h1>
+
+<p>In Brigade, a project is just a special Kubernetes secret. The Brigade project currently offers
+two methods to create a project: via the <code>brig</code> cli and via the <a href="https://github.com/Azure/brigade-charts/tree/master/charts/brigade-project">brigade-project</a>
+Helm chart.  The latter is managed in the <a href="https://github.com/Azure/brigade-charts">Azure/brigade-charts</a> repo
+and an in-depth overview of its configuration can be seen in the chart
+<a href="https://github.com/Azure/brigade-charts/blob/master/chart/brigade-project/README.md">README</a>.</p>
+
+<p>This document explains how to use both methods for managing your Brigade projects.</p>
+
+<h2 id="an-introduction-to-projects">An Introduction to Projects</h2>
+
+<p>Brigade projects provide the necessary context for executing Brigade scripts.
+They provide <em>permission</em> to run scripts, <em>authentication</em> for some operations,
+<em>configuration</em> for VCS, and <em>secret management</em> for Brigade scripts.</p>
+
+<p>Often times, a Brigade Project will point to an external VCS repository. The
+purpose of this feature is to make it easy to inject arbitrary files into a
+Brigade pipeline, and do so in a way that meets standard expectations about
+file versioning and storage.</p>
+
+<p>Because GitHub is massively popular with open source developers, we chose to focus
+on GitHub as a first experience. However, this document explains how to work with
+other Git services, and how to extend Brigade to work with other VCS systems.</p>
+
+<h2 id="a-few-recommendations">A Few Recommendations</h2>
+
+<ul>
+<li>Name your project with the GitHub convention <code>userOrGroup/project</code>.</li>
+<li>When installing the Helm chart, use the <code>-n NAME</code> flag to name your Helm release.
+We suggest <code>userOrGroup-project</code> as the release name just to make it easy.</li>
+<li>When you use a GitHub repo, don&rsquo;t put secrets in it, even if you make your
+repo private. Put them in your <code>values.yaml</code> file for your project (and don&rsquo;t
+put that in GitHub).</li>
+</ul>
+
+<h2 id="creating-and-managing-a-project">Creating and Managing a Project</h2>
+
+<h3 id="the-brig-project-create-command">The <code>brig project create</code> Command</h3>
+
+<p>The preferred default for project creation and maintenance is via <code>brig</code>.  To create a
+new Brigade project, simply run <code>brig project create</code> and you will be prompted to answer a few questions:</p>
+
+<pre><code class="language-console">$ brig project create
+? Project name deis/empty-testbed
+? Full repository name github.com/deis/empty-testbed
+? Clone URL (https://github.com/your/repo.git) https://github.com/deis/empty-testbed.git
+? Add secrets? No
+Auto-generated a Shared Secret: &quot;FweBxcwJvcbTTuW5CquyPtHM&quot;
+? Configure GitHub Access? No
+? Configure advanced options No
+</code></pre>
+
+<p>You can use <code>--dry-run --verbose</code> to see the answers to the question without creating
+a new release. For more, see <code>brig project create --help</code>.</p>
+
+<p>You can optionally customize a bunch of advanced options during <code>brig project create</code>:</p>
+
+<ul>
+<li><em>Custom VCS sidecar</em>: The default sidecar uses Git to fetch your repository</li>
+<li><em>Build storage size</em>: By default, 50Mi of shared temp space is allocated per build. Larger values slow down build startup. Units are Ki, Mi, or Gi</li>
+<li><em>Build storage class</em>: Kubernetes provides named storage classes. If you want to use a custom storage class for Builds, set the class name here</li>
+<li><em>Job cache storage class</em>: Same as before, the custom storage class that will be used for job caches</li>
+<li><em>SecretKeyRef usage</em>: Allow or disallow usage of secretKeyRef in job environments</li>
+<li><em>Worker image registry or DockerHub org</em>: For non-DockerHub, this is the root URL. For DockerHub, it is the org</li>
+<li><em>Worker image name</em>: The name of the worker image, e.g. workerImage</li>
+<li><em>Custom worker image tag</em>: The worker image tag to pull, e.g. 1.2.3 or latest</li>
+<li><em>Worker image pull policy</em>: The image pull policy determines how often Kubernetes will try to refresh this image</li>
+<li><em>Worker command</em>: Override the worker&rsquo;s default command (yarn -s start)</li>
+<li><em>Initialize Git submodules</em>: For repos that have submodules, initialize them on each clone. Not recommended on public repos</li>
+<li><em>Allow host mounts</em>: Allow host-mounted volumes for worker and jobs. Not recommended in multi-tenant clusters</li>
+<li><em>Allow privileged jobs</em>: Allow jobs to mount the Docker socket or perform other privileged operations. Not recommended for multi-tenant clusters</li>
+<li><em>Image pull secrets</em>: Comma-separated list of image pull secret names that will be supplied to workers and jobs</li>
+<li><em>Default script ConfigMap name</em>: It is possible to store a default script in a ConfigMap. Supply the name of that ConfigMap to use the script</li>
+<li><em>brigade.js file path</em>: brigade.js file path relative to the repository root, e.g. &lsquo;mypath/brigade.js&rsquo;. Absolute paths will not be accepted</li>
+<li><em>Upload a default brigade.js script</em>: The local path to a default brigade.js file that will be run if none exists in the repo. Overrides the ConfigMap script</li>
+</ul>
+
+<h3 id="managing-your-projects">Managing Your Projects</h3>
+
+<p>With <code>brig project create</code>, your projects are stored in Kubernetes secrets. You
+can save a local copy of that secret using <code>brigade project create --out=myproject.json</code>.</p>
+
+<p>If you have already created the secret, you can fetch it from Kubernetes by running
+<code>brig project get my/project</code> where <code>my/project</code> is the project name you assigned.</p>
+
+<h2 id="creating-and-managing-a-project-the-old-way">Creating and Managing a Project (The Old Way)</h2>
+
+<p>Note: Managing Brigade projects via Helm chart is being deprecated in favor of using <code>brig</code>.</p>
+
+<h3 id="the-brigade-project-chart">The Brigade Project Chart</h3>
+
+<p>The Brigade Project chart is located in the <a href="https://github.com/Azure/brigade-charts">Azure/brigade-charts</a> source tree at
+<code>charts/brigade-project</code>. You can also install it out of the Brigade chart repository.</p>
+
+<pre><code class="language-console">$ helm repo add brigade https://azure.github.io/brigade-charts
+$ helm search brigade/brigade-project
+NAME                   	CHART VERSION	APP VERSION	DESCRIPTION
+brigade/brigade-project	0.20.0       	v0.20.0    	Create a Brigade project
+</code></pre>
+
+<p>We recommend using the following pattern to create your project:</p>
+
+<h4 id="1-create-a-place-to-store-project-configs">1. Create a place to store project configs</h4>
+
+<p>Store your project configuration in a safe place (probably locally or in a storage
+system like Keybase).</p>
+
+<pre><code class="language-console">$ mkdir -p brigade-projects/myproject
+$ cd brigade-projects/myproject
+</code></pre>
+
+<blockquote>
+<p>You can store project configs in Git repos, but we don&rsquo;t recommend GitHub for
+this. Keybase has <a href="https://keybase.io/blog/encrypted-git-for-everyone">free encrypted private Git repos</a>,
+which are great for this sort of thing.</p>
+</blockquote>
+
+<h4 id="2-create-a-values-yaml-file-for-your-project">2. Create a <code>values.yaml</code> file for your project</h4>
+
+<pre><code>$ helm inspect values brigade/brigade-project &gt; values.yaml
+</code></pre>
+
+<h4 id="3-edit-the-values-for-your-project">3. Edit the values for your project</h4>
+
+<p>Read through the generated <code>values.yaml</code> file and modify it accordingly.</p>
+
+<p>Our suggestions are as follows, replacing <code>deis/empty-testbed</code> with your own project&rsquo;s name:</p>
+
+<pre><code class="language-yaml"># Definitely do these:
+project: &quot;deis/empty-testbed&quot;
+secrets: {}
+
+# Probably do these so you can load a GitHub project which has useful stuff
+# in it, and if you want to use GitHub webhooks.
+repository: &quot;github.com/deis/empty-testbed&quot;
+cloneURL: &quot;https://github.com/deis/empty-testbed.git&quot;
+github:
+   token: &quot;github oauth token&quot;
+
+# If you want GitHub webhooks.
+sharedSecret: &quot;IBrakeForSeaBeasts&quot;
+
+# As for the rest, use them if you know you need them.
+</code></pre>
+
+<p>For information on configuring for GitHub, see the <a href="github.md">GitHub configuration guide</a>.</p>
+
+<h4 id="4-install-your-project">4. Install your project</h4>
+
+<p>Use Helm to install your chart, with its override values.</p>
+
+<pre><code class="language-console">$ helm install brigade/brigade-project -n $MY_NAME -f values.yaml
+</code></pre>
+
+<p>Replace <code>$MY_NAME</code> with the name of your project (something like <code>deis-empty-testbed</code>).</p>
+
+<p>Once the project is created, you can use <code>brig</code> or another gateway to begin
+writing and running <code>brigade</code> scripts.</p>
+
+<h4 id="5-fetch-values-later">5. Fetch values later</h4>
+
+<p>To get just the values later, you can run <code>helm get values $MY_NAME</code></p>
+
+<h4 id="6-upgrade-a-project">6. Upgrade a project</h4>
+
+<p>You can upgrade a project at any time with the command</p>
+
+<pre><code class="language-console">$ helm upgrade $MY_PROJECT brigade/brigade-project -f values.yaml
+</code></pre>
+
+<p>We suggest not using the <code>--reuse-values</code> flag on <code>helm upgrade</code> because it can
+cause confusing results unless you really know what you are doing.</p>
+
+<h4 id="7-deleting-a-project">7. Deleting a project</h4>
+
+<p>Use <code>helm delete $MY_PROJECT</code> to delete a project. Note that once you have done
+this, Brigade will no longer execute brigade scripts for this project.</p>
+
+<h2 id="listing-and-inspecting-projects-with-brig">Listing and inspecting projects with <code>brig</code></h2>
+
+<p>If you have the <code>brig</code> client installed, you can use it to list and interact with
+your projects:</p>
+
+<pre><code>$ brig project list
+NAME                       	ID                                                            	REPO
+technosophos/brigade-trello	brigade-635e505c74ad679bb9144d19950504fbe86b136ac3770bcff51ac6	github.com/technosophos/brigade-trello
+deis/empty-testbed         	brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac	github.com/deis/empty-testbed
+technosophos/hello-helm    	brigade-b140dc50d4eb9136dccab7225e8fbc9c0f5e17e19aede9d3566c0f	github.com/technosophos/hello-helm
+technosophos/twitter-t     	brigade-cf0858d449971e79083aacddc565450b8bf65a2b9f5d66ea76fdb4	github.com/technosophos/twitter-t
+</code></pre>
+
+<p>You can also directly inspect your project with <code>brig</code>:</p>
+
+<pre><code class="language-console">$ brig project get deis/empty-testbed
+id: brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
+name: deis/empty-testbed
+repo:
+  name: github.com/deis/empty-testbed
+  owner: &quot;&quot;
+  cloneurl: https://github.com/deis/empty-testbed.git
+  sshkey: &quot;&quot;
+kubernetes:
+  namespace: default
+  vcssidecar: Azure/git-sidecar:latest
+  buildStorageSize: &quot;50Mi&quot;
+sharedsecret: FakeSharedSecret
+github:
+  token: 76faketoken789
+secrets:
+  dbPassword: supersecret
+</code></pre>
+
+<h2 id="internal-brigade-project-names">Internal Brigade Project Names</h2>
+
+<p>Brigade creates an &ldquo;internal name&rdquo; for each project. It looks something like
+this:</p>
+
+<pre><code>brigade-635e505c74ad679bb9144d19950504fbe86b136ac3770bcff51ac6
+</code></pre>
+
+<p>There is nothing fancy about this name. In fact, it is just a prefixed hash of
+the project name. Its purpose is merely to ensure that we can meet the naming
+requirements of Kubernetes without imposing undue restrictions on how you name
+your project.</p>
+
+<p><em>These names are intentionally repeatable.</em> Two projects with the same name should
+also have the same internal name.</p>
+
+<h2 id="using-ssh-keys">Using SSH Keys</h2>
+
+<p>You can use SSH keys and a <code>git+ssh</code> URL to secure a private repository.</p>
+
+<p>In this case, your project&rsquo;s <code>cloneURL</code> should be of the form <code>git@github.com:Azure/brigade.git</code>
+and you will need to add the SSH <em>private key</em> to the <code>values.yaml</code> file.</p>
+
+<p>When doing <code>brig project create</code>, URLs that do not use HTTP or HTTPS will prompt
+for (optionally) adding an SSH key.</p>
+
+<h2 id="using-other-git-providers">Using other Git providers</h2>
+
+<p>Git providers like BitBucket or GitLab should work fine as Brigade <em>projects</em>. However,
+the <a href="./github.md">Brigade GitHub Gateway</a> does not necessarily support them (yet).</p>
+
+<p>You must ensure, however, that your Kubernetes cluster can access the Git repository
+over the network via the URL provided in <code>cloneURL</code>.</p>
+
+<h2 id="using-other-vcs-systems">Using other VCS systems</h2>
+
+<p>It is possible to write a simple VCS sidecar that uses other VCS systems such as
+Mercurial, Bazaar, or Subversion. Essentially, a VCS sidecar need only be able
+to take the given information from the project and use it to create a local snapshot
+of the project in an appointed location. See the <a href="https://github.com/Azure/brigade/tree/master/git-sidecar">Git sidecar</a>
+for an example.</p>
+
+<hr />
+
+<p>Prev: <a href="gateways.md">Brigade Gateways</a> <code>|</code> Next: <a href="security.md">Securing Brigade</a></p>
+
+<p>Return to the <a href="index.md">Table of Contents</a></p>
+<div class="edit-meta">Last updated on 1 Jan 0001 / Published on 1 Jan 0001<br></div><nav class="pagination"><a class="nav nav-prev" href="/topics/ingress/" title="Ingress"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Ingress</a>
+<a class="nav nav-next" href="/topics/releasing/" title="Releasing Brigade">Next - Releasing Brigade <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+<nav>
+<ul>
+<li class=""><a href="/">Home</a></li>
+
+<li class=""><a href="/intro/">Getting Started</a>
+<ul class="">
+<li class=""><a href="/intro/overview/">Brigade Overview</a></li>
+<li class=""><a href="/intro/install/">Installing Brigade</a></li>
+<li class=""><a href="/intro/tutorial01/">Tutorial 1: Writing a CI pipeline</a></li>
+<li class=""><a href="/intro/tutorial02/">Tutorial 2: Setup GitHub</a></li>
+<li class=""><a href="/intro/tutorial03/">Tutorial 3: Projects &amp; Events</a></li>
+<li class=""><a href="/intro/tutorial04/">Tutorial 4: Writing and Testing an App</a></li>
+<li class=""><a href="/intro/writing-efficient-pipelines/">Tutorial 5: Writing Efficient Pipelines</a></li>
+</ul>
+  
+</li>
+
+<li class="parent"><a href="/topics/">Topic Guides</a>
+<ul class="sub-menu">
+<li class=""><a href="/topics/scripting_advanced/">Advanced Scripting Guide</a></li>
+<li class=""><a href="/topics/dockerhub/">Container Registry Integration</a></li>
+<li class=""><a href="/topics/dependencies/">Dependencies</a></li>
+<li class=""><a href="/topics/design/">Design</a></li>
+<li class=""><a href="/topics/developers/">Developer Guide</a></li>
+<li class=""><a href="/topics/gateways/">Gateways</a></li>
+<li class=""><a href="/topics/genericgateway/">Generic Gateway</a></li>
+<li class=""><a href="/topics/github/">GitHub Integration</a></li>
+<li class=""><a href="/topics/ingress/">Ingress</a></li>
+<li class="active"><a href="/topics/projects/">Managing Projects in Brigade</a></li>
+<li class=""><a href="/topics/releasing/">Releasing Brigade</a></li>
+<li class=""><a href="/topics/scripting/">Scripting Guide</a></li>
+<li class=""><a href="/topics/secrets/">Secret Management</a></li>
+<li class=""><a href="/topics/security/">Securing Brigade</a></li>
+<li class=""><a href="/topics/storage/">Storage</a></li>
+<li class=""><a href="/topics/testing/">Testing</a></li>
+<li class=""><a href="/topics/javascript/">The Brigade.js API</a></li>
+<li class=""><a href="/topics/readnext/">What to Read Next</a></li>
+<li class=""><a href="/topics/workers/">Workers</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

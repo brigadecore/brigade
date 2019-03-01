@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Tutorial 3: Projects &amp; Events - Brigade</title>
+<meta name="description" content="Writing your first CI pipeline, Part 3">
+<meta name="generator" content="Hugo 0.54.0" />
+<link href="/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/intro/tutorial03/">
+<link rel="stylesheet" href="/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="/js/functions.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/js/jquery.backtothetop/jquery.backtothetop.min.js"></script></head>
+<body>
+<div class="container"><header>
+<h1>Brigade</h1>
+
+<p class="description">Brigade - Event-driven scripting for Kubernetes.</p>
+
+</header>
+
+<div class="content-container">
+<main><h1>Tutorial 3: Projects &amp; Events</h1>
+
+<h1 id="writing-your-first-ci-pipeline-part-3">Writing your first CI pipeline, Part 3</h1>
+
+<p>This tutorial begins where <a href="tutorial02.md">Tutorial 2</a> left off. We’ll walk through the process for configuring your newly created Github repository with Brigade for testing new features. We&rsquo;ll configure a new Brigade project, and have Github push events to trigger Brigade builds.</p>
+
+<h2 id="create-a-brigade-project">Create a Brigade project</h2>
+
+<p>The Brigade server tracks separate configuration for each project you set up. To create and manage these configurations, we use the <a href="https://github.com/Azure/brigade/tree/master/brig">brig</a> cli.</p>
+
+<p>Here we create a project for our GitHub repo:</p>
+
+<pre><code class="language-console"> $ brig project create
+? Project Name bacongobbler/uuid-generator
+? Full repository name github.com/bacongobbler/uuid-generator
+? Clone URL (https://github.com/your/repo.git) https://github.com/bacongobbler/uuid-generator.git
+? Add secrets? No
+Auto-generated a Shared Secret: &quot;mDXUDZyDsTUHw4KZIMPOQMN1&quot;
+? Configure GitHub Access? No
+? Configure advanced options No
+Project ID: brigade-5ea0b3d7707afb5d04d55544485da6aff4f58006c1633f4ae0cb11
+</code></pre>
+
+<p>Note: to explore the advanced options, each prompt offers further info when <code>?</code> is entered.</p>
+
+<h2 id="configuring-github">Configuring Github</h2>
+
+<p>We want to build our project each time a new commit is pushed to master, and each time we get a new Pull Request.</p>
+
+<p>To do this, follow the <a href="https://github.com/Azure/brigade-github-app">Brigade GitHub App</a> documentation to set up
+a GitHub App.  During configuration, copy the shared secret above (<code>mDXUDZyDsTUHw4KZIMPOQMN1</code>) and set this as the
+&ldquo;Webhook secret&rdquo; value for the App.</p>
+
+<p><img src="img/img3.png" style="height: 500px;" /></p>
+
+<p>We&rsquo;ll need to upgrade our Brigade server with our <code>brigade-github-app</code> sub-chart configuration filled in:</p>
+
+<pre><code class="language-console">$ helm inspect values brigade/brigade &gt; brigade-values.yaml
+$ # Add configuration under the `brigade-github-app` section
+$ helm upgrade brigade brigade/brigade -f brigade-values.yaml
+</code></pre>
+
+<p>We can then get the IP needed to update the &ldquo;Webhook URL&rdquo; entry for our App.  Run this command on your
+Kubernetes cluster, and look for the <code>brigade-github-app</code> line:</p>
+
+<pre><code class="language-console">$ kubectl get service
+NAME                                TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)        AGE
+brigade-server-brigade-api          ClusterIP      10.0.34.228    &lt;none&gt;         7745/TCP       1d
+brigade-server-brigade-github-app   LoadBalancer   10.0.69.248    10.21.77.9     80:31980/TCP   1d
+</code></pre>
+
+<p>You will use the <code>EXTERNAL-IP</code> address to form the full URL: <code>http://10.21.77.9/events/github</code>.
+Update the App&rsquo;s &ldquo;Webhook URL&rdquo; with this value.  (Note: it is preferred that DNS be set up instead of
+a hard-coded IP.  See the <a href="https://github.com/Azure/brigade-github-app">Brigade GitHub App docs</a> for more.)</p>
+
+<p>The next time you push to the repository, the webhook system should trigger a build.</p>
+
+<blockquote>
+<p>For more on configuring GitHub, see <a href="../topics/github.md">the GitHub Guide</a></p>
+</blockquote>
+
+<p>After configuring Brigade to test new features, read <a href="tutorial04.md">part 4 of this tutorial</a> to write a new feature to the uuid-generator project, which will trigger a test build using Brigade.</p>
+
+<hr />
+
+<p>Prev: <a href="tutorial02.md">Part 2</a> <code>|</code> Next: <a href="tutorial04.md">Part 4</a></p>
+<div class="edit-meta">Last updated on 1 Jan 0001 / Published on 1 Jan 0001<br></div><nav class="pagination"><a class="nav nav-prev" href="/intro/tutorial02/" title="Tutorial 2: Setup GitHub"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Tutorial 2: Setup GitHub</a>
+<a class="nav nav-next" href="/intro/tutorial04/" title="Tutorial 4: Writing and Testing an App">Next - Tutorial 4: Writing and Testing an App <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+<nav>
+<ul>
+<li class=""><a href="/">Home</a></li>
+
+<li class="parent"><a href="/intro/">Getting Started</a>
+<ul class="sub-menu">
+<li class=""><a href="/intro/overview/">Brigade Overview</a></li>
+<li class=""><a href="/intro/install/">Installing Brigade</a></li>
+<li class=""><a href="/intro/tutorial01/">Tutorial 1: Writing a CI pipeline</a></li>
+<li class=""><a href="/intro/tutorial02/">Tutorial 2: Setup GitHub</a></li>
+<li class="active"><a href="/intro/tutorial03/">Tutorial 3: Projects &amp; Events</a></li>
+<li class=""><a href="/intro/tutorial04/">Tutorial 4: Writing and Testing an App</a></li>
+<li class=""><a href="/intro/writing-efficient-pipelines/">Tutorial 5: Writing Efficient Pipelines</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="/topics/">Topic Guides</a>
+<ul class="">
+<li class=""><a href="/topics/scripting_advanced/">Advanced Scripting Guide</a></li>
+<li class=""><a href="/topics/dockerhub/">Container Registry Integration</a></li>
+<li class=""><a href="/topics/dependencies/">Dependencies</a></li>
+<li class=""><a href="/topics/design/">Design</a></li>
+<li class=""><a href="/topics/developers/">Developer Guide</a></li>
+<li class=""><a href="/topics/gateways/">Gateways</a></li>
+<li class=""><a href="/topics/genericgateway/">Generic Gateway</a></li>
+<li class=""><a href="/topics/github/">GitHub Integration</a></li>
+<li class=""><a href="/topics/ingress/">Ingress</a></li>
+<li class=""><a href="/topics/projects/">Managing Projects in Brigade</a></li>
+<li class=""><a href="/topics/releasing/">Releasing Brigade</a></li>
+<li class=""><a href="/topics/scripting/">Scripting Guide</a></li>
+<li class=""><a href="/topics/secrets/">Secret Management</a></li>
+<li class=""><a href="/topics/security/">Securing Brigade</a></li>
+<li class=""><a href="/topics/storage/">Storage</a></li>
+<li class=""><a href="/topics/testing/">Testing</a></li>
+<li class=""><a href="/topics/javascript/">The Brigade.js API</a></li>
+<li class=""><a href="/topics/readnext/">What to Read Next</a></li>
+<li class=""><a href="/topics/workers/">Workers</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

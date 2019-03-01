@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Design - Brigade</title>
+<meta name="description" content="How Brigade is designed">
+<meta name="generator" content="Hugo 0.54.0" />
+<link href="/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/topics/design/">
+<link rel="stylesheet" href="/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="/js/functions.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/js/jquery.backtothetop/jquery.backtothetop.min.js"></script></head>
+<body>
+<div class="container"><header>
+<h1>Brigade</h1>
+
+<p class="description">Brigade - Event-driven scripting for Kubernetes.</p>
+
+</header>
+
+<div class="content-container">
+<main><h1>Design</h1>
+
+<h1 id="brigade-design">Brigade Design</h1>
+
+<p><em>This is a living document, and is kept up to date with the current state of
+Brigade. It is a high-level explanation of the Brigade design.</em></p>
+
+<p>Brigade is an in-cluster runtime environment. It interprets scripts, and executes
+them often by invoking resources inside of the cluster. Brigade is event-based
+scripting of Kubernetes pipelines.</p>
+
+<p><img src="img/design-01.png" alt="Event-based scripting of pipelines" /></p>
+
+<ul>
+<li>Event-based: A script execution is triggered by a Brigade event.</li>
+<li>Scripting: Programs are expressed as JavaScript files that declare one or more event handlers.</li>
+<li>Pipelines: A script expresses a series of related jobs that run in parallel or serially.</li>
+</ul>
+
+<h2 id="terminology">Terminology</h2>
+
+<p><img src="img/design-02.png" alt="Brigade Run" /></p>
+
+<ul>
+<li><strong>Brigade</strong> is the name of the project. Often, the term is used generically to
+refer to the in-cluster Brigade components.
+
+<ul>
+<li><strong>Brigade Controller</strong> is the name of the central controller.</li>
+<li><strong>Brigade API</strong> is an API server used to access information about Brigade&rsquo;s
+current and past workloads.</li>
+</ul></li>
+<li><strong>Brig</strong> is a command line client for Brigade.</li>
+<li><strong>Event</strong> is a Brigade-issued indicator that something happened.</li>
+<li><strong>Gateways</strong> transform outside triggers (a Git pull request, a Trello card move) into
+events.</li>
+<li><strong>brigade.js</strong> is the standard name for a JavaScript file that contains one or more Brigade event handlers.</li>
+<li><strong>Job</strong> is a build unit, comprised of one or more build steps called &ldquo;tasks&rdquo;
+
+<ul>
+<li><strong>Task</strong> is a step within a job.</li>
+</ul></li>
+<li><strong>Webhook</strong> is an incoming HTTP/HTTPS request from an external source. Some gateways
+uses webhooks as triggers for events.</li>
+<li><strong>Project</strong> is a named collection of data that Brigade operates on. Often, though
+not always, a Project is linked to a Git project. All scripts are executed within
+the context of a project.
+
+<ul>
+<li><strong>Secrets</strong> are bits of configuration considered &ldquo;non-public&rdquo;. They are stored
+in projects, and may be accessed within scripts.</li>
+<li><strong>VCS Sidecar</strong> is a special Docker image that knows how to load a project&rsquo;s
+related VCS repository into a build or job. The default VCS sidecar only knows
+about Git.</li>
+</ul></li>
+<li><strong>Build</strong> is a run (an instance) of a script. When a script is executed, the
+data about that execution is conceptually referenced as a <em>build</em>. A build
+must handle at least one event, and may handle multiple events.</li>
+</ul>
+
+<h2 id="the-developer-s-view">The Developer&rsquo;s View</h2>
+
+<p>From the developer&rsquo;s view, Brigade works like this:</p>
+
+<p>A <em>project</em> describes the context in which a Brigade script will run. It may define
+the following:</p>
+
+<ul>
+<li>Project name</li>
+<li>Related files, stored in a VCS repository (Git is supported out of the box, others
+require a different VCS sidecar)</li>
+<li>Configuration, such as tokens, SSH keys, and other items necessary to wire up
+a script run.</li>
+<li>Secrets, which are opaque configuration items that are presumed to be non-public.
+While configuration information is not guaranteed to be available inside of a
+script, secrets are.</li>
+<li>The VCS sidecar to use. (Default is the Git sidecar)</li>
+</ul>
+
+<p>One or more scripts may be executed within the context of a project. Brigade
+assumes that a default script will reside in the project&rsquo;s VCS repository at the
+relative path <code>./brigade.js</code>. Gateways may provide other ways of sending
+scripts into Brigade.</p>
+
+<p>A Brigade script should have at least one event handler defined. Event handlers
+are triggered when a gateway emits an event. Events are bound to projects, so
+an event will only be triggered for the explicitly declared project. (In other
+words, there are no <em>global</em> events, only project-bound events.)</p>
+
+<p>An event specifies the following things:</p>
+
+<ul>
+<li>Which project it is attached to (e.g. <code>my/project</code>)</li>
+<li>The name of the event that fired (e.g. <code>pull_request</code>)</li>
+<li>The entity that triggered the event (e.g. <code>github</code>)</li>
+<li>The script to run (defaults to <code>./brigade.js</code> in the VCS)</li>
+<li>A payload containing event data.</li>
+</ul>
+
+<p>(The list above is not exhaustive.)</p>
+
+<p>When Brigade receives an event, it loads the referenced project, then starts a
+new worker. The worker executes the Brigade script, using as its entry point the
+event handler for the triggered event (e.g. <code>events.on('pull_request')</code>. The worker
+processes the script until one of the following occurs:</p>
+
+<ul>
+<li>The script exits successfully</li>
+<li>The script terminates because of an error</li>
+<li>The worker times out</li>
+</ul>
+
+<p>The fundamental units of a script are event handlers, jobs, and tasks.</p>
+
+<p>An <em>event handler</em> associates a named event with a function that can process the
+event:</p>
+
+<pre><code class="language-javascript">events.on('event name', () =&gt; { /* handler */ })
+</code></pre>
+
+<p>An event handler is explicitly given two pieces of information: the <code>event</code> record
+and the <code>project</code> record.</p>
+
+<ul>
+<li>The <code>event</code> record provides information about the event.</li>
+<li>The <code>project</code> record provides some (but not all) information about the project,
+notably names, secrets, and VCS information</li>
+</ul>
+
+<p>A typical event handler declares and runs one or more <em>jobs</em>. A job is a discrete
+unit of work that is associated with a <em>container image</em>.</p>
+
+<pre><code class="language-javascript">const myJob = new Job(&quot;job-name&quot;, &quot;image:tag&quot;)
+</code></pre>
+
+<p>When a job is executed, the container image is <em>pulled</em> from an origin (such as DockerHub),
+and is executed in the cluster. A job specifies configuration and input to that
+container. And the output of that container is returned from the job.</p>
+
+<p>A job may declare zero or more <em>tasks</em>. A task is an individual step executed inside
+of a container. For example, if a container is just a simple Linux container with
+a shell, multiple shell commands can be run as tasks:</p>
+
+<pre><code>myJob.tasks = [
+  &quot;echo hello&quot;,
+  &quot;echo world&quot;
+]
+</code></pre>
+
+<p>In addition to jobs, scripts may declare <em>groups</em>, where groups are merely organizing
+units that can execute multiple jobs according to predefined patterns (e.g. all
+in parallel, each serially).</p>
+
+<p>When a script is executed, cluster resources are allocated to execute each job as
+an independent cluster resource (a Pod). Various storage configurations may provide
+shared space between jobs in a build, or between multiple instances of the same
+job in different builds.</p>
+
+<h2 id="the-operator-s-view">The Operator&rsquo;s View</h2>
+
+<p>Operationally speaking, Brigade is a tool for chaining together Kubernetes pods
+in order to accomplish high level goals. It is analogous to the way UNIX shell scripts
+work.</p>
+
+<p>A UNIX shell script defines the workflow around executing one or more lower-level
+system executables. Similarly, a Brigade script defines a workflow for executing
+multiple containers within a cluster.</p>
+
+<p>Brigade has several functional concepts.</p>
+
+<p><img src="img/design-overview.png" alt="Design Overview" /></p>
+
+<p>A Gateway is a workload, typically a Kubernetes Deployment fronted by a Service
+or Ingress, that transforms a trigger (inbound webhook, item on queue) into a
+Brigade event.</p>
+
+<p><img src="img/design-trigger-gateway.png" alt="Service, Trigger, Gateway, Event" /></p>
+
+<p>The illustration above shows how GitHub translates a Git event into a webhook, which
+the optional <a href="./github.md">Brigade GitHub Gateway</a> translates into an event to be
+consumed by the Brigade controller.</p>
+
+<p>In Brigade, all scripts are executed in the context of a <em>project</em>. Projects are
+represented as Kubernetes Secrets.</p>
+
+<p>The Controller is a Kubernetes controller that listens for Brigade event objects,
+and handles these objects by starting workers.</p>
+
+<p>Brigade events are currently specified as Kubernetes Secrets with particular
+labels. We use secrets because at the time of development, Third Party Resources
+were deprecated and Custom Resource Descriptions are not final. This aspect of the
+system <em>may</em> change between the 0.1.0 release of Brigade and the 1.0.0 release.</p>
+
+<p>Brigade Workers are pods that execute brigade scripts. Each worker handles exactly
+one brigade script. Workers are never pooled. A worker runs to completion, to failure,
+or to timeout. Prior to the 1.0.0 release of Brigade, the simple pods may be
+replaced by Kubernetes Job objects instead.</p>
+
+<p>Brigade workers handle an event by starting a <em>build</em>, where a build executes a
+script. A build will create a PVC for shared storage (job-to-job shared filesystem),
+and will create one or more pods (one per job). The worker will attempt to destroy
+all destroyable resources once the build has completed. Note that jobs are left in
+the Complete state (not deleted) so that their logs may be accessed. Cache PVCs
+are left unattached, and prepared for re-use.</p>
+
+<p>A Brigade Job is started by a worker, and is executed as a pod. A job is run
+to completion, to error, or to timeout. Its status and results are made available
+to the calling worker, which in turn provides access to the script.</p>
+
+<p>Along with the execution of an event-build pipeline, Brigade also provides an
+API server that provides access to information about current and past builds, projects,
+and jobs. The API server is typically fronted by a Service or Ingress.</p>
+
+<h2 id="reasoning-for-certain-design-decisions">Reasoning for Certain Design Decisions</h2>
+
+<ul>
+<li>Go was selected because it provides the most mature Kubernetes APIs.</li>
+<li>At various points, we explored using TPRs and later CRDs. But the feature sets
+and stability of these two facilities never reached a satisfactorily stable
+point. So we use secrets for configuration data. Secrets have the following benefits:
+
+<ul>
+<li>They are mountable via the volume system, a feature we use frequently</li>
+<li>They can be injected as environment variables</li>
+<li>They benefit from Kubernetes improvements to secret storage</li>
+</ul></li>
+<li>JavaScript was selected because of it&rsquo;s high score on just about all language
+usage analyses.</li>
+<li>Node.js was selected because of its robust ecosystem</li>
+<li>TypeScript was selected because its type system resembled Go&rsquo;s.</li>
+<li>The Controller model was selected because it gave us the advantages of a queueing
+system, but without requiring a stand-alone service.</li>
+<li>GitHub and Git were selected because they appear to be the leading tools used
+by developers.</li>
+<li>Docker containers were selected because they are the clear market leader.</li>
+<li>PVCs are used for shared storage because they are the closest Kubernetes comes
+to providing a shareable filesystem. We explored, and ultimately rejected, multiple
+userland alternatives.</li>
+<li>The Job/Task terminology comes from ETL</li>
+<li>The Event terminology comes from JavaScript&rsquo;s event model</li>
+<li>The Build terminology comes from CI/CD systems</li>
+</ul>
+
+<h2 id="history-of-brigade">History of Brigade</h2>
+
+<p>Brigade was designed in March 2016 by the Deis Helm Team (now part of Microsoft).</p>
+
+<p>The first design used Lua instead of JavaScript, and relied on very few Kubernetes resources.
+Instead, it used a Redis queue for message passing and key/value storage. Other
+than some proof-of-concept work, the Lua engine never materialized. JavaScript&rsquo;s
+popularity made it a better choice.</p>
+
+<p>An original Kubernetes-oriented JavaScript engine was developed several months later.
+This was intended to be both a stand-alone component and a foundational piece for
+Brigade. Work was abandoned in favor of the Node.js worker pattern.</p>
+
+<p>In April of 2017, Brigade was designated as the third part of the Helm/Draft/Brigade
+ecosystem. At this point, it was renamed &ldquo;Acid&rdquo; (Acme Continuous Integration &amp; Deployment).</p>
+
+<p>Brigade reached a stability point in September 2017, and was re-renamed back from
+Acid to Brigade. Brigade was released publicly under the MIT license in October
+2017, as release 0.1.0.</p>
+
+<hr />
+
+<p>Next: <a href="scripting.md">Scripting Guide</a></p>
+
+<p>Return to the <a href="index.md">Table of Contents</a></p>
+<div class="edit-meta">Last updated on 1 Jan 0001 / Published on 1 Jan 0001<br></div><nav class="pagination"><a class="nav nav-prev" href="/topics/dependencies/" title="Dependencies"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Dependencies</a>
+<a class="nav nav-next" href="/topics/developers/" title="Developer Guide">Next - Developer Guide <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+<nav>
+<ul>
+<li class=""><a href="/">Home</a></li>
+
+<li class=""><a href="/intro/">Getting Started</a>
+<ul class="">
+<li class=""><a href="/intro/overview/">Brigade Overview</a></li>
+<li class=""><a href="/intro/install/">Installing Brigade</a></li>
+<li class=""><a href="/intro/tutorial01/">Tutorial 1: Writing a CI pipeline</a></li>
+<li class=""><a href="/intro/tutorial02/">Tutorial 2: Setup GitHub</a></li>
+<li class=""><a href="/intro/tutorial03/">Tutorial 3: Projects &amp; Events</a></li>
+<li class=""><a href="/intro/tutorial04/">Tutorial 4: Writing and Testing an App</a></li>
+<li class=""><a href="/intro/writing-efficient-pipelines/">Tutorial 5: Writing Efficient Pipelines</a></li>
+</ul>
+  
+</li>
+
+<li class="parent"><a href="/topics/">Topic Guides</a>
+<ul class="sub-menu">
+<li class=""><a href="/topics/scripting_advanced/">Advanced Scripting Guide</a></li>
+<li class=""><a href="/topics/dockerhub/">Container Registry Integration</a></li>
+<li class=""><a href="/topics/dependencies/">Dependencies</a></li>
+<li class="active"><a href="/topics/design/">Design</a></li>
+<li class=""><a href="/topics/developers/">Developer Guide</a></li>
+<li class=""><a href="/topics/gateways/">Gateways</a></li>
+<li class=""><a href="/topics/genericgateway/">Generic Gateway</a></li>
+<li class=""><a href="/topics/github/">GitHub Integration</a></li>
+<li class=""><a href="/topics/ingress/">Ingress</a></li>
+<li class=""><a href="/topics/projects/">Managing Projects in Brigade</a></li>
+<li class=""><a href="/topics/releasing/">Releasing Brigade</a></li>
+<li class=""><a href="/topics/scripting/">Scripting Guide</a></li>
+<li class=""><a href="/topics/secrets/">Secret Management</a></li>
+<li class=""><a href="/topics/security/">Securing Brigade</a></li>
+<li class=""><a href="/topics/storage/">Storage</a></li>
+<li class=""><a href="/topics/testing/">Testing</a></li>
+<li class=""><a href="/topics/javascript/">The Brigade.js API</a></li>
+<li class=""><a href="/topics/readnext/">What to Read Next</a></li>
+<li class=""><a href="/topics/workers/">Workers</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

@@ -1,0 +1,90 @@
+// homepage animation
+
+@mixin boat-animation-rules($startX, $startY, $endX, $endY) {
+  $crest: -7px;
+  $trough: -12px;
+  @keyframes animatedBoat {
+    0%    { background-position: $startX $startY; bottom: $crest;}
+    10%   { bottom: $trough; }
+    20%   { bottom: $crest; }
+    30%   { bottom: $trough; }
+    40%   { bottom: $crest; }
+    50%   { bottom: $trough; }
+    60%   { bottom: $crest; }
+    70%   { bottom: $trough; }
+    80%   { bottom: $crest; }
+    90%   { bottom: $trough; }
+    100%  { background-position: $endX $endY; bottom: $crest; }
+  }
+  @-moz-keyframes animatedBoat {
+    0%    { background-position: $startX $startY; bottom: $crest;}
+    10%   { bottom: $trough; }
+    20%   { bottom: $crest; }
+    30%   { bottom: $trough; }
+    40%   { bottom: $crest; }
+    50%   { bottom: $trough; }
+    60%   { bottom: $crest; }
+    70%   { bottom: $trough; }
+    80%   { bottom: $crest; }
+    90%   { bottom: $trough; }
+    100%  { background-position: $endX $endY; bottom: $crest; }
+  }
+  @-webkit-keyframes animatedBoat {
+    0%    { background-position: $startX $startY; bottom: $crest;}
+    10%   { bottom: $trough; }
+    20%   { bottom: $crest; }
+    30%   { bottom: $trough; }
+    40%   { bottom: $crest; }
+    50%   { bottom: $trough; }
+    60%   { bottom: $crest; }
+    70%   { bottom: $trough; }
+    80%   { bottom: $crest; }
+    90%   { bottom: $trough; }
+    100%  { background-position: $endX $endY; bottom: $crest; }
+  }
+  @-ms-keyframes animatedBoat {
+    0%    { background-position: $startX $startY; bottom: $crest;}
+    10%   { bottom: $trough; }
+    20%   { bottom: $crest; }
+    30%   { bottom: $trough; }
+    40%   { bottom: $crest; }
+    50%   { bottom: $trough; }
+    60%   { bottom: $crest; }
+    70%   { bottom: $trough; }
+    80%   { bottom: $crest; }
+    90%   { bottom: $trough; }
+    100%  { background-position: $endX $endY; bottom: $crest; }
+  }
+  @-o-keyframes animatedBoat {
+    0%    { background-position: $startX $startY; bottom: $crest;}
+    10%   { bottom: $trough; }
+    20%   { bottom: $crest; }
+    30%   { bottom: $trough; }
+    40%   { bottom: $crest; }
+    50%   { bottom: $trough; }
+    60%   { bottom: $crest; }
+    70%   { bottom: $trough; }
+    80%   { bottom: $crest; }
+    90%   { bottom: $trough; }
+    100%  { background-position: $endX $endY; bottom: $crest; }
+  }
+}
+
+$boat-animation: animatedBoat 10s linear infinite;
+$source-font: $base;
+$inconsolata-font: 'Inconsolata', Fixed, monospace;
+$vertical-margin: 25%;
+$footer-padding: 4em;
+$mobile-maximum-width: 414px;
+$tablet-maximum-width: 768px;
+$boat-size: 150px;
+$gutter: 20px;
+$normalWeight: 400;
+$lightWeight: 300;
+$titleFontSize: 54px;
+$bodyFontSize: 18px;
+$helmLogoHeight: 79px;
+$helmLogoWidth: 170px;
+$fishSize: 210px;
+$fishDepth: 150px;
+$deisLogoWidth: 125px;

@@ -1,0 +1,44 @@
+{{ partial "header.html" . }}
+
+<div class="container container-full blog-layout">
+
+  <div class="main blog page" id="scrollpane">
+    <h1 class="blog-logo">
+      <a href="/">
+        {{ partial "logo.html" . }}
+      </a>
+      <a href="/blog">
+        <em>Blog</em>
+      </a>
+    </h1>
+    
+    <nav class="top-bar">
+      <ul class="inline right text-right">
+        {{ partial "nav.html" . }}
+      </ul>
+    </nav>
+
+    <div class="row">
+      <div class="small-1 columns">&nbsp;</div>
+      <div class="small-10 columns content-wrap">        
+        
+        {{ range .Paginator.Pages }}
+          <article>
+            <header>
+              <h1><a href="{{ .Permalink }}">{{ .Title }}</a></h1>
+              <p>{{ .Date.Format "Mon, Jan 2, 2006" }}</p>
+            </header>
+            
+            {{ .Summary }}
+            {{ if .Truncated }}
+            <a href="{{ .RelPermalink }}">Read More…</a>
+            {{ end }}
+          </article>
+  
+        {{ end }}
+      </div>
+      <div class="small-1 columns">&nbsp;</div>
+    </div>
+  </div>
+
+  {{ partial "footer-blog.html" . }}

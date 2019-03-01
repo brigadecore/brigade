@@ -1,0 +1,19 @@
+<div class="list-node">
+  <article>
+    <h2 class="post-title"><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
+    <section class="article-body">
+      {{ .Summary }}
+      <p><a href="{{ .Permalink }}">Read More...</a></p>
+    </section>
+    <section class="metadata single bottom">
+      <div class="pub-date">Published on {{ .Date.Format "Monday, Jan 2, 2006" }} in <a href="/{{ .Section }}" class="capitalize">{{ .Section }}</a></div>
+      <ul class="tags">
+      {{ range .Params.tags }}
+        <li>
+          <a href="/tags/{{ . | urlize }}">{{ . }}</a>
+        </li>
+      {{ end }}
+      </ul>
+    </section>
+  </article>
+</div>

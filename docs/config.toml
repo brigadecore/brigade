@@ -1,0 +1,27 @@
+baseURL = "/"
+title = "Brigade"
+theme = "techdoc"
+
+[params]
+  title = "Brigade"
+  description = "Brigade - Event-driven scripting for Kubernetes."
+
+[[menu.main]]
+    name = "Home"
+    url = "https://brigade.sh"
+    weight = 1
+
+[[menu.main]]
+    name = "Docs"
+    url = "https://docs.brigade.sh"
+    weight = 2
+
+[[menu.main]]
+    name = "Examples"
+    url = "https://github.com/Azure/brigade/tree/master/docs/content/examples"
+    weight = 3
+
+[[menu.main]]
+    name = "Github"
+    url = "https://github.com/azure/brigade"
+    weight = 4

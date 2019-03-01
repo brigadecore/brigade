@@ -1,0 +1,6 @@
+.button {
+  @include border-radius(0.15em,0.15em);
+  @include klinicBold;
+  line-height: 1.636;
+  background-color: $blue1;
+}

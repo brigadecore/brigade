@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Dependencies - Brigade</title>
+<meta name="description" content="How dependencies work in Brigade">
+<meta name="generator" content="Hugo 0.54.0" />
+<link href="/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/topics/dependencies/">
+<link rel="stylesheet" href="/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="/js/functions.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/js/jquery.backtothetop/jquery.backtothetop.min.js"></script></head>
+<body>
+<div class="container"><header>
+<h1>Brigade</h1>
+
+<p class="description">Brigade - Event-driven scripting for Kubernetes.</p>
+
+</header>
+
+<div class="content-container">
+<main><h1>Dependencies</h1>
+
+<h1 id="import-dependencies-in-your-brigade-js-file">Import dependencies in your <code>brigade.js</code> file</h1>
+
+<p>A Brigade worker is responsible for executing your <code>brigade.js</code> file. By default, Brigade comes with a general purpose worker which does not have any external dependency that is not critical to controlling the flow of your pipeline.</p>
+
+<p>If you want to have other dependencies available in your worker execution environment (and available in <code>brigade.js</code>), there are multiple approaches:</p>
+
+<ul>
+<li><p>by creating a custom worker container image, which has your dependencies. This approach is <a href="workers.md">described in detail in this document</a>. In a nutshell, use this approach if you have the same dependency for multiple projects, or if your dependencies take a long time to pull.</p></li>
+
+<li><p>without creating a custom container image:</p>
+
+<ul>
+<li>by adding a <code>brigade.json</code> file in your repository (similar to a <code>package.json</code> file)
+that contains the dependencies and that are specific on every Brigade project.</li>
+<li>by directly using local dependencies located in your project repository.</li>
+</ul></li>
+</ul>
+
+<p>This document describes the last two approaches.</p>
+
+<blockquote>
+<p>Here you can find a <a href="https://github.com/radu-matei/brigade-javascript-deps">repository that exemplifies both approaches here</a>.</p>
+</blockquote>
+
+<h2 id="add-custom-dependencies-using-a-brigade-json-file">Add custom dependencies using a <code>brigade.json</code> file</h2>
+
+<p>If you need different dependencies for every Brigade project, this can be easily achieved
+using a <code>brigade.json</code> file placed side-by-side the <code>brigade.js</code> file. This file contains
+the dependency name and version, and has the following structure:</p>
+
+<pre><code>{
+    &quot;dependencies&quot;: {
+        &quot;is-thirteen&quot;: &quot;2.0.0&quot;
+    }
+}
+</code></pre>
+
+<p>Before starting to execute the <code>brigade.js</code> script, the worker will install the<br />
+dependencies using <code>yarn</code>, adding them to the <code>node_modules</code> folder.</p>
+
+<p>Then, in the <code>brigade.js</code> file, the new dependency can be used just like any
+other NodeJS dependency:</p>
+
+<pre><code>const { events } = require(&quot;brigadier&quot;)
+const is = require(&quot;is-thirteen&quot;);
+
+events.on(&quot;exec&quot;, function (e, p) {
+    console.log(&quot;is 13 thirteen? &quot; + is(13).thirteen());
+})
+</code></pre>
+
+<p>Now if we run a build for this project, we see the <code>is-thirteen</code> dependency added,
+as well as the console log resulted from using it:</p>
+
+<pre><code>$ brig run brigade-86959b08a89af5b6b83f0ace6d9030f1fdca7ed8ea0a296e27d72e
+Event created. Waiting for worker pod named &quot;brigade-worker-01cexrvrs08shcev26961cwd6n&quot;.
+Started build 01cexrvrs08shcev26961cwd6n as &quot;brigade-worker-01cexrvrs08shcev26961cwd6n&quot;
+installing is-thirteen@2.0.0
+prestart: src/brigade.js written
+[brigade] brigade-worker version: 0.14.0
+[brigade:k8s] Creating PVC named brigade-worker-01cexrvrs08shcev26961cwd6n
+is 13 thirteen? true
+[brigade:app] after: default event handler fired
+[brigade:app] beforeExit(2): destroying storage
+[brigade:k8s] Destroying PVC named brigade-worker-01cexrvrs08shcev26961cwd6n
+</code></pre>
+
+<p>Notes:</p>
+
+<ul>
+<li><p>the dependencies <em>must</em> point to the exact version (and not use the tilde ~ and caret ^ to indicate semver compatible versions)</p></li>
+
+<li><p>when adding a custom dependency using <code>brigade.json</code>, <code>yarn</code> will add it side-by-side with <a href="../../brigade-worker/package.json">the worker&rsquo;s
+dependencies</a> - this means that the process will fail if a dependency that conflicts with one of the
+worker&rsquo;s dependencies is added. However, already existing dependencies (such as <code>@kubernetes/client-node</code>, <code>ulid</code> or <code>chai</code>)
+can be used from <code>brigade.js</code> without adding them to <code>brigade.json</code>.</p></li>
+</ul>
+
+<p>However, the only issue is trying to add a different version of an already existing dependency of the worker.</p>
+
+<ul>
+<li><p>as the Brigade worker is capable of modifying the state of the cluster, be mindful
+of any external dependencies added through <code>brigade.json</code></p></li>
+
+<li><p>for now, the only part of <code>brigade.json</code> used is the <code>dependencies</code> object - it means the rest of the file
+can be used to pass additional information to <code>brigade.js</code>, such as environment data - however, as the <code>brigade.json</code>
+file is passed in the source control repository, information passed there will be available to anyone with access to the repository.</p></li>
+
+<li><p>all dependencies added in <code>brigade.json</code> are dynamically installed on every Brigade build - this means if the dependencies added
+are large, and the build frequency is high for a particular project, it might make sense to make a pre-built Docker image that
+already contains the dependencies, <a href="workers.md">as described in this document</a>.</p></li>
+</ul>
+
+<h2 id="using-local-dependencies-from-the-project-repository">Using local dependencies from the project repository</h2>
+
+<p><em>Note: this approach is currently experimental, and only for projects whose <code>brigade.js</code> is located at the root of the repository.</em></p>
+
+<p>This approach works great for using dependencies that are not intended to be external packages, and which are located in the project repository.</p>
+
+<p>Let&rsquo;s consider the following scenario: we have a JavaScript file located in <code>/local-deps/circle.js</code>, where <code>local-deps</code> is a directory at the root of our git repository. In our <code>brigade.js</code> file, we can use any exported method or variable from that package by simply using a <code>require</code> statement, just like in any other JavaScript project.</p>
+
+<pre><code class="language-javascript">// file /local-deps/circle.js
+var PI = 3.14;
+exports.area = function (r) {
+    return PI * r * r;
+};
+exports.circumference = function (r) {
+    return 2 * PI * r;
+};
+</code></pre>
+
+<p>Then, in our <code>brigade.js</code> we can import that file and use it:</p>
+
+<pre><code class="language-javascript">const { events } = require(&quot;@azure/brigadier&quot;)
+const circle = require(&quot;./local-deps/circle&quot;);
+
+events.on(&quot;exec&quot;, function (e, p) {
+    console.log(&quot;area of a circle with radius 3 &quot; + circle.area(3));
+});
+</code></pre>
+
+<h2 id="best-practices">Best Practices</h2>
+
+<p>As we have seen, it is easy to add new functionality to the Brigade worker. But
+it is important to keep in mind that the Worker is intended to do one thing:
+execute Brigade chains.</p>
+
+<p>To that end, it is best to fight the temptation to put too much logic into the
+Brigade worker. Where possible, use Jobs to perform specific tasks within their
+own containers, and use workers to control the execution of a series of Jobs.</p>
+<div class="edit-meta">Last updated on 1 Jan 0001 / Published on 1 Jan 0001<br></div><nav class="pagination"><a class="nav nav-prev" href="/topics/dockerhub/" title="Container Registry Integration"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Container Registry Integration</a>
+<a class="nav nav-next" href="/topics/design/" title="Design">Next - Design <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+<nav>
+<ul>
+<li class=""><a href="/">Home</a></li>
+
+<li class=""><a href="/intro/">Getting Started</a>
+<ul class="">
+<li class=""><a href="/intro/overview/">Brigade Overview</a></li>
+<li class=""><a href="/intro/install/">Installing Brigade</a></li>
+<li class=""><a href="/intro/tutorial01/">Tutorial 1: Writing a CI pipeline</a></li>
+<li class=""><a href="/intro/tutorial02/">Tutorial 2: Setup GitHub</a></li>
+<li class=""><a href="/intro/tutorial03/">Tutorial 3: Projects &amp; Events</a></li>
+<li class=""><a href="/intro/tutorial04/">Tutorial 4: Writing and Testing an App</a></li>
+<li class=""><a href="/intro/writing-efficient-pipelines/">Tutorial 5: Writing Efficient Pipelines</a></li>
+</ul>
+  
+</li>
+
+<li class="parent"><a href="/topics/">Topic Guides</a>
+<ul class="sub-menu">
+<li class=""><a href="/topics/scripting_advanced/">Advanced Scripting Guide</a></li>
+<li class=""><a href="/topics/dockerhub/">Container Registry Integration</a></li>
+<li class="active"><a href="/topics/dependencies/">Dependencies</a></li>
+<li class=""><a href="/topics/design/">Design</a></li>
+<li class=""><a href="/topics/developers/">Developer Guide</a></li>
+<li class=""><a href="/topics/gateways/">Gateways</a></li>
+<li class=""><a href="/topics/genericgateway/">Generic Gateway</a></li>
+<li class=""><a href="/topics/github/">GitHub Integration</a></li>
+<li class=""><a href="/topics/ingress/">Ingress</a></li>
+<li class=""><a href="/topics/projects/">Managing Projects in Brigade</a></li>
+<li class=""><a href="/topics/releasing/">Releasing Brigade</a></li>
+<li class=""><a href="/topics/scripting/">Scripting Guide</a></li>
+<li class=""><a href="/topics/secrets/">Secret Management</a></li>
+<li class=""><a href="/topics/security/">Securing Brigade</a></li>
+<li class=""><a href="/topics/storage/">Storage</a></li>
+<li class=""><a href="/topics/testing/">Testing</a></li>
+<li class=""><a href="/topics/javascript/">The Brigade.js API</a></li>
+<li class=""><a href="/topics/readnext/">What to Read Next</a></li>
+<li class=""><a href="/topics/workers/">Workers</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>
