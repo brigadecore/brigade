@@ -20,3 +20,7 @@ node_modules/
 
 # Developer
 pvt/
+
+# Docs
+docs/public/
+docs/resources/
