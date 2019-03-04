@@ -953,7 +953,7 @@ header h1 {
   position: absolute;
   left: 2.5%;
   top: 1.5rem;
-  background: url("../images/brigade.png") no-repeat 0 0;
+  background: url("../img/brigade.png") no-repeat 0 0;
   background-size: contain;
   width: 240px;
   min-height: 78px;
