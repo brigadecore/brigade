@@ -11,7 +11,7 @@ var browserSync = require('browser-sync').create();
 var reload = browserSync.reload;
 
 var src_paths = {
-  sass: ['src/scss/*.scss'],
+  sass: ['static/scss/*.scss'],
   script: [
     'static/js/*.js',
     '!static/js/*.min.js'
@@ -35,7 +35,7 @@ gulp.task('lint:sass', function() {
     }))
     .pipe($.stylelint({
       config: {
-        ignoreFiles: "src/scss/_normalize.scss",
+        ignoreFiles: "static/scss/_normalize.scss",
         extends: [
           "stylelint-config-recommended",
           "stylelint-scss",
