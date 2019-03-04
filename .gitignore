@@ -18,9 +18,9 @@ node_modules/
 .idea/
 .swp
 
+# Docs
+docs/public/*
+docs/resources/
+
 # Developer
 pvt/
-
-# Docs
-docs/public/
-docs/resources/
