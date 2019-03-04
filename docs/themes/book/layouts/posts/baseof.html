@@ -10,14 +10,18 @@
 <body>
   <input type="checkbox" style="display: none" id="menu-control" />
   <main class="flex container">
-    <aside class="book-menu fixed">
-      {{ partial "docs/menu" . }}
-    </aside>
+    <article class="content-wrap">
 
-    <div class="book-posts mr-auto">
-      {{ partial "docs/mobile-header" . }}
-      {{ template "main" . }}
-    </div>
+      <aside class="book-menu fixed">
+        {{ partial "docs/menu" . }}
+      </aside>
+
+      <div class="book-posts mr-auto">
+        {{ partial "docs/mobile-header" . }}
+        {{ template "main" . }}
+      </div>
+    
+    </article>
   </main>
   
 

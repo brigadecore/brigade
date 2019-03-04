@@ -1,5 +1,5 @@
 ---
-title: 'Tutorial 4: Writing and Testing an App'
+title: 'Tutorial 4: Writing a Test'
 description: 'Writing your first CI pipeline, Part 4'
 section: intro
 ---

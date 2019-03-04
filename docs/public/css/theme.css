@@ -415,7 +415,7 @@ template {
 }
 
 body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "work_sansregular", "Helvetica Neue", Helvetica, Arial, Geneva, sans-serif;
   -webkit-font-feature-settings: 'pwid';
   font-feature-settings: 'pwid';
   line-height: 1.9;
@@ -925,4 +925,192 @@ footer {
   font-size: 80%;
   text-align: right;
   color: #999;
+}
+
+@font-face {
+  font-family: 'work_sansregular';
+  src: url("../../fonts/worksans-regular-webfont.eot");
+  src: url("../../fonts/worksans-regular-webfont.eot?#iefix") format("embedded-opentype"), url("../../fonts/worksans-regular-webfont.woff") format("woff"), url("../../fonts/worksans-regular-webfont.ttf") format("truetype"), url("../../fonts/worksans-regular-webfont.svg#f310d4dccd89e059e79d3b6deebb4725") format("svg");
+  font-style: normal;
+  font-weight: 400;
+}
+
+header {
+  border-top: 4px solid #37b0e7;
+  background: #E4ECE8;
+  background: -webkit-gradient(linear, left top, right top, from(#E4ECE8), to(#9AAACD));
+  background: linear-gradient(to right, #E4ECE8, #9AAACD);
+  min-height: 7.5rem;
+}
+
+header h1,
+header p {
+  color: #277a9f !important;
+}
+
+header h1 {
+  text-indent: -9999em;
+  position: absolute;
+  left: 2.5%;
+  top: 1.5rem;
+  background: url("../images/brigade.png") no-repeat 0 0;
+  background-size: contain;
+  width: 240px;
+  min-height: 78px;
+  display: block;
+}
+
+header p {
+  text-indent: -999em;
+}
+
+header .menu {
+  background: #E4ECE8;
+  background: -webkit-gradient(linear, left top, right top, from(#E4ECE8), to(#9AAACD));
+  background: linear-gradient(to right, #E4ECE8, #9AAACD);
+  border: none;
+}
+
+header .menu a {
+  color: #277a9f;
+}
+
+header nav {
+  position: absolute;
+  right: 5%;
+  top: 3.125rem;
+}
+
+header nav ul li a {
+  font-size: 1.125rem;
+}
+
+.sidebar {
+  background: #f6f9fa;
+  max-width: 300px !important;
+}
+
+.sidebar nav {
+  padding-top: 1rem;
+}
+
+.sidebar nav ul li a {
+  border: none;
+  -webkit-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+  color: #277a9f;
+}
+
+.sidebar nav ul li a:hover {
+  border-left: 0px solid #ccc !important;
+  background: #EFF4F5 !important;
+}
+
+.sidebar nav ul li.active a {
+  background: #EFF4F5 !important;
+  border-left: 0px solid #ccc !important;
+  color: #37b0e7 !important;
+}
+
+.sidebar nav ul li ul {
+  padding-bottom: 0.667rem;
+}
+
+.sidebar nav ul li ul li a {
+  font-size: 0.825rem;
+  color: #647b83;
+}
+
+main article.content-wrap {
+  -ms-flex: auto !important;
+  -webkit-box-flex: 1 !important;
+  flex: auto !important;
+  max-width: auto !important;
+  max-width: 780px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+main article.content-wrap h1 {
+  color: #277a9f;
+  margin-bottom: 1.25rem;
+}
+
+main article.content-wrap h1 + h1 {
+  font-weight: normal;
+  font-size: 1rem;
+  margin: -1rem 0 2rem;
+  color: #37b0e7;
+}
+
+main article.content-wrap h1 + h1 + p {
+  font-size: 1.25rem;
+  line-height: 1.6;
+  margin-bottom: 2.25rem;
+}
+
+main article.content-wrap h2 {
+  color: #37b0e7;
+  margin-top: 2.5rem;
+}
+
+main article.content-wrap p {
+  line-height: 1.7;
+  padding-right: 5%;
+  color: #647b83;
+}
+
+main article.content-wrap ul li, main article.content-wrap ol li {
+  color: #647b83;
+  line-height: 1.8;
+  padding-bottom: 0.333rem;
+}
+
+main article.content-wrap p a,
+main article.content-wrap li a,
+main article.content-wrap small a {
+  color: #37b0e7;
+  position: relative;
+  -webkit-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+  text-decoration: none;
+}
+
+main article.content-wrap p a:after,
+main article.content-wrap li a:after,
+main article.content-wrap small a:after {
+  width: 10%;
+  height: 3px;
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  display: block;
+  content: " ";
+  background: #37b0e7;
+  opacity: 0;
+  -webkit-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+
+main article.content-wrap p a:hover:after,
+main article.content-wrap li a:hover:after,
+main article.content-wrap small a:hover:after {
+  width: 100%;
+  left: 0;
+  opacity: 1;
+}
+
+main article.content-wrap code {
+  background: #E4ECE8;
+}
+
+main article.content-wrap pre {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #6a818a;
+  border-radius: 0.667rem;
+  background: #E4ECE8;
+  background: -webkit-gradient(linear, left top, right top, from(#E4ECE8), to(#dde7e2));
+  background: linear-gradient(to right, #E4ECE8, #dde7e2);
+  line-height: 1.4;
 }
