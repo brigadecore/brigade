@@ -1,6 +1,6 @@
 ---
 title: Installing Brigade
-description: Quick install guide for Brigade
+description: 'Quick install guide for Brigade'
 section: intro
 ---
 

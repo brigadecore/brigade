@@ -1,6 +1,7 @@
 ---
 title: Advanced Scripting Guide
-description: This guide provides some tips and ideas for advanced scripting.
+description: 'This guide provides some tips and ideas for advanced scripting.'
+aliases: /topics/
 ---
 
 # Advanced Scripting Guide

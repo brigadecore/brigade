@@ -7,22 +7,20 @@ description: Homepage of the Brigade Documentation
 
 Everything you need to know about Brigade.  
 
-## First Steps
+### First Steps
 
 Are you new to Brigade or to testing applications on Kubernetes? [This is the place to start!](intro/index.md)
 
-## Topic Guides
+### Topic Guides
 
 Learn about alternative methods of installation, integration with other tools, and
-writing advanced Brigade scripts.
+writing advanced Brigade scripts. [Dive deep into what makes Brigade, Brigade](topics/index).
 
-[Dive deep into what makes Brigade, Brigade](topics/index.md).
+### Releasing Brigade
 
-## Releasing Brigade
+For maintainers of this project, steps on cutting a new release of Brigade can be found [here](topics/releasing).
 
-For maintainers of this project, steps on cutting a new release of Brigade can be found [here](topics/releasing.md).
-
-## Related Resources
+### Related Resources
 
 If you'd like to add links to this list, open a pull request on 
 [Brigade's GitHub project](https://github.com/Azure/brigade)

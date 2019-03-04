@@ -1021,6 +1021,10 @@ header nav ul li a {
   color: #647b83;
 }
 
+main {
+  padding-bottom: 0;
+}
+
 main article.content-wrap {
   -ms-flex: auto !important;
   -webkit-box-flex: 1 !important;
@@ -1066,40 +1070,6 @@ main article.content-wrap ul li, main article.content-wrap ol li {
   padding-bottom: 0.333rem;
 }
 
-main article.content-wrap p a,
-main article.content-wrap li a,
-main article.content-wrap small a {
-  color: #37b0e7;
-  position: relative;
-  -webkit-transition: all 0.3s ease-in-out;
-  transition: all 0.3s ease-in-out;
-  text-decoration: none;
-}
-
-main article.content-wrap p a:after,
-main article.content-wrap li a:after,
-main article.content-wrap small a:after {
-  width: 10%;
-  height: 3px;
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  display: block;
-  content: " ";
-  background: #37b0e7;
-  opacity: 0;
-  -webkit-transition: all 0.3s ease-in-out;
-  transition: all 0.3s ease-in-out;
-}
-
-main article.content-wrap p a:hover:after,
-main article.content-wrap li a:hover:after,
-main article.content-wrap small a:hover:after {
-  width: 100%;
-  left: 0;
-  opacity: 1;
-}
-
 main article.content-wrap code {
   background: #E4ECE8;
 }
@@ -1113,4 +1083,54 @@ main article.content-wrap pre {
   background: -webkit-gradient(linear, left top, right top, from(#E4ECE8), to(#dde7e2));
   background: linear-gradient(to right, #E4ECE8, #dde7e2);
   line-height: 1.4;
+}
+
+article p a,
+article li a,
+article small a,
+nav.pagination a {
+  color: #37b0e7;
+  position: relative;
+  -webkit-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+  text-decoration: none;
+}
+
+article p a:after,
+article li a:after,
+article small a:after,
+nav.pagination a:after {
+  width: 10%;
+  height: 3px;
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  display: block;
+  content: " ";
+  background: #37b0e7;
+  opacity: 0;
+  -webkit-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+
+article p a:hover:after,
+article li a:hover:after,
+article small a:hover:after,
+nav.pagination a:hover:after {
+  width: 100%;
+  left: 0;
+  opacity: 1;
+}
+
+footer {
+  margin: 0 auto;
+  padding: 4rem 0 1.5rem;
+  background-color: #f7f9fa;
+  text-align: center;
+}
+
+footer p,
+footer p.powered,
+footer a {
+  color: #aaa;
 }
