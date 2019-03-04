@@ -1070,6 +1070,13 @@ main article.content-wrap ul li, main article.content-wrap ol li {
   padding-bottom: 0.333rem;
 }
 
+main article.content-wrap img {
+  margin: 2.5rem auto;
+  -webkit-box-shadow: 0 2px 5px rgba(100, 100, 100, 0.5);
+  box-shadow: 0 2px 5px rgba(100, 100, 100, 0.5);
+  max-width: 100%;
+}
+
 main article.content-wrap code {
   background: #E4ECE8;
 }

@@ -77,7 +77,7 @@ $ FLASK_APP=uuid-generator/app/__init__.py flask run
 
 Now, open a Web browser and go to “/” on your local domain – e.g., http://127.0.0.1:5000/. You should see "Hello World!":
 
-<img src="img/img1.png" style="height: 500px;" />
+![Hello World!](https://docs.brigade.sh/img/img1.png)
 
 If you look back to the running flask app's logs, you should see new logs pop up:
 
@@ -103,7 +103,7 @@ def hello():
 
 Re-run the web server and open the browser back to http://127.0.0.1:5000/. You should now see a random UUID:
 
-<img src="img/img2.png" style="height: 500px;" />
+!Random UUID](https://docs.brigade.sh/img/img2.png)
 
 Keep refreshing the page. You should see new UUIDs being generated every time you refresh the page.
 

@@ -36,7 +36,7 @@ To do this, follow the [Brigade GitHub App][brigade-github-app] documentation to
 a GitHub App.  During configuration, copy the shared secret above (`mDXUDZyDsTUHw4KZIMPOQMN1`) and set this as the
 "Webhook secret" value for the App.
 
-<img src="img/img3.png" style="height: 500px;" />
+![GithHub Webhooks](https://docs.brigade.sh/img/img3.png)
 
 We'll need to upgrade our Brigade server with our `brigade-github-app` sub-chart configuration filled in:
 

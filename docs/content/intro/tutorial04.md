@@ -259,10 +259,12 @@ $ git push origin add-brigade
 ```
 
 Open up a new pull request on your repository using the branch:
-<img src="img/img4.png" style="height: 500px;" />
+
+![New PR](https://docs.brigade.sh/img/img4.png)
 
 And we should now see the Checks tab with updates/results from the resulting Check Suite:
-<img src="img/img5.png" style="height: 500px;" />
+
+![GitHub Checks](https://docs.brigade.sh/img/img5.png)
 
 This concludes the basic tutorial. If you are familiar with Brigade and are interested in learning how to refactor brigade.js into a more efficient test pipeline, check out [Advanced tutorial: Writing efficient pipelines][efficient-pipelines].
 

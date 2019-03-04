@@ -12,7 +12,7 @@ Brigade is an in-cluster runtime environment. It interprets scripts, and execute
 them often by invoking resources inside of the cluster. Brigade is event-based
 scripting of Kubernetes pipelines.
 
-![Event-based scripting of pipelines](img/design-01.png)
+![Event-based scripting of pipelines](https://docs.brigade.sh/img/design-01.png)
 
 - Event-based: A script execution is triggered by a Brigade event.
 - Scripting: Programs are expressed as JavaScript files that declare one or more event handlers.
@@ -20,7 +20,7 @@ scripting of Kubernetes pipelines.
 
 ## Terminology
 
-![Brigade Run](img/design-02.png)
+![Brigade Run](https://docs.brigade.sh/img/design-02.png)
 
 - **Brigade** is the name of the project. Often, the term is used generically to
   refer to the in-cluster Brigade components.

@@ -166,6 +166,12 @@ main article.content-wrap {
       padding-bottom: 0.333rem;
     }
   }
+
+  img {
+    margin: 2.5rem auto;
+    box-shadow: 0 2px 5px rgba(100,100,100,0.5);
+    max-width: 100%;
+  }
  
   code {
     background: #E4ECE8;

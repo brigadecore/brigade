@@ -35,7 +35,7 @@ nginx-ingress-default-backend   ClusterIP      10.0.121.201   <none>         80/
 
 We will use the public IP to configure our DNS name. You can use any DNS provider - and in this example, we will use Cloudflare to add a new A Record. Note that you must use a domain name you have access to (in this case, we will use `*.kube.radu.sh` - that means this configuration can provide URLs such as `abc.kube.radu.sh`):
 
-<img src="img/cloudflare-dns.png" style="height: 500px;" />
+![Cloudflare DNS](https://docs.brigade.sh/img/cloudflare-dns.png)
 
 At this point, you should be able to create Ingress objects that point to internal Kubernetes services, without exposing them. However, the ingress would not have a TLS certificate, and manually adding certificates for each one, while possible, is not ideal. This is where [`cert-manager`](https://github.com/jetstack/cert-manager) comes into play, which allows us to  _automatically provision and manage TLS certificates in Kubernetes_.
 
@@ -180,7 +180,7 @@ kuar-demo-prod-tls   True    kuar-demo-prod-tls   9m
 
 At this point, the host defined in your ingress configuration should be accessible, with a TLS certificate, and pointing to the demo:
 
-<img src="img/kuard-tls.png" style="height: 500px;" />
+![Kuard TLS](https://docs.brigade.sh/img/kuard-tls.png)
 
 Make sure to change the email in the cluster issuer to your own, and configure the domain and host of the ingress to the ones you own.
 
@@ -228,6 +228,6 @@ genericGateway:
 
 Notice how the `annotations`, `hosts`, `paths` and `tls` sections are almost identical with the example we had before. If we install Brigade using these values, the same process that happened before for the demo application starts now - we will have an Ingress object, and `cert-manager` will make and `Order` and create a `Certificate` object using a certificate from LetsEncrypt. A couple of seconds later, we can verify the generic gateway is successfully deployed, and we have an HTTPS endpoint:
 
-<img src="img/brigade-ingress.png" style="height: 500px;" />
+![Brigade Ingress](https://docs.brigade.sh/img/brigade-ingress.png)
 
 Now we can follow the same process for any gateway we want to expose on the Internet.
