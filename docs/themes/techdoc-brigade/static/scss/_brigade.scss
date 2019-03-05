@@ -114,6 +114,21 @@ header {
       }
     }
   }
+
+  // make the sidebar content 'sticky'
+  &.fixed nav {
+    position: fixed;
+    max-width: 300px;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1500;
+    overflow-y: scroll;
+
+    ul {
+      padding-bottom: 0.667rem;
+    }
+  } 
 }
 
 main {

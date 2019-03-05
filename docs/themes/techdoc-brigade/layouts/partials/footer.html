@@ -9,3 +9,16 @@
 <i class="fas fa-circle"></i>
 <i class="fas fa-arrow-circle-up"></i>
 </span></a>
+
+<script type="text/javascript">
+  // make the sidebar sticky on scroll
+  var affixMenu = document.querySelector(".sidebar");
+
+  window.onscroll = function() {
+    if (window.pageYOffset > 140) {
+      affixMenu.classList.add("fixed");
+    } else {
+      affixMenu.classList.remove("fixed");
+    };
+  }
+</script>
