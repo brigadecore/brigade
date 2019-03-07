@@ -1,4 +1,4 @@
-baseURL = "/"
+baseURL = "https://docs.brigade.sh/"
 title = "Brigade"
 theme = "techdoc-brigade"
 canonifyURLs = "true"

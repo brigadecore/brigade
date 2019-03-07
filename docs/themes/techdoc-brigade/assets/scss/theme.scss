@@ -1,5 +1,5 @@
-@import 'node_modules/flexbox-grid-mixins/sass/flexbox-grid-mixins';
-@import 'variable';
+@import '_variables';
+@import 'flexbox-grid-mixins';
 @import "normalize";
 @import "element";
 @import "structure";

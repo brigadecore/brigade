@@ -4,11 +4,10 @@
 
 @font-face {
   font-family: 'work_sansregular';
-  src: url('../../fonts/worksans-regular-webfont.eot');
-  src: url('../../fonts/worksans-regular-webfont.eot?#iefix') format("embedded-opentype"),
-       url('../../fonts/worksans-regular-webfont.woff') format('woff'),
-       url('../../fonts/worksans-regular-webfont.ttf') format('truetype'),
-       url('../../fonts/worksans-regular-webfont.svg#f310d4dccd89e059e79d3b6deebb4725') format('svg');
+  src: url('../fonts/worksans-regular-webfont.eot');
+  src: url('../fonts/worksans-regular-webfont.eot?#iefix') format("embedded-opentype"),
+       url('../fonts/worksans-regular-webfont.woff') format('woff'),
+       url('../fonts/worksans-regular-webfont.ttf') format('truetype');
   font-style: normal;
   font-weight: 400;
 }
