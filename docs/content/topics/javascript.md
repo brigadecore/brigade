@@ -386,9 +386,3 @@ The `Repository` class describes a project's VCS repository (if provided).
 
 - `name: string`: The name of the repo (`org/name`)
 - `cloneURL: string`: The URL that the VCS software can use to clone the repository.
-
----
-
-Prev: [Scripting Guide](scripting.md) `|` Next: [Scripting Guide - Advanced](scripting_advanced.md)
-
-Return to the [Table of Contents](index.md)

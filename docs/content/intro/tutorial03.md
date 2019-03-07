@@ -66,10 +66,6 @@ The next time you push to the repository, the webhook system should trigger a bu
 
 After configuring Brigade to test new features, read [part 4 of this tutorial][part4] to write a new feature to the uuid-generator project, which will trigger a test build using Brigade.
 
----
-
-Prev: [Part 2][part2] `|` Next: [Part 4][part4]
-
-[part2]: tutorial02.md
-[part4]: tutorial04.md
+[part2]: ../tutorial02
+[part4]: ../tutorial04
 [brigade-github-app]: https://github.com/Azure/brigade-github-app

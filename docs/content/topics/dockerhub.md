@@ -131,9 +131,3 @@ The above answers an ACR webhook. The data sent by DockerHub's webhook is
 **IMPORTANT:** An event will trigger for _every tag you push_, even if that tag
 is not new or updated. If you push both a `latest` and a versioned tag for a
 single image, you will get two webhook invocations.
-
----
-
-Prev: [GitHub Integration](github.md) `|` Next: [Generic Gateway Integration](genericgateway.md)
-
-Return to the [Table of Contents](index.md)

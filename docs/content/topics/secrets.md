@@ -237,9 +237,3 @@ brig run BRIGADE_PROJECT_NAME -f brigade.js
 ```
 
 We will then see `"hello world"` displayed in the logs.
-
----
-
-Prev: [Generic Gateway Integration](genericgateway.md) `|` Next: [Brigade Gateways](gateways.md)
-
-Return to the [Table of Contents](index.md)

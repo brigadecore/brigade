@@ -21,5 +21,4 @@ Here are a few things to help you:
 
 If you've gone through this article, then you're probably scratching your head on what to [read next][readnext].
 
-
-[readnext]: readnext.md
+[readnext]: ../readnext

@@ -26,9 +26,3 @@ Brigade is a Kubernetes-native tool for doing event-driven scripting. Here's wha
     Docker images.
 
 Brigade is designed for teams. It is not a SaaS, nor does it require a legion of domain experts to configure and run it. Instead, it should be easy to install, configure, and maintain.
-
----
-
-Prev: [Docs Index](../index.md) `|` Next: [Quickstart Guide][install]
-
-[install]: install.md

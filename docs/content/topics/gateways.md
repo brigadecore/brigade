@@ -342,9 +342,3 @@ cron gateway.
 
 Again, there are other programming libraries and platforms that interoperate with
 Kubernetes. Many of them are hosted on GitHub in the [kubernetes-client org](https://github.com/kubernetes-client).
-
----
-
-Prev: [Using Secrets](secrets.md) `|` Next: [Projects](projects.md)
-
-Return to the [Table of Contents](index.md)

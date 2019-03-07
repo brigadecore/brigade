@@ -188,9 +188,3 @@ world
 ```
 
 Job `j1` has our extra command, while `j2` only inherited the defaults from `MyJob`.
-
----
-
-Prev: [Brigade.js Reference](javascript.md) `|` Next: [GitHub Integration](github.md)
-
-Return to the [Table of Contents](index.md)

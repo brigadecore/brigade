@@ -1325,9 +1325,3 @@ you want more details about the Brigade JS API, you can look at the [API
 documentation](javascript.md). For a more advanced scripting guide, check [here](scripting_advanced.md).
 
 Happy Scripting!
-
----
-
-Prev: [Design](design.md) `|` Next: [Brigade.js Reference](javascript.md)
-
-Return to the [Table of Contents](index.md)

@@ -264,11 +264,5 @@ to take the given information from the project and use it to create a local snap
 of the project in an appointed location. See the [Git sidecar](https://github.com/Azure/brigade/tree/master/git-sidecar)
 for an example.
 
----
-
-Prev: [Brigade Gateways](gateways.md) `|` Next: [Securing Brigade](security.md)
-
-Return to the [Table of Contents](index.md)
-
 [brigade-charts]: https://github.com/Azure/brigade-charts
 [brigade-project-chart]: https://github.com/Azure/brigade-charts/tree/master/charts/brigade-project

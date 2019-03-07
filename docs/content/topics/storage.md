@@ -184,9 +184,3 @@ if creating via the `brig` cli.
 - Killing the worker pod will orphan shared storage PVCs, as the cleanup routine
   is part of the worker's shutdown process. If you manually destroy a worker pod,
   you must also manually destroy the associated PVCs.
-
----
-
-Prev: [Securing Brigade](security.md) `|` Next: [Workers](workers.md)
-
-Return to the [Table of Contents](index.md)
