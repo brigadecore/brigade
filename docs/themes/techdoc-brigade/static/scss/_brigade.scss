@@ -250,3 +250,48 @@ footer {
     color: #aaa;
   }
 }
+
+// mobile styles
+@media only screen and (max-width: 480px) {
+  header .menu nav {
+    min-width: 50%; 
+
+    ul {
+      li {
+        display: inline-block;
+        font-size: 1rem;
+        margin-left: 1rem;
+        border-bottom: none;
+      }
+    }
+  }
+  
+  .sidebar,
+  .sidebar.fixed {
+    max-width: auto !important;
+    min-width: 100% !important;
+    
+    nav {
+      position: relative;
+      max-width: auto !important;
+      min-width: 100% !important;
+      left: auto;
+      top: auto;
+      bottom: auto;
+      z-index: 1500;
+      overflow-y: auto;
+      border-top: 12px solid #ccc;
+
+      ul {
+        padding-bottom: 0.25rem;
+
+        li {
+          a {
+            line-height: 2.25;
+          }
+        }
+      }
+    }
+  } 
+
+}

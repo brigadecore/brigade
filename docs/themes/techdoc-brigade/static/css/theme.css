@@ -1155,3 +1155,40 @@ footer p.powered,
 footer a {
   color: #aaa;
 }
+
+@media only screen and (max-width: 480px) {
+  header .menu nav {
+    min-width: 50%;
+  }
+  header .menu nav ul li {
+    display: inline-block;
+    font-size: 1rem;
+    margin-left: 1rem;
+    border-bottom: none;
+  }
+  .sidebar,
+  .sidebar.fixed {
+    max-width: auto !important;
+    min-width: 100% !important;
+  }
+  .sidebar nav,
+  .sidebar.fixed nav {
+    position: relative;
+    max-width: auto !important;
+    min-width: 100% !important;
+    left: auto;
+    top: auto;
+    bottom: auto;
+    z-index: 1500;
+    overflow-y: auto;
+    border-top: 12px solid #ccc;
+  }
+  .sidebar nav ul,
+  .sidebar.fixed nav ul {
+    padding-bottom: 0.25rem;
+  }
+  .sidebar nav ul li a,
+  .sidebar.fixed nav ul li a {
+    line-height: 2.25;
+  }
+}
