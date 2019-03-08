@@ -346,35 +346,52 @@ export class JobRunner implements jobs.JobRunner {
 
     this.runner.spec.containers[0].env = envVars;
 
-    let mountPath = job.mountPath || this.options.mountPath;
 
-    // Add secret volume
-    this.runner.spec.volumes = [
-      { name: secName, secret: { secretName: secName } } as kubernetes.V1Volume
-    ];
-    this.runner.spec.containers[0].volumeMounts = [
-      { name: secName, mountPath: "/hook" } as kubernetes.V1VolumeMount
-    ];
+    if (job.host.os == "windows") {
+      this.runner.spec.containers[0].command = ["powershell.exe"];
+      this.runner.spec.containers[0].args = [job.tasks.join(";")];
+    } else {
 
-    this.runner.spec.initContainers = [];
-    if (job.useSource && project.repo.cloneURL && project.kubernetes.vcsSidecar) {
-      // Add the sidecar.
-      let sidecar = sidecarSpec(
-        e,
-        "/src",
-        project.kubernetes.vcsSidecar,
-        project
-      );
-      this.runner.spec.initContainers = [sidecar];
+      let mountPath = job.mountPath || this.options.mountPath;
 
-      // Add volume/volume mounts
-      this.runner.spec.volumes.push(
-        { name: "vcs-sidecar", emptyDir: {} } as kubernetes.V1Volume
-      );
-      this.runner.spec.containers[0].volumeMounts.push(
-        { name: "vcs-sidecar", mountPath: mountPath } as kubernetes.V1VolumeMount
-      );
+      // Add secret volume
+      this.runner.spec.volumes = [
+        { name: secName, secret: { secretName: secName } } as kubernetes.V1Volume
+      ];
+      this.runner.spec.containers[0].volumeMounts = [
+        { name: secName, mountPath: "/hook" } as kubernetes.V1VolumeMount
+      ];
+
+      let newCmd = generateScript(job);
+      if (!newCmd) {
+        this.runner.spec.containers[0].command = null;
+      } else {
+        this.secret.data["main.sh"] = b64enc(newCmd);
+      }
+
+      this.runner.spec.initContainers = [];
+      if (job.useSource && project.repo.cloneURL && project.kubernetes.vcsSidecar) {
+        // Add the sidecar.
+        let sidecar = sidecarSpec(
+          e,
+          "/src",
+          project.kubernetes.vcsSidecar,
+          project
+        );
+        this.runner.spec.initContainers = [sidecar];
+
+        // Add volume/volume mounts
+        this.runner.spec.volumes.push(
+          { name: "vcs-sidecar", emptyDir: {} } as kubernetes.V1Volume
+        );
+        this.runner.spec.containers[0].volumeMounts.push(
+          { name: "vcs-sidecar", mountPath: mountPath } as kubernetes.V1VolumeMount
+        );
+      }
     }
+
+
+
 
     if (job.imagePullSecrets) {
       this.runner.spec.imagePullSecrets = [];
@@ -467,12 +484,7 @@ export class JobRunner implements jobs.JobRunner {
       this.runner.spec.containers[0].args = job.args;
     }
 
-    let newCmd = generateScript(job);
-    if (!newCmd) {
-      this.runner.spec.containers[0].command = null;
-    } else {
-      this.secret.data["main.sh"] = b64enc(newCmd);
-    }
+
 
     // If the job asks for privileged mode and the project allows this, enable it.
     if (job.privileged && project.allowPrivilegedJobs) {
@@ -944,10 +956,14 @@ function newRunnerPod(
   c1.name = "brigaderun";
   c1.image = brigadeImage;
 
-  if (jobShell == "") {
-    jobShell = "/bin/sh";
+  if (jobShell == "powershell.exe") {
+  } else {
+    if (jobShell == "") {
+      jobShell = "/bin/sh";
+    }
+    c1.command = [jobShell, "/hook/main.sh"];
+
   }
-  c1.command = [jobShell, "/hook/main.sh"];
 
   c1.imagePullPolicy = imageForcePull ? "Always" : "IfNotPresent";
   c1.securityContext = new kubernetes.V1SecurityContext();
