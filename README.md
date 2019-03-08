@@ -11,7 +11,7 @@ for Kubernetes.
 - Project-based management
 - Configurable event hooks
 - Easy construction of pipelines
-- Check out the [docs](https://azure.github.io/brigade/) to get started.
+- Check out the [docs](https://docs.brigade.sh/) to get started.
 
  <!-- [![asciicast](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG.png)](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG) -->
 
@@ -27,7 +27,7 @@ for Kubernetes.
   other popular web services. And it can be easily extended to support your own
   services.
 
-The [design introduction](https://azure.github.io/brigade/topics/design.html) introduces Brigade concepts and
+The [design introduction](https://docs.brigade.sh/topics/design/) introduces Brigade concepts and
 architecture.
 
 ## Quickstart
@@ -77,7 +77,7 @@ Auto-generated a Shared Secret: "novxKi64FKWyvU4EPZulyo0o"
 Project ID: brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
 ```
 
-Here we're using the name 'deis/empty-testbed' for our project, which points to a test repo on 'https://github.com/deis/empty-testbed'. Of course, don't forget to give a proper name to your project, as well as set the 'Clone URL' correctly. If it's wrong, your subsequent Builds will fail! For documentation on project creation, check [here](https://azure.github.io/brigade/topics/projects.html).
+Here we're using the name 'deis/empty-testbed' for our project, which points to a test repo on 'https://github.com/deis/empty-testbed'. Of course, don't forget to give a proper name to your project, as well as set the 'Clone URL' correctly. If it's wrong, your subsequent Builds will fail! For documentation on project creation, check [here](https://docs.brigade.sh/topics/projects/).
 
 Now we can view the newly created project:
 ```bash
@@ -119,7 +119,7 @@ events.on("exec", () => {
 
 When the `exec` event is triggered, Brigade will create a Build based on this brigade.js file. This Build will create a single job that will start an image based on `alpine:3.8` which will simply do a couple of echoes. The Kubernetes Pod that will be created to run this Build job will have a name starting with 'do-nothing'. As you can probably guess, a new Kubernetes Secret will also be created to store information about this Build.
 
-Moreover, you can check out [this tutorial](https://azure.github.io/brigade/intro/) for more on creating scripts.
+Moreover, you can check out [this tutorial](https://docs.brigade.sh/intro/) for more on creating scripts.
 
 ### Running a Build
 
@@ -208,7 +208,7 @@ helm delete brigade --purge
 
 ## Brigade :heart: Developers
 
-To get started head to the [developer's guide](https://azure.github.io/brigade/topics/developers.html)
+To get started head to the [developer's guide](https://docs.brigade.sh/topics/developers/)
 
 Brigade is well-tested on Minikube and [Azure Kubernetes Service](https://docs.microsoft.com/en-us/azure/aks/).
 
