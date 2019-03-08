@@ -31,12 +31,8 @@ we can follow these steps to release Brigade:
 bumping the `version` and `appVersion` values in both the Brigade
 [chart](https://github.com/Azure/brigade-charts/blob/master/charts/brigade/Chart.yaml) and
 the Brigade Project [chart](https://github.com/Azure/brigade-charts/blob/master/charts/brigade-project/Chart.yaml)
-and then re-building and re-indexing the charts.
-
-    ```console
-    $ # bump version and appVersion in charts/{brigade,brigade-project}/Chart.yaml
-    $ make build index
-    $ # commit changes, issue PR
-    ```
+to match the current release value.  Once this pull request is merged, the
+[brigade.js pipeline](https://github.com/Azure/brigade-charts/blob/master/brigade.js) will handle building
+fresh chart artifacts and updating the chart index file.
 
 [brigade-charts]: https://github.com/Azure/brigade-charts

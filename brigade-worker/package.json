@@ -10,7 +10,7 @@
     "prestart": "node prestart.js",
     "build-start": "yarn build && yarn start",
     "start": "node --no-deprecation ./dist/index.js",
-    "test": "mocha --compilers ts:ts-node/register --recursive ./test/**/*.ts",
+    "test": "mocha --require ts-node/register --recursive ./test/**/*.ts",
     "build": "tsc",
     "brigade": "yarn start",
     "docs": "typedoc --out ./doc --excludePrivate --excludeExternals --exclude test/*.ts --exclude doc/** ./src"
@@ -20,20 +20,20 @@
   "repository": "https://github.com/Azure/brigade",
   "devDependencies": {
     "@types/chai": "^4.0.1",
-    "@types/mocha": "^2.2.41",
-    "@types/node": "^10.3.0",
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^11.9.6",
+    "@types/ws": "6.0.1",
     "chai": "^4.1.0",
-    "mocha": "^4.1.0",
+    "mocha": "^6.0.2",
     "prettier": "^1.9.1",
     "rimraf": "^2.6.2",
-    "ts-node": "^7.0.0",
-    "typedoc": "^0.8.0",
-    "typescript": "^3.2.2",
-    "@types/ws": "6.0.1"
+    "ts-node": "^8.0.2",
+    "typedoc": "^0.14.2",
+    "typescript": "^3.2.2"
   },
   "dependencies": {
-    "@kubernetes/client-node": "^0.7.2",
     "@azure/brigadier": "^0.4.0",
+    "@kubernetes/client-node": "^0.7.2",
     "child-process-promise": "^2.2.1",
     "pretty-error": "^2.1.1",
     "ulid": "^0.2.0"
