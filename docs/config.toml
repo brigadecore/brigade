@@ -1,0 +1,26 @@
+baseURL = "https://docs.brigade.sh/"
+title = "Brigade"
+theme = "techdoc-brigade"
+canonifyURLs = "true"
+relativeURLs = "false"
+
+[params]
+  title = "Brigade"
+  description = "Brigade - Event-driven scripting for Kubernetes."
+
+# top navigation
+    # (side nav is auto generated from content dir)
+[[menu.main]]
+    name = "Docs"
+    url = "https://docs.brigade.sh"
+    weight = 1
+
+[[menu.main]]
+    name = "Examples"
+    url = "https://github.com/Azure/brigade/tree/master/docs/content/examples"
+    weight = 2
+
+[[menu.main]]
+    name = "Github"
+    url = "https://github.com/azure/brigade"
+    weight = 3

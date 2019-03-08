@@ -1,0 +1,24 @@
+<a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+
+<script type="text/javascript">
+  // make the sidebar sticky on scroll
+  var affixMenu = document.querySelector(".sidebar");
+
+  window.onscroll = function() {
+    if (window.pageYOffset > 140) {
+      affixMenu.classList.add("fixed");
+    } else {
+      affixMenu.classList.remove("fixed");
+    };
+  }
+</script>

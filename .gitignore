@@ -11,12 +11,15 @@
 /tests/testdata/*-generated.*
 /vendor/
 node_modules/
-
+.DS_Store
 
 # IDEs
 .vscode/
 .idea/
 .swp
+
+# Docs
+docs/public/*
 
 # Developer
 pvt/
