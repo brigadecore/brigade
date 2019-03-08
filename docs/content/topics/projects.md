@@ -1,5 +1,5 @@
 ---
-title: Managing Projects in Brigade
+title: Projects
 description: How to manage Brigade Projects using either the Brig CLI or Helm Charts
 ---
 

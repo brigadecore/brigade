@@ -12,29 +12,29 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
 ## Table of Contents
 
 - Architecture
-  - [Brigade Design](design.md): A high-level explanation of how Brigade is designed.
+  - [Brigade Design](design): A high-level explanation of how Brigade is designed.
 - Using Brigade (brigade.js, webhooks)
-  - [Scripting Guide](scripting.md): How to write JavaScript for `brigade.js` files.
-  - [Brigade.js Reference](javascript.md): The API for brigade.js files.
-  - [Scripting Guide - Advanced](scripting_advanced.md): Advanced examples for `brigade.js` files.
-  - [Adding dependencies to `brigade.js`](dependencies.md): How to add local dependencies and NPM packages to your `brigade.js` files.
-  - [GitHub Integration](github.md): A guide for configuring GitHub integration.
-  - [Container Registry Integration](dockerhub.md): A guide for configuring integration with DockerHub or Azure Container Registry.
-  - [Generic Gateway](genericgateway.md): How to use Brigade's Generic Gateway functionality.
-  - [Using Secrets](secrets.md): How to pass sensitive data into builds.
-  - [Brigade Gateways](gateways.md): Learn how to write your own Brigade gateway.
+  - [Scripting Guide](scripting): How to write JavaScript for `brigade.js` files.
+  - [Brigade.js Reference](javascript): The API for brigade.js files.
+  - [Scripting Guide - Advanced](scripting_advanced): Advanced examples for `brigade.js` files.
+  - [Adding dependencies to `brigade.js`](dependencies): How to add local dependencies and NPM packages to your `brigade.js` files.
+  - [GitHub Integration](github): A guide for configuring GitHub integration.
+  - [Container Registry Integration](dockerhub): A guide for configuring integration with DockerHub or Azure Container Registry.
+  - [Generic Gateway](genericgateway): How to use Brigade's Generic Gateway functionality.
+  - [Using Secrets](secrets): How to pass sensitive data into builds.
+  - [Brigade Gateways](gateways): Learn how to write your own Brigade gateway.
 - Configuring and Running Brigade
-  - [Projects](projects.md): Install, upgrade, and use Brigade Projects.
-  - [Securing Brigade](security.md): Things to consider when configuring Brigade.
-  - [Storage](storage.md): How Brigade uses Kubernetes Persistent Storage.
-  - [Workers](workers.md): More information regarding Brigade Worker.
-  - [Testing Brigade](testing.md): How to test Brigade.
+  - [Projects](projects): Install, upgrade, and use Brigade Projects.
+  - [Securing Brigade](security): Things to consider when configuring Brigade.
+  - [Storage](storage): How Brigade uses Kubernetes Persistent Storage.
+  - [Workers](workers): More information regarding Brigade Worker.
+  - [Testing Brigade](testing): How to test Brigade.
 - Contributing to Brigade Development
-  - [Brigade Developers Guide](developers.md): A guide for people who want to modify Brigade's
+  - [Brigade Developers Guide](developers): A guide for people who want to modify Brigade's
     code.
 - Examples
-  - [Example Projects](../index.md#technical): Brigade-related projects.
+  - [Example Projects](../index/#technical): Brigade-related projects.
 
 
 
-[write]: https://github.com/Azure/brigade/new/master/docs/topics
+[write]: https://github.com/Azure/brigade/new/master/content/docs/topics
