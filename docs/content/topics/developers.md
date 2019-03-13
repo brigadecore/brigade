@@ -259,11 +259,5 @@ yarn start
 
 You may change the variables above to point to the desired project.
 
----
-
-Prev: [Workers](workers.md) `|` Next: [Example Projects](../index.md#technical)
-
-Return to the [Table of Contents](index.md)
-
 [brigade-charts]: https://github.com/Azure/brigade-charts
 [brigade-project-chart]: https://github.com/Azure/brigade-charts/tree/master/charts/brigade-project

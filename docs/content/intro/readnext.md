@@ -23,5 +23,5 @@ The [introductory material][] is designed for people new to Brigade – or to we
 
 The [topic guides][topics], on the other hand, dive deep into individual parts of Brigade. There are complete guides to Brigade's controller, sandbox engine, and much more. This is probably where you’ll want to spend most of your time; if you work your way through these guides you should come out knowing pretty much everything there is to know about Brigade.
 
-[introductory material]: index.md
-[topics]: ../topics/index.md
+[introductory material]: ../
+[topics]: ../../topics/

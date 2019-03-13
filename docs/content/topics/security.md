@@ -84,9 +84,3 @@ Brigade projects, builds, and jobs.
 
 This service should only be exposed to the outside network when necessary. And
 when exposed, it should use transport layer security (aka SSL) whenever possible.
-
----
-
-Prev: [Projects](projects.md) `|` Next: [Storage](storage.md)
-
-Return to the [Table of Contents](index.md)

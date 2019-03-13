@@ -79,9 +79,5 @@ Brigade is well-tested on [AKS Kubernetes](https://docs.microsoft.com/en-us/azur
   DNS service or another DNS service) to your Load Balancer IP. GitHub and other
   webhook services seem to work better with DNS names than with IP addresses.
 
----
-
-Prev: [Overview][overview] `|` Next: [Writing your first CI pipeline, Part 1][part1]
-
-[overview]: overview.md
-[part1]: tutorial01.md
+[overview]: ../overview
+[part1]: ../tutorial01

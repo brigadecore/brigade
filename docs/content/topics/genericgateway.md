@@ -174,9 +174,3 @@ events.on("cloudevent", (e, p) => { // handler for a CloudEvent
   echo.run();
 });
 ```
-
----
-
-Prev: [Container Registry Integration](dockerhub.md) `|` Next: [Using Secrets](secrets.md)
-
-Return to the [Table of Contents](index.md)

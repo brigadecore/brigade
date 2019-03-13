@@ -50,11 +50,5 @@ $ helm install -n brigade/brigade -f brigade-values.yaml -f brigade-github-app-v
 To link this GitHub App up with GitHub repositories by way of Brigade projects, continue following the
 [README.md](https://github.com/Azure/brigade-github-app/blob/master/README.md#6-add-brigade-projects-for-each-github-project).
 
----
-
-Prev: [Scripting Guide - Advanced](scripting_advanced.md) `|` Next: [Container Registry Integration](dockerhub.md)
-
-Return to the [Table of Contents](index.md)
-
 [brigade-github-app]: https://github.com/Azure/brigade-github-app
 [brigade-github-app-readme]: https://github.com/Azure/brigade-github-app/blob/master/README.md
