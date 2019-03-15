@@ -61,7 +61,7 @@ When you create a new Brigade Project via Brig CLI, you can optionally create su
 
 ### Calling the SimpleEvents endpoint
 
-When calling the Generic Gateway `simpleevents` endpoint, you must include a SimpleEvent with a custom JSON payload such as:
+When calling the Generic Gateway endpoint for a `simpleevent` (currently this is `/simpleevents/v1`), you must include a SimpleEvent with a custom JSON payload such as:
 
 ```json
 {
@@ -86,7 +86,8 @@ curl --header "Content-Type: application/json" \
   http://localhost:8000/simpleevents/v1/PROJECT_ID/SECRET
 ```
 
-If you do not wish to provide any payload, you can send empty POST data or just an empty JSON object (`{}`). 
+This will trigger a Build and raise an event of type `simpleevent` which you should handle in your brigade.js file.
+Moreover, if you do not wish to provide any payload, you can send empty POST data or just an empty JSON object (`{}`). 
 
 ---
 **NOTE**
@@ -97,7 +98,7 @@ If you plan to use this type of event with source control, you should specify `r
 
 ### Calling the CloudEvent endpoint
 
-When calling the Generic Gateway `cloudevents/v02` endpoint, you must include a valid [0.2 CloudEvent](https://github.com/cloudevents/spec/blob/v0.2/spec.md) message such as:
+When calling the Generic Gateway endpoint for a `cloudevent` (currently this is `/cloudevents/v02`), you must include a valid [0.2 CloudEvent](https://github.com/cloudevents/spec/blob/v0.2/spec.md) message such as:
 
 ```json
 {
@@ -132,7 +133,9 @@ curl --header "Content-Type: application/json" \
   http://localhost:8000/cloudevents/v02/PROJECT_ID/SECRET
 ```
 
-Bear in mind that 0.2 Cloud Events specification requires non-empty and proper values for "type","source","id" and "specversion" ([source](https://github.com/cloudevents/spec/blob/v0.2/spec.md#type)).
+This will trigger a Build and raise an event of type `cloudevent` which you should handle in your brigade.js file.
+
+Bear in mind that 0.2 Cloud Events specification requires non-empty and proper values for "type", "source", "id" and "specversion" ([source](https://github.com/cloudevents/spec/blob/v0.2/spec.md#type)).
 
 A CloudEvent may include domain-specific information in the `data` field ([source](https://github.com/cloudevents/spec/blob/v0.2/spec.md#data-attribute)). 
 
