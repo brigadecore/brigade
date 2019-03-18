@@ -69,10 +69,10 @@ The output of the master process is written to STDOUT.
 
 ## Building Brig
 
-To build Brig, clone the [Brigade repository](https://github.com/Azure/brigade)
-to `$GOPATH/src/github.com/Azure/brigade` and then run `make bootstrap brig`.
+To build Brig, clone the [Brigade repository](https://github.com/brigadecore/brigade)
+to `$GOPATH/src/github.com/brigadecore/brigade` and then run `make bootstrap brig`.
 
-If you have $GOPATH issues, you may need to [add the Brigade binary](https://github.com/Azure/brigade/issues/447) to your path.
+If you have $GOPATH issues, you may need to [add the Brigade binary](https://github.com/brigadecore/brigade/issues/447) to your path.
 
 ## How Brig Works
 

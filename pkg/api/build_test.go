@@ -9,7 +9,7 @@ import (
 
 	restful "github.com/emicklei/go-restful"
 
-	"github.com/Azure/brigade/pkg/storage/mock"
+	"github.com/brigadecore/brigade/pkg/storage/mock"
 )
 
 func TestBuildLogs(t *testing.T) {

@@ -109,7 +109,7 @@ Keep refreshing the page. You should see new UUIDs being generated every time yo
 
 When you’re comfortable with the application, read [part 2 of this tutorial][part2] to learn about pushing our application to GitHub.
 
-[github]: https://github.com/Azure/brigade
+[github]: https://github.com/brigadecore/brigade
 [install]: ../install
 [part1]: ../tutorial01
 [part2]: ../tutorial02

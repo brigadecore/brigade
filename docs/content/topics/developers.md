@@ -47,9 +47,9 @@ Follow these steps when cloning the brigade repository to use an existing `GOPAT
 ```bash
 export GOPATH=$(go env GOPATH) # GOPATH is set to $HOME/go by default
 export PATH=$GOPATH/bin:$PATH # 'make bootstrap brig' will try to execute binnaries in $GOPATH/bin
-mkdir -p $GOPATH/src/github.com/Azure
-git clone https://github.com/Azure/brigade $GOPATH/src/github.com/Azure/brigade
-cd $GOPATH/src/github.com/Azure/brigade
+mkdir -p $GOPATH/src/github.com/brigadecore
+git clone https://github.com/brigadecore/brigade $GOPATH/src/github.com/brigadecore/brigade
+cd $GOPATH/src/github.com/brigadecore/brigade
 ```
 
 **Note**: this leaves you at the tip of **master** in the repository where active development
@@ -146,7 +146,7 @@ Brigade charts are hosted in the separate [Azure/brigade-charts][brigade-charts]
 repo, so we'll need to add the corresponding Helm repo locally:
 
 ```
-$ helm repo add brigade https://azure.github.io/brigade-charts
+$ helm repo add brigade https://brigadecore.github.io/charts
 "brigade" has been added to your repositories
 ```
 
@@ -259,5 +259,5 @@ yarn start
 
 You may change the variables above to point to the desired project.
 
-[brigade-charts]: https://github.com/Azure/brigade-charts
-[brigade-project-chart]: https://github.com/Azure/brigade-charts/tree/master/charts/brigade-project
+[brigade-charts]: https://github.com/brigadecore/brigade-charts
+[brigade-project-chart]: https://github.com/brigadecore/brigade-charts/tree/master/charts/brigade-project

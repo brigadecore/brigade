@@ -3,7 +3,7 @@ package storage
 import (
 	"io"
 
-	"github.com/Azure/brigade/pkg/brigade"
+	"github.com/brigadecore/brigade/pkg/brigade"
 )
 
 // DeleteBuildOptions represents options for a build deletion

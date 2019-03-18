@@ -24,7 +24,7 @@ echo-images:
 GIT_TAG   = $(shell git describe --tags --always)
 VERSION   ?= ${GIT_TAG}
 IMAGE_TAG ?= ${VERSION}
-LDFLAGS   += -X github.com/Azure/brigade/pkg/version.Version=$(VERSION)
+LDFLAGS   += -X github.com/brigadecore/brigade/pkg/version.Version=$(VERSION)
 
 CX_OSES = linux windows darwin
 CX_ARCHS = amd64
@@ -104,7 +104,7 @@ test-unit: vendor
 #
 # To set this up in your local environment:
 # - Make sure kubectl is pointed to the right cluster
-# - Run "helm repo add brigade https://azure.github.io/brigade-charts"
+# - Run "helm repo add brigade https://brigadecore.github.io/charts"
 # - Run "helm inspect values brigade/brigade-project > myvals.yaml"
 # - Set the values in myvalues.yaml to something like this:
 #   project: "deis/empty-testbed"
@@ -140,7 +140,7 @@ format: format-go format-js
 
 .PHONY: format-go
 format-go:
-	go list -f '{{.Dir}}' ./... | xargs goimports -w -local github.com/Azure/brigade
+	go list -f '{{.Dir}}' ./... | xargs goimports -w -local github.com/brigadecore/brigade
 
 .PHONY: format-js
 format-js:

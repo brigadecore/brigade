@@ -3,7 +3,7 @@ package api
 import (
 	"testing"
 
-	"github.com/Azure/brigade/pkg/storage/mock"
+	"github.com/brigadecore/brigade/pkg/storage/mock"
 )
 
 func TestGetBuildSummariesForProjects(t *testing.T) {

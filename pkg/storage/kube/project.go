@@ -11,7 +11,7 @@ import (
 
 	"strconv"
 
-	"github.com/Azure/brigade/pkg/brigade"
+	"github.com/brigadecore/brigade/pkg/brigade"
 )
 
 const secretTypeProject = "brigade.sh/project"

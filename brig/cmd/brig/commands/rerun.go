@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Azure/brigade/pkg/script"
+	"github.com/brigadecore/brigade/pkg/script"
 )
 
 const rerunUsage = `Request that Brigade re-run a build.

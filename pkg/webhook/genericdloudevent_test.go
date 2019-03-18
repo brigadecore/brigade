@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/Azure/brigade/pkg/brigade"
-	"github.com/Azure/brigade/pkg/storage"
-	"github.com/Azure/brigade/pkg/storage/mock"
+	"github.com/brigadecore/brigade/pkg/brigade"
+	"github.com/brigadecore/brigade/pkg/storage"
+	"github.com/brigadecore/brigade/pkg/storage/mock"
 
 	gin "gopkg.in/gin-gonic/gin.v1"
 

@@ -30,7 +30,7 @@ event handler will be called.
 ## The `brigadier` Library
 
 The main library for Brigade is called `brigadier`. The Brigade runtime grants access to
-this library.  The source code for this library is located in [Azure/brigadier](https://github.com/Azure/brigadier).
+this library.  The source code for this library is located in [Azure/brigadier](https://github.com/brigadecore/brigadier).
 
 ```
 const brigadier = require('brigadier')

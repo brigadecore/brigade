@@ -17,7 +17,7 @@
   },
   "author": "The Steel Thread Team",
   "license": "MIT",
-  "repository": "https://github.com/Azure/brigade",
+  "repository": "https://github.com/brigadecore/brigade",
   "devDependencies": {
     "@types/chai": "^4.0.1",
     "@types/mocha": "^5.2.6",

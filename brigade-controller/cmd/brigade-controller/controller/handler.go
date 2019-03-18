@@ -15,7 +15,7 @@ import (
 
 	"strconv"
 
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/brigadecore/brigade/pkg/storage/kube"
 )
 
 var (

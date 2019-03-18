@@ -11,7 +11,7 @@
 
 [[projects]]
   digest = "1:a6487ef53b8f41197ed24e00b69ede54a6c75b387728b70d873b8922bb112335"
-  name = "github.com/Azure/go-autorest"
+  name = "github.com/brigadecore/go-autorest"
   packages = [
     "autorest",
     "autorest/adal",

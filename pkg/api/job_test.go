@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Azure/brigade/pkg/storage/mock"
+	"github.com/brigadecore/brigade/pkg/storage/mock"
 
 	restful "github.com/emicklei/go-restful"
 )

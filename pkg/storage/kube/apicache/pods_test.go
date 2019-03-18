@@ -8,7 +8,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 
-	"github.com/Azure/brigade/pkg/merge"
+	"github.com/brigadecore/brigade/pkg/merge"
 )
 
 func TestPodStore(t *testing.T) {

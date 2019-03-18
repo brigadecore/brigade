@@ -20,7 +20,7 @@ and which will be used for all Brigade projects.
 - without creating a custom container image - check [the dependencies document](dependencies.md) for a detailed description for this approach.
 
 **Note:** This area of Brigade is still evolving. If you have ideas for improving
-it, feel free to [file an issue](https://github.com/Azure/brigade/issues) explaining
+it, feel free to [file an issue](https://github.com/brigadecore/brigade/issues) explaining
 your idea.
 
 

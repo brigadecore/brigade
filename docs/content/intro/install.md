@@ -10,7 +10,7 @@ The Brigade server is deployed via its [Helm](https://github.com/helm/helm) char
 Brigade projects are managed via [brig](#brig). Here are the steps:
 
 1. Make sure `helm` is installed, and `helm version` returns the correct server.
-2. Add the Brigade repo: `helm repo add brigade https://azure.github.io/brigade-charts`
+2. Add the Brigade repo: `helm repo add brigade https://brigadecore.github.io/charts`
 3. Install Brigade: `helm install brigade/brigade --name brigade-server`
 4. Create a Brigade project: `brig project create`
 
@@ -49,7 +49,7 @@ Note that this is just one way of configuring Brigade to receive inbound connect
 
 ## Brig
 
-We recommend using [Brig](https://github.com/Azure/brigade/tree/master/brig), a command line tool for interacting with Brigade. Read the [Brig guide](https://github.com/Azure/brigade/tree/master/brig) for installation and usage docs.
+We recommend using [Brig](https://github.com/brigadecore/brigade/tree/master/brig), a command line tool for interacting with Brigade. Read the [Brig guide](https://github.com/brigadecore/brigade/tree/master/brig) for installation and usage docs.
 
 ## Notes for Minikube
 

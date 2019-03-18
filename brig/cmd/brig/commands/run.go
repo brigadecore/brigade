@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Azure/brigade/pkg/decolorizer"
-	"github.com/Azure/brigade/pkg/script"
+	"github.com/brigadecore/brigade/pkg/decolorizer"
+	"github.com/brigadecore/brigade/pkg/script"
 )
 
 var (

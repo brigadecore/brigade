@@ -10,7 +10,7 @@ This tutorial begins where [Tutorial 2][part2] left off. We’ll walk through th
 
 ## Create a Brigade project
 
-The Brigade server tracks separate configuration for each project you set up. To create and manage these configurations, we use the [brig](https://github.com/Azure/brigade/tree/master/brig) cli.
+The Brigade server tracks separate configuration for each project you set up. To create and manage these configurations, we use the [brig](https://github.com/brigadecore/brigade/tree/master/brig) cli.
 
 Here we create a project for our GitHub repo:
 
@@ -68,4 +68,4 @@ After configuring Brigade to test new features, read [part 4 of this tutorial][p
 
 [part2]: ../tutorial02
 [part4]: ../tutorial04
-[brigade-github-app]: https://github.com/Azure/brigade-github-app
+[brigade-github-app]: https://github.com/brigadecore/brigade-github-app

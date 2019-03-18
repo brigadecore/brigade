@@ -3,7 +3,7 @@ package webhook
 import (
 	"testing"
 
-	"github.com/Azure/brigade/pkg/brigade"
+	"github.com/brigadecore/brigade/pkg/brigade"
 )
 
 func newProject() *brigade.Project {

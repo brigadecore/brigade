@@ -6,7 +6,7 @@ import (
 
 	restful "github.com/emicklei/go-restful"
 
-	"github.com/Azure/brigade/pkg/storage"
+	"github.com/brigadecore/brigade/pkg/storage"
 )
 
 // Build represents the build api handlers.

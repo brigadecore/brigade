@@ -6,8 +6,8 @@ import (
 
 	restful "github.com/emicklei/go-restful"
 
-	"github.com/Azure/brigade/pkg/brigade"
-	"github.com/Azure/brigade/pkg/storage"
+	"github.com/brigadecore/brigade/pkg/brigade"
+	"github.com/brigadecore/brigade/pkg/storage"
 )
 
 // Project represents the project api handlers.
