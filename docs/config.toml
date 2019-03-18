@@ -22,5 +22,5 @@ relativeURLs = "false"
 
 [[menu.main]]
     name = "Github"
-    url = "https://github.com/azure/brigade"
+    url = "https://github.com/brigadecore/brigade"
     weight = 3

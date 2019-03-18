@@ -1,5 +1,5 @@
-import { Project, BrigadeEvent } from "@azure/brigadier/out/events";
-import { Result, Job } from "@azure/brigadier/out/job";
+import { Project, BrigadeEvent } from "@brigadecore/brigadier/out/events";
+import { Result, Job } from "@brigadecore/brigadier/out/job";
 
 // This package contains mocks of objects found elsewhere in Brigade.
 

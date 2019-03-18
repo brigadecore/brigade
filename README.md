@@ -199,7 +199,7 @@ helm delete brigade --purge
 - Gateways
   - [BitBucket events](https://github.com/lukepatrick/brigade-bitbucket-gateway): Gateway Support for BitBucket repositories
   - [GitLab events](https://github.com/lukepatrick/brigade-gitlab-gateway): Gateway Support for GitLab repositories
-  - [Kubernetes events](https://github.com/azure/brigade-k8s-gateway): Gateway that listens to Kubernetes event stream
+  - [Kubernetes events](https://github.com/brigadecore/brigade-k8s-gateway): Gateway that listens to Kubernetes event stream
   - [Event Grid gateway](https://github.com/radu-matei/brigade-eventgrid-gateway): Gateway for Azure Event Grid events
   - [Cron Gateway](https://github.com/technosophos/brigade-cron): Schedule events to run at a particular time
   - [Trello and Generic Webhooks](https://github.com/technosophos/brigade-trello): Experimental gateway for Trello and for generic webhooks

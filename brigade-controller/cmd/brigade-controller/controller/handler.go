@@ -187,8 +187,8 @@ func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 func workerImageConfig(project *v1.Secret, config *Config) (string, string) {
 	// There isn't a correct way of making a proper distinction between registry,
 	// registry+name or name, examples:
-	//	* azure/brigade-worker:1234
-	//	* myregisitry.com/azure/brigade-worker:1234
+	//	* brigadecore/brigade-worker:1234
+	//	* myregisitry.com/brigadecore/brigade-worker:1234
 	// 	* myregistry/brigade-worker:1234
 	// In order to tackle this, registry+name will be the name of the image.
 
