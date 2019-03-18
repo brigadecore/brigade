@@ -28,7 +28,7 @@ const projectCreateUsage = `Create a new project.
 Create a new project by answering questions or supplying a configuration file.
 
 Project names are typically in the form 'ORG/PROJECT' or 'USER/PROJECT". For
-example, Azure/brigade or deis/empty-testbed.
+example, brigadecore/brigade or deis/empty-testbed.
 
 A Brigade project provides a context in which a brigade.js file is executed.
 Projects are frequently tied to (Git) source code repositories, and contain

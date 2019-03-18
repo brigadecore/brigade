@@ -37,7 +37,7 @@ $ pip --version
 
 If you see "command not found", see [how to install pip](https://pip.pypa.io/en/stable/installing/) for advice on how to install pip.
 
-If you're having trouble going through this tutorial, please post an issue to [Azure/brigade][github] to chat with other Brigade users who might be able to help.
+If you're having trouble going through this tutorial, please post an issue to [brigadecore/brigade][github] to chat with other Brigade users who might be able to help.
 
 ## Creating your first application
 

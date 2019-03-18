@@ -23,7 +23,7 @@ For that reason, it is prudent to configure security.
 
 ## How RBAC Is Configured
 
-The Helm [chart](https://github.com/brigadecore/brigade-charts/tree/master/charts/brigade) for Brigade
+The Helm [chart](https://github.com/brigadecore/charts/tree/master/charts/brigade) for Brigade
 includes an RBAC configuration that is designed to run in an isolated namespace.
 
 The RBAC defines a Service Account for every Deployment (API, Controller, Gateway),

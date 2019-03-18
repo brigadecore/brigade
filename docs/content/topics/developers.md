@@ -142,7 +142,7 @@ daemon. The image tag (set by `VERSION` in the [Makefile](../../Makefile)) will 
 to a unique value such as `v0.20.0-80-g6721dd8`.  You can verify this by running `docker images`
 and affirming these tagged images are listed.
 
-Brigade charts are hosted in the separate [Azure/brigade-charts][brigade-charts]
+Brigade charts are hosted in the separate [brigadecore/charts][charts]
 repo, so we'll need to add the corresponding Helm repo locally:
 
 ```
@@ -259,5 +259,5 @@ yarn start
 
 You may change the variables above to point to the desired project.
 
-[brigade-charts]: https://github.com/brigadecore/brigade-charts
-[brigade-project-chart]: https://github.com/brigadecore/brigade-charts/tree/master/charts/brigade-project
+[charts]: https://github.com/brigadecore/charts
+[brigade-project-chart]: https://github.com/brigadecore/charts/tree/master/charts/brigade-project

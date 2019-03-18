@@ -7,7 +7,7 @@
 # NOTE: It does not mock the payload.
 #
 # To use this script:
-# - install a brigade-project pointing to Azure/brigade. That will generate a
+# - install a brigade-project pointing to brigadecore/brigade. That will generate a
 #   secret with the BRIGADE_PROJECT_ID shown below
 # - run this script
 
