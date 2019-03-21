@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/Azure/brigade/pkg/merge"
+	"github.com/brigadecore/brigade/pkg/merge"
 )
 
 const defaultCacheSyncTimeout = 30 * time.Second

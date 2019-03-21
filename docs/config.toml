@@ -17,10 +17,10 @@ relativeURLs = "false"
 
 [[menu.main]]
     name = "Examples"
-    url = "https://github.com/Azure/brigade/tree/master/docs/content/examples"
+    url = "https://github.com/brigadecore/brigade/tree/master/docs/content/examples"
     weight = 2
 
 [[menu.main]]
     name = "Github"
-    url = "https://github.com/azure/brigade"
+    url = "https://github.com/brigadecore/brigade"
     weight = 3

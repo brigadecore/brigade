@@ -3,9 +3,9 @@ import { assert } from "chai";
 import * as req from "../src/require";
 
 describe("overriding require", function () {
-    describe("when `@azure/brigadier` is imported", function () {
+    describe("when `@brigadecore/brigadier` is imported", function () {
         it("correctly overrides to `./brigadier`", function () {
-            assert.equal(req.getOverriddenPackage("@azure/brigadier"), "./brigadier");
+            assert.equal(req.getOverriddenPackage("@brigadecore/brigadier"), "./brigadier");
         });
     });
 

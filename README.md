@@ -38,19 +38,19 @@ The easiest way to install Brigade into your Kubernetes cluster is to install it
 
 ```bash
 # add Brigade chart repo
-helm repo add brigade https://azure.github.io/brigade-charts
+helm repo add brigade https://brigadecore.github.io/charts
 # install Brigade - this also installs Kashti
 helm install -n brigade brigade/brigade
 ```
 
-You will now have Brigade installed. [Kashti](https://github.com/Azure/kashti), the dashboard for your Brigade pipelines, is also installed in the cluster.
+You will now have Brigade installed. [Kashti](https://github.com/brigadecore/kashti), the dashboard for your Brigade pipelines, is also installed in the cluster.
 
 ### Install brig
 
-Brig is the Brigade command line client. You can use `brig` to create/update/delete new brigade Projects, run Builds, etc. To get `brig`, navigate to the [Releases page](https://github.com/Azure/brigade/releases/) and then download the appropriate client for your platform. For example, if you're using Linux or WSL, you can get the 0.20.0 version in this way:
+Brig is the Brigade command line client. You can use `brig` to create/update/delete new brigade Projects, run Builds, etc. To get `brig`, navigate to the [Releases page](https://github.com/brigadecore/brigade/releases/) and then download the appropriate client for your platform. For example, if you're using Linux or WSL, you can get the 0.20.0 version in this way:
 
 ```bash
-wget -O brig https://github.com/Azure/brigade/releases/download/v0.20.0/brig-linux-amd64
+wget -O brig https://github.com/brigadecore/brigade/releases/download/v0.20.0/brig-linux-amd64
 chmod +x brig
 mv brig ~/bin
 ```
@@ -193,13 +193,13 @@ helm delete brigade --purge
 
 ## Related Projects
 
-- [Kashti](https://github.com/Azure/kashti) - a dashboard for your Brigade pipelines.
+- [Kashti](https://github.com/brigadecore/kashti) - a dashboard for your Brigade pipelines.
 - [Brigadeterm](https://github.com/slok/brigadeterm) - a simple terminal ui for brigade pipelining system.
 - [Brigade exporter](https://github.com/slok/brigade-exporter) - a [Prometheus](https://prometheus.io) exporter to gather metrics from Brigade.
 - Gateways
   - [BitBucket events](https://github.com/lukepatrick/brigade-bitbucket-gateway): Gateway Support for BitBucket repositories
   - [GitLab events](https://github.com/lukepatrick/brigade-gitlab-gateway): Gateway Support for GitLab repositories
-  - [Kubernetes events](https://github.com/azure/brigade-k8s-gateway): Gateway that listens to Kubernetes event stream
+  - [Kubernetes events](https://github.com/brigadecore/brigade-k8s-gateway): Gateway that listens to Kubernetes event stream
   - [Event Grid gateway](https://github.com/radu-matei/brigade-eventgrid-gateway): Gateway for Azure Event Grid events
   - [Cron Gateway](https://github.com/technosophos/brigade-cron): Schedule events to run at a particular time
   - [Trello and Generic Webhooks](https://github.com/technosophos/brigade-trello): Experimental gateway for Trello and for generic webhooks
@@ -228,6 +228,6 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 
 # Support & Feedback
 
-We have a slack channel! [Kubernetes/#brigade](https://kubernetes.slack.com/messages/C87MF1RFD) Feel free to join for any support questions or feedback, we are happy to help. To report an issue or to request a feature open an issue [here](https://github.com/Azure/brigade/issues)
+We have a slack channel! [Kubernetes/#brigade](https://kubernetes.slack.com/messages/C87MF1RFD) Feel free to join for any support questions or feedback, we are happy to help. To report an issue or to request a feature open an issue [here](https://github.com/brigadecore/brigade/issues)
 
-[brigade-project-chart]: https://github.com/Azure/brigade-charts/tree/master/charts/brigade-project
+[brigade-project-chart]: https://github.com/brigadecore/charts/tree/master/charts/brigade-project

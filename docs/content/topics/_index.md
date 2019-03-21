@@ -37,4 +37,4 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
 
 
 
-[write]: https://github.com/Azure/brigade/new/master/content/docs/topics
+[write]: https://github.com/brigadecore/brigade/new/master/content/docs/topics

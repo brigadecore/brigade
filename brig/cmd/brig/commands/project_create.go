@@ -18,9 +18,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 
-	"github.com/Azure/brigade/pkg/brigade"
-	"github.com/Azure/brigade/pkg/storage"
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/brigadecore/brigade/pkg/brigade"
+	"github.com/brigadecore/brigade/pkg/storage"
+	"github.com/brigadecore/brigade/pkg/storage/kube"
 )
 
 const projectCreateUsage = `Create a new project.
@@ -28,7 +28,7 @@ const projectCreateUsage = `Create a new project.
 Create a new project by answering questions or supplying a configuration file.
 
 Project names are typically in the form 'ORG/PROJECT' or 'USER/PROJECT". For
-example, Azure/brigade or deis/empty-testbed.
+example, brigadecore/brigade or deis/empty-testbed.
 
 A Brigade project provides a context in which a brigade.js file is executed.
 Projects are frequently tied to (Git) source code repositories, and contain

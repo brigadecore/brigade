@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/Azure/brigade/pkg/storage"
+	"github.com/brigadecore/brigade/pkg/storage"
 
 	restful "github.com/emicklei/go-restful"
 )

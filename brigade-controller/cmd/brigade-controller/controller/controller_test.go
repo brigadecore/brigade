@@ -450,9 +450,9 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 		},
 		{
 			defaultWorkerImage:     "deis/brigade-worker:latest",
-			projectWorkerImageName: "azure/brigade-worker",
+			projectWorkerImageName: "brigadecore/brigade-worker",
 			projectWorkerImageTag:  "1234567890",
-			expWorkerImage:         "azure/brigade-worker:1234567890",
+			expWorkerImage:         "brigadecore/brigade-worker:1234567890",
 		},
 		{
 			defaultWorkerImage: "deis/brigade-worker",

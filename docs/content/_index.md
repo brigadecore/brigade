@@ -23,7 +23,7 @@ For maintainers of this project, steps on cutting a new release of Brigade can b
 ### Related Resources
 
 If you'd like to add links to this list, open a pull request on 
-[Brigade's GitHub project](https://github.com/Azure/brigade)
+[Brigade's GitHub project](https://github.com/brigadecore/brigade)
 
 ### Articles and Videos
 

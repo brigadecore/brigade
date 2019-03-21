@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/brigadecore/brigade/pkg/storage/kube"
 )
 
 const projectGetUsage = `Get details for a project.

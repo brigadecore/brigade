@@ -9,7 +9,7 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
-	"github.com/Azure/brigade/pkg/brigade"
+	"github.com/brigadecore/brigade/pkg/brigade"
 )
 
 // GetWorker returns the worker description.

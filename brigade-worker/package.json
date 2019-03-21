@@ -17,7 +17,7 @@
   },
   "author": "The Steel Thread Team",
   "license": "MIT",
-  "repository": "https://github.com/Azure/brigade",
+  "repository": "https://github.com/brigadecore/brigade",
   "devDependencies": {
     "@types/chai": "^4.0.1",
     "@types/mocha": "^5.2.6",
@@ -32,7 +32,7 @@
     "typescript": "^3.2.2"
   },
   "dependencies": {
-    "@azure/brigadier": "^0.4.0",
+    "@brigadecore/brigadier": "^0.4.0",
     "@kubernetes/client-node": "^0.7.2",
     "child-process-promise": "^2.2.1",
     "pretty-error": "^2.1.1",

@@ -1,6 +1,6 @@
 # Brigade Docs
 
-* Browse the [docs on GitHub](https://github.com/Azure/brigade/tree/master/docs/content)
+* Browse the [docs on GitHub](https://github.com/brigadecore/brigade/tree/master/docs/content)
 * Browse the [docs website at docs.brigade.sh](https://docs.brigade.sh)
 
 ---

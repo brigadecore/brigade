@@ -5,9 +5,9 @@
 /** */
 
 import * as kubernetes from "@kubernetes/client-node";
-import * as jobs from "@azure/brigadier/out/job";
-import { LogLevel, ContextLogger } from "@azure/brigadier/out/logger";
-import { BrigadeEvent, Project } from "@azure/brigadier/out/events";
+import * as jobs from "@brigadecore/brigadier/out/job";
+import { LogLevel, ContextLogger } from "@brigadecore/brigadier/out/logger";
+import { BrigadeEvent, Project } from "@brigadecore/brigadier/out/events";
 import * as fs from "fs";
 import * as path from "path";
 import * as request from "request";

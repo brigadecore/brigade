@@ -13,8 +13,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/duration"
 
-	"github.com/Azure/brigade/pkg/brigade"
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/brigadecore/brigade/pkg/brigade"
+	"github.com/brigadecore/brigade/pkg/storage/kube"
 )
 
 const buildListUsage = `List all installed builds.

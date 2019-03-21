@@ -10,9 +10,9 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
-	"github.com/Azure/brigade/pkg/storage"
-	"github.com/Azure/brigade/pkg/storage/kube"
-	"github.com/Azure/brigade/pkg/webhook"
+	"github.com/brigadecore/brigade/pkg/storage"
+	"github.com/brigadecore/brigade/pkg/storage/kube"
+	"github.com/brigadecore/brigade/pkg/webhook"
 )
 
 var (

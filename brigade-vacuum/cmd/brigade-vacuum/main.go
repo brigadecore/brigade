@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Azure/brigade/brigade-vacuum/cmd/brigade-vacuum/commands"
+	"github.com/brigadecore/brigade/brigade-vacuum/cmd/brigade-vacuum/commands"
 )
 
 func main() {

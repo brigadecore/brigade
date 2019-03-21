@@ -109,7 +109,7 @@ exports.circumference = function (r) {
 Then, in our `brigade.js` we can import that file and use it:
 
 ```javascript
-const { events } = require("@azure/brigadier")
+const { events } = require("@brigadecore/brigadier")
 const circle = require("./local-deps/circle");
 
 events.on("exec", function (e, p) {

@@ -7,9 +7,9 @@ description: How to manage Brigade Projects using either the Brig CLI or Helm Ch
 
 In Brigade, a project is just a special Kubernetes secret. The Brigade project currently offers
 two methods to create a project: via the `brig` cli and via the [brigade-project][brigade-project-chart]
-Helm chart.  The latter is managed in the [Azure/brigade-charts][brigade-charts] repo
+Helm chart.  The latter is managed in the [brigadecore/charts][charts] repo
 and an in-depth overview of its configuration can be seen in the chart
-[README](https://github.com/Azure/brigade-charts/blob/master/chart/brigade-project/README.md).
+[README](https://github.com/brigadecore/charts/blob/master/chart/brigade-project/README.md).
 
 This document explains how to use both methods for managing your Brigade projects.
 
@@ -92,11 +92,11 @@ Note: Managing Brigade projects via Helm chart is being deprecated in favor of u
 
 ### The Brigade Project Chart
 
-The Brigade Project chart is located in the [Azure/brigade-charts][brigade-charts] source tree at
+The Brigade Project chart is located in the [brigadecore/charts][charts] source tree at
 `charts/brigade-project`. You can also install it out of the Brigade chart repository.
 
 ```console
-$ helm repo add brigade https://azure.github.io/brigade-charts
+$ helm repo add brigade https://brigadecore.github.io/charts
 $ helm search brigade/brigade-project
 NAME                   	CHART VERSION	APP VERSION	DESCRIPTION
 brigade/brigade-project	0.20.0       	v0.20.0    	Create a Brigade project
@@ -211,7 +211,7 @@ repo:
   sshkey: ""
 kubernetes:
   namespace: default
-  vcssidecar: Azure/git-sidecar:latest
+  vcssidecar: deis/git-sidecar:latest
   buildStorageSize: "50Mi"
 sharedsecret: FakeSharedSecret
 github:
@@ -242,7 +242,7 @@ also have the same internal name.
 
 You can use SSH keys and a `git+ssh` URL to secure a private repository.
 
-In this case, your project's `cloneURL` should be of the form `git@github.com:Azure/brigade.git`
+In this case, your project's `cloneURL` should be of the form `git@github.com:brigadecore/brigade.git`
 and you will need to add the SSH _private key_ to the `values.yaml` file.
 
 When doing `brig project create`, URLs that do not use HTTP or HTTPS will prompt
@@ -261,8 +261,8 @@ over the network via the URL provided in `cloneURL`.
 It is possible to write a simple VCS sidecar that uses other VCS systems such as
 Mercurial, Bazaar, or Subversion. Essentially, a VCS sidecar need only be able
 to take the given information from the project and use it to create a local snapshot
-of the project in an appointed location. See the [Git sidecar](https://github.com/Azure/brigade/tree/master/git-sidecar)
+of the project in an appointed location. See the [Git sidecar](https://github.com/brigadecore/brigade/tree/master/git-sidecar)
 for an example.
 
-[brigade-charts]: https://github.com/Azure/brigade-charts
-[brigade-project-chart]: https://github.com/Azure/brigade-charts/tree/master/charts/brigade-project
+[charts]: https://github.com/brigadecore/charts
+[brigade-project-chart]: https://github.com/brigadecore/charts/tree/master/charts/brigade-project

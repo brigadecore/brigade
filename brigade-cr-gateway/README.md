@@ -13,5 +13,5 @@ If you do not see your preferred registry above, you can do any of the following
   us.
 2. Write a custom gateway. This may be necessary if your chosen container registry
   uses even moderately exotic auth patterns.
-3. File an issue in the issue queue [here](https://github.com/Azure/brigade/issues), and see if you can rally some support
+3. File an issue in the issue queue [here](https://github.com/brigadecore/brigade/issues), and see if you can rally some support
   for building one.

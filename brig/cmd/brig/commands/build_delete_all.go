@@ -4,8 +4,8 @@ import (
 	"errors"
 	"io"
 
-	"github.com/Azure/brigade/pkg/storage"
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/brigadecore/brigade/pkg/storage"
+	"github.com/brigadecore/brigade/pkg/storage/kube"
 
 	"github.com/spf13/cobra"
 )

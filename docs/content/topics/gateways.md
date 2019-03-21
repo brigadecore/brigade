@@ -19,7 +19,7 @@ Brigade ships with the ability to enable various gateways that are ready to go.
 
 These include the [Container Registry Gateway](dockerhub.md), the [Github Gateway](./github.md)
 and the [Generic Gateway](./genericgateway.md).  They can all be enabled via top-level
-Helm [chart flags](https://github.com/Azure/brigade-charts/blob/master/charts/brigade/values.yaml).
+Helm [chart flags](https://github.com/brigadecore/charts/blob/master/charts/brigade/values.yaml).
 
 All of these provide HTTP-based listeners that receive incoming requests
 (from a container registry, Github or other platforms and systems) and generate

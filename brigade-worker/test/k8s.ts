@@ -3,8 +3,8 @@ import { assert } from "chai";
 import * as mock from "./mock";
 
 import * as k8s from "../src/k8s";
-import { BrigadeEvent, Project } from "@azure/brigadier/out/events";
-import { Job, Result, brigadeCachePath, brigadeStoragePath } from "@azure/brigadier/out/job";
+import { BrigadeEvent, Project } from "@brigadecore/brigadier/out/events";
+import { Job, Result, brigadeCachePath, brigadeStoragePath } from "@brigadecore/brigadier/out/job";
 
 import * as kubernetes from "@kubernetes/client-node";
 

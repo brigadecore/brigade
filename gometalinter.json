@@ -7,7 +7,7 @@
   "DisableAll": true,
   "Linters": {
     "goimports": {
-      "Command": "goimports -l --local github.com/Azure/brigade"
+      "Command": "goimports -l --local github.com/brigadecore/brigade"
     }
   },
   "Enable": [

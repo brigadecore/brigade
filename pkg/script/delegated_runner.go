@@ -12,9 +12,9 @@ import (
 
 	"github.com/Masterminds/kitt/progress"
 
-	"github.com/Azure/brigade/pkg/brigade"
-	"github.com/Azure/brigade/pkg/storage"
-	"github.com/Azure/brigade/pkg/storage/kube"
+	"github.com/brigadecore/brigade/pkg/brigade"
+	"github.com/brigadecore/brigade/pkg/storage"
+	"github.com/brigadecore/brigade/pkg/storage/kube"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
