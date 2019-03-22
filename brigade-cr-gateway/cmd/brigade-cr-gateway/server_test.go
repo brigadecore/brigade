@@ -39,8 +39,8 @@ func TestNewRouter(t *testing.T) {
 	// before it hits the GitHub API.
 	routes := []string{
 		"/events/webhook/brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac",
-		"/events/webhook/deis/empty-testbed",
-		"/events/webhook/deis/empty-testbed/master",
+		"/events/webhook/brigadecore/empty-testbed",
+		"/events/webhook/brigadecore/empty-testbed/master",
 	}
 	for _, r := range routes {
 		res, err = http.Post(ts.URL+r, "application/json", bytes.NewBuffer(body))

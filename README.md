@@ -67,9 +67,9 @@ brig project create
 
 Output would be similar to this:
 ```
-? Project name deis/empty-testbed
-? Full repository name github.com/deis/empty-testbed
-? Clone URL (https://github.com/your/repo.git) https://github.com/deis/empty-testbed.git
+? Project name brigadecore/empty-testbed
+? Full repository name github.com/brigadecore/empty-testbed
+? Clone URL (https://github.com/your/repo.git) https://github.com/brigadecore/empty-testbed.git
 ? Add secrets? No
 Auto-generated a Shared Secret: "novxKi64FKWyvU4EPZulyo0o"
 ? Configure GitHub Access? No
@@ -77,7 +77,7 @@ Auto-generated a Shared Secret: "novxKi64FKWyvU4EPZulyo0o"
 Project ID: brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
 ```
 
-Here we're using the name 'deis/empty-testbed' for our project, which points to a test repo on 'https://github.com/deis/empty-testbed'. Of course, don't forget to give a proper name to your project, as well as set the 'Clone URL' correctly. If it's wrong, your subsequent Builds will fail! For documentation on project creation, check [here](https://docs.brigade.sh/topics/projects/).
+Here we're using the name 'brigadecore/empty-testbed' for our project, which points to a test repo on 'https://github.com/brigadecore/empty-testbed'. Of course, don't forget to give a proper name to your project, as well as set the 'Clone URL' correctly. If it's wrong, your subsequent Builds will fail! For documentation on project creation, check [here](https://docs.brigade.sh/topics/projects/).
 
 Now we can view the newly created project:
 ```bash
@@ -126,7 +126,7 @@ Moreover, you can check out [this tutorial](https://docs.brigade.sh/intro/) for 
 To create and run a Brigade Build for the brigade.js file we wrote, we will use `brig`.
 
 ```bash
-brig run deis/empty-testbed -f brigade.js
+brig run brigadecore/empty-testbed -f brigade.js
 ```
 
 This will trigger the `exec` event and show you the detailed output, which will be similar to this:
@@ -186,7 +186,7 @@ To remove created resources:
 
 ```bash
 # delete project
-brig  project delete deis/empty-testbed
+brig  project delete brigadecore/empty-testbed
 # remove Brigade
 helm delete brigade --purge
 ```

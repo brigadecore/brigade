@@ -801,7 +801,7 @@ function sidecarSpec(
   let initGitSubmodules = project.repo.initGitSubmodules;
 
   if (!imageTag) {
-    imageTag = "deis/git-sidecar:latest";
+    imageTag = "brigadecore/git-sidecar:latest";
   }
 
   let spec = new kubernetes.V1Container();

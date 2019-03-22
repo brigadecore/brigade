@@ -7,7 +7,7 @@ namespace="default"
 event_provider="simple-event"
 event_type="my_event"
 
-# This is github.com/deis/empty-testbed
+# This is github.com/brigadecore/empty-testbed
 project_id="brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac"
 commit_ref="master"
 commit_id="589e15029e1e44dee48de4800daf1f78e64287c0"

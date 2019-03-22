@@ -217,17 +217,17 @@ is pointing to the correct cluster.
 Once you have Brigade running in Minikube or a comparable alternative, you should be
 able to run the functional tests.
 
-First, create a project that points to the `deis/empty-testbed` project. The most
+First, create a project that points to the `brigadecore/empty-testbed` project. The most
 flexible way of doing this is via the `brig` cli.  Here we supply `-x` to forgo
 interactive prompts.  All the defaults will therefore be set to the
-[deis/empty-testbed](https://github.com/deis/empty-testbed) project.
+[brigadecore/empty-testbed](https://github.com/brigadecore/empty-testbed) project.
 
 ```console
  $ brig project create -x
 Project ID: brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
 ```
 
-You can check this project configuration out via `brig project get deis/empty-testbed`.
+You can check this project configuration out via `brig project get brigadecore/empty-testbed`.
 
 With this setup, you should be able to run `make test-functional` and see the
 tests run against your local Brigade binary.

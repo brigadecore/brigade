@@ -199,7 +199,7 @@ Here are the custom Helm values we are going to use:
 ```yaml
 genericGateway:
   enabled: true
-  registry: deis
+  registry: brigadecore
   name: brigade-generic-gateway
   service:
     name: brigade-generic-service

@@ -47,7 +47,7 @@ func TestProjectSecrets(t *testing.T) {
 func TestProjectWorkerConfig(t *testing.T) {
 	proj := Project{
 		Worker: WorkerConfig{
-			Registry:   "deis",
+			Registry:   "brigadecore",
 			Name:       "brigade-worker",
 			Tag:        "canary",
 			PullPolicy: "Always",
@@ -64,8 +64,8 @@ func TestProjectWorkerConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got.Worker.Registry != "deis" {
-		t.Errorf("unexpected Project.Worker.Registry: %s != deis", got.Worker.Registry)
+	if got.Worker.Registry != "brigadecore" {
+		t.Errorf("unexpected Project.Worker.Registry: %s != brigadecore", got.Worker.Registry)
 	}
 	if got.Worker.Name != "brigade-worker" {
 		t.Errorf("unexpected Project.Worker.Name: %s != brigade-worker", got.Worker.Name)

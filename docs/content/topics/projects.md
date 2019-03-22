@@ -46,9 +46,9 @@ new Brigade project, simply run `brig project create` and you will be prompted t
 
 ```console
 $ brig project create
-? Project name deis/empty-testbed
-? Full repository name github.com/deis/empty-testbed
-? Clone URL (https://github.com/your/repo.git) https://github.com/deis/empty-testbed.git
+? Project name brigadecore/empty-testbed
+? Full repository name github.com/brigadecore/empty-testbed
+? Clone URL (https://github.com/your/repo.git) https://github.com/brigadecore/empty-testbed.git
 ? Add secrets? No
 Auto-generated a Shared Secret: "FweBxcwJvcbTTuW5CquyPtHM"
 ? Configure GitHub Access? No
@@ -128,17 +128,17 @@ $ helm inspect values brigade/brigade-project > values.yaml
 
 Read through the generated `values.yaml` file and modify it accordingly.
 
-Our suggestions are as follows, replacing `deis/empty-testbed` with your own project's name:
+Our suggestions are as follows, replacing `brigadecore/empty-testbed` with your own project's name:
 
 ```yaml
 # Definitely do these:
-project: "deis/empty-testbed"
+project: "brigadecore/empty-testbed"
 secrets: {}
 
 # Probably do these so you can load a GitHub project which has useful stuff
 # in it, and if you want to use GitHub webhooks.
-repository: "github.com/deis/empty-testbed"
-cloneURL: "https://github.com/deis/empty-testbed.git"
+repository: "github.com/brigadecore/empty-testbed"
+cloneURL: "https://github.com/brigadecore/empty-testbed.git"
 github:
    token: "github oauth token"
 
@@ -158,7 +158,7 @@ Use Helm to install your chart, with its override values.
 $ helm install brigade/brigade-project -n $MY_NAME -f values.yaml
 ```
 
-Replace `$MY_NAME` with the name of your project (something like `deis-empty-testbed`).
+Replace `$MY_NAME` with the name of your project (something like `brigadecore-empty-testbed`).
 
 Once the project is created, you can use `brig` or another gateway to begin
 writing and running `brigade` scripts.
@@ -193,7 +193,7 @@ your projects:
 $ brig project list
 NAME                       	ID                                                            	REPO
 technosophos/brigade-trello	brigade-635e505c74ad679bb9144d19950504fbe86b136ac3770bcff51ac6	github.com/technosophos/brigade-trello
-deis/empty-testbed         	brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac	github.com/deis/empty-testbed
+brigadecore/empty-testbed         	brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac	github.com/brigadecore/empty-testbed
 technosophos/hello-helm    	brigade-b140dc50d4eb9136dccab7225e8fbc9c0f5e17e19aede9d3566c0f	github.com/technosophos/hello-helm
 technosophos/twitter-t     	brigade-cf0858d449971e79083aacddc565450b8bf65a2b9f5d66ea76fdb4	github.com/technosophos/twitter-t
 ```
@@ -201,17 +201,17 @@ technosophos/twitter-t     	brigade-cf0858d449971e79083aacddc565450b8bf65a2b9f5d
 You can also directly inspect your project with `brig`:
 
 ```console
-$ brig project get deis/empty-testbed
+$ brig project get brigadecore/empty-testbed
 id: brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
-name: deis/empty-testbed
+name: brigadecore/empty-testbed
 repo:
-  name: github.com/deis/empty-testbed
+  name: github.com/brigadecore/empty-testbed
   owner: ""
-  cloneurl: https://github.com/deis/empty-testbed.git
+  cloneurl: https://github.com/brigadecore/empty-testbed.git
   sshkey: ""
 kubernetes:
   namespace: default
-  vcssidecar: deis/git-sidecar:latest
+  vcssidecar: brigadecore/git-sidecar:latest
   buildStorageSize: "50Mi"
 sharedsecret: FakeSharedSecret
 github:

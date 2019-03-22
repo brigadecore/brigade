@@ -104,7 +104,7 @@ class Notification {
   // Send a new notification, and return a Promise<result>.
   run() {
     this.count++;
-    var j = new Job(`${ this.name }-${ this.count }`, "deis/brigade-github-check-run:latest");
+    var j = new Job(`${ this.name }-${ this.count }`, "brigadecore/brigade-github-check-run:latest");
     j.imageForcePull = true;
     j.env = {
       CHECK_CONCLUSION: this.conclusion,
@@ -220,7 +220,7 @@ function goDockerBuild(e, p) {
 function dockerhubPublish(project, tag) {
   const publisher = new Job("dockerhub-publish", "docker");
   let dockerRegistry = project.secrets.dockerhubRegistry || "docker.io";
-  let dockerOrg = project.secrets.dockerhubOrg || "deis";
+  let dockerOrg = project.secrets.dockerhubOrg || "brigadecore";
 
   publisher.docker.enabled = true;
   publisher.storage.enabled = true;

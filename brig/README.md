@@ -16,9 +16,9 @@ An example setup might look like the following:
 
 ```console
 $ brig project create
-? Project name deis/empty-testbed
-? Full repository name github.com/deis/empty-testbed
-? Clone URL (https://github.com/your/repo.git) https://github.com/deis/empty-testbed.git
+? Project name brigadecore/empty-testbed
+? Full repository name github.com/brigadecore/empty-testbed
+? Clone URL (https://github.com/your/repo.git) https://github.com/brigadecore/empty-testbed.git
 ? Add secrets? No
 Auto-generated a Shared Secret: "FweBxcwJvcbTTuW5CquyPtHM"
 ? Configure GitHub Access? No

@@ -28,7 +28,7 @@ const projectCreateUsage = `Create a new project.
 Create a new project by answering questions or supplying a configuration file.
 
 Project names are typically in the form 'ORG/PROJECT' or 'USER/PROJECT". For
-example, brigadecore/brigade or deis/empty-testbed.
+example, brigadecore/brigade or brigadecore/empty-testbed.
 
 A Brigade project provides a context in which a brigade.js file is executed.
 Projects are frequently tied to (Git) source code repositories, and contain
@@ -56,10 +56,10 @@ var (
 // defaultProject has the default project settings.
 // Rather than use this directly, you should get a copy from newProject().
 var defaultProject = brigade.Project{
-	Name: "deis/empty-testbed",
+	Name: "brigadecore/empty-testbed",
 	Repo: brigade.Repo{
-		Name:     "github.com/deis/empty-testbed",
-		CloneURL: "https://github.com/deis/empty-testbed.git",
+		Name:     "github.com/brigadecore/empty-testbed",
+		CloneURL: "https://github.com/brigadecore/empty-testbed.git",
 	},
 	Secrets: map[string]string{},
 	Worker: brigade.WorkerConfig{
@@ -67,7 +67,7 @@ var defaultProject = brigade.Project{
 	},
 	WorkerCommand: "yarn -s start",
 	Kubernetes: brigade.Kubernetes{
-		VCSSidecar: "deis/git-sidecar:latest",
+		VCSSidecar: "brigadecore/git-sidecar:latest",
 	},
 }
 

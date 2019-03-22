@@ -31,7 +31,7 @@ brigade-github-app:
     enabled: true
 
   # Image configuration
-  registry: deis
+  registry: brigadecore
   name: brigade-github-app
 ...
   github:

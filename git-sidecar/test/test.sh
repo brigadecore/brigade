@@ -31,7 +31,7 @@ setup_git_server() {
 
   repo_root="${root_dir}/tmp/test.git"
 
-  git clone --mirror https://github.com/deis/empty-testbed.git "${repo_root}"
+  git clone --mirror https://github.com/brigadecore/empty-testbed.git "${repo_root}"
   )
 }
 

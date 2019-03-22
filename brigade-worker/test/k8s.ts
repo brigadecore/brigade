@@ -27,13 +27,13 @@ describe("k8s", function() {
       let p = k8s.secretToProject("default", s);
       assert.equal(
         p.id,
-        "brigade-544b459e6ad7267e7791c4f77bfd1722a15e305a22cf9d3c60c5be"
+        "brigade-7e3d1157331f6726338395e320cffa41d2bc9e20157fd7a4df355d"
       );
-      assert.equal(p.name, "github.com/deis/test-private-testbed");
-      assert.equal(p.repo.name, "deis/test-private-testbed");
+      assert.equal(p.name, "github.com/brigadecore/test-private-testbed");
+      assert.equal(p.repo.name, "brigadecore/test-private-testbed");
       assert.equal(
         p.repo.cloneURL,
-        "https://github.com/deis/empty-testbed.git"
+        "https://github.com/brigadecore/empty-testbed.git"
       );
       assert.isTrue(p.repo.initGitSubmodules);
       assert.equal(p.repo.token, "pretend password\n");
@@ -51,10 +51,10 @@ describe("k8s", function() {
         let p = k8s.secretToProject("default", s);
         assert.equal(
           p.id,
-          "brigade-544b459e6ad7267e7791c4f77bfd1722a15e305a22cf9d3c60c5be"
+          "brigade-7e3d1157331f6726338395e320cffa41d2bc9e20157fd7a4df355d"
         );
-        assert.equal(p.name, "github.com/deis/test-private-testbed");
-        assert.equal(p.repo.name, "deis/test-private-testbed");
+        assert.equal(p.name, "github.com/brigadecore/test-private-testbed");
+        assert.equal(p.repo.name, "brigadecore/test-private-testbed");
         assert.equal(p.repo.token, "pretend password\n");
         assert.equal(p.kubernetes.namespace, "default");
         assert.equal(p.kubernetes.vcsSidecar, "vcs-image:latest");
@@ -563,10 +563,10 @@ function mockSecret(): kubernetes.V1Secret {
   let s = new kubernetes.V1Secret();
   s.metadata = new kubernetes.V1ObjectMeta();
   s.data = {
-    cloneURL: "aHR0cHM6Ly9naXRodWIuY29tL2RlaXMvZW1wdHktdGVzdGJlZC5naXQ=",
+    cloneURL: "aHR0cHM6Ly9naXRodWIuY29tL2JyaWdhZGVjb3JlL2VtcHR5LXRlc3RiZWQuZ2l0",
     initGitSubmodules: "dHJ1ZQ==",
     "github.token": "cHJldGVuZCBwYXNzd29yZAo=",
-    repository: "Z2l0aHViLmNvbS9kZWlzL3Rlc3QtcHJpdmF0ZS10ZXN0YmVk",
+    repository: "Z2l0aHViLmNvbS9icmlnYWRlY29yZS90ZXN0LXByaXZhdGUtdGVzdGJlZA==",
     secrets: "eyJoZWxsbyI6ICJ3b3JsZCJ9Cg==",
     vcsSidecar: "dmNzLWltYWdlOmxhdGVzdA==",
     buildStorageSize: "NTBNaQ==",
@@ -574,15 +574,15 @@ function mockSecret(): kubernetes.V1Secret {
     "kubernetes.buildStorageClass": "dGFzaHRlZ28="
   };
   s.metadata.annotations = {
-    projectName: "deis/test-private-testbed"
+    projectName: "brigadecore/test-private-testbed"
   };
 
   s.metadata.labels = {
     managedBy: "brigade",
-    release: "deis-test-private-testbed"
+    release: "brigadecore-test-private-testbed"
   };
   s.metadata.name =
-    "brigade-544b459e6ad7267e7791c4f77bfd1722a15e305a22cf9d3c60c5be";
+    "brigade-7e3d1157331f6726338395e320cffa41d2bc9e20157fd7a4df355d";
 
   return s;
 }
