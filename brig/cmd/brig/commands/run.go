@@ -33,14 +33,14 @@ const runUsage = `Send a Brigade JS file to the server.
 This sends a file into the cluster and waits for it to complete. It accepts
 a project name or project ID.
 
-	$ brig run deis/empty-testbed
+	$ brig run brigadecore/empty-testbed
 
 When no JS file is supplied, the project will be checked for a brigade.js file
 in the associated repository.
 
 To send a local JS file to the server, use the '-f' flag:
 
-	$ brig run -f my.js deis/empty-testbed
+	$ brig run -f my.js brigadecore/empty-testbed
 
 While specifying an event is possible, use caution. Many events expect a
 particular payload.

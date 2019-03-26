@@ -14,7 +14,7 @@ event_provider="github"
 event_type="push"
 project_id="brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac"
 payload="{}"
-script="_cache/github.com/deis/empty-testbed/brigade.js"
+script="_cache/github.com/brigadecore/empty-testbed/brigade.js"
 
 while (($# > 0)); do
   case "$1" in

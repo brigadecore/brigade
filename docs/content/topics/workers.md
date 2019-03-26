@@ -53,7 +53,7 @@ Say we want to provide an XML parser to our Brigade scripts. We can do that
 using a `Dockerfile`:
 
 ```Dockerfile
-FROM deis/brigade-worker:latest
+FROM brigadecore/brigade-worker:latest
 
 RUN yarn add xml-simple
 ```
@@ -146,7 +146,7 @@ is some project you have already created) should result in a successful run.
 
 Here is an example:
 ```console
-$ brig run -f brigade.js deis/empty-testbed
+$ brig run -f brigade.js brigadecore/empty-testbed
 Started build 01c7kmserwyc5y05rrhpvnp5m0 as "brigade-worker-01c7kmserwyc5y05rrhpvnp5m0-master"
 prestart: src/brigade.js written
 [brigade] brigade-worker version: 0.10.0
@@ -185,7 +185,7 @@ exports.alpineJob = function(name) {
 We can build this file into our Dockerfile by copying it into the image:
 
 ```
-FROM deis/brigade-worker:latest
+FROM brigadecore/brigade-worker:latest
 
 RUN yarn add xml-simple
 COPY mylib.js /home/src/dist

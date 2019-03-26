@@ -212,7 +212,7 @@ func createStubProjectSecret(projectID string) *v1.Secret {
 				"app":       "brigade",
 			},
 			Annotations: map[string]string{
-				"projectName": "deis/empty-testbed",
+				"projectName": "brigadecore/empty-testbed",
 			},
 		},
 		Type: "brigade.sh/project",
@@ -231,7 +231,7 @@ func createStubBuildSecret(projectID string, buildID string) *v1.Secret {
 				"app":       "brigade",
 			},
 			Annotations: map[string]string{
-				"projectName": "deis/empty-testbed",
+				"projectName": "brigadecore/empty-testbed",
 			},
 		},
 		Type: "brigade.sh/build",

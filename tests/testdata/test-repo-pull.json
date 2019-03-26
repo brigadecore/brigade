@@ -7,11 +7,11 @@
   },
   "repository":{
     "name": "empty-testbed",
-    "full_name": "deis/empty-testbed",
-    "clone_url": "https://github.com/deis/empty-testbed.git",
-    "ssh_url": "https://github.com/deis/empty-testbed.git",
+    "full_name": "brigadecore/empty-testbed",
+    "clone_url": "https://github.com/brigadecore/empty-testbed.git",
+    "ssh_url": "https://github.com/brigadecore/empty-testbed.git",
     "owner": {
-      "name": "deis"
+      "name": "brigadecore"
     }
   },
   "sender":{}

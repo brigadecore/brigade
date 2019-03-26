@@ -217,7 +217,7 @@ func TestConfigureProject(t *testing.T) {
 			"sshKey":            []byte("hello$world"),
 			"namespace":         []byte("zooropa"),
 			"secrets":           []byte(`{"bar":"baz","foo":"bar"}`),
-			"worker.registry":   []byte("deis"),
+			"worker.registry":   []byte("brigadecore"),
 			"worker.name":       []byte("brigade-worker"),
 			"worker.tag":        []byte("canary"),
 			"worker.pullPolicy": []byte("Always"),
@@ -277,8 +277,8 @@ func TestConfigureProject(t *testing.T) {
 	} else if v != "" {
 		t.Fatal("Expected empty string for non-existent key")
 	}
-	if proj.Worker.Registry != "deis" {
-		t.Fatalf("unexpected Worker.Registry: %s != deis", proj.Worker.Registry)
+	if proj.Worker.Registry != "brigadecore" {
+		t.Fatalf("unexpected Worker.Registry: %s != brigadecore", proj.Worker.Registry)
 	}
 	if proj.Worker.Name != "brigade-worker" {
 		t.Fatalf("unexpected Worker.Name: %s != brigade-worker", proj.Worker.Name)

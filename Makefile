@@ -1,7 +1,7 @@
 # The Docker registry where images are pushed.
 # Note that if you use an org (like on Quay and DockerHub), you should
 # include that: quay.io/foo
-DOCKER_REGISTRY    ?= deis
+DOCKER_REGISTRY    ?= brigadecore
 DOCKER_BUILD_FLAGS :=
 LDFLAGS            :=
 
@@ -107,15 +107,15 @@ test-unit: vendor
 # - Run "helm repo add brigade https://brigadecore.github.io/charts"
 # - Run "helm inspect values brigade/brigade-project > myvals.yaml"
 # - Set the values in myvalues.yaml to something like this:
-#   project: "deis/empty-testbed"
-#   repository: "github.com/deis/empty-testbed"
+#   project: "brigadecore/empty-testbed"
+#   repository: "github.com/brigadecore/empty-testbed"
 #   secret: "MySecret"
 # - Run "helm install brigade/brigade-project -f myvals.yaml"
 # - Run "make test-functional"
 #
-# This will clone the github.com/deis/empty-testbed repo and run the brigade.js
+# This will clone the github.com/brigadecore/empty-testbed repo and run the brigade.js
 # file found there.
-# Test Repo is https://github.com/deis/empty-testbed
+# Test Repo is https://github.com/brigadecore/empty-testbed
 TEST_REPO_COMMIT =  589e15029e1e44dee48de4800daf1f78e64287c0
 KUBECONFIG       ?= ${HOME}/.kube/config
 .PHONY: test-functional

@@ -206,7 +206,7 @@ function checkRequested(e, p) {
   console.log("check requested");
 
   // This Check Run image handles updating GitHub
-  const checkRunImage = "deis/brigade-github-check-run:latest";
+  const checkRunImage = "brigadecore/brigade-github-check-run:latest";
 
   // Common configuration
   const env = {

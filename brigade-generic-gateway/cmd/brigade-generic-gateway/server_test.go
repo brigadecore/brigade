@@ -14,7 +14,7 @@ func TestNewRouter(t *testing.T) {
 	t.Parallel()
 	s := mock.New()
 	s.ProjectList[0].ID = "brigade-4625a05cf6914e556aa254cb2af234203744de2f"
-	s.ProjectList[0].Name = "deis/empty-testbed"
+	s.ProjectList[0].Name = "brigadecore/empty-testbed"
 	s.ProjectList[0].GenericGatewaySecret = "mysecret"
 	r := newRouter(s)
 

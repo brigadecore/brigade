@@ -103,7 +103,7 @@ var (
 				"app":       "brigade",
 			},
 			Annotations: map[string]string{
-				"projectName": "deis/empty-testbed",
+				"projectName": "brigadecore/empty-testbed",
 			},
 		},
 		Type: secretTypeBuild,
@@ -117,7 +117,7 @@ var (
 			"sshKey":            []byte("hello$world"),
 			"namespace":         []byte("zooropa"),
 			"secrets":           []byte(`{"bar":"baz","foo":"bar"}`),
-			"worker.registry":   []byte("deis"),
+			"worker.registry":   []byte("brigadecore"),
 			"worker.name":       []byte("brigade-worker"),
 			"worker.tag":        []byte("canary"),
 			"worker.pullPolicy": []byte("Always"),
