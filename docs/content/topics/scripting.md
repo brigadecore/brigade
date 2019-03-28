@@ -26,9 +26,9 @@ For the examples in this document, we have created a project via `brig` with the
 
 ```console
 $ brig project create
-? Project Name deis/empty-testbed
-? Full repository name github.com/deis/empty-testbed
-? Clone URL (https://github.com/your/repo.git) https://github.com/deis/empty-testbed.git
+? Project Name brigadecore/empty-testbed
+? Full repository name github.com/brigadecore/empty-testbed
+? Clone URL (https://github.com/your/repo.git) https://github.com/brigadecore/empty-testbed.git
 ? Add secrets? Yes
 ? 	Secret 1 dbPassword
 ? 	Value supersecret
@@ -45,8 +45,8 @@ care what a repository contains.)
 
 Based on the above, we have:
 
-- A project named `deis/empty-testbed`
-- A GitHub repo at `https://github.com/deis/empty-testbed.git`
+- A project named `brigadecore/empty-testbed`
+- A GitHub repo at `https://github.com/brigadecore/empty-testbed.git`
 - And a single secret: `dbPassword: supersecret`
 
 We'll use this project throughout the tutorial as we create some `brigade.js` files and test
@@ -320,9 +320,9 @@ $ node prestart.js
 prestart: src/brigade.js written
 $ node --no-deprecation ./dist/src/index.js
 Creating PVC named brigade-worker-01brx7v6wsg31k81x0h4pznv47-master
-looking up default/github-com-deis-empty-testbed-do-nothing
+looking up default/github-com-brigadecore-empty-testbed-do-nothing
 Creating secret do-nothing-1504055331341-master
-Creating Job Cache PVC github-com-deis-empty-testbed-do-nothing
+Creating Job Cache PVC github-com-brigadecore-empty-testbed-do-nothing
 Creating pod do-nothing-1504055331341-master
 Timeout set at 900000
 default/do-nothing-1504055331341-master phase Pending
@@ -387,9 +387,9 @@ $ node prestart.js
 prestart: src/brigade.js written
 $ node --no-deprecation ./dist/src/index.js
 Creating PVC named brigade-worker-01brx98hq5f3e93jxy5ddpfwgx-master
-looking up default/github-com-deis-empty-testbed-do-nothing
+looking up default/github-com-brigadecore-empty-testbed-do-nothing
 Creating secret do-nothing-1504056818776-master
-Creating Job Cache PVC github-com-deis-empty-testbed-do-nothing
+Creating Job Cache PVC github-com-brigadecore-empty-testbed-do-nothing
 Creating pod do-nothing-1504056818776-master
 Timeout set at 900000
 default/do-nothing-1504056818776-master phase Pending
@@ -454,13 +454,13 @@ $ node prestart.js
 prestart: src/brigade.js written
 $ node --no-deprecation ./dist/src/index.js
 Creating PVC named brigade-worker-01brx9n20bsjxeweggtzb7fpka-master
-looking up default/github-com-deis-empty-testbed-hello
-looking up default/github-com-deis-empty-testbed-goodbye
+looking up default/github-com-brigadecore-empty-testbed-hello
+looking up default/github-com-brigadecore-empty-testbed-goodbye
 Creating secret hello-1504057229136-master
 Creating secret goodbye-1504057229149-master
-Creating Job Cache PVC github-com-deis-empty-testbed-hello
+Creating Job Cache PVC github-com-brigadecore-empty-testbed-hello
 undefined
-Creating Job Cache PVC github-com-deis-empty-testbed-goodbye
+Creating Job Cache PVC github-com-brigadecore-empty-testbed-goodbye
 undefined
 Creating pod hello-1504057229136-master
 Creating pod goodbye-1504057229149-master
@@ -546,16 +546,16 @@ $ node prestart.js
 prestart: src/brigade.js written
 $ node --no-deprecation ./dist/src/index.js
 Creating PVC named brigade-worker-01brxgx62zey1b31ae2ccd2xnm-master
-looking up default/github-com-deis-empty-testbed-hello
+looking up default/github-com-brigadecore-empty-testbed-hello
 Creating secret hello-1504059196321-master
-Creating Job Cache PVC github-com-deis-empty-testbed-hello
+Creating Job Cache PVC github-com-brigadecore-empty-testbed-hello
 Creating pod hello-1504059196321-master
 Timeout set at 900000
 default/hello-1504059196321-master phase Pending
 default/hello-1504059196321-master phase Succeeded
-looking up default/github-com-deis-empty-testbed-goodbye
+looking up default/github-com-brigadecore-empty-testbed-goodbye
 Creating secret goodbye-1504059200407-master
-Creating Job Cache PVC github-com-deis-empty-testbed-goodbye
+Creating Job Cache PVC github-com-brigadecore-empty-testbed-goodbye
 Creating pod goodbye-1504059200407-master
 Timeout set at 900000
 default/goodbye-1504059200407-master phase Pending
@@ -568,7 +568,7 @@ Compared to our previous version, we can see the different. It runs the `hello` 
 and then runs the `goodbye` job.
 
 Before moving on to talk about groups, though, let's do one short example that does
-something useful. Our project points to the [empty testbed](https://github.com/deis/empty-testbed)
+something useful. Our project points to the [empty testbed](https://github.com/brigadecore/empty-testbed)
 repository in GitHub. That repository happens to have a small Node.js application, and we
 can write a simple set of tasks to build and run that application.
 
@@ -576,7 +576,7 @@ can write a simple set of tasks to build and run that application.
 
 Earlier we talked about how a project may have an associated Git repository. And when we
 created our project, we pointed it to [a
-repository](https://github.com/deis/empty-testbed) that contains a simple Node.js
+repository](https://github.com/brigadecore/empty-testbed) that contains a simple Node.js
 application. In this example, we are going to work directly with that repository.
 
 Here's our new script:
@@ -636,7 +636,7 @@ Brigade is automatically getting us a copy of that project and attaching that co
 `Job` that we run.
 
 When a repository is checked out, it is stored by default in `/src`. So it is as if we
-started every job by doing a `git clone https://github.com/deis/empty-testbed.git /src`.
+started every job by doing a `git clone https://github.com/brigadecore/empty-testbed.git /src`.
 That means we can start our job knowing that we already have access to everything in our
 Git project.
 
@@ -821,15 +821,15 @@ secrets (environment variables or credentials) that are available to us.
 ```
 {
   "id":"brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac",
-  "name":"github.com/deis/empty-testbed",
+  "name":"github.com/brigadecore/empty-testbed",
   "kubernetes":{
     "namespace":"default",
-    "vcsSidecar":"deis/git-sidecar:latest",
+    "vcsSidecar":"brigadecore/git-sidecar:latest",
     "buildStorageSize": "50Mi"
   },
   "repo":{
-    "name":"deis/empty-testbed",
-    "cloneURL":"https://github.com/deis/empty-testbed.git"
+    "name":"brigadecore/empty-testbed",
+    "cloneURL":"https://github.com/brigadecore/empty-testbed.git"
   },
   "secrets":{
     "dbPassword":"supersecret"
@@ -876,7 +876,7 @@ prestart: src/brigade.js written
 $ node --no-deprecation ./dist/src/index.js
 Creating PVC named brigade-worker-01brz271ma5h06na0bb5j7d2rm-master
 >>> event exec caused by brig
->>> project github.com/deis/empty-testbed clones the repo at https://github.com/deis/empty-testbed.git
+>>> project github.com/brigadecore/empty-testbed clones the repo at https://github.com/brigadecore/empty-testbed.git
 Destroying PVC named brigade-worker-01brz271ma5h06na0bb5j7d2rm-master
 Done in 1.04s.
 ```
@@ -921,7 +921,7 @@ If we look at the output of the pod, we'll see this:
 
 ```
 $ kubectl logs echo-1504074306432-master
-Project github.com/deis/empty-testbed
+Project github.com/brigadecore/empty-testbed
 Event exec
 ```
 
@@ -1095,8 +1095,8 @@ docker.tasks = [
   "dockerd-entrypoint.sh &",
   "sleep 20",
   "cd /src",
-  "docker pull deis/kashti:canary || true",
-  "docker build -t deis/kashti:canary ."
+  "docker pull brigadecore/kashti:canary || true",
+  "docker build -t brigadecore/kashti:canary ."
 ];
 
 docker.run()
@@ -1120,8 +1120,8 @@ docker.tasks = [
   "dockerd-entrypoint.sh &",
   "sleep 20",
   "cd /src",
-  "docker pull deis/kashti:canary || true",
-  "docker build -t deis/kashti:canary ."
+  "docker pull brigadecore/kashti:canary || true",
+  "docker build -t brigadecore/kashti:canary ."
 ];
 
 // If a Docker user is specified, we push.
@@ -1130,7 +1130,7 @@ if (project.secrets.DOCKER_USER) {
   docker.env.DOCKER_PASS = project.secrets.DOCKER_PASS
   docker.env.DOCKER_REGISTRY = project.secrets.DOCKER_REGISTRY
   docker.tasks.push("docker login -u $DOCKER_USER -p $DOCKER_PASS $DOCKER_REGISTRY")
-  docker.tasks.push("docker push deis/kashti:canary")
+  docker.tasks.push("docker push brigadecore/kashti:canary")
 } else {
   console.log("skipping push. DOCKER_USER is not set.");
 }
@@ -1184,18 +1184,18 @@ $ node prestart.js
 prestart: src/brigade.js written
 $ node --no-deprecation ./dist/src/index.js
 Creating PVC named brigade-worker-01bsy7k5h6n65gtt5sfrstte99-master
-looking up default/github-com-deis-empty-testbed-one
+looking up default/github-com-brigadecore-empty-testbed-one
 Creating secret one-1505326897996-master
-Creating Job Cache PVC github-com-deis-empty-testbed-one
+Creating Job Cache PVC github-com-brigadecore-empty-testbed-one
 Creating pod one-1505326897996-master
 Timeout set at 900000
 default/one-1505326897996-master phase Pending
 default/one-1505326897996-master phase Pending
 default/one-1505326897996-master phase Succeeded
-looking up default/github-com-deis-empty-testbed-two
+looking up default/github-com-brigadecore-empty-testbed-two
 Creating secret two-1505326904108-master
 Creating pod two-1505326904108-master
-Creating Job Cache PVC github-com-deis-empty-testbed-two
+Creating Job Cache PVC github-com-brigadecore-empty-testbed-two
 Timeout set at 900000
 default/two-1505326904108-master phase Pending
 default/two-1505326904108-master phase Succeeded

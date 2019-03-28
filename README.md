@@ -47,10 +47,10 @@ You will now have Brigade installed. [Kashti](https://github.com/brigadecore/kas
 
 ### Install brig
 
-Brig is the Brigade command line client. You can use `brig` to create/update/delete new brigade Projects, run Builds, etc. To get `brig`, navigate to the [Releases page](https://github.com/brigadecore/brigade/releases/) and then download the appropriate client for your platform. For example, if you're using Linux or WSL, you can get the 0.20.0 version in this way:
+Brig is the Brigade command line client. You can use `brig` to create/update/delete new brigade Projects, run Builds, etc. To get `brig`, navigate to the [Releases page](https://github.com/brigadecore/brigade/releases/) and then download the appropriate client for your platform. For example, if you're using Linux or WSL, you can get the 1.0.0 version in this way:
 
 ```bash
-wget -O brig https://github.com/brigadecore/brigade/releases/download/v0.20.0/brig-linux-amd64
+wget -O brig https://github.com/brigadecore/brigade/releases/download/v1.0.0/brig-linux-amd64
 chmod +x brig
 mv brig ~/bin
 ```
@@ -67,9 +67,9 @@ brig project create
 
 Output would be similar to this:
 ```
-? Project name deis/empty-testbed
-? Full repository name github.com/deis/empty-testbed
-? Clone URL (https://github.com/your/repo.git) https://github.com/deis/empty-testbed.git
+? Project name brigadecore/empty-testbed
+? Full repository name github.com/brigadecore/empty-testbed
+? Clone URL (https://github.com/your/repo.git) https://github.com/brigadecore/empty-testbed.git
 ? Add secrets? No
 Auto-generated a Shared Secret: "novxKi64FKWyvU4EPZulyo0o"
 ? Configure GitHub Access? No
@@ -77,7 +77,7 @@ Auto-generated a Shared Secret: "novxKi64FKWyvU4EPZulyo0o"
 Project ID: brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
 ```
 
-Here we're using the name 'deis/empty-testbed' for our project, which points to a test repo on 'https://github.com/deis/empty-testbed'. Of course, don't forget to give a proper name to your project, as well as set the 'Clone URL' correctly. If it's wrong, your subsequent Builds will fail! For documentation on project creation, check [here](https://docs.brigade.sh/topics/projects/).
+Here we're using the name 'brigadecore/empty-testbed' for our project, which points to a test repo on 'https://github.com/brigadecore/empty-testbed'. Of course, don't forget to give a proper name to your project, as well as set the 'Clone URL' correctly. If it's wrong, your subsequent Builds will fail! For documentation on project creation, check [here](https://docs.brigade.sh/topics/projects/).
 
 Now we can view the newly created project:
 ```bash
@@ -126,7 +126,7 @@ Moreover, you can check out [this tutorial](https://docs.brigade.sh/intro/) for 
 To create and run a Brigade Build for the brigade.js file we wrote, we will use `brig`.
 
 ```bash
-brig run deis/empty-testbed -f brigade.js
+brig run brigadecore/empty-testbed -f brigade.js
 ```
 
 This will trigger the `exec` event and show you the detailed output, which will be similar to this:
@@ -136,7 +136,7 @@ Event created. Waiting for worker pod named "brigade-worker-01d0y7bcxs6ke0yayrx6
 Build: 01d0y7bcxs6ke0yayrx6nbvm39, Worker: brigade-worker-01d0y7bcxs6ke0yayrx6nbvm39
 prestart: no dependencies file found
 prestart: loading script from /etc/brigade/script
-[brigade] brigade-worker version: 0.20.0
+[brigade] brigade-worker version: 1.0.0
 [brigade:k8s] Creating secret do-nothing-01d0y7bcxs6ke0yayrx6nbvm39
 [brigade:k8s] Creating pod do-nothing-01d0y7bcxs6ke0yayrx6nbvm39
 [brigade:k8s] Timeout set at 900000
@@ -186,7 +186,7 @@ To remove created resources:
 
 ```bash
 # delete project
-brig  project delete deis/empty-testbed
+brig  project delete brigadecore/empty-testbed
 # remove Brigade
 helm delete brigade --purge
 ```
@@ -214,17 +214,8 @@ Brigade is well-tested on Minikube and [Azure Kubernetes Service](https://docs.m
 
 # Contributing
 
-This project welcomes contributions and suggestions. Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.microsoft.com.
+The Brigade project accepts contributions via GitHub pull requests. The [Contributing](CONTRIBUTING.md) document outlines the process to help get your contribution accepted.
 
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
 # Support & Feedback
 

@@ -6,16 +6,16 @@ import { Result, Job } from "@brigadecore/brigadier/out/job";
 export function mockProject(): Project {
   return {
     id: "brigade-c0ff33544b459e6ac0ffee",
-    name: "deis/empty-testbed",
+    name: "brigadecore/empty-testbed",
     repo: {
-      name: "deis/empty-testbed",
-      cloneURL: "https://github.com/deis/empty-testbed.git",
+      name: "brigadecore/empty-testbed",
+      cloneURL: "https://github.com/brigadecore/empty-testbed.git",
       token: "supersecret",
       initGitSubmodules: false
     },
     kubernetes: {
       namespace: "default",
-      vcsSidecar: "deis/git-sidecar:latest",
+      vcsSidecar: "brigadecore/git-sidecar:latest",
       buildStorageSize: "50Mi"
     },
     allowPrivilegedJobs: true,

@@ -104,7 +104,7 @@ class Notification {
   // Send a new notification, and return a Promise<result>.
   run() {
     this.count++;
-    var j = new Job(`${ this.name }-${ this.count }`, "deis/brigade-github-check-run:latest");
+    var j = new Job(`${ this.name }-${ this.count }`, "brigadecore/brigade-github-check-run:latest");
     j.imageForcePull = true;
     j.env = {
       CHECK_CONCLUSION: this.conclusion,
@@ -189,7 +189,7 @@ function release(p, tag) {
 }
 
 // Separate docker build stage as there may be multiple consumers/publishers,
-// For example, publishing to Dockerhub and ACR below
+// For example, publishing to Dockerhub below
 function goDockerBuild(e, p) {
   // We build in a separate pod b/c AKS's Docker is too old to do multi-stage builds.
   const builder = new Job(`${projectName}-docker-build`, goImg);
@@ -220,7 +220,7 @@ function goDockerBuild(e, p) {
 function dockerhubPublish(project, tag) {
   const publisher = new Job("dockerhub-publish", "docker");
   let dockerRegistry = project.secrets.dockerhubRegistry || "docker.io";
-  let dockerOrg = project.secrets.dockerhubOrg || "deis";
+  let dockerOrg = project.secrets.dockerhubOrg || "brigadecore";
 
   publisher.docker.enabled = true;
   publisher.storage.enabled = true;
@@ -236,34 +236,6 @@ function dockerhubPublish(project, tag) {
   ];
 
   return publisher;
-}
-
-function acrBuild(project, tag) {
-  const acrImagePrefix = "public/deis/";
-
-  let registry = project.secrets.acrRegistry || projectName;
-  var acrBuilder = new Job("az-build", "microsoft/azure-cli:latest");
-
-  acrBuilder.imageForcePull = true;
-  acrBuilder.storage.enabled = true;
-
-  acrBuilder.tasks = [
-    addMake,
-    // Create a service principal and assign it proper perms on the ACR.
-    `az login --service-principal -u ${project.secrets.acrName} -p '${project.secrets.acrToken}' --tenant ${project.secrets.acrTenant}`,
-    `cd /src`,
-    `mkdir -p ./bin`,
-    "for i in $(make echo-images); do \
-      cd ${i} ; \
-      echo '========> Building ${i}' ; \
-      cp -av " + sharedMountPrefix + "${i}/rootfs ./ ; \
-      az acr build -r " + registry + " -t " + acrImagePrefix + "${i}:" + tag + " . ; \
-      echo '<======== Finished ${i}' ; \
-      cd .. ; \
-     done"
-  ];
-
-  return acrBuilder;
 }
 
 function slackNotify(title, msg, project) {
@@ -314,8 +286,7 @@ events.on("push", (e, p) => {
   if (doPublish) {
     jobs.push(
       goDockerBuild(e, p),
-      dockerhubPublish(p, tag),
-      acrBuild(p, tag)
+      dockerhubPublish(p, tag)
     );
   }
 
@@ -360,12 +331,8 @@ events.on("publish", (e, p) => {
     throw error("No tag specified");
   }
 
-  goDockerBuild(e, p)
-    .run()
-    .then(() => {
-      Group.runAll([
-        acrBuild(p, payload.tag),
-        dockerhubPublish(p, payload.tag)
-      ]);
-    });
+  Group.runEach([
+    goDockerBuild(e, p),
+    dockerhubPublish(p, payload.tag)
+  ]);
 });

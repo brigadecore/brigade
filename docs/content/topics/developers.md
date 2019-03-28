@@ -55,7 +55,7 @@ cd $GOPATH/src/github.com/brigadecore/brigade
 **Note**: this leaves you at the tip of **master** in the repository where active development
 is happening. You might prefer to checkout the most recent stable tag:
 
-- `$ git checkout v0.20.0`
+- `$ git checkout v1.0.0`
 
 After cloning the project locally, you should run this command to [configure the remote](https://help.github.com/articles/configuring-a-remote-for-a-fork/): 
 
@@ -139,7 +139,7 @@ $ eval $(minikube docker-env)
 
 Running `make docker-build` will push the Brigade images to the Minikube Docker
 daemon. The image tag (set by `VERSION` in the [Makefile](../../Makefile)) will default
-to a unique value such as `v0.20.0-80-g6721dd8`.  You can verify this by running `docker images`
+to a unique value such as `v1.0.0-80-g6721dd8`.  You can verify this by running `docker images`
 and affirming these tagged images are listed.
 
 Brigade charts are hosted in the separate [brigadecore/charts][charts]
@@ -217,17 +217,17 @@ is pointing to the correct cluster.
 Once you have Brigade running in Minikube or a comparable alternative, you should be
 able to run the functional tests.
 
-First, create a project that points to the `deis/empty-testbed` project. The most
+First, create a project that points to the `brigadecore/empty-testbed` project. The most
 flexible way of doing this is via the `brig` cli.  Here we supply `-x` to forgo
 interactive prompts.  All the defaults will therefore be set to the
-[deis/empty-testbed](https://github.com/deis/empty-testbed) project.
+[brigadecore/empty-testbed](https://github.com/brigadecore/empty-testbed) project.
 
 ```console
  $ brig project create -x
 Project ID: brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
 ```
 
-You can check this project configuration out via `brig project get deis/empty-testbed`.
+You can check this project configuration out via `brig project get brigadecore/empty-testbed`.
 
 With this setup, you should be able to run `make test-functional` and see the
 tests run against your local Brigade binary.

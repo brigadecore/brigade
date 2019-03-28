@@ -65,9 +65,9 @@ func newRouter(store storage.Store) *gin.Engine {
 		// This is the recommended form.
 		events.POST("/webhook/:org", handler)
 
-		// Of the form /webhook/deis/empty-testbed?commit=master
+		// Of the form /webhook/brigadecore/empty-testbed?commit=master
 		events.POST("/webhook/:org/:repo", handler)
-		// Of the form /webhook/deis/empty-testbed/master
+		// Of the form /webhook/brigadecore/empty-testbed/master
 		events.POST("/webhook/:org/:repo/:commit", handler)
 	}
 

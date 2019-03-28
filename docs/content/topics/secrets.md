@@ -25,13 +25,13 @@ add a secret and/or additional secrets need to be added to this existing project
 `brig project create --replace -p <existing project name>`.
 
 Here we add a new secret with key `dbPassword` and value `supersecret` to our existing
-`deis/empty-testbed` project:
+`brigadecore/empty-testbed` project:
 
 ```console
-$ brig project create --replace -p deis/empty-testbed
-? Existing Project Name deis/empty-testbed
-? Full repository name github.com/deis/empty-testbed
-? Clone URL (https://github.com/your/repo.git) https://github.com/deis/empty-testbed.git
+$ brig project create --replace -p brigadecore/empty-testbed
+? Existing Project Name brigadecore/empty-testbed
+? Full repository name github.com/brigadecore/empty-testbed
+? Clone URL (https://github.com/your/repo.git) https://github.com/brigadecore/empty-testbed.git
 ? Add secrets? Yes
 ? 	Secret 1 dbPassword
 ? 	Value supersecret
