@@ -47,10 +47,10 @@ You will now have Brigade installed. [Kashti](https://github.com/brigadecore/kas
 
 ### Install brig
 
-Brig is the Brigade command line client. You can use `brig` to create/update/delete new brigade Projects, run Builds, etc. To get `brig`, navigate to the [Releases page](https://github.com/brigadecore/brigade/releases/) and then download the appropriate client for your platform. For example, if you're using Linux or WSL, you can get the 0.20.0 version in this way:
+Brig is the Brigade command line client. You can use `brig` to create/update/delete new brigade Projects, run Builds, etc. To get `brig`, navigate to the [Releases page](https://github.com/brigadecore/brigade/releases/) and then download the appropriate client for your platform. For example, if you're using Linux or WSL, you can get the 1.0.0 version in this way:
 
 ```bash
-wget -O brig https://github.com/brigadecore/brigade/releases/download/v0.20.0/brig-linux-amd64
+wget -O brig https://github.com/brigadecore/brigade/releases/download/v1.0.0/brig-linux-amd64
 chmod +x brig
 mv brig ~/bin
 ```
@@ -136,7 +136,7 @@ Event created. Waiting for worker pod named "brigade-worker-01d0y7bcxs6ke0yayrx6
 Build: 01d0y7bcxs6ke0yayrx6nbvm39, Worker: brigade-worker-01d0y7bcxs6ke0yayrx6nbvm39
 prestart: no dependencies file found
 prestart: loading script from /etc/brigade/script
-[brigade] brigade-worker version: 0.20.0
+[brigade] brigade-worker version: 1.0.0
 [brigade:k8s] Creating secret do-nothing-01d0y7bcxs6ke0yayrx6nbvm39
 [brigade:k8s] Creating pod do-nothing-01d0y7bcxs6ke0yayrx6nbvm39
 [brigade:k8s] Timeout set at 900000

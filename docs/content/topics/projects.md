@@ -99,7 +99,7 @@ The Brigade Project chart is located in the [brigadecore/charts][charts] source 
 $ helm repo add brigade https://brigadecore.github.io/charts
 $ helm search brigade/brigade-project
 NAME                   	CHART VERSION	APP VERSION	DESCRIPTION
-brigade/brigade-project	0.20.0       	v0.20.0    	Create a Brigade project
+brigade/brigade-project	1.0.0       	v1.0.0    	Create a Brigade project
 ```
 
 We recommend using the following pattern to create your project:
