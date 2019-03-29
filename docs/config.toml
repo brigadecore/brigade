@@ -60,7 +60,7 @@ relativeURLs = "false"
     parent = "intro"
 [[menu.index]]
     name = "Topic Guides"
-    url = "https://brigade.sh/topics/"
+    url = "/topics/"
     weight = 30
     identifier = "topics"
     [[menu.index]]
