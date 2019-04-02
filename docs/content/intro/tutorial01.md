@@ -103,7 +103,7 @@ def hello():
 
 Re-run the web server and open the browser back to http://127.0.0.1:5000/. You should now see a random UUID:
 
-!Random UUID](https://docs.brigade.sh/img/img2.png)
+![Random UUID](https://docs.brigade.sh/img/img2.png)
 
 Keep refreshing the page. You should see new UUIDs being generated every time you refresh the page.
 
