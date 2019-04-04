@@ -1,6 +1,7 @@
 # Brigade: Event-based Scripting for Kubernetes
 
 ![Build Status](http://badges.technosophos.me/v1/github/build/Azure/brigade/badge.svg?branch=master)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2688/badge)](https://bestpractices.coreinfrastructure.org/projects/2688)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbrigadecore%2Fbrigade.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbrigadecore%2Fbrigade?ref=badge_shield)
 
 Script simple and complex workflows using JavaScript. Chain together containers,
