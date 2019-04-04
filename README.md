@@ -1,6 +1,7 @@
 # Brigade: Event-based Scripting for Kubernetes
 
 ![Build Status](http://badges.technosophos.me/v1/github/build/Azure/brigade/badge.svg?branch=master)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2688/badge)](https://bestpractices.coreinfrastructure.org/projects/2688)
 
 Script simple and complex workflows using JavaScript. Chain together containers,
 running them in parallel or serially. Fire scripts based on times, GitHub events,
