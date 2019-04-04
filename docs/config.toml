@@ -153,6 +153,10 @@ relativeURLs = "false"
     url = "/topics/workers/"
     weight = 48
     parent = "topics"
+[[menu.index]]
+    name = "Contributing"
+    url = "/contributing/"
+    weight = 50
 
 
 # top navigation - project links
