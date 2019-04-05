@@ -1,6 +1,8 @@
 # Brigade: Event-based Scripting for Kubernetes
 
 ![Build Status](http://badges.technosophos.me/v1/github/build/Azure/brigade/badge.svg?branch=master)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2688/badge)](https://bestpractices.coreinfrastructure.org/projects/2688)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbrigadecore%2Fbrigade.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbrigadecore%2Fbrigade?ref=badge_shield)
 
 Script simple and complex workflows using JavaScript. Chain together containers,
 running them in parallel or serially. Fire scripts based on times, GitHub events,
@@ -65,3 +67,7 @@ The Brigade project accepts contributions via GitHub pull requests. The [Contrib
 We have a slack channel! [Kubernetes/#brigade](https://kubernetes.slack.com/messages/C87MF1RFD) Feel free to join for any support questions or feedback, we are happy to help. To report an issue or to request a feature open an issue [here](https://github.com/brigadecore/brigade/issues)
 
 [brigade-project-chart]: https://github.com/brigadecore/charts/tree/master/charts/brigade-project
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbrigadecore%2Fbrigade.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbrigadecore%2Fbrigade?ref=badge_large)

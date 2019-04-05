@@ -1,58 +1,21 @@
-{{$currentNode := .}}
+{{ $currentPage := . }}
+{{- if .Site.Menus.index -}}
 <nav>
-<ul>
-<li class="{{ if .IsHome }}active{{ end }}"><a href="{{ .Site.BaseURL }}">Home</a></li>
-{{- if eq .Site.Params.ordersectionsby "title" -}}
-  {{- range .Site.Home.Sections.ByTitle -}}
-{{template "menu" dict "sect" . "currentnode" $currentNode}}
-  {{- end -}}
-{{- else -}}
-  {{- range .Site.Home.Sections.ByWeight -}}
-{{template "menu" dict "sect" . "currentnode" $currentNode}}
-  {{- end -}}
-{{- end}}
-</ul>
-</nav>
-
-{{define "menu"}}
-{{- $currentNode := .currentnode -}}
-{{ with .sect }}
-{{ if .IsSection }}
-{{ if in .Site.Params.menu_exclusion .Section }}
-{{- else -}}
-  {{- safeHTML .Params.head -}}
-<li class="{{ if .IsAncestor $currentNode }}parent{{ end }}{{ if eq .UniqueID $currentNode.UniqueID }} active{{ end }}{{ if .Params.alwaysopen }} parent{{ end }}"><a href="{{ .URL }}">{{ safeHTML .Params.Pre }}{{ .Title }}{{ safeHTML .Params.Post }}</a>
-  {{- $numberOfPages := (add (len .Pages) (len .Sections)) -}}
-  {{if ne $numberOfPages 0}}
-<ul class="{{ if .IsAncestor $currentNode }}sub-menu{{ end }}">
-    {{- .Scratch.Set "pages" .Pages -}}
-    {{- if .Sections -}}
-      {{- .Scratch.Set "pages" (.Pages | union .Sections) -}}
+  <ul>
+    {{- range .Site.Menus.index.ByWeight -}}
+      {{ if .HasChildren -}}
+      <li class="parent{{ if $currentPage.HasMenuCurrent "index" . }} active{{ end }}"><a href="{{ .URL | absURL }}">{{- .Name -}} <i class="fas fa-angle-right"></i></a>
+        
+        <ul class="sub-menu">
+          {{ range .Children -}}
+          <li class="child{{ if $currentPage.HasMenuCurrent "index" . }} active{{ end }}"><a href="{{ .URL | absURL }}">{{ .Name }}</a></li>
+          {{ end -}}
+        </ul>
+      </li>
+      {{- else }}
+      <li{{ if $currentPage.HasMenuCurrent "index" . }} class="active"{{ end }}><a href="{{ .URL | absURL }}">{{- .Name -}}</a></li>
+      {{- end -}}
     {{- end -}}
-    {{- $pages := (.Scratch.Get "pages") -}}
-    {{- if eq .Site.Params.ordersectionsby "title" -}}
-      {{- range $pages.ByTitle -}}
-        {{- if and .Params.hidden (not $.showhidden) -}}
-        {{- else -}}
-{{template "menu" dict "sect" . "currentnode" $currentNode}}
-        {{- end -}}
-      {{- end -}}
-    {{- else -}}
-      {{- range $pages.ByWeight -}}
-        {{- if and .Params.hidden (not $.showhidden) -}}
-        {{- else -}}
-{{template "menu" dict "sect" . "currentnode" $currentNode}}
-        {{- end -}}
-      {{- end -}}
-    {{- end}}
-</ul>
-  {{end}}
-</li>
-{{- end -}}
-{{- else -}}
-  {{- if not .Params.Hidden -}}
-<li class="{{ if eq .UniqueID $currentNode.UniqueID }}active{{ end }}"><a href="{{ .URL }}">{{ safeHTML .Params.Pre }}{{ .Title }}{{ safeHTML .Params.Post }}</a></li>
-  {{- end -}}
-{{ end -}}
-{{ end -}}
-{{ end }}
+  </ul>
+</nav>
+{{- end }}

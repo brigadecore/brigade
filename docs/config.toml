@@ -8,8 +8,158 @@ relativeURLs = "false"
   title = "Brigade"
   description = "Brigade - Event-driven scripting for Kubernetes."
 
-# top navigation
-    # (side nav is auto generated from content dir)
+# main docs 'index' menu on left
+[[menu.index]]
+    name = "Home"
+    url = "https://brigade.sh"
+    weight = 10
+[[menu.index]]
+    name = "Getting Started"
+    url = "/intro/"
+    weight = 20
+    identifier = "intro"
+    [[menu.index]]
+    name = "Overview"
+    url = "/intro/overview/"
+    weight = 21
+    parent = "intro"
+    [[menu.index]]
+    name = "Installing Brigade"
+    url = "/intro/install/"
+    weight = 22
+    parent = "intro"
+    [[menu.index]]
+    name = "Tutorial 1: Writing a CI pipeline"
+    url = "/intro/tutorial01/"
+    weight = 23
+    parent = "intro"
+    [[menu.index]]
+    name = "Tutorial 2: Setup GitHub"
+    url = "/intro/tutorial02/"
+    weight = 24
+    parent = "intro"
+    [[menu.index]]
+    name = "Tutorial 3: Projects & Events"
+    url = "/intro/tutorial03/"
+    weight = 25
+    parent = "intro"
+    [[menu.index]]
+    name = "Tutorial 4: Writing a Test"
+    url = "/intro/tutorial04/"
+    weight = 26
+    parent = "intro"
+    [[menu.index]]
+    name = "Tutorial 5: Writing Efficient Pipelines"
+    url = "/intro/writing-efficient-pipelines/"
+    weight = 27
+    parent = "intro"
+    [[menu.index]]
+    name = "What to Read Next"
+    url = "/intro/readnext/"
+    weight = 28
+    parent = "intro"
+[[menu.index]]
+    name = "Topic Guides"
+    url = "/topics/"
+    weight = 30
+    identifier = "topics"
+    [[menu.index]]
+    name = "Advanced Scripting Guide"
+    url = "/topics/scripting_advanced/"
+    weight = 31
+    parent = "topics"
+    [[menu.index]]
+    name = "Container Registry Integration"
+    url = "/topics/dockerhub/"
+    weight = 32
+    parent = "topics"
+    [[menu.index]]
+    name = "Dependencies"
+    url = "/topics/dependencies/"
+    weight = 33
+    parent = "topics"
+    [[menu.index]]
+    name = "Design"
+    url = "/topics/design/"
+    weight = 34
+    parent = "topics"
+    [[menu.index]]
+    name = "Developer Guide"
+    url = "/topics/developers/"
+    weight = 35
+    parent = "topics"
+    [[menu.index]]
+    name = "Gateways"
+    url = "/topics/gateways/"
+    weight = 36
+    parent = "topics"
+    [[menu.index]]
+    name = "Genric Gateway"
+    url = "/topics/genericgateway/"
+    weight = 37
+    parent = "topics"
+    [[menu.index]]
+    name = "GitHub Integration"
+    url = "/topics/github/"
+    weight = 38
+    parent = "topics"
+    [[menu.index]]
+    name = "Ingress"
+    url = "/topics/ingress/"
+    weight = 39
+    parent = "topics"
+    [[menu.index]]
+    name = "Projects"
+    url = "/topics/projects/"
+    weight = 40
+    parent = "topics"
+    [[menu.index]]
+    name = "Releasing Brigade"
+    url = "/topics/releasing/"
+    weight = 41
+    parent = "topics"
+    [[menu.index]]
+    name = "Scripting Guide"
+    url = "/topics/scripting/"
+    weight = 42
+    parent = "topics"
+    [[menu.index]]
+    name = "Secret Management"
+    url = "/topics/secrets/"
+    weight = 43
+    parent = "topics"
+    [[menu.index]]
+    name = "Securing Brigade"
+    url = "/topics/security/"
+    weight = 44
+    parent = "topics"
+    [[menu.index]]
+    name = "Storage"
+    url = "/topics/storage/"
+    weight = 45
+    parent = "topics"
+    [[menu.index]]
+    name = "Testing"
+    url = "/topics/testing/"
+    weight = 46
+    parent = "topics"
+    [[menu.index]]
+    name = "The Brigade.js API"
+    url = "/topics/javascript/"
+    weight = 47
+    parent = "topics"
+    [[menu.index]]
+    name = "Workers"
+    url = "/topics/workers/"
+    weight = 48
+    parent = "topics"
+[[menu.index]]
+    name = "Contributing"
+    url = "/contributing/"
+    weight = 50
+
+
+# top navigation - project links
 [[menu.main]]
     name = "Docs"
     url = "https://docs.brigade.sh"
