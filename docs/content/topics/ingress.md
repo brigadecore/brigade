@@ -97,7 +97,7 @@ This is the definition for the production issuer (also make sure to change the e
        privateKeySecretRef:
          name: letsencrypt-prod
        # Enable the HTTP-01 challenge provider
-http01: {}
+       http01: {}
 ```
 
 > Note: `ClusterIssuer` objects work across namespaces - if you want to limit generating certificates to a single namespace, use an `Issuer` object.
