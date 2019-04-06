@@ -24,39 +24,44 @@ relativeURLs = "false"
     weight = 21
     parent = "intro"
     [[menu.index]]
+    name = "Quickstart"
+    url = "/intro/quickstart"
+    weight = 22
+    parent = "intro"
+    [[menu.index]]
     name = "Installing Brigade"
     url = "/intro/install/"
-    weight = 22
+    weight = 23
     parent = "intro"
     [[menu.index]]
     name = "Tutorial 1: Writing a CI pipeline"
     url = "/intro/tutorial01/"
-    weight = 23
+    weight = 24
     parent = "intro"
     [[menu.index]]
     name = "Tutorial 2: Setup GitHub"
     url = "/intro/tutorial02/"
-    weight = 24
+    weight = 25
     parent = "intro"
     [[menu.index]]
     name = "Tutorial 3: Projects & Events"
     url = "/intro/tutorial03/"
-    weight = 25
+    weight = 26
     parent = "intro"
     [[menu.index]]
     name = "Tutorial 4: Writing a Test"
     url = "/intro/tutorial04/"
-    weight = 26
+    weight = 27
     parent = "intro"
     [[menu.index]]
     name = "Tutorial 5: Writing Efficient Pipelines"
     url = "/intro/writing-efficient-pipelines/"
-    weight = 27
+    weight = 28
     parent = "intro"
     [[menu.index]]
     name = "What to Read Next"
     url = "/intro/readnext/"
-    weight = 28
+    weight = 29
     parent = "intro"
 [[menu.index]]
     name = "Topic Guides"
