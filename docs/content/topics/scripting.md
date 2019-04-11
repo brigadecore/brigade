@@ -63,7 +63,7 @@ message to the log:
 ```javascript
 console.log("hello world")
 ```
-[brigade-01.js](examples/brigade-01.js)
+[brigade-01.js](../../examples/brigade-01.js)
 
 If we run this script, we would see output that looked something like this:
 
@@ -109,7 +109,7 @@ events.on("exec", () => {
   console.log("==> handling an 'exec' event")
 })
 ```
-[brigade-02.js](examples/brigade-02.js)
+[brigade-02.js](../../examples/brigade-02.js)
 
 > The `() => {}` syntax is a newer way to declare an anonymous function. We use this
 > syntax throughout the tutorial, but unless otherwise noted, you can substitute in the
@@ -151,7 +151,7 @@ events.on("push", () => {
   console.log(" **** I'm a GitHub 'push' handler")
 })
 ```
-[brigade-03.js](examples/brigade-03.js)
+[brigade-03.js](../../examples/brigade-03.js)
 
 Now if we re-run our `brig` command, we will see the same output as before:
 
@@ -209,7 +209,7 @@ events.on("after", () => {
   console.log(" **** AFTER EVENT called")
 })
 ```
-[brigade-04.js](examples/brigade-04.js)
+[brigade-04.js](../../examples/brigade-04.js)
 
 The `brig` client will trigger the `exec` event. But then when that event has been
 processed, Brigade will trigger an `after` event before returning:
@@ -266,7 +266,7 @@ events.on("exec", () => {
   job.run()
 })
 ```
-[brigade-05.js](examples/brigade-05.js)
+[brigade-05.js](../../examples/brigade-05.js)
 
 The first thing to note is that _we have changed the first line_. In addition to importing
 the `events` object, we are now also importing `Job`. `Job` is the prototype for creating
@@ -367,7 +367,7 @@ events.on("exec", () => {
   job.run()
 })
 ```
-[brigade-06.js](examples/brigade-06.js)
+[brigade-06.js](../../examples/brigade-06.js)
 
 Tasks can be an arbitrary shell command _that is supported by the image you use_.
 Tasks are concatenated together and executed as one shell script. (In Linux, they
@@ -433,7 +433,7 @@ events.on("exec", () => {
   goodbye.run()
 })
 ```
-[brigade-07.js](examples/brigade-07.js)
+[brigade-07.js](../../examples/brigade-07.js)
 
 In this example we create two jobs (`hello` and `goodbye`). Each starts an Alpine
 container and prints a couple of messages, then exits.
@@ -516,7 +516,7 @@ events.on("exec", () => {
   })
 })
 ```
-[brigade-08.js](examples/brigade-08.js)
+[brigade-08.js](../../examples/brigade-08.js)
 
 The important new part is at the end. We have replaced this:
 
@@ -596,6 +596,7 @@ events.on("exec", () => {
   test.run()
 })
 ```
+[brigade-09.js](../../examples/brigade-09.js)
 
 This time around, we are going to run three tasks:
 
@@ -695,7 +696,7 @@ events.on("exec", () => {
   Group.runEach([hello, goodbye])
 })
 ```
-[brigade-10.js](examples/brigade-10.js)
+[brigade-10.js](../../examples/brigade-10.js)
 
 There are three things to notice in the example above:
 
@@ -731,6 +732,7 @@ events.on("exec", () => {
     })
 })
 ```
+[brigade-11.js](../../examples/brigade-11.js)
 
 In the above case, `hello` and `goodbye` will run at the same time. But `helloAgain` will
 not be started until both of the others have finished.
@@ -762,6 +764,7 @@ events.on("exec", () => {
   first.runAll().then( () => second.runAll() )
 })
 ```
+[brigade-12.js](../../examples/brigade-12.js)
 
 The above creates two groups, and then later executes them. The order of execution would
 be:
@@ -864,7 +867,7 @@ events.on("exec", (e, p) => {
   console.log(">>> project " + p.name + " clones the repo at " + p.repo.cloneURL)
 })
 ```
-[brigade-13.js](examples/brigade-13.js)
+[brigade-13.js](../../examples/brigade-13.js)
 
 If we run the above, we'll see output like this:
 
@@ -907,6 +910,7 @@ events.on("exec", (e, p) => {
   echo.run()
 })
 ```
+[brigade-14.js](../../examples/brigade-14.js)
 
 In the above code, we create a job named `echo` and we run two tasks. In the first, we
 directly inject the project name (`p.name`) into the task command before the task is run.
@@ -962,7 +966,7 @@ events.on("exec", (e, p) => {
   Group.runEach([one, two, three])
 })
 ```
-[brigade-16.js](examples/brigade-16.js)
+[brigade-15.js](../../examples/brigade-15.js)
 
 In the script above, jobs `one` and `two` should each write a line to the file
 `hello.txt`, which is stored in the shared `/mnt/brigade/share` directory. Since this
@@ -1015,7 +1019,7 @@ events.on("exec", (e) => {
   job.run()
 })
 ```
-[brigade-16.js](examples/brigade-16.js)
+[brigade-16.js](../../examples/brigade-16.js)
 
 This script creates a new job and then enables the cache. Then it runs two different
 tasks. The first writes the build's unique ID into a file in the cache, and the second one
@@ -1167,7 +1171,7 @@ events.on("exec", (e, p) => {
   })
 })
 ```
-[brigade-17.js](examples/brigade-17.js)
+[brigade-17.js](../../examples/brigade-17.js)
 
 Our actual containers (`one` and `two`) are not doing much work here. They're just
 echoing content to their standard output. But that information is captured by Brigade
@@ -1231,7 +1235,7 @@ events.on("next", () => {
   console.log("fired 'next' event")
 })
 ```
-[brigade-18.js](examples/brigade-18.js)
+[brigade-18.js](../../examples/brigade-18.js)
 
 The example above uses `events.emit` to fire a new event. In that example, we
 re-use an existing event, which is not necessarily the best practice. A more
@@ -1256,7 +1260,7 @@ events.on("next", (e) => {
   console.log(`fired ${e.type} caused by ${e.cause.event.type}`)
 })
 ```
-[brigade-19.js](examples/brigade-19.js)
+[brigade-19.js](../../examples/brigade-19.js)
 
 In this example, `e2` is a new event. Any new event _must_ have the following fields:
 
@@ -1282,7 +1286,7 @@ events.on("exec", () => {
   console.log("second")
 })
 ```
-[brigade-20.js](examples/brigade-20.js)
+[brigade-20.js](../../examples/brigade-20.js)
 
 In this case, when the `exec` event is run, _both handlers will execute in the
 order they are defined_.
@@ -1305,7 +1309,7 @@ events.on("exec2", (e, project) => {
   events.emit("next", e, project)
 })
 ```
-[brigade-21.js](examples/brigade-21.js)
+[brigade-21.js](../../examples/brigade-21.js)
 
 In the example above, the `next` event handler is _only registered_ if the
 `exec` event is run. Triggering the event `exec` will also trigger the wrapped
