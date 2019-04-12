@@ -99,7 +99,7 @@ relativeURLs = "false"
     weight = 36
     parent = "topics"
     [[menu.index]]
-    name = "Genric Gateway"
+    name = "Generic Gateway"
     url = "/topics/genericgateway/"
     weight = 37
     parent = "topics"
