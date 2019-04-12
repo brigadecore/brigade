@@ -70,7 +70,7 @@ Brigade is well-tested on [AKS Kubernetes](https://docs.microsoft.com/en-us/azur
   an Azure load balancer for you.
 - For caching and storage, we recommend creating an Azure Storage instance and
   creating a Persistent Volume and Storage Class that use the `AzureFile` driver.
-  (For an example, see the `Azure File Setup` section in the [storage document](../topics/storage.md#azure-file-setup).)
+  (For an example, see the `Azure File Setup` section in the [storage document](../../topics/storage/#azure-file-setup).)
 - You can use Azure Container Registry for private images, provided that you
   add the ACR instance to the same Resource Group that AKS belongs to.
 - ACR's webhooks can be used to trigger events, as they follow the DockerHub
