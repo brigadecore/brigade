@@ -1,6 +1,6 @@
 const process = require("process")
 const fs = require("fs")
-const exec = require("child-process-promise")
+const { execFileSync } = require("child_process")
 
 // Script locations in order of precedence.
 const scripts = [
@@ -21,20 +21,22 @@ const scripts = [
 ];
 
 //checked out in repo
-const deps = "/vcs/brigade.json"
+const depsFile = "/vcs/brigade.json"
 
-addDeps()
+if (require.main === module)  {
+  addDeps()
 
-try {
-  var data = loadScript()
-  let wrapper = "const {overridingRequire} = require('./require');((require) => {" +
-    data.toString() +
-    "})(overridingRequire)"
-  fs.writeFileSync("dist/brigade.js", wrapper)
-} catch (e) {
-  console.log("prestart: no script override")
-  console.error(e)
-  process.exit(1)
+  try {
+    var data = loadScript()
+    let wrapper = "const {overridingRequire} = require('./require');((require) => {" +
+      data.toString() +
+      "})(overridingRequire)"
+    fs.writeFileSync("dist/brigade.js", wrapper)
+  } catch (e) {
+    console.log("prestart: no script override")
+    console.error(e)
+    process.exit(1)
+  }
 }
 
 // loadScript loads the first configured script it finds.
@@ -51,22 +53,46 @@ function loadScript() {
 }
 
 function addDeps() {
-  if (fs.existsSync(deps)) {
-    const p = require(deps)
-    for (var dep in p.dependencies) {
-      var d = dep + "@" + p.dependencies[dep];
-      console.log("installing " + d)
-      addYarn(d);
-    }
-  } else {
+  if (!fs.existsSync(depsFile)) {
     console.log("prestart: no dependencies file found")
+    return
+  }
+  const deps = require(depsFile).dependencies || {}
+
+  const packages = buildPackageList(deps)
+  if (packages.length == 0) {
+    console.log("prestart: no dependencies to install")
+    return
+  }
+
+  console.log(`prestart: installing ${packages.join(', ')}`)
+  try {
+    addYarn(packages)
+  } catch (e)  {
+    console.error(e)
+    process.exit(1)
   }
 }
 
-function addYarn(arg) {
-  return exec.exec(`yarn add ${arg}`, {})
-    .catch(e => {
-      console.error(e)
-      process.exit(1)
-    });
+function buildPackageList(deps) {
+  if (!deps) {
+    throw new Error("'deps' must not be null")
+  }
+
+  return Object.entries(deps).map(([dep, version]) => dep + "@" + version)
+}
+
+function addYarn(packages) {
+  if (!packages || packages.length == 0) {
+    throw new Error("'packages' must be an array with at least one item")
+  }
+
+  execFileSync("yarn", ["add", ...packages])
+}
+
+module.exports = {
+  depsFile,
+  addDeps,
+  buildPackageList,
+  addYarn,
 }
