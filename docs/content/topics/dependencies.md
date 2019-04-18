@@ -67,8 +67,6 @@ is 13 thirteen? true
 
 Notes:
 
-- the dependencies _must_ point to the exact version (and not use the tilde ~ and caret ^ to indicate semver compatible versions)
-
 - when adding a custom dependency using `brigade.json`, `yarn` will add it side-by-side with [the worker's 
 dependencies](../../brigade-worker/package.json) - this means that the process will fail if a dependency that conflicts with one of the 
 worker's dependencies is added. However, already existing dependencies (such as `@kubernetes/client-node`, `ulid` or `chai`) 
@@ -89,8 +87,8 @@ already contains the dependencies, [as described in this document](workers.md).
 
 ## Using local dependencies from the project repository
 
-*Note: this approach is currently experimental, and only for projects whose `brigade.js` is located at the root of the repository.*
-
+Local dependencies are resolved using standard Node [module resolution](https://nodejs.org/api/modules.html#modules_all_together),
+with one change: the worker's `node_modules` directory is added as a fallback, so `brigade.js`—and any local dependencies—can resolve modules installed via `brigade.json`.
 This approach works great for using dependencies that are not intended to be external packages, and which are located in the project repository. 
 
 Let's consider the following scenario: we have a JavaScript file located in `/local-deps/circle.js`, where `local-deps` is a directory at the root of our git repository. In our `brigade.js` file, we can use any exported method or variable from that package by simply using a `require` statement, just like in any other JavaScript project.

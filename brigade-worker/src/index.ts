@@ -26,6 +26,7 @@
 /** */
 
 import * as fs from "fs";
+import * as moduleAlias from "module-alias";
 import * as process from "process";
 import * as ulid from "ulid";
 
@@ -35,8 +36,49 @@ import { ContextLogger, LogLevel } from "@brigadecore/brigadier/out/logger";
 
 import { options } from "./k8s";
 
-// This is a side-effect import.
-import "./brigade";
+// Install aliases for common ways of referring to Brigade/Brigadier.
+moduleAlias.addAliases({
+  "brigade": __dirname + "/brigadier",
+  "brigadier": __dirname + "/brigadier",
+  "@brigadecore/brigadier": __dirname + "/brigadier",
+});
+// Add the current module resolution paths to module-alias, so the node_modules
+// that prestart.js adds to will be resolvable from the Brigade script and any
+// local dependencies.
+module.paths.forEach(moduleAlias.addPath);
+moduleAlias();
+
+// Script locations in order of precedence.
+const scripts = [
+  // manual override for debugging
+  process.env.BRIGADE_SCRIPT,
+
+  // data mounted from event secret (e.g. brig run)
+  "/etc/brigade/script",
+
+  // checked out in repo
+  "/vcs/brigade.js",
+
+  // data mounted from project.DefaultScript
+  "/etc/brigade-project/defaultScript",
+
+  // mounted configmap named in brigade.sh/project.DefaultScriptName
+  "/etc/brigade-default-script/brigade.js"
+];
+
+function findScript() {
+  for (let src of scripts) {
+    if (fs.existsSync(src) && fs.readFileSync(src, "utf8") != "") {
+      return src;
+    }
+  }
+}
+
+// Search for the Brigade script and, if found, execute it.
+const script = findScript();
+if (script) {
+  require(script);
+}
 
 const logLevel = LogLevel[process.env.BRIGADE_LOG_LEVEL || "LOG"];
 const logger = new ContextLogger([], logLevel);

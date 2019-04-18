@@ -22,6 +22,7 @@
     "@types/chai": "^4.0.1",
     "@types/mocha": "^5.2.6",
     "@types/mock-require": "^2.0.0",
+    "@types/module-alias": "^2.0.0",
     "@types/node": "^11.9.6",
     "@types/sinon": "^7.0.11",
     "@types/ws": "6.0.1",
@@ -39,6 +40,7 @@
     "@brigadecore/brigadier": "^0.4.0",
     "@kubernetes/client-node": "^0.7.2",
     "child-process-promise": "^2.2.1",
+    "module-alias": "^2.2.0",
     "pretty-error": "^2.1.1",
     "ulid": "^0.2.0"
   }

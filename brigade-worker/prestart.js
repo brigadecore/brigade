@@ -2,54 +2,11 @@ const process = require("process")
 const fs = require("fs")
 const { execFileSync } = require("child_process")
 
-// Script locations in order of precedence.
-const scripts = [
-  // manual override for debugging
-  process.env.BRIGADE_SCRIPT,
-
-  // data mounted from event secret (e.g. brig run)
-  "/etc/brigade/script",
-
-  // checked out in repo
-  "/vcs/brigade.js",
-
-  // data mounted from project.DefaultScript
-  "/etc/brigade-project/defaultScript",
-
-  // mounted configmap named in brigade.sh/project.DefaultScriptName
-  "/etc/brigade-default-script/brigade.js"
-];
-
 //checked out in repo
 const depsFile = "/vcs/brigade.json"
 
 if (require.main === module)  {
   addDeps()
-
-  try {
-    var data = loadScript()
-    let wrapper = "const {overridingRequire} = require('./require');((require) => {" +
-      data.toString() +
-      "})(overridingRequire)"
-    fs.writeFileSync("dist/brigade.js", wrapper)
-  } catch (e) {
-    console.log("prestart: no script override")
-    console.error(e)
-    process.exit(1)
-  }
-}
-
-// loadScript loads the first configured script it finds.
-function loadScript() {
-  for (let src of scripts) {
-    if (fs.existsSync(src)) {
-      var data = fs.readFileSync(src, 'utf8')
-      if (data != "") {
-        console.log(`prestart: loading script from ${ src }`)
-        return data
-      }
-    }
-  }
 }
 
 function addDeps() {
