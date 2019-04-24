@@ -516,8 +516,7 @@ export class JobRunner implements jobs.JobRunner {
           resolve(this);
         })
         .catch(reason => {
-          this.logger.error(reason);
-          reject(reason);
+          reject(new Error(reason.body.message));
         });
     });
   }
@@ -553,8 +552,7 @@ export class JobRunner implements jobs.JobRunner {
               });
           })
           .catch(err => {
-            this.logger.error(err);
-            reject(err);
+            reject(new Error(err.body.message));
           });
       }
     });
@@ -595,7 +593,7 @@ export class JobRunner implements jobs.JobRunner {
     });
     const req = request(requestOptions, (error, response, body) => {
       if (error) {
-        this.logger.error(error);
+        this.logger.error(error.body.message);
         this.reconnect = true; //reconnect unless aborted
       }
     });
@@ -680,7 +678,7 @@ export class JobRunner implements jobs.JobRunner {
               name,
               ns,
               new kubernetes.V1DeleteOptions()
-            ).catch(e => this.logger.error(e));
+            ).catch(e => this.logger.error(e.body.message));
             clearTimers();
             reject(new Error(cs[0].state.waiting.message));
           }
@@ -739,7 +737,7 @@ export class JobRunner implements jobs.JobRunner {
         });
         const req = request(requestOptions, (error, response, body) => {
           if (error) {
-            this.logger.error(error);
+            this.logger.error(error.body.message);
             this.reconnect = true; //reconnect unless aborted
           }
         });
