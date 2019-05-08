@@ -17,6 +17,7 @@ import (
 type Config struct {
 	Namespace                  string
 	WorkerImage                string
+	WorkerCommand              string
 	WorkerPullPolicy           string
 	WorkerServiceAccount       string
 	ProjectServiceAccount      string
