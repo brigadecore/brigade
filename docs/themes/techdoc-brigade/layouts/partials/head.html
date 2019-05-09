@@ -16,8 +16,7 @@
 <link rel="canonical" href="{{ .Permalink }}">
 
 {{ $fonts := resources.Get "fonts/" | absURL }}  
-{{ $options := (dict "outputStyle" "compressed" "enableSourceMap" true }}
-{{ $style := resources.Get "scss/theme.scss" | toCSS | minify | fingerprint  $options }} 
+{{ $style := resources.Get "scss/theme.scss" | toCSS | minify | fingerprint }} 
 <link rel="stylesheet" href="{{ $style.RelPermalink }}" emotion="🤩">
 
 <link rel="icon" type="image/png" href="https://docs.brigade.sh/img/favicon.png">
