@@ -1,6 +1,15 @@
 ---
 title: Gateways
 description: How gateways work how to create your own.
+aliases:
+  - /gateways.md
+  - /gateways/gateways
+  - /gateways/gateways.md
+  - /developers/gateways.md
+  - /topics/gateways/gateways.md
+  - /topics/design/gateways.md
+  - /topics/developers/gateways.md
+  - /intro/topics/gateways.md
 ---
 
 # Brigade Gateways

@@ -1,6 +1,13 @@
 ---
 title: Generic Gateway
 description: About Brigade's generic gateway.
+aliases:
+  - /genericgateway.md
+  - /gateways/genericgateway
+  - /gateways/genericgateway.md
+  - /topics/gateways/genericgateway.md
+  - /intro/genericgateway.md
+  - /topics/genericgateway.md
 ---
 
 # Generic Gateway

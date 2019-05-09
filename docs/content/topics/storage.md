@@ -1,6 +1,10 @@
 ---
 title: Storage
 description: 'How Brigade uses Kubernetes Persistent Storage.'
+aliases:
+  - /storage.md
+  - /intro/storage.md
+  - /topics/storage.md
 ---
 
 # How Brigade uses Kubernetes Persistent Storage
