@@ -63,6 +63,12 @@ relativeURLs = "false"
     url = "/intro/readnext/"
     weight = 29
     parent = "intro"
+    [[menu.index]]
+    name = "Tutorial: Preview Environments"
+    url = "/intro/tutorial-preview-environments/"
+    weight = 30
+    parent = "intro"
+
 [[menu.index]]
     name = "Topic Guides"
     url = "/topics/"
@@ -112,7 +118,7 @@ relativeURLs = "false"
     name = "Secret Management"
     url = "/topics/secrets/"
     weight = 49
-    parent = "topics" 
+    parent = "topics"
     [[menu.index]]
     name = "Gateways"
     url = "/topics/gateways/"
