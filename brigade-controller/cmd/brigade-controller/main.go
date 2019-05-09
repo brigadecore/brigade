@@ -30,6 +30,7 @@ func main() {
 	flag.StringVar(&master, "master", "", "master url")
 	flag.StringVar(&ctrConfig.Namespace, "namespace", defaultNamespace(), "kubernetes namespace")
 	flag.StringVar(&ctrConfig.WorkerImage, "worker-image", defaultWorkerImage(), "kubernetes worker image")
+	flag.StringVar(&ctrConfig.WorkerCommand, "worker-command", "", "kubernetes worker command")
 	flag.StringVar(&ctrConfig.WorkerPullPolicy, "worker-pull-policy", defaultWorkerPullPolicy(), "kubernetes worker image pull policy")
 	flag.StringVar(&ctrConfig.WorkerServiceAccount, "worker-service-account", defaultWorkerServiceAccount(), "kubernetes worker service account name")
 	flag.StringVar(&ctrConfig.ProjectServiceAccount, "project-service-account", defaultProjectServiceAccount(), "default brigade project service account name")

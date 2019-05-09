@@ -65,7 +65,6 @@ var defaultProject = brigade.Project{
 	Worker: brigade.WorkerConfig{
 		PullPolicy: "IfNotPresent",
 	},
-	WorkerCommand: "yarn -s start",
 	Kubernetes: brigade.Kubernetes{
 		VCSSidecar: "brigadecore/git-sidecar:latest",
 	},
@@ -464,8 +463,8 @@ func projectAdvancedPrompts(p *brigade.Project, store storage.Store) error {
 			Name: "workerCommand",
 			Prompt: &survey.Input{
 				Message: "Worker command",
-				Help:    "EXPERT: Override the worker's default command (yarn -s start)",
-				Default: p.WorkerCommand,
+				Help:    "EXPERT: Override the worker's default command",
+				Default: "",
 			},
 		},
 		{
