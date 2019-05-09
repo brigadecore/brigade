@@ -26,6 +26,7 @@ header {
   background: -moz-linear-gradient(left, #E4ECE8, #9AAACD);
   background: linear-gradient(to right, #E4ECE8, #9AAACD);
   min-height: 7.5rem;
+  padding-top: 32px;
 
   h1,
   p {
@@ -36,7 +37,7 @@ header {
     text-indent: -9999em;
     position: absolute;
     left: 2.5%;
-    top: 1.5rem;
+    top: 3.25rem;
     background: url('../img/brigade.png') no-repeat 0 0;
     background-size: contain;
     width: 240px;
@@ -62,7 +63,7 @@ header {
   nav {
     position: absolute;
     right: 5%;
-    top: 3.125rem;
+    top: 4.75rem;
 
     ul {
       li {
@@ -232,6 +233,22 @@ main article.content-wrap {
     line-height: 1.4;
   }
 }
+
+.cookie-banner {
+  font-size: 0.75rem;
+  text-align: center;
+  color: white;
+  padding: 0.75rem 0 0.5rem;
+  position: absolute;
+  background: $bluem;
+  width: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 800;
+  line-height: 1;
+}
+
 
 // link styles
 
