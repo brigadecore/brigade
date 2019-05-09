@@ -148,6 +148,35 @@ main article.content-wrap {
     margin-bottom: 1.25rem;
   }
 
+  h2, h3, h4, h5, h6 {
+    position: relative;
+
+    // anchor links for section titles
+    .header-link {
+      position: absolute;
+      left: -1em;
+      opacity: 0;
+      font-size: 1rem;
+      padding-top: 0.333em;
+      text-decoration: none;
+      transition: all 0.3s ease-in-out;
+
+      &:hover {
+        border-bottom: none;
+        background-color: transparent;
+      }
+    }
+
+    &:hover {
+      color: $blued;
+
+      .header-link {
+        opacity: 1;
+        left: -1.75em;
+      }
+    }
+  }
+
   // page title area
   h1 + h1 {
     font-weight: normal;

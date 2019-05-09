@@ -6,7 +6,7 @@ relativeURLs = "true"
 
 [params]
   title = "Brigade"
-  description = "Brigade - Event-driven scripting for Kubernetes."
+  description = "Brigade: Event-driven scripting for Kubernetes."
 
 # main docs 'index' menu on left
 [[menu.index]]
