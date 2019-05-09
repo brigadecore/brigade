@@ -10,6 +10,7 @@
 <i class="fas fa-arrow-circle-up"></i>
 </span></a>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
 <script type="text/javascript">
   // make the sidebar sticky on scroll
   var affixMenu = document.querySelector(".sidebar");
@@ -21,4 +22,17 @@
       affixMenu.classList.remove("fixed");
     };
   }
+
+  // add permalinks to titles  
+  $(function() {
+    return $("h2, h3, h4, h5, h6").each(function(i, el) {
+      var $el, icon, id;
+      $el = $(el);
+      id = $el.attr('id');
+      icon = '&#9875;';
+      if (id) {
+        return $el.prepend($("<a />").addClass("header-link").attr("href", "#" + id).html(icon));
+      }
+    });
+  });
 </script>

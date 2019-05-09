@@ -17,6 +17,6 @@
 
 {{ $fonts := resources.Get "fonts/" | absURL }}  
 {{ $style := resources.Get "scss/theme.scss" | toCSS | minify | fingerprint }} 
-<link rel="stylesheet" href="{{ $style.Permalink }}" emotion="🤩">
+<link rel="stylesheet" href="{{ $style.RelPermalink }}" emotion="🤩">
 
 <link rel="icon" type="image/png" href="https://docs.brigade.sh/img/favicon.png">
