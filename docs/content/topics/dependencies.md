@@ -1,6 +1,11 @@
 ---
 title: Dependencies
 description: How dependencies work in Brigade
+aliases:
+  - /dependencies.md
+  - /topics/dependencies.md
+  - /topics/workers/dependencies.md
+  - /intro/dependencies.md
 ---
 
 # Import dependencies in your `brigade.js` file

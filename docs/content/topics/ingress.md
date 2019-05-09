@@ -1,6 +1,10 @@
 ---
 title: Ingress
 description: How to configure gateways for Ingress and automatic TLS.
+aliases:
+  - /ingress.md
+  - /topics/ingress.md
+  - /intro/ingress.md
 ---
 
 # Using an ingress
