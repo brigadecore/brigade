@@ -2,7 +2,7 @@ baseURL = "https://docs.brigade.sh/"
 title = "Brigade"
 theme = "techdoc-brigade"
 canonifyURLs = "true"
-relativeURLs = "false"
+relativeURLs = "true"
 
 [params]
   title = "Brigade"
