@@ -1,6 +1,11 @@
 ---
 title: Design
 description: How Brigade is designed
+aliases:
+  - /design.md
+  - /gateways/design
+  - /gateways/design.md
+  - /topics/gateways/design.md
 ---
 
 # Brigade Design

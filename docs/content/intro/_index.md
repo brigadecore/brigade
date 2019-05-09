@@ -2,6 +2,10 @@
 title: Getting Started
 description: How to get up and running with Brigade
 section: intro
+aliases:
+  - /index.md
+  - /intro/index.md
+  - /intro/index/
 ---
 
 # Getting Started
