@@ -24,98 +24,53 @@ relativeURLs = "false"
     weight = 21
     parent = "intro"
     [[menu.index]]
+    name = "Quickstart"
+    url = "/intro/quickstart/"
+    weight = 22
+    parent = "intro"
+    [[menu.index]]
     name = "Installing Brigade"
     url = "/intro/install/"
-    weight = 22
+    weight = 23
     parent = "intro"
     [[menu.index]]
     name = "Tutorial 1: Writing a CI pipeline"
     url = "/intro/tutorial01/"
-    weight = 23
+    weight = 24
     parent = "intro"
     [[menu.index]]
     name = "Tutorial 2: Setup GitHub"
     url = "/intro/tutorial02/"
-    weight = 24
+    weight = 25
     parent = "intro"
     [[menu.index]]
     name = "Tutorial 3: Projects & Events"
     url = "/intro/tutorial03/"
-    weight = 25
+    weight = 26
     parent = "intro"
     [[menu.index]]
     name = "Tutorial 4: Writing a Test"
     url = "/intro/tutorial04/"
-    weight = 26
+    weight = 27
     parent = "intro"
     [[menu.index]]
     name = "Tutorial 5: Writing Efficient Pipelines"
     url = "/intro/writing-efficient-pipelines/"
-    weight = 27
+    weight = 28
     parent = "intro"
     [[menu.index]]
     name = "What to Read Next"
     url = "/intro/readnext/"
-    weight = 28
+    weight = 29
     parent = "intro"
 [[menu.index]]
     name = "Topic Guides"
     url = "/topics/"
-    weight = 30
+    weight = 40
     identifier = "topics"
-    [[menu.index]]
-    name = "Advanced Scripting Guide"
-    url = "/topics/scripting_advanced/"
-    weight = 31
-    parent = "topics"
-    [[menu.index]]
-    name = "Container Registry Integration"
-    url = "/topics/dockerhub/"
-    weight = 32
-    parent = "topics"
-    [[menu.index]]
-    name = "Dependencies"
-    url = "/topics/dependencies/"
-    weight = 33
-    parent = "topics"
     [[menu.index]]
     name = "Design"
     url = "/topics/design/"
-    weight = 34
-    parent = "topics"
-    [[menu.index]]
-    name = "Developer Guide"
-    url = "/topics/developers/"
-    weight = 35
-    parent = "topics"
-    [[menu.index]]
-    name = "Gateways"
-    url = "/topics/gateways/"
-    weight = 36
-    parent = "topics"
-    [[menu.index]]
-    name = "Genric Gateway"
-    url = "/topics/genericgateway/"
-    weight = 37
-    parent = "topics"
-    [[menu.index]]
-    name = "GitHub Integration"
-    url = "/topics/github/"
-    weight = 38
-    parent = "topics"
-    [[menu.index]]
-    name = "Ingress"
-    url = "/topics/ingress/"
-    weight = 39
-    parent = "topics"
-    [[menu.index]]
-    name = "Projects"
-    url = "/topics/projects/"
-    weight = 40
-    parent = "topics"
-    [[menu.index]]
-    name = "Releasing Brigade"
-    url = "/topics/releasing/"
     weight = 41
     parent = "topics"
     [[menu.index]]
@@ -124,35 +79,89 @@ relativeURLs = "false"
     weight = 42
     parent = "topics"
     [[menu.index]]
+    name = "The Brigade.js API"
+    url = "/topics/javascript/"
+    weight = 43
+    parent = "topics"
+    [[menu.index]]
+    name = "Advanced Scripting Guide"
+    url = "/topics/scripting_advanced/"
+    weight = 44
+    parent = "topics"
+    [[menu.index]]
+    name = "Dependencies"
+    url = "/topics/dependencies/"
+    weight = 45
+    parent = "topics"
+    [[menu.index]]
+    name = "GitHub Integration"
+    url = "/topics/github/"
+    weight = 46
+    parent = "topics"
+    [[menu.index]]
+    name = "Container Registry Integration"
+    url = "/topics/dockerhub/"
+    weight = 47
+    parent = "topics"
+    [[menu.index]]
+    name = "Generic Gateway"
+    url = "/topics/genericgateway/"
+    weight = 48
+    parent = "topics"
+    [[menu.index]]
     name = "Secret Management"
     url = "/topics/secrets/"
-    weight = 43
+    weight = 49
+    parent = "topics" 
+    [[menu.index]]
+    name = "Gateways"
+    url = "/topics/gateways/"
+    weight = 50
+    parent = "topics"
+    [[menu.index]]
+    name = "Ingress"
+    url = "/topics/ingress/"
+    weight = 51
+    parent = "topics"
+    [[menu.index]]
+    name = "Projects"
+    url = "/topics/projects/"
+    weight = 52
     parent = "topics"
     [[menu.index]]
     name = "Securing Brigade"
     url = "/topics/security/"
-    weight = 44
+    weight = 53
     parent = "topics"
     [[menu.index]]
     name = "Storage"
     url = "/topics/storage/"
-    weight = 45
-    parent = "topics"
-    [[menu.index]]
-    name = "Testing"
-    url = "/topics/testing/"
-    weight = 46
-    parent = "topics"
-    [[menu.index]]
-    name = "The Brigade.js API"
-    url = "/topics/javascript/"
-    weight = 47
+    weight = 54
     parent = "topics"
     [[menu.index]]
     name = "Workers"
     url = "/topics/workers/"
-    weight = 48
+    weight = 55
     parent = "topics"
+    [[menu.index]]
+    name = "Testing"
+    url = "/topics/testing/"
+    weight = 56
+    parent = "topics"
+    [[menu.index]]
+    name = "Developer Guide"
+    url = "/topics/developers/"
+    weight = 57
+    parent = "topics"
+    [[menu.index]]
+    name = "Releasing Brigade"
+    url = "/topics/releasing/"
+    weight = 58
+    parent = "topics"
+[[menu.index]]
+    name = "Contributing"
+    url = "/contributing/"
+    weight = 60
 
 
 # top navigation - project links

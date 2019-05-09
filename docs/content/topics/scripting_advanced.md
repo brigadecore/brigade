@@ -34,7 +34,7 @@ function exec(e, p) {
     });
 };
 ```
-[advanced-01.js](examples/advanced-01.js)
+[advanced-01.js](../../examples/advanced-01.js)
 
 In the example above, we use implicit JavaScript `Promise` objects for chaining two jobs, then printing `done` after the two jobs are run. Each `Job.run()` call returns a `Promise`, and we call that `Promise`'s `then()` method.
 
@@ -54,7 +54,7 @@ async function exec(e, p) {
     console.log("done");
 }
 ```
-[advanced-02.js](examples/advanced-02.js)
+[advanced-02.js](../../examples/advanced-02.js)
 
 The first thing to note about this example is that we are annotating our `exec()` function with the `async` prefix. This tells the JavaScript runtime that the function is an asynchronous handler.
 
@@ -81,7 +81,7 @@ async function exec(e, p) {
     } 
 };
 ```
-[advanced-03.js](examples/advanced-03.js)
+[advanced-03.js](../../examples/advanced-03.js)
 
 In the example above, the second job (`j2`) will execute `exit 1`, which will cause the container to exit with an error. When `await j2.run()` is executed, it will throw an exception because `j2` exited with an error. In our `catch` block, we print the error message that we receive.
 
@@ -141,7 +141,7 @@ events.on("exec", (e, p) => {
   Group.runEach([j1, j2])
 });
 ```
-[advanced-04.js](examples/advanced-04.js)
+[advanced-04.js](../../examples/advanced-04.js)
 
 In the example above, both `j1` and `j2` will have the same image and the same tasks. They inherited these predefined settings from the `MyJob` class. Using inheritence in this way can reduce boilerplate code.
 
@@ -169,7 +169,7 @@ events.on("exec", (e, p) => {
   Group.runEach([j1, j2])
 });
 ```
-[advanced-05.js](examples/advanced-05.js)
+[advanced-05.js](../../examples/advanced-05.js)
 
 
 If we were to look at the output of these two jobs, we'd see something like this:
