@@ -55,7 +55,7 @@ $ helm upgrade brigade-config brigade/brigade-project --install \
 
 New environments will be created by executing brigade script via `brig` cli. 
 
-![Create Environment Pipeline](/img/preview-environments-create.png)
+![Create Environment Pipeline](https://docs.brigade.sh/img/preview-environments-create.png)
 
 ## Create Namespace
 
@@ -221,8 +221,7 @@ projects:
     tag: prod
 ```
 
-Our ConfigMap will be labeled with  `type: preview-environment-config` label. 
-It will be used as a selector by projects' `brigade.js` script as they're being released.
+Our ConfigMap will be labeled with `type: preview-environment-config` label. This label will be used as a selector by application's `brigade.js` script at the time of a release.
 
 ```js
 const createEnvironmentConfigMap = async (name, projects) => {
@@ -256,7 +255,7 @@ https://github.com/brigadecore/brigade-tutorial-config/blob/master/brigade.js
 
 `Products Service` is a sample application that will be deployed to our preview environment every time it is released (tagged with a `prod` tag). Instance of PostgreSQL deployed  during creation of the environment is a dependency of our service.
 
-![Create Environment Pipeline](/img/preview-environments-release.png)
+![Create Environment Pipeline](https://docs.brigade.sh/img/preview-environments-release.png)
 
 ## Service Brigade Project
 
