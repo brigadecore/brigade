@@ -556,6 +556,119 @@ describe("k8s", function() {
         });
       });
     });
+    describe("cachePVC", () => {
+      let jr: k8s.JobRunner;
+      beforeEach(function() {
+        let j = new mock.MockJob("pequod", "whaler", ["echo hello"]);
+        let p = mock.mockProject();
+        let e = mock.mockEvent();
+        jr = new k8s.JobRunner().init(j, e, p);
+      });
+      context("when global default cache storage class is specified", () => {
+        beforeEach(function() {
+          jr.options.defaultCacheStorageClass = "foo";
+        });
+        context("when the cache storage class is overridden at the project level", () => {
+          beforeEach(function() {
+            jr.project.kubernetes.cacheStorageClass = "bar";
+          });
+          it("it uses that", () => {
+            let pvc = jr['cachePVC']()
+            assert.equal(pvc.spec.storageClassName, jr.project.kubernetes.cacheStorageClass)
+          });
+        });
+        context("when the cache storage class is not overridden at the project level", () => {
+          beforeEach(function() {
+            jr.project.kubernetes.cacheStorageClass = "";
+          });
+          it("it falls back on the global default", () => {
+            let pvc = jr['cachePVC']()
+            assert.equal(pvc.spec.storageClassName, jr.options.defaultCacheStorageClass)
+          });
+        });
+      });
+      context("when global default cache storage class is not specified", () => {
+        beforeEach(function() {
+          jr.options.defaultCacheStorageClass = "";
+        });
+        context("when the cache storage class is overridden at the project level", () => {
+          beforeEach(function() {
+            jr.project.kubernetes.cacheStorageClass = "bar";
+          });
+          it("it uses that", () => {
+            let pvc = jr['cachePVC']()
+            assert.equal(pvc.spec.storageClassName, jr.project.kubernetes.cacheStorageClass)
+          });
+        });
+        context("when the cache storage class is not overridden at the project level", () => {
+          beforeEach(function() {
+            jr.project.kubernetes.cacheStorageClass = "";
+          });
+          it("it falls back on the cluster default", () => {
+            let pvc = jr['cachePVC']()
+            // Undefined means k8s will use the cluster's default storage class
+            assert.isUndefined(pvc.spec.storageClassName);
+          });
+        });
+      });
+    });
+  });
+
+  describe("BuildStorage", () => {
+    describe("buildPVC", () => {
+      let bs: k8s.BuildStorage;
+      beforeEach(function() {
+        bs = new k8s.BuildStorage();
+        bs.proj = mock.mockProject();
+      });
+      context("when global default build storage class is specified", () => {
+        beforeEach(function() {
+          bs.options.defaultBuildStorageClass = "foo";
+        });
+        context("when the build storage class is overridden at the project level", () => {
+          beforeEach(function() {
+            bs.proj.kubernetes.buildStorageClass = "bar";
+          });
+          it("it uses that", () => {
+            let pvc = bs['buildPVC']("10Gi");
+            assert.equal(pvc.spec.storageClassName, bs.proj.kubernetes.buildStorageClass)
+          });
+        });
+        context("when the build storage class is not overridden at the project level", () => {
+          beforeEach(function() {
+            bs.proj.kubernetes.buildStorageClass = "";
+          });
+          it("it falls back on the global default", () => {
+            let pvc = bs['buildPVC']("10Gi");
+            assert.equal(pvc.spec.storageClassName, bs.options.defaultBuildStorageClass)
+          });
+        });
+      });
+      context("when global default build storage class is not specified", () => {
+        beforeEach(function() {
+          bs.options.defaultBuildStorageClass = "";
+        });
+        context("when the build storage class is overridden at the project level", () => {
+          beforeEach(function() {
+            bs.proj.kubernetes.buildStorageClass = "bar";
+          });
+          it("it uses that", () => {
+            let pvc = bs['buildPVC']("10Gi");
+            assert.equal(pvc.spec.storageClassName, bs.proj.kubernetes.buildStorageClass)
+          });
+        });
+        context("when the build storage class is not overridden at the project level", () => {
+          beforeEach(function() {
+            bs.proj.kubernetes.buildStorageClass = "";
+          });
+          it("it falls back on the cluster default", () => {
+            let pvc = bs['buildPVC']("10Gi");
+            // Undefined means k8s will use the cluster's default storage class
+            assert.isUndefined(pvc.spec.storageClassName);
+          });
+        });
+      });
+    });
   });
 });
 

@@ -39,6 +39,8 @@ func main() {
 	flag.StringVar(&ctrConfig.WorkerRequestsMemory, "worker-requests-memory", "", "kubernetes worker memory requests")
 	flag.StringVar(&ctrConfig.WorkerLimitsCPU, "worker-limits-cpu", "", "kubernetes worker cpu limits")
 	flag.StringVar(&ctrConfig.WorkerLimitsMemory, "worker-limits-memory", "", "kubernetes worker memory limits")
+	flag.StringVar(&ctrConfig.DefaultBuildStorageClass, "default-build-storage-class", defaultBuildStorageClass(), "default storage class to use for shared build storage")
+	flag.StringVar(&ctrConfig.DefaultCacheStorageClass, "default-cache-storage-class", defaultCacheStorageClass(), "default storage class to use for caching jobs")
 	flag.Parse()
 
 	if ctrConfig.ProjectServiceAccountRegex == "" {
@@ -103,4 +105,12 @@ func defaultNamespace() string {
 		return ns
 	}
 	return v1.NamespaceDefault
+}
+
+func defaultBuildStorageClass() string {
+	return os.Getenv("BRIGADE_DEFAULT_BUILD_STORAGE_CLASS")
+}
+
+func defaultCacheStorageClass() string {
+	return os.Getenv("BRIGADE_DEFAULT_CACHE_STORAGE_CLASS")
 }
