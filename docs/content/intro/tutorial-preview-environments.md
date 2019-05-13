@@ -30,7 +30,7 @@ Brigade's [brig](../../install/#brig) cli utility should be present on your mach
 
 We will use two GitHub repositories:
 
-- [brigade-tutorial-config](https://github.com/brigadecore/brigade-tutorial-config): containing orchestration responsible for managing brigade projects and creating new environments.
+- [brigade-tutorial-config](https://github.com/brigadecore/brigade-tutorial-config): containing orchestration responsible for managing Brigade projects and creating new environments.
 - [brigade-tutorial-app](https://github.com/brigadecore/brigade-tutorial-app): example microservice used to demonstrate release process.
 
 `GITHUB_SHARED_SECRET` and `GITHUB_TOKEN` environment variables will be used throughout this tutorial and you'll have to ensure they are set correctly. To generate GitHub token follow [this article](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line).
@@ -41,13 +41,11 @@ Let's create new Brigade Project for our `brigade-tutorial-config` repository.
 
 ```sh
 # Ensure brigade charts are added to your helm registry:
-$ helm repo add brigade https://brigadecore.github.io/charts \
-  --kube-context=docker-for-desktop
+$ helm repo add brigade https://brigadecore.github.io/charts
 
 # Create new Brigade Project by installing brigade-project chart:
 $ helm upgrade brigade-config brigade/brigade-project --install \
   --namespace brigade \
-  --kube-context docker-for-desktop \
   --set github.token=$(GITHUB_TOKEN) \
   --set worker.tag=v1.0.0 \
   --set project=brigadecore/brigade-tutorial-config \
@@ -136,8 +134,7 @@ In the same directory add `payload.json` file with this content:
 Let's run our workflow with `brig`:
 
 ```sh
-$ brig run brigadecore/brigade-tutorial-config -f brigade.js -p payload.json \
---kube-context docker-for-desktop --namespace brigade
+$ brig run brigadecore/brigade-tutorial-config -f brigade.js -p payload.json --namespace brigade
 ```
 
 Command above will trigger brigade workflow by executing `brigade.js` script with a data from `payload.json`.
@@ -205,7 +202,7 @@ Lachlan Evenson has been building and publishing [docker images](https://hub.doc
 After Job successfully completes we can verify our PostgreSQL is installed:
 
 ```sh
-$ helm list --kube-context=docker-for-desktop
+$ helm list
 
 NAME            	STATUS  	CHART                	NAMESPACE
 bob-postgresql  	DEPLOYED	postgresql-3.16.     	bob
@@ -268,7 +265,6 @@ Let's create new Brigade Project for our `brigade-tutorial-app` repository.
 ```sh
 $ helm upgrade brigade-app brigade/brigade-project --install \
   --namespace brigade \
-  --kube-context docker-for-desktop \
   --set sharedSecret=$(GITHUB_SHARED_SECRET) \
   --set github.token=$(GITHUB_TOKEN) \
   --set worker.tag=v1.0.0 \
