@@ -61,8 +61,7 @@ New environments will be created by executing brigade script via `brig` cli.
 
 ## Create Namespace
 
-Let's start by adding new `brigade.js` to the root of your repository and adding script 
-that will handle creation of new Kubernetes namespace.
+Let's start by adding a new `brigade.js` script to the root of your repository. For now it will be responsible for creation of a new Kubernetes namespace.
 
 ```js
 
