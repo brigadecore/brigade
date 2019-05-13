@@ -17,10 +17,12 @@ application under development can be tested against production version of applic
 
 For the purpose of this tutorial we're assuming you have a Kubernetes cluster up and running and Brigade components are deployed to `brigade` namespace within it.  
 
-We'll be relying on GitHub webhooks so make sure that `brigade-github-app.enabled` is set to `true` when installing `brigade` helm chart. You can learn more about GitHub integration [here](../topics/github.md)  
+We'll be relying on GitHub webhooks so make sure that `brigade-github-app.enabled` is set to `true` when installing `brigade` helm chart. You can learn more about GitHub integration [here](../../topics/github)  
 
 [Docker for Desktop's Kubernetes](https://docs.docker.com/docker-for-mac/kubernetes/) 
-cluster is sufficient to perform all steps from this tutorial. To accept incoming GitHub Webhooks to your desktop cluster you can use free version of [Ngrok](https://ngrok.com/) service to establish secure tunnelling. Follow this [excellent guide](https://stefanprodan.com/2018/expose-kubernetes-services-over-http-with-ngrok/) to set this up.
+cluster is sufficient to perform all steps from this tutorial.  
+
+To accept incoming GitHub Webhooks you ensure your [ingress](../../topics/ingress/) is configured, alternatively, on desktop cluster you can use free version of [Ngrok](https://ngrok.com/) service to establish secure tunnelling. Follow this [excellent guide](https://stefanprodan.com/2018/expose-kubernetes-services-over-http-with-ngrok/) to set this up.
 
 Brigade's [brig](../../install/#brig) cli utility should be present on your machine.
 
