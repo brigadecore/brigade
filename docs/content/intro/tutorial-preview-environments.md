@@ -7,7 +7,7 @@ section: intro
 In this tutorial we'll create a workflow for creating Development Preview Environments.
 
 Preview Environment is a dedicated Kubernetes Namespace where all of your applications 
-and their dependencies are deployed. We will create a pipeline for both creation of these ephemeral environments 
+and their dependencies are deployed. We will create a pipeline for both creation of these ephemeral environments, 
 as well as auto-deployment of the applications themselves.
 
 Preview Environments are a great place for early experimentation where changes to your 
@@ -15,7 +15,9 @@ application under development can be tested against production version of applic
 
 ## Setup
 
-For the purpose of this tutorial we're assuming you have a Kubernetes cluster up and running and Brigade components are deployed to `brigade` namespace within it. We'll be relying on GitHub webhooks so make sure that `brigade-github-app` is also installed.  
+For the purpose of this tutorial we're assuming you have a Kubernetes cluster up and running and Brigade components are deployed to `brigade` namespace within it.  
+
+We'll be relying on GitHub webhooks so make sure that `brigade-github-app.enabled` is set to `true` when installing `brigade` helm chart. You can learn more about GitHub integration [here](../topics/github.md)  
 
 [Docker for Desktop's Kubernetes](https://docs.docker.com/docker-for-mac/kubernetes/) 
 cluster is sufficient to perform all steps from this tutorial. To accept incoming GitHub Webhooks to your desktop cluster you can use free version of [Ngrok](https://ngrok.com/) service to establish secure tunnelling. Follow this [excellent guide](https://stefanprodan.com/2018/expose-kubernetes-services-over-http-with-ngrok/) to set this up.
