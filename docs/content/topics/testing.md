@@ -1,6 +1,10 @@
 ---
 title: Testing
 description: 'How to test Brigade Scripts.'
+aliases:
+  - /testing.md
+  - /intro/testing.md
+  - /topics/testing.md
 ---
 
 # Testing Brigade Scripts

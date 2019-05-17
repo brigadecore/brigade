@@ -1,6 +1,10 @@
 ---
 title: 'Topic Guides'
 description: 'Deep dives into individual parts of Brigade'
+aliases:
+  - /topics.md
+  - /topics/index.md
+  - /topics/index/
 ---
 
 # Topic Guides

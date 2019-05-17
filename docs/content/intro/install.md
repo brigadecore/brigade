@@ -2,6 +2,10 @@
 title: Installing Brigade
 description: 'Quick install guide for Brigade'
 section: intro
+aliases:
+  - /install.md
+  - /intro/install.md
+  - /topics/intro/install.md
 ---
 
 _This part is a work-in-progress because Brigade is still developer-oriented_

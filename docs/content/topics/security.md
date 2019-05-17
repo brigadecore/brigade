@@ -1,6 +1,10 @@
 ---
 title: Securing Brigade
 description: 'How to configure security for Brigade.'
+aliases:
+  - /security.md
+  - /intro/security.md
+  - /topics/security.md
 ---
 
 # Securing Brigade

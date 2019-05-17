@@ -17,6 +17,7 @@ import (
 type Config struct {
 	Namespace                  string
 	WorkerImage                string
+	WorkerCommand              string
 	WorkerPullPolicy           string
 	WorkerServiceAccount       string
 	ProjectServiceAccount      string
@@ -25,6 +26,8 @@ type Config struct {
 	WorkerRequestsMemory       string
 	WorkerLimitsCPU            string
 	WorkerLimitsMemory         string
+	DefaultBuildStorageClass   string
+	DefaultCacheStorageClass   string
 }
 
 // Controller listens for new brigade builds and starts the worker pods.

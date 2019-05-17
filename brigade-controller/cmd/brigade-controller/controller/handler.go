@@ -82,6 +82,9 @@ func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 	env := workerEnv(project, build, config)
 
 	cmd := []string{"yarn", "-s", "start"}
+	if config.WorkerCommand != "" {
+		cmd = strings.Split(config.WorkerCommand, " ")
+	}
 	if cmdBytes, ok := project.Data["workerCommand"]; ok && len(cmdBytes) > 0 {
 		cmd = strings.Split(string(cmdBytes), " ")
 	}
@@ -264,6 +267,8 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 			Name:      "BRIGADE_REPO_AUTH_TOKEN",
 			ValueFrom: secretRef("github.token", project),
 		},
+		{Name: "BRIGADE_DEFAULT_BUILD_STORAGE_CLASS", Value: config.DefaultBuildStorageClass},
+		{Name: "BRIGADE_DEFAULT_CACHE_STORAGE_CLASS", Value: config.DefaultCacheStorageClass},
 	}
 
 	if config.ProjectServiceAccountRegex != "" {

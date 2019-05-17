@@ -1,6 +1,11 @@
 ---
 title: Container Registry Integration
 description: How to use Brigade with DockerHub, ACR, etc
+aliases:
+  - /dockerhub.md
+  - /gateways/dockerhub
+  - /gateways/dockerhub.md
+  - /topics/gateways/dockerhub.md
 ---
 
 # Container Registry (DockerHub, ACR) Integration

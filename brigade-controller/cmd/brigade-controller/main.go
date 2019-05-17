@@ -30,6 +30,7 @@ func main() {
 	flag.StringVar(&master, "master", "", "master url")
 	flag.StringVar(&ctrConfig.Namespace, "namespace", defaultNamespace(), "kubernetes namespace")
 	flag.StringVar(&ctrConfig.WorkerImage, "worker-image", defaultWorkerImage(), "kubernetes worker image")
+	flag.StringVar(&ctrConfig.WorkerCommand, "worker-command", "", "kubernetes worker command")
 	flag.StringVar(&ctrConfig.WorkerPullPolicy, "worker-pull-policy", defaultWorkerPullPolicy(), "kubernetes worker image pull policy")
 	flag.StringVar(&ctrConfig.WorkerServiceAccount, "worker-service-account", defaultWorkerServiceAccount(), "kubernetes worker service account name")
 	flag.StringVar(&ctrConfig.ProjectServiceAccount, "project-service-account", defaultProjectServiceAccount(), "default brigade project service account name")
@@ -38,6 +39,8 @@ func main() {
 	flag.StringVar(&ctrConfig.WorkerRequestsMemory, "worker-requests-memory", "", "kubernetes worker memory requests")
 	flag.StringVar(&ctrConfig.WorkerLimitsCPU, "worker-limits-cpu", "", "kubernetes worker cpu limits")
 	flag.StringVar(&ctrConfig.WorkerLimitsMemory, "worker-limits-memory", "", "kubernetes worker memory limits")
+	flag.StringVar(&ctrConfig.DefaultBuildStorageClass, "default-build-storage-class", defaultBuildStorageClass(), "default storage class to use for shared build storage")
+	flag.StringVar(&ctrConfig.DefaultCacheStorageClass, "default-cache-storage-class", defaultCacheStorageClass(), "default storage class to use for caching jobs")
 	flag.Parse()
 
 	if ctrConfig.ProjectServiceAccountRegex == "" {
@@ -102,4 +105,12 @@ func defaultNamespace() string {
 		return ns
 	}
 	return v1.NamespaceDefault
+}
+
+func defaultBuildStorageClass() string {
+	return os.Getenv("BRIGADE_DEFAULT_BUILD_STORAGE_CLASS")
+}
+
+func defaultCacheStorageClass() string {
+	return os.Getenv("BRIGADE_DEFAULT_CACHE_STORAGE_CLASS")
 }

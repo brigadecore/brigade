@@ -90,7 +90,9 @@ const kc = getKubeConfig();
  */
 export var options: KubernetesOptions = {
   serviceAccount: "brigade-worker",
-  mountPath: "/src"
+  mountPath: "/src",
+  defaultBuildStorageClass: "",
+  defaultCacheStorageClass: ""
 };
 
 /**
@@ -99,6 +101,8 @@ export var options: KubernetesOptions = {
 export class KubernetesOptions {
   serviceAccount: string;
   mountPath: string;
+  defaultBuildStorageClass: string;
+  defaultCacheStorageClass: string;
 }
 
 class K8sResult implements jobs.Result {
@@ -123,6 +127,7 @@ export class BuildStorage {
   name: string;
   build: string;
   logger: ContextLogger = new ContextLogger("k8s");
+  options: KubernetesOptions = Object.assign({}, options);
 
   /**
    * create initializes a new PVC for storing data.
@@ -196,8 +201,12 @@ export class BuildStorage {
     s.spec.resources = res;
     if (this.proj.kubernetes.buildStorageClass.length > 0) {
       s.spec.storageClassName = this.proj.kubernetes.buildStorageClass;
+    } else if (
+      this.options.defaultBuildStorageClass &&
+      this.options.defaultBuildStorageClass.length > 0
+    ) {
+      s.spec.storageClassName = this.options.defaultBuildStorageClass;
     }
-
     return s;
   }
 }
@@ -780,6 +789,11 @@ export class JobRunner implements jobs.JobRunner {
       this.project.kubernetes.cacheStorageClass.length > 0
     ) {
       s.spec.storageClassName = this.project.kubernetes.cacheStorageClass;
+    } else if (
+      this.options.defaultCacheStorageClass &&
+      this.options.defaultCacheStorageClass.length > 0
+    ) {
+      s.spec.storageClassName = this.options.defaultCacheStorageClass;
     }
     let res = new kubernetes.V1ResourceRequirements();
     res.requests = { storage: this.job.cache.size };

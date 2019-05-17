@@ -1,6 +1,10 @@
 ---
 title: Releasing Brigade
 description: How to cut a new release of Brigade
+aliases:
+  - /releasing.md
+  - /intro/releasing.md
+  - /topics/releasing.md
 ---
 
 # Releasing Brigade

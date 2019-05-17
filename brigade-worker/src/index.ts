@@ -18,6 +18,10 @@
  * - `BRIGADE_BUILD_ID`: The ULID for the build. This is unique.
  * - `BRIGADE_BUILD_NAME`: This is actually the ID of the worker.
  * - `BRIGADE_SERVICE_ACCOUNT`: The service account to use.
+ * - `BRIGADE_DEFAULT_BUILD_STORAGE_CLASS`: The Kubernetes StorageClass to use
+ *   for shared build storage if none is specified in project configuration.
+ * - `BRIGADE_DEFAULT_CACHE_STORAGE_CLASS`: The Kubernetes StorageClass to use
+ *   for caching jobs if none is specified in project configuration.
  *
  * Also, the Brigade script must be written to `brigade.js`.
  */
@@ -125,6 +129,13 @@ if (process.env.BRIGADE_SERVICE_ACCOUNT_REGEX) {
       logger.log(`Service Account ${options.serviceAccount} does not match regex ${process.env.BRIGADE_SERVICE_ACCOUNT_REGEX}`);
       process.exit(1);
   }
+}
+
+if (process.env.BRIGADE_DEFAULT_BUILD_STORAGE_CLASS) {
+  options.defaultBuildStorageClass = process.env.BRIGADE_DEFAULT_BUILD_STORAGE_CLASS
+}
+if (process.env.BRIGADE_DEFAULT_CACHE_STORAGE_CLASS) {
+  options.defaultCacheStorageClass = process.env.BRIGADE_DEFAULT_CACHE_STORAGE_CLASS
 }
 
 // Run the app.

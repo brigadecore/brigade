@@ -1,6 +1,13 @@
 ---
 title: GitHub Integration
 description: How to provide GitHub integration for triggering Brigade builds from GitHub events.
+aliases:
+  - /github.md
+  - /gateways/github
+  - /gateways/github.md
+  - /topics/gateways/github.md
+  - /topics/design/github.md
+  - /intro/topics/github.md
 ---
 
 # GitHub Integration

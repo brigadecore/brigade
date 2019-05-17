@@ -1,6 +1,10 @@
 ---
 title: Secret Management
 description: 'How Brigade utilizes Kubernetes secrets.'
+aliases:
+  - /secrets.md
+  - /topics/secrets.md
+  - /topics/scripting/secrets.md
 ---
 
 # Secret Management

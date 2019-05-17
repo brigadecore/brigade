@@ -1,12 +1,12 @@
 baseURL = "https://docs.brigade.sh/"
-title = "Brigade"
+title = "Brigade Docs"
 theme = "techdoc-brigade"
 canonifyURLs = "true"
-relativeURLs = "false"
+relativeURLs = "true"
 
 [params]
   title = "Brigade"
-  description = "Brigade - Event-driven scripting for Kubernetes."
+  description = "Brigade: Event-driven scripting for Kubernetes."
 
 # main docs 'index' menu on left
 [[menu.index]]
