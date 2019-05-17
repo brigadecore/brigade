@@ -33,24 +33,17 @@ We will use two GitHub repositories:
 - [brigade-tutorial-config](https://github.com/brigadecore/brigade-tutorial-config): containing orchestration responsible for managing Brigade projects and creating new environments.
 - [brigade-tutorial-app](https://github.com/brigadecore/brigade-tutorial-app): example microservice used to demonstrate release process.
 
-`GITHUB_SHARED_SECRET` and `GITHUB_TOKEN` environment variables will be used throughout this tutorial and you'll have to ensure they are set correctly. To generate GitHub token follow [this article](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line).
+GitHub token will be used in this tutorial. To generate it follow [this article](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line).
 
 ## Config Brigade Project
 
 Let's create new Brigade Project for our `brigade-tutorial-config` repository.
 
-```sh
-# Ensure brigade charts are added to your helm registry:
-$ helm repo add brigade https://brigadecore.github.io/charts
-
-# Create new Brigade Project by installing brigade-project chart:
-$ helm upgrade brigade-config brigade/brigade-project --install \
-  --namespace brigade \
-  --set github.token=$(GITHUB_TOKEN) \
-  --set worker.tag=v1.0.0 \
-  --set project=brigadecore/brigade-tutorial-config \
-  --set repository=github.com/brigadecore/brigade-tutorial-config \
-  --set cloneURL=https://github.com/brigadecore/brigade-tutorial-config
+```console
+$ brig project create --namespace brigade
+? Project Name brigadecore/brigade-tutorial-config
+? Full repository name github.com/brigadecore/brigade-tutorial-config
+? Clone URL https://github.com/brigadecore/brigade-tutorial-config
 ```
 
 ## Create Preview Environment Pipeline
@@ -132,7 +125,7 @@ In the same directory add `payload.json` file with this content:
 
 Let's run our workflow with `brig`:
 
-```sh
+```console
 $ brig run brigadecore/brigade-tutorial-config -f brigade.js -p payload.json --namespace brigade
 ```
 
@@ -200,7 +193,7 @@ Lachlan Evenson has been building and publishing [docker images](https://hub.doc
 
 After Job successfully completes we can verify our PostgreSQL is installed:
 
-```sh
+```console
 $ helm list
 
 NAME            	STATUS  	CHART                	NAMESPACE
@@ -259,17 +252,16 @@ https://github.com/brigadecore/brigade-tutorial-config/blob/master/brigade.js
 
 ## Service Brigade Project
 
-Let's create new Brigade Project for our `brigade-tutorial-app` repository.
+Let's create new Brigade Project for our `brigade-tutorial-app` repository. 
 
-```sh
-$ helm upgrade brigade-app brigade/brigade-project --install \
-  --namespace brigade \
-  --set sharedSecret=$(GITHUB_SHARED_SECRET) \
-  --set github.token=$(GITHUB_TOKEN) \
-  --set worker.tag=v1.0.0 \
-  --set project=brigadecore/brigade-tutorial-app \
-  --set repository=github.com/brigadecore/brigade-tutorial-app \
-  --set cloneURL=https://github.com/brigadecore/brigade-tutorial-app
+```console
+$ brig project create --namespace brigade
+? Project Name brigadecore/brigade-tutorial-app
+? Full repository name github.com/brigadecore/brigade-tutorial-app
+? Clone URL https://github.com/brigadecore/brigade-tutorial-app
+Auto-generated a Shared Secret: "uSEtlJicRK3RhRWiOatImwBs"
+? Configure GitHub Access? Yes
+? OAuth2 token <my-github-token>
 ```
 
 ## GitHub Webhook
@@ -281,7 +273,7 @@ Note: if using docker-for-desktop Kubernetes cluster follow [this guide](https:/
 - In your GitHub repository got to `Settings -> Webhooks -> Add Webhook`
 - In `Payload URL` enter your exposed brigade url e.g. http://e8432c17.ngrok.io/events/github
 - Change `Content type` to `application/json`
-- In `Secret` enter your desired shared secret as used during creation of Brigade Project with `GITHUB_SHARED_SECRET`.
+- In `Secret` enter shared secret that was auto-generated during run of `brig project create` command above.
 - Choose `Let me select individual events.` unselect all options that have been preselected and choose `Branch or tag creation`. For the purpose of this tutorial we will be interested in tags created events only.
 
 ## Service Implementation
