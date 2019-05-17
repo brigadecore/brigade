@@ -130,6 +130,7 @@ export class App {
     // Run if an uncaught rejection happens.
     process.on("unhandledRejection", (reason: any, p: Promise<any>) => {
       this.logger.error(reason);
+      console.log("Unhandled rejection: " + reason);
       this.fireError(reason, "unhandledRejection");
     });
 
