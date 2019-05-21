@@ -84,7 +84,8 @@ if (script) {
   require(script);
 }
 
-const logLevel = LogLevel[process.env.BRIGADE_LOG_LEVEL || "LOG"];
+// Log level may come in as lowercased 'log', 'info', etc., if run by the brig cli
+const logLevel = LogLevel[process.env.BRIGADE_LOG_LEVEL.toUpperCase() || "LOG"];
 const logger = new ContextLogger([], logLevel);
 
 const version = require("../package.json").version;
