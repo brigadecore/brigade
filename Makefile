@@ -1,10 +1,164 @@
-# The Docker registry where images are pushed.
-# Note that if you use an org (like on Quay and DockerHub), you should
-# include that: quay.io/foo
-DOCKER_REGISTRY    ?= brigadecore
-DOCKER_BUILD_FLAGS :=
-LDFLAGS            :=
+SHELL ?= /bin/bash
 
+.DEFAULT_GOAL := build
+
+################################################################################
+# Version details                                                              #
+################################################################################
+
+# This will reliably return the short SHA1 of HEAD or, if the working directory
+# is dirty, will return that + "-dirty"
+GIT_VERSION = $(shell git describe --always --abbrev=7 --dirty --match=NeVeRmAtCh)
+
+################################################################################
+# Go build details                                                             #
+################################################################################
+
+BASE_PACKAGE_NAME := github.com/brigadecore/brigade
+
+################################################################################
+# Containerized development environment-- or lack thereof                      #
+################################################################################
+
+ifneq ($(SKIP_DOCKER),true)
+	GO_DEV_IMAGE := quay.io/deis/lightweight-docker-go:v0.6.0
+	JS_DEV_IMAGE := node:12.3.1-stretch
+
+	GO_DOCKER_CMD := docker run \
+		-it \
+		--rm \
+		-e SKIP_DOCKER=true \
+		-v $$(pwd):/go/src/$(BASE_PACKAGE_NAME) \
+		-w /go/src/$(BASE_PACKAGE_NAME) $(GO_DEV_IMAGE)
+
+	JS_DOCKER_CMD := docker run \
+		-it \
+		--rm \
+		-e SKIP_DOCKER=true \
+		-e KUBECONFIG="/code/$(BASE_PACKAGE_NAME)/brigade-worker/test/fake_kubeconfig.yaml" \
+		-v $$(pwd):/code/$(BASE_PACKAGE_NAME) \
+		-w /code/$(BASE_PACKAGE_NAME) $(JS_DEV_IMAGE)
+endif
+
+################################################################################
+# Binaries and Docker images we build and publish                              #
+################################################################################
+
+IMAGES := brigade-api brigade-controller brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig brigade-worker git-sidecar
+
+ifdef DOCKER_REGISTRY
+	DOCKER_REGISTRY := $(DOCKER_REGISTRY)/
+endif
+
+ifdef DOCKER_ORG
+	DOCKER_ORG := $(DOCKER_ORG)/
+endif
+
+DOCKER_IMAGE_PREFIX := $(DOCKER_REGISTRY)$(DOCKER_ORG)
+
+ifdef VERSION
+	MUTABLE_DOCKER_TAG := latest
+else
+	VERSION            := $(GIT_VERSION)
+	MUTABLE_DOCKER_TAG := edge
+endif
+
+LDFLAGS              := -X github.com/brigadecore/brigade/pkg/version.Version=$(VERSION)
+IMMUTABLE_DOCKER_TAG := $(VERSION)
+
+################################################################################
+# Utility targets                                                              #
+################################################################################
+
+.PHONY: dep
+dep:
+	$(GO_DOCKER_CMD) dep ensure -v
+
+.PHONY: format
+format: format-go format-js
+
+.PHONY: format-go
+format-go:
+	$(GO_DOCKER_CMD) sh -c "go list -f '{{.Dir}}' ./... | xargs goimports -w -local github.com/brigadecore/brigade"
+
+.PHONY: yarn-install
+yarn-install:
+	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn install'
+
+.PHONY: format-js
+format-js:
+	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn format'
+
+################################################################################
+# Tests                                                                        #
+################################################################################
+
+# All non-functional tests
+.PHONY: test
+test: verify-vendored-code lint test-unit verify-vendored-code-js test-js
+
+# Verifies there are no discrepancies between desired dependencies and the
+# tracked, vendored dependencies
+.PHONY: verify-vendored-code
+verify-vendored-code:
+	$(GO_DOCKER_CMD) dep check
+
+.PHONY: lint
+lint:
+	$(GO_DOCKER_CMD) golangci-lint run --config ./golangci.yml
+
+# Unit tests. Local only.
+.PHONY: test-unit
+test-unit:
+	$(GO_DOCKER_CMD) go test -v ./...
+
+# Verifies there are no discrepancies between desired dependencies and the
+# tracked, vendored dependencies
+.PHONY: verify-vendored-code-js
+verify-vendored-code-js:
+	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn check --integrity && yarn check --verify-tree'
+
+# JS test is local only
+.PHONY: test-js
+test-js:
+	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn build && yarn test'
+
+################################################################################
+# Build / Publish                                                              #
+################################################################################
+
+build: build-all-images build-brig
+
+.PHONY: build-all-images
+build-all-images: $(addsuffix -build-image,$(IMAGES))
+
+%-build-image:
+	docker build \
+		-f $*/Dockerfile \
+		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
+		--build-arg LDFLAGS='$(LDFLAGS)' \
+		.
+	docker tag $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG)
+
+# Cross-compile binaries for brig
+build-brig:
+	$(GO_DOCKER_CMD) bash -c 'LDFLAGS="$(LDFLAGS)" scripts/build-brig.sh'
+
+.PHONY: push
+push: push-all-images
+
+# You must be logged into DOCKER_REGISTRY before you can push.
+.PHONY: push-all-images
+push-all-images: build-all-images
+push-all-images: $(addsuffix -push-image,$(IMAGES))
+
+%-push-image:
+	docker push $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)
+	docker push $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG)
+
+################################################################################
+# Helm and functional test utils                                               #
+################################################################################
 
 # Helm chart/release defaults
 BRIGADE_RELEASE                 ?= brigade-server
@@ -12,68 +166,20 @@ BRIGADE_NAMESPACE               ?= default
 BRIGADE_GITHUB_GW_SERVICE       := $(BRIGADE_RELEASE)-brigade-github-app
 BRIGADE_GITHUB_GW_INTERNAL_PORT := 80
 BRIGADE_GITHUB_GW_EXTERNAL_PORT := 7744
+BRIGADE_VERSION := $(VERSION)
 
-BINS        = brigade-api brigade-controller brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig
-IMAGES      = brigade-api brigade-controller brigade-cr-gateway brigade-generic-gateway brigade-vacuum brig brigade-worker git-sidecar
-
-
-.PHONY: echo-images
-echo-images:
-	@echo $(IMAGES)
-
-GIT_TAG   = $(shell git describe --tags --always)
-VERSION   ?= ${GIT_TAG}
-IMAGE_TAG ?= ${VERSION}
-LDFLAGS   += -X github.com/brigadecore/brigade/pkg/version.Version=$(VERSION)
-
-CX_OSES = linux windows darwin
-CX_ARCHS = amd64
-
-# Build native binaries
-.PHONY: build
-build: $(BINS)
-
-.PHONY: $(BINS)
-$(BINS): vendor
-	go build -ldflags '$(LDFLAGS)' -o bin/$@ ./$@/cmd/$@
-
-# Cross-compile for Docker+Linux
-build-docker-bins: $(addsuffix -docker-bin,$(BINS))
-
-%-docker-bin: vendor
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./$*/rootfs/$* ./$*/cmd/$*
-
-# To use docker-build, you need to have Docker installed and configured. You should also set
-# DOCKER_REGISTRY to your own personal registry if you are not pushing to the official upstream.
-.PHONY: docker-build
-docker-build: build-docker-bins
-docker-build: $(addsuffix -image,$(IMAGES))
-
-%-image:
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG) $*
-
-# You must be logged into DOCKER_REGISTRY before you can push.
-.PHONY: docker-push
-docker-push: $(addsuffix -push,$(IMAGES))
-
-%-push:
-	docker push $(DOCKER_REGISTRY)/$*:$(IMAGE_TAG)
-
-# Cross-compile binaries for our CX targets.
-# Mainly, this is for brig-cross-compile
-%-cross-compile: vendor
-	@for os in $(CX_OSES); do \
-		echo "building $$os"; \
-		for arch in $(CX_ARCHS); do \
-			GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o ./bin/$*-$$os-$$arch ./$*/cmd/$*; \
-		done; \
-		if [ $$os = 'windows' ]; then \
-			mv ./bin/$*-$$os-$$arch ./bin/$*-$$os-$$arch.exe; \
-		fi; \
-	done
-
-.PHONY: build-release
-build-release: brig-cross-compile
+# DOCKER_IMAGE_PREFIX would have a trailing slash that we won't want here
+# because the charts glue the registry (registry + org, really), image name.
+# and tag together themselves and do not account for the possibility of registry
+# or org being "". So, we create a new variable here called BRIGADE_REGISTRY
+# that is DOCKER_IMAGE_PREFIX minus any trailing slash. If DOCKER_IMAGE_PREFIX
+# is the empty string, we default to "brigadecore", since, again, the charts
+# cannot currently accommodate a blank registry or org.
+ifeq ("$(DOCKER_IMAGE_PREFIX)","")
+	BRIGADE_REGISTRY := brigadecore
+else
+	BRIGADE_REGISTRY := $(shell echo $(DOCKER_IMAGE_PREFIX) | sed 's:/*$$::')
+endif
 
 .PHONY: helm-install
 helm-install: helm-upgrade
@@ -82,22 +188,20 @@ helm-install: helm-upgrade
 helm-upgrade:
 	helm upgrade --install $(BRIGADE_RELEASE) brigade/brigade --namespace $(BRIGADE_NAMESPACE) \
 		--set brigade-github-app.enabled=true \
-		--set controller.tag=$(VERSION) \
-		--set api.tag=$(VERSION) \
-		--set worker.tag=$(VERSION) \
-		--set cr.tag=$(VERSION) \
-		--set vacuum.tag=$(VERSION)
-
-# All non-functional tests
-.PHONY: test
-test: test-style
-test: test-unit
-test: test-js
-
-# Unit tests. Local only.
-.PHONY: test-unit
-test-unit: vendor
-	go test -v ./...
+		--set controller.registry=$(BRIGADE_REGISTRY) \
+		--set controller.tag=$(BRIGADE_VERSION) \
+		--set api.registry=$(BRIGADE_REGISTRY) \
+		--set api.tag=$(BRIGADE_VERSION) \
+		--set worker.registry=$(BRIGADE_REGISTRY) \
+		--set worker.tag=$(BRIGADE_VERSION) \
+		--set cr.enabled=true \
+		--set cr.registry=$(BRIGADE_REGISTRY) \
+		--set cr.tag=$(BRIGADE_VERSION) \
+		--set genericGateway.enabled=true \
+		--set genericGateway.registry=$(BRIGADE_REGISTRY) \
+		--set genericGateway.tag=$(BRIGADE_VERSION) \
+		--set vacuum.registry=$(BRIGADE_REGISTRY) \
+		--set vacuum.tag=$(BRIGADE_VERSION)
 
 # Functional tests assume access to github.com
 # and Brigade chart installed with `--set brigade-github-app.enabled=true`
@@ -119,58 +223,8 @@ test-unit: vendor
 TEST_REPO_COMMIT =  589e15029e1e44dee48de4800daf1f78e64287c0
 KUBECONFIG       ?= ${HOME}/.kube/config
 .PHONY: test-functional
-test-functional: vendor
 test-functional:
 	@kubectl port-forward service/$(BRIGADE_GITHUB_GW_SERVICE) $(BRIGADE_GITHUB_GW_EXTERNAL_PORT):80 &>/dev/null & \
 		echo $$! > /tmp/$(BRIGADE_GITHUB_GW_SERVICE).PID
 	go test --tags integration ./tests -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
 	@kill -TERM $$(cat /tmp/$(BRIGADE_GITHUB_GW_SERVICE).PID)
-
-# JS test is local only
-.PHONY: test-js
-test-js:
-	cd brigade-worker && yarn build && KUBECONFIG="./test/fake_kubeconfig.yaml" yarn test
-
-.PHONY: test-style
-test-style:
-	golangci-lint run --config ./golangci.yml
-
-.PHONY: format
-format: format-go format-js
-
-.PHONY: format-go
-format-go:
-	go list -f '{{.Dir}}' ./... | xargs goimports -w -local github.com/brigadecore/brigade
-
-.PHONY: format-js
-format-js:
-	cd brigade-worker && yarn format
-
-HAS_GOLANGCI     := $(shell command -v golangci-lint;)
-HAS_DEP          := $(shell command -v dep;)
-HAS_GIT          := $(shell command -v git;)
-HAS_YARN         := $(shell command -v yarn;)
-
-.PHONY: bootstrap-js
-bootstrap-js:
-ifndef HAS_YARN
-	$(error You must install yarn)
-endif
-	cd brigade-worker && yarn install
-
-vendor:
-ifndef HAS_GIT
-	$(error You must install git)
-endif
-ifndef HAS_DEP
-	go get -u github.com/golang/dep/cmd/dep
-endif
-ifndef HAS_GOLANGCI
-	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint && \
-	cd $(GOPATH)/src/github.com/golangci/golangci-lint/cmd/golangci-lint && \
-	go install -ldflags "-X 'main.version=$(git describe --tags)' -X 'main.commit=$(git rev-parse --short HEAD)' -X 'main.date=$(date)'"
-endif
-	dep ensure
-
-.PHONY: bootstrap
-bootstrap: vendor

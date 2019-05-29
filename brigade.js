@@ -8,80 +8,94 @@ const projectName = "brigade";
 const projectOrg = "brigadecore";
 
 // Go build defaults
-const goImg = "golang:1.11";
+const goImg = "quay.io/deis/lightweight-docker-go:v0.6.0";
 const gopath = "/go";
 const localPath = gopath + `/src/github.com/${projectOrg}/${projectName}`;
-const goEnv = {
-  "DEST_PATH": localPath,
-  "GOPATH": gopath
-};
 
-// Used by Docker image build/publish jobs
-const sharedMountPrefix = `/mnt/${projectName}/share/`;
-const addMake =
-  "apk upgrade 1>/dev/null && \
-  apk add --update --no-cache make 1>/dev/null";
+// JS build defaults
+const jsImg = "node:12.3.1-stretch";
 
-const noop = {run: () => {return Promise.resolve()}};
+const releaseTagRegex = /^refs\/tags\/(v[0-9]+(?:\.[0-9]+)*(?:\-.+)?)$/;
 
-function goTest(e, project) {
+const noopJob = {run: () => {return Promise.resolve()}};
+
+function goTest() {
   // Create a new job to run Go tests
-  var goTest = new Job("go-test", goImg);
-
-  goTest.env = goEnv;
-  goTest.tasks = [
-    // Need to move the source into GOPATH so vendor/ works as desired.
-    "mkdir -p " + localPath,
-    "mv /src/* " + localPath,
-    "mv /src/.git " + localPath,
-    "cd " + localPath,
-    "make vendor",
-    "make test-style",
-    "make test-unit"
+  var job = new Job("go-test", goImg);
+  job.mountPath = localPath;
+  // Set a few environment variables.
+  job.env = {
+    "SKIP_DOCKER": "true"
+  };
+  // Run Go unit tests
+  job.tasks = [
+    `cd ${localPath}`,
+    "make verify-vendored-code lint test-unit"
   ];
-
-  return goTest;
+  return job;
 }
 
-function jsTest(e, project) {
-  // Run the javascript-based brigade worker tests
-  var jsTest = new Job("js-test", "node:8");
-
-  jsTest.tasks = [
+function jsTest() {
+  // Create a new job to run JS-based Brigade worker tests
+  var job = new Job("js-test", jsImg);
+  // Set a few environment variables.
+  job.env = {
+    "SKIP_DOCKER": "true"
+  };
+  job.tasks = [
     "cd /src",
-    "make bootstrap-js",
-    "make test-js"
+    "make verify-vendored-code-js test-js"
   ];
+  return job;
+}
 
-  return jsTest;
+function buildAndPublishImages(project, version) {
+  let dockerRegistry = project.secrets.dockerhubRegistry || "docker.io";
+  let dockerOrg = project.secrets.dockerhubOrg || "brigadecore";
+  var job = new Job("build-and-publish-images", "docker:stable-dind");
+  job.privileged = true;
+  job.tasks = [
+    "apk add --update --no-cache make git",
+    "dockerd-entrypoint.sh &",
+    "sleep 20",
+    "cd /src",
+    `docker login ${dockerRegistry} -u ${project.secrets.dockerhubUsername} -p ${project.secrets.dockerhubPassword}`,
+    `DOCKER_REGISTRY=${dockerRegistry} DOCKER_ORG=${dockerOrg} VERSION=${version} make build-all-images push-all-images`,
+    `docker logout ${dockerRegistry}`
+  ];
+  return job;
 }
 
 // Here we can add additional Check Runs, which will run in parallel and
 // report their results independently to GitHub
 function runSuite(e, p) {
-  // Important: To prevent Promise.all() from failing fast, we catch and return
-  // all errors. This ensures Promise.all() always resolves. We then iterate
-  // over all resolved values looking for errors. If we find one, we throw it
-  // so the whole build will fail.
-  //
-  // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all#Promise.all_fail-fast_behaviour
-  //
-  // Note: as provided language string is used in job naming, it must consist
-  // of lowercase letters and hyphens only (per Brigade/K8s restrictions)
-  return Promise.all([
-    checkRun(e, p, goTest, "go").catch((err) => {return err}),
-    checkRun(e, p, jsTest, "javascript").catch((err) => {return err}),
-  ])
-  .then((values) => {
-    values.forEach((value) => {
-      if (value instanceof Error) throw value;
+  // For the master branch, we build and publish images in response to the push
+  // event. We test as a precondition for doing that, so we DON'T test here
+  // for the master branch.
+  if (e.revision.ref != "master") {
+    // Important: To prevent Promise.all() from failing fast, we catch and
+    // return all errors. This ensures Promise.all() always resolves. We then
+    // iterate over all resolved values looking for errors. If we find one, we
+    // throw it so the whole build will fail.
+    //
+    // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all#Promise.all_fail-fast_behaviour
+    //
+    // Note: as provided language string is used in job naming, it must consist
+    // of lowercase letters and hyphens only (per Brigade/K8s restrictions)
+    return Promise.all([
+      checkRun(e, p, goTest, "go").catch((err) => {return err}),
+      checkRun(e, p, jsTest, "javascript").catch((err) => {return err}),
+    ])
+    .then((values) => {
+      values.forEach((value) => {
+        if (value instanceof Error) throw value;
+      });
     });
-  });
+  }
 }
 
-// checkRun is a GitHub Check Run that is ran as part of a Checks Suite,
-// running the provided runFunc with language-based messaging
-function checkRun(e, p, runFunc, language) {
+// runTests is a Check Run that is run as part of a Checks Suite
+function runTests(e, p, runFunc, language) {
   console.log("Check requested");
 
   // Create Notification object (which is just a Job to update GH using the Checks API)
@@ -92,7 +106,7 @@ function checkRun(e, p, runFunc, language) {
   note.text = "This task will ensure build, linting and tests all pass.";
 
   // Send notification, then run, then send pass/fail notification
-  return notificationWrap(runFunc(e, p), note);
+  return notificationWrap(runFunc(), note);
 }
 
 // A GitHub Check Suite notification
@@ -118,19 +132,19 @@ class Notification {
   // Send a new notification, and return a Promise<result>.
   run() {
     this.count++;
-    var j = new Job(`${ this.name }-${ this.count }`, "brigadecore/brigade-github-check-run:latest");
-    j.imageForcePull = true;
-    j.env = {
-      CHECK_CONCLUSION: this.conclusion,
-      CHECK_NAME: this.name,
-      CHECK_TITLE: this.title,
-      CHECK_PAYLOAD: this.payload,
-      CHECK_SUMMARY: this.summary,
-      CHECK_TEXT: this.text,
-      CHECK_DETAILS_URL: this.detailsURL,
-      CHECK_EXTERNAL_ID: this.externalID
+    var job = new Job(`${ this.name }-${ this.count }`, "brigadecore/brigade-github-check-run:latest");
+    job.imageForcePull = true;
+    job.env = {
+      "CHECK_CONCLUSION": this.conclusion,
+      "CHECK_NAME": this.name,
+      "CHECK_TITLE": this.title,
+      "CHECK_PAYLOAD": this.payload,
+      "CHECK_SUMMARY": this.summary,
+      "CHECK_TEXT": this.text,
+      "CHECK_DETAILS_URL": this.detailsURL,
+      "CHECK_EXTERNAL_ID": this.externalID
     };
-    return j.run();
+    return job.run();
   }
 }
 
@@ -140,7 +154,6 @@ async function notificationWrap(job, note) {
   try {
     let res = await job.run();
     const logs = await job.logs();
-
     note.conclusion = "success";
     note.summary = `Task "${ job.name }" passed`;
     note.text = note.text = "```" + res.toString() + "```\nComplete";
@@ -160,193 +173,92 @@ async function notificationWrap(job, note) {
   }
 }
 
-function release(p, tag) {
+function githubRelease(p, tag) {
   if (!p.secrets.ghToken) {
     throw new Error("Project must have 'secrets.ghToken' set");
   }
-
   // Cross-compile binaries for a given release and upload them to GitHub.
-  var cx = new Job("release", goImg);
-
-  cx.storage.enabled = true;
+  var job = new Job("release", goImg);
+  job.mountPath = localPath;
   parts = p.repo.name.split("/", 2);
-  cx.env = {
-    GITHUB_USER: parts[0],
-    GITHUB_REPO: parts[1],
-    GITHUB_TOKEN: p.secrets.ghToken,
-    GOPATH: gopath
+  // Set a few environment variables.
+  job.env = {
+    "SKIP_DOCKER": "true",
+    "GITHUB_USER": parts[0],
+    "GITHUB_REPO": parts[1],
+    "GITHUB_TOKEN": p.secrets.ghToken,
   };
-
-  cx.tasks = [
+  job.tasks = [
     "go get github.com/aktau/github-release",
-    `cd /src`,
-    `git checkout ${tag}`,
-    // Need to move the source into GOPATH so vendor/ works as desired.
-    `mkdir -p ${localPath}`,
-    `cp -a /src/* ${localPath}`,
-    `cp -a /src/.git ${localPath}`,
     `cd ${localPath}`,
-    "make vendor",
-    "make build-release",
+    "make build-brig",
     `last_tag=$(git describe --tags ${tag}^ --abbrev=0 --always)`,
     `github-release release \
       -t ${tag} \
       -n "${parts[1]} ${tag}" \
       -d "$(git log --no-merges --pretty=format:'- %s %H (%aN)' HEAD ^$last_tag)" \
       || echo "release ${tag} exists"`,
-    "for bin in ./bin/*; do github-release upload -f ${bin} -n $(basename ${bin}) -t " + tag + "; done"
+    `for bin in ./bin/*; do github-release upload -f $bin -n $(basename $bin) -t ${tag}; done`
   ];
-
-  console.log(cx.tasks);
+  console.log(job.tasks);
   console.log(`releases at https://github.com/${p.repo.name}/releases/tag/${tag}`);
-  return cx;
-}
-
-// Separate docker build stage as there may be multiple consumers/publishers,
-// For example, publishing to Dockerhub below
-function goDockerBuild(e, p) {
-  // We build in a separate pod b/c AKS's Docker is too old to do multi-stage builds.
-  const builder = new Job(`${projectName}-docker-build`, goImg);
-
-  builder.storage.enabled = true;
-  builder.env = goEnv;
-  builder.tasks = [
-    `cd /src`,
-    `mkdir -p ${localPath}/bin`,
-    `cp -a /src/* ${localPath}`,
-    `cp -a /src/.git ${localPath}`,
-    `cd ${localPath}`,
-    "make vendor",
-    "make build-docker-bins",
-    // Copy the Docker rootfs of each binary into shared storage. This is
-    // a little tricky because worker is non-Go, so later we will have
-    // to copy them back.
-    "for i in $(make echo-images); do \
-        mkdir -p " + sharedMountPrefix + "${i}/rootfs; \
-        [ ! -d ${i}/rootfs ] || cp -a ./${i}/rootfs/* " + sharedMountPrefix + "${i}/rootfs/; \
-      done",
-    `ls -lah ${sharedMountPrefix}`
-  ];
-
-  return builder;
-}
-
-function dockerhubPublish(project, tag) {
-  const publisher = new Job("dockerhub-publish", "docker");
-  let dockerRegistry = project.secrets.dockerhubRegistry || "docker.io";
-  let dockerOrg = project.secrets.dockerhubOrg || "brigadecore";
-
-  publisher.docker.enabled = true;
-  publisher.storage.enabled = true;
-  publisher.tasks = [
-    addMake,
-    `docker login ${dockerRegistry} -u ${project.secrets.dockerhubUsername} -p ${project.secrets.dockerhubPassword}`,
-    "cd /src",
-    "for i in $(make echo-images); do \
-       cp -av " + sharedMountPrefix + "${i}/rootfs ./${i}; \
-       DOCKER_REGISTRY=" + dockerOrg + " VERSION=" + tag + " make ${i}-image ${i}-push; \
-     done",
-    `docker logout ${dockerRegistry}`
-  ];
-
-  return publisher;
+  return job;
 }
 
 function slackNotify(title, msg, project) {
   if (project.secrets.SLACK_WEBHOOK) {
-    var slack = new Job(`${projectName}-slack-notify`, "technosophos/slack-notify:latest");
-
-    slack.env = {
-      SLACK_WEBHOOK: project.secrets.SLACK_WEBHOOK,
-      SLACK_USERNAME: "brigade-ci",
-      SLACK_TITLE: title,
-      SLACK_MESSAGE: msg,
-      SLACK_COLOR: "#00ff00"
+    var job = new Job(`${projectName}-slack-notify`, "technosophos/slack-notify:latest");
+    job.env = {
+      "SLACK_WEBHOOK": project.secrets.SLACK_WEBHOOK,
+      "SLACK_USERNAME": "brigade-ci",
+      "SLACK_TITLE": title,
+      "SLACK_MESSAGE": msg,
+      "SLACK_COLOR": "#00ff00"
     };
-    slack.tasks = ["/slack-notify"];
-
-    return slack;
-  } else {
-    console.log(`Slack Notification for '${title}' not sent; no SLACK_WEBHOOK secret found.`);
-    return noop;
+    job.tasks = ["/slack-notify"];
+    return job;
   }
+  console.log(`Slack Notification for '${title}' not sent; no SLACK_WEBHOOK secret found.`);
+  return noopJob;
 }
 
 events.on("exec", (e, p) => {
   return Group.runAll([
-    goTest(e, p),
-    jsTest(e, p)
+    goTest(),
+    jsTest()
   ]);
 });
 
-// Although a GH App will trigger 'check_suite:requested' on a push to master event,
-// it will not for a tag push, hence the need for this handler
 events.on("push", (e, p) => {
-  let doPublish = false;
-  let doRelease = false;
-  let tag = "";
-  let jobs = [];
-
-  if (e.revision.ref.includes("refs/heads/master")) {
-    doPublish = true;
-    tag = "latest";
-  } else if (e.revision.ref.startsWith("refs/tags/")) {
-    doPublish = true;
-    doRelease = true;
-    let parts = e.revision.ref.split("/", 3);
-    tag = parts[2];
-  }
-
-  if (doPublish) {
-    jobs.push(
-      goDockerBuild(e, p),
-      dockerhubPublish(p, tag)
-    );
-  }
-
-  if (doRelease) {
-    jobs.push(
-      release(p, tag),
+  let matchStr = e.revision.ref.match(releaseTagRegex);
+  if (matchStr) {
+    // This is an official release with a semantically versioned tag
+    let matchTokens = Array.from(matchStr);
+    let version = matchTokens[1];
+    return buildAndPublishImages(p, version).run()
+    .then(() => {
+      githubRelease(p, version).run();
+    })
+    .then(() => {
       slackNotify(
         "Brigade Release", 
-        `${tag} release now on GitHub! <https://github.com/${p.repo.name}/releases/tag/${tag}>`, 
+        `${version} release now on GitHub! <https://github.com/${p.repo.name}/releases/tag/${version}>`, 
         p
-      )
-    );
+      ).run();
+    });
   }
-
-  if (jobs.length) {
-    Group.runEach(jobs);
+  if (e.revision.ref == "refs/heads/master") {
+    // This runs tests then builds and publishes "edge" images
+    return Group.runAll([
+      goTest(),
+      jsTest()
+    ])
+    .then(() => {
+      buildAndPublishImages(p, "").run();
+    });
   }
-});
+})
 
 events.on("check_suite:requested", runSuite);
 events.on("check_suite:rerequested", runSuite);
 events.on("check_run:rerequested", runSuite);
-
-events.on("release", (e, p) => {
-  /*
-   * Expects JSON of the form {'tag': 'v1.2.3'}
-   */
-  payload = JSON.parse(e.payload);
-  if (!payload.tag) {
-    throw error("No tag specified");
-  }
-
-  release(p, payload.tag).run();
-});
-
-events.on("publish", (e, p) => {
-  /*
-   * Expects JSON of the form {'tag': 'v1.2.3'}
-   */
-  payload = JSON.parse(e.payload);
-  if (!payload.tag) {
-    throw error("No tag specified");
-  }
-
-  Group.runEach([
-    goDockerBuild(e, p),
-    dockerhubPublish(p, payload.tag)
-  ]);
-});
