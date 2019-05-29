@@ -9,8 +9,6 @@
 /brigade-worker/dist/
 /brigade-worker/doc/
 /tests/testdata/*-generated.*
-/vendor/
-node_modules/
 .DS_Store
 
 # IDEs
