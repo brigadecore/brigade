@@ -59,10 +59,24 @@ function jsTest(e, project) {
 // Here we can add additional Check Runs, which will run in parallel and
 // report their results independently to GitHub
 function runSuite(e, p) {
+  // Important: To prevent Promise.all() from failing fast, we catch and return
+  // all errors. This ensures Promise.all() always resolves. We then iterate
+  // over all resolved values looking for errors. If we find one, we throw it
+  // so the whole build will fail.
+  //
+  // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all#Promise.all_fail-fast_behaviour
+  //
   // Note: as provided language string is used in job naming, it must consist
   // of lowercase letters and hyphens only (per Brigade/K8s restrictions)
-  checkRun(e, p, goTest, "go").catch(e  => {console.error(e.toString())});
-  checkRun(e, p, jsTest, "javascript").catch(e  => {console.error(e.toString())});
+  return Promise.all([
+    checkRun(e, p, goTest, "go").catch((err) => {return err}),
+    checkRun(e, p, jsTest, "javascript").catch((err) => {return err}),
+  ])
+  .then((values) => {
+    values.forEach((value) => {
+      if (value instanceof Error) throw value;
+    });
+  });
 }
 
 // checkRun is a GitHub Check Run that is ran as part of a Checks Suite,
@@ -137,12 +151,12 @@ async function notificationWrap(job, note) {
     note.summary = `Task "${ job.name }" failed for ${ e.buildID }`;
     note.text = "```" + logs + "```\nFailed with error: " + e.toString();
     try {
-      return await note.run();
+      await note.run();
     } catch (e2) {
       console.error("failed to send notification: " + e2.toString());
       console.error("original error: " + e.toString());
-      return e2;
     }
+    throw e;
   }
 }
 
