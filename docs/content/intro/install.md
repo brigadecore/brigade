@@ -31,7 +31,7 @@ Let's take the example of enabling the [GitHub App Gateway](../topics/github.md)
 We would upgrade our `brigade-server` release like so:
 
 ```
-$ helm upgrade -n brigade-server brigade/brigade --set brigade-github-app.enabled=true
+$ helm upgrade brigade-server brigade/brigade --set brigade-github-app.enabled=true
 ```
 
 We'd then locate the external IP as follows:
