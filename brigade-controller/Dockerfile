@@ -6,11 +6,11 @@ COPY brigade-controller/ brigade-controller/
 COPY pkg/ pkg/
 COPY vendor/ vendor/
 RUN go build -ldflags "$LDFLAGS" -o bin/brigade-controller ./brigade-controller/cmd/brigade-controller
+RUN mkdir /scratch-tmp
 
 FROM scratch
+# The glog library will write to here.
+COPY --from=0 /scratch-tmp/ /tmp/
 COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=0 /go/src/github.com/brigadecore/brigade/bin/brigade-controller /usr/bin/brigade-controller
-# We have dependencies that use glog, which tries to write logs to /tmp/
-# Scratch containers don't HAVE a /tmp/ directory-- at least not by default.
-# We redirect the log output to stderr using the --logtostderr switch.
-CMD ["/usr/bin/brigade-controller", "--logtostderr"]
+CMD ["/usr/bin/brigade-controller"]
