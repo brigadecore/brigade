@@ -83,8 +83,8 @@ function runSuite(e, p) {
     // Note: as provided language string is used in job naming, it must consist
     // of lowercase letters and hyphens only (per Brigade/K8s restrictions)
     return Promise.all([
-      checkRun(e, p, goTest, "go").catch((err) => {return err}),
-      checkRun(e, p, jsTest, "javascript").catch((err) => {return err}),
+      runTests(e, p, goTest, "go").catch((err) => {return err}),
+      runTests(e, p, jsTest, "javascript").catch((err) => {return err}),
     ])
     .then((values) => {
       values.forEach((value) => {
