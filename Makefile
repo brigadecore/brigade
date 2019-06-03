@@ -21,7 +21,7 @@ BASE_PACKAGE_NAME := github.com/brigadecore/brigade
 ################################################################################
 
 ifneq ($(SKIP_DOCKER),true)
-	GO_DEV_IMAGE := quay.io/deis/lightweight-docker-go:v0.6.0
+	GO_DEV_IMAGE := quay.io/deis/lightweight-docker-go:v0.7.0
 	JS_DEV_IMAGE := node:12.3.1-stretch
 
 	GO_DOCKER_CMD := docker run \

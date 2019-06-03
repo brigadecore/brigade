@@ -8,7 +8,7 @@ const projectName = "brigade";
 const projectOrg = "brigadecore";
 
 // Go build defaults
-const goImg = "quay.io/deis/lightweight-docker-go:v0.6.0";
+const goImg = "quay.io/deis/lightweight-docker-go:v0.7.0";
 const gopath = "/go";
 const localPath = gopath + `/src/github.com/${projectOrg}/${projectName}`;
 
