@@ -9,6 +9,7 @@
 /brigade-worker/dist/
 /brigade-worker/doc/
 /tests/testdata/*-generated.*
+/.dockerignore
 .DS_Store
 
 # IDEs
