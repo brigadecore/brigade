@@ -627,7 +627,7 @@ export class JobRunner implements jobs.JobRunner {
     // Handle to abort the request on completion and only to ensure that we hook the 'follow logs' events only once
     let followLogsRequest: request.Request = null;
 
-    this.logger.log(`Timeout set at ${timeout}`);
+    this.logger.log(`Timeout set at ${timeout} milliseconds`);
 
     // At intervals, poll the Kubernetes server and get the pod phase. If the
     // phase is Succeeded or Failed, bail out. Otherwise, keep polling.
