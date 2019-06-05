@@ -1,0 +1,68 @@
+{
+    "name": "@types/chai",
+    "version": "4.1.7",
+    "description": "TypeScript definitions for chai",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Jed Mao",
+            "url": "https://github.com/jedmao",
+            "githubUsername": "jedmao"
+        },
+        {
+            "name": "Bart van der Schoor",
+            "url": "https://github.com/Bartvds",
+            "githubUsername": "Bartvds"
+        },
+        {
+            "name": "Andrew Brown",
+            "url": "https://github.com/AGBrown",
+            "githubUsername": "AGBrown"
+        },
+        {
+            "name": "Olivier Chevet",
+            "url": "https://github.com/olivr70",
+            "githubUsername": "olivr70"
+        },
+        {
+            "name": "Matt Wistrand",
+            "url": "https://github.com/mwistrand",
+            "githubUsername": "mwistrand"
+        },
+        {
+            "name": "Josh Goldberg",
+            "url": "https://github.com/joshuakgoldberg",
+            "githubUsername": "joshuakgoldberg"
+        },
+        {
+            "name": "Shaun Luttin",
+            "url": "https://github.com/shaunluttin",
+            "githubUsername": "shaunluttin"
+        },
+        {
+            "name": "Gintautas Miselis",
+            "url": "https://github.com/Naktibalda",
+            "githubUsername": "Naktibalda"
+        },
+        {
+            "name": "Satana Charuwichitratana",
+            "url": "https://github.com/micksatana",
+            "githubUsername": "micksatana"
+        },
+        {
+            "name": "Erik Schierboom",
+            "url": "https://github.com/ErikSchierboom",
+            "githubUsername": "ErikSchierboom"
+        }
+    ],
+    "main": "",
+    "types": "",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git"
+    },
+    "scripts": {},
+    "dependencies": {},
+    "typesPublisherContentHash": "b209d59efd53be161ab3cf1f1172d37245e44815cfb7a43839001f0481545771",
+    "typeScriptVersion": "2.0"
+}
