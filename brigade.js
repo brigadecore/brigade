@@ -17,11 +17,11 @@ const jsImg = "node:12.3.1-stretch";
 
 const releaseTagRegex = /^refs\/tags\/(v[0-9]+(?:\.[0-9]+)*(?:\-.+)?)$/;
 
-const noopJob = {run: () => {return Promise.resolve()}};
+const noopJob = { run: () => { return Promise.resolve() } };
 
 function goTest() {
   // Create a new job to run Go tests
-  var job = new Job("go-test", goImg);
+  var job = new Job("test-go", goImg);
   job.mountPath = localPath;
   // Set a few environment variables.
   job.env = {
@@ -37,7 +37,7 @@ function goTest() {
 
 function jsTest() {
   // Create a new job to run JS-based Brigade worker tests
-  var job = new Job("js-test", jsImg);
+  var job = new Job("test-javascript", jsImg);
   // Set a few environment variables.
   job.env = {
     "SKIP_DOCKER": "true"
@@ -83,30 +83,32 @@ function runSuite(e, p) {
     // Note: as provided language string is used in job naming, it must consist
     // of lowercase letters and hyphens only (per Brigade/K8s restrictions)
     return Promise.all([
-      runTests(e, p, goTest, "go").catch((err) => {return err}),
-      runTests(e, p, jsTest, "javascript").catch((err) => {return err}),
+      runTests(e, p, goTest).catch((err) => { return err }),
+      runTests(e, p, jsTest).catch((err) => { return err }),
     ])
-    .then((values) => {
-      values.forEach((value) => {
-        if (value instanceof Error) throw value;
+      .then((values) => {
+        values.forEach((value) => {
+          if (value instanceof Error) throw value;
+        });
       });
-    });
   }
 }
 
 // runTests is a Check Run that is run as part of a Checks Suite
-function runTests(e, p, runFunc, language) {
+function runTests(e, p, jobFunc) {
   console.log("Check requested");
 
+  let job = jobFunc();
+
   // Create Notification object (which is just a Job to update GH using the Checks API)
-  var note = new Notification(`test-${language}`, e, p);
+  var note = new Notification(job.name, e, p);
   note.conclusion = "";
-  note.title = `Run ${language} tests`;
-  note.summary = `Running the ${language} build/test targets for ${e.revision.commit}`;
+  note.title = `Run ${job.name}`;
+  note.summary = `Running ${job.name} build/test targets for ${e.revision.commit}`;
   note.text = "This task will ensure build, linting and tests all pass.";
 
   // Send notification, then run, then send pass/fail notification
-  return notificationWrap(runFunc(), note);
+  return notificationWrap(job, note);
 }
 
 // A GitHub Check Suite notification
@@ -116,7 +118,7 @@ class Notification {
     this.payload = e.payload;
     this.name = name;
     this.externalID = e.buildID;
-    this.detailsURL = `https://brigadecore.github.io/kashti/builds/${ e.buildID }`;
+    this.detailsURL = `https://brigadecore.github.io/kashti/builds/${e.buildID}`;
     this.title = "running check";
     this.text = "";
     this.summary = "";
@@ -132,7 +134,7 @@ class Notification {
   // Send a new notification, and return a Promise<result>.
   run() {
     this.count++;
-    var job = new Job(`${ this.name }-${ this.count }`, "brigadecore/brigade-github-check-run:latest");
+    var job = new Job(`${this.name}-${this.count}`, "brigadecore/brigade-github-check-run:latest");
     job.imageForcePull = true;
     job.env = {
       "CHECK_CONCLUSION": this.conclusion,
@@ -155,13 +157,13 @@ async function notificationWrap(job, note) {
     let res = await job.run();
     const logs = await job.logs();
     note.conclusion = "success";
-    note.summary = `Task "${ job.name }" passed`;
-    note.text = note.text = "```" + res.toString() + "```\nComplete";
+    note.summary = `Task "${job.name}" passed`;
+    note.text = "```" + res.toString() + "```\nComplete";
     return await note.run();
   } catch (e) {
     const logs = await job.logs();
     note.conclusion = "failure";
-    note.summary = `Task "${ job.name }" failed for ${ e.buildID }`;
+    note.summary = `Task "${job.name}" failed for ${e.buildID}`;
     note.text = "```" + logs + "```\nFailed with error: " + e.toString();
     try {
       await note.run();
@@ -236,16 +238,16 @@ events.on("push", (e, p) => {
     let matchTokens = Array.from(matchStr);
     let version = matchTokens[1];
     return buildAndPublishImages(p, version).run()
-    .then(() => {
-      githubRelease(p, version).run();
-    })
-    .then(() => {
-      slackNotify(
-        "Brigade Release", 
-        `${version} release now on GitHub! <https://github.com/${p.repo.name}/releases/tag/${version}>`, 
-        p
-      ).run();
-    });
+      .then(() => {
+        githubRelease(p, version).run();
+      })
+      .then(() => {
+        slackNotify(
+          "Brigade Release",
+          `${version} release now on GitHub! <https://github.com/${p.repo.name}/releases/tag/${version}>`,
+          p
+        ).run();
+      });
   }
   if (e.revision.ref == "refs/heads/master") {
     // This runs tests then builds and publishes "edge" images
@@ -253,9 +255,9 @@ events.on("push", (e, p) => {
       goTest(),
       jsTest()
     ])
-    .then(() => {
-      buildAndPublishImages(p, "").run();
-    });
+      .then(() => {
+        buildAndPublishImages(p, "").run();
+      });
   }
 })
 
