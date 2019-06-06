@@ -17,14 +17,14 @@ application under development can be tested against production version of applic
 
 For the purpose of this tutorial we're assuming you have a Kubernetes cluster up and running and Brigade components are deployed to `brigade` namespace within it.  
 
-We'll be relying on GitHub webhooks so make sure that `brigade-github-app.enabled` is set to `true` when installing `brigade` helm chart. You can learn more about GitHub integration [here](../../topics/github)  
+We'll be relying on GitHub webhooks so make sure that `brigade-github-app.enabled` is set to `true` when installing `brigade` helm chart. You can learn more about GitHub integration [here](../../topics/github).  
 
 [Docker for Desktop's Kubernetes](https://docs.docker.com/docker-for-mac/kubernetes/) 
 cluster is sufficient to perform all steps from this tutorial.  
 
-To accept incoming GitHub Webhooks you ensure your [ingress](../../topics/ingress/) is configured, alternatively, on desktop cluster you can use free version of [Ngrok](https://ngrok.com/) service to establish secure tunnelling. Follow this [excellent guide](https://stefanprodan.com/2018/expose-kubernetes-services-over-http-with-ngrok/) to set this up.
+To accept incoming GitHub Webhooks, ensure your [ingress](../../topics/ingress/) is configured. Alternatively, on a desktop cluster, you can use a free version of the [Ngrok](https://ngrok.com/) service to establish secure tunneling. Follow this [excellent guide](https://stefanprodan.com/2018/expose-kubernetes-services-over-http-with-ngrok/) to set this up.
 
-Brigade's [brig](../../install/#brig) cli utility should be present on your machine.
+Brigade's [brig](../../intro/install/#brig) cli utility should be present on your machine.
 
 ## Git Repositories
 
@@ -37,7 +37,7 @@ GitHub token will be used in this tutorial. To generate it follow [this article]
 
 ## Config Brigade Project
 
-Let's create new Brigade Project for our `brigade-tutorial-config` repository.
+Let's create a new Brigade Project for our `brigade-tutorial-config` repository.
 
 ```console
 $ brig project create --namespace brigade
@@ -48,7 +48,7 @@ $ brig project create --namespace brigade
 
 ## Create Preview Environment Pipeline
 
-New environments will be created by executing brigade script via `brig` cli. 
+New environments will be created by executing a brigade script via `brig` cli. 
 
 ![Create Environment Pipeline](https://docs.brigade.sh/img/preview-environments-create.png)
 
@@ -117,7 +117,7 @@ events.on("exec", event => {
 
 ```
 
-In the same directory add `payload.json` file with this content:
+In the same directory add `payload.json` file with the following content:
 
 ```json
 {"name": "bob"}
@@ -129,14 +129,14 @@ Let's run our workflow with `brig`:
 $ brig run brigadecore/brigade-tutorial-config -f brigade.js -p payload.json --namespace brigade
 ```
 
-Command above will trigger brigade workflow by executing `brigade.js` script with a data from `payload.json`.
+Command above will trigger a Brigade workflow by executing the `brigade.js` script with the data from `payload.json`.
 
-At this point our `brigade.js` script will simply use Kubernetes API to create new namespace. Name of new namespace is set in payload json.
+At this point our `brigade.js` script will simply use the Kubernetes API to create a new namespace. The name of new namespace is set in payload json.
 
-We first comparing it with a list of `protected` namespace names and then we're using 
+First, we compare the namespace with a list of `protected` namespace names and then we're using 
 API to check if the namespace already exists, and if not, we create it. 
 
-> **With power of Kubernetes API we can easily orchestrate any aspects of our pipeline.**
+> **With the power of the Kubernetes API we can easily orchestrate any aspects of our pipeline.**
 
 ## Environment Dependencies
 
@@ -185,13 +185,11 @@ const provisionEnvironment = async (environmentName, projects) => {
 Before deploying our PostgreSQL StatefulSet we check if one already exists. 
 To list StatefulSets in a Namespace we need to use `listNamespacedStatefulSet` 
 api endpoint that lives in `kubernetes.Apps_v1Api` set of APIs. 
-We create instance of it called `k8sAppClient` first.
 
-Once we verify our dependency needs to be installed we create `postgresql` Job that will 
-run `lachlanevenson/k8s-helm:v2.12.3` image as it's worker. 
+Once we verify our dependency needs to be installed we create a `postgresql` Job that will run the `lachlanevenson/k8s-helm:v2.12.3` image as its worker. 
 Lachlan Evenson has been building and publishing [docker images](https://hub.docker.com/r/lachlanevenson/k8s-helm/) with every version of Helm.
 
-After Job successfully completes we can verify our PostgreSQL is installed:
+After the Job successfully completes, we can verify our PostgreSQL is installed:
 
 ```console
 $ helm list
@@ -202,7 +200,8 @@ bob-postgresql  	DEPLOYED	postgresql-3.16.     	bob
 
 ## Environment ConfigMap
 
-Environment ConfigMap is created in `brigade` namespace where we keep track of all projects we would like to be installed in our environment. One ConfigMap is created per environment.
+
+The Environment ConfigMap is created in the `brigade` namespace where we keep track of all projects we would like to be installed in our environment. One ConfigMap is created per environment.
 
 Sample of data structure:
 
@@ -214,7 +213,7 @@ projects:
     tag: prod
 ```
 
-Our ConfigMap will be labeled with `type: preview-environment-config` label. This label will be used as a selector by application's `brigade.js` script at the time of a release.
+Our ConfigMap will be labeled with a `type: preview-environment-config` label. This label will be used as a selector by the application's `brigade.js` script at the time of a release.
 
 ```js
 const createEnvironmentConfigMap = async (name, projects) => {
@@ -240,19 +239,19 @@ const provisionEnvironment = async (environmentName, projects) => {
 
 ```
 
-You can see final implementation of the script in the reference repository:
+You can see the final implementation of the script in the reference repository:
 
 https://github.com/brigadecore/brigade-tutorial-config/blob/master/brigade.js
 
 ## Products Project
 
-`Products Service` is a sample application that will be deployed to our preview environment every time it is released (tagged with a `prod` tag). Instance of PostgreSQL deployed  during creation of the environment is a dependency of our service.
+`Products Service` is a sample application that will be deployed to our preview environment every time it is released (tagged with a `prod` tag). The instance of PostgreSQL deployed  during creation of the environment is a dependency of our service.
 
 ![Create Environment Pipeline](https://docs.brigade.sh/img/preview-environments-release.png)
 
 ## Service Brigade Project
 
-Let's create new Brigade Project for our `brigade-tutorial-app` repository. 
+Let's create a new Brigade Project for our `brigade-tutorial-app` repository. 
 
 ```console
 $ brig project create --namespace brigade
@@ -266,19 +265,19 @@ Auto-generated a Shared Secret: "uSEtlJicRK3RhRWiOatImwBs"
 
 ## GitHub Webhook
 
-To enable auto-deployment of our service to all (interested) preview environments we fist need to enable a GitHub Webhook that will notify Brigade of a new release.
+To enable auto-deployment of our service to all (interested) preview environments we first need to enable a GitHub Webhook that will notify Brigade of a new release.
 
 Note: if using docker-for-desktop Kubernetes cluster follow [this guide](https://stefanprodan.com/2018/expose-kubernetes-services-over-http-with-ngrok/) to set up Ngrok tunneling to your local `brigade-github-app` service.
 
-- In your GitHub repository got to `Settings -> Webhooks -> Add Webhook`
+- In your GitHub repository go to `Settings -> Webhooks -> Add Webhook`
 - In `Payload URL` enter your exposed brigade url e.g. http://e8432c17.ngrok.io/events/github
 - Change `Content type` to `application/json`
-- In `Secret` enter shared secret that was auto-generated during run of `brig project create` command above.
-- Choose `Let me select individual events.` unselect all options that have been preselected and choose `Branch or tag creation`. For the purpose of this tutorial we will be interested in tags created events only.
+- In `Secret` enter the shared secret that was auto-generated during run of `brig project create` command above.
+- Choose `Let me select individual events`. Unselect all options that have been preselected and choose `Branch or tag creation`. For the purpose of this tutorial we will be interested in tags created events only.
 
 ## Service Implementation
 
-Our Python Products Microservice will expose REST Api that will handle adding products to a database.
+Our Python Products Microservice will expose a REST Api that will handle adding products to a database.
 
 Service codebase has 3 main parts:
 
@@ -330,7 +329,7 @@ events.on("create", event => {
   });
 });
 ```
-- Use Kubernetes API to fetch all ConfigMaps from `brigade` namespace of type `preview-environment-config`
+- Use the Kubernetes API to fetch all ConfigMaps from the `brigade` namespace of type `preview-environment-config`
 - For every preview environment ConfigMap:
     - find out if that environment is interested in our service and 
     - check if current payload tag matches tag specified for the environment.
@@ -382,7 +381,7 @@ const getTagCommit = async (tag, org, repo) => {
 };
 ```
 
-- We execute Brigade Job that runs Helm deployment by providing appropriate docker image tag
+- We execute a Brigade Job that runs Helm deployment by providing appropriate docker image tag
 
 ```js
 const deploy = async (environmentName, gitSha) => {
@@ -405,7 +404,7 @@ const deploy = async (environmentName, gitSha) => {
 };
 ```
 
-You can see final implementation of the script in the reference repository:
+You can see the final implementation of the script in the reference repository:
 
 https://github.com/brigadecore/brigade-tutorial-app/blob/master/brigade.js
 
@@ -421,4 +420,4 @@ Once `prod` tag is added, GitHub will send payload event to our Brigade GitHub G
 
 ## Summary
 
-In this tutorial we've learnt how to orchestrate creation of isolated Preview Environments where changes can be pushed continuously after every code commit. You can use similar approach for releases to your long lived environments like staging or production. Head over to [brigade-tutorial-config](https://github.com/brigadecore/brigade-tutorial-config) and [brigade-tutorial-app](https://github.com/brigadecore/brigade-tutorial-app) repositories to see complete implementation of brigade scripts used in this tutorial.
+In this tutorial we've learnt how to orchestrate creation of isolated Preview Environments where changes can be pushed continuously after every code commit. You can use a similar approach for releases to your long lived environments, like staging or production. Head over to [brigade-tutorial-config](https://github.com/brigadecore/brigade-tutorial-config) and [brigade-tutorial-app](https://github.com/brigadecore/brigade-tutorial-app) repositories to see complete implementation of brigade scripts used in this tutorial.
