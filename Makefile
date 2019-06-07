@@ -21,6 +21,7 @@ BASE_PACKAGE_NAME := github.com/brigadecore/brigade
 ################################################################################
 
 ifneq ($(SKIP_DOCKER),true)
+	PROJECT_ROOT := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 	GO_DEV_IMAGE := quay.io/deis/lightweight-docker-go:v0.7.0
 	JS_DEV_IMAGE := node:12.3.1-stretch
 
@@ -28,7 +29,7 @@ ifneq ($(SKIP_DOCKER),true)
 		-it \
 		--rm \
 		-e SKIP_DOCKER=true \
-		-v $$(pwd):/go/src/$(BASE_PACKAGE_NAME) \
+		-v $(PROJECT_ROOT):/go/src/$(BASE_PACKAGE_NAME) \
 		-w /go/src/$(BASE_PACKAGE_NAME) $(GO_DEV_IMAGE)
 
 	JS_DOCKER_CMD := docker run \
@@ -36,7 +37,7 @@ ifneq ($(SKIP_DOCKER),true)
 		--rm \
 		-e SKIP_DOCKER=true \
 		-e KUBECONFIG="/code/$(BASE_PACKAGE_NAME)/brigade-worker/test/fake_kubeconfig.yaml" \
-		-v $$(pwd):/code/$(BASE_PACKAGE_NAME) \
+		-v $(PROJECT_ROOT):/code/$(BASE_PACKAGE_NAME) \
 		-w /code/$(BASE_PACKAGE_NAME) $(JS_DEV_IMAGE)
 endif
 
