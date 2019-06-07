@@ -1,0 +1,20 @@
+{
+  "author": "Lloyd Hilaiel <lloyd@hilaiel.com> (http://lloyd.io)",
+  "name": "JSONSelect",
+  "description": "CSS-like selectors for JSON",
+  "version": "0.4.0",
+  "homepage": "http://jsonselect.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lloyd/JSONSelect.git"
+  },
+  "main": "src/jsonselect",
+  "engines": {
+    "node": ">=0.4.7"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "node src/test/run.js"
+  }
+}

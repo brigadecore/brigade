@@ -1,0 +1,4 @@
+*
+!brigade-controller/
+!pkg/
+!vendor/

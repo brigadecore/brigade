@@ -1,0 +1,4 @@
+*
+!brigade-api/
+!pkg/
+!vendor/

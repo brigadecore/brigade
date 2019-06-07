@@ -40,22 +40,24 @@ This document covers environment setup, how to run functional tests and developm
 
 ## Prerequisites
 
-- Go toolchain (latest version)
 - Minikube
 - Docker
 - make
-- Node.js, Yarn and NPM
 
 ## Clone the Repository In GOPATH
 
-Follow these steps when cloning the brigade repository to use an existing `GOPATH` for your system:
+Building from source does not _require_ code to be on your `GOPATH` since all
+builds are containerized by default, however, if you do have Go installed
+locally and wish (for instance) for your text editor or IDE's Go support to work
+properly with this project, then follow these optional steps for cloning the
+Brigade repository into your `GOPATH`:
 
-```bash
-export GOPATH=$(go env GOPATH) # GOPATH is set to $HOME/go by default
-export PATH=$GOPATH/bin:$PATH # 'make bootstrap brig' will try to execute binnaries in $GOPATH/bin
-mkdir -p $GOPATH/src/github.com/brigadecore
-git clone https://github.com/brigadecore/brigade $GOPATH/src/github.com/brigadecore/brigade
-cd $GOPATH/src/github.com/brigadecore/brigade
+```console
+$ export GOPATH=$(go env GOPATH) # GOPATH is set to $HOME/go by default
+$ export PATH=$GOPATH/bin:$PATH
+$ mkdir -p $GOPATH/src/github.com/brigadecore
+$ git clone https://github.com/brigadecore/brigade $GOPATH/src/github.com/brigadecore/brigade
+$ cd $GOPATH/src/github.com/brigadecore/brigade
 ```
 
 **Note**: this leaves you at the tip of **master** in the repository where active development
@@ -65,63 +67,123 @@ is happening. You might prefer to checkout the most recent stable tag:
 
 After cloning the project locally, you should run this command to [configure the remote](https://help.github.com/articles/configuring-a-remote-for-a-fork/): 
 
-```bash
-git remote add fork https://github.com/<your GitHub username>/brigade
+```console
+$ git remote add fork https://github.com/<your GitHub username>/brigade
 ```
 
 To push your changes to your fork, run:
 
-```bash
-git push --set-upstream fork <branch>
+```console
+$ git push --set-upstream fork <branch>
 ```
 
-## Building Source
+## Working with Go Code
 
-To build all of the source, run this:
+To run lint checks:
 
-```
-$ make bootstrap build
-```
-
-To build just the client binaries, run this:
-
-```
-$ make bootstrap brig
+```console
+$ make lint
 ```
 
-To build Docker images, run:
+To format the Go files:
 
-```
-$ make docker-build
+```console
+$ make format-go
 ```
 
-## Javascript Bootstrap/Test
+To run the unit tests:
 
-To bootstrap the Javascript dependencies required by Brigade Worker:
+```console
+$ make test-unit
+```
 
+To re-run Go dependency resolution:
+
+```console
+$ make dep
 ```
-$ make bootstrap-js
-```
+
+## Working with JS Code (for the Brigade Worker)
 
 To format the Javascript files:
 
-```
+```console
 $ make format-js
 ```
 
 To run the tests:
 
-```
+```console
 $ make test-js
 ```
 
+To re-run JS dependency resolution:
+
+```console
+$ make yarn-install
+```
+
 (See `Running the Brigade-Worker Locally` below for live testing against a running instance.)
+
+## Building Source
+
+To build all of the source, run this:
+
+```console
+$ make build-all-images build-brig
+```
+
+To build just the Docker images, run:
+
+```console
+$ make build-all-images
+```
+
+To build just the client binaries (for Mac, Linux, and Windows on amd64), run
+this:
+
+```console
+$ make build-brig
+```
+
+## Pushing Images
+
+By default, built images are named using the following scheme:
+`<component>:<version>`. If you wish to push customized or experimental images
+you have built from source to a particular org on a particular Docker registry,
+this can be controlled with environment variables.
+
+The following, for instance, will build images that can be pushed to the
+`krancour` org on Dockerhub (the registry that is implied when none is
+specified).
+
+```console
+$ DOCKER_ORG=krancour make build-all-images
+```
+
+To build for the `krancour` org on a different registry, such as `quay.io`:
+
+```console
+$ DOCKER_REGISTRY=quay.io DOCKER_ORG=krancour make build-all-images
+```
+
+Images built with names that specify registries and orgs for which you have
+write access can be pushed using `make push-all-images`. Note that the
+`build-all-images` target is a dependency for the `push-all-images` target, so
+the build _and_ push processes can be accomplished together like so:
+
+Note also that you _must_ be logged into the registry in question _before_
+attempting this.
+
+```console
+$ DOCKER_REGISTRY=quay.io DOCKER_ORG=krancour make push-all-images
+```
 
 ## Minikube configuration
 
 Start Minikube. Your addons should look like this:
 
-```
+```console
 $  minikube addons list
 - addon-manager: enabled
 - dashboard: disabled
@@ -139,19 +201,18 @@ for Brigade to operate.
 For local development, you will want to point your Docker client to the Minikube
 Docker daemon:
 
-```
+```console
 $ eval $(minikube docker-env)
 ```
 
-Running `make docker-build` will push the Brigade images to the Minikube Docker
-daemon. The image tag (set by `VERSION` in the [Makefile](../../Makefile)) will default
-to a unique value such as `v1.0.0-80-g6721dd8`.  You can verify this by running `docker images`
-and affirming these tagged images are listed.
+Running `make build-all-images` will build the Brigade images using the Minikube
+Docker daemon. The image tag will be derived from the git sha.  You can verify
+this by running `docker images` and affirming these tagged images are listed.
 
 Brigade charts are hosted in the separate [brigadecore/charts][charts]
 repo, so we'll need to add the corresponding Helm repo locally:
 
-```
+```console
 $ helm repo add brigade https://brigadecore.github.io/charts
 "brigade" has been added to your repositories
 ```
@@ -165,29 +226,37 @@ $ make helm-install
 
 This will issue the appropriate command to create a new Brigade chart release on this cluster.
 
-(Note: `helm init` may be needed to get tiller up and running on the cluster, if not already started.)
+Note: `helm init` may be needed to get tiller up and running on the cluster, if not already started.
 
-During active development, the flow might then look like:
+Note also: If you were specific about `DOCKER_ORG` and/or `DOCKER_REGISTRY` when
+building images, you should also be specific when running `make helm-install`.
+For instance:
+
+```console
+$ DOCKER_ORG=krancour make build-all-images helm-install
+```
+
+During active development, the overall flow might then look like this:
 
 ```console
 $ # make code changes, commit
-$ make docker-build
-$ make helm-upgrade
+$ make build-all-images helm-upgrade
 $ # (repeat)
 $ # push to fork and create pull request
 ```
 
-For finer-grained control, you may wish to create a custom `values.yaml` file for the chart
-and set various values in addition to the latest image tags:
+For finer-grained control over installation, do not use `make helm-upgrade`.
+Instead, you may opt to create a custom `values.yaml` file for the chart and set
+various values in addition to the latest image tags:
 
-```
+```console
 $ helm inspect values brigade/brigade > myvalues.yaml
-$ open myvalues.yaml    # Change all `tag:` fields to be `tag: <tag>`, etc.
+$ open myvalues.yaml    # Change all `registry:` and `tag:` fields as appropriate
 ```
 
 From here, you can install Brigade into Minikube using the Helm chart:
 
-```
+```console
 $ helm install -n brigade brigade/brigade -f myvalues.yaml
 ```
 
@@ -209,7 +278,7 @@ Assuming you have Brigade installed (either on minikube or another cluster) and
 your `$KUBECONFIG` is pointing to that cluster, you can run `brigade-controller`
 locally.
 
-```
+```console
 $ ./bin/brigade-controller --kubeconfig $KUBECONFIG
 ```
 
@@ -247,7 +316,7 @@ to set.
 
 Here is an example script for running a quick test against a locally running brigade worker.
 
-```
+```bash
 #!/bin/bash
 
 export BRIGADE_EVENT_TYPE=quicktest

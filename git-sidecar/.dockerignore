@@ -1,5 +1,2 @@
-cmd
-tmp
-test
-README.md
-Dockerfile
+*
+!git-sidecar/
