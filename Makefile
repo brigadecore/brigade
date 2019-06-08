@@ -84,11 +84,11 @@ format-go:
 
 .PHONY: yarn-install
 yarn-install:
-	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn install'
+	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn install"
 
 .PHONY: format-js
 format-js:
-	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn format'
+	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn format"
 
 ################################################################################
 # Tests                                                                        #
@@ -117,12 +117,12 @@ test-unit:
 # tracked, vendored dependencies
 .PHONY: verify-vendored-code-js
 verify-vendored-code-js:
-	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn check --integrity && yarn check --verify-tree'
+	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn check --integrity && yarn check --verify-tree"
 
 # JS test is local only
 .PHONY: test-js
 test-js:
-	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn build && yarn test'
+	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn build && yarn test"
 
 ################################################################################
 # Build / Publish                                                              #
@@ -144,7 +144,7 @@ build-all-images: $(addsuffix -build-image,$(IMAGES))
 
 # Cross-compile binaries for brig
 build-brig:
-	$(GO_DOCKER_CMD) bash -c 'LDFLAGS="$(LDFLAGS)" scripts/build-brig.sh'
+	$(GO_DOCKER_CMD) bash -c "LDFLAGS=\"$(LDFLAGS)\" scripts/build-brig.sh"
 
 .PHONY: push
 push: push-all-images
