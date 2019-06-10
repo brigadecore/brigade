@@ -6,32 +6,32 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 	"regexp"
-	"strings"
+
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/Masterminds/goutils"
-	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/brigadecore/brigade/pkg/brigade"
 	"github.com/brigadecore/brigade/pkg/storage"
 	"github.com/brigadecore/brigade/pkg/storage/kube"
+
+	"github.com/spf13/cobra"
 )
+
+const abort = "project could not be saved: %s"
 
 const projectCreateUsage = `Create a new project.
 
 Create a new project by answering questions or supplying a configuration file.
 
+For Projects that use a Version Control System (VCS) like GitHub or BitBucket,
 Project names are typically in the form 'ORG/PROJECT' or 'USER/PROJECT". For
-example, brigadecore/brigade or brigadecore/empty-testbed.
+example, brigadecore/brigade or brigadecore/empty-testbed. For non-VCS Projects,
+feel free to use your own preferred naming terms.
 
 A Brigade project provides a context in which a brigade.js file is executed.
-Projects are frequently tied to (Git) source code repositories, and contain
+Projects can be tied to (Git) source code repositories, and contain
 configuration data such as secrets, Kubernetes-specific directives, and
 settings for gateways or workers.
 
@@ -42,8 +42,6 @@ is specified in conjunction with -x/--no-prompts, then the values in the file wi
 be used without prompting the user for any changes.
 `
 
-const abort = "project could not be saved: %s"
-
 var (
 	projectCreateConfig      string
 	projectCreateOut         string
@@ -53,9 +51,9 @@ var (
 	projectCreateReplace     bool
 )
 
-// defaultProject has the default project settings.
+// defaultProjectVCS has the default project settings.
 // Rather than use this directly, you should get a copy from newProject().
-var defaultProject = brigade.Project{
+var defaultProjectVCS = brigade.Project{
 	Name: "brigadecore/empty-testbed",
 	Repo: brigade.Repo{
 		Name:     "github.com/brigadecore/empty-testbed",
@@ -70,9 +68,9 @@ var defaultProject = brigade.Project{
 	},
 }
 
-// newProject clones the default project.
-func newProject() *brigade.Project {
-	proj := defaultProject
+// newProjectVCS clones the default project.
+func newProjectVCS() *brigade.Project {
+	proj := defaultProjectVCS
 	return &proj
 }
 
@@ -107,7 +105,8 @@ func createProject(out io.Writer) error {
 
 	store := kube.New(c, globalNamespace)
 
-	proj := newProject()
+	// set the default to VCS
+	proj := newProjectVCS()
 	if projectCreateConfig != "" {
 		if proj, err = loadProjectConfig(projectCreateConfig, proj); err != nil {
 			return err
@@ -123,12 +122,13 @@ func createProject(out io.Writer) error {
 	}
 
 	if !projectCreateNoPrompts {
-		if err := projectCreatePrompts(proj, store); err != nil {
+		if err := projectCreateVCSOrNoVCS(proj, store); err != nil {
 			return err
 		}
 	}
 
 	// Disable sidecar container if set to NONE
+	// this is used to cancel the default being set on function `newProjectVCS()`
 	if proj.Kubernetes.VCSSidecar == "NONE" {
 		proj.Kubernetes.VCSSidecar = ""
 	}
@@ -173,75 +173,32 @@ func createProject(out io.Writer) error {
 	return store.CreateProject(proj)
 }
 
-// projectCreatePrompts handles all of the prompts.
-//
-// Default values are read from the given project. Values are then
-// replaced on that object.
-func projectCreatePrompts(p *brigade.Project, store storage.Store) error {
-	// We always set this to the globalNamespace, otherwise things will break.
-	p.Kubernetes.Namespace = globalNamespace
-
-	message := "Project Name"
-	if projectCreateReplace {
-		message = "Existing " + message
-	}
-
-	initialName := p.Name
-	if err := survey.AskOne(&survey.Input{
-		Message: message,
-		Help:    "By convention, this is user/project or org/project",
-		Default: p.Name,
-	}, &p.Name, survey.Required); err != nil {
-		return err
-	}
-
-	// If the name changes, let's quickly try to set some sensible defaults.
-	// If the name has not changed, we assume we should keep using the previously
-	// loaded values, since this is an update or a namespace move or something
-	// similar.
-	if p.Name != initialName {
-		p.Repo.Name = fmt.Sprintf("github.com/%s", p.Name)
-		p.Repo.CloneURL = fmt.Sprintf("https://%s.git", p.Repo.Name)
-	}
-
-	qs := []*survey.Question{
+func projectCreateVCSOrNoVCS(p *brigade.Project, store storage.Store) error {
+	var vcsQuestionResult string
+	err := survey.Ask([]*survey.Question{
 		{
-			Name: "name",
-			Prompt: &survey.Input{
-				Message: "Full repository name",
-				Help:    "A protocol-neutral path to your repo, like github.com/foo/bar",
-				Default: p.Repo.Name,
+			Name: "VCSOrNoVCS",
+			Prompt: &survey.Select{
+				Message: "VCS or no-VCS project?",
+				Help:    "Does your Prject require the pull of a repo stored on a Version Control System (e.g. GitHub or BitBucket)?",
+				Options: []string{"VCS", "no-VCS"},
 			},
 		},
-		{
-			Name: "cloneURL",
-			Prompt: &survey.Input{
-				Message: "Clone URL (https://github.com/your/repo.git)",
-				Help:    "The URL that Git should use to clone. The protocol (https, git, ssh) will determine how the repo is fetched.",
-				Default: p.Repo.CloneURL,
-			},
-		},
-	}
+	}, &vcsQuestionResult)
 
-	if err := survey.Ask(qs, &p.Repo); err != nil {
+	if err != nil {
 		return fmt.Errorf(abort, err)
 	}
 
-	// Don't prompt for key if the URL is HTTP(S).
-	if !isHTTP(p.Repo.CloneURL) {
-		var fname string
-		err := survey.AskOne(&survey.Input{
-			Message: "Path to SSH key for SSH clone URLs (leave blank to skip)",
-			Help:    "The local path to an SSH key file, which will be uploaded to the project. Use this for SSH clone URLs.",
-		}, &fname, loadFileValidator)
-		if err != nil {
-			return fmt.Errorf(abort, err)
-		}
-		if key := loadFileStr(fname); key != "" {
-			p.Repo.SSHKey = replaceNewlines(key)
-		}
+	if vcsQuestionResult == "VCS" {
+		return projectCreatePromptsVCS(p, store)
 	}
 
+	return projectCreatePromptsNoVCS(p, store)
+
+}
+
+func addEditSecrets(p *brigade.Project, store storage.Store) error {
 	if len(p.Secrets) > 0 {
 		fmt.Println("The following secrets are already defined:")
 		for k := range p.Secrets {
@@ -288,73 +245,34 @@ func projectCreatePrompts(p *brigade.Project, store storage.Store) error {
 			}
 			p.Secrets[kvp.Key] = kvp.Value
 		}
-
-	}
-
-	if p.SharedSecret == "" {
-		p.SharedSecret, _ = goutils.RandomAlphaNumeric(24)
-		fmt.Printf("Auto-generated a Shared Secret: %q\n", p.SharedSecret)
-	}
-
-	configureGitHub := false
-	if err := survey.AskOne(&survey.Confirm{
-		Message: "Configure GitHub Access?",
-		Help:    "Configure GitHub CI/CD integration for this project",
-	}, &configureGitHub, nil); err != nil {
-		return fmt.Errorf(abort, err)
-	} else if configureGitHub {
-		if err := survey.Ask([]*survey.Question{
-			{
-				Name: "token",
-				Prompt: &survey.Input{
-					Message: "OAuth2 token",
-					Help:    "Used for contacting the GitHub API. GitHub issues this.",
-					Default: p.Github.Token,
-				},
-			},
-			{
-				Name: "baseURL",
-				Prompt: &survey.Input{
-					Message: "GitHub Enterprise URL",
-					Help:    "If using GitHub Enterprise, set the base URL here",
-					Default: p.Github.BaseURL,
-				},
-			},
-			{
-				Name: "uploadURL",
-				Prompt: &survey.Input{
-					Message: "GitHub Enterprise upload URL",
-					Help:    "If using GitHub Enterprise, set the upload URL here",
-					Default: p.Github.UploadURL,
-				},
-			},
-		}, &p.Github); err != nil {
-			return fmt.Errorf(abort, err)
-		}
-	}
-
-	doAdvanced := false
-	if err := survey.AskOne(&survey.Confirm{
-		Message: "Configure advanced options",
-		Help:    "Show the advanced configuration options for projects",
-	}, &doAdvanced, nil); err != nil {
-		return fmt.Errorf(abort, err)
-	} else if doAdvanced {
-		return projectAdvancedPrompts(p, store)
 	}
 	return nil
 }
 
-func projectAdvancedPrompts(p *brigade.Project, store storage.Store) error {
+func addGenericGatewaySecret(p *brigade.Project, store storage.Store) error {
+	err := survey.AskOne(&survey.Input{
+		Message: "Secret for the Generic Gateway (alphanumeric characters only). Press Enter if you want it to be auto-generated",
+		Help:    "This is the secret that secures the Generic Gateway. Only alphanumeric characters are accepted. Provide an empty string if you want an auto-generated one",
+	}, &p.GenericGatewaySecret, genericGatewaySecretValidator)
+	if err != nil {
+		return fmt.Errorf(abort, err)
+	}
+
+	// user pressed Enter key, so let's auto-generate a GenericGateway secret
+	if p.GenericGatewaySecret == "" {
+		var err error
+		p.GenericGatewaySecret, err = goutils.RandomAlphaNumeric(5)
+		if err != nil {
+			return fmt.Errorf("Error in generating Generic Gateway Secret: %s", err.Error())
+		}
+		fmt.Printf("Auto-generated Generic Gateway Secret: %s\n", p.GenericGatewaySecret)
+	}
+	return nil
+}
+
+// advancedQuestionsKubernetes asks Kubernetes related questions
+func advancedQuestionsKubernetes(p *brigade.Project, store storage.Store) ([]*survey.Question, error) {
 	questions := []*survey.Question{
-		{
-			Name: "vCSSidecar",
-			Prompt: &survey.Input{
-				Message: "Custom VCS sidecar (enter 'NONE' for no sidecar)",
-				Help:    "The default sidecar uses Git to fetch your repository",
-				Default: p.Kubernetes.VCSSidecar,
-			},
-		},
 		{
 			Name: "buildStorageSize",
 			Prompt: &survey.Input{
@@ -385,7 +303,7 @@ func projectAdvancedPrompts(p *brigade.Project, store storage.Store) error {
 	scn, err := store.GetStorageClassNames()
 	if err != nil {
 		// this error indicates a cluster communication problem, so exit now since project creation will probably fail as well
-		return err
+		return nil, err
 	}
 
 	// in the unlikely event that there are no storage classes installed, let the user know
@@ -413,11 +331,12 @@ func projectAdvancedPrompts(p *brigade.Project, store storage.Store) error {
 		questions = append(questions, storageClassQuestions...)
 	}
 
-	if err := survey.Ask(questions, &p.Kubernetes); err != nil {
-		return fmt.Errorf(abort, err)
-	}
+	return questions, nil
+}
 
-	if err := survey.Ask([]*survey.Question{
+// advancedQuestionsWorker asks Worker related questions
+func advancedQuestionsWorker(p *brigade.Project, store storage.Store) []*survey.Question {
+	return []*survey.Question{
 		{
 			Name: "registry",
 			Prompt: &survey.Input{
@@ -455,24 +374,18 @@ func projectAdvancedPrompts(p *brigade.Project, store storage.Store) error {
 				Default: p.Worker.PullPolicy,
 			},
 		},
-	}, &p.Worker); err != nil {
-		return fmt.Errorf(abort, err)
 	}
-	if err := survey.Ask([]*survey.Question{
+}
+
+// advancedQuestionsProject asks Project related questions
+func advancedQuestionsProject(p *brigade.Project, store storage.Store) []*survey.Question {
+	return []*survey.Question{
 		{
 			Name: "workerCommand",
 			Prompt: &survey.Input{
 				Message: "Worker command",
 				Help:    "EXPERT: Override the worker's default command",
 				Default: "",
-			},
-		},
-		{
-			Name: "initGitSubmodules",
-			Prompt: &survey.Confirm{
-				Message: "Initialize Git submodules",
-				Help:    "For repos that have submodules, initialize them on each clone. Not recommended on public repos.",
-				Default: p.InitGitSubmodules,
 			},
 		},
 		{
@@ -499,32 +412,19 @@ func projectAdvancedPrompts(p *brigade.Project, store storage.Store) error {
 				Default: p.ImagePullSecrets,
 			},
 		},
-		{
-			Name: "defaultScriptName",
-			Prompt: &survey.Input{
-				Message: "Default script ConfigMap name",
-				Help:    "EXPERT: It is possible to store a default script in a ConfigMap. Supply the name of that ConfigMap to use the script.",
-				Default: p.DefaultScriptName,
-			},
-		},
-		{
-			Name: "brigadejsPath",
-			Prompt: &survey.Input{
-				Message: "brigade.js file path relative to the repository root",
-				Help:    "brigade.js file path relative to the repository root, e.g. 'mypath/brigade.js'",
-				Default: p.BrigadejsPath,
-			},
-			Validate: func(ans interface{}) error {
-				sans := fmt.Sprintf("%v", ans)
-				if filepath.IsAbs(sans) {
-					return errors.New("Path must be relative")
-				}
-				return nil
-			},
-		},
-	}, p); err != nil {
+	}
+}
+
+func addBrigadeJS(p *brigade.Project, store storage.Store) error {
+	err := survey.AskOne(&survey.Input{
+		Message: "Default script ConfigMap name",
+		Help:    "It is possible to store a default script in a ConfigMap. Supply the name of that ConfigMap to use the script.",
+		Default: p.DefaultScriptName,
+	}, &p.DefaultScriptName, nil)
+	if err != nil {
 		return fmt.Errorf(abort, err)
 	}
+
 	var fname string
 	err = survey.AskOne(&survey.Input{
 		Message: "Upload a default brigade.js script",
@@ -537,22 +437,35 @@ func projectAdvancedPrompts(p *brigade.Project, store storage.Store) error {
 		p.DefaultScript = loadFileStr(fname)
 	}
 
-	err = survey.AskOne(&survey.Input{
-		Message: "Secret for the Generic Gateway (alphanumeric characters only). Press Enter if you want it to be auto-generated",
-		Help:    "This is the secret that secures the Generic Gateway. Only alphanumeric characters are accepted. Provide an empty string if you want an auto-generated one",
-	}, &p.GenericGatewaySecret, genericGatewaySecretValidator)
-	if err != nil {
-		return fmt.Errorf(abort, err)
+	return nil
+}
+
+func setProjectName(p *brigade.Project, store storage.Store, configureVCS bool) error {
+	// We always set this to the globalNamespace, otherwise things will break.
+	p.Kubernetes.Namespace = globalNamespace
+
+	message := "Project Name"
+	if projectCreateReplace {
+		message = "Existing " + message
 	}
 
-	// user pressed Enter key, so let's auto-generate a GenericGateway secret
-	if p.GenericGatewaySecret == "" {
-		var err error
-		p.GenericGatewaySecret, err = goutils.RandomAlphaNumeric(5)
-		if err != nil {
-			return fmt.Errorf("Error in generating Generic Gateway Secret: %s", err.Error())
-		}
-		fmt.Printf("Auto-generated Generic Gateway Secret: %s\n", p.GenericGatewaySecret)
+	initialName := p.Name
+	if err := survey.AskOne(&survey.Input{
+		Message: message,
+		Help:    "By convention, this is user/project or org/project",
+		Default: p.Name,
+	}, &p.Name, survey.Required); err != nil {
+		return err
+	}
+
+	// We do configure VCS details only if asked (i.e. only if the Project is a VCS Project)
+	// If the name changes, let's quickly try to set some sensible defaults.
+	// If the name has not changed, we assume we should keep using the previously
+	// loaded values, since this is an update or a namespace move or something
+	// similar.
+	if p.Name != initialName && configureVCS {
+		p.Repo.Name = fmt.Sprintf("github.com/%s", p.Name)
+		p.Repo.CloneURL = fmt.Sprintf("https://%s.git", p.Repo.Name)
 	}
 
 	return nil
@@ -569,73 +482,4 @@ func genericGatewaySecretValidator(val interface{}) error {
 		return nil
 	}
 	return fmt.Errorf("Generic Gateway secret should only contain alphanumeric characters")
-}
-
-// loadFileValidator validates that a file exists and can be read.
-func loadFileValidator(val interface{}) error {
-	name := os.ExpandEnv(val.(string))
-	if name == "" {
-		return nil
-	}
-	_, err := ioutil.ReadFile(name)
-	return err
-}
-
-// loadFileStr should not be called unless loadFileValidator is called first.
-func loadFileStr(name string) string {
-	if name == "" {
-		return ""
-	}
-	data, err := ioutil.ReadFile(name)
-	if err != nil {
-		return ""
-	}
-	return string(data)
-}
-
-func replaceNewlines(data string) string {
-	return strings.Replace(data, "\n", "$", -1)
-}
-
-// loadProjectConfig loads a project configuration from the local filesystem.
-func loadProjectConfig(file string, proj *brigade.Project) (*brigade.Project, error) {
-	rdr, err := os.Open(file)
-	if err != nil {
-		return proj, err
-	}
-	defer rdr.Close()
-
-	sec, err := parseSecret(rdr)
-	if err != nil {
-		return proj, err
-	}
-
-	if sec.Name == "" {
-		return proj, fmt.Errorf("secret in %s is missing required name field", file)
-	}
-	return kube.NewProjectFromSecret(sec, "")
-}
-
-func parseSecret(reader io.Reader) (*v1.Secret, error) {
-	dec := yaml.NewYAMLOrJSONDecoder(reader, 4096)
-	secret := &v1.Secret{}
-	// We are only decoding the first item in the YAML.
-	err := dec.Decode(secret)
-
-	// Convert StringData to Data
-	if len(secret.StringData) > 0 {
-		if secret.Data == nil {
-			secret.Data = map[string][]byte{}
-		}
-		for key, val := range secret.StringData {
-			secret.Data[key] = []byte(val)
-		}
-	}
-
-	return secret, err
-}
-
-func isHTTP(str string) bool {
-	str = strings.ToLower(str)
-	return strings.HasPrefix(str, "http:") || strings.HasPrefix(str, "https:")
 }

@@ -194,7 +194,7 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 	proj.DefaultScriptName = sv.String("defaultScriptName")
 
 	proj.Repo = brigade.Repo{
-		Name: def(sv.String("repository"), proj.Name),
+		Name: sv.String("repository"),
 		// Note that we have to undo the key escaping.
 		SSHKey:   strings.Replace(sv.String("sshKey"), "$", "\n", -1),
 		CloneURL: sv.String("cloneURL"),

@@ -46,7 +46,7 @@ const wrapClient = fns => {
   // wrap client methods with retry logic
   for (let fn of fns) {
     let originalFn = defaultClient[fn.name];
-    defaultClient[fn.name] = function() {
+    defaultClient[fn.name] = function () {
       return retry(originalFn, arguments, 4000, 5);
     };
   }
@@ -248,7 +248,7 @@ export class JobRunner implements jobs.JobRunner {
   cancel: boolean;
   reconnect: boolean;
 
-  constructor() {}
+  constructor() { }
 
   /**
    * init takes a generic so we can run this against mocks as well as against the real Job type.
@@ -331,9 +331,9 @@ export class JobRunner implements jobs.JobRunner {
         // add the reference to the env var list.
 
         if (val.secretKeyRef != null && !allowSecretKeyRef) {
-         // allowSecretKeyRef is not to true so disallow setting secrets in the environment
-         this.logger.warn(`Using secretKeyRef is not allowed in this project, not setting environment variable ${key}`);
-         continue
+          // allowSecretKeyRef is not to true so disallow setting secrets in the environment
+          this.logger.warn(`Using secretKeyRef is not allowed in this project, not setting environment variable ${key}`);
+          continue
         }
 
         envVars.push({
@@ -595,7 +595,7 @@ export class JobRunner implements jobs.JobRunner {
         } else {
           obj = JSON.parse(data);
         }
-      } catch (e) {} //let it stay connected.
+      } catch (e) { } //let it stay connected.
       if (obj && obj.object) {
         this.pod = obj.object as kubernetes.V1Pod;
       }
@@ -910,7 +910,7 @@ function newRunnerPod(
     jobShell = "/bin/sh";
   }
   c1.command = [jobShell, "/hook/main.sh"];
-  
+
   c1.imagePullPolicy = imageForcePull ? "Always" : "IfNotPresent";
   c1.securityContext = new kubernetes.V1SecurityContext();
 
@@ -1006,7 +1006,7 @@ export function secretToProject(
 ): Project {
   let p: Project = {
     id: secret.metadata.name,
-    name: b64dec(secret.data.repository),
+    name: secret.metadata.annotations["projectName"],
     kubernetes: {
       namespace: secret.metadata.namespace || ns,
       buildStorageSize: "50Mi",
@@ -1018,15 +1018,17 @@ export function secretToProject(
       cacheStorageClass: "",
       buildStorageClass: ""
     },
-    repo: {
-      name: secret.metadata.annotations["projectName"],
-      cloneURL: null,
-      initGitSubmodules: false
-    },
     secrets: {},
     allowPrivilegedJobs: true,
     allowHostMounts: false
   };
+  if (secret.data.repository != null) {
+    p.repo = {
+      name: b64dec(secret.data.repository),
+      cloneURL: null,
+      initGitSubmodules: false
+    }
+  }
   if (secret.data.vcsSidecar) {
     p.kubernetes.vcsSidecar = b64dec(secret.data.vcsSidecar);
   }

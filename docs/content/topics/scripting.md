@@ -33,6 +33,7 @@ For the examples in this document, we have created a project via `brig` with the
 
 ```console
 $ brig project create
+? VCS or no-VCS project? VCS
 ? Project Name brigadecore/empty-testbed
 ? Full repository name github.com/brigadecore/empty-testbed
 ? Clone URL (https://github.com/your/repo.git) https://github.com/brigadecore/empty-testbed.git
