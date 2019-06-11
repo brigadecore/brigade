@@ -193,7 +193,7 @@ function githubRelease(p, tag) {
   job.tasks = [
     "go get github.com/aktau/github-release",
     `cd ${localPath}`,
-    "make build-brig",
+    `VERSION=${tag} make build-brig`,
     `last_tag=$(git describe --tags ${tag}^ --abbrev=0 --always)`,
     `github-release release \
       -t ${tag} \
