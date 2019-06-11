@@ -94,6 +94,28 @@ function runSuite(e, p) {
   }
 }
 
+// runCheck is the default function invoked on a check_run:* event
+//
+// It determines which check is being requested (from the payload body)
+// and runs this particular check, or else throws an error if the check
+// is not found
+function runCheck(e, p) {
+  payload = JSON.parse(e.payload);
+
+  // Extract the check name
+  name = payload.body.check_run.name;
+
+  // Determine which check to run
+  switch(name) {
+    case "test-go":
+      return runTests(e, p, goTest);
+    case "test-javascript":
+      return runTests(e, p, jsTest);
+    default:
+      throw new Error(`No check found with name: ${name}`);
+  }
+}
+
 // runTests is a Check Run that is run as part of a Checks Suite
 function runTests(e, p, jobFunc) {
   console.log("Check requested");
@@ -109,6 +131,26 @@ function runTests(e, p, jobFunc) {
 
   // Send notification, then run, then send pass/fail notification
   return notificationWrap(job, note);
+}
+
+// handleIssueComment handles an issue_comment event, parsing the comment text
+// and determining whether or not to trigger an action
+function handleIssueComment(e, p) {
+  console.log("handling issue comment....")
+  payload = JSON.parse(e.payload);
+
+  // Extract the comment body and trim whitespace
+  comment = payload.body.comment.body.trim();
+
+  // Here we determine if a comment should provoke an action
+  switch(comment) {
+    // Currently, the do-all '/brig run' comment is supported,
+    // for (re-)triggering the default Checks suite
+    case "/brig run":
+      return runSuite(e, p);
+    default:
+      console.log(`No applicable action found for comment: ${comment}`);
+  }
 }
 
 // A GitHub Check Suite notification
@@ -263,4 +305,6 @@ events.on("push", (e, p) => {
 
 events.on("check_suite:requested", runSuite);
 events.on("check_suite:rerequested", runSuite);
-events.on("check_run:rerequested", runSuite);
+events.on("check_run:rerequested", runCheck);
+events.on("issue_comment:created", handleIssueComment);
+events.on("issue_comment:edited", handleIssueComment);
