@@ -51,6 +51,7 @@ brig project create
 
 Output would be similar to this:
 ```
+? VCS or no-VCS project? VCS
 ? Project name brigadecore/empty-testbed
 ? Full repository name github.com/brigadecore/empty-testbed
 ? Clone URL (https://github.com/your/repo.git) https://github.com/brigadecore/empty-testbed.git
@@ -196,45 +197,18 @@ On each Build, Brigade Worker will run this file and create a container with a n
 
 We will create a Project that will listen for a [SimpleEvent](https://docs.brigade.sh/topics/genericgateway/), which you can think of as a simple JSON object.
 
-To create a new project, use `brig project create`. You should pay attention to the following:
-
-- `Full repository name` and `Clone URL` will not be taken into consideration, so use whatever values you want
-- Select `Yes` for `advanced options`
-- Give `NONE` for a `Custom VCS sidecar` since we won't use VCS
-- Use `brigade.js` for the `Upload a default brigade.js script` option
-- Feel free to select a `secret for the Generic Gateway` (we're using `mysecret` in the example below)
-- You can leave all other options at their default values (just press Enter on every interactive prompt)
+To create a new project, use `brig project create`. You should make sure to add a `brigade.js` script, either using the `Default script ConfigMap name` or the `Upload a default brigade.js script` option.
 
 ```
+? VCS or no-VCS project? no-VCS
 ? Project Name brigadecore/empty-testbed
-? Full repository name github.com/brigadecore/empty-testbed
-? Clone URL (https://github.com/your/repo.git) https://github.com/brigadecore/empty-testbed.git
 ? Add secrets? No
-Auto-generated a Shared Secret: "VdNQ1eO4qVBXNmZZgNcO51CP"
-? Configure GitHub Access? No
-? Configure advanced options Yes
-? Custom VCS sidecar (enter 'NONE' for no sidecar) NONE
-? Build storage size
-? SecretKeyRef usage No
-? Build storage class default
-? Job cache storage class default
-? Worker image registry or DockerHub org
-? Worker image name
-? Custom worker image tag
-? Worker image pull policy IfNotPresent
-? Worker command yarn -s start
-? Initialize Git submodules No
-? Allow host mounts No
-? Allow privileged jobs No
-? Image pull secrets
-? Default script ConfigMap name
-? brigade.js file path relative to the repository root
-? Upload a default brigade.js script brigade.js
 ? Secret for the Generic Gateway (alphanumeric characters only). Press Enter if you want it to be auto-generated mysecret
+? Default script ConfigMap name
+? Upload a default brigade.js script brigade.js
+? Configure advanced options [? for help] (y/N)
 Project ID: brigade-4897c99315be5d2a2403ea33bdcb24f8116dc69613d5917d879d5f
 ```
-
-*Yes, we do know that the process to create a non-VCS/Generic Gateway Project is a bit cumbersome. This is going to be fixed in [#816](https://github.com/brigadecore/brigade/issues/816)*
 
 ### Send a SimpleEvent to the Generic Gateway
 
