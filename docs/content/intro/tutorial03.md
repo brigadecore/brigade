@@ -29,7 +29,7 @@ Project ID: brigade-5ea0b3d7707afb5d04d55544485da6aff4f58006c1633f4ae0cb11
 
 Note: to explore the advanced options, each prompt offers further info when `?` is entered.
 
-## Configuring Github
+## Configuring GitHub
 
 We want to build our project each time a new commit is pushed to master, and each time we get a new Pull Request.
 
