@@ -7,15 +7,32 @@ import (
 
 const testProjectSecret = "./testdata/project_secret.json"
 
-func TestInitProject(t *testing.T) {
-	p := newProject()
-	if p.Name != defaultProject.Name {
+func TestInitProjectVCS(t *testing.T) {
+	p := newProjectVCS()
+	if p.Name != defaultProjectVCS.Name {
 		t.Fatal("newProject is not cloning default project")
 	}
 
 	p.Name = "overrideName"
-	if p.Name == defaultProject.Name {
+	if p.Name == defaultProjectVCS.Name {
 		t.Fatal("newProject returned the pointer to the default project.")
+	}
+}
+
+func TestInitProjectNoVCS(t *testing.T) {
+	p := newProjectVCS()     // VCS is the default
+	setDefaultValuesNoVCS(p) // switch the defaults to a no VCS project
+
+	if p.Kubernetes.VCSSidecar != "NONE" {
+		t.Fatal("VCSSidecar should be NONE")
+	}
+
+	if p.Repo.CloneURL != "" {
+		t.Fatal("CloneURL should be an empty string")
+	}
+
+	if p.Repo.Name != "" {
+		t.Fatal("Repo.Name should be an empty string")
 	}
 }
 
@@ -36,7 +53,7 @@ func TestParseSecret(t *testing.T) {
 }
 
 func TestLoadProjectConfig(t *testing.T) {
-	proj, err := loadProjectConfig(testProjectSecret, newProject())
+	proj, err := loadProjectConfig(testProjectSecret, newProjectVCS())
 	if err != nil {
 		t.Fatal(err)
 	}
