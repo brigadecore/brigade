@@ -16,6 +16,7 @@ An example setup might look like the following:
 
 ```console
 $ brig project create
+? VCS or no-VCS project? VCS
 ? Project name brigadecore/empty-testbed
 ? Full repository name github.com/brigadecore/empty-testbed
 ? Clone URL (https://github.com/your/repo.git) https://github.com/brigadecore/empty-testbed.git

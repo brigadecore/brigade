@@ -15,7 +15,8 @@ The Brigade server tracks separate configuration for each project you set up. To
 Here we create a project for our GitHub repo:
 
 ```console
- $ brig project create
+$ brig project create
+? VCS or no-VCS project? VCS
 ? Project Name bacongobbler/uuid-generator
 ? Full repository name github.com/bacongobbler/uuid-generator
 ? Clone URL (https://github.com/your/repo.git) https://github.com/bacongobbler/uuid-generator.git

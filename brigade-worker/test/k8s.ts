@@ -21,16 +21,16 @@ describe("k8s", function() {
     });
   });
 
-  describe("secretToProject", function() {
-    it("converts secret to project", function() {
-      let s = mockSecret();
+  describe("secretToProjectVCS", function() {
+    it("converts secret to project - with a VCS", function() {
+      let s = mockSecretVCS();
       let p = k8s.secretToProject("default", s);
       assert.equal(
         p.id,
         "brigade-7e3d1157331f6726338395e320cffa41d2bc9e20157fd7a4df355d"
       );
-      assert.equal(p.name, "github.com/brigadecore/test-private-testbed");
-      assert.equal(p.repo.name, "brigadecore/test-private-testbed");
+      assert.equal(p.name, "brigadecore/test-private-testbed");
+      assert.equal(p.repo.name, "github.com/brigadecore/test-private-testbed");
       assert.equal(
         p.repo.cloneURL,
         "https://github.com/brigadecore/empty-testbed.git"
@@ -46,15 +46,15 @@ describe("k8s", function() {
     });
     describe("when cloneURL is missing", function() {
       it("omits cloneURL", function() {
-        let s = mockSecret();
+        let s = mockSecretVCS();
         s.data.cloneURL = "";
         let p = k8s.secretToProject("default", s);
         assert.equal(
           p.id,
           "brigade-7e3d1157331f6726338395e320cffa41d2bc9e20157fd7a4df355d"
         );
-        assert.equal(p.name, "github.com/brigadecore/test-private-testbed");
-        assert.equal(p.repo.name, "brigadecore/test-private-testbed");
+        assert.equal(p.name, "brigadecore/test-private-testbed");
+        assert.equal(p.repo.name, "github.com/brigadecore/test-private-testbed");
         assert.equal(p.repo.token, "pretend password\n");
         assert.equal(p.kubernetes.namespace, "default");
         assert.equal(p.kubernetes.vcsSidecar, "vcs-image:latest");
@@ -63,6 +63,26 @@ describe("k8s", function() {
 
         assert.isNull(p.repo.cloneURL);
       });
+    });
+  });
+
+  describe("secretToProjectnoVCS", function() {
+    it("converts secret to project - without a VCS", function() {
+      let s = mockSecretnoVCS();
+      let p = k8s.secretToProject("default", s);
+      assert.equal(
+        p.id,
+        "brigade-0e0ae80bb1243d95ea707257baebda6ccf96094cd0353d875ae903"
+      );
+      assert.equal(p.name, "noVCSProject");
+      assert.equal(p.repo, undefined);
+      assert.equal(s.data["genericGatewaySecret"], "SThkQ1g=") // Project class does not contain genericGatewaySecret field - this is because we do not want to expose the genericGatewaySecret to any job
+      assert.equal(p.kubernetes.namespace, "default");
+      assert.equal(p.kubernetes.vcsSidecar, "");
+      assert.property(p.secrets, "hello");
+      assert.equal(p.secrets.hello, "world");
+      assert.equal(p.kubernetes.cacheStorageClass, "tashtego");
+      assert.equal(p.kubernetes.buildStorageClass, "tashtego");
     });
   });
 
@@ -672,7 +692,7 @@ describe("k8s", function() {
   });
 });
 
-function mockSecret(): kubernetes.V1Secret {
+function mockSecretVCS(): kubernetes.V1Secret {
   let s = new kubernetes.V1Secret();
   s.metadata = new kubernetes.V1ObjectMeta();
   s.data = {
@@ -696,6 +716,29 @@ function mockSecret(): kubernetes.V1Secret {
   };
   s.metadata.name =
     "brigade-7e3d1157331f6726338395e320cffa41d2bc9e20157fd7a4df355d";
+
+  return s;
+}
+
+function mockSecretnoVCS(): kubernetes.V1Secret {
+  let s = new kubernetes.V1Secret();
+  s.metadata = new kubernetes.V1ObjectMeta();
+  s.data = {
+    secrets: "eyJoZWxsbyI6ICJ3b3JsZCJ9Cg==",
+    buildStorageSize: "NTBNaQ==",
+    "kubernetes.cacheStorageClass": "dGFzaHRlZ28=",
+    "kubernetes.buildStorageClass": "dGFzaHRlZ28=",
+    genericGatewaySecret: "SThkQ1g="
+  };
+  s.metadata.annotations = {
+    projectName: "noVCSProject"
+  };
+  s.metadata.labels = {
+    managedBy: "brigade",
+    release: "brigadecore-test-private-testbed"
+  };
+  s.metadata.name =
+    "brigade-0e0ae80bb1243d95ea707257baebda6ccf96094cd0353d875ae903";
 
   return s;
 }
