@@ -1023,8 +1023,12 @@ export function secretToProject(
     allowHostMounts: false
   };
   if (secret.data.repository != null) {
+    // For legacy/backwards-compatibility reasons,
+    // we set project name and repo name to the following values,
+    // despite the fact that they should logically be swapped.
+    p.name = b64dec(secret.data.repository)
     p.repo = {
-      name: b64dec(secret.data.repository),
+      name: secret.metadata.annotations["projectName"],
       cloneURL: null,
       initGitSubmodules: false
     }
