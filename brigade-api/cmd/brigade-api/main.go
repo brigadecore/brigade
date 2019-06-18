@@ -249,7 +249,7 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 				Name: "MIT",
 				URL:  "http://mit.org",
 			},
-			Version: "1.0.0",
+			Version: "1.1.0",
 		},
 	}
 }

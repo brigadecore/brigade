@@ -178,13 +178,11 @@ and handles these objects by starting workers.
 
 Brigade events are currently specified as Kubernetes Secrets with particular
 labels. We use secrets because at the time of development, Third Party Resources
-were deprecated and Custom Resource Descriptions are not final. This aspect of the
-system _may_ change between the 0.1.0 release of Brigade and the 1.0.0 release.
+were deprecated and Custom Resource Descriptions are not final.
 
 Brigade Workers are pods that execute brigade scripts. Each worker handles exactly
 one brigade script. Workers are never pooled. A worker runs to completion, to failure,
-or to timeout. Prior to the 1.0.0 release of Brigade, the simple pods may be
-replaced by Kubernetes Job objects instead.
+or to timeout.
 
 Brigade workers handle an event by starting a _build_, where a build executes a
 script. A build will create a PVC for shared storage (job-to-job shared filesystem),
