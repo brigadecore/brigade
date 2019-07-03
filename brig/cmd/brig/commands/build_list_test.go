@@ -18,6 +18,10 @@ const (
 	stubBuild3ID   = "01cxmy71nbq7nasvth8pva1s23"
 )
 
+type DefaultBuildData struct {
+	LogLevel, Event, Commit, Ref string
+}
+
 var (
 	stubDT1Start     = time.Now().Add(-5 * time.Minute)
 	stubTimeDT1Start = metav1.NewTime(stubDT1Start)
@@ -29,6 +33,13 @@ var (
 	stubDT3Start     = time.Now().Add(-3 * time.Minute)
 	stubTimeDT3Start = metav1.NewTime(stubDT3Start)
 	stubDT3End       = time.Now().Add(-time.Minute)
+
+	defaultStubBuildData = DefaultBuildData{
+		LogLevel: "log",
+		Event:    "exec",
+		Commit:   "abc1234",
+		Ref:      "master",
+	}
 )
 
 func TestGetEmptyBuildList(t *testing.T) {
@@ -235,6 +246,12 @@ func createStubBuildSecret(projectID string, buildID string) *v1.Secret {
 			},
 		},
 		Type: "brigade.sh/build",
+		Data: map[string][]byte{
+			"log_level":  []byte(defaultStubBuildData.LogLevel),
+			"event_type": []byte(defaultStubBuildData.Event),
+			"commit_id":  []byte(defaultStubBuildData.Commit),
+			"commit_ref": []byte(defaultStubBuildData.Ref),
+		},
 	}
 
 	if buildID != "" {
