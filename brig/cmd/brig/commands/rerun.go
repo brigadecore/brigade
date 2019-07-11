@@ -2,11 +2,14 @@ package commands
 
 import (
 	"errors"
+	"io"
 	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
 
+	"github.com/brigadecore/brigade/pkg/brigade"
+	"github.com/brigadecore/brigade/pkg/decolorizer"
 	"github.com/brigadecore/brigade/pkg/script"
 )
 
@@ -17,22 +20,39 @@ must still be accessible. Once a build is vacuumed, it can no longer be re-run.
 
 Using the '-f' flag will cause brig to resend the old payload, but override the old
 script with the provided one.
+
+As this command features all of the same flags as run, additional overrides are available,
+such as re-running with a different event, payload body, commit, etc.  See usage via -h/--help.
 `
 
 var (
-	rerunLogLevel string
-	rerunFile     string
+	rerunFile       string
+	rerunEvent      string
+	rerunPayload    string
+	rerunCommitish  string
+	rerunRef        string
+	rerunLogLevel   string
+	rerunNoProgress bool
+	rerunNoColor    bool
+	rerunBackground bool
 )
 
 func init() {
+	rerun.Flags().StringVarP(&rerunFile, "file", "f", "", "The JavaScript file to execute")
+	rerun.Flags().StringVarP(&rerunEvent, "event", "e", "", "The name of the event to fire")
+	rerun.Flags().StringVarP(&rerunPayload, "payload", "p", "", "The path to a payload file")
+	rerun.Flags().StringVarP(&rerunCommitish, "commit", "c", "", "A VCS (git) commit")
+	rerun.Flags().StringVarP(&rerunRef, "ref", "r", "", "A VCS (git) version, tag, or branch")
+	rerun.Flags().BoolVar(&rerunNoProgress, "no-progress", runNoProgress, "Disable progress meter")
+	rerun.Flags().BoolVar(&rerunNoColor, "no-color", runNoColor, "Remove color codes from log output")
+	rerun.Flags().BoolVarP(&rerunBackground, "background", "b", runBackground, "Trigger the event and exit. Let the job rerun in the background.")
 	rerun.Flags().StringVarP(&rerunLogLevel, "level", "l", "log", "Specified log level: log, info, warn, error")
-	rerun.Flags().StringVarP(&rerunFile, "file", "f", "", "Override the JS file from the last build")
 	Root.AddCommand(rerun)
 }
 
 var rerun = &cobra.Command{
 	Use:   "rerun BUILD_ID",
-	Short: "Given an existing build ID, re-run the same event.",
+	Short: "Re-run the build associated with the provided ID.",
 	Long:  rerunUsage,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
@@ -49,28 +69,13 @@ var rerun = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		a.ScriptLogDestination = os.Stdout
-		a.NoProgress = runNoProgress
-		a.Background = runBackground
-		a.Verbose = globalVerbose
 
-		build, err := a.GetBuild(bid)
+		updateRunner(a)
+
+		build, err := getUpdatedBuild(a, bid)
 		if err != nil {
 			return err
 		}
-
-		if rerunFile != "" {
-			data, err := ioutil.ReadFile(rerunFile)
-			if err != nil {
-				return err
-			}
-			build.Script = data
-		}
-
-		// Override a few things
-		build.ID = ""
-		build.LogLevel = rerunLogLevel
-		build.Worker = nil
 
 		err = a.SendBuild(build)
 
@@ -85,4 +90,57 @@ var rerun = &cobra.Command{
 
 		return err
 	},
+}
+
+func updateRunner(r *script.Runner) {
+	var destination io.Writer = os.Stdout
+	if rerunNoColor {
+		// Pipe the data through a Writer that strips the color codes and then
+		// sends the resulting data to the underlying writer.
+		destination = decolorizer.New(destination)
+	}
+
+	r.ScriptLogDestination = destination
+	r.NoProgress = rerunNoProgress
+	r.Background = rerunBackground
+	r.Verbose = globalVerbose
+}
+
+func getUpdatedBuild(r *script.Runner, bid string) (*brigade.Build, error) {
+	build, err := r.GetBuild(bid)
+	if err != nil {
+		return build, err
+	}
+
+	if rerunFile != "" {
+		data, err := ioutil.ReadFile(rerunFile)
+		if err != nil {
+			return build, err
+		}
+		build.Script = data
+	}
+
+	if len(rerunPayload) > 0 {
+		var err error
+		if build.Payload, err = ioutil.ReadFile(rerunPayload); err != nil {
+			return build, err
+		}
+	}
+
+	if rerunEvent != "" {
+		build.Type = rerunEvent
+	}
+	if rerunCommitish != "" {
+		build.Revision.Commit = rerunCommitish
+	}
+	if rerunRef != "" {
+		build.Revision.Ref = rerunRef
+	}
+
+	// Override a few things
+	build.ID = ""
+	build.LogLevel = rerunLogLevel
+	build.Worker = nil
+
+	return build, nil
 }
