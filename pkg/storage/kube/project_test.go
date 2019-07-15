@@ -229,6 +229,7 @@ func TestConfigureProject(t *testing.T) {
 			// Default fo allowHostMounts is false. Testing that
 			"initGitSubmodules": []byte("false"),
 			"workerCommand":     []byte("echo hello"),
+			"imagePullSecrets":  []byte("image pull secrets"),
 		},
 	}
 
@@ -310,6 +311,10 @@ func TestConfigureProject(t *testing.T) {
 
 	if proj.WorkerCommand != "echo hello" {
 		t.Error("unexpected worker command")
+	}
+
+	if proj.ImagePullSecrets != "image pull secrets" {
+		t.Error("unexpected image pull secrets")
 	}
 }
 
