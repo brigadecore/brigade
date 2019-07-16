@@ -28,7 +28,7 @@ const (
 )
 
 // NewDelegatedRunner returns a new Runner object with the provided Kubernetes Clientset and namespace
-func NewDelegatedRunner(c *kubernetes.Clientset, namespace string) (*Runner, error) {
+func NewDelegatedRunner(c kubernetes.Interface, namespace string) (*Runner, error) {
 	app := &Runner{
 		store:                kube.New(c, namespace),
 		kc:                   c,
