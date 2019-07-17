@@ -43,5 +43,8 @@
     "module-alias": "^2.2.0",
     "pretty-error": "^2.1.1",
     "ulid": "^0.2.0"
+  },
+  "resolutions": {
+    "lodash": "^4.17.13"
   }
 }
