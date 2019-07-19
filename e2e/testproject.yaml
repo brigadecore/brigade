@@ -1,0 +1,45 @@
+apiVersion: v1
+data:
+  allowHostMounts: ZmFsc2U=
+  allowPrivilegedJobs: ZmFsc2U=
+  brigadejsPath: ""
+  buildStorageSize: ""
+  cloneURL: aHR0cHM6Ly9naXRodWIuY29tL2JyaWdhZGVjb3JlL2VtcHR5LXRlc3RiZWQuZ2l0
+  defaultScript: Y29uc3QgeyBldmVudHMsIEpvYiB9ID0gcmVxdWlyZSgiYnJpZ2FkaWVyIik7CgpldmVudHMub24oInNpbXBsZWV2ZW50IiwgKGUsIHApID0+IHsgIC8vIGhhbmRsZXIgZm9yIGEgU2ltcGxlRXZlbnQKICB2YXIgZWNobyA9IG5ldyBKb2IoImVjaG9zaW1wbGVldmVudCIsICJhbHBpbmU6My44Iik7CiAgZWNoby50YXNrcyA9IFsKICAgICJlY2hvIFByb2plY3QgIiArIHAubmFtZSwKICAgICJlY2hvIGV2ZW50IHR5cGU6ICRFVkVOVF9UWVBFIgogIF07CiAgZWNoby5lbnYgPSB7CiAgICAiRVZFTlRfVFlQRSI6IGUudHlwZQogIH07CiAgZWNoby5ydW4oKTsKfSk7Cg==
+  defaultScriptName: ""
+  genericGatewaySecret: MTIzNA==
+  github.baseURL: ""
+  github.token: ""
+  github.uploadURL: ""
+  imagePullSecrets: ""
+  initGitSubmodules: ZmFsc2U=
+  kubernetes.allowSecretKeyRef: ZmFsc2U=
+  kubernetes.buildStorageClass: ""
+  kubernetes.cacheStorageClass: ""
+  namespace: ZGVmYXVsdA==
+  repository: Z2l0aHViLmNvbS9icmlnYWRlY29yZS9lbXB0eS10ZXN0YmVk
+  secrets: e30=
+  serviceAccount: ""
+  sharedSecret: ""
+  sshKey: ""
+  vcsSidecar: ""
+  worker.name: ""
+  worker.pullPolicy: SWZOb3RQcmVzZW50
+  worker.registry: ""
+  worker.tag: ""
+  workerCommand: ""
+kind: Secret
+metadata:
+  annotations:
+    projectName: e2eproject
+  creationTimestamp: "2019-07-16T13:18:32Z"
+  labels:
+    app: brigade
+    component: project
+    heritage: brigade
+  name: brigade-5b55ed522537b663e178f751959d234fd650d626f33f70557b2e82
+  namespace: default
+  resourceVersion: "1195"
+  selfLink: /api/v1/namespaces/default/secrets/brigade-5b55ed522537b663e178f751959d234fd650d626f33f70557b2e82
+  uid: cc1a07b1-72ca-4788-9496-244194545269
+type: brigade.sh/project
