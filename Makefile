@@ -241,3 +241,7 @@ test-functional:
 		echo $$! > /tmp/$(BRIGADE_GITHUB_GW_SERVICE).PID
 	go test --tags integration ./tests -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
 	@kill -TERM $$(cat /tmp/$(BRIGADE_GITHUB_GW_SERVICE).PID)
+
+.PHONY: e2e
+e2e:
+	./e2e/run.sh

@@ -275,8 +275,8 @@ kubectl --namespace kube-system create serviceaccount tiller
 kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller 
 kubectl --namespace kube-system patch deploy tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}' 
 ```
-- Run `DOCKER_REGISTRY=brigadecore make build-all-images load-all-images` to build all images locally for the kind cluster
-- Run `make helm-install` to install/upgrade Brigade onto the kind cluster. This is the command you should re-run to test your changes during your Brigade development workflow
+- Run `DOCKER_ORG=brigadecore make build-all-images load-all-images` to build all images locally for the kind cluster
+- Run `make helm-install` to install/upgrade Brigade onto the kind cluster. This is the command you should re-run to test your changes during your Brigade development workflow. If this command does not work, you probably need to run `helm repo add brigade https://brigadecore.github.io/charts`
 
 When you're done, feel free to `kind delete cluster` to tear down the kind cluster resources.
 
@@ -354,3 +354,16 @@ You may change the variables above to point to the desired project.
 
 [charts]: https://github.com/brigadecore/charts
 [brigade-project-chart]: https://github.com/brigadecore/charts/tree/master/charts/brigade-project
+
+## End to end testing
+
+We've written an end to end test scenario for Brigade that that you can run using `make e2e`. Currently, what the test in the `run.sh` does is
+
+* installs kubectl, kind, helm 3 if not already installed
+* builds docker images of Brigade components
+* loads them into kind
+* installs them onto the kind cluster
+* confirm that all components are successfully deployed
+* installs a test Brigade project (brig project create -x -f) and confirms that the corresponding k8s Secret is created
+* runs a custom brigade.js and verifies some output from worker Pod
+* on completion (or on error) it tears down the kind cluster
