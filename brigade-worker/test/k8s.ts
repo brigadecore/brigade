@@ -29,8 +29,8 @@ describe("k8s", function() {
         p.id,
         "brigade-7e3d1157331f6726338395e320cffa41d2bc9e20157fd7a4df355d"
       );
-      assert.equal(p.name, "brigadecore/test-private-testbed");
-      assert.equal(p.repo.name, "github.com/brigadecore/test-private-testbed");
+      assert.equal(p.name, "github.com/brigadecore/test-private-testbed");
+      assert.equal(p.repo.name, "brigadecore/test-private-testbed");
       assert.equal(
         p.repo.cloneURL,
         "https://github.com/brigadecore/empty-testbed.git"
@@ -53,8 +53,8 @@ describe("k8s", function() {
           p.id,
           "brigade-7e3d1157331f6726338395e320cffa41d2bc9e20157fd7a4df355d"
         );
-        assert.equal(p.name, "brigadecore/test-private-testbed");
-        assert.equal(p.repo.name, "github.com/brigadecore/test-private-testbed");
+        assert.equal(p.name, "github.com/brigadecore/test-private-testbed");
+        assert.equal(p.repo.name, "brigadecore/test-private-testbed");
         assert.equal(p.repo.token, "pretend password\n");
         assert.equal(p.kubernetes.namespace, "default");
         assert.equal(p.kubernetes.vcsSidecar, "vcs-image:latest");

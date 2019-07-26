@@ -221,6 +221,7 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 	proj.InitGitSubmodules = strings.ToLower(def(sv.String("initGitSubmodules"), "false")) == "true"
 	proj.AllowPrivilegedJobs = strings.ToLower(def(sv.String("allowPrivilegedJobs"), "true")) == "true"
 	proj.AllowHostMounts = strings.ToLower(def(sv.String("allowHostMounts"), "false")) == "true"
+	proj.ImagePullSecrets = sv.String("imagePullSecrets")
 
 	proj.BrigadejsPath = sv.String("brigadejsPath")
 	proj.WorkerCommand = sv.String("workerCommand")

@@ -40,7 +40,7 @@ This document covers environment setup, how to run functional tests and developm
 
 ## Prerequisites
 
-- Minikube
+- Minikube or [kind](https://github.com/kubernetes-sigs/kind)
 - Docker
 - make
 
@@ -63,7 +63,7 @@ $ cd $GOPATH/src/github.com/brigadecore/brigade
 **Note**: this leaves you at the tip of **master** in the repository where active development
 is happening. You might prefer to checkout the most recent stable tag:
 
-- `$ git checkout v1.0.0`
+- `$ git checkout v1.1.0`
 
 After cloning the project locally, you should run this command to [configure the remote](https://help.github.com/articles/configuring-a-remote-for-a-fork/): 
 
@@ -287,6 +287,24 @@ $ helm install -n brigade brigade/brigade -f myvalues.yaml
 
 Don't forget to also create a project.  Check out [projects](./projects.md) to see how it's done.
 
+## Developing brigade with kind
+
+You can also use [kind](https://github.com/kubernetes-sigs/kind) for your day to day Brigade development workflow. Kind has a great quickstart that can be found [here](https://kind.sigs.k8s.io/docs/user/quick-start/).
+
+- Run `kind create cluster` to create the cluster 
+- Run `export KUBECONFIG="$(kind get kubeconfig-path --name="kind")"` to set KUBECONFIG to the file that was created by kind
+- Install helm on the `kind` cluster by running `helm init`. The latest [Helm 3](https://github.com/helm/helm) version is recommended. However, if you're running Helm 2, check [here](https://helm.sh/docs/using_helm/#role-based-access-control) for proper Helm/Tiller installation instructions or use
+```
+# Only if you are using Helm 2
+kubectl --namespace kube-system create serviceaccount tiller
+kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller 
+kubectl --namespace kube-system patch deploy tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}' 
+```
+- Run `DOCKER_ORG=brigadecore make build-all-images load-all-images` to build all images locally for the kind cluster
+- Run `make helm-install` to install/upgrade Brigade onto the kind cluster. This is the command you should re-run to test your changes during your Brigade development workflow. If this command does not work, you probably need to run `helm repo add brigade https://brigadecore.github.io/charts`
+
+When you're done, feel free to `kind delete cluster` to tear down the kind cluster resources.
+
 ## Running Brigade inside remote Kubernetes
 
 Some developers use a remote Kubernetes instead of minikube.
@@ -297,7 +315,7 @@ you will need to do two things:
 - Make sure you push your `brigade` docker images to a registry the cluster can access
 - Set the image when you do a `helm install brigade/<chart>` on the Brigade chart.
 
-## Running Brigade (brigade-controller) Locally (against Minikube)
+## Running Brigade (brigade-controller) Locally (against Minikube or kind)
 
 Assuming you have Brigade installed (either on minikube or another cluster) and
 your `$KUBECONFIG` is pointing to that cluster, you can run `brigade-controller`
@@ -361,3 +379,16 @@ You may change the variables above to point to the desired project.
 
 [charts]: https://github.com/brigadecore/charts
 [brigade-project-chart]: https://github.com/brigadecore/charts/tree/master/charts/brigade-project
+
+## End to end testing
+
+We've written an end to end test scenario for Brigade that that you can run using `make e2e`. Currently, what the test in the `run.sh` does is
+
+* installs kubectl, kind, helm 3 if not already installed
+* builds docker images of Brigade components
+* loads them into kind
+* installs them onto the kind cluster
+* confirm that all components are successfully deployed
+* installs a test Brigade project (brig project create -x -f) and confirms that the corresponding k8s Secret is created
+* runs a custom brigade.js and verifies some output from worker Pod
+* on completion (or on error) it tears down the kind cluster

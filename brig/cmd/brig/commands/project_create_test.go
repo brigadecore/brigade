@@ -2,7 +2,10 @@ package commands
 
 import (
 	"os"
+	"reflect"
 	"testing"
+
+	"github.com/brigadecore/brigade/pkg/brigade"
 )
 
 const testProjectSecret = "./testdata/project_secret.json"
@@ -27,12 +30,8 @@ func TestInitProjectNoVCS(t *testing.T) {
 		t.Fatal("VCSSidecar should be NONE")
 	}
 
-	if p.Repo.CloneURL != "" {
-		t.Fatal("CloneURL should be an empty string")
-	}
-
-	if p.Repo.Name != "" {
-		t.Fatal("Repo.Name should be an empty string")
+	if reflect.DeepEqual(p.Repo, brigade.Repo{}) {
+		t.Fatal("Project Repo should be empty/unset")
 	}
 }
 

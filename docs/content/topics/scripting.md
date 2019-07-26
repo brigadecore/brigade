@@ -1063,6 +1063,10 @@ There are two final observations to make about job caches:
 Each job has the option to mount in a docker socket. When enabled, a docker socket is mounted to
 `/var/run/docker.sock` in the job's container.
 
+In order for the socket to be mounted, the Brigade project must have `Allow host mounts` set to
+`true`. This can be set via the Advanced Configuration Options during `brig create`.  (See the [projects](projects.md)
+doc for further info.)
+
 This is a toggle-able option for all jobs, but is not enabled by default. A job must declare that it
 needs a docker socket.
 
@@ -1090,6 +1094,10 @@ what containers are available in this engine.
 
 For security reasons, it is recommended that you use Docker-in-Docker (DinD) instead of using
 the Docker socket directly.
+
+DinD containers must run as privileged in order to function.  Therefore, the Brigade project must have 
+`Allow privileged jobs` set to `true`.  This can be set via the Advanced Configuration Options
+during `brig create`.  (See the [projects](projects.md) doc for further info.)
 
 Here is an example job definition that uses the official Docker image to do a Docker
 build:

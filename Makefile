@@ -41,6 +41,10 @@ ifneq ($(SKIP_DOCKER),true)
 		-w /code/$(BASE_PACKAGE_NAME) $(JS_DEV_IMAGE)
 endif
 
+# Allow for users to supply a different helm cli name,
+# for instance, if one has helm v3 as `helm3` and helm v2 as `helm`
+HELM ?= helm
+
 ################################################################################
 # Binaries and Docker images we build and publish                              #
 ################################################################################
@@ -142,6 +146,14 @@ build-all-images: $(addsuffix -build-image,$(IMAGES))
 		.
 	docker tag $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG)
 
+.PHONY: load-all-images
+load-all-images: $(addsuffix -load-image,$(IMAGES))
+
+%-load-image:
+	@echo "Loading $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
+	@kind load docker-image $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
+			|| echo >&2 "kind not installed or error loading image: $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
+
 # Cross-compile binaries for brig
 build-brig:
 	$(GO_DOCKER_CMD) bash -c "LDFLAGS=\"$(LDFLAGS)\" scripts/build-brig.sh"
@@ -188,7 +200,7 @@ helm-install: helm-upgrade
 
 .PHONY: helm-upgrade
 helm-upgrade:
-	helm upgrade --install $(BRIGADE_RELEASE) brigade/brigade --namespace $(BRIGADE_NAMESPACE) \
+	$(HELM) upgrade --install $(BRIGADE_RELEASE) brigade/brigade --namespace $(BRIGADE_NAMESPACE) \
 		--set brigade-github-app.enabled=true \
 		--set controller.registry=$(BRIGADE_REGISTRY) \
 		--set controller.tag=$(BRIGADE_VERSION) \
@@ -230,3 +242,7 @@ test-functional:
 		echo $$! > /tmp/$(BRIGADE_GITHUB_GW_SERVICE).PID
 	go test --tags integration ./tests -kubeconfig $(KUBECONFIG) $(TEST_REPO_COMMIT)
 	@kill -TERM $$(cat /tmp/$(BRIGADE_GITHUB_GW_SERVICE).PID)
+
+.PHONY: e2e
+e2e:
+	./e2e/run.sh

@@ -87,7 +87,4 @@ func setDefaultValuesNoVCS(p *brigade.Project) {
 	p.Name = "myproject"
 	// setting the sidecar to NONE
 	p.Kubernetes.VCSSidecar = "NONE"
-	// empty values for the repo
-	p.Repo.CloneURL = ""
-	p.Repo.Name = ""
 }

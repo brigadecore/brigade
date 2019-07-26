@@ -52,9 +52,10 @@ func init() {
 
 // Root is the root command
 var Root = &cobra.Command{
-	Use:   "brig",
-	Short: "The Brigade client",
-	Long:  mainUsage,
+	Use:          "brig",
+	Short:        "The Brigade client",
+	Long:         mainUsage,
+	SilenceUsage: true,
 }
 
 // kubeClient returns a Kubernetes clientset.
