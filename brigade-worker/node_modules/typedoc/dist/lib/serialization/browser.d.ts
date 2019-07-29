@@ -27,6 +27,9 @@ export interface SourceReferenceContainer<T> {
 export interface GroupsContainer<T> {
     groups: T[];
 }
+export interface CategoriesContainer<T> {
+    categories: T[];
+}
 export interface ContainerReflectionContainer<TChildren> {
     children: TChildren[];
 }
@@ -53,7 +56,7 @@ export interface ReflectionObject extends ReflectionContainer, Partial<CommentCo
 }
 export interface ParameterReflectionObject extends ReflectionObject, TypeContainer, DefaultValueContainer {
 }
-export interface ContainerReflectionObject extends ReflectionObject, Partial<SourceReferenceContainer<SourceReferenceObject>>, Partial<GroupsContainer<ReflectionGroupObject>>, ContainerReflectionContainer<ReflectionObject> {
+export interface ContainerReflectionObject extends ReflectionObject, Partial<SourceReferenceContainer<SourceReferenceObject>>, Partial<GroupsContainer<ReflectionGroupObject>>, Partial<CategoriesContainer<ReflectionCategoryObject>>, ContainerReflectionContainer<ReflectionObject> {
 }
 export interface DeclarationReflectionObject extends ContainerReflectionObject, DefaultValueContainer, Partial<TypeContainer>, Partial<TypeParameterContainer>, Partial<SignatureReflectionContainer<ParameterReflectionObject>>, DeclarationReflectionContainer<SignatureReflectionObject> {
 }
@@ -97,6 +100,11 @@ export interface TypeObject {
 export interface ReflectionGroupObject {
     title: string;
     kind: number;
+    children?: number[];
+    categories?: ReflectionCategoryObject[];
+}
+export interface ReflectionCategoryObject {
+    title: string;
     children?: number[];
 }
 export interface ReflectionFlagsObject {

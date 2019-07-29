@@ -9,5 +9,6 @@ __export(require("./comments"));
 __export(require("./sources"));
 __export(require("./decorator"));
 __export(require("./reflection-group"));
+__export(require("./reflection-category"));
 __export(require("./models"));
 //# sourceMappingURL=index.js.map

@@ -27,10 +27,8 @@ module.exports = function (argString) {
     if (c === opening) {
       if (!args[i]) args[i] = ''
       opening = null
-      continue
     } else if ((c === "'" || c === '"') && !opening) {
       opening = c
-      continue
     }
 
     if (!args[i]) args[i] = ''
