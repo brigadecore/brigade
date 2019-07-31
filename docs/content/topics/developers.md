@@ -77,6 +77,31 @@ To push your changes to your fork, run:
 $ git push --set-upstream fork <branch>
 ```
 
+## Containerized Development Environment
+
+To ensure a consistent development environment for all contributors, Brigade
+relies heavily on Docker containers as sandboxes for all development activities
+including dependency resolution, executing tests, or running a development
+server.
+
+`make` targets seamlessly handle the container orchestration.
+
+If, for whatever reason, you must opt-out of executing development tasks within
+containers, set the `SKIP_DOCKER` environment variable to `true`, but be aware
+that by doing so, the success or failure of development-related tasks, tests,
+etc. will be dependent on the state of your system, with no guarantee of the
+same results in CI.
+
+## Developing on Windows
+
+All development-related tasks should "just work" on Linux and Mac OS systems.
+When developing on Windows, the maintainers strongly recommend utilizing the
+Windows Subsystem for Linux.
+
+[This blog post](https://nickjanetakis.com/blog/setting-up-docker-for-windows-and-wsl-to-work-flawlessly)
+provides excellent guidance on making the Windows Subsystem for Linux work
+seamlessly with Docker Desktop (Docker for Windows).
+
 ## Working with Go Code
 
 To run lint checks:

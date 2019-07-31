@@ -21,6 +21,7 @@ BASE_PACKAGE_NAME := github.com/brigadecore/brigade
 ################################################################################
 
 ifneq ($(SKIP_DOCKER),true)
+	PROJECT_ROOT := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 	GO_DEV_IMAGE := quay.io/deis/lightweight-docker-go:v0.7.0
 	JS_DEV_IMAGE := node:12.3.1-stretch
 
@@ -28,7 +29,7 @@ ifneq ($(SKIP_DOCKER),true)
 		-it \
 		--rm \
 		-e SKIP_DOCKER=true \
-		-v $$(pwd):/go/src/$(BASE_PACKAGE_NAME) \
+		-v $(PROJECT_ROOT):/go/src/$(BASE_PACKAGE_NAME) \
 		-w /go/src/$(BASE_PACKAGE_NAME) $(GO_DEV_IMAGE)
 
 	JS_DOCKER_CMD := docker run \
@@ -36,7 +37,7 @@ ifneq ($(SKIP_DOCKER),true)
 		--rm \
 		-e SKIP_DOCKER=true \
 		-e KUBECONFIG="/code/$(BASE_PACKAGE_NAME)/brigade-worker/test/fake_kubeconfig.yaml" \
-		-v $$(pwd):/code/$(BASE_PACKAGE_NAME) \
+		-v $(PROJECT_ROOT):/code/$(BASE_PACKAGE_NAME) \
 		-w /code/$(BASE_PACKAGE_NAME) $(JS_DEV_IMAGE)
 endif
 
@@ -87,11 +88,11 @@ format-go:
 
 .PHONY: yarn-install
 yarn-install:
-	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn install'
+	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn install"
 
 .PHONY: format-js
 format-js:
-	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn format'
+	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn format"
 
 ################################################################################
 # Tests                                                                        #
@@ -120,12 +121,12 @@ test-unit:
 # tracked, vendored dependencies
 .PHONY: verify-vendored-code-js
 verify-vendored-code-js:
-	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn check --integrity && yarn check --verify-tree'
+	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn check --integrity && yarn check --verify-tree"
 
 # JS test is local only
 .PHONY: test-js
 test-js:
-	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn build && yarn test'
+	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn build && yarn test"
 
 ################################################################################
 # Build / Publish                                                              #
@@ -155,7 +156,7 @@ load-all-images: $(addsuffix -load-image,$(IMAGES))
 
 # Cross-compile binaries for brig
 build-brig:
-	$(GO_DOCKER_CMD) bash -c 'LDFLAGS="$(LDFLAGS)" scripts/build-brig.sh'
+	$(GO_DOCKER_CMD) bash -c "LDFLAGS=\"$(LDFLAGS)\" scripts/build-brig.sh"
 
 .PHONY: push
 push: push-all-images
