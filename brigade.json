@@ -1,0 +1,5 @@
+{
+    "dependencies": {
+        "@brigadecore/brigade-utils": "0.2.0"
+    }
+}
