@@ -145,6 +145,12 @@ func projectAdvancedPromptsVCS(p *brigade.Project, store storage.Store) error {
 	if err := survey.Ask(questionsKubernetes, &p.Kubernetes); err != nil {
 		return fmt.Errorf(abort, err)
 	}
+	if p.Kubernetes.BuildStorageClass == leftUndefined {
+		p.Kubernetes.BuildStorageClass = ""
+	}
+	if p.Kubernetes.CacheStorageClass == leftUndefined {
+		p.Kubernetes.CacheStorageClass = ""
+	}
 
 	questionsWorker := advancedQuestionsWorker(p, store)
 	if err := survey.Ask(questionsWorker, &p.Worker); err != nil {
