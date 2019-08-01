@@ -171,6 +171,7 @@ export class BuildStorage {
         .deleteNamespacedPersistentVolumeClaim(
           this.name,
           this.proj.kubernetes.namespace,
+          "true",
           opts
         )
         .then(() => {
@@ -240,7 +241,7 @@ export class JobRunner implements jobs.JobRunner {
   project: Project;
   event: BrigadeEvent;
   job: jobs.Job;
-  client: kubernetes.Core_v1Api;
+  client: kubernetes.CoreV1Api;
   options: KubernetesOptions;
   serviceAccount: string;
   logger: ContextLogger;
@@ -686,6 +687,7 @@ export class JobRunner implements jobs.JobRunner {
             k.deleteNamespacedPod(
               name,
               ns,
+              "true",
               new kubernetes.V1DeleteOptions()
             ).catch(e => this.logger.error(e.body.message));
             clearTimers();

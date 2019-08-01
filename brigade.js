@@ -44,7 +44,7 @@ function jsTest() {
   };
   job.tasks = [
     "cd /src",
-    "make verify-vendored-code-js test-js"
+    "make verify-vendored-code-js test-js yarn-audit"
   ];
   return job;
 }
@@ -106,7 +106,7 @@ function runCheck(e, p) {
   name = payload.body.check_run.name;
 
   // Determine which check to run
-  switch(name) {
+  switch (name) {
     case "test-go":
       return runTests(e, p, goTest);
     case "test-javascript":
@@ -143,7 +143,7 @@ function handleIssueComment(e, p) {
   comment = payload.body.comment.body.trim();
 
   // Here we determine if a comment should provoke an action
-  switch(comment) {
+  switch (comment) {
     // Currently, the do-all '/brig run' comment is supported,
     // for (re-)triggering the default Checks suite
     case "/brig run":
