@@ -1,6 +1,6 @@
 {
   "name": "@brigadecore/brigadier",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Brigade library for pipelines and events",
   "main": "out/index.js",
   "types": "out/index.d.ts",
@@ -13,10 +13,11 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "mocha --compilers ts:ts-node/register --recursive ./test/**/*.ts"
+    "test": "mocha --require ts-node/register --recursive ./test/**/*.ts"
   },
   "keywords": [
-    "kubernetes", "brigade"
+    "kubernetes",
+    "brigade"
   ],
   "files": [
     "out/*.js",
@@ -27,15 +28,15 @@
     "@types/mocha": "^2.2.41",
     "@types/node": "^10.3.0",
     "chai": "^4.1.0",
-    "mocha": "^3.4.2",
+    "mocha": "^6.2.0",
     "prettier": "^1.9.1",
     "rimraf": "^2.6.2",
     "ts-node": "^7.0.0",
-    "typedoc": "^0.11.0",
-    "typescript": "^3.0.1"
+    "typedoc": "^0.15.0",
+    "typescript": "^3.2.2"
   },
   "dependencies": {
-    "@kubernetes/client-node": "^0.7.2",
+    "@kubernetes/client-node": "^0.10.1",
     "child-process-promise": "^2.2.1",
     "pretty-error": "^2.1.1",
     "ulid": "^0.2.0"

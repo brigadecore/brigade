@@ -380,6 +380,8 @@ You may change the variables above to point to the desired project.
 [charts]: https://github.com/brigadecore/charts
 [brigade-project-chart]: https://github.com/brigadecore/charts/tree/master/charts/brigade-project
 
+> Note: an Node dependency audit is part of the build process. To execute it manually, before pushing, you can run `make yarn-audit`.
+
 ## End to end testing
 
 We've written an end to end test scenario for Brigade that that you can run using `make e2e`. Currently, what the test in the `run.sh` does is

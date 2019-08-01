@@ -21,6 +21,7 @@ exports.IntrinsicTypeSerializer = serializers_1.IntrinsicTypeSerializer;
 exports.ParameterReflectionSerializer = serializers_1.ParameterReflectionSerializer;
 exports.ProjectReflectionSerializer = serializers_1.ProjectReflectionSerializer;
 exports.ReferenceTypeSerializer = serializers_1.ReferenceTypeSerializer;
+exports.ReflectionCategorySerializer = serializers_1.ReflectionCategorySerializer;
 exports.ReflectionGroupSerializer = serializers_1.ReflectionGroupSerializer;
 exports.ReflectionSerializer = serializers_1.ReflectionSerializer;
 exports.ReflectionTypeSerializer = serializers_1.ReflectionTypeSerializer;

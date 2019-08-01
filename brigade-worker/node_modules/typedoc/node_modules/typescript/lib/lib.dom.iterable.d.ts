@@ -116,6 +116,13 @@ interface Headers {
     values(): IterableIterator<string>;
 }
 
+interface MediaKeyStatusMap {
+    [Symbol.iterator](): IterableIterator<[BufferSource, MediaKeyStatus]>;
+    entries(): IterableIterator<[BufferSource, MediaKeyStatus]>;
+    keys(): IterableIterator<BufferSource>;
+    values(): IterableIterator<MediaKeyStatus>;
+}
+
 interface MediaList {
     [Symbol.iterator](): IterableIterator<string>;
 }
@@ -177,6 +184,10 @@ interface SVGLengthList {
 
 interface SVGNumberList {
     [Symbol.iterator](): IterableIterator<SVGNumber>;
+}
+
+interface SVGPointList {
+    [Symbol.iterator](): IterableIterator<DOMPoint>;
 }
 
 interface SVGStringList {

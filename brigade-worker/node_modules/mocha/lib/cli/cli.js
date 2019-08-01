@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 'use strict';
 
 /**
@@ -11,9 +13,9 @@
 
 const debug = require('debug')('mocha:cli:cli');
 const symbols = require('log-symbols');
-const yargs = require('yargs');
+const yargs = require('yargs/yargs');
 const path = require('path');
-const {loadOptions} = require('./options');
+const {loadOptions, YARGS_PARSER_CONFIG} = require('./options');
 const commands = require('./commands');
 const ansi = require('ansi-colors');
 const {repository, homepage, version, gitter} = require('../../package.json');
@@ -32,7 +34,9 @@ exports.main = (argv = process.argv.slice(2)) => {
 
   Error.stackTraceLimit = Infinity; // configurable via --stack-trace-limit?
 
-  yargs
+  var args = loadOptions(argv);
+
+  yargs()
     .scriptName('mocha')
     .command(commands.run)
     .command(commands.init)
@@ -59,7 +63,9 @@ exports.main = (argv = process.argv.slice(2)) => {
     Docs: ${ansi.yellow(homepage)}
       `
     )
-    .parse(argv, loadOptions(argv));
+    .parserConfiguration(YARGS_PARSER_CONFIG)
+    .config(args)
+    .parse(args._);
 };
 
 // allow direct execution

@@ -1,0 +1,29 @@
+{
+    "name": "@types/js-yaml",
+    "version": "3.12.1",
+    "description": "TypeScript definitions for js-yaml",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Bart van der Schoor",
+            "url": "https://github.com/Bartvds",
+            "githubUsername": "Bartvds"
+        },
+        {
+            "name": "Sebastian Clausen",
+            "url": "https://github.com/sclausen",
+            "githubUsername": "sclausen"
+        }
+    ],
+    "main": "",
+    "types": "index",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/js-yaml"
+    },
+    "scripts": {},
+    "dependencies": {},
+    "typesPublisherContentHash": "cf81869fcb788e3fef61d529166d7b2381e0321fef67f25cbd601009b6131ba3",
+    "typeScriptVersion": "2.2"
+}

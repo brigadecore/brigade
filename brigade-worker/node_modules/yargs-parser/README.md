@@ -73,7 +73,6 @@ Parses command line arguments returning a simple mapping of keys and values.
   * `opts.string`: keys should be treated as strings (even if they resemble a number `-x 33`).
   * `opts.configuration`: provide configuration options to the yargs-parser (see: [configuration](#configuration)).
   * `opts.number`: keys should be treated as numbers.
-  * `opts['--']`: arguments after the end-of-options flag `--` will be set to the `argv.['--']` array instead of being set to the `argv._` array.
 
 **returns:**
 

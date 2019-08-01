@@ -94,6 +94,10 @@ yarn-install:
 format-js:
 	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn format"
 
+.PHONY: yarn-audit
+yarn-audit:
+	$(JS_DOCKER_CMD) sh -c 'cd brigade-worker && yarn audit'
+
 ################################################################################
 # Tests                                                                        #
 ################################################################################
