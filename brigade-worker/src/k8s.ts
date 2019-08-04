@@ -442,6 +442,16 @@ export class JobRunner implements jobs.JobRunner {
       }
     }
 
+    for (let cfg of job.volumeConfig) {
+      if (cfg.volume.hostPath != undefined && !project.allowHostMounts) {
+        throw new Error(`allowHostMounts is false in this project, not mounting path ${cfg.volume.hostPath.path}`)
+      }
+      this.runner.spec.volumes.push(cfg.volume);
+      for (let i = 0; i < this.runner.spec.containers.length; i++) {
+        this.runner.spec.containers[i].volumeMounts.push(cfg.mount);
+      }
+    }
+
     if (job.args.length > 0) {
       this.runner.spec.containers[0].args = job.args;
     }

@@ -1,28 +1,28 @@
 import "mocha";
-import { assert } from "chai";
+import { assert, expect } from "chai";
 import * as mock from "./mock";
 
 import * as k8s from "../src/k8s";
 import { BrigadeEvent, Project } from "@brigadecore/brigadier/out/events";
-import { Job, Result, brigadeCachePath, brigadeStoragePath } from "@brigadecore/brigadier/out/job";
+import { Job, Result, brigadeCachePath, brigadeStoragePath, JobVolumeConfig, JobResourceLimit } from "@brigadecore/brigadier/out/job";
 
 import * as kubernetes from "@kubernetes/client-node";
 
-describe("k8s", function() {
+describe("k8s", function () {
   describe("b64enc", () => {
-    it('encodes the string "hello"', function() {
+    it('encodes the string "hello"', function () {
       assert.equal(k8s.b64enc("hello"), "aGVsbG8=");
     });
   });
 
   describe("b64dec", () => {
-    it('decodes the string "aGVsbG8="', function() {
+    it('decodes the string "aGVsbG8="', function () {
       assert.equal(k8s.b64dec("aGVsbG8="), "hello");
     });
   });
 
-  describe("secretToProjectVCS", function() {
-    it("converts secret to project - with a VCS", function() {
+  describe("secretToProjectVCS", function () {
+    it("converts secret to project - with a VCS", function () {
       let s = mockSecretVCS();
       let p = k8s.secretToProject("default", s);
       assert.equal(
@@ -44,8 +44,8 @@ describe("k8s", function() {
       assert.equal(p.kubernetes.cacheStorageClass, "tashtego");
       assert.equal(p.kubernetes.buildStorageClass, "tashtego");
     });
-    describe("when cloneURL is missing", function() {
-      it("omits cloneURL", function() {
+    describe("when cloneURL is missing", function () {
+      it("omits cloneURL", function () {
         let s = mockSecretVCS();
         s.data.cloneURL = "";
         let p = k8s.secretToProject("default", s);
@@ -66,8 +66,8 @@ describe("k8s", function() {
     });
   });
 
-  describe("secretToProjectnoVCS", function() {
-    it("converts secret to project - without a VCS", function() {
+  describe("secretToProjectnoVCS", function () {
+    it("converts secret to project - without a VCS", function () {
       let s = mockSecretnoVCS();
       let p = k8s.secretToProject("default", s);
       assert.equal(
@@ -86,17 +86,17 @@ describe("k8s", function() {
     });
   });
 
-  describe("JobRunner", function() {
-    describe("when constructed", function() {
+  describe("JobRunner", function () {
+    describe("when constructed", function () {
       let j: Job;
       let p: Project;
       let e: BrigadeEvent;
-      beforeEach(function() {
+      beforeEach(function () {
         j = new mock.MockJob("pequod", "whaler", ["echo hello"]);
         p = mock.mockProject();
         e = mock.mockEvent();
       });
-      it("creates Kubernetes objects from a job, event, and project", function() {
+      it("creates Kubernetes objects from a job, event, and project", function () {
         let jr = new k8s.JobRunner().init(j, e, p);
 
         assert.equal(jr.name, `pequod-${e.buildID}`);
@@ -113,12 +113,12 @@ describe("k8s", function() {
         assert.isNotNull(jr.runner.spec.containers[0].command);
         assert.property(jr.secret.data, "main.sh");
       });
-      context("when env vars are specified", function() {
-        context("as data", function() {
-          beforeEach(function() {
+      context("when env vars are specified", function () {
+        context("as data", function () {
+          beforeEach(function () {
             j.env = { one: "first", two: "second" };
           });
-          it("sets them on the pod", function() {
+          it("sets them on the pod", function () {
             let jr = new k8s.JobRunner().init(j, e, p);
             let found = 0;
 
@@ -135,8 +135,8 @@ describe("k8s", function() {
             assert.equal(found, 2);
           });
         });
-        context("as references", function() {
-          beforeEach(function() {
+        context("as references", function () {
+          beforeEach(function () {
             j.env = {
               one: {
                 secretKeyRef: {
@@ -152,7 +152,7 @@ describe("k8s", function() {
               } as kubernetes.V1EnvVarSource
             };
           });
-          it("sets them on the pod", function() {
+          it("sets them on the pod", function () {
             let jr = new k8s.JobRunner().init(j, e, p);
             let found = 0;
 
@@ -167,8 +167,8 @@ describe("k8s", function() {
             assert.equal(found, 2);
           });
         });
-        context("as references with allowSecretKeyRef false", function() {
-          beforeEach(function() {
+        context("as references with allowSecretKeyRef false", function () {
+          beforeEach(function () {
             j.env = {
               one: {
                 secretKeyRef: {
@@ -184,7 +184,7 @@ describe("k8s", function() {
               } as kubernetes.V1EnvVarSource
             };
           });
-          it("sets them on the pod", function() {
+          it("sets them on the pod", function () {
             let jr = new k8s.JobRunner().init(j, e, p, false);
             let found = 0;
 
@@ -200,14 +200,14 @@ describe("k8s", function() {
           });
         });
       });
-      context("when resources are specified", function() {
-        beforeEach(function() {
+      context("when resources are specified", function () {
+        beforeEach(function () {
           j.resourceRequests.cpu = "250m";
           j.resourceRequests.memory = "512Mi";
           j.resourceLimits.cpu = "500m";
           j.resourceLimits.memory = "1Gi";
         });
-        it("sets resource requests and limits for the container pod", function() {
+        it("sets resource requests and limits for the container pod", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           let expResources = new kubernetes.V1ResourceRequirements();
           expResources.requests = { cpu: "250m", memory: "512Mi" };
@@ -218,63 +218,63 @@ describe("k8s", function() {
           );
         });
       });
-      context("when service account is specified", function() {
-        beforeEach(function() {
+      context("when service account is specified", function () {
+        beforeEach(function () {
           j.serviceAccount = "svcAccount";
         });
-        it("sets a service account name for the pod", function() {
+        it("sets a service account name for the pod", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.equal(jr.runner.spec.serviceAccountName, "svcAccount");
         });
       });
-      context("when no service account is specified", function() {
-        it("sets a service account name to 'brigade-worker'", function() {
+      context("when no service account is specified", function () {
+        it("sets a service account name to 'brigade-worker'", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.equal(jr.runner.spec.serviceAccountName, "brigade-worker");
         });
       });
-      context("when custom service account is specified", function() {
-        it("sets a service account name to 'custom-worker'", function() {
+      context("when custom service account is specified", function () {
+        it("sets a service account name to 'custom-worker'", function () {
           k8s.options.serviceAccount = "custom-worker";
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.equal(jr.runner.spec.serviceAccountName, "custom-worker");
         });
       });
-      context("when args are supplied", function() {
-        beforeEach(function() {
+      context("when args are supplied", function () {
+        beforeEach(function () {
           j.tasks = [];
           j.args = ["--aye", "-j", "kay"];
         });
-        it("adds container args", function() {
+        it("adds container args", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.equal(jr.runner.spec.containers[0].args.length, 3);
           assert.notProperty(jr.secret.data, "main.sh");
         });
       });
-      context("when no args are supplied", function() {
-        beforeEach(function() {
+      context("when no args are supplied", function () {
+        beforeEach(function () {
           j.args = [];
         });
-        it("has no container args", function() {
+        it("has no container args", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.notProperty(jr.runner.spec.containers[0], "args");
         });
       });
-      context("when no tasks are supplied", function() {
-        beforeEach(function() {
+      context("when no tasks are supplied", function () {
+        beforeEach(function () {
           j.tasks = [];
         });
-        it("omits commands", function() {
+        it("omits commands", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.isNull(jr.runner.spec.containers[0].command);
           assert.notProperty(jr.secret.data, "main.sh");
         });
       });
-      context("when useSource is set to false", function() {
-        beforeEach(function() {
+      context("when useSource is set to false", function () {
+        beforeEach(function () {
           j.tasks = [];
         });
-        it("omits init container", function() {
+        it("omits init container", function () {
           j.useSource = false;
           let jr = new k8s.JobRunner().init(j, e, p);
           // Currently, annotations are only created if the init container
@@ -282,11 +282,11 @@ describe("k8s", function() {
           assert.deepEqual(jr.runner.metadata.annotations, {});
         });
       });
-      context("when no cloneURL is set", function() {
-        beforeEach(function() {
+      context("when no cloneURL is set", function () {
+        beforeEach(function () {
           j.tasks = [];
         });
-        it("omits init container", function() {
+        it("omits init container", function () {
           p.repo.cloneURL = null;
           let jr = new k8s.JobRunner().init(j, e, p);
           // Currently, annotations are only created if the init container
@@ -294,11 +294,11 @@ describe("k8s", function() {
           assert.deepEqual(jr.runner.metadata.annotations, {});
         });
       });
-      context("when SSH key is provided", function() {
-        beforeEach(function() {
+      context("when SSH key is provided", function () {
+        beforeEach(function () {
           p.repo.sshKey = "SUPER SECRET";
         });
-        it("attaches key to pod", function() {
+        it("attaches key to pod", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           let sidecar = jr.runner.spec.initContainers[0];
           assert.equal(sidecar.env.length, 14);
@@ -313,22 +313,22 @@ describe("k8s", function() {
           assert.isTrue(hasBrigadeRepoKey, "Has BRIGADE REPO KEY as param");
         });
       });
-      context("when sidecar is disabled", function() {
-        beforeEach(function() {
+      context("when sidecar is disabled", function () {
+        beforeEach(function () {
           p.kubernetes.vcsSidecar = "";
         });
-        it("job runner should have no init containers", function() {
+        it("job runner should have no init containers", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.equal(jr.runner.spec.initContainers.length, 0);
         });
-        it("job runner should have no sidecar volumes", function() {
+        it("job runner should have no sidecar volumes", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.notDeepInclude(
             jr.runner.spec.volumes,
             { name: "vcs-sidecar", emptyDir: {} } as kubernetes.V1Volume
           );
         });
-        it("job runner should have no sidecar volume mounts", function() {
+        it("job runner should have no sidecar volume mounts", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.notDeepInclude(
             jr.runner.spec.containers[0].volumeMounts,
@@ -336,11 +336,11 @@ describe("k8s", function() {
           );
         });
       });
-      context("when mount path is supplied", function() {
-        beforeEach(function() {
+      context("when mount path is supplied", function () {
+        beforeEach(function () {
           j.mountPath = "/ahab";
         });
-        it("mounts the provided path", function() {
+        it("mounts the provided path", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           for (let v of jr.runner.spec.containers[0].volumeMounts) {
             if (v.name == "vcs-sidecar") {
@@ -349,12 +349,12 @@ describe("k8s", function() {
           }
         });
       });
-      context("when cache is enabled", function() {
-        beforeEach(function() {
+      context("when cache is enabled", function () {
+        beforeEach(function () {
           j.cache.enabled = true;
           j.storage.enabled = true;
         });
-        it("configures volumes", function() {
+        it("configures volumes", function () {
           // We uppercase to test that names are correctly downcased. Issue #224
           j.name = j.name.toUpperCase();
           let jr = new k8s.JobRunner().init(j, e, p);
@@ -393,7 +393,7 @@ describe("k8s", function() {
           assert.isTrue(foundCache, "expected cache volume claim found");
           assert.isTrue(foundStorage, "expected storage volume claim found");
         });
-        it("configures volumes with custom paths", function() {
+        it("configures volumes with custom paths", function () {
           j.cache.path = "/cache";
           j.cache.enabled = true;
           j.storage.path = "/storage";
@@ -420,11 +420,11 @@ describe("k8s", function() {
           assert.isTrue(foundStorage, "expected storage volume mount found");
         });
       });
-      context("when the project has enabled host mounts", function() {
-        beforeEach(function() {
+      context("when the project has enabled host mounts", function () {
+        beforeEach(function () {
           p.allowHostMounts = true;
         });
-        it("allows jobs to mount the host's docker socket", function() {
+        it("allows jobs to mount the host's docker socket", function () {
           j.docker.enabled = true;
           let jr = new k8s.JobRunner().init(j, e, p);
           for (let c of jr.runner.spec.containers) {
@@ -439,11 +439,11 @@ describe("k8s", function() {
           assert.equal(vol.hostPath.path, "/var/run/docker.sock");
         });
       });
-      context("when the project has disabled host mounts", function() {
-        beforeEach(function() {
+      context("when the project has disabled host mounts", function () {
+        beforeEach(function () {
           p.allowHostMounts = false;
         });
-        it("does not allow jobs to mount the host's docker socket", function() {
+        it("does not allow jobs to mount the host's docker socket", function () {
           j.docker.enabled = true;
           let jr = new k8s.JobRunner().init(j, e, p);
           for (let c of jr.runner.spec.containers) {
@@ -452,8 +452,89 @@ describe("k8s", function() {
           assert.equal(jr.runner.spec.volumes.length, 2);
         });
       });
-      context("when job is privileged", function() {
-        it("privileges containers", function() {
+      context("when volumeConfig is set for jobs", function () {
+        it("and a host path volume is set, with allowHostMounts disabled, error is thrown", function () {
+          var m = new kubernetes.V1VolumeMount();
+          m.name = "mock-volume"
+          m.mountPath = "/mock/volume";
+
+          var v = new kubernetes.V1Volume();
+          v.name = "mock-volume";
+          v.hostPath = {
+            path: "/some/path",
+            type: "Directory"
+          };
+          j.volumeConfig = [
+            new JobVolumeConfig(m, v)
+          ];
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.throw(Error, "allowHostMounts is false in this project, not mounting path /some/path");
+        });
+        it("and a host path volume mount is set, with allowHostMounts enabled, no error is thrown", function () {
+          var m = new kubernetes.V1VolumeMount();
+          m.name = "mock-volume"
+          m.mountPath = "/mock/volume";
+          var v = new kubernetes.V1Volume();
+          v.name = "mock-volume";
+          v.hostPath = {
+            path: "/some/path",
+            type: "Directory"
+          };
+          j.volumeConfig = [
+            new JobVolumeConfig(m, v)
+          ];
+          p.allowHostMounts = true;
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
+        });
+        it("and a host path volume mount is set, all properties are set correctly", function () {
+          var m = new kubernetes.V1VolumeMount();
+          m.name = "mock-volume"
+          m.mountPath = "/mock/volume";
+          var v = new kubernetes.V1Volume();
+          v.name = "mock-volume";
+          v.hostPath = {
+            path: "/some/path",
+            type: "Directory"
+          };
+          j.volumeConfig = [
+            new JobVolumeConfig(m, v)
+          ];
+          p.allowHostMounts = true;
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
+          let jr = new k8s.JobRunner().init(j, e, p);
+          for (let c of jr.runner.spec.containers) {
+            assert.equal(c.volumeMounts[2].mountPath, "/mock/volume");
+            assert.equal(c.volumeMounts[2].name, "mock-volume");
+          }
+          assert.equal(jr.runner.spec.volumes[2].name, "mock-volume");
+          assert.equal(jr.runner.spec.volumes[2].hostPath.path, "/some/path");
+          assert.equal(jr.runner.spec.volumes[2].hostPath.type, "Directory");
+        });
+        it("and a persistent volume claim is set, all properties are set correctly", function () {
+          var m = new kubernetes.V1VolumeMount();
+          m.name = "mock-pvc"
+          m.mountPath = "/mock/volume";
+          var v = new kubernetes.V1Volume();
+          v.name = "mock-pvc";
+          v.persistentVolumeClaim = {
+            claimName: "some-claim"
+          };
+          j.volumeConfig = [
+            new JobVolumeConfig(m, v)
+          ];
+          p.allowHostMounts = true;
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
+          let jr = new k8s.JobRunner().init(j, e, p);
+          for (let c of jr.runner.spec.containers) {
+            assert.equal(c.volumeMounts[2].mountPath, "/mock/volume");
+            assert.equal(c.volumeMounts[2].name, "mock-pvc");
+          }
+          assert.equal(jr.runner.spec.volumes[2].name, "mock-pvc");
+          assert.equal(jr.runner.spec.volumes[2].persistentVolumeClaim.claimName, "some-claim");
+        });
+
+      });
+      context("when job is privileged", function () {
+        it("privileges containers", function () {
           j.privileged = true;
           let jr = new k8s.JobRunner().init(j, e, p);
           for (let c of jr.runner.spec.containers) {
@@ -461,11 +542,11 @@ describe("k8s", function() {
           }
         });
       });
-      context("when the project has privileged mode disabled", function() {
-        beforeEach(function() {
+      context("when the project has privileged mode disabled", function () {
+        beforeEach(function () {
           p.allowPrivilegedJobs = false;
         });
-        it("does not allow privileged jobs", function() {
+        it("does not allow privileged jobs", function () {
           j.privileged = true;
           let jr = new k8s.JobRunner().init(j, e, p);
           for (let c of jr.runner.spec.containers) {
@@ -473,8 +554,8 @@ describe("k8s", function() {
           }
         });
       });
-      context("when image pull secrets are supplied", function() {
-        it("sets imagePullSecrets", function() {
+      context("when image pull secrets are supplied", function () {
+        it("sets imagePullSecrets", function () {
           j.imagePullSecrets = ["one", "two"];
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.equal(jr.runner.spec.imagePullSecrets.length, 2);
@@ -484,8 +565,8 @@ describe("k8s", function() {
           }
         });
       });
-      context("when a host os is supplied", function() {
-        it("sets a node selector", function() {
+      context("when a host os is supplied", function () {
+        it("sets a node selector", function () {
           j.host.os = "windows";
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.equal(
@@ -494,15 +575,15 @@ describe("k8s", function() {
           );
         });
       });
-      context("when a host name is supplied", function() {
-        it("sets a node name", function() {
+      context("when a host name is supplied", function () {
+        it("sets a node name", function () {
           j.host.name = "aciBridge";
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.equal("aciBridge", jr.runner.spec.nodeName);
         });
       });
-      context("when host nodeSelector are supplied", function() {
-        it("sets a node selector", function() {
+      context("when host nodeSelector are supplied", function () {
+        it("sets a node selector", function () {
           j.host.nodeSelector.set("inn", "spouter");
           j.host.nodeSelector.set("ship", "pequod");
           let jr = new k8s.JobRunner().init(j, e, p);
@@ -510,14 +591,14 @@ describe("k8s", function() {
           assert.equal("pequod", jr.runner.spec.nodeSelector["ship"]);
         });
       });
-      context("when vcsSidecar resources defined", function() {
-        beforeEach(function() {
+      context("when vcsSidecar resources defined", function () {
+        beforeEach(function () {
           p.kubernetes.vcsSidecarResourcesLimitsCPU = "100m";
           p.kubernetes.vcsSidecarResourcesLimitsMemory = "100Mi";
           p.kubernetes.vcsSidecarResourcesRequestsCPU = "50m";
           p.kubernetes.vcsSidecarResourcesRequestsMemory = "50Mi";
         });
-        it("sets resource requests and limits for the init-container pod", function() {
+        it("sets resource requests and limits for the init-container pod", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           let expResources = new kubernetes.V1ResourceRequirements();
           expResources.limits = { cpu: "100m", memory: "100Mi" };
@@ -528,12 +609,12 @@ describe("k8s", function() {
           );
         });
       });
-      context("when vcsSidecar only cpu resources defined", function() {
-        beforeEach(function() {
+      context("when vcsSidecar only cpu resources defined", function () {
+        beforeEach(function () {
           p.kubernetes.vcsSidecarResourcesLimitsCPU = "100m";
           p.kubernetes.vcsSidecarResourcesRequestsCPU = "50m";
         });
-        it("sets only cpu resource requests and limits for the init-container pod", function() {
+        it("sets only cpu resource requests and limits for the init-container pod", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           let expResources = new kubernetes.V1ResourceRequirements();
           expResources.limits = { cpu: "100m" };
@@ -544,12 +625,12 @@ describe("k8s", function() {
           );
         });
       });
-      context("when vcsSidecar only memory resources defined", function() {
-        beforeEach(function() {
+      context("when vcsSidecar only memory resources defined", function () {
+        beforeEach(function () {
           p.kubernetes.vcsSidecarResourcesLimitsMemory = "100Mi";
           p.kubernetes.vcsSidecarResourcesRequestsMemory = "50Mi";
         });
-        it("sets only memory resource requests and limits for the init-container pod", function() {
+        it("sets only memory resource requests and limits for the init-container pod", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           let expResources = new kubernetes.V1ResourceRequirements();
           expResources.limits = { memory: "100Mi" };
@@ -560,36 +641,36 @@ describe("k8s", function() {
           );
         });
       });
-      context("when no job shell is specified", function() {
-        it("default shell is /bin/sh", function() {
+      context("when no job shell is specified", function () {
+        it("default shell is /bin/sh", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
-          assert.deepEqual(jr.runner.spec.containers[0].command, [ '/bin/sh', '/hook/main.sh' ]);
+          assert.deepEqual(jr.runner.spec.containers[0].command, ['/bin/sh', '/hook/main.sh']);
         });
       });
-      context("when job shell is specified", function() {
-        beforeEach(function() {
+      context("when job shell is specified", function () {
+        beforeEach(function () {
           j.shell = "/bin/bash"
         });
-        it("shell is /bin/bash", function() {
+        it("shell is /bin/bash", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
-          assert.deepEqual(jr.runner.spec.containers[0].command, [ '/bin/bash', '/hook/main.sh' ]);
+          assert.deepEqual(jr.runner.spec.containers[0].command, ['/bin/bash', '/hook/main.sh']);
         });
       });
     });
     describe("cachePVC", () => {
       let jr: k8s.JobRunner;
-      beforeEach(function() {
+      beforeEach(function () {
         let j = new mock.MockJob("pequod", "whaler", ["echo hello"]);
         let p = mock.mockProject();
         let e = mock.mockEvent();
         jr = new k8s.JobRunner().init(j, e, p);
       });
       context("when global default cache storage class is specified", () => {
-        beforeEach(function() {
+        beforeEach(function () {
           jr.options.defaultCacheStorageClass = "foo";
         });
         context("when the cache storage class is overridden at the project level", () => {
-          beforeEach(function() {
+          beforeEach(function () {
             jr.project.kubernetes.cacheStorageClass = "bar";
           });
           it("it uses that", () => {
@@ -598,7 +679,7 @@ describe("k8s", function() {
           });
         });
         context("when the cache storage class is not overridden at the project level", () => {
-          beforeEach(function() {
+          beforeEach(function () {
             jr.project.kubernetes.cacheStorageClass = "";
           });
           it("it falls back on the global default", () => {
@@ -608,11 +689,11 @@ describe("k8s", function() {
         });
       });
       context("when global default cache storage class is not specified", () => {
-        beforeEach(function() {
+        beforeEach(function () {
           jr.options.defaultCacheStorageClass = "";
         });
         context("when the cache storage class is overridden at the project level", () => {
-          beforeEach(function() {
+          beforeEach(function () {
             jr.project.kubernetes.cacheStorageClass = "bar";
           });
           it("it uses that", () => {
@@ -621,7 +702,7 @@ describe("k8s", function() {
           });
         });
         context("when the cache storage class is not overridden at the project level", () => {
-          beforeEach(function() {
+          beforeEach(function () {
             jr.project.kubernetes.cacheStorageClass = "";
           });
           it("it falls back on the cluster default", () => {
@@ -637,16 +718,16 @@ describe("k8s", function() {
   describe("BuildStorage", () => {
     describe("buildPVC", () => {
       let bs: k8s.BuildStorage;
-      beforeEach(function() {
+      beforeEach(function () {
         bs = new k8s.BuildStorage();
         bs.proj = mock.mockProject();
       });
       context("when global default build storage class is specified", () => {
-        beforeEach(function() {
+        beforeEach(function () {
           bs.options.defaultBuildStorageClass = "foo";
         });
         context("when the build storage class is overridden at the project level", () => {
-          beforeEach(function() {
+          beforeEach(function () {
             bs.proj.kubernetes.buildStorageClass = "bar";
           });
           it("it uses that", () => {
@@ -655,7 +736,7 @@ describe("k8s", function() {
           });
         });
         context("when the build storage class is not overridden at the project level", () => {
-          beforeEach(function() {
+          beforeEach(function () {
             bs.proj.kubernetes.buildStorageClass = "";
           });
           it("it falls back on the global default", () => {
@@ -665,11 +746,11 @@ describe("k8s", function() {
         });
       });
       context("when global default build storage class is not specified", () => {
-        beforeEach(function() {
+        beforeEach(function () {
           bs.options.defaultBuildStorageClass = "";
         });
         context("when the build storage class is overridden at the project level", () => {
-          beforeEach(function() {
+          beforeEach(function () {
             bs.proj.kubernetes.buildStorageClass = "bar";
           });
           it("it uses that", () => {
@@ -678,7 +759,7 @@ describe("k8s", function() {
           });
         });
         context("when the build storage class is not overridden at the project level", () => {
-          beforeEach(function() {
+          beforeEach(function () {
             bs.proj.kubernetes.buildStorageClass = "";
           });
           it("it falls back on the cluster default", () => {
@@ -742,3 +823,7 @@ function mockSecretnoVCS(): kubernetes.V1Secret {
 
   return s;
 }
+
+function checkObjWithVal(prop, val, arr: Array<any>): boolean {
+  return arr.some(obj => obj[prop] === val);
+} 
