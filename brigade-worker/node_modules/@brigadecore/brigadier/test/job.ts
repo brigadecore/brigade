@@ -9,7 +9,6 @@ import {
   brigadeCachePath,
   brigadeStoragePath,
   jobNameIsValid,
-  JobVolumeConfig
 } from "../src/job";
 import { V1Volume, V1VolumeMount } from "@kubernetes/client-node/dist/api";
 
@@ -161,32 +160,32 @@ describe("job", function () {
         assert.deepEqual(j.annotations, { 'some_kubetoiam/thing': 'my/path' });
       });
     });
-    describe("#volumeConfig", function () {
+    describe("#volumes and #volumeMounts", function () {
       beforeEach(function () {
         j = new mock.MockJob("my-job");
-        var m = new V1VolumeMount();
-        m.name = "mock-volume"
-        m.mountPath = "/mock/volume";
+        var mount = new V1VolumeMount();
+        mount.name = "mock-volume"
+        mount.mountPath = "/mock/volume";
 
-        var v = new V1Volume();
-        v.name = "mock-volume";
-        v.hostPath = {
+        var volume = new V1Volume();
+        volume.name = "mock-volume";
+        volume.hostPath = {
           path: "/some/path",
           type: "Directory"
         };
 
-        j.volumeConfig = [
-          new JobVolumeConfig(m, v)
-        ];
+        j.volumes.push(volume);
+        j.volumeMounts.push(mount);
       });
-      it("is correctly configured", function () {
-        assert.equal(j.volumeConfig.length, 1);
-        assert.equal(j.volumeConfig[0].mount!.name, "mock-volume");
-        assert.equal(j.volumeConfig[0].mount!.mountPath, "/mock/volume");
+      it("are correctly set", function () {
+        assert.equal(j.volumes.length, 1);
+        assert.equal(j.volumes[0].name, "mock-volume");
+        assert.equal(j.volumes[0].hostPath!.path, "/some/path");
+        assert.equal(j.volumes[0].hostPath!.type, "Directory");
 
-        assert.equal(j.volumeConfig[0].volume!.name, "mock-volume");
-        assert.equal(j.volumeConfig[0].volume!.hostPath!.path, "/some/path");
-        assert.equal(j.volumeConfig[0].volume!.hostPath!.type, "Directory");
+        assert.equal(j.volumeMounts.length, 1);
+        assert.equal(j.volumeMounts[0].name, "mock-volume");
+        assert.equal(j.volumeMounts[0].mountPath, "/mock/volume");
       });
     });
   });

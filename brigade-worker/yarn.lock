@@ -4,7 +4,7 @@
 
 "@brigadecore/brigadier@radu-matei/brigadier#job-volume-config-out":
   version "0.6.0"
-  resolved "https://codeload.github.com/radu-matei/brigadier/tar.gz/7eeaf847233a79e96fb63d774ab243e69e4cce0e"
+  resolved "https://codeload.github.com/radu-matei/brigadier/tar.gz/d864e6dd7b28a2b283504f7bd0b9ac03c6c8bed5"
   dependencies:
     "@kubernetes/client-node" "^0.10.1"
     child-process-promise "^2.2.1"

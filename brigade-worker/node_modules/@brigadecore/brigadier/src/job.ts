@@ -155,32 +155,6 @@ export class JobResourceLimit {
 }
 
 /**
- * EXPERIMENTAL: allow mounting volumes to the job runner pod.
- * JobVolumeConfig represents a Kubernetes Volume and VolumeMount pair.
- * The Volume is mounted in the job pod at the path defined by the VolumeMount.
- * The name for the mount and volume must match. 
- * For more info, see https://kubernetes.io/docs/concepts/storage/volumes/
- * 
- * For a simple shared volume between all the containers of a job, use JobStorage.
- */
-export class JobVolumeConfig {
-  /** mounting config of the volume */
-  public mount?: V1VolumeMount;
-  /** volume that will be mounted at the mount location */
-  public volume?: V1Volume;
-
-  /**
-   * 
-   * @param m represents the volume mount
-   * @param v represents the volume
-   */
-  constructor(m: V1VolumeMount, v: V1Volume) {
-    this.mount = m;
-    this.volume = v;
-  }
-}
-
-/**
  * Job represents a single job, which is composed of several closely related sequential tasks.
  * Jobs must have names. Every job also has an associated image, which references
  * the Docker container to be run.
@@ -254,9 +228,27 @@ export abstract class Job {
   public storage: JobStorage;
 
   /**
-   * volume configuration preferences for current job.
+   * EXPERIMENTAL: define volumes for the job.
+   * The property is defined as a list of Kubernetes volumes, and supports all Kubernetes volume types.
+   * Use the job's volumeMounts property to mount a volume defined to a path in the job's container.
+   * The names for the volume and the desired volume mount must match. 
+   * For more info, see https://kubernetes.io/docs/concepts/storage/volumes/
+   * 
+   * For a simple shared volume between all the containers of a job, use JobStorage.
    */
-  public volumeConfig: JobVolumeConfig[];
+  public volumes: V1Volume[];
+
+  /**
+   * EXPERIMENTAL: define volume mounts for the job.
+   * The property is defined as a list of Kubernetes volume mounts.
+   * Use the job's volumes property to define volumes.
+   * The names for the volume and the desired volume mount must match.
+   * For more info, see https://kubernetes.io/docs/concepts/storage/volumes/
+   * 
+   * For a simple shared volume between all the containers of a job, use JobStorage.
+   */
+  public volumeMounts: V1VolumeMount[];
+
   /**
    * docker controls the job's preferences on mounting the host's docker daemon.
    */
@@ -309,7 +301,8 @@ export abstract class Job {
     this.host = new JobHost();
     this.resourceRequests = new JobResourceRequest();
     this.resourceLimits = new JobResourceLimit();
-    this.volumeConfig = [];
+    this.volumes = [];
+    this.volumeMounts = [];
   }
 
   /** run executes the job and then */
