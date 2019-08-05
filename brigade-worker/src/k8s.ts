@@ -12,6 +12,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as request from "request";
 import * as byline_1 from "byline";
+import { V1Volume } from "@kubernetes/client-node";
 
 // The internals for running tasks. This must be loaded before any of the
 // objects that use run().
@@ -442,13 +443,20 @@ export class JobRunner implements jobs.JobRunner {
       }
     }
 
-    for (let cfg of job.volumeConfig) {
-      if (cfg.volume.hostPath != undefined && !project.allowHostMounts) {
-        throw new Error(`allowHostMounts is false in this project, not mounting path ${cfg.volume.hostPath.path}`)
+    // If the job defines volumes, add them to the pod's volume list.
+    // If the volume type is `hostPath`, first check if the project allows host mounts
+    // and throw an error if it it does not.
+    for (let v of job.volumes) {
+      if (v.hostPath != undefined && !project.allowHostMounts) {
+        throw new Error(`allowHostMounts is false in this project, not mounting ${v.hostPath.path}`);
       }
-      this.runner.spec.volumes.push(cfg.volume);
+      this.runner.spec.volumes.push(v);
+    }
+
+    // If the job defines volume mounts, add them to every container's spec.
+    for (let m of job.volumeMounts) {
       for (let i = 0; i < this.runner.spec.containers.length; i++) {
-        this.runner.spec.containers[i].volumeMounts.push(cfg.mount);
+        this.runner.spec.containers[i].volumeMounts.push(m);
       }
     }
 

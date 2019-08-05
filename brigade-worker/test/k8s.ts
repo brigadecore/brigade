@@ -4,7 +4,7 @@ import * as mock from "./mock";
 
 import * as k8s from "../src/k8s";
 import { BrigadeEvent, Project } from "@brigadecore/brigadier/out/events";
-import { Job, Result, brigadeCachePath, brigadeStoragePath, JobVolumeConfig, JobResourceLimit } from "@brigadecore/brigadier/out/job";
+import { Job, Result, brigadeCachePath, brigadeStoragePath } from "@brigadecore/brigadier/out/job";
 
 import * as kubernetes from "@kubernetes/client-node";
 
@@ -452,87 +452,115 @@ describe("k8s", function () {
           assert.equal(jr.runner.spec.volumes.length, 2);
         });
       });
-      context("when volumeConfig is set for jobs", function () {
-        it("and a host path volume is set, with allowHostMounts disabled, error is thrown", function () {
+      context("when a hostPath type volume is set for a job", function () {
+        beforeEach(function () {
+          var v = new kubernetes.V1Volume();
+          v.name = "mock-volume";
+          v.hostPath = {
+            path: "/some/path",
+            type: "Directory"
+          };
+          j.volumes.push(v);
+        });
+        it("with allowHostMounts disabled, error is thrown", function () {
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.throw(Error, "allowHostMounts is false in this project, not mounting /some/path");
+        });
+        it("with allowHostMounts enabled, no error is thrown", function () {
+          p.allowHostMounts = true;
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
+        });
+        it("all properties are properly set", function () {
+          p.allowHostMounts = true;
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
+          let jr = new k8s.JobRunner().init(j, e, p);
+
+          assert.equal(jr.runner.spec.volumes[2].name, "mock-volume");
+          assert.equal(jr.runner.spec.volumes[2].hostPath.path, "/some/path");
+          assert.equal(jr.runner.spec.volumes[2].hostPath.type, "Directory");
+        });
+
+        it("and job enables Docker, all properties are properly set", function () {
+          p.allowHostMounts = true;
+          j.docker.enabled = true;
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
+          let jr = new k8s.JobRunner().init(j, e, p);
+
+          assert.equal(jr.runner.spec.volumes[2].name, "docker-socket");
+          assert.equal(jr.runner.spec.volumes[2].hostPath.path, "/var/run/docker.sock");
+
+          assert.equal(jr.runner.spec.volumes[3].name, "mock-volume");
+          assert.equal(jr.runner.spec.volumes[3].hostPath.path, "/some/path");
+          assert.equal(jr.runner.spec.volumes[3].hostPath.type, "Directory");
+        });
+      });
+
+      context("when a persistent volume type volume is set for a job", function () {
+        beforeEach(function () {
+          var v = new kubernetes.V1Volume();
+          v.name = "mock-volume";
+          v.persistentVolumeClaim = {
+            claimName: "some-claim"
+          };
+          j.volumes.push(v);
+        });
+        it("with allowHostMounts disabled, no error is thrown", function () {
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
+        });
+
+        it("with allowHostMounts enabled, no error is thrown", function () {
+          p.allowHostMounts = true;
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
+        });
+        it("all properties are properly set", function () {
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
+          let jr = new k8s.JobRunner().init(j, e, p);
+
+          assert.equal(jr.runner.spec.volumes[2].name, "mock-volume");
+          assert.equal(jr.runner.spec.volumes[2].persistentVolumeClaim.claimName, "some-claim");
+        });
+        it("and job enables Docker, all properties are properly set", function () {
+          p.allowHostMounts = true;
+          j.docker.enabled = true;
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
+          let jr = new k8s.JobRunner().init(j, e, p);
+
+          assert.equal(jr.runner.spec.volumes[2].name, "docker-socket");
+          assert.equal(jr.runner.spec.volumes[2].hostPath.path, "/var/run/docker.sock");
+
+          assert.equal(jr.runner.spec.volumes[3].name, "mock-volume");
+          assert.equal(jr.runner.spec.volumes[3].persistentVolumeClaim.claimName, "some-claim");
+        });
+      });
+
+      context("when volumeMounts is set for a job", function () {
+        beforeEach(function () {
           var m = new kubernetes.V1VolumeMount();
           m.name = "mock-volume"
           m.mountPath = "/mock/volume";
 
-          var v = new kubernetes.V1Volume();
-          v.name = "mock-volume";
-          v.hostPath = {
-            path: "/some/path",
-            type: "Directory"
-          };
-          j.volumeConfig = [
-            new JobVolumeConfig(m, v)
-          ];
-          expect(() => new k8s.JobRunner().init(j, e, p)).to.throw(Error, "allowHostMounts is false in this project, not mounting path /some/path");
+          j.volumeMounts.push(m);
         });
-        it("and a host path volume mount is set, with allowHostMounts enabled, no error is thrown", function () {
-          var m = new kubernetes.V1VolumeMount();
-          m.name = "mock-volume"
-          m.mountPath = "/mock/volume";
-          var v = new kubernetes.V1Volume();
-          v.name = "mock-volume";
-          v.hostPath = {
-            path: "/some/path",
-            type: "Directory"
-          };
-          j.volumeConfig = [
-            new JobVolumeConfig(m, v)
-          ];
-          p.allowHostMounts = true;
-          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
-        });
-        it("and a host path volume mount is set, all properties are set correctly", function () {
-          var m = new kubernetes.V1VolumeMount();
-          m.name = "mock-volume"
-          m.mountPath = "/mock/volume";
-          var v = new kubernetes.V1Volume();
-          v.name = "mock-volume";
-          v.hostPath = {
-            path: "/some/path",
-            type: "Directory"
-          };
-          j.volumeConfig = [
-            new JobVolumeConfig(m, v)
-          ];
-          p.allowHostMounts = true;
-          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
+        it("the volume mounts are set in all containers", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           for (let c of jr.runner.spec.containers) {
             assert.equal(c.volumeMounts[2].mountPath, "/mock/volume");
             assert.equal(c.volumeMounts[2].name, "mock-volume");
           }
-          assert.equal(jr.runner.spec.volumes[2].name, "mock-volume");
-          assert.equal(jr.runner.spec.volumes[2].hostPath.path, "/some/path");
-          assert.equal(jr.runner.spec.volumes[2].hostPath.type, "Directory");
         });
-        it("and a persistent volume claim is set, all properties are set correctly", function () {
-          var m = new kubernetes.V1VolumeMount();
-          m.name = "mock-pvc"
-          m.mountPath = "/mock/volume";
-          var v = new kubernetes.V1Volume();
-          v.name = "mock-pvc";
-          v.persistentVolumeClaim = {
-            claimName: "some-claim"
-          };
-          j.volumeConfig = [
-            new JobVolumeConfig(m, v)
-          ];
+        it("and Docker is enabled for the job, the volume mounts are set in all containers", function () {
           p.allowHostMounts = true;
-          expect(() => new k8s.JobRunner().init(j, e, p)).to.not.throw(Error);
+          j.docker.enabled = true;
           let jr = new k8s.JobRunner().init(j, e, p);
           for (let c of jr.runner.spec.containers) {
-            assert.equal(c.volumeMounts[2].mountPath, "/mock/volume");
-            assert.equal(c.volumeMounts[2].name, "mock-pvc");
-          }
-          assert.equal(jr.runner.spec.volumes[2].name, "mock-pvc");
-          assert.equal(jr.runner.spec.volumes[2].persistentVolumeClaim.claimName, "some-claim");
-        });
+            assert.equal(c.volumeMounts[2].mountPath, "/var/run/docker.sock");
+            assert.equal(c.volumeMounts[2].name, "docker-socket");
 
+            assert.equal(c.volumeMounts[3].mountPath, "/mock/volume");
+            assert.equal(c.volumeMounts[3].name, "mock-volume");
+          }
+        });
       });
+
       context("when job is privileged", function () {
         it("privileges containers", function () {
           j.privileged = true;
