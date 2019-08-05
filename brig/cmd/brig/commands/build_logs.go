@@ -22,11 +22,13 @@ build.
 )
 
 var (
+	logsInit bool
 	logsJobs bool
 	logsLast bool
 )
 
 func init() {
+	buildLogs.Flags().BoolVarP(&logsInit, "init", "i", false, "Show init container logs as well as the worker log")
 	buildLogs.Flags().BoolVarP(&logsJobs, "jobs", "j", false, "Show job logs as well as the worker log")
 	buildLogs.Flags().BoolVarP(&logsLast, "last", "l", false, "Show last build's log (ignores BUILD_ID)")
 	build.AddCommand(buildLogs)
@@ -76,6 +78,13 @@ func showBuildLogs(out io.Writer, buildID string) error {
 	}
 
 	fmt.Fprintf(out, logHeader, bs.Worker.ID)
+	if logsInit {
+		initLogs, err := store.GetWorkerInitLog(bs.Worker)
+		if err != nil {
+			return err
+		}
+		fmt.Fprint(out, initLogs)
+	}
 	fmt.Fprint(out, workerLog)
 	if logsJobs {
 		return showJobLogs(out, bs, store)
