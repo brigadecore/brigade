@@ -3,6 +3,7 @@
 // Be careful when editing!
 // ============================================================================
 const { events, Job, Group } = require("brigadier");
+const { Check } = require("@brigadecore/brigade-utils");
 
 const projectName = "brigade";
 const projectOrg = "brigadecore";
@@ -120,101 +121,8 @@ function runCheck(e, p) {
 function runTests(e, p, jobFunc) {
   console.log("Check requested");
 
-  let job = jobFunc();
-
-  // Create Notification object (which is just a Job to update GH using the Checks API)
-  var note = new Notification(job.name, e, p);
-  note.conclusion = "";
-  note.title = `Run ${job.name}`;
-  note.summary = `Running ${job.name} build/test targets for ${e.revision.commit}`;
-  note.text = "This task will ensure build, linting and tests all pass.";
-
-  // Send notification, then run, then send pass/fail notification
-  return notificationWrap(job, note);
-}
-
-// handleIssueComment handles an issue_comment event, parsing the comment text
-// and determining whether or not to trigger an action
-function handleIssueComment(e, p) {
-  console.log("handling issue comment....")
-  payload = JSON.parse(e.payload);
-
-  // Extract the comment body and trim whitespace
-  comment = payload.body.comment.body.trim();
-
-  // Here we determine if a comment should provoke an action
-  switch (comment) {
-    // Currently, the do-all '/brig run' comment is supported,
-    // for (re-)triggering the default Checks suite
-    case "/brig run":
-      return runSuite(e, p);
-    default:
-      console.log(`No applicable action found for comment: ${comment}`);
-  }
-}
-
-// A GitHub Check Suite notification
-class Notification {
-  constructor(name, e, p) {
-    this.proj = p;
-    this.payload = e.payload;
-    this.name = name;
-    this.externalID = e.buildID;
-    this.detailsURL = `https://brigadecore.github.io/kashti/builds/${e.buildID}`;
-    this.title = "running check";
-    this.text = "";
-    this.summary = "";
-
-    // count allows us to send the notification multiple times, with a distinct pod name
-    // each time.
-    this.count = 0;
-
-    // One of: "success", "failure", "neutral", "cancelled", or "timed_out".
-    this.conclusion = "neutral";
-  }
-
-  // Send a new notification, and return a Promise<result>.
-  run() {
-    this.count++;
-    var job = new Job(`${this.name}-${this.count}`, "brigadecore/brigade-github-check-run:latest");
-    job.imageForcePull = true;
-    job.env = {
-      "CHECK_CONCLUSION": this.conclusion,
-      "CHECK_NAME": this.name,
-      "CHECK_TITLE": this.title,
-      "CHECK_PAYLOAD": this.payload,
-      "CHECK_SUMMARY": this.summary,
-      "CHECK_TEXT": this.text,
-      "CHECK_DETAILS_URL": this.detailsURL,
-      "CHECK_EXTERNAL_ID": this.externalID
-    };
-    return job.run();
-  }
-}
-
-// Helper to wrap a job execution between two notifications.
-async function notificationWrap(job, note) {
-  await note.run();
-  try {
-    let res = await job.run();
-    const logs = await job.logs();
-    note.conclusion = "success";
-    note.summary = `Task "${job.name}" passed`;
-    note.text = "```" + res.toString() + "```\nComplete";
-    return await note.run();
-  } catch (e) {
-    const logs = await job.logs();
-    note.conclusion = "failure";
-    note.summary = `Task "${job.name}" failed for ${e.buildID}`;
-    note.text = "```" + logs + "```\nFailed with error: " + e.toString();
-    try {
-      await note.run();
-    } catch (e2) {
-      console.error("failed to send notification: " + e2.toString());
-      console.error("original error: " + e.toString());
-    }
-    throw e;
-  }
+  var check = new Check(e, p, jobFunc());
+  return check.run();
 }
 
 function githubRelease(p, tag) {
@@ -306,5 +214,5 @@ events.on("push", (e, p) => {
 events.on("check_suite:requested", runSuite);
 events.on("check_suite:rerequested", runSuite);
 events.on("check_run:rerequested", runCheck);
-events.on("issue_comment:created", handleIssueComment);
-events.on("issue_comment:edited", handleIssueComment);
+events.on("issue_comment:created", (e, p) => Check.handleIssueComment(e, p, runSuite));
+events.on("issue_comment:edited", (e, p) => Check.handleIssueComment(e, p, runSuite));
