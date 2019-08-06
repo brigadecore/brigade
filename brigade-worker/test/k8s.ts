@@ -534,10 +534,16 @@ describe("k8s", function () {
 
       context("when volumeMounts is set for a job", function () {
         beforeEach(function () {
+          var v = new kubernetes.V1Volume();
+          v.name = "mock-volume";
+          v.persistentVolumeClaim = {
+            claimName: "some-claim"
+          };
+          j.volumes.push(v);
+
           var m = new kubernetes.V1VolumeMount();
           m.name = "mock-volume"
           m.mountPath = "/mock/volume";
-
           j.volumeMounts.push(m);
         });
         it("the volume mounts are set in all containers", function () {
@@ -560,7 +566,16 @@ describe("k8s", function () {
           }
         });
       });
+      context("when a volumeMount is set for a job, but the referenced volume does not exist", function () {
+        it("error is thrown", function () {
+          var m = new kubernetes.V1VolumeMount();
+          m.name = "mock-volume"
+          m.mountPath = "/mock/volume";
+          j.volumeMounts.push(m);
 
+          expect(() => new k8s.JobRunner().init(j, e, p)).to.throw(Error, "volume mock-volume referenced in volume mount is not defined");
+        });
+      });
       context("when job is privileged", function () {
         it("privileges containers", function () {
           j.privileged = true;

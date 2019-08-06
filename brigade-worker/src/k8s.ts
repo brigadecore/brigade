@@ -12,7 +12,6 @@ import * as fs from "fs";
 import * as path from "path";
 import * as request from "request";
 import * as byline_1 from "byline";
-import { V1Volume } from "@kubernetes/client-node";
 
 // The internals for running tasks. This must be loaded before any of the
 // objects that use run().
@@ -455,6 +454,10 @@ export class JobRunner implements jobs.JobRunner {
 
     // If the job defines volume mounts, add them to every container's spec.
     for (let m of job.volumeMounts) {
+      if (!volumeExists(m, job.volumes)) {
+        throw new Error(`volume ${m.name} referenced in volume mount is not defined`);
+      }
+
       for (let i = 0; i < this.runner.spec.containers.length; i++) {
         this.runner.spec.containers[i].volumeMounts.push(m);
       }
@@ -1111,4 +1114,15 @@ export function secretToProject(
     );
   }
   return p;
+}
+
+// helper function to check if the volume referenced by a volume mount is defined by the job
+function volumeExists(volumeMount: kubernetes.V1VolumeMount, volumes: kubernetes.V1Volume[]): boolean {
+  for (let v of volumes) {
+    if (volumeMount.name === v.name) {
+      return true;
+    }
+  }
+
+  return false;
 }
