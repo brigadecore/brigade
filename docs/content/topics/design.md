@@ -243,3 +243,7 @@ ecosystem. At this point, it was renamed "Acid" (Acme Continuous Integration & D
 Brigade reached a stability point in September 2017, and was re-renamed back from
 Acid to Brigade. Brigade was released publicly under the MIT license in October
 2017, as release 0.1.0.
+
+In March of 2019, in tandem with Brigade's 1.0.0 release, the project was donated to
+the CNCF org as a Sandbox Project.  During this transition, the license was updated to
+Apache-2.0.

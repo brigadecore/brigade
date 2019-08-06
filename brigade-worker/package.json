@@ -16,7 +16,7 @@
     "docs": "typedoc --out ./doc --excludePrivate --excludeExternals --exclude test/*.ts --exclude doc/** ./src"
   },
   "author": "The Steel Thread Team",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "repository": "https://github.com/brigadecore/brigade",
   "devDependencies": {
     "@types/byline": "^4.2.31",
