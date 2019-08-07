@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"regexp"
 	"strings"
@@ -162,7 +163,11 @@ func (a *Runner) waitForWorker(buildID string) error {
 }
 
 func (a *Runner) podLog(name string, w io.Writer) error {
-	req := a.kc.CoreV1().Pods(a.namespace).GetLogs(name, &v1.PodLogOptions{Follow: true})
+	tailAllLines := int64(math.MaxInt64)
+	req := a.kc.CoreV1().Pods(a.namespace).GetLogs(name, &v1.PodLogOptions{
+		Follow:    true,
+		TailLines: &tailAllLines,
+	})
 
 	readCloser, err := req.Timeout(waitTimeout).Stream()
 	if err != nil {
