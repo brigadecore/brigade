@@ -213,7 +213,8 @@ Properties of `Job`
 - `resourceRequests: JobResourceRequest`: CPU and memory request resources for the job pod container.
 - `resourceLimits: JobResourceLimit`: CPU and memory limit resources for the job pod container.
 - `streamLogs: boolean`: controls whether logs from the job Pod will be streamed to output (similar functionality to `kubectl logs PODNAME -f`).
-
+- `volumes: kubernetes.V1Volume[]`: list of Kubernetes volumes to be attached to the job pod specification. See the [Kubernetes type definition](https://github.com/kubernetes-client/javascript/blob/159b32d2cd96117eb19342190c6bc3fa9bc8e3eb/src/gen/model/v1Volume.ts#L44)
+- `volumeMounts: kubernetes.V1VolumeMount[]`: list of Kubernetes volume mounts to be attached to all containers in the job pod specification. See the [Kubernetes type definition](https://github.com/kubernetes-client/javascript/blob/159b32d2cd96117eb19342190c6bc3fa9bc8e3eb/src/gen/model/v1VolumeMount.ts#L17)
 #### Setting execution resources to a job
 
 For some jobs is a good practice to set limits and guarantee some resources. In the following example job pod container resource requests and limits are set.

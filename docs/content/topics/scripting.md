@@ -1160,6 +1160,67 @@ docker.run()
 In the above, if the docker credentials are set for the project, a `docker push`
 is performed on the image just built.
 
+#### Attaching volumes and volume mounts to jobs
+
+Build storage and job cache represent a very simple and convenient way that Brigade exposes
+for attaching storage to your jobs. But if your job requires the mounting of an existing 
+[Kubernetes volume](https://kubernetes.io/docs/concepts/storage/volumes/), the Brigade JavaScript 
+API exposes two propeties on the `Job` class:
+
+- `volumes`: list of Kubernetes volumes to be attached to the pod specification. Supports all [Kubernetes 
+volume types](https://kubernetes.io/docs/concepts/storage/volumes/#types-of-volumes) supported by your cluster configuration. Volumes are referenced by name in the `volumeMounts` property.
+To reference a volume of type `hostPath`, the Brigade project must allow host mounts. 
+- `volumeMounts`: list of Kubernetes volume mounts to be attached to all containers in the job pod specification, referenced 
+by their names. Volumes referenced here must be defined in the `volumes` property.
+
+> Note: simple use cases for build storage or job caches should still use the existing Brigade properties for 
+> enabling the storage and cache. These properties should only be used in advanced scenarios that require mounting 
+> Kubernetes volumes.
+
+> This functionality was introduced with Brigade 1.2, and is in experimental state.
+
+Example:
+
+```javascript
+    var j = new Job("some-image");
+    j.volumes = [
+        {
+            name: "modules",
+            hostPath: {
+                path: "/lib/modules",
+                type: "Directory"
+            }
+        },
+        {
+            name: "cgroup",
+            hostPath: {
+                path: "/sys/fs/cgroup",
+                type: "Directory"
+            }
+        },
+        {
+            name: "docker-graph-storage",
+            emptyDir: {}
+        }
+    ];
+
+    j.volumeMounts = [
+        {
+            name: "modules",
+            mountPath: "/lib/modules",
+            readOnly: true
+        },
+        {
+            name: "cgroup",
+            mountPath: "/sys/fs/cgroup"
+        },
+        {
+            name: "docker-graph-storage",
+            mountPath: "/var/lib/docker"
+        }
+    ];
+```
+
 ## Jobs and Return Values
 
 We have seen already that when we run a job, it will return a JavaScript Promise.
