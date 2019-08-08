@@ -208,6 +208,11 @@ func (s *Store) GetWorkerLog(w *brigade.Worker) (string, error) {
 	return s.LogData, nil
 }
 
+// GetWorkerInitLog gets the mock log data.
+func (s *Store) GetWorkerInitLog(w *brigade.Worker) (string, error) {
+	return s.LogData, nil
+}
+
 // GetWorkerLogStream gets a readcloser of the mock log data.
 func (s *Store) GetWorkerLogStream(w *brigade.Worker) (io.ReadCloser, error) {
 	return rc(s.LogData), nil

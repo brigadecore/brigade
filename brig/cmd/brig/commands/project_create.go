@@ -19,9 +19,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const abort = "project could not be saved: %s"
+const (
+	abort = "project could not be saved: %s"
 
-const projectCreateUsage = `Create a new project.
+	projectCreateUsage = `Create a new project.
 
 Create a new project by answering questions or supplying a configuration file.
 
@@ -41,6 +42,9 @@ The user will be prompted to answer questions to build the configuration. If -f
 is specified in conjunction with -x/--no-prompts, then the values in the file will
 be used without prompting the user for any changes.
 `
+
+	leftUndefined = "Leave undefined"
+)
 
 var (
 	projectCreateConfig      string
@@ -310,12 +314,19 @@ func advancedQuestionsKubernetes(p *brigade.Project, store storage.Store) ([]*su
 	if len(scn) == 0 {
 		fmt.Println("Warning: there are 0 StorageClasses in the cluster. Will not set StorageClasses for this Brigade Project")
 	} else {
+		scn = append(scn, leftUndefined)
 		storageClassQuestions := []*survey.Question{
 			{
 				Name: "buildStorageClass",
 				Prompt: &survey.Select{
 					Message: "Build storage class",
-					Help:    "Kubernetes provides named storage classes. If you want to use a custom storage class, set the class name here.",
+					Help: "Kubernetes provides named storage classes. If you want " +
+						"to use a custom storage\nclass, set the class name here." +
+						"\n\n" +
+						"Choose \"Leave undefined\" IF Brigade is configured with a " +
+						"default build storage\nclass (which may differ from the " +
+						"cluster-wide default storage class) and you\nwish to use that " +
+						"Brigade-level default.",
 					Options: scn,
 				},
 			},
@@ -323,7 +334,13 @@ func advancedQuestionsKubernetes(p *brigade.Project, store storage.Store) ([]*su
 				Name: "cacheStorageClass",
 				Prompt: &survey.Select{
 					Message: "Job cache storage class",
-					Help:    "Kubernetes provides named storage classes. If you want to use a custom storage class, set the class name here.",
+					Help: "Kubernetes provides named storage classes. If you want " +
+						"to use a custom storage\nclass, set the class name here." +
+						"\n\n" +
+						"Choose \"Leave undefined\" IF Brigade is configured with a " +
+						"default cache storage\nclass (which may differ from the " +
+						"cluster-wide default storage class) and you\nwish to use that " +
+						"Brigade-level default.",
 					Options: scn,
 				},
 			},
