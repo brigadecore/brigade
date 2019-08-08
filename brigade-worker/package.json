@@ -38,7 +38,7 @@
     "typescript": "^3.2.2"
   },
   "dependencies": {
-    "@brigadecore/brigadier": "^0.5.0",
+    "@brigadecore/brigadier": "^0.6.1",
     "@kubernetes/client-node": "^0.10.1",
     "byline": "^5.0.0",
     "child-process-promise": "^2.2.1",

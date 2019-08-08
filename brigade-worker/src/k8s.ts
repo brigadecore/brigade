@@ -442,6 +442,27 @@ export class JobRunner implements jobs.JobRunner {
       }
     }
 
+    // If the job defines volumes, add them to the pod's volume list.
+    // If the volume type is `hostPath`, first check if the project allows host mounts
+    // and throw an error if it it does not.
+    for (let v of job.volumes) {
+      if (v.hostPath != undefined && !project.allowHostMounts) {
+        throw new Error(`allowHostMounts is false in this project, not mounting ${v.hostPath.path}`);
+      }
+      this.runner.spec.volumes.push(v);
+    }
+
+    // If the job defines volume mounts, add them to every container's spec.
+    for (let m of job.volumeMounts) {
+      if (!volumeExists(m, job.volumes)) {
+        throw new Error(`volume ${m.name} referenced in volume mount is not defined`);
+      }
+
+      for (let i = 0; i < this.runner.spec.containers.length; i++) {
+        this.runner.spec.containers[i].volumeMounts.push(m);
+      }
+    }
+
     if (job.args.length > 0) {
       this.runner.spec.containers[0].args = job.args;
     }
@@ -1093,4 +1114,15 @@ export function secretToProject(
     );
   }
   return p;
+}
+
+// helper function to check if the volume referenced by a volume mount is defined by the job
+function volumeExists(volumeMount: kubernetes.V1VolumeMount, volumes: kubernetes.V1Volume[]): boolean {
+  for (let v of volumes) {
+    if (volumeMount.name === v.name) {
+      return true;
+    }
+  }
+
+  return false;
 }
