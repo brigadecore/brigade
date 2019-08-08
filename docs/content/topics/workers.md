@@ -24,7 +24,7 @@ project/event-specific configuration or logic.
 The remainder of this page covers various methods of creating and using
 custom workers.
 
-# Extending the Default Worker
+# Extending the Default Worker with Additional NPM Packages
 
 Brigade ships with a worker focused on running jobs defined by a project's
 `brigade.js` file. This worker exposes a host of useful Node.js libraries to
@@ -61,7 +61,7 @@ the `xml-simple` library.
 
 Next, skip to the section on [building and publishing a custom worker image](#building-and-publishing-a-custom-worker-image).
 
-## Adding a Custom (Non-NPM) Library
+# Extending the Default Worker without NPM
 
 Sometimes it is useful to encapsulate commonly used Brigade code into a library
 that can be shared between projects internally. While the NPM model above is
@@ -79,9 +79,6 @@ exports.alpineJob = function(name) {
   return j
 }
 ```
-
-**Note:** Because we are loading our code directly into Brigade, we import
-`./brigadier`, not `brigadier`. This may change in the future.
 
 We can build this file into our `Dockerfile` by copying it into the image:
 
@@ -150,7 +147,7 @@ is not applicable to a worker that does not utilize such configuration.
 |---------------------------|-------------|-------|
 | `BRIGADE_LOG_LEVEL` | Desired log level. | This is typically left unset by the controller. |
 | `BRIGADE_PROJECT_ID` | A unique identifier for the Brigade project. | |
-| `BRIGADE_PROJECT_NAMESPACE` | The Kubernetes namespace in which the worker should create any pods that implement each build's job(s). The  worker must have write access to this namespace. | Note that this may be different from the workspace in which the worker itself is executed by the controller. |
+| `BRIGADE_PROJECT_NAMESPACE` | The Kubernetes namespace in which the worker should create any pods that implement each build's job(s). The  worker must have write access to this namespace. | Note this is always the same namespace as the one that the worker itself is executed. |
 | `BRIGADE_REMOTE_URL` | If applicable, a URL for obtaining project source code from a VCS repository. | |
 | `BRIGADE_REPO_AUTH_TOKEN` | If applicable, an authentication token for accessing the project's private source code repository. | |
 | `BRIGADE_REPO_KEY` | If applicable, an ssh key for accessing the project's private source code repository. | |
