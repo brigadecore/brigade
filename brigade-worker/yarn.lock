@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@brigadecore/brigadier@^0.6.1":
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/@brigadecore/brigadier/-/brigadier-0.6.1.tgz#deb4174de9314c5997521a1b3e2a7c6bcfeddc68"
-  integrity sha512-95U96JnRhobKZUMJtTVtT0+EWQ8zgJw7MAFYdzd0K4ajkGZAahJdXGbFrey4R3JZbcJZhwCh3Ny+pLP7EjLgCQ==
+"@brigadecore/brigadier@^0.8.0":
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/@brigadecore/brigadier/-/brigadier-0.8.0.tgz#8ef41ff5ee13a18a8fbe7c8621fa39d21bc7e266"
+  integrity sha512-lZWDpuVAwrcYFpbNlAjwjsEGom2KEAxg3xAR+BZT9h7Syd8Nu2KIVBKs8sfKgEl1Fhy4DWhg+m2QZMa4sXjwxg==
   dependencies:
     "@kubernetes/client-node" "^0.10.1"
     child-process-promise "^2.2.1"
