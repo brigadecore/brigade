@@ -184,7 +184,7 @@ func projectCreateVCSOrNoVCS(p *brigade.Project, store storage.Store) error {
 			Name: "VCSOrNoVCS",
 			Prompt: &survey.Select{
 				Message: "VCS or no-VCS project?",
-				Help:    "Does your Prject require the pull of a repo stored on a Version Control System (e.g. GitHub or BitBucket)?",
+				Help:    "Does your Project require the pull of a repo stored on a Version Control System (e.g. GitHub or BitBucket)?",
 				Options: []string{"VCS", "no-VCS"},
 			},
 		},
