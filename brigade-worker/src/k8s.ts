@@ -839,6 +839,15 @@ function sidecarSpec(
     imageTag = "brigadecore/git-sidecar:latest";
   }
 
+  // Try to get cloneURL from the event first. This allows gateways to override
+	// the project-level cloneURL if the commit that should be built, for
+	// instance, exists only within a fork. If this isn't set at the event-level,
+	// fall back to the project-level default.
+  let cloneURL = e.cloneURL;
+  if (cloneURL == "") {
+    cloneURL = project.repo.cloneURL
+  }
+
   let spec = new kubernetes.V1Container();
   (spec.name = "vcs-sidecar"),
     (spec.env = [
@@ -849,7 +858,7 @@ function sidecarSpec(
       envVar("BRIGADE_EVENT_PROVIDER", e.provider),
       envVar("BRIGADE_EVENT_TYPE", e.type),
       envVar("BRIGADE_PROJECT_ID", project.id),
-      envVar("BRIGADE_REMOTE_URL", project.repo.cloneURL),
+      envVar("BRIGADE_REMOTE_URL", cloneURL),
       envVar("BRIGADE_WORKSPACE", local),
       envVar("BRIGADE_PROJECT_NAMESPACE", project.kubernetes.namespace),
       envVar("BRIGADE_SUBMODULES", initGitSubmodules.toString()),
