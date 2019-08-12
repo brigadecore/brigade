@@ -108,6 +108,7 @@ func (s *store) CreateBuild(build *brigade.Build) error {
 		StringData: map[string]string{
 			"build_id":       buildName,
 			"build_name":     buildName,
+			"clone_url":      build.CloneURL,
 			"commit_id":      build.Revision.Commit,
 			"commit_ref":     build.Revision.Ref,
 			"event_provider": build.Provider,
@@ -203,6 +204,7 @@ func NewBuildFromSecret(secret v1.Secret) *brigade.Build {
 		ProjectID: lbs["project"],
 		Type:      sv.String("event_type"),
 		Provider:  sv.String("event_provider"),
+		CloneURL:  sv.String("clone_url"),
 		Revision: &brigade.Revision{
 			Commit: sv.String("commit_id"),
 			Ref:    sv.String("commit_ref"),

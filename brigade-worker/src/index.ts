@@ -8,6 +8,9 @@
  * - `BRIGADE_EVENT_PROVIDER`: The name of the event provider, such as `github` or `dockerhub`
  * - `BRIGADE_PROJECT_ID`: The project ID. This is used to load the Project
  *   object from configuration.
+ * - `BRIGADE_REMOTE_URL`: The URL from which to obtain source code to be built.
+ *   This is optional. If left unset by the controller, the worker will fall
+ *   back to a project-level URL.
  * - `BRIGADE_COMMIT_ID`: The VCS commit ID (e.g. the Git commit)
  * - `BRIGADE_COMMIT_REF`: The VCS full reference, defaults to
  *   `refs/heads/master`
@@ -107,6 +110,7 @@ let e: events.BrigadeEvent = {
   workerID: process.env.BRIGADE_BUILD_NAME || `unknown-${defaultULID}`,
   type: process.env.BRIGADE_EVENT_TYPE || "ping",
   provider: process.env.BRIGADE_EVENT_PROVIDER || "unknown",
+  cloneURL: process.env.BRIGADE_REMOTE_URL,
   revision: {
     commit: process.env.BRIGADE_COMMIT_ID,
     ref: process.env.BRIGADE_COMMIT_REF
