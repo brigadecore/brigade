@@ -12,6 +12,10 @@ type Build struct {
 	Type string `json:"type"`
 	// Provider is the name of the service that caused the event (github, vsts, cron, ...)
 	Provider string `json:"provider"`
+	// CloneURL is the URL at which the repository can be cloned.
+	// This is optional at the build-level. If set, it overrides the same setting
+	// at the projet-level.
+	CloneURL string `json:"clone_url"`
 	// Revision describes a vcs revision.
 	Revision *Revision `json:"revision"`
 	// Payload is the raw data as received by the webhook.
