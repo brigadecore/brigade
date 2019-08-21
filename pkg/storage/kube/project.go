@@ -49,7 +49,7 @@ func SecretFromProject(project *brigade.Project) (v1.Secret, error) {
 		project.ID = brigade.ProjectID(project.Name)
 	}
 
-	// The marshal on SecretsMap redacts secrts, so we cast and marshal as a raw
+	// The marshal on SecretsMap redacts secrets, so we cast and marshal as a raw
 	// map[string]string
 	var secrets map[string]string = project.Secrets
 	secretsJSON, err := json.Marshal(secrets)

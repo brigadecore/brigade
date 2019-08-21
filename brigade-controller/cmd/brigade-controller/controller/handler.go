@@ -296,7 +296,7 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 	return envs
 }
 
-// workerResources generates the resources for the worker, given in the cofiguration
+// workerResources generates the resources for the worker, given in the configuration
 // If the value is not given, or it's wrong, empty resources gill be returned
 func workerResources(config *Config) v1.ResourceRequirements {
 	resources := v1.ResourceRequirements{
