@@ -60,7 +60,7 @@ func init() {
 	f := Root.PersistentFlags()
 	f.StringVarP(&globalNamespace, "namespace", "n", "", "The Kubernetes namespace for Brigade")
 	f.StringVarP(&globalAge, "age", "a", "", "Age as a fuzzy date ('48h' for hours, '20m' for minutes, '2000s' for seconds)")
-	f.IntVarP(&globalMaxBuilds, "max-builds", "m", vacuum.NoMaxBuilds, "Maxinum number of builds to keep")
+	f.IntVarP(&globalMaxBuilds, "max-builds", "m", vacuum.NoMaxBuilds, "Maximum number of builds to keep")
 	f.BoolVarP(&globalVerbose, "verbose", "v", false, "Turn on verbose output")
 	f.StringVar(&globalKubeConfig, "kubeconfig", "", "The path to a KUBECONFIG file, overrides $KUBECONFIG.")
 }
