@@ -1016,8 +1016,19 @@ function generateScript(job: jobs.Job): string | null {
   let newCmd = "#!" + job.shell + "\n\n";
 
   // if shells that support the `set` command are selected, let's add some sane defaults
-  if (job.shell == "/bin/sh" || job.shell == "/bin/bash") {
-    newCmd += "set -e\n\n";
+  switch (job.shell) {
+    case "/bin/sh":
+      // The -e option will cause a bash script to exit immediately when a command fails
+      newCmd += "set -e\n\n";
+      break;
+    case "/bin/bash":
+      // The -e option will cause a bash script to exit immediately when a command fails
+      // The -o pipefail option sets the exit code of a pipeline to that of the rightmost command
+      // to exit with a non-zero status, or to zero if all commands of the pipeline exit successfully.
+      newCmd += "set -eo pipefail\n\n";
+      break;
+    default:
+      // No-op currently
   }
 
   // Join the tasks to make a new command:

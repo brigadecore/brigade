@@ -193,7 +193,8 @@ Properties of `Job`
 - `name: string`: The job name
 - `shell: string`: The shell in which to execute the tasks (`/bin/sh`)
 - `tasks: string[]`: Tasks to be run in the job, in order. Tasks are concatenated
-  together and packaged as a Borne (`/bin/sh`) shell script with `set -eo pipefail`.
+  together and, by default, packaged as a Bourne (`/bin/sh`) shell script with `set -e`.
+  If the Bourne Again Shell is used (`/bin/bash`), `set -eo pipefail` will be used.
 - `args: string[]`: Arguments to pass to the container's entrypoint. It is recommended,
   though not required, that implementors not use both `args` and `tasks`.
 - `imageForcePull: boolean`: Defines the container image pull policy: `Always` if `true` or `IfNotPresent` if `false` (defaults to `false`).

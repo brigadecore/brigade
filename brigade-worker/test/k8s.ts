@@ -270,6 +270,31 @@ describe("k8s", function () {
           assert.notProperty(jr.secret.data, "main.sh");
         });
       });
+      context("when tasks are supplied", function () {
+        beforeEach(function () {
+          j.tasks = ["echo 'foo'"];
+        });
+        it("the resulting shell script should have certain options set", function () {
+          let jr = new k8s.JobRunner().init(j, e, p);
+          assert.deepEqual(jr.runner.spec.containers[0].command, [ '/bin/sh', '/hook/main.sh' ]);
+          assert.equal(k8s.b64dec(jr.secret.data["main.sh"]),
+            "#!/bin/sh\n\nset -e\n\necho 'foo'");
+        });
+        it("the resulting bash script should have certain options set", function () {
+          j.shell = "/bin/bash";
+          let jr = new k8s.JobRunner().init(j, e, p);
+          assert.deepEqual(jr.runner.spec.containers[0].command, [ '/bin/bash', '/hook/main.sh' ]);
+          assert.equal(k8s.b64dec(jr.secret.data["main.sh"]),
+            "#!/bin/bash\n\nset -eo pipefail\n\necho 'foo'");
+        });
+        it("the resulting dash script shouldn't have any options set", function () {
+          j.shell = "/bin/dash";
+          let jr = new k8s.JobRunner().init(j, e, p);
+          assert.deepEqual(jr.runner.spec.containers[0].command, [ '/bin/dash', '/hook/main.sh' ]);
+          assert.equal(k8s.b64dec(jr.secret.data["main.sh"]),
+            "#!/bin/dash\n\necho 'foo'");
+        });
+      });
       context("when useSource is set to false", function () {
         beforeEach(function () {
           j.tasks = [];
