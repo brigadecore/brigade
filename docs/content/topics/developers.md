@@ -63,7 +63,7 @@ $ cd $GOPATH/src/github.com/brigadecore/brigade
 **Note**: this leaves you at the tip of **master** in the repository where active development
 is happening. You might prefer to checkout the most recent stable tag:
 
-- `$ git checkout v1.1.0`
+- `$ git checkout v1.2.0`
 
 After cloning the project locally, you should run this command to [configure the remote](https://help.github.com/articles/configuring-a-remote-for-a-fork/): 
 

@@ -249,7 +249,7 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 				Name: "Apache-2.0",
 				URL:  "https://www.apache.org/licenses/LICENSE-2.0",
 			},
-			Version: "1.1.0",
+			Version: "1.2.0",
 		},
 	}
 }
