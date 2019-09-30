@@ -8,8 +8,6 @@ aliases:
   - /topics/intro/install.md
 ---
 
-_This part is a work-in-progress because Brigade is still developer-oriented_
-
 The Brigade server is deployed via its [Helm](https://github.com/helm/helm) chart and
 Brigade projects are managed via [brig](#brig). Here are the steps:
 
@@ -26,12 +24,14 @@ By default, Brigade is not configured with a load balancer service for incoming 
 comes in the form of one or more [Gateways](../topics/gateways.md) that provide configurable services, usually in tandem
 with ingress resources.
 
+### Brigade Github App Gateway with External IP
+
 Let's take the example of enabling the [GitHub App Gateway](../topics/github.md).
 
-We would upgrade our `brigade-server` release like so:
+By default, the Brigade Github App gateway chart defines the associated service type as `ClusterIP`, which is only accessible within the Kubernetes cluster.   If we wish to set up the gateway with an externally-visible IP of type `LoadBalancer`, we would upgrade our `brigade-server` release like so:
 
 ```
-$ helm upgrade brigade-server brigade/brigade --set brigade-github-app.enabled=true
+$ helm upgrade brigade-server brigade/brigade --set brigade-github-app.enabled=true --set brigade-github-app.service.type=LoadBalancer
 ```
 
 We'd then locate the external IP as follows:
@@ -49,7 +49,7 @@ The `EXTERNAL-IP` field is the IP address that external services, such as GitHub
 There will be more configuration needed for the `brigade-github-app` sub-chart for GitHub events to reach a Brigade project.
 See more at [GitHub App Gateway](../topics/github.md).
 
-Note that this is just one way of configuring Brigade to receive inbound connections. Brigade itself does not care how traffic is routed to it. Those with operational knowledge of Kubernetes may wish to use another method of ingress routing.
+Note that this is just one way of configuring Brigade to receive inbound connections. Brigade itself does not care how traffic is routed to it. Those with operational knowledge of Kubernetes may wish to use another method of ingress routing.  See the [Ingress](../topics/ingress.md) doc for more information.
 
 ## Brig
 
