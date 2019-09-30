@@ -5,6 +5,7 @@ aliases:
   - /ingress.md
   - /topics/ingress.md
   - /intro/ingress.md
+  - /intro/topics/ingress.md
 ---
 
 # Using an ingress
