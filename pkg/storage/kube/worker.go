@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 
 	v1 "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,8 +85,10 @@ func (s *store) GetWorkerInitLog(worker *brigade.Worker) (string, error) {
 }
 
 func (s *store) getWorkerLogStream(follow bool, worker *brigade.Worker, container ...string) (io.ReadCloser, error) {
+	tailAllLines := int64(math.MaxInt64)
 	opts := &v1.PodLogOptions{
-		Follow: follow,
+		Follow:    follow,
+		TailLines: &tailAllLines,
 	}
 	if len(container) > 0 {
 		opts.Container = container[0]
