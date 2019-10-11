@@ -1,0 +1,100 @@
+## 0.11.1 / 2019-03-31
+
+* [ENHANCEMENT] (Brigade) Update to Brigade v1.0.0.
+
+## 0.11.0 / 2019-03-16
+
+* [ENHANCEMENT] (Brigade) Update to Brigade v1.0.0-beta.2.
+
+## 0.10.0 / 2019-02-03
+
+* [ENHANCEMENT] (Brigade) Update to Brigade v0.20.
+
+## 0.9.1 / 2019-01-04
+
+* [ENHANCEMENT] (Kubernetes) Add BRIGADE_NAMESPACE env var to set default brigade namespace without the need to use the --namespace flag.
+
+## 0.9.0 / 2018-12-25
+
+* [ENHANCEMENT] (Brigade) Update to Brigade v0.19.
+
+## 0.8.0 / 2018-11-09
+
+* [ENHANCEMENT] (Brigade) Update to Brigade v0.18.
+
+## 0.7.0 / 2018-10-06
+
+* [ENHANCEMENT] (Kubernetes) Set better settings on client connection.
+* [ENHANCEMENT] (Brigade) Update to Brigade v0.17.
+
+## 0.6.0 / 2018-08-12
+
+* [ENHANCEMENT] (Brigade) Update to Brigade v0.16.
+
+## 0.5.2 / 2018-08-04
+
+* [ENHANCEMENT] (Brigade) Add the ability to rerun a build.
+
+## 0.5.1 / 2018-08-03
+
+* [BUGFIX] (UI) Fix panic on some windows terminals.
+
+## 0.5.0 / 2018-07-15
+
+* [ENHANCEMENT] (Brigade) Update to Brigade v0.15.
+* [ENHANCEMENT] (UI) Add ANSI color support on logs.
+
+## 0.4.2 / 2018-06-07
+
+* [BUGFIX] (UI/Brigade) Fix sort of jobs and builds on the pages.
+
+## 0.4.1 / 2018-06-07
+
+* [ENHANCEMENT] (UI) Autoreload pages.
+* [ENHANCEMENT] (cli) Add short flags.
+
+## 0.4.0 / 2018-06-03
+
+* [ENHANCEMENT] (UI) Autoreload the job log UI when job has finished.
+* [FEATURE] (UI) Allow live streaming of logs on job log UI.
+* [ENHANCEMENT] (Tview) Update tview to the latest revision in master branch.
+* [ENHANCEMENT] (Brigade) Update to Brigade v0.14.
+
+## 0.3.1 / 2018-05-30
+
+* [ENHANCEMENT] (UI) Scroll to the bottom of the job logs when refreshing logs.
+* [ENHANCEMENT] (k8s) Add context flag to allow connecting using kubectl configuration contexts.
+* [ENHANCEMENT] (UI) Add Project filtering (#31)(@walialu).
+
+## 0.3.0 / 2018-04-20
+
+* [ENHANCEMENT] (UI) Add Backspace to go back.
+* [ENHANCEMENT] (UI) Add R for reloading as keybinding.
+* [ENHANCEMENT] (UI) Add Q for quit as keybinding.
+* [ENHANCEMENT] (k8s) Update to 0.7.0 Kubernetes go client lib.
+* [ENHANCEMENT] (k8s) Load all available credential types in the Kubernetes go client lib.
+* [ENHANCEMENT] (Brigade) Update to Brigade v0.13.
+
+## 0.2.0 / 2018-03-30
+
+* [FEATURE] (UI) Add latest 5 builds status on project list.
+* [FEATURE] (Brigade) Project hast the information of the latest 5 builds.
+* [FEATURE] (UI) Allow going back with left arrow.
+* [BUGFIX]  (UI) Set ESC as home key instead of F1.
+* [FEATURE] (UI) Allow reloading projects on home window (project list).
+* [FEATURE] (UI) Add exit/quit key combination.
+* [FEATURE] (UI) Different colors and icons to states of jobs, builds, projects.
+* [FEATURE] (Brigade) Add pending and unknown states.
+* [BUGFIX]  (k8s) When no namespace is specified use default namespace.
+
+## 0.1.1 / 2018-03-23
+
+* [BUGFIX] (UI) Fix not showing any project on project list when one of the projects has 0 builds.
+
+## 0.1.0 / 2018-03-22
+
+* [FEATURE] (UI) Project list.
+* [FEATURE] (UI) Build list.
+* [FEATURE] (UI) Job list.
+* [FEATURE] (UI) Job pipeline graph.
+* [FEATURE] (UI) Job log.
