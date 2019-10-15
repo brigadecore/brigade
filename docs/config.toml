@@ -85,6 +85,11 @@ relativeURLs = "true"
     weight = 42
     parent = "topics"
     [[menu.index]]
+    name = "The Brig CLI"
+    url = "/topics/brig/"
+    weight = 42
+    parent = "topics"
+    [[menu.index]]
     name = "The Brigade.js API"
     url = "/topics/javascript/"
     weight = 43

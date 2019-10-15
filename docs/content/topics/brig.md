@@ -1,3 +1,13 @@
+---
+title: The Brig CLI
+description: Using the Brigade CLI
+aliases:
+  - /brig.md
+  - /topics/brig.md
+  - /topics/cli/brig.md
+  - /intro/brig.md
+---
+
 # Brig: The Brigade CLI
 
 Brig is a command line tool for interacting with Brigade. It allows Brigade
@@ -49,11 +59,11 @@ By default, Brig requests that the event `exec` be run. You can override this by
 supplying a `--event=NAME` flag. For example, try executing the following script:
 
 ```javascript
-const { events } = require("brigadier")
+const { events } = require("brigadier");
 
 events.on("exec", () => {
-  console.log("Hello from brig!")
-})
+  console.log("Hello from brig!");
+});
 ```
 
 A more complete example:
@@ -67,13 +77,6 @@ the Kubernetes `my-builds` namespace. It executes within the project
 `technosophos/myproject`.
 
 The output of the master process is written to STDOUT.
-
-## Building Brig
-
-To build Brig, clone the [Brigade repository](https://github.com/brigadecore/brigade)
-to `$GOPATH/src/github.com/brigadecore/brigade` and then run `make bootstrap brig`.
-
-If you have $GOPATH issues, you may need to [add the Brigade binary](https://github.com/brigadecore/brigade/issues/447) to your path.
 
 ## How Brig Works
 
