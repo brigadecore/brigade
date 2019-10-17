@@ -1,6 +1,6 @@
 ---
-title: 'Topic Guides'
-description: 'Deep dives into individual parts of Brigade'
+title: "Topic Guides"
+description: "Deep dives into individual parts of Brigade"
 aliases:
   - /topics.md
   - /topics/index.md
@@ -19,6 +19,7 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
   - [Brigade Design](design): A high-level explanation of how Brigade is designed.
 - Using Brigade (brigade.js, webhooks)
   - [Scripting Guide](scripting): How to write JavaScript for `brigade.js` files.
+  - [Using the Brigade CLI](brig)
   - [Brigade.js Reference](javascript): The API for brigade.js files.
   - [Scripting Guide - Advanced](scripting_advanced): Advanced examples for `brigade.js` files.
   - [Adding dependencies to `brigade.js`](dependencies): How to add local dependencies and NPM packages to your `brigade.js` files.
@@ -38,7 +39,5 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
     code.
 - Examples
   - [Example Projects](../index/#technical): Brigade-related projects.
-
-
 
 [write]: https://github.com/brigadecore/brigade/new/master/content/docs/topics
