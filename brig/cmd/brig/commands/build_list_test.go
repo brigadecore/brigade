@@ -70,17 +70,19 @@ func TestGetBuildList(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(bls) != 3 {
+	bfs := getBuildsForStdout(bls)
+
+	if len(bfs) != 3 {
 		t.Error("Error in getBuilds for all projects")
 	}
 
-	if bls[0].since != "???" || bls[0].ID != stubBuild2ID {
+	if bfs[0].since != "???" || bfs[0].ID != stubBuild2ID {
 		t.Error("Error in build2 time")
 	}
-	if bls[1].since != "3m" || bls[1].ID != stubBuild3ID {
+	if bfs[1].since != "3m" || bfs[1].ID != stubBuild3ID {
 		t.Error("Error in build3 time")
 	}
-	if bls[2].since != "5m" || bls[2].ID != stubBuild1ID {
+	if bfs[2].since != "5m" || bfs[2].ID != stubBuild1ID {
 		t.Error("Error in build1 time")
 	}
 }
@@ -94,14 +96,16 @@ func TestGetBuildListWithProject(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(bls) != 2 {
+	bfs := getBuildsForStdout(bls)
+
+	if len(bfs) != 2 {
 		t.Errorf("Error in getBuilds for project %s", stubProject1ID)
 	}
 
-	if bls[0].since != "???" || bls[0].ID != stubBuild2ID {
+	if bfs[0].since != "???" || bfs[0].ID != stubBuild2ID {
 		t.Error("Error in build2")
 	}
-	if bls[1].since != "5m" || bls[1].ID != stubBuild1ID {
+	if bfs[1].since != "5m" || bfs[1].ID != stubBuild1ID {
 		t.Error("Error in build1")
 	}
 
@@ -116,17 +120,18 @@ func TestGetBuildListCountTwo(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(bls) != 2 {
-		t.Error("Error in getBuilds for '--count 2'")
+	bfs := getBuildsForStdout(bls)
+
+	if len(bfs) != 2 {
+		t.Errorf("Error in getBuilds for '--count 2', got %v builds", len(bfs))
 	}
 
-	if bls[0].since != "???" || bls[0].ID != stubBuild2ID {
+	if bfs[0].since != "???" || bfs[0].ID != stubBuild2ID {
 		t.Error("Error in build2 time")
 	}
-	if bls[1].since != "3m" || bls[1].ID != stubBuild3ID {
+	if bfs[1].since != "3m" || bfs[1].ID != stubBuild3ID {
 		t.Error("Error in build3 time")
 	}
-
 }
 
 // createFakeBuilds creates necessary Pods/Secrets for 3 fake builds/jobs

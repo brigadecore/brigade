@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -18,6 +19,7 @@ Print the attributes of a build.
 
 func init() {
 	build.AddCommand(buildGet)
+	buildGet.Flags().StringVarP(&output, "output", "o", "", "Return output in another format. Supported formats: json")
 }
 
 var buildGet = &cobra.Command{
@@ -47,6 +49,17 @@ func getBuild(out io.Writer, bid string) error {
 	script := string(b.Script)
 	payload := string(b.Payload)
 
+	if output == "json" {
+		b, err := json.MarshalIndent(b, "", "    ")
+		if err != nil {
+			return err
+		}
+		_, err = out.Write(b)
+		return err
+	}
+
+	// unless the --verbose flag was passed, strip the values
+	// for the script and payload
 	b.Script = nil
 	b.Payload = nil
 

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -22,11 +23,15 @@ const buildListUsage = `List all installed builds.
 Print a list of the current builds starting from latest (in creation time) to oldest. By default it will print all the builds, use --count to get a subset of them.
 `
 
-var buildListCount int
+var (
+	buildListCount int
+	output         string
+)
 
 func init() {
 	build.AddCommand(buildList)
 	buildList.Flags().IntVarP(&buildListCount, "count", "c", 0, "The maximum number of builds to return. 0 for all")
+	buildList.Flags().StringVarP(&output, "output", "o", "", "Return output in another format. Supported formats: json")
 }
 
 var buildList = &cobra.Command{
@@ -49,7 +54,16 @@ var buildList = &cobra.Command{
 			return err
 		}
 
-		listBuilds(bls, cmd.OutOrStdout())
+		if output == "json" {
+			bj, err := json.MarshalIndent(bls, "", "    ")
+			if err != nil {
+				return err
+			}
+			_, err = cmd.OutOrStdout().Write(bj)
+			return err
+		}
+
+		listBuilds(getBuildsForStdout(bls), cmd.OutOrStdout())
 		return nil
 	},
 }
@@ -63,12 +77,11 @@ func listBuilds(bs []*buildForStdout, out io.Writer) {
 	fmt.Fprintln(out, table)
 }
 
-func getBuilds(project string, client kubernetes.Interface, count int) ([]*buildForStdout, error) {
-
-	store := kube.New(client, globalNamespace)
-
+func getBuilds(project string, client kubernetes.Interface, count int) ([]*brigade.Build, error) {
 	var builds []*brigade.Build
 	var err error
+
+	store := kube.New(client, globalNamespace)
 	if project == "" {
 		builds, err = store.GetBuilds()
 		if err != nil {
@@ -79,27 +92,31 @@ func getBuilds(project string, client kubernetes.Interface, count int) ([]*build
 		if err != nil {
 			return nil, err
 		}
-
 		builds, err = store.GetProjectBuilds(proj)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// sorting here on StartTime because we do not want to rely on K8s sorting (which would be the order that Secrets/Pods were created)
-	// remember that most recent *started* builds must be at the top
+	// sorting here on StartTime because we do not want to rely on K8s sorting
+	// which would be the order that Secrets/Pods were created
 	sort.Slice(builds, func(i, j int) bool {
 		if builds[i].Worker == nil || builds[j].Worker == nil {
 			return false
 		}
-		return builds[i].Worker.StartTime.Before(builds[j].Worker.StartTime)
+		return builds[i].Worker.StartTime.After(builds[j].Worker.StartTime)
 	})
 
+	if count == 0 || count > len(builds) {
+		count = len(builds)
+	}
+
+	return builds[:count], err
+}
+
+func getBuildsForStdout(builds []*brigade.Build) []*buildForStdout {
 	var bfss []*buildForStdout
-	for i := len(builds) - 1; i >= 0; i-- {
-		if count > 0 && len(builds)-i-1 >= count {
-			break
-		}
+	for i := 0; i < len(builds); i++ {
 
 		b := builds[i]
 		bfs := &buildForStdout{Build: builds[i]}
@@ -115,7 +132,7 @@ func getBuilds(project string, client kubernetes.Interface, count int) ([]*build
 		bfss = append(bfss, bfs)
 	}
 
-	return bfss, nil
+	return bfss
 }
 
 type buildForStdout struct {
