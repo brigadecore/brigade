@@ -13,13 +13,13 @@ Once the intended commit has been tested and we have confidence to cut a release
 we can follow these steps to release Brigade:
 
 1. Issue a docs pull request with all `<current release>` strings updated to 
-`<anticipated release>`, e.g. `1.1.0` becomes `1.2.0`.
+`<anticipated release>`, e.g. `1.2.0` becomes `1.2.1`.
 
 1. Once this pull request is merged, create and push the git tag from the intended commit:
 
     ```console
-    $ git tag v1.2.0
-    $ git push origin v1.2.0
+    $ git tag v1.2.1
+    $ git push origin v1.2.1
     ```
 
     The release pipeline located in our [brigade.js](../../brigade.js) then takes over

@@ -1,10 +1,5 @@
 /bin/
-/brig/rootfs/brig
-/brigade-api/rootfs/brigade-api
-/brigade-controller/rootfs/brigade-controller
-/brigade-cr-gateway/rootfs/brigade-cr-gateway
-/brigade-generic-gateway/rootfs/brigade-generic-gateway
-/brigade-vacuum/rootfs/brigade-vacuum
+/**/rootfs
 /brigade-worker/dist/
 /brigade-worker/doc/
 /tests/testdata/*-generated.*

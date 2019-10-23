@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 
 	v1 "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,8 +67,10 @@ func (s *store) GetJobLog(job *brigade.Job) (string, error) {
 }
 
 func (s *store) getJobLogStream(follow bool, job *brigade.Job) (io.ReadCloser, error) {
+	tailAllLines := int64(math.MaxInt64)
 	req := s.client.CoreV1().Pods(s.namespace).GetLogs(job.ID, &v1.PodLogOptions{
-		Follow: follow,
+		Follow:    follow,
+		TailLines: &tailAllLines,
 	})
 
 	readCloser, err := req.Stream()
