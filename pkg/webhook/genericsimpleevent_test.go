@@ -191,7 +191,7 @@ func checkBuild(t *testing.T, store *mock.Store, expectedRef string, expectedCom
 					time.Sleep(50 * time.Millisecond)
 				} else {
 					c <- struct{}{} // signal that we do have a Build
-					break
+					return
 				}
 			case <-stopChan: // calling goroutine signals that we should exit, so return
 				return
