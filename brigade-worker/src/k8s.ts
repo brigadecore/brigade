@@ -769,7 +769,9 @@ export class JobRunner implements jobs.JobRunner {
         });
         const req = request(requestOptions, (error, response, body) => {
           if (error) {
-            this.logger.error(error.body.message);
+            if (error.body.message) {
+              this.logger.error(error.body.message);
+            }
             this.reconnect = true; //reconnect unless aborted
           }
         });
