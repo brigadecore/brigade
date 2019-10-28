@@ -474,7 +474,7 @@ export class JobRunner implements jobs.JobRunner {
       this.secret.data["main.sh"] = b64enc(newCmd);
     }
 
-    // If the job askes for privileged mode and the project allows this, enable it.
+    // If the job asks for privileged mode and the project allows this, enable it.
     if (job.privileged && project.allowPrivilegedJobs) {
       for (let i = 0; i < this.runner.spec.containers.length; i++) {
         this.runner.spec.containers[i].securityContext.privileged = true;
@@ -500,6 +500,10 @@ export class JobRunner implements jobs.JobRunner {
     let podName = this.name;
     let k = this.client;
     let ns = this.project.kubernetes.namespace;
+    if (this.cancel && this.pod == undefined || this.pod.status.phase == "Pending") {
+      return Promise.resolve<string>(
+        "pod " + podName + " still unscheduled or pending when job was canceled; no logs to return.")
+    }
     return Promise.resolve<string>(
       k.readNamespacedPodLog(podName, ns).then(result => {
         return result.body;
@@ -785,7 +789,7 @@ export class JobRunner implements jobs.JobRunner {
     let timer = new Promise((solve, reject) => {
       waiter = setTimeout(() => {
         this.cancel = true;
-        reject("time limit exceeded");
+        reject(new Error("time limit (" + timeout + " ms) exceeded"));
       }, timeout);
     });
 

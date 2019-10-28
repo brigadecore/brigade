@@ -4,7 +4,7 @@ import * as mock from "./mock";
 
 import * as k8s from "../src/k8s";
 import { BrigadeEvent, Project } from "@brigadecore/brigadier/out/events";
-import { Job, Result, brigadeCachePath, brigadeStoragePath } from "@brigadecore/brigadier/out/job";
+import { Job, Result, brigadeCachePath, brigadeStoragePath, JobResourceLimit } from "@brigadecore/brigadier/out/job";
 
 import * as kubernetes from "@kubernetes/client-node";
 
@@ -722,6 +722,14 @@ describe("k8s", function () {
         it("shell is /bin/bash", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           assert.deepEqual(jr.runner.spec.containers[0].command, ['/bin/bash', '/hook/main.sh']);
+        });
+      });
+      context("when logs is called", function() {
+        it("when the job has been canceled", async function () {
+          let jr = new k8s.JobRunner().init(j, e, p);
+          jr.cancel = true;
+          let logs = await jr.logs();
+          assert.equal("pod pequod-1234567890abcdef still unscheduled or pending when job was canceled; no logs to return.", logs);
         });
       });
     });
