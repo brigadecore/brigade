@@ -1,6 +1,6 @@
 #!/bin/bash
 # custom script for e2e testing
-# ~/bin must exist and be part of $PATH
+# ${BIN_DIR} must exist and be part of $PATH
 
 # kudos to https://elder.dev/posts/safer-bash/
 set -o errexit # script exits when a command fails == set -e
@@ -8,16 +8,24 @@ set -o nounset # script exits when tries to use undeclared variables == set -u
 #set -o xtrace # trace what's executed == set -x (useful for debugging)
 set -o pipefail # causes pipelines to retain / set the last non-zero status
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+BIN_DIR="${BIN_DIR:-"$(mktemp -d)"}"
+
+# This script may be run in the form of a Brigade KindJob,
+# wherein the kind cluster will have already been pre-provisioned,
+# hence the need to be able to opt-out
+CREATE_KIND="${CREATE_KIND:-true}"
+
 KUBECTL_PLATFORM=linux/amd64
-KUBECTL_VERSION=v1.15.0
+KUBECTL_VERSION=v1.15.3
 KUBECTL_EXECUTABLE=kubectl
 
 KIND_PLATFORM=kind-linux-amd64
-KIND_VERSION=v0.4.0
+KIND_VERSION=v0.5.1
 KIND_EXECUTABLE=kind
 
 HELM_PLATFORM=linux-amd64
-HELM_VERSION=helm-v3.0.0-alpha.1
+HELM_VERSION=helm-v3.0.0-beta.4
 HELM_EXECUTABLE=helm3
 
 ########################################################################################################################################################
@@ -26,20 +34,22 @@ function prerequisites_check(){
     # check if kubectl is installed
     if ! [ -x "$(command -v kubectl)" ]; then
       echo 'Error: kubectl is not installed. Installing...'
-      curl -LO https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/$KUBECTL_PLATFORM/kubectl && chmod +x ./kubectl && mv kubectl ~/bin/$KUBECTL_EXECUTABLE
+      curl -LO https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/$KUBECTL_PLATFORM/kubectl && chmod +x ./kubectl && mv kubectl ${BIN_DIR}/$KUBECTL_EXECUTABLE
     fi
 
     # check if kind is installed
     if ! [ -x "$(command -v $KIND_EXECUTABLE)" ]; then
         echo 'Error: kind is not installed. Installing...'
-        wget https://github.com/kubernetes-sigs/kind/releases/download/$KIND_VERSION/$KIND_PLATFORM && mv $KIND_PLATFORM ~/bin/$KIND_EXECUTABLE && chmod +x ~/bin/$KIND_EXECUTABLE
+        wget https://github.com/kubernetes-sigs/kind/releases/download/$KIND_VERSION/$KIND_PLATFORM && mv $KIND_PLATFORM ${BIN_DIR}/$KIND_EXECUTABLE && chmod +x ${BIN_DIR}/$KIND_EXECUTABLE
     fi
 
     # check if helm is installed
     if ! [ -x "$(command -v $HELM_EXECUTABLE)" ]; then
         echo 'Error: Helm is not installed. Installing...'
-        wget https://get.helm.sh/$HELM_VERSION-$HELM_PLATFORM.tar.gz && tar -xvzf $HELM_VERSION-$HELM_PLATFORM.tar.gz && rm -rf $HELM_VERSION-$HELM_PLATFORM.tar.gz && mv $HELM_PLATFORM/helm ~/bin/$HELM_EXECUTABLE && chmod +x ~/bin/$HELM_EXECUTABLE
+        wget https://get.helm.sh/$HELM_VERSION-$HELM_PLATFORM.tar.gz && tar -xvzf $HELM_VERSION-$HELM_PLATFORM.tar.gz && rm -rf $HELM_VERSION-$HELM_PLATFORM.tar.gz && mv $HELM_PLATFORM/helm ${BIN_DIR}/$HELM_EXECUTABLE && chmod +x ${BIN_DIR}/$HELM_EXECUTABLE
     fi
+
+    export PATH="${BIN_DIR}:${PATH}"
 }
 
 
@@ -57,13 +67,11 @@ function install_helm_project(){
 function wait_for_deployments() {
     echo "-----Waiting for Brigade components' deployments-----"
     # https://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
-    DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
     "${DIR}"/wait-for-deployment.sh -n default brigade-server-brigade-api
     "${DIR}"/wait-for-deployment.sh -n default brigade-server-brigade-cr-gw
     "${DIR}"/wait-for-deployment.sh -n default brigade-server-brigade-ctrl
     "${DIR}"/wait-for-deployment.sh -n default brigade-server-brigade-generic-gateway
     "${DIR}"/wait-for-deployment.sh -n default brigade-server-brigade-github-app
-    "${DIR}"/wait-for-deployment.sh -n default brigade-server-brigade-github-oauth
     "${DIR}"/wait-for-deployment.sh -n default brigade-server-kashti
 }
 
@@ -100,11 +108,15 @@ function run_verify_build(){
 prerequisites_check
 
 # create kind k8s cluster
-$KIND_EXECUTABLE create cluster
+if [[ "${CREATE_KIND}" == "true" ]]; then
+  $KIND_EXECUTABLE create cluster
+fi
 
 function finish {
-  echo "-----Cleaning up-----"
-  $KIND_EXECUTABLE delete cluster
+  if [[ "${CREATE_KIND}" == "true" ]]; then
+    echo "-----Cleaning up-----"
+    $KIND_EXECUTABLE delete cluster
+  fi
 }
 
 trap finish EXIT
