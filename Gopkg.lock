@@ -118,6 +118,73 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:65c9e58c85d0791b146dc7f4387330329204a70fb34532e7ffce71a2f04f59a2"
+  name = "github.com/gdamore/encoding"
+  packages = ["."]
+  pruneopts = ""
+  revision = "6289cdc94c00ac4aa177771c5fce7af2f96b626d"
+  version = "v1.0.0"
+
+[[projects]]
+  digest = "1:4ac27199a267997e47d6a4995d31a89454e522c9c2d6fb3d225ee62c612a0578"
+  name = "github.com/gdamore/tcell"
+  packages = [
+    ".",
+    "terminfo",
+    "terminfo/a/adm3a",
+    "terminfo/a/aixterm",
+    "terminfo/a/alacritty",
+    "terminfo/a/ansi",
+    "terminfo/a/aterm",
+    "terminfo/b/beterm",
+    "terminfo/b/bsdos_pc",
+    "terminfo/base",
+    "terminfo/c/cygwin",
+    "terminfo/d/d200",
+    "terminfo/d/d210",
+    "terminfo/d/dtterm",
+    "terminfo/dynamic",
+    "terminfo/e/emacs",
+    "terminfo/e/eterm",
+    "terminfo/extended",
+    "terminfo/g/gnome",
+    "terminfo/h/hpterm",
+    "terminfo/h/hz1500",
+    "terminfo/k/konsole",
+    "terminfo/k/kterm",
+    "terminfo/l/linux",
+    "terminfo/p/pcansi",
+    "terminfo/r/rxvt",
+    "terminfo/s/screen",
+    "terminfo/s/simpleterm",
+    "terminfo/s/sun",
+    "terminfo/t/termite",
+    "terminfo/t/tvi910",
+    "terminfo/t/tvi912",
+    "terminfo/t/tvi921",
+    "terminfo/t/tvi925",
+    "terminfo/t/tvi950",
+    "terminfo/t/tvi970",
+    "terminfo/v/vt100",
+    "terminfo/v/vt102",
+    "terminfo/v/vt220",
+    "terminfo/v/vt320",
+    "terminfo/v/vt400",
+    "terminfo/v/vt420",
+    "terminfo/v/vt52",
+    "terminfo/w/wy50",
+    "terminfo/w/wy60",
+    "terminfo/w/wy99_ansi",
+    "terminfo/x/xfce",
+    "terminfo/x/xnuppc",
+    "terminfo/x/xterm",
+    "terminfo/x/xterm_kitty",
+  ]
+  pruneopts = ""
+  revision = "4d152cc2622d491e1b0a034c3211b9df28c0ba2d"
+  version = "v1.3.0"
+
+[[projects]]
   digest = "1:a31fbb19d2b38d50bc125d97b7c3e7a286d3f6f37d18756011eb6e7d1a9fa7d0"
   name = "github.com/ghodss/yaml"
   packages = ["."]
@@ -308,6 +375,14 @@
   version = "1.0.0"
 
 [[projects]]
+  digest = "1:ae90995bad89e019ff65f8de58750555cdf01662a52aed7adb91acc8a95775c8"
+  name = "github.com/lucasb-eyer/go-colorful"
+  packages = ["."]
+  pruneopts = ""
+  revision = "30298f24079860c4dee452fdef6519b362a4a026"
+  version = "v1.0.2"
+
+[[projects]]
   branch = "master"
   digest = "1:d9e483f4b9e306facf126bd90b02d512bd22ea4471e1568867e32221a8abbb16"
   name = "github.com/mailru/easyjson"
@@ -358,6 +433,27 @@
   pruneopts = ""
   revision = "02a8604050d8466dd915307496174adb9be4593a"
   version = "v1.3.1"
+
+[[projects]]
+  digest = "1:a57e3fd8177ac03fb27d852f0b5f13e2bfd0fbf488292a7ba7d44f8f880d26d9"
+  name = "github.com/rivo/tview"
+  packages = ["."]
+  pruneopts = ""
+  revision = "6614b16d9037759065eac63d8fb3d8408e63e222"
+
+[[projects]]
+  digest = "1:765194f2d674c98d3fdbba7b5147cb41f595bbb841669f17d356cad8c92ce71c"
+  name = "github.com/slok/brigadeterm"
+  packages = [
+    "pkg/controller",
+    "pkg/model/brigade",
+    "pkg/service/brigade",
+    "pkg/ui",
+    "pkg/ui/page",
+  ]
+  pruneopts = ""
+  revision = "8e4fbf8a2ccaee06783b6b401af524aa83714f4d"
+  version = "v0.11.1"
 
 [[projects]]
   digest = "1:a1403cc8a94b8d7956ee5e9694badef0e7b051af289caad1cf668331e3ffa4f6"
@@ -431,6 +527,8 @@
   digest = "1:75a8b2050f6576c5ebc0f4985ad976cca7e4c1834c73a2a15d522a2d8d143963"
   name = "golang.org/x/text"
   packages = [
+    "encoding",
+    "encoding/internal/identifier",
     "internal/gen",
     "internal/triegen",
     "internal/ucd",
@@ -720,6 +818,10 @@
     "github.com/google/go-github/github",
     "github.com/gosuri/uitable",
     "github.com/oklog/ulid",
+    "github.com/rivo/tview",
+    "github.com/slok/brigadeterm/pkg/controller",
+    "github.com/slok/brigadeterm/pkg/service/brigade",
+    "github.com/slok/brigadeterm/pkg/ui",
     "github.com/spf13/cobra",
     "golang.org/x/oauth2",
     "gopkg.in/AlecAivazis/survey.v1",

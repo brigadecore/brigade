@@ -59,10 +59,10 @@ By default, Brig requests that the event `exec` be run. You can override this by
 supplying a `--event=NAME` flag. For example, try executing the following script:
 
 ```javascript
-const { events } = require("brigadier");
+const { events } = require('brigadier');
 
-events.on("exec", () => {
-  console.log("Hello from brig!");
+events.on('exec', () => {
+  console.log('Hello from brig!');
 });
 ```
 
@@ -77,6 +77,36 @@ the Kubernetes `my-builds` namespace. It executes within the project
 `technosophos/myproject`.
 
 The output of the master process is written to STDOUT.
+
+### Starting the Brigade web dashboard
+
+Brig comes with a web dashboard, Kashti, which can be launched using the `brig dashboard` command.
+The dashboard runs in your Kubernetes cluster, and Brig creates a tunnel, on `localhost`, then opens
+the default browser. On top of the global settings of Brig (the Kubernetes context, config, and namespace),
+the port of the local tunnel and disabling the launch of the default browser can be configured with flags.
+
+```
+$ brig dashboard --help
+Flags:
+  -h, --help             help for dashboard
+      --open-dashboard   open the dashboard in the browser (default true)
+      --port int         local port for the Kashti dashboard (default 8081)
+
+$ brig dashboard
+Connecting to kashti at http://localhost:8081...
+Connected! When you are finished with this session, enter CTRL+C.
+```
+
+![Brigade web dashboard, Kashti](https://user-images.githubusercontent.com/686194/33646819-7d19d222-da06-11e7-8513-82e521fda608.gif)
+
+### Starting the Brigade CLI dashboard
+
+Brig also comes with a CLI dashboard that communicates directly with the Brigade API.
+This dashboard is an integration of the community project [Brigadeterm](https://github.com/slok/brigadeterm/),
+and can be launched using the `brig term` command. The refresh interval of the dashboard can be passed as a
+flag to the `brig term` command.
+
+![Brigade CLI dashboard](https://docs.brigade.sh/img/brig-term.png)
 
 ## How Brig Works
 
