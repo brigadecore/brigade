@@ -61,3 +61,15 @@
 [[constraint]]
   name = "github.com/cloudevents/sdk-go"
   version = "0.2.0"
+
+[[constraint]]
+  name = "github.com/slok/brigadeterm"
+  version = "v0.11.1"
+
+[[constraint]]
+  name = "github.com/mattn/go-runewidth"
+  version = "v0.0.2"
+
+[[constraint]]
+  name = "github.com/rivo/tview"
+  revision = "6614b16d9037759065eac63d8fb3d8408e63e222"

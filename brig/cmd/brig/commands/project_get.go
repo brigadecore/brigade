@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/brigadecore/brigade/pkg/storage/kube"
 )
@@ -20,6 +21,7 @@ The PROJECT may either be the ID or the name of a project.
 
 func init() {
 	project.AddCommand(projectGet)
+	projectGet.Flags().StringVarP(&output, "output", "o", "", "Return output in another format. Supported formats: json")
 }
 
 var projectGet = &cobra.Command{
@@ -51,7 +53,16 @@ func getProject(out io.Writer, name string) error {
 		return err
 	}
 
-	bytes, err := json.MarshalIndent(sec, "", "  ")
+	if output == "json" {
+		b, err := json.MarshalIndent(sec, "", "    ")
+		if err != nil {
+			return err
+		}
+		_, err = out.Write(b)
+		return err
+	}
+
+	bytes, err := yaml.Marshal(sec)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 
@@ -17,6 +18,7 @@ Print a list of all of the projects in the given namespace.
 
 func init() {
 	project.AddCommand(projectList)
+	projectList.Flags().StringVarP(&output, "output", "o", "", "Return output in another format. Supported formats: json")
 }
 
 var projectList = &cobra.Command{
@@ -37,6 +39,15 @@ func listProjects(out io.Writer) error {
 	store := kube.New(c, globalNamespace)
 	ps, err := store.GetProjects()
 	if err != nil {
+		return err
+	}
+
+	if output == "json" {
+		b, err := json.MarshalIndent(ps, "", "    ")
+		if err != nil {
+			return err
+		}
+		_, err = out.Write(b)
 		return err
 	}
 
