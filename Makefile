@@ -88,7 +88,7 @@ format-go:
 
 .PHONY: yarn-install
 yarn-install:
-	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn install"
+	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn install && yarn global add strip-ansi-cli"
 
 .PHONY: format-js
 format-js:
@@ -130,7 +130,7 @@ verify-vendored-code-js:
 # JS test is local only
 .PHONY: test-js
 test-js:
-	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn build && yarn test"
+	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn build && yarn --silent test"
 
 ################################################################################
 # Build / Publish                                                              #

@@ -10,7 +10,7 @@
     "prestart": "node prestart.js",
     "build-start": "yarn build && yarn start",
     "start": "node --no-deprecation ./dist/index.js",
-    "test": "mocha --require ts-node/register --recursive ./test/**/*.ts",
+    "test": "mocha --no-colors --require ts-node/register --recursive ./test/**/*.ts",
     "build": "tsc",
     "brigade": "yarn start",
     "docs": "typedoc --out ./doc --excludePrivate --excludeExternals --exclude test/*.ts --exclude doc/** ./src"
