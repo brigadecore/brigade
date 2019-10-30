@@ -46,7 +46,7 @@ describe("app", function() {
           });
           let caught = false;
           brigadier.events.on("error", () => {
-            caught = true;
+            // caught = true;
           });
           let e = mock.mockEvent();
           e.type = "test-fail";
