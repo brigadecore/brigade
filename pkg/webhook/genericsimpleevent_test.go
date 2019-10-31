@@ -26,7 +26,7 @@ func newGenericProject() *brigade.Project {
 			Name:     "github.com/dgkanatsios/o365-notify",
 			CloneURL: "https://github.com/dgkanatsios/o365-notify",
 		},
-		Secrets: map[string]string{
+		Secrets: map[string]interface{}{
 			"mysecret": "value",
 		},
 		DefaultScript: `const { events, Job } = require("brigadier")
