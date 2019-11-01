@@ -144,7 +144,8 @@ function runCheck(e, p) {
 function runTests(e, p, jobFunc) {
   console.log("Check requested");
 
-  var check = new Check(e, p, jobFunc());
+  var check = new Check(e, p, jobFunc(),
+    `https://brigadecore.github.io/kashti/builds/${e.buildID}`);
   return check.run();
 }
 
