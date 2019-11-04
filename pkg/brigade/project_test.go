@@ -20,7 +20,8 @@ func TestProjectSecrets(t *testing.T) {
 	proj := Project{
 		SharedSecret: "wisper",
 		Secrets:      map[string]string{"foo": "bar"},
-		Repo:         Repo{SSHKey: "noop"},
+		Repo: Repo{SSHKey: "noop",
+			SSHKey: "noop"},
 	}
 
 	data, err := json.Marshal(&proj)
@@ -40,6 +41,9 @@ func TestProjectSecrets(t *testing.T) {
 		t.Error("Project.Secrets should not be " + redacted)
 	}
 	if got.Repo.SSHKey != "" {
+		t.Error("Project.Repo.SSHKey should not be exported")
+	}
+	if got.Repo.SSHCert != "" {
 		t.Error("Project.Repo.SSHKey should not be exported")
 	}
 }

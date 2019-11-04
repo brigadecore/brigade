@@ -87,6 +87,7 @@ func SecretFromProject(project *brigade.Project) (v1.Secret, error) {
 
 			"repository": project.Repo.Name,
 			"sshKey":     project.Repo.SSHKey,
+			"sshCert":    project.Repo.SSHCert,
 			"cloneURL":   project.Repo.CloneURL,
 
 			"secrets": string(secretsJSON),
@@ -197,6 +198,7 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 		Name: sv.String("repository"),
 		// Note that we have to undo the key escaping.
 		SSHKey:   strings.Replace(sv.String("sshKey"), "$", "\n", -1),
+		SSHCert:  strings.Replace(sv.String("sshCert"), "$", "\n", -1),
 		CloneURL: sv.String("cloneURL"),
 	}
 

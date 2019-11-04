@@ -108,7 +108,8 @@ type Repo struct {
 	// Traditionally, this is an HTTPS URL.
 	CloneURL string `json:"cloneURL"`
 	// SSHKey is the auth string for SSH-based cloning
-	SSHKey string `json:"-"`
+	SSHKey  string `json:"-"`
+	SSHCert string `json:"-"`
 }
 
 // Kubernetes describes the Kubernetes configuration for a project.
