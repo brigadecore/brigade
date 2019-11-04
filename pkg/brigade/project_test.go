@@ -21,7 +21,7 @@ func TestProjectSecrets(t *testing.T) {
 		SharedSecret: "wisper",
 		Secrets:      map[string]string{"foo": "bar"},
 		Repo: Repo{SSHKey: "noop",
-			SSHKey: "noop"},
+			SSHCert: "noop"},
 	}
 
 	data, err := json.Marshal(&proj)
