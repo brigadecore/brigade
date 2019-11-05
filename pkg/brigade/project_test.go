@@ -44,7 +44,7 @@ func TestProjectSecrets(t *testing.T) {
 		t.Error("Project.Repo.SSHKey should not be exported")
 	}
 	if got.Repo.SSHCert != "" {
-		t.Error("Project.Repo.SSHKey should not be exported")
+		t.Error("Project.Repo.SSHCert should not be exported")
 	}
 }
 
