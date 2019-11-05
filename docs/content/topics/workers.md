@@ -151,6 +151,7 @@ is not applicable to a worker that does not utilize such configuration.
 | `BRIGADE_REMOTE_URL` | If applicable, a URL for obtaining project source code from a VCS repository. | |
 | `BRIGADE_REPO_AUTH_TOKEN` | If applicable, an authentication token for accessing the project's private source code repository. | |
 | `BRIGADE_REPO_KEY` | If applicable, an ssh key for accessing the project's private source code repository. | |
+| `BRIGADE_REPO_SSH_CERT` | If applicable, an ssh certificate used together with ssh key. | |
 | `BRIGADE_SCRIPT` | If applicable, may override the default location of the `brigade.js` file. | |
 | `BRIGADE_SECRET_KEY_REF` | A boolean (represented as the _string_ `"true"` or `"false"`) indicating whether pods that implement each build's job(s) may utilize `secretKeyRef` in defining their own environment variables. | |
 | `BRIGADE_SERVICE_ACCOUNT` | The service account to be used by any pods that implement each build's job(s). | Note that this may be different from the service account used by the worker itself. | |
