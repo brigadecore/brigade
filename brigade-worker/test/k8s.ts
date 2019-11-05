@@ -326,7 +326,7 @@ describe("k8s", function () {
         it("attaches key to pod", function () {
           let jr = new k8s.JobRunner().init(j, e, p);
           let sidecar = jr.runner.spec.initContainers[0];
-          assert.equal(sidecar.env.length, 14);
+          assert.equal(sidecar.env.length, 15);
 
           let hasBrigadeRepoKey: boolean = false;
           for (let i of sidecar.env) {
