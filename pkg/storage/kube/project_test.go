@@ -38,7 +38,16 @@ func TestGetProject(t *testing.T) {
 
 func TestCreateProject(t *testing.T) {
 	k, s := fakeStore()
-	secretsMap := map[string]string{"username": "hello", "password": "world"}
+	secretsMap := map[string]interface{}{
+		"username": "hello",
+		"password": "world",
+		"data": map[string]interface{}{
+			"nested": "value",
+			"deeply": map[string]string{
+				"nested": "value",
+			},
+		},
+	}
 	n := "tennyson/light-brigade"
 	proj := &brigade.Project{
 		Name:         n,
@@ -275,7 +284,7 @@ func TestConfigureProject(t *testing.T) {
 	}
 	if v, ok := proj.Secrets["NO SUCH KEY"]; ok {
 		t.Fatal("unexpected key")
-	} else if v != "" {
+	} else if v != nil {
 		t.Fatal("Expected empty string for non-existent key")
 	}
 	if proj.Worker.Registry != "brigadecore" {
