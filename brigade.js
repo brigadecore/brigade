@@ -90,30 +90,31 @@ function buildAndPublishImages(project, version) {
 // Here we can add additional Check Runs, which will run in parallel and
 // report their results independently to GitHub
 function runSuite(e, p) {
-  // For the master branch, we build and publish images in response to the push
-  // event. We test as a precondition for doing that, so we DON'T test here
-  // for the master branch.
-  if (e.revision.ref != "master") {
-    // Important: To prevent Promise.all() from failing fast, we catch and
-    // return all errors. This ensures Promise.all() always resolves. We then
-    // iterate over all resolved values looking for errors. If we find one, we
-    // throw it so the whole build will fail.
-    //
-    // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all#Promise.all_fail-fast_behaviour
-    //
-    // Note: as provided language string is used in job naming, it must consist
-    // of lowercase letters and hyphens only (per Brigade/K8s restrictions)
-    return Promise.all([
-      runTests(e, p, goTest).catch((err) => { return err }),
-      runTests(e, p, jsTest).catch((err) => { return err }),
-      runTests(e, p, e2e).catch((err) => { return err }),
-    ])
-      .then((values) => {
-        values.forEach((value) => {
-          if (value instanceof Error) throw value;
-        });
+  // Important: To prevent Promise.all() from failing fast, we catch and
+  // return all errors. This ensures Promise.all() always resolves. We then
+  // iterate over all resolved values looking for errors. If we find one, we
+  // throw it so the whole build will fail.
+  //
+  // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all#Promise.all_fail-fast_behaviour
+  //
+  // Note: as provided language string is used in job naming, it must consist
+  // of lowercase letters and hyphens only (per Brigade/K8s restrictions)
+  return Promise.all([
+    runTests(e, p, goTest).catch((err) => { return err }),
+    runTests(e, p, jsTest).catch((err) => { return err }),
+    runTests(e, p, e2e).catch((err) => { return err }),
+  ])
+    .then((values) => {
+      values.forEach((value) => {
+        if (value instanceof Error) throw value;
       });
-  }
+    })
+    .then(() => {
+      if (e.revision.ref == "master") {
+        // This builds and publishes "edge" images
+        buildAndPublishImages(p, "").run();
+      }
+    });
 }
 
 // runCheck is the default function invoked on a check_run:* event
@@ -229,16 +230,6 @@ events.on("push", (e, p) => {
           `${version} release now on GitHub! <https://github.com/${p.repo.name}/releases/tag/${version}>`,
           p
         ).run();
-      });
-  }
-  if (e.revision.ref == "refs/heads/master") {
-    // This runs tests then builds and publishes "edge" images
-    return Group.runAll([
-      goTest(),
-      jsTest()
-    ])
-      .then(() => {
-        buildAndPublishImages(p, "").run();
       });
   }
 })
