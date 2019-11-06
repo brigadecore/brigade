@@ -213,7 +213,7 @@ To use Docker-in-Docker inside of a job, you will need to do three things:
 
 ```javascript
   let dind = new Job("dind-run", "docker:dind");
-  dind.privileged = true; // allowPriviledgeJobs must be set to true for this to work
+  dind.privileged = true; // allowPrivilegedJobs must be set to true for this to work
   dind.tasks = [
       "dockerd-entrypoint.sh &", // <-- this sets up the Docker in Docker daemon
       "sleep 20", // Wait for the dockerd to start
