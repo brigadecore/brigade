@@ -86,6 +86,26 @@ You can optionally customize a bunch of advanced options during `brig project cr
 - *brigade.js file path*: brigade.js file path relative to the repository root, e.g. 'mypath/brigade.js'. Absolute paths will not be accepted
 - *Upload a default brigade.js script*: The local path to a default brigade.js file that will be run if none exists in the repo. Overrides the ConfigMap script
 
+#### Storing a Script in a ConfigMap
+
+It is possible to store a `brigade.js` script in a dedicated ConfigMap, and then share that ConfigMap with multiple projects.
+
+For example, if you have a local file named `examples/brigade.js`, you can use the `kubectl` command to turn it into a ConfigMap for Brigade to consume:
+
+```console
+$ kubectl create configmap default-brigade-script --from-file=brigade.js=examples/brigade.js
+```
+
+The command above stores the `examples/brigade.js` script in a ConfigMap named `default-brigade-script`. When creating a new project, you can answer the *Default script ConfigMap name* question by providing the name of this ConfigMap: `default-brigade-script`.
+
+If this value is supplied, the `brigade.js` in the ConfigMap will be used if and only if neither the project nor the repository provides an alternative `brigade.js` file. In other words, this is the _last location_ checked for a Brigade script.
+
+#### Storing a Default Script in the Project
+
+It is also possible to store a default Brigade script within the project definition. When `brig project create` prompts for *brigade.js file path* you can enter the path to a `brigade.js` file (e.g. `examples/brigade.js`) and that file will be copied into the project. Note that if you edit the `brigade.js` you will need to edit the project's Kubernetes Secret and update the script accordingly.
+
+If a script is set here, it will override a ConfigMap based script. However, if a repository holds a `brigade.js` file, that will take precedence over this.
+
 ### Managing Your Projects
 
 With `brig project create`, your projects are stored in Kubernetes secrets. You
