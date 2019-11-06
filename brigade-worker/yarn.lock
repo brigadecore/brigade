@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@brigadecore/brigadier@^0.8.0":
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/@brigadecore/brigadier/-/brigadier-0.8.0.tgz#8ef41ff5ee13a18a8fbe7c8621fa39d21bc7e266"
-  integrity sha512-lZWDpuVAwrcYFpbNlAjwjsEGom2KEAxg3xAR+BZT9h7Syd8Nu2KIVBKs8sfKgEl1Fhy4DWhg+m2QZMa4sXjwxg==
+"@brigadecore/brigadier@^0.9.0":
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/@brigadecore/brigadier/-/brigadier-0.9.0.tgz#f293bc1b2c250c70b5fc49a37286fa839b99156e"
+  integrity sha512-b7m7F0qAITON9yKSGGy4VUJ5skPCK7KyGTrhPWnBnAu7Va5QVaE+tIeg1HDoftmQrA+H+FLv3zz5RtbvAI+oiw==
   dependencies:
     "@kubernetes/client-node" "^0.10.1"
     child-process-promise "^2.2.1"
@@ -710,10 +710,10 @@ growl@1.10.5:
   resolved "https://registry.yarnpkg.com/growl/-/growl-1.10.5.tgz#f2735dc2283674fa67478b10181059355c369e5e"
   integrity sha512-qBr4OuELkhPenW6goKVXiv47US3clb3/IbuWF9KNKEijAy9oeHxU9IgzjvJhHkUzhaj7rOUD7+YGWqUjLp5oSA==
 
-handlebars@^4.1.2, handlebars@^4.3.0:
-  version "4.3.3"
-  resolved "https://registry.yarnpkg.com/handlebars/-/handlebars-4.3.3.tgz#56dd05fe33d6bd8a7d797351c39a0cdcfd576be5"
-  integrity sha512-VupOxR91xcGojfINrzMqrvlyYbBs39sXIrWa7YdaQWeBudOlvKEGvCczMfJPgnuwHE/zyH1M6J+IUP6cgDVyxg==
+handlebars@^4.1.2, handlebars@^4.4.5:
+  version "4.5.1"
+  resolved "https://registry.yarnpkg.com/handlebars/-/handlebars-4.5.1.tgz#8a01c382c180272260d07f2d1aa3ae745715c7ba"
+  integrity sha512-C29UoFzHe9yM61lOsIlCE5/mQVGrnIOrOq7maQl76L7tYPCgC1og0Ajt6uWnX4ZTxBPnjw+CUvawphwCfJgUnA==
   dependencies:
     neo-async "^2.6.0"
     optimist "^0.6.1"

@@ -63,7 +63,7 @@ var defaultProjectVCS = brigade.Project{
 		Name:     "github.com/brigadecore/empty-testbed",
 		CloneURL: "https://github.com/brigadecore/empty-testbed.git",
 	},
-	Secrets: map[string]string{},
+	Secrets: map[string]interface{}{},
 	Worker: brigade.WorkerConfig{
 		PullPolicy: "IfNotPresent",
 	},

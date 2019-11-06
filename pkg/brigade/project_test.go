@@ -19,8 +19,9 @@ func TestShortSHA(t *testing.T) {
 func TestProjectSecrets(t *testing.T) {
 	proj := Project{
 		SharedSecret: "wisper",
-		Secrets:      map[string]string{"foo": "bar"},
-		Repo:         Repo{SSHKey: "noop"},
+		Secrets:      map[string]interface{}{"foo": "bar"},
+		Repo: Repo{SSHKey: "noop",
+			SSHCert: "noop"},
 	}
 
 	data, err := json.Marshal(&proj)
@@ -41,6 +42,9 @@ func TestProjectSecrets(t *testing.T) {
 	}
 	if got.Repo.SSHKey != "" {
 		t.Error("Project.Repo.SSHKey should not be exported")
+	}
+	if got.Repo.SSHCert != "" {
+		t.Error("Project.Repo.SSHCert should not be exported")
 	}
 }
 

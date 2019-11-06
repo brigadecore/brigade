@@ -19,7 +19,7 @@ func newProject() *brigade.Project {
 			VCSSidecar:       "sidecar:latest",
 			BuildStorageSize: "50Mi",
 		},
-		Secrets: map[string]string{
+		Secrets: map[string]interface{}{
 			"mysecret": "value",
 		},
 	}

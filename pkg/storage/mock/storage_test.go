@@ -80,7 +80,7 @@ func TestStore(t *testing.T) {
 	extraProj = &brigade.Project{
 		Name:    "extra",
 		ID:      "extra",
-		Secrets: map[string]string{},
+		Secrets: map[string]interface{}{},
 	}
 	if err := m.CreateProject(extraProj); err != nil {
 		t.Fatal(err)

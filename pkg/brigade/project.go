@@ -56,10 +56,10 @@ type Project struct {
 	GenericGatewaySecret string `json:"genericGatewaySecret"`
 }
 
-// SecretsMap is a map[string]string for storing secrets.
+// SecretsMap is a map[string]interface{} for storing secrets.
 //
 // When secrets are marshaled, values will be redacted.
-type SecretsMap map[string]string
+type SecretsMap map[string]interface{}
 
 const redacted = "REDACTED"
 
@@ -108,7 +108,8 @@ type Repo struct {
 	// Traditionally, this is an HTTPS URL.
 	CloneURL string `json:"cloneURL"`
 	// SSHKey is the auth string for SSH-based cloning
-	SSHKey string `json:"-"`
+	SSHKey  string `json:"-"`
+	SSHCert string `json:"-"`
 }
 
 // Kubernetes describes the Kubernetes configuration for a project.

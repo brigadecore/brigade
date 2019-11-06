@@ -50,8 +50,8 @@ func SecretFromProject(project *brigade.Project) (v1.Secret, error) {
 	}
 
 	// The marshal on SecretsMap redacts secrets, so we cast and marshal as a raw
-	// map[string]string
-	var secrets map[string]string = project.Secrets
+	// map[string]interface{}
+	var secrets map[string]interface{} = project.Secrets
 	secretsJSON, err := json.Marshal(secrets)
 	if err != nil {
 		return v1.Secret{}, err
@@ -87,6 +87,7 @@ func SecretFromProject(project *brigade.Project) (v1.Secret, error) {
 
 			"repository": project.Repo.Name,
 			"sshKey":     project.Repo.SSHKey,
+			"sshCert":    project.Repo.SSHCert,
 			"cloneURL":   project.Repo.CloneURL,
 
 			"secrets": string(secretsJSON),
@@ -197,10 +198,11 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 		Name: sv.String("repository"),
 		// Note that we have to undo the key escaping.
 		SSHKey:   strings.Replace(sv.String("sshKey"), "$", "\n", -1),
+		SSHCert:  strings.Replace(sv.String("sshCert"), "$", "\n", -1),
 		CloneURL: sv.String("cloneURL"),
 	}
 
-	envVars := map[string]string{}
+	envVars := map[string]interface{}{}
 	if d := sv.Bytes("secrets"); len(d) > 0 {
 		if err := json.Unmarshal(d, &envVars); err != nil {
 			return nil, err
