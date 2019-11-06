@@ -884,6 +884,16 @@ function sidecarSpec(
         }
       }
     } as kubernetes.V1EnvVar);
+    spec.env.push({
+      name: "BRIGADE_REPO_SSH_CERT",
+      valueFrom: {
+        secretKeyRef: {
+          key: "sshCert",
+          name: project.id
+        }
+      }
+    } as kubernetes.V1EnvVar);
+
   }
 
   if (project.repo.token) {
@@ -1125,6 +1135,9 @@ export function secretToProject(
   }
   if (secret.data.sshKey) {
     p.repo.sshKey = b64dec(secret.data.sshKey);
+  }
+  if (secret.data.sshCert) {
+    p.repo.sshCert = b64dec(secret.data.sshCert);
   }
   if (secret.data["github.token"]) {
     p.repo.token = b64dec(secret.data["github.token"]);

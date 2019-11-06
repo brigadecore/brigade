@@ -19,7 +19,7 @@ var (
 		ID:           "project-id",
 		Name:         "project-name",
 		SharedSecret: "shared-secre3t",
-		Secrets:      map[string]string{"key": "value"},
+		Secrets:      map[string]interface{}{"key": "value"},
 	}
 	// StubWorker1 is a stub Worker. It is used in StubBuild1, too.
 	StubWorker1 = &brigade.Worker{

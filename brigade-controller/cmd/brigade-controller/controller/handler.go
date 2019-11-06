@@ -272,7 +272,12 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 		{
 			Name:      "BRIGADE_REPO_KEY",
 			ValueFrom: secretRef("sshKey", project),
-		}, {
+		},
+		{
+			Name:      "BRIGADE_REPO_SSH_CERT",
+			ValueFrom: secretRef("sshCert", project),
+		},
+		{
 			Name:      "BRIGADE_REPO_AUTH_TOKEN",
 			ValueFrom: secretRef("github.token", project),
 		},
