@@ -19,7 +19,7 @@ func TestShortSHA(t *testing.T) {
 func TestProjectSecrets(t *testing.T) {
 	proj := Project{
 		SharedSecret: "wisper",
-		Secrets:      map[string]string{"foo": "bar"},
+		Secrets:      map[string]interface{}{"foo": "bar"},
 		Repo: Repo{SSHKey: "noop",
 			SSHCert: "noop"},
 	}

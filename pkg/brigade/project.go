@@ -56,10 +56,10 @@ type Project struct {
 	GenericGatewaySecret string `json:"genericGatewaySecret"`
 }
 
-// SecretsMap is a map[string]string for storing secrets.
+// SecretsMap is a map[string]interface{} for storing secrets.
 //
 // When secrets are marshaled, values will be redacted.
-type SecretsMap map[string]string
+type SecretsMap map[string]interface{}
 
 const redacted = "REDACTED"
 
