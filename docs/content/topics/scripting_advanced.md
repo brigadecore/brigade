@@ -193,3 +193,34 @@ world
 ```
 
 Job `j1` has our extra command, while `j2` only inherited the defaults from `MyJob`.
+
+
+## Using Docker Within a Brigade Job
+
+It is possible to use Docker inside of a Brigade job. However, you will need to do some extra work. Because a Job must run in privileged mode to use the Docker socket, the method here presents a security risk and should not be allowed for untrusted brigade scripts.
+
+Before you can write scripts that use privileged mode, you will need to set the following permissions on your Brigade project:
+
+```yaml
+allowHostMounts: "true"
+allowPrivilegedJobs: "true"
+```
+
+To use Docker-in-Docker inside of a job, you will need to do three things:
+
+- Select a container image for your job that can use Docker in Docker
+- Set the job to `privileged = true`
+- Run extra tasks to setup Docker-in-Docker (see the `dockerd-entrypoint.sh &` command below)
+
+```javascript
+  let dind = new Job("dind-run", "docker:dind");
+  dind.privileged = true;
+  dind.docker.enabled = true;
+  dind.tasks = [
+      "dockerd-entrypoint.sh &", // <-- this sets up the Docker in Docker daemon
+      "sleep 20", // Wait for the dockerd to start
+      "echo ready to do docker builds and things."
+  ];
+```
+
+Normally, you would create your own Docker image that used `FROM docker:dind` and then added your own code, but the above shows you the main steps necessary.
