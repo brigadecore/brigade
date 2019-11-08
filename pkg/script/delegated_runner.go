@@ -94,7 +94,8 @@ func (a *Runner) SendBuild(b *brigade.Build) error {
 }
 
 // SendScript converts a script into a Brigade Build object and submits it
-func (a *Runner) SendScript(projectName string, data []byte, event, commitish, ref string, payload []byte, logLevel string) error {
+// TODO: ripe for refactor to reduce amount of params... create/use Script struct?
+func (a *Runner) SendScript(projectName string, data []byte, deps []byte, event, commitish, ref string, payload []byte, logLevel string) error {
 
 	projectID := brigade.ProjectID(projectName)
 	if _, err := a.store.GetProject(projectID); err != nil {
@@ -111,6 +112,7 @@ func (a *Runner) SendScript(projectName string, data []byte, event, commitish, r
 		},
 		Payload:  payload,
 		Script:   data,
+		Deps:     deps,
 		LogLevel: logLevel,
 	}
 	return a.SendBuild(b)

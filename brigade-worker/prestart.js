@@ -2,15 +2,33 @@ const process = require("process")
 const fs = require("fs")
 const { execFileSync } = require("child_process")
 
-//checked out in repo
-const depsFile = "/vcs/brigade.json"
+const mountedDepsFile = "/etc/brigade/brigade.json";
+const vcsDepsFile = "/vcs/brigade.json";
+// Deps file locations in order of precedence.
+const depsFiles = [
+  // data mounted from event secret (e.g. brig run)
+  mountedDepsFile,
+
+  // checked out in repo
+  vcsDepsFile,
+];
+
+function findDeps() {
+  for (let src of depsFiles) {
+    if (fs.existsSync(src) && fs.readFileSync(src, "utf8") != "") {
+      return src;
+    }
+  }
+  return "";
+}
 
 if (require.main === module)  {
   addDeps()
 }
 
 function addDeps() {
-  if (!fs.existsSync(depsFile)) {
+  const depsFile = findDeps();
+  if (!depsFile) {
     console.log("prestart: no dependencies file found")
     return
   }
@@ -48,7 +66,8 @@ function addYarn(packages) {
 }
 
 module.exports = {
-  depsFile,
+  mountedDepsFile,
+  vcsDepsFile,
   addDeps,
   buildPackageList,
   addYarn,

@@ -5,6 +5,7 @@ aliases:
   - /brig.md
   - /topics/brig.md
   - /topics/cli/brig.md
+  - /topics/dependencies/brig.md
   - /intro/brig.md
 ---
 
@@ -69,14 +70,16 @@ events.on('exec', () => {
 A more complete example:
 
 ```console
-$ brig run --file my/brigade.js --namespace my-builds technosophos/myproject
+$ brig run --file my/brigade.js --deps-file my/brigade.json --namespace my-builds technosophos/myproject
 ```
 
-The above looks for `./my/brigade.js` and sends it to the Brigade server inside of
-the Kubernetes `my-builds` namespace. It executes within the project
+The above looks for `./my/brigade.js` along with the `./my/brigade.json` dependencies file and
+sends them to the Brigade server inside of the Kubernetes `my-builds` namespace. It executes within the project
 `technosophos/myproject`.
 
 The output of the master process is written to STDOUT.
+
+For more details on how the dependencies file is used, see the [dependencies](dependencies.md) doc.
 
 ### Starting the Brigade web dashboard
 

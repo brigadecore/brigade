@@ -34,7 +34,7 @@ Sometimes, it is necessary to make additional libraries (perhaps even
 custom libraries) available to your `brigade.js` file.  There are two methods
 available to achieve this:
 
-1. Adding a `brigade.json` file to your repository. Refer to [the dependencies
+1. Supplying a `brigade.json` file listing dependencies. Refer to [the dependencies
   document](dependencies.md) for a detailed description of this approach.
 
 1. Create a custom Docker image for the worker that contains the additional
