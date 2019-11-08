@@ -22,6 +22,7 @@ func (api Project) List(request *restful.Request, response *restful.Response) {
 		response.WriteErrorString(http.StatusNotFound, "No Projects found.")
 		return
 	}
+	sort.Slice(projects, func(i, j int) bool { return projects[i].Name < projects[j].Name })
 	response.WriteHeaderAndEntity(http.StatusOK, projects)
 }
 
@@ -86,5 +87,6 @@ func (api Project) Builds(request *restful.Request, response *restful.Response) 
 		response.WriteErrorString(http.StatusNotFound, "No Project Builds found.")
 		return
 	}
+	sort.Slice(builds, func(i, j int) bool { return builds[i].ID < builds[j].ID })
 	response.WriteHeaderAndEntity(http.StatusOK, builds)
 }

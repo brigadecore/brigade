@@ -3,6 +3,7 @@ package api
 import (
 	"io"
 	"net/http"
+	"sort"
 
 	restful "github.com/emicklei/go-restful"
 
@@ -39,6 +40,7 @@ func (api Build) Jobs(request *restful.Request, response *restful.Response) {
 		response.WriteErrorString(http.StatusNotFound, "Build Jobs could not be found.")
 		return
 	}
+	sort.Slice(jobs, func(i, j int) bool { return jobs[i].CreationTime.String() < jobs[j].CreationTime.String() })
 	response.WriteEntity(jobs)
 
 }
