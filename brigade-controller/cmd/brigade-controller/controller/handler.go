@@ -81,7 +81,7 @@ func (c *Controller) updateBuildStatus(build *v1.Secret) error {
 func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 	env := workerEnv(project, build, config)
 
-	cmd := []string{"yarn", "-s", "start"}
+	var cmd []string
 	if config.WorkerCommand != "" {
 		cmd = strings.Split(config.WorkerCommand, " ")
 	}
