@@ -4,4 +4,4 @@ WORKDIR /home/src
 COPY brigade-worker/ /home/src/
 RUN yarn build
 
-CMD yarn run test
+CMD yarn -s start
