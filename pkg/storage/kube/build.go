@@ -102,9 +102,9 @@ func (s *store) CreateBuild(build *brigade.Build) error {
 		},
 		Type: secretTypeBuild,
 		Data: map[string][]byte{
-			"script":       build.Script,
-			"brigade.json": build.Deps,
-			"payload":      build.Payload,
+			"script":  build.Script,
+			"config":  build.Config,
+			"payload": build.Payload,
 		},
 		StringData: map[string]string{
 			"build_id":       buildName,

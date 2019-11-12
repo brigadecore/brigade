@@ -70,7 +70,7 @@ events.on('exec', () => {
 A more complete example:
 
 ```console
-$ brig run --file my/brigade.js --deps-file my/brigade.json --namespace my-builds technosophos/myproject
+$ brig run --file my/brigade.js --config my/brigade.json --namespace my-builds technosophos/myproject
 ```
 
 The above looks for `./my/brigade.js` along with the `./my/brigade.json` dependencies file and

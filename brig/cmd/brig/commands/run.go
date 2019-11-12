@@ -14,7 +14,7 @@ import (
 
 var (
 	runFile       string
-	runDepsFile   string
+	runConfigFile string
 	runEvent      string
 	runPayload    string
 	runCommitish  string
@@ -55,7 +55,7 @@ func init() {
 	run.Flags().StringVarP(&runFile, "file", "f", "", "The JavaScript file to execute")
 	run.Flags().StringVarP(&runEvent, "event", "e", "exec", "The name of the event to fire")
 	run.Flags().StringVarP(&runPayload, "payload", "p", "", "The path to a payload file")
-	run.Flags().StringVarP(&runDepsFile, "deps-file", "d", "", "The brigade.json file to install dependencies from")
+	run.Flags().StringVar(&runConfigFile, "config", "", "The brigade.json config file")
 	run.Flags().StringVarP(&runCommitish, "commit", "c", "", "A VCS (git) commit")
 	run.Flags().StringVarP(&runRef, "ref", "r", defaultRef, "A VCS (git) version, tag, or branch")
 	run.Flags().BoolVar(&runNoProgress, "no-progress", false, "Disable progress meter")
@@ -81,7 +81,7 @@ var run = &cobra.Command{
 			return err
 		}
 
-		deps, err := readFileParam(runDepsFile)
+		config, err := readFileParam(runConfigFile)
 		if err != nil {
 			return err
 		}
@@ -112,7 +112,7 @@ var run = &cobra.Command{
 		runner.Background = runBackground
 		runner.Verbose = globalVerbose
 
-		err = runner.SendScript(proj, scr, deps, runEvent, runCommitish, runRef, payload, runLogLevel)
+		err = runner.SendScript(proj, scr, config, runEvent, runCommitish, runRef, payload, runLogLevel)
 		if err == nil {
 			return nil
 		}

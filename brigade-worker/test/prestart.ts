@@ -78,20 +78,18 @@ describe("prestart", function() {
     });
   });
 
-  describe("addDeps", function () {
+  describe("createConfig", function () {
     let
-      execFileSync: sinon.SinonStub,
       existsSync: sinon.SinonStub,
       readFileSync: sinon.SinonStub,
+      writeFileSync: sinon.SinonStub,
       exit: sinon.SinonStub;
 
       beforeEach(function() {
-        execFileSync = sinon.stub();
-        mock("child_process", { execFileSync });
-
         existsSync = sinon.stub();
         readFileSync = sinon.stub();
-        mock("fs", { existsSync, readFileSync })
+        writeFileSync = sinon.stub();
+        mock("fs", { existsSync, readFileSync, writeFileSync })
 
         exit = sinon.stub();
         mock("process", { env: {}, exit });
@@ -110,56 +108,101 @@ describe("prestart", function() {
       it("no brigade.json", function() {
         existsSync.callsFake(() => false);
 
-        prestart.addDeps();
+        prestart.createConfig();
 
         sinon.assert.calledTwice(existsSync);
-        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedDepsFile);
-        sinon.assert.calledWith(existsSync.secondCall, prestart.vcsDepsFile);
-        sinon.assert.notCalled(execFileSync);
+        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
+        sinon.assert.calledWith(existsSync.secondCall, prestart.vcsConfigFile);
         sinon.assert.notCalled(exit);
       });
 
       it("no brigade.json mounted, but exists in vcs", function() {
-        mock(prestart.vcsDepsFile, {});
+        mock(prestart.vcsConfigFile, {});
         existsSync.callsFake((...args) => {
-          return args === prestart.vcsDepsFile;
+          return args === prestart.vcsConfigFile;
         });
+
+        prestart.createConfig();
+
+        sinon.assert.calledTwice(existsSync);
+        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
+        sinon.assert.calledWith(existsSync.secondCall, prestart.vcsConfigFile);
+        sinon.assert.notCalled(exit);
+      });
+    });
+
+  describe("addDeps", function () {
+    let
+      execFileSync: sinon.SinonStub,
+      existsSync: sinon.SinonStub,
+      readFileSync: sinon.SinonStub,
+      writeFileSync: sinon.SinonStub,
+      exit: sinon.SinonStub;
+
+      beforeEach(function() {
+        execFileSync = sinon.stub();
+        mock("child_process", { execFileSync });
+
+        existsSync = sinon.stub();
+        readFileSync = sinon.stub();
+        writeFileSync = sinon.stub();
+        mock("fs", { existsSync, readFileSync, writeFileSync })
+
+        exit = sinon.stub();
+        mock("process", { env: {}, exit });
+
+        sinon.stub(console, 'error');
+
+        prestart = mock.reRequire("../prestart");
+      });
+
+      afterEach(function() {
+        mock.stopAll();
+
+        (console as any).error.restore();
+      });
+
+      it("no config file exists", function() {
+        existsSync.callsFake(() => false);
 
         prestart.addDeps();
 
-        sinon.assert.calledTwice(existsSync);
-        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedDepsFile);
-        sinon.assert.calledWith(existsSync.secondCall, prestart.vcsDepsFile);
+        sinon.assert.calledThrice(existsSync);
+        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
+        sinon.assert.calledWith(existsSync.secondCall, prestart.vcsConfigFile);
+        sinon.assert.calledWith(existsSync.thirdCall, prestart.configFile);
         sinon.assert.notCalled(execFileSync);
         sinon.assert.notCalled(exit);
       });
 
       it("no dependencies object", function() {
-        mock(prestart.mountedDepsFile, {});
+        mock(prestart.configFile, {});
         existsSync.callsFake(() => true);
 
         prestart.addDeps();
 
-        sinon.assert.calledOnce(existsSync);
-        sinon.assert.calledWithExactly(existsSync, prestart.mountedDepsFile);
+        sinon.assert.calledTwice(existsSync);
+        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
+        sinon.assert.calledWith(existsSync.secondCall, prestart.configFile);
         sinon.assert.notCalled(execFileSync);
         sinon.assert.notCalled(exit);
       });
 
       it("empty dependencies", function() {
-        mock(prestart.mountedDepsFile, { dependencies: {}})
+        mock(prestart.configFile, { dependencies: {}})
         existsSync.callsFake(() => true);
 
         prestart.addDeps();
 
-        sinon.assert.calledOnce(existsSync);
-        sinon.assert.calledWithExactly(existsSync, prestart.mountedDepsFile);
+        sinon.assert.calledTwice(existsSync);
+        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
+        sinon.assert.calledWith(existsSync.secondCall, prestart.configFile);
         sinon.assert.notCalled(execFileSync);
         sinon.assert.notCalled(exit);
       });
 
       it("one dependency", function() {
-        mock(prestart.mountedDepsFile, {
+        mock(prestart.configFile, {
           dependencies: {
             "is-thirteen": "2.0.0",
           },
@@ -168,8 +211,9 @@ describe("prestart", function() {
 
         prestart.addDeps();
 
-        sinon.assert.calledOnce(existsSync);
-        sinon.assert.calledWithExactly(existsSync, prestart.mountedDepsFile);
+        sinon.assert.calledTwice(existsSync);
+        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
+        sinon.assert.calledWith(existsSync.secondCall, prestart.configFile);
         sinon.assert.calledOnce(execFileSync);
         sinon.assert.calledWithExactly(
           execFileSync, "yarn", ["add", "is-thirteen@2.0.0"]);
@@ -177,7 +221,7 @@ describe("prestart", function() {
       })
 
       it("two dependencies", function() {
-        mock(prestart.mountedDepsFile, {
+        mock(prestart.configFile, {
           dependencies: {
             "is-thirteen": "2.0.0",
             "lodash": "4.0.0",
@@ -187,8 +231,9 @@ describe("prestart", function() {
 
         prestart.addDeps();
 
-        sinon.assert.calledOnce(existsSync);
-        sinon.assert.calledWithExactly(existsSync, prestart.mountedDepsFile);
+        sinon.assert.calledTwice(existsSync);
+        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
+        sinon.assert.calledWith(existsSync.secondCall, prestart.configFile);
         sinon.assert.calledOnce(execFileSync);
         sinon.assert.calledWithExactly(
           execFileSync, "yarn", ["add", "is-thirteen@2.0.0", "lodash@4.0.0"]);
@@ -196,7 +241,7 @@ describe("prestart", function() {
       });
 
       it("yarn error", function() {
-        mock(prestart.mountedDepsFile, {
+        mock(prestart.configFile, {
           dependencies: {
             "is-thirteen": "2.0.0",
           },
@@ -210,8 +255,9 @@ describe("prestart", function() {
 
         prestart.addDeps();
 
-        sinon.assert.calledOnce(existsSync);
-        sinon.assert.calledWithExactly(existsSync, prestart.mountedDepsFile);
+        sinon.assert.calledTwice(existsSync);
+        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
+        sinon.assert.calledWith(existsSync.secondCall, prestart.configFile);
         sinon.assert.calledOnce(execFileSync);
         sinon.assert.calledWithExactly(execFileSync, "yarn", ["add", "is-thirteen@2.0.0"]);
         sinon.assert.calledOnce(exit);
