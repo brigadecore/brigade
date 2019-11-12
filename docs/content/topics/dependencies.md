@@ -34,7 +34,8 @@ repository and/or supplied at runtime via a `brig run` command.  See the [brig](
 details on the latter method.  Note that if a `brigade.json` is supplied at runtime, this takes
 precedence over the file found in version control.
 
-This file contains the dependency name and version, and has the following structure:
+This file is intended to hold general configuration details for Brigade.  The list of dependency
+names and versions can be added under the `dependencies` section, like so:
 
 ```
 {

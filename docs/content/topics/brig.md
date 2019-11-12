@@ -73,13 +73,13 @@ A more complete example:
 $ brig run --file my/brigade.js --config my/brigade.json --namespace my-builds technosophos/myproject
 ```
 
-The above looks for `./my/brigade.js` along with the `./my/brigade.json` dependencies file and
+The above looks for `./my/brigade.js` along with the `./my/brigade.json` configuration file and
 sends them to the Brigade server inside of the Kubernetes `my-builds` namespace. It executes within the project
 `technosophos/myproject`.
 
 The output of the master process is written to STDOUT.
 
-For more details on how the dependencies file is used, see the [dependencies](dependencies.md) doc.
+For more details on how the dependencies section of the `brigade.json` config file is used, see the [dependencies](dependencies.md) doc.
 
 ### Starting the Brigade web dashboard
 
