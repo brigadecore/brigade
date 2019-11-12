@@ -3,6 +3,7 @@ import { assert } from "chai";
 import * as mock from "mock-require";
 import * as sinon from "sinon";
 import { getDefaultCompilerOptions } from "typescript";
+import { write, read } from "fs";
 
 // Using `let` and `require` so `mock.reRequire` is legal later.
 let prestart = require('../prestart');
@@ -88,21 +89,16 @@ describe("prestart", function() {
       beforeEach(function() {
         existsSync = sinon.stub();
         readFileSync = sinon.stub();
+        readFileSync.callsFake(() => "{}");
         writeFileSync = sinon.stub();
+
         mock("fs", { existsSync, readFileSync, writeFileSync })
-
-        exit = sinon.stub();
-        mock("process", { env: {}, exit });
-
-        sinon.stub(console, 'error');
 
         prestart = mock.reRequire("../prestart");
       });
 
       afterEach(function() {
         mock.stopAll();
-
-        (console as any).error.restore();
       });
 
       it("no brigade.json", function() {
@@ -113,13 +109,25 @@ describe("prestart", function() {
         sinon.assert.calledTwice(existsSync);
         sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
         sinon.assert.calledWith(existsSync.secondCall, prestart.vcsConfigFile);
-        sinon.assert.notCalled(exit);
+        sinon.assert.notCalled(writeFileSync);
+      });
+
+      it("config exists via mounted file", function() {
+        existsSync.callsFake((...args) => {
+          return args[0] === prestart.mountedConfigFile;
+        });
+
+        prestart.createConfig();
+
+        sinon.assert.calledOnce(existsSync);
+        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
+        sinon.assert.called(writeFileSync);
+        sinon.assert.calledWithExactly(writeFileSync, prestart.configFile, "{}")
       });
 
       it("no brigade.json mounted, but exists in vcs", function() {
-        mock(prestart.vcsConfigFile, {});
         existsSync.callsFake((...args) => {
-          return args === prestart.vcsConfigFile;
+          return args[0] === prestart.vcsConfigFile;
         });
 
         prestart.createConfig();
@@ -127,7 +135,8 @@ describe("prestart", function() {
         sinon.assert.calledTwice(existsSync);
         sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
         sinon.assert.calledWith(existsSync.secondCall, prestart.vcsConfigFile);
-        sinon.assert.notCalled(exit);
+        sinon.assert.called(writeFileSync);
+        sinon.assert.calledWithExactly(writeFileSync, prestart.configFile, "{}")
       });
     });
 
