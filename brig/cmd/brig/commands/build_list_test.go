@@ -19,7 +19,7 @@ const (
 )
 
 type DefaultBuildData struct {
-	LogLevel, Event, Commit, Ref string
+	LogLevel, Event, Commit, Config, Ref string
 }
 
 var (
@@ -38,6 +38,7 @@ var (
 		LogLevel: "log",
 		Event:    "exec",
 		Commit:   "abc1234",
+		Config:   "brigade.json",
 		Ref:      "master",
 	}
 )
