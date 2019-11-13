@@ -2,8 +2,6 @@ import "mocha";
 import { assert } from "chai";
 import * as mock from "mock-require";
 import * as sinon from "sinon";
-import { getDefaultCompilerOptions } from "typescript";
-import { write, read } from "fs";
 
 // Using `let` and `require` so `mock.reRequire` is legal later.
 let prestart = require('../prestart');
