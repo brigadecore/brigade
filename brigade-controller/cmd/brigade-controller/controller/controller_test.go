@@ -115,8 +115,10 @@ func TestController(t *testing.T) {
 		}
 	}
 
-	if len(c.Command) > 0 {
-		t.Errorf("Expected command to be empty, got %q", c.Command)
+	for i, term := range []string{"yarn", "-s", "start"} {
+		if c.Command[i] != term {
+			t.Errorf("Expected command %d to be %q, got %q", i, term, c.Command[i])
+		}
 	}
 
 	if c.VolumeMounts[0].Name != "brigade-build" {
