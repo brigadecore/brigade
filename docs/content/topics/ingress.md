@@ -18,7 +18,7 @@ To follow along, you will need:
 
 - a Kubernetes cluster with a public endpoint - most cloud-provided Kubernetes services should be able to provide a public IP for your services.
 - a domain name you own, with DNS records managed through a DNS provider (for example Cloudflare).
-- Helm correctly configured in your cluster.
+- [Helm](https://helm.sh/) correctly configured in your cluster.
 
 
 ## Deploying the Nginx Ingress Controller
@@ -46,63 +46,82 @@ At this point, you should be able to create Ingress objects that point to intern
 
 ## Cert-Manager
 
-Following the [official instructions on deploying `cert-manager`](https://github.com/jetstack/cert-manager/blob/master/docs/tutorials/acme/quick-start/index.rst#step-5---deploy-cert-manager):
+Following the [official instructions on deploying `cert-manager` onto Kubernetes via Helm](https://docs.cert-manager.io/en/latest/getting-started/install/kubernetes.html#installing-with-helm):
 
 ```
-# Install the cert-manager CRDs. We must do this before installing the Helm
-# chart in the next step
-$ kubectl apply -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.6/deploy/manifests/00-crds.yaml
+# Install the CustomResourceDefinition resources separately
+kubectl apply --validate=false -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/deploy/manifests/00-crds.yaml
 
-# Update your local Helm chart repositories
-$ helm repo update
+# Create the namespace for cert-manager
+kubectl create namespace cert-manager
 
-# Install cert-manager
-$ helm install --name cert-manager --namespace cert-manager stable/cert-manager
+# Add the Jetstack Helm repository
+helm repo add jetstack https://charts.jetstack.io
+
+# Update your local Helm chart repository cache
+helm repo update
+
+# Install the cert-manager Helm chart
+helm install \
+  --name cert-manager \
+  --namespace cert-manager \
+  --version v0.11.0 \
+  jetstack/cert-manager
 ```
 
-This created some Kubernetes Custom Resources Definitions (CRDs), and deployed the Helm chart. Among the CRDs created is one of type `Issuer` - when an ingress resource is annotated with a specific issuer, this will request a TLS certificate from the [ACME server URL](https://letsencrypt.org/docs/client-options/) from the definition below, and before expiration, an email will be sent to the address defined below - so make sure to edit the file.
+This created some Kubernetes Custom Resources Definitions (CRDs), and deployed the Helm chart. Among the CRDs created is one of type `ClusterIssuer` - when an ingress resource is annotated with a specific cluster issuer, this will request a TLS certificate from the [ACME server URL](https://letsencrypt.org/docs/client-options/) from the definition below, and before expiration, an email will be sent to the address defined below - so make sure to edit the file.
 
 Let's Encrypt defines two tiers for emitting certificates - staging and production. Production certificates have rather strong [limit rates](https://letsencrypt.org/docs/rate-limits/), so in order to make sure your setup works, start with generating staging certificates, then move to production certificates.
 
 Below you can find the definitions for each of the tiers:
 
 ```yaml
-   apiVersion: certmanager.k8s.io/v1alpha1
+   apiVersion: cert-manager.io/v1alpha2
    kind: ClusterIssuer
    metadata:
-     name: letsencrypt-staging
+    name: letsencrypt-staging
    spec:
      acme:
-       # The ACME server URL
-       server: https://acme-staging-v02.api.letsencrypt.org/directory
-       # Email address used for ACME registration
-       # Make sure to change this.
-       email: user@example.com
-       # Name of a secret used to store the ACME account private key
-       privateKeySecretRef:
-         name: letsencrypt-staging
-       # Enable the HTTP-01 challenge provider
-       http01: {}
+      # The ACME server URL
+      server: https://acme-staging-v02.api.letsencrypt.org/directory
+      # Email address used for ACME registration
+      # Make sure to change this.
+      email: user@example.com
+      # Name of a secret used to store the ACME account private key
+      privateKeySecretRef:
+        name: letsencrypt-staging
+      # Add a single challenge solver, HTTP01 using nginx
+      solvers:
+      # An empty 'selector' means that this solver matches all domains
+      - selector: {}
+        http01:
+          ingress:
+            class: nginx
 ```
 
 This is the definition for the production issuer (also make sure to change the email used):
 
 ```yaml
-   apiVersion: certmanager.k8s.io/v1alpha1
+   apiVersion: cert-manager.io/v1alpha2
    kind: ClusterIssuer
    metadata:
-     name: letsencrypt-prod
+    name: letsencrypt-prod
    spec:
-     acme:
-       # The ACME server URL
-       server: https://acme-v02.api.letsencrypt.org/directory
-       # Email address used for ACME registration
-       email: user@example.com
-       # Name of a secret used to store the ACME account private key
-       privateKeySecretRef:
-         name: letsencrypt-prod
-       # Enable the HTTP-01 challenge provider
-       http01: {}
+    acme:
+      # The ACME server URL
+      server: https://acme-v02.api.letsencrypt.org/directory
+      # Email address used for ACME registration
+      email: user@example.com
+      # Name of a secret used to store the ACME account private key
+      privateKeySecretRef:
+        name: letsencrypt-prod
+      # Add a single challenge solver, HTTP01 using nginx
+      solvers:
+      # An empty 'selector' means that this solver matches all domains
+      - selector: {}
+        http01:
+          ingress:
+            class: nginx
 ```
 
 > Note: `ClusterIssuer` objects work across namespaces - if you want to limit generating certificates to a single namespace, use an `Issuer` object.
@@ -157,9 +176,9 @@ metadata:
   name: kuar-demo
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    certmanager.k8s.io/cluster-issuer: "letsencrypt-prod"
-    certmanager.k8s.io/acme-challenge-type: http01
-
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/acme-challenge-type: http01
 spec:
   tls:
   - hosts:
@@ -218,9 +237,9 @@ genericGateway:
     enabled: true
     annotations:
       kubernetes.io/ingress.class: "nginx"
-      certmanager.k8s.io/cluster-issuer: "letsencrypt-prod"
-      certmanager.k8s.io/acme-challenge-type: http01
-
+      kubernetes.io/tls-acme: "true"
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      cert-manager.io/acme-challenge-type: http01
     hosts:
       - brigade-events-test.kube.radu.sh
     paths:
