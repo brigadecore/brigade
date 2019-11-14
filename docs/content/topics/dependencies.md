@@ -5,6 +5,7 @@ aliases:
   - /dependencies.md
   - /topics/dependencies.md
   - /topics/workers/dependencies.md
+  - /topics/brig/dependencies.md
   - /intro/dependencies.md
 ---
 
@@ -17,7 +18,7 @@ If you want to have other dependencies available in your worker execution enviro
 - by creating a custom worker container image, which has your dependencies. This approach is [described in detail in this document](workers.md). In a nutshell, use this approach if you have the same dependency for multiple projects, or if your dependencies take a long time to pull.
 
 - without creating a custom container image:
-    - by adding a `brigade.json` file in your repository (similar to a `package.json` file) 
+    - by supplying a `brigade.json` file (similar to a `package.json` file) 
 that contains the dependencies and that are specific on every Brigade project.
     - by directly using local dependencies located in your project repository.
 
@@ -28,8 +29,13 @@ This document describes the last two approaches.
 ## Add custom dependencies using a `brigade.json` file
 
 If you need different dependencies for every Brigade project, this can be easily achieved 
-using a `brigade.json` file placed side-by-side the `brigade.js` file. This file contains 
-the dependency name and version, and has the following structure:
+using a `brigade.json` file.  This can be placed side-by-side the `brigade.js` file in the project
+repository and/or supplied at runtime via a `brig run` command.  See the [brig](brig.md) doc for
+details on the latter method.  Note that if a `brigade.json` is supplied at runtime, this takes
+precedence over the file found in version control.
+
+This file is intended to hold general configuration details for Brigade.  The list of dependency
+names and versions can be added under the `dependencies` section, like so:
 
 ```
 {

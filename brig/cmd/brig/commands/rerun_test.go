@@ -77,6 +77,7 @@ func TestRerun_getUpdatedBuild(t *testing.T) {
 		Name     string
 		LogLevel string
 		Type     string
+		Config   string
 		Commit   string
 		Ref      string
 	}
@@ -87,6 +88,7 @@ func TestRerun_getUpdatedBuild(t *testing.T) {
 			LogLevel: defaultStubBuildData.LogLevel,
 			Type:     defaultStubBuildData.Event,
 			Commit:   defaultStubBuildData.Commit,
+			Config:   defaultStubBuildData.Config,
 			Ref:      defaultStubBuildData.Ref,
 		},
 		{
@@ -94,6 +96,7 @@ func TestRerun_getUpdatedBuild(t *testing.T) {
 			LogLevel: "warn",
 			Type:     "different-event",
 			Commit:   "new-commit",
+			Config:   "new-config",
 			Ref:      "new-ref",
 		},
 	}
