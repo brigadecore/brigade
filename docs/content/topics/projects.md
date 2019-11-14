@@ -77,7 +77,7 @@ You can optionally customize a bunch of advanced options during `brig project cr
 - *Worker image name*: The name of the worker image, e.g. workerImage
 - *Custom worker image tag*: The worker image tag to pull, e.g. 1.2.3 or latest
 - *Worker image pull policy*: The image pull policy determines how often Kubernetes will try to refresh this image
-- *Worker command*: Override the worker image's default command
+- *Worker command*: Override the worker's default command (yarn -s start)
 - *Initialize Git submodules*: For repos that have submodules, initialize them on each clone. Not recommended on public repos
 - *Allow host mounts*: Allow host-mounted volumes for worker and jobs. Not recommended in multi-tenant clusters
 - *Allow privileged jobs*: Allow jobs to mount the Docker socket or perform other privileged operations. Not recommended for multi-tenant clusters

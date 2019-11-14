@@ -46,8 +46,8 @@ type Project struct {
 	ImagePullSecrets string `json:"imagePullSecrets"`
 
 	// WorkerCommand is a string command that can be issued to the worker image.
-	// This is an alternative to the image's default command (or other, globally
-	// configured command) usually issued.
+	// This is an alternative to the default 'yarn -s start' command (or other
+	// globally configured command) usually issued.
 	WorkerCommand string `json:"workerCommand"`
 
 	// BrigadejsPath contains the path for the Brigade.js file in the source repo
