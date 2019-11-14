@@ -2,7 +2,7 @@ const process = require("process")
 const fs = require("fs")
 const { execFileSync } = require("child_process")
 
-const configFile = "/config.json";
+const configFile = "/brigade.json";
 const mountedConfigFile = "/etc/brigade/config";
 const vcsConfigFile = "/vcs/brigade.json";
 
