@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"strings"
 	"testing"
 
 	v1 "k8s.io/api/core/v1"
@@ -51,8 +52,8 @@ func TestNewWorkerPod_Defaults(t *testing.T) {
 		t.Error("Expected vcs-sidecar volume mount to exist")
 	}
 
-	if len(container.Command) > 0 {
-		t.Errorf("Unexpected command: %q", container.Command)
+	if cmd := strings.Join(container.Command, " "); cmd != "yarn -s start" {
+		t.Errorf("Unexpected command: %s", cmd)
 	}
 
 	if len(container.Resources.Limits) != 0 {
