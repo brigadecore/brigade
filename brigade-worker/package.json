@@ -47,6 +47,6 @@
     "ulid": "^0.2.0"
   },
   "resolutions": {
-    "handlebars": "^4.4.5"
+    "handlebars": "^4.5.2"
   }
 }
