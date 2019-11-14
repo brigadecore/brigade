@@ -14,6 +14,7 @@ import (
 
 var (
 	runFile       string
+	runConfigFile string
 	runEvent      string
 	runPayload    string
 	runCommitish  string
@@ -54,6 +55,7 @@ func init() {
 	run.Flags().StringVarP(&runFile, "file", "f", "", "The JavaScript file to execute")
 	run.Flags().StringVarP(&runEvent, "event", "e", "exec", "The name of the event to fire")
 	run.Flags().StringVarP(&runPayload, "payload", "p", "", "The path to a payload file")
+	run.Flags().StringVar(&runConfigFile, "config", "", "The brigade.json config file")
 	run.Flags().StringVarP(&runCommitish, "commit", "c", "", "A VCS (git) commit")
 	run.Flags().StringVarP(&runRef, "ref", "r", defaultRef, "A VCS (git) version, tag, or branch")
 	run.Flags().BoolVar(&runNoProgress, "no-progress", false, "Disable progress meter")
@@ -74,20 +76,19 @@ var run = &cobra.Command{
 		}
 		proj := args[0]
 
-		var scr []byte
-		if len(runFile) > 0 {
-			var err error
-			if scr, err = ioutil.ReadFile(runFile); err != nil {
-				return err
-			}
+		scr, err := readFileParam(runFile)
+		if err != nil {
+			return err
 		}
 
-		var payload []byte
-		if len(runPayload) > 0 {
-			var err error
-			if payload, err = ioutil.ReadFile(runPayload); err != nil {
-				return err
-			}
+		config, err := readFileParam(runConfigFile)
+		if err != nil {
+			return err
+		}
+
+		payload, err := readFileParam(runPayload)
+		if err != nil {
+			return err
 		}
 
 		var destination io.Writer = os.Stdout
@@ -111,7 +112,7 @@ var run = &cobra.Command{
 		runner.Background = runBackground
 		runner.Verbose = globalVerbose
 
-		err = runner.SendScript(proj, scr, runEvent, runCommitish, runRef, payload, runLogLevel)
+		err = runner.SendScript(proj, scr, config, runEvent, runCommitish, runRef, payload, runLogLevel)
 		if err == nil {
 			return nil
 		}
@@ -127,4 +128,11 @@ var run = &cobra.Command{
 
 		return err
 	},
+}
+
+func readFileParam(path string) ([]byte, error) {
+	if len(path) > 0 {
+		return ioutil.ReadFile(path)
+	}
+	return []byte{}, nil
 }

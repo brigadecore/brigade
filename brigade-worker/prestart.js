@@ -2,19 +2,44 @@ const process = require("process")
 const fs = require("fs")
 const { execFileSync } = require("child_process")
 
-//checked out in repo
-const depsFile = "/vcs/brigade.json"
+const configFile = "/brigade.json";
+const mountedConfigFile = "/etc/brigade/config";
+const vcsConfigFile = "/vcs/brigade.json";
+
+// Config file locations in order of precedence.
+const configFiles = [
+  // data mounted from event secret (e.g. brig run)
+  mountedConfigFile,
+
+  // checked out in repo
+  vcsConfigFile,
+];
+
+function createConfig() {
+  for (let src of configFiles) {
+    if (fs.existsSync(src) && fs.readFileSync(src, "utf8") != "") {
+      // Node's require will complain/fail if the file does not have a .json/.js extension
+      // Here we create the appropriately named file using the contents from src
+      fs.writeFileSync(configFile, fs.readFileSync(src, "utf8"));
+      return;
+    }
+  }
+}
 
 if (require.main === module)  {
   addDeps()
 }
 
 function addDeps() {
-  if (!fs.existsSync(depsFile)) {
+  createConfig();
+  if (!fs.existsSync(configFile)) {
     console.log("prestart: no dependencies file found")
     return
   }
-  const deps = require(depsFile).dependencies || {}
+
+  // Parse the config file
+  // Currently, we only look for dependencies
+  const deps = require(configFile).dependencies || {}
 
   const packages = buildPackageList(deps)
   if (packages.length == 0) {
@@ -48,7 +73,10 @@ function addYarn(packages) {
 }
 
 module.exports = {
-  depsFile,
+  configFile,
+  mountedConfigFile,
+  vcsConfigFile,
+  createConfig,
   addDeps,
   buildPackageList,
   addYarn,

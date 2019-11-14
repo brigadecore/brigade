@@ -29,6 +29,7 @@ var (
 	rerunFile       string
 	rerunEvent      string
 	rerunPayload    string
+	rerunConfigFile string
 	rerunCommitish  string
 	rerunRef        string
 	rerunLogLevel   string
@@ -41,6 +42,7 @@ func init() {
 	rerun.Flags().StringVarP(&rerunFile, "file", "f", "", "The JavaScript file to execute")
 	rerun.Flags().StringVarP(&rerunEvent, "event", "e", "", "The name of the event to fire")
 	rerun.Flags().StringVarP(&rerunPayload, "payload", "p", "", "The path to a payload file")
+	rerun.Flags().StringVar(&rerunConfigFile, "config", "", "The brigade.json config file")
 	rerun.Flags().StringVarP(&rerunCommitish, "commit", "c", "", "A VCS (git) commit")
 	rerun.Flags().StringVarP(&rerunRef, "ref", "r", "", "A VCS (git) version, tag, or branch")
 	rerun.Flags().BoolVar(&rerunNoProgress, "no-progress", runNoProgress, "Disable progress meter")
@@ -118,6 +120,14 @@ func getUpdatedBuild(r *script.Runner, bid string) (*brigade.Build, error) {
 			return build, err
 		}
 		build.Script = data
+	}
+
+	if rerunConfigFile != "" {
+		config, err := ioutil.ReadFile(rerunConfigFile)
+		if err != nil {
+			return build, err
+		}
+		build.Config = config
 	}
 
 	if len(rerunPayload) > 0 {
