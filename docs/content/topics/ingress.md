@@ -273,11 +273,17 @@ Follow Steps 0-4 in the [Getting Started Guide](https://linkerd.io/2/getting-sta
 on to the Kubernetes cluster hosting Brigade.  Note that you may also opt to install/manage the server via the corresponding Helm chart.  Check out the
 [Helm Install Instructions](https://linkerd.io/2/tasks/install-helm/) for further details.
 
-### Upgrading Brigade
+### Integration with Brigade
 
-Next, we'll upgrade the Brigade Helm release(s) so that Linkerd can watch the services we're interested in monitoring.  Wiring up Linkerd is as simple as
-attaching an annotation (`linkerd.io/inject: enabled`) to each pod we're interested in.  Here, we add the annotations to the Brigade API server
-and Kashti, `via the Helm upgrade command:
+Linkerd's term for integration with a given service is injection.  Note that the [inject CLI docs](https://linkerd.io/2/reference/cli/inject/) show how to inject
+Linkerd globally on a namespace.  For Brigade, we don't wish to do so, as the namespace it is deployed in will surely consist of a large number of Brigade Job pods.
+Since injection means a Linkerd sidecar container will be attached to all pods, and owing to how Kubernetes currently works, this would prevent said Jobs from ever terminating.
+
+We only wish to inject Linkerd into Brigade's long-running components - and for this example we're most interested in the components that receive external requests: the
+Brigade API server and Kashti (with gateways mentioned a little later).
+
+Wiring up Linkerd is as simple as attaching an annotation (`linkerd.io/inject: enabled`) to each pod we're interested in.  Here, we add the annotations to
+the Brigade API server and Kashti, via a Helm release upgrade (or install, if no release currently exists):
 
 ```
 helm upgrade --install brigade-server brigade/brigade \
@@ -307,7 +313,7 @@ api:
 ...
 ```
 
-Then we invoke the Helm upgrade like so:
+Then we invoke the upgrade command like so:
 
 ```
 helm upgrade --install brigade-server brigade/brigade -f values.yaml
@@ -364,7 +370,7 @@ ingress:
 ...
 ```
 
-Then we invoke the Helm upgrade command like so:
+Then we invoke the upgrade command like so:
 
 ```
 helm upgrade --install brigade-gh-app brigade/brigade-github-app -f values.yaml
