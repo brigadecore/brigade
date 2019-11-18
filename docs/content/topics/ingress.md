@@ -250,8 +250,138 @@ genericGateway:
         - brigade-events-test.kube.radu.sh
 ```
 
-Notice how the `annotations`, `hosts`, `paths` and `tls` sections are almost identical with the example we had before. If we install Brigade using these values, the same process that happened before for the demo application starts now - we will have an Ingress object, and `cert-manager` will make and `Order` and create a `Certificate` object using a certificate from LetsEncrypt. A couple of seconds later, we can verify the generic gateway is successfully deployed, and we have an HTTPS endpoint:
+Notice how the `annotations`, `hosts`, `paths` and `tls` sections are almost identical with the example we had before. If we install Brigade using these values, the same process that happened before for the demo application starts now - we will have an Ingress object, and `cert-manager` will make an `Order` and create a `Certificate` object using a certificate from LetsEncrypt. A couple of seconds later, we can verify the generic gateway is successfully deployed, and we have an HTTPS endpoint:
 
 ![Brigade Ingress](https://docs.brigade.sh/img/brigade-ingress.png)
 
 Now we can follow the same process for any gateway we want to expose on the Internet.
+
+## Setting up a Service Mesh to monitor Brigade using Linkerd
+
+Brigade has a handful of services that we may want to monitor and capture stats from.   The two core services handling inbound requests are the API server
+and the Kashti server.  Additionally, any number of optional gateways would be candidates for inclusion.
+
+A service mesh is an infrastructure layer that can provide such analytics, oftentimes also bringing in load balancing, authentication, authorization and
+circuit breaking functionality.  In this example, we'll be using [Linkerd](linkerd) as our service mesh and focus primarily on service observability and
+traceability.
+
+Here we show how the applicable Brigade components can be configured so that Linkerd can provide service data for us to use.
+
+### Installing Linkerd
+
+Follow Steps 0-4 in the [Getting Started Guide](https://linkerd.io/2/getting-started/) to install the Linkerd cli on to your machine and the Linkerd server
+on to the Kubernetes cluster hosting Brigade.  Note that you may also opt to install/manage the server via the corresponding Helm chart.  Check out the
+[Helm Install Instructions](https://linkerd.io/2/tasks/install-helm/) for further details.
+
+### Integration with Brigade
+
+Linkerd's term for integration with a given service is injection.  Note that the [inject CLI docs](https://linkerd.io/2/reference/cli/inject/) show how to inject
+Linkerd globally on a namespace.  For Brigade, we don't wish to do so, as the namespace it is deployed in will surely consist of a large number of Brigade Job pods.
+Since injection means a Linkerd sidecar container will be attached to all pods, and owing to how Kubernetes currently works, this would prevent said Jobs from ever terminating.
+
+We only wish to inject Linkerd into Brigade's long-running components - and for this example we're most interested in the components that receive external requests: the
+Brigade API server and Kashti (with gateways mentioned a little later).
+
+Wiring up Linkerd is as simple as attaching an annotation (`linkerd.io/inject: enabled`) to each pod we're interested in.  Here, we add the annotations to
+the Brigade API server and Kashti, via a Helm release upgrade (or install, if no release currently exists):
+
+```
+helm upgrade --install brigade-server brigade/brigade \
+  --set api.podAnnotations."linkerd\.io/inject"=enabled \
+  --set kashti.podAnnotations."linkerd\.io/inject"=enabled
+```
+
+Alternatively, these can be added to the chart values file and supplied instead.
+
+In the `values.yaml` file:
+
+```
+...
+
+kashti:
+  enabled: true
+  podAnnotations:
+    linkerd.io/inject: enabled
+
+...
+
+api:
+  enabled: true
+  podAnnotations:
+    linkerd.io/inject: enabled
+
+...
+```
+
+Then we invoke the upgrade command like so:
+
+```
+helm upgrade --install brigade-server brigade/brigade -f values.yaml
+```
+
+### Monitoring Brigade
+
+Now that we have Linkerd hooked up to the services we are interested in, we can check things out via Linkerd's dashboard.
+
+```
+linkerd dashboard &
+```
+
+This will launch both the Linkerd dashboard and default Grafana dashboard, opening up the former in your default browser.  We can now navigate to
+the namespace we have Brigade installed into (here `default`) and confirm both of the services are healthy and running:
+
+![Linkerd Dashboard Deployment Stats](https://docs.brigade.sh/img/linkerd-dashboard-1.png)
+
+Be sure to explore all the dashboard has to offer, including the Grafana dashboard.  Check out the [Dashboard Doc](https://linkerd.io/2/features/dashboard/)
+for further details.
+
+Note that much of the same information displayed in the dashboard can be gleaned from the `linkerd` cli.  See the [CLI Reference](https://linkerd.io/2/reference/cli/)
+for further info.
+
+### Bonus round: Linkerd Ingress configuration for monitoring Gateways
+
+The default configuration for Brigade gateways is to funnel traffic through an ingress controller, as seen above.  Therefore, in addition to adding
+the pod annotation to each gateway we wish to monitor, we'll need to add a bit of additional configuration to each gateway's ingress resource.
+
+Following the [Using Ingress](https://linkerd.io/2/tasks/using-ingress/#nginx) doc, we see what is needed for configuration when using the Nginx Ingress
+Controller.  It boils down to adding an additional annotation to the ingress resource.
+
+Taking the Brigade GitHub App Gateway as our example, we add the necessary config to the Helm chart values and then upgrade the release:
+
+In the `values.yaml` file, we add the `linkerd.io/inject` entry under `podAnnotations` and the `nginx.ingress.kubernetes.io/configuration-snippet` entry under `ingress.annotations`:
+
+```
+...
+
+podAnnotations:
+  linkerd.io/inject: enabled
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: "ngin"
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/acme-challenge-type: http01
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header l5d-dst-override $service_name.$namespace.svc.cluster.local:$service_port;
+      grpc_set_header l5d-dst-override $service_name.$namespace.svc.cluster.local:$service_port;
+
+...
+```
+
+Then we invoke the upgrade command like so:
+
+```
+helm upgrade --install brigade-gh-app brigade/brigade-github-app -f values.yaml
+```
+
+Navigating back to our dashboard, we then see the updated TCP stats for our gateway, perhaps after (re-)sending a few webhooks from our GitHub App page
+to generate some inbound and outbound traffic:
+
+![Linkerd Dashboard TCP Stats](https://docs.brigade.sh/img/linkerd-dashboard-2.png)
+
+This just scratches the surface of what Linkerd can provide, but we already have a great way to monitor the health of our Brigade services
+at a glance.
+
+[linkerd]: https://linkerd.io/
