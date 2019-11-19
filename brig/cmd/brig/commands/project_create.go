@@ -457,6 +457,31 @@ func addBrigadeJS(p *brigade.Project, store storage.Store) error {
 	return nil
 }
 
+func addBrigadeConfig(p *brigade.Project, store storage.Store) error {
+	err := survey.AskOne(&survey.Input{
+		Message: "Default brigade.json config ConfigMap name",
+		Help:    "It is possible to store a default brigade.json config in a ConfigMap. Supply the name of that ConfigMap to use the config.",
+		Default: p.DefaultConfigName,
+	}, &p.DefaultConfigName, nil)
+	if err != nil {
+		return fmt.Errorf(abort, err)
+	}
+
+	var fname string
+	err = survey.AskOne(&survey.Input{
+		Message: "Upload a default brigade.json config",
+		Help:    "The local path to a default brigade.json config file that will be run if none exists in the repo. Overrides the ConfigMap version.",
+	}, &fname, loadFileValidator)
+	if err != nil {
+		return fmt.Errorf(abort, err)
+	}
+	if config := loadFileStr(fname); config != "" {
+		p.DefaultConfig = loadFileStr(fname)
+	}
+
+	return nil
+}
+
 func setProjectName(p *brigade.Project, store storage.Store, configureVCS bool) error {
 	// We always set this to the globalNamespace, otherwise things will break.
 	p.Kubernetes.Namespace = globalNamespace

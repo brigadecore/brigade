@@ -369,9 +369,10 @@ export BRIGADE_PAYLOAD='{}'
 export BRIGADE_PROJECT_ID=brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
 export BRIGADE_PROJECT_NAMESPACE=default
 export BRIGADE_SCRIPT="$(pwd)/brigade.js"
+export BRIGADE_CONFIG="$(pwd)/brigade.json"
 
 cd ./brigade-worker
-echo "running $BRIGADE_EVENT_TYPE on $BRIGADE_SCRIPT for $BRIGADE_PROJECT_ID"
+echo "running $BRIGADE_EVENT_TYPE on $BRIGADE_SCRIPT with $BRIGADE_CONFIG config for $BRIGADE_PROJECT_ID"
 yarn start
 ```
 

@@ -46,6 +46,12 @@ func projectCreatePromptsNoVCS(p *brigade.Project, store storage.Store) error {
 		}
 	}
 
+	// ask/edit a brigade.json config file either in a ConfigMap or local
+	err = addBrigadeConfig(p, store)
+	if err != nil {
+		return fmt.Errorf(abort, err)
+	}
+
 	doAdvanced := false
 	if err := survey.AskOne(&survey.Confirm{
 		Message: "Configure advanced options",

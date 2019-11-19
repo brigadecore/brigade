@@ -110,6 +110,7 @@ var (
 		Data: map[string][]byte{
 			"repository":        []byte("myrepo"),
 			"defaultScript":     []byte(`console.log("hello default script")`),
+			"defaultConfig":     []byte(`{"dependencies":{"hello":"0.1.0"}}`),
 			"sharedSecret":      []byte("mysecret"),
 			"github.token":      []byte("like a fish needs a bicycle"),
 			"github.baseURL":    []byte("https://example.com/base"),

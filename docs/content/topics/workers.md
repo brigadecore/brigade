@@ -145,6 +145,7 @@ is not applicable to a worker that does not utilize such configuration.
 
 | Environment Variable Name | Description | Notes |
 |---------------------------|-------------|-------|
+| `BRIGADE_CONFIG` | If applicable, may override the default location of the `brigade.json` configuration file. | |
 | `BRIGADE_LOG_LEVEL` | Desired log level. | This is typically left unset by the controller. |
 | `BRIGADE_PROJECT_ID` | A unique identifier for the Brigade project. | |
 | `BRIGADE_PROJECT_NAMESPACE` | The Kubernetes namespace in which the worker should create any pods that implement each build's job(s). The  worker must have write access to this namespace. | Note this is always the same namespace as the one that the worker itself is executed. |

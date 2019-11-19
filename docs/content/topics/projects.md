@@ -83,8 +83,11 @@ You can optionally customize a bunch of advanced options during `brig project cr
 - *Allow privileged jobs*: Allow jobs to mount the Docker socket or perform other privileged operations. Not recommended for multi-tenant clusters
 - *Image pull secrets*: Comma-separated list of image pull secret names that will be supplied to workers and jobs
 - *Default script ConfigMap name*: It is possible to store a default script in a ConfigMap. Supply the name of that ConfigMap to use the script
-- *brigade.js file path*: brigade.js file path relative to the repository root, e.g. 'mypath/brigade.js'. Absolute paths will not be accepted
+- *brigade.js file path relative to the repository root*: brigade.js file path relative to the repository root, e.g. 'mypath/brigade.js'. Absolute paths will not be accepted
 - *Upload a default brigade.js script*: The local path to a default brigade.js file that will be run if none exists in the repo. Overrides the ConfigMap script
+- *Default config ConfigMap name*: It is possible to store a default brigade.json config in a ConfigMap. Supply the name of that ConfigMap to use the config
+- *brigade.json file path relative to the repository root*: brigade.json file path relative to the repository root, e.g. 'mypath/brigade.json'. Absolute paths will not be accepted
+- *Upload a default brigade.json config*: The local path to a default brigade.json config file that will be used if none exists in the repo. Overrides the ConfigMap config
 
 #### Storing a Script in a ConfigMap
 
@@ -100,11 +103,15 @@ The command above stores the `examples/brigade.js` script in a ConfigMap named `
 
 If this value is supplied, the `brigade.js` in the ConfigMap will be used if and only if neither the project nor the repository provides an alternative `brigade.js` file. In other words, this is the _last location_ checked for a Brigade script.
 
+This same pattern can be used to store a default `brigade.json` configuration file in a ConfigMap for use by multiple projects. The associated prompt is *Default brigade.json config ConfigMap name*
+
 #### Storing a Default Script in the Project
 
-It is also possible to store a default Brigade script within the project definition. When `brig project create` prompts for *brigade.js file path* you can enter the path to a `brigade.js` file (e.g. `examples/brigade.js`) and that file will be copied into the project. Note that if you edit the `brigade.js` you will need to edit the project's Kubernetes Secret and update the script accordingly.
+It is also possible to store a default Brigade script within the project definition. When `brig project create` prompts for *Upload a default brigade.js script* you can enter the local path to a `brigade.js` file (e.g. `examples/brigade.js`) and that file will be copied into the project. Note that if you edit the `brigade.js` you will need to edit the project's Kubernetes Secret and update the script accordingly.
 
 If a script is set here, it will override a ConfigMap based script. However, if a repository holds a `brigade.js` file, that will take precedence over this.
+
+This same pattern can be used to store a default `brigade.json` configuration file for a project.  The associated prompt is *Upload a default brigade.json config*.
 
 ### Managing Your Projects
 

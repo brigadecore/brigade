@@ -67,6 +67,8 @@ func TestCreateProject(t *testing.T) {
 		},
 		DefaultScript:     "console.log('hi');",
 		DefaultScriptName: "bernie",
+		DefaultConfig:     `{ "dependencies": { "year": "2.0.20" } }`,
+		DefaultConfigName: "sanders",
 		Repo: brigade.Repo{
 			Name:     "git.example.com/tennyson/light-brigade",
 			SSHKey:   "i know what you did last summer",
@@ -171,11 +173,16 @@ func TestReplaceProject(t *testing.T) {
 		t.Fatal("Err should not be nil, since project does not exist")
 	}
 	// create another one, this time using same ID and a couple of added/changed properties
-	p2 := &brigade.Project{Name: "fakeName", ID: "brigade-fakeID", DefaultScript: "new.js", Github: brigade.Github{
-		Token:     "half-a-league2",
-		BaseURL:   "http://example2.com",
-		UploadURL: "http://up.example2.com",
-	}}
+	p2 := &brigade.Project{
+		Name:          "fakeName",
+		ID:            "brigade-fakeID",
+		DefaultScript: "new.js",
+		DefaultConfig: "new.json",
+		Github: brigade.Github{
+			Token:     "half-a-league2",
+			BaseURL:   "http://example2.com",
+			UploadURL: "http://up.example2.com",
+		}}
 	// replace it
 	if err := s.ReplaceProject(p2); err != nil {
 		t.Fatal(err)
@@ -188,6 +195,10 @@ func TestReplaceProject(t *testing.T) {
 	// check for new/added properties
 	if updatedSecret.StringData["defaultScript"] != "new.js" {
 		t.Fatalf("Wrong value in DefaultScript. It's %s whereas it should be 'new.js'", updatedSecret.StringData["defaultScript"])
+	}
+
+	if updatedSecret.StringData["defaultConfig"] != "new.json" {
+		t.Fatalf("Wrong value in DefaultConfig. It's %s whereas it should be 'new.json'", updatedSecret.StringData["defaultConfig"])
 	}
 
 	if updatedSecret.StringData["github.baseURL"] != "http://example2.com" {
@@ -219,6 +230,8 @@ func TestConfigureProject(t *testing.T) {
 			"repository":        []byte("myrepo"),
 			"defaultScript":     []byte(`console.log("hello default script")`),
 			"defaultScriptName": []byte("global-cm-script"),
+			"defaultConfig":     []byte(`{"dependencies":{"hello":"0.1.0"}}`),
+			"defaultConfigName": []byte("global-cm-config"),
 			"sharedSecret":      []byte("mysecret"),
 			"github.token":      []byte("like a fish needs a bicycle"),
 			"github.baseURL":    []byte("https://example.com/base"),

@@ -234,12 +234,32 @@ func projectAdvancedPromptsVCS(p *brigade.Project, store storage.Store) error {
 				return nil
 			},
 		},
+		{
+			Name: "brigadeConfigPath",
+			Prompt: &survey.Input{
+				Message: "brigade.json file path relative to the repository root",
+				Help:    "brigade.json file path relative to the repository root, e.g. 'mypath/brigade.json'",
+				Default: p.BrigadeConfigPath,
+			},
+			Validate: func(ans interface{}) error {
+				sans := fmt.Sprintf("%v", ans)
+				if filepath.IsAbs(sans) {
+					return errors.New("Path must be relative")
+				}
+				return nil
+			},
+		},
 	}...)
 	if err := survey.Ask(questionsProject, p); err != nil {
 		return fmt.Errorf(abort, err)
 	}
 
 	err = addBrigadeJS(p, store)
+	if err != nil {
+		return fmt.Errorf(abort, err)
+	}
+
+	err = addBrigadeConfig(p, store)
 	if err != nil {
 		return fmt.Errorf(abort, err)
 	}

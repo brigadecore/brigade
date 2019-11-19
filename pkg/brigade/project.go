@@ -22,6 +22,10 @@ type Project struct {
 	DefaultScript string `json:"defaultScript"`
 	// DefaultScriptName is the name of the configmap where the script is stored.
 	DefaultScriptName string `json:"defaultScriptName"`
+	// DefaultConfig is a json config used by default when missing from the repo
+	DefaultConfig string `json:"defaultConfig"`
+	// DefaultConfigName is the name of the configmap where the config is stored.
+	DefaultConfigName string `json:"defaultConfigName"`
 	// Kubernetes holds information about Kubernetes
 	Kubernetes Kubernetes `json:"kubernetes"`
 	// SharedSecret is the GitHub shared key
@@ -52,6 +56,10 @@ type Project struct {
 
 	// BrigadejsPath contains the path for the Brigade.js file in the source repo
 	BrigadejsPath string `json:"brigadejsPath"`
+
+	// BrigadeConfigPath contains the path for the brigade.json file in the source repo
+	BrigadeConfigPath string `json:"brigadeConfigPath"`
+
 	// GenericGatewaySecret is a string that contains the access code used by API Server to authenticate generic Gateway requests
 	GenericGatewaySecret string `json:"genericGatewaySecret"`
 }

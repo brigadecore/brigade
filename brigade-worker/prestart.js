@@ -5,14 +5,25 @@ const { execFileSync } = require("child_process")
 const configFile = "/brigade.json";
 const mountedConfigFile = "/etc/brigade/config";
 const vcsConfigFile = "/vcs/brigade.json";
+const defaultProjectConfigFile = "/etc/brigade-project/defaultConfig";
+const configMapConfigFile = "/etc/brigade-default-config/brigade.json";
 
 // Config file locations in order of precedence.
 const configFiles = [
+  // manual override for debugging
+  process.env.BRIGADE_CONFIG,
+
   // data mounted from event secret (e.g. brig run)
   mountedConfigFile,
 
   // checked out in repo
   vcsConfigFile,
+
+  // data mounted from project.DefaultConfig
+  defaultProjectConfigFile,
+
+  // mounted configmap named in brigade.sh/project.DefaultConfigName
+  configMapConfigFile
 ];
 
 function createConfig() {
@@ -76,6 +87,8 @@ module.exports = {
   configFile,
   mountedConfigFile,
   vcsConfigFile,
+  defaultProjectConfigFile,
+  configMapConfigFile,
   createConfig,
   addDeps,
   buildPackageList,

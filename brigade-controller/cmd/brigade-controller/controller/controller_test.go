@@ -203,6 +203,7 @@ func TestController_WithScript(t *testing.T) {
 		Data: map[string][]byte{
 			"vcsSidecar":        []byte(sidecarImage),
 			"defaultScriptName": []byte("my-script"),
+			"defaultConfigName": []byte("my-config"),
 		},
 	}
 
@@ -247,8 +248,8 @@ func TestController_WithScript(t *testing.T) {
 	if l := len(pod.Spec.InitContainers); l != 1 {
 		t.Fatalf("Expected 1 init container, got %d", l)
 	}
-	if l := len(pod.Spec.Containers[0].VolumeMounts); l != 4 {
-		t.Fatalf("Expected 3 volume mounts, got %d", l)
+	if l := len(pod.Spec.Containers[0].VolumeMounts); l != 5 {
+		t.Fatalf("Expected 5 volume mounts, got %d", l)
 	}
 }
 
