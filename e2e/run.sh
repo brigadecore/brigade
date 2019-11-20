@@ -17,15 +17,15 @@ BIN_DIR="${BIN_DIR:-"$(mktemp -d)"}"
 CREATE_KIND="${CREATE_KIND:-true}"
 
 KUBECTL_PLATFORM=linux/amd64
-KUBECTL_VERSION=v1.15.3
+KUBECTL_VERSION=v1.16.3
 KUBECTL_EXECUTABLE=kubectl
 
 KIND_PLATFORM=kind-linux-amd64
-KIND_VERSION=v0.5.1
+KIND_VERSION=v0.6.0
 KIND_EXECUTABLE=kind
 
 HELM_PLATFORM=linux-amd64
-HELM_VERSION=helm-v3.0.0-beta.4
+HELM_VERSION=helm-v3.0.0
 HELM_EXECUTABLE=helm3
 
 ########################################################################################################################################################
