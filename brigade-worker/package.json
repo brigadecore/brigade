@@ -12,8 +12,7 @@
     "start": "node --no-deprecation ./dist/index.js",
     "test": "mocha --require ts-node/register --recursive ./test/**/*.ts",
     "build": "tsc",
-    "brigade": "yarn start",
-    "docs": "typedoc --out ./doc --excludePrivate --excludeExternals --exclude test/*.ts --exclude doc/** ./src"
+    "brigade": "yarn start"
   },
   "author": "The Steel Thread Team",
   "license": "Apache-2.0",
@@ -34,7 +33,6 @@
     "rimraf": "^2.6.2",
     "sinon": "^7.3.1",
     "ts-node": "^8.0.2",
-    "typedoc": "^0.15.0",
     "typescript": "^3.2.2"
   },
   "dependencies": {
@@ -45,8 +43,5 @@
     "module-alias": "^2.2.0",
     "pretty-error": "^2.1.1",
     "ulid": "^0.2.0"
-  },
-  "resolutions": {
-    "handlebars": "^4.5.2"
   }
 }
