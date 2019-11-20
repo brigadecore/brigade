@@ -16,6 +16,7 @@ BIN_DIR="${BIN_DIR:-"$(mktemp -d)"}"
 # hence the need to be able to opt-out
 CREATE_KIND="${CREATE_KIND:-true}"
 
+# TODO: defer to env for kubectl/kind/helm versions
 KUBECTL_PLATFORM=linux/amd64
 KUBECTL_VERSION=v1.16.3
 KUBECTL_EXECUTABLE=kubectl
@@ -31,23 +32,25 @@ HELM_EXECUTABLE=helm3
 ########################################################################################################################################################
 
 function prerequisites_check(){
-    # check if kubectl is installed
-    if ! [ -x "$(command -v kubectl)" ]; then
-      echo 'Error: kubectl is not installed. Installing...'
-      curl -LO https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/$KUBECTL_PLATFORM/kubectl && chmod +x ./kubectl && mv kubectl ${BIN_DIR}/$KUBECTL_EXECUTABLE
-    fi
+    # echo "Installing gofish to handle the installation of needed binaries..."
+    # curl -fsSL https://raw.githubusercontent.com/fishworks/gofish/master/scripts/install.sh | bash && \
+    #   gofish init
+    # gofish install kubectl
 
-    # check if kind is installed
-    if ! [ -x "$(command -v $KIND_EXECUTABLE)" ]; then
-        echo 'Error: kind is not installed. Installing...'
-        wget https://github.com/kubernetes-sigs/kind/releases/download/$KIND_VERSION/$KIND_PLATFORM && mv $KIND_PLATFORM ${BIN_DIR}/$KIND_EXECUTABLE && chmod +x ${BIN_DIR}/$KIND_EXECUTABLE
-    fi
+    echo "Installing kubectl version ${KUBECTL_VERSION}..."
+    curl -o ${BIN_DIR}/${KUBECTL_EXECUTABLE} -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/${KUBECTL_PLATFORM}/kubectl && \
+      chmod +x ${BIN_DIR}/${KUBECTL_EXECUTABLE}
 
-    # check if helm is installed
-    if ! [ -x "$(command -v $HELM_EXECUTABLE)" ]; then
-        echo 'Error: Helm is not installed. Installing...'
-        wget https://get.helm.sh/$HELM_VERSION-$HELM_PLATFORM.tar.gz && tar -xvzf $HELM_VERSION-$HELM_PLATFORM.tar.gz && rm -rf $HELM_VERSION-$HELM_PLATFORM.tar.gz && mv $HELM_PLATFORM/helm ${BIN_DIR}/$HELM_EXECUTABLE && chmod +x ${BIN_DIR}/$HELM_EXECUTABLE
-    fi
+    echo "Installing kind version ${KIND_VERSION}..."
+    wget -O ${BIN_DIR}/${KIND_EXECUTABLE} https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/${KIND_PLATFORM} && \
+      chmod +x ${BIN_DIR}/${KIND_EXECUTABLE}
+
+    echo "Installing helm version ${HELM_VERSION}..."
+    wget -O ${BIN_DIR}/${HELM_VERSION}-${HELM_PLATFORM}.tar.gz https://get.helm.sh/${HELM_VERSION}-${HELM_PLATFORM}.tar.gz && \
+      tar -xvzf ${BIN_DIR}/${HELM_VERSION}-${HELM_PLATFORM}.tar.gz -C ${BIN_DIR} && \
+      rm -rf ${BIN_DIR}/${HELM_VERSION}-${HELM_PLATFORM}.tar.gz && \
+      chmod +x ${BIN_DIR}/${HELM_PLATFORM}/helm && \
+      mv ${BIN_DIR}/${HELM_PLATFORM}/helm ${BIN_DIR}/$HELM_EXECUTABLE
 
     export PATH="${BIN_DIR}:${PATH}"
 }
@@ -109,24 +112,20 @@ prerequisites_check
 
 # create kind k8s cluster
 if [[ "${CREATE_KIND}" == "true" ]]; then
-  $KIND_EXECUTABLE create cluster
+  ${KIND_EXECUTABLE} create cluster --image kindest/node:${KUBECTL_VERSION}
 fi
 
 function finish {
   if [[ "${CREATE_KIND}" == "true" ]]; then
     echo "-----Cleaning up-----"
-    $KIND_EXECUTABLE delete cluster
+    ${KIND_EXECUTABLE} delete cluster
   fi
 }
 
 trap finish EXIT
 
-# set KUBECONFIG with details from kind
-export KUBECONFIG="$($KIND_EXECUTABLE get kubeconfig-path --name="kind")"
-
 # build all images and load them onto kind
 DOCKER_ORG=brigadecore make build-all-images load-all-images
-
 
 install_helm_project # installs helm and Brigade onto kind
 
