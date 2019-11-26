@@ -127,8 +127,10 @@ var (
 
 	// stubBuild is a build
 	stubBuild = &brigade.Build{
-		ID:        stubBuildID,
-		ProjectID: stubProjectID,
+		ID:         stubBuildID,
+		ProjectID:  stubProjectID,
+		ShortTitle: "this is a short title",
+		LongTitle:  "this is a long title",
 		Revision: &brigade.Revision{
 			Commit: "abc123",
 			Ref:    "refs/heads/master",
