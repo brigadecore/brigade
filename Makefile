@@ -144,6 +144,7 @@ build-all-images: $(addsuffix -build-image,$(IMAGES))
 %-build-image:
 	cp $*/.dockerignore .
 	docker build \
+		--no-cache \
 		-f $*/Dockerfile \
 		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
 		--build-arg LDFLAGS='$(LDFLAGS)' \
@@ -250,3 +251,12 @@ test-functional:
 .PHONY: e2e
 e2e:
 	./e2e/run.sh
+
+.PHONY: e2e-docker
+e2e-docker:
+	docker run \
+		-e CREATE_KIND="${CREATE_KIND}" \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v $(PROJECT_ROOT):/go/src/$(BASE_PACKAGE_NAME) \
+		-w /go/src/$(BASE_PACKAGE_NAME) vdice/dind-go:edge \
+		./e2e/run.sh
