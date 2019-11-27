@@ -23,6 +23,8 @@ func TestNewBuildFromSecret(t *testing.T) {
 		Data: map[string][]byte{
 			"event_type":     []byte("foo"),
 			"event_provider": []byte("bar"),
+			"short_title":    []byte("this is a short title"),
+			"long_title":     []byte("this is a long title"),
 			"payload":        []byte("this is a payload"),
 			"script":         []byte("ohai"),
 			"commit_id":      []byte("abc123"),

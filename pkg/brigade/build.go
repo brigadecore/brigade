@@ -12,6 +12,18 @@ type Build struct {
 	Type string `json:"type"`
 	// Provider is the name of the service that caused the event (github, vsts, cron, ...)
 	Provider string `json:"provider"`
+	// ShortTitle is an optional field for a short (and not necessarily unique)
+	// string value that can be added to a build by a gateway to ascribe context
+	// that may be meaningful to human users. For instance, the GitHub gateway
+	// COULD label a build triggered by a pull request with the title or number of
+	// that pull request.
+	ShortTitle string `json:"short_title"`
+	// LongTitle is an optional field for a longer (and not necessarily unique)
+	// string value that can be added to a build by a gateway to ascribe context
+	// that may be meaningful to human users. For instance, the GitHub gateway
+	// COULD label a build triggered by a pull request with the title or number of
+	// that pull request.
+	LongTitle string `json:"long_title"`
 	// CloneURL is the URL at which the repository can be cloned.
 	// This is optional at the build-level. If set, it overrides the same setting
 	// at the projet-level.
