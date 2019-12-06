@@ -81,8 +81,7 @@ describe("prestart", function() {
     let
       existsSync: sinon.SinonStub,
       readFileSync: sinon.SinonStub,
-      writeFileSync: sinon.SinonStub,
-      exit: sinon.SinonStub;
+      writeFileSync: sinon.SinonStub;
 
       beforeEach(function() {
         existsSync = sinon.stub();
@@ -90,7 +89,7 @@ describe("prestart", function() {
         readFileSync.callsFake(() => "{}");
         writeFileSync = sinon.stub();
 
-        mock("fs", { existsSync, readFileSync, writeFileSync })
+        mock("fs", { existsSync, readFileSync, writeFileSync });
 
         prestart = mock.reRequire("../prestart");
       });
@@ -104,10 +103,26 @@ describe("prestart", function() {
 
         prestart.createConfig();
 
-        sinon.assert.calledTwice(existsSync);
-        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
-        sinon.assert.calledWith(existsSync.secondCall, prestart.vcsConfigFile);
+        assert.equal(existsSync.getCalls().length, 5);
+        assert.deepEqual(existsSync.getCall(0).args, [process.env.BRIGADE_CONFIG]);
+        assert.deepEqual(existsSync.getCall(1).args, [prestart.mountedConfigFile]);
+        assert.deepEqual(existsSync.getCall(2).args, [prestart.vcsConfigFile]);
+        assert.deepEqual(existsSync.getCall(3).args, [prestart.defaultProjectConfigFile]);
+        assert.deepEqual(existsSync.getCall(4).args, [prestart.configMapConfigFile]);
         sinon.assert.notCalled(writeFileSync);
+      });
+
+      it("config exists via env var", function() {
+        existsSync.callsFake((...args) => {
+          return args[0] === process.env.BRIGADE_CONFIG;
+        });
+
+        prestart.createConfig();
+
+        assert.equal(existsSync.getCalls().length, 1);
+        assert.deepEqual(existsSync.getCall(0).args, [process.env.BRIGADE_CONFIG]);
+        sinon.assert.called(writeFileSync);
+        sinon.assert.calledWithExactly(writeFileSync, prestart.configFile, "{}");
       });
 
       it("config exists via mounted file", function() {
@@ -117,10 +132,11 @@ describe("prestart", function() {
 
         prestart.createConfig();
 
-        sinon.assert.calledOnce(existsSync);
-        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
+        assert.equal(existsSync.getCalls().length, 2);
+        assert.deepEqual(existsSync.getCall(0).args, [process.env.BRIGADE_CONFIG]);
+        assert.deepEqual(existsSync.getCall(1).args, [prestart.mountedConfigFile]);
         sinon.assert.called(writeFileSync);
-        sinon.assert.calledWithExactly(writeFileSync, prestart.configFile, "{}")
+        sinon.assert.calledWithExactly(writeFileSync, prestart.configFile, "{}");
       });
 
       it("no brigade.json mounted, but exists in vcs", function() {
@@ -130,11 +146,45 @@ describe("prestart", function() {
 
         prestart.createConfig();
 
-        sinon.assert.calledTwice(existsSync);
-        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
-        sinon.assert.calledWith(existsSync.secondCall, prestart.vcsConfigFile);
+        assert.equal(existsSync.getCalls().length, 3);
+        assert.deepEqual(existsSync.getCall(0).args, [process.env.BRIGADE_CONFIG]);
+        assert.deepEqual(existsSync.getCall(1).args, [prestart.mountedConfigFile]);
+        assert.deepEqual(existsSync.getCall(2).args, [prestart.vcsConfigFile]);
         sinon.assert.called(writeFileSync);
-        sinon.assert.calledWithExactly(writeFileSync, prestart.configFile, "{}")
+        sinon.assert.calledWithExactly(writeFileSync, prestart.configFile, "{}");
+      });
+
+      it("config exists via project default", function() {
+        existsSync.callsFake((...args) => {
+          return args[0] === prestart.defaultProjectConfigFile;
+        });
+
+        prestart.createConfig();
+
+        assert.equal(existsSync.getCalls().length, 4);
+        assert.deepEqual(existsSync.getCall(0).args, [process.env.BRIGADE_CONFIG]);
+        assert.deepEqual(existsSync.getCall(1).args, [prestart.mountedConfigFile]);
+        assert.deepEqual(existsSync.getCall(2).args, [prestart.vcsConfigFile]);
+        assert.deepEqual(existsSync.getCall(3).args, [prestart.defaultProjectConfigFile]);
+        sinon.assert.called(writeFileSync);
+        sinon.assert.calledWithExactly(writeFileSync, prestart.configFile, "{}");
+      });
+
+      it("config exists via config map", function() {
+        existsSync.callsFake((...args) => {
+          return args[0] === prestart.configMapConfigFile;
+        });
+
+        prestart.createConfig();
+
+        assert.equal(existsSync.getCalls().length, 5);
+        assert.deepEqual(existsSync.getCall(0).args, [process.env.BRIGADE_CONFIG]);
+        assert.deepEqual(existsSync.getCall(1).args, [prestart.mountedConfigFile]);
+        assert.deepEqual(existsSync.getCall(2).args, [prestart.vcsConfigFile]);
+        assert.deepEqual(existsSync.getCall(3).args, [prestart.defaultProjectConfigFile]);
+        assert.deepEqual(existsSync.getCall(4).args, [prestart.configMapConfigFile]);
+        sinon.assert.called(writeFileSync);
+        sinon.assert.calledWithExactly(writeFileSync, prestart.configFile, "{}");
       });
     });
 
@@ -153,7 +203,7 @@ describe("prestart", function() {
         existsSync = sinon.stub();
         readFileSync = sinon.stub();
         writeFileSync = sinon.stub();
-        mock("fs", { existsSync, readFileSync, writeFileSync })
+        mock("fs", { existsSync, readFileSync, writeFileSync });
 
         exit = sinon.stub();
         mock("process", { env: {}, exit });
@@ -174,10 +224,13 @@ describe("prestart", function() {
 
         prestart.addDeps();
 
-        sinon.assert.calledThrice(existsSync);
-        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
-        sinon.assert.calledWith(existsSync.secondCall, prestart.vcsConfigFile);
-        sinon.assert.calledWith(existsSync.thirdCall, prestart.configFile);
+        assert.equal(existsSync.getCalls().length, 6);
+        assert.deepEqual(existsSync.getCall(0).args, [process.env.BRIGADE_CONFIG]);
+        assert.deepEqual(existsSync.getCall(1).args, [prestart.mountedConfigFile]);
+        assert.deepEqual(existsSync.getCall(2).args, [prestart.vcsConfigFile]);
+        assert.deepEqual(existsSync.getCall(3).args, [prestart.defaultProjectConfigFile]);
+        assert.deepEqual(existsSync.getCall(4).args, [prestart.configMapConfigFile]);
+        assert.deepEqual(existsSync.getCall(5).args, [prestart.configFile]);
         sinon.assert.notCalled(execFileSync);
         sinon.assert.notCalled(exit);
       });
@@ -188,9 +241,9 @@ describe("prestart", function() {
 
         prestart.addDeps();
 
-        sinon.assert.calledTwice(existsSync);
-        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
-        sinon.assert.calledWith(existsSync.secondCall, prestart.configFile);
+        assert.equal(existsSync.getCalls().length, 2);
+        assert.deepEqual(existsSync.getCall(0).args, [process.env.BRIGADE_CONFIG]);
+        assert.deepEqual(existsSync.getCall(1).args, [prestart.configFile]);
         sinon.assert.notCalled(execFileSync);
         sinon.assert.notCalled(exit);
       });
@@ -201,9 +254,9 @@ describe("prestart", function() {
 
         prestart.addDeps();
 
-        sinon.assert.calledTwice(existsSync);
-        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
-        sinon.assert.calledWith(existsSync.secondCall, prestart.configFile);
+        assert.equal(existsSync.getCalls().length, 2);
+        assert.deepEqual(existsSync.getCall(0).args, [process.env.BRIGADE_CONFIG]);
+        assert.deepEqual(existsSync.getCall(1).args, [prestart.configFile]);
         sinon.assert.notCalled(execFileSync);
         sinon.assert.notCalled(exit);
       });
@@ -218,9 +271,9 @@ describe("prestart", function() {
 
         prestart.addDeps();
 
-        sinon.assert.calledTwice(existsSync);
-        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
-        sinon.assert.calledWith(existsSync.secondCall, prestart.configFile);
+        assert.equal(existsSync.getCalls().length, 2);
+        assert.deepEqual(existsSync.getCall(0).args, [process.env.BRIGADE_CONFIG]);
+        assert.deepEqual(existsSync.getCall(1).args, [prestart.configFile]);
         sinon.assert.calledOnce(execFileSync);
         sinon.assert.calledWithExactly(
           execFileSync, "yarn", ["add", "is-thirteen@2.0.0"]);
@@ -238,9 +291,9 @@ describe("prestart", function() {
 
         prestart.addDeps();
 
-        sinon.assert.calledTwice(existsSync);
-        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
-        sinon.assert.calledWith(existsSync.secondCall, prestart.configFile);
+        assert.equal(existsSync.getCalls().length, 2);
+        assert.deepEqual(existsSync.getCall(0).args, [process.env.BRIGADE_CONFIG]);
+        assert.deepEqual(existsSync.getCall(1).args, [prestart.configFile]);
         sinon.assert.calledOnce(execFileSync);
         sinon.assert.calledWithExactly(
           execFileSync, "yarn", ["add", "is-thirteen@2.0.0", "lodash@4.0.0"]);
@@ -262,9 +315,9 @@ describe("prestart", function() {
 
         prestart.addDeps();
 
-        sinon.assert.calledTwice(existsSync);
-        sinon.assert.calledWith(existsSync.firstCall, prestart.mountedConfigFile);
-        sinon.assert.calledWith(existsSync.secondCall, prestart.configFile);
+        assert.equal(existsSync.getCalls().length, 2);
+        assert.deepEqual(existsSync.getCall(0).args, [process.env.BRIGADE_CONFIG]);
+        assert.deepEqual(existsSync.getCall(1).args, [prestart.configFile]);
         sinon.assert.calledOnce(execFileSync);
         sinon.assert.calledWithExactly(execFileSync, "yarn", ["add", "is-thirteen@2.0.0"]);
         sinon.assert.calledOnce(exit);
