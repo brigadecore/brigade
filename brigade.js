@@ -156,6 +156,7 @@ function githubRelease(p, tag) {
   }
   // Cross-compile binaries for a given release and upload them to GitHub.
   var job = new Job("release", goImg);
+  job.shell = "/bin/bash";
   job.mountPath = localPath;
   parts = p.repo.name.split("/", 2);
   // Set a few environment variables.
@@ -173,9 +174,10 @@ function githubRelease(p, tag) {
     `github-release release \
       -t ${tag} \
       -n "${parts[1]} ${tag}" \
-      -d "$(git log --no-merges --pretty=format:'- %s %H (%aN)' HEAD ^$last_tag)" \
-      || echo "release ${tag} exists"`,
-    `for bin in ./bin/*; do github-release upload -f $bin -n $(basename $bin) -t ${tag}; done`
+      -d "$(git log --no-merges --pretty=format:'- %s %H (%aN)' HEAD ^$last_tag)" 2>&1 | sed -e "s/\${GITHUB_TOKEN}/<REDACTED>/"`,
+    `for bin in ./bin/*; do \
+      github-release upload -f $bin -n $(basename $bin) -t ${tag} 2>&1 | sed -e "s/\${GITHUB_TOKEN}/<REDACTED>/"; \
+    done`
   ];
   console.log(job.tasks);
   console.log(`releases at https://github.com/${p.repo.name}/releases/tag/${tag}`);
@@ -210,7 +212,8 @@ events.on("e2e", () => {
 events.on("exec", (e, p) => {
   return Group.runAll([
     goTest(),
-    jsTest()
+    jsTest(),
+    e2e()
   ]);
 });
 
@@ -220,17 +223,26 @@ events.on("push", (e, p) => {
     // This is an official release with a semantically versioned tag
     let matchTokens = Array.from(matchStr);
     let version = matchTokens[1];
-    return buildAndPublishImages(p, version).run()
+    return Group.runAll([
+      goTest(),
+      jsTest(),
+      e2e()
+    ])
       .then(() => {
-        githubRelease(p, version).run();
-      })
-      .then(() => {
-        slackNotify(
-          "Brigade Release",
-          `${version} release now on GitHub! <https://github.com/${p.repo.name}/releases/tag/${version}>`,
-          p
-        ).run();
+        Group.runEach([
+          buildAndPublishImages(p, version),
+          githubRelease(p, version),
+          slackNotify(
+            "Brigade Release",
+            `${version} release now on GitHub! <https://github.com/${p.repo.name}/releases/tag/${version}>`,
+            p
+          )
+        ])
       });
+  } else {
+    if (e.revision.ref.startsWith('refs/tags')) {
+      console.log(`Ref ${e.revision.ref} does not match expected official release tag regex (${releaseTagRegex}); not releasing.`);
+    }
   }
 })
 
