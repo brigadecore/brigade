@@ -84,6 +84,8 @@ func SecretFromProject(project *brigade.Project) (v1.Secret, error) {
 			"buildStorageSize":  project.Kubernetes.BuildStorageSize,
 			"defaultScript":     project.DefaultScript,
 			"defaultScriptName": project.DefaultScriptName,
+			"defaultConfig":     project.DefaultConfig,
+			"defaultConfigName": project.DefaultConfigName,
 
 			"repository": project.Repo.Name,
 			"sshKey":     project.Repo.SSHKey,
@@ -104,6 +106,7 @@ func SecretFromProject(project *brigade.Project) (v1.Secret, error) {
 			"allowHostMounts":      bfmt(project.AllowHostMounts),
 			"workerCommand":        project.WorkerCommand,
 			"brigadejsPath":        project.BrigadejsPath,
+			"brigadeConfigPath":    project.BrigadeConfigPath,
 			"genericGatewaySecret": project.GenericGatewaySecret,
 
 			"kubernetes.cacheStorageClass": project.Kubernetes.CacheStorageClass,
@@ -193,6 +196,8 @@ func NewProjectFromSecret(secret *v1.Secret, namespace string) (*brigade.Project
 
 	proj.DefaultScript = sv.String("defaultScript")
 	proj.DefaultScriptName = sv.String("defaultScriptName")
+	proj.DefaultConfig = sv.String("defaultConfig")
+	proj.DefaultConfigName = sv.String("defaultConfigName")
 
 	proj.Repo = brigade.Repo{
 		Name: sv.String("repository"),

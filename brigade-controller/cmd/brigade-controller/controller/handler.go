@@ -168,6 +168,10 @@ func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 		attachConfigMap(&spec, string(scriptName), "/etc/brigade-default-script")
 	}
 
+	if configName := project.Data["defaultConfigName"]; len(configName) > 0 {
+		attachConfigMap(&spec, string(configName), "/etc/brigade-default-config")
+	}
+
 	if ips := project.Data["imagePullSecrets"]; len(ips) > 0 {
 		pullSecs := strings.Split(string(ips), ",")
 		refs := []v1.LocalObjectReference{}
@@ -295,6 +299,15 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 			log.Printf("Warning: 'brigadejsPath' is set on Project Secret but will be ignored because provided path '%s' is an absolute path", brigadejsPath)
 		} else {
 			envs = append(envs, v1.EnvVar{Name: "BRIGADE_SCRIPT", Value: filepath.Join("/vcs", brigadejsPath)})
+		}
+	}
+
+	brigadeConfigPath := psv.String("brigadeConfigPath")
+	if brigadeConfigPath != "" {
+		if filepath.IsAbs(brigadeConfigPath) {
+			log.Printf("Warning: 'brigadeConfigPath' is set on Project Secret but will be ignored because provided path '%s' is an absolute path", brigadeConfigPath)
+		} else {
+			envs = append(envs, v1.EnvVar{Name: "BRIGADE_CONFIG", Value: filepath.Join("/vcs", brigadeConfigPath)})
 		}
 	}
 
