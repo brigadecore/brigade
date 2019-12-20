@@ -75,46 +75,51 @@ As Brigade uses storage for caching and short-term file sharing, it is often con
 to use storage backends that are optimized for short-term ephemeral storage.
 
 NFS (Network File System) is one protocol that works well for Brigade. You can
-use the [NFS Provisioner](https://github.com/IlyaSemenov/nfs-provisioner-chart)
+use the [NFS Server Provisioner](https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner)
 chart to easily install an NFS server.
 
 ```console
-$ helm repo add nfs-provisioner https://raw.githubusercontent.com/IlyaSemenov/nfs-provisioner-chart/master/repo
-$ helm install --name nfs nfs-provisioner/nfs-provisioner --set hostPath=/var/run/nfs-provisioner
+$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+$ helm install --name nfs stable/nfs-server-provisioner
 ```
 
-(Note that RBAC is enabled by default. To turn it off, use `--set rbac.enabled=false`.)
+By default, the chart installs with persistance disabled.  For various methods on enabling, as well as
+configuring other aspects of the installation, see the
+[README](https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner).
 
-To use an emptyDir instead of a host mount, set `--hostPath=""`, like so:
+This chart installs a `StorageClass` named `nfs`.  There are two options to configure Brigade
+to use this storage class: at the server-level (for all Brigade projects) or at the project level.
+Note that project-level settings will override the server-level settings.
 
-```console
-$ helm install --name nfs nfs-provisioner/nfs-provisioner --set hostPath=""
-```
+In either case, there are two storage class settings:
 
-If you have plenty of memory to spare, and are more concerned with fast storage,
-you can configure the provisioner to use a tmpfs in-memory filesystem.
+- `cacheStorageClass`: This is used for the Job cache.
+- `buildStorageClass`: This is used for the shared per-build storage.
 
-```console
-$ helm install --name nfs nfs-provisioner/nfs-provisioner --set hostPath="" --set useTmpfs=true
-```
-
-This chart installs a `StorageClass` named `local-nfs`. Brigade projects can
-each declare which storage classes they want to use. And there are two storage
-class settings:
-
-- `kubernetes.cacheStorageClass`: This is used for the Job cache.
-- `kubernetes.buildStorageClass`: This is used for the shared per-build storage.
-
-In your project's `values.yaml` file, set both of those to `local-nfs`, and then
-upgrade your project:
+To set these at the Brigade server level, set the values below accordingly in the Brigade
+chart's `values.yaml` file:
 
 values.yaml
 ```yaml
-# ...
-kubernetes
+worker:
+  defaultBuildStorageClass: nfs
+  defaultCacheStorageClass: nfs
+```
+
+Then:
+
+```console
+$ helm upgrade brigade brigade/brigade -f values.yaml
+```
+
+To set these at the Brigade project level, set the values below accordingly in the Brigade
+Project chart's `values.yaml` file:
+
+values.yaml
+```yaml
 kubernetes:
-  buildStorageClass: local-nfs
-  cacheStorageClass: local-nfs
+  buildStorageClass: nfs
+  cacheStorageClass: nfs
 ```
 
 Then:
@@ -123,12 +128,27 @@ Then:
 $ helm upgrade my-project brigade/brigade-broject -f values.yaml
 ```
 
+Note: The project-level settings can also be configured during the "Advanced" set up if creating via the `brig` cli:
+
+```console
+ $ brig project create
+...
+
+? Build storage class nfs
+? Job cache storage class  [Use arrows to move, type to filter, ? for more help]
+  azurefile
+  default
+  managed-premium
+❯ nfs
+  Leave undefined
+```
+
 If you would prefer to use the NFS provisioner as a cluster-wide default volume provider
 (and have Brigade automatically use it), you can do so by making it the default
 storage class:
 
 ```console
-$ helm install --name nfs nfs-provisioner/nfs-provisioner --set hostPath="" --set defaultClass=true
+$ helm install --name nfs stable/nfs-server-provisioner --set storageClass.defaultClass=true
 ```
 
 Because Brigade pipelines can set up and tear down an NFS PVC very fast, the easiest
@@ -136,34 +156,27 @@ way to check that the above works is to run a `brig run` and then check the
 log files for the NFS provisioner:
 
 ```console
-$ kubectl logs nfs-provisioner-0 | grep volume
-I0305 21:20:28.187133       1 controller.go:786] volume "pvc-06e2d938-20bb-11e8-a31a-080027a443a9" for claim "default/brigade-worker-01c7w0jse5grpkzwesz3htnnv5-master" created
-I0305 21:20:28.195955       1 controller.go:803] volume "pvc-06e2d938-20bb-11e8-a31a-080027a443a9" for claim "default/brigade-worker-01c7w0jse5grpkzwesz3htnnv5-master" saved
-I0305 21:20:28.195972       1 controller.go:839] volume "pvc-06e2d938-20bb-11e8-a31a-080027a443a9" provisioned for claim "default/brigade-worker-01c7w0jse5grpkzwesz3htnnv5-master"
-I0305 21:20:34.208355       1 controller.go:1028] volume "pvc-06e2d938-20bb-11e8-a31a-080027a443a9" deleted
-I0305 21:20:34.216852       1 controller.go:1039] volume "pvc-06e2d938-20bb-11e8-a31a-080027a443a9" deleted from database
-I0305 21:21:15.967959       1 controller.go:786] volume "pvc-235dd152-20bb-11e8-a31a-080027a443a9" for claim "default/brigade-worker-01c7w0m8jw1h44vwhvzp4pr2dr-master" created
-I0305 21:21:15.973328       1 controller.go:803] volume "pvc-235dd152-20bb-11e8-a31a-080027a443a9" for claim "default/brigade-worker-01c7w0m8jw1h44vwhvzp4pr2dr-master" saved
-I0305 21:21:15.973358       1 controller.go:839] volume "pvc-235dd152-20bb-11e8-a31a-080027a443a9" provisioned for claim "default/brigade-worker-01c7w0m8jw1h44vwhvzp4pr2dr-master"
-I0305 21:21:26.045133       1 controller.go:1028] volume "pvc-235dd152-20bb-11e8-a31a-080027a443a9" deleted
-I0305 21:21:26.052593       1 controller.go:1039] volume "pvc-235dd152-20bb-11e8-a31a-080027a443a9" deleted from database
-I0305 21:25:40.845601       1 controller.go:786] volume "pvc-c13e95f0-20bb-11e8-a31a-080027a443a9" for claim "default/brigade-worker-01c7w0wbffk3xhmbwwq114g15v-master" created
-I0305 21:25:40.853759       1 controller.go:803] volume "pvc-c13e95f0-20bb-11e8-a31a-080027a443a9" for claim "default/brigade-worker-01c7w0wbffk3xhmbwwq114g15v-master" saved
-I0305 21:25:40.853790       1 controller.go:839] volume "pvc-c13e95f0-20bb-11e8-a31a-080027a443a9" provisioned for claim "default/brigade-worker-01c7w0wbffk3xhmbwwq114g15v-master"
-I0305 21:25:50.974719       1 controller.go:786] volume "pvc-c746f068-20bb-11e8-a31a-080027a443a9" for claim "default/github-com-brigadecore-empty-testbed-three" created
-I0305 21:25:50.994219       1 controller.go:803] volume "pvc-c746f068-20bb-11e8-a31a-080027a443a9" for claim "default/github-com-brigadecore-empty-testbed-three" saved
-I0305 21:25:50.994237       1 controller.go:839] volume "pvc-c746f068-20bb-11e8-a31a-080027a443a9" provisioned for claim "default/github-com-brigadecore-empty-testbed-three"
-I0305 21:25:56.974297       1 controller.go:1028] volume "pvc-c13e95f0-20bb-11e8-a31a-080027a443a9" deleted
-I0305 21:25:56.985432       1 controller.go:1039] volume "pvc-c13e95f0-20bb-11e8-a31a-080027a443a9" deleted from database
+$ kubectl logs -f nfs-nfs-server-provisioner-0
+...
+
+I1220 20:22:36.699672       1 controller.go:926] provision "default/brigade-worker-01dwjfkm36xf5539dh41fw9qsd" class "nfs": started
+I1220 20:22:36.714277       1 event.go:221] Event(v1.ObjectReference{Kind:"PersistentVolumeClaim", Namespace:"default", Name:"brigade-worker-01dwjfkm36xf5539dh41fw9qsd", UID:"7535d094-2366-11ea-a145-72982b3e8f81", APIVersion:"v1", ResourceVersion:"8941502", FieldPath:""}): type: 'Normal' reason: 'Provisioning' External provisioner is provisioning volume for claim "default/brigade-worker-01dwjfkm36xf5539dh41fw9qsd"
+I1220 20:22:36.727753       1 provision.go:439] using service SERVICE_NAME=nfs-nfs-server-provisioner cluster IP 10.0.241.101 as NFS server IP
+I1220 20:22:36.739746       1 controller.go:1026] provision "default/brigade-worker-01dwjfkm36xf5539dh41fw9qsd" class "nfs": volume "pvc-7535d094-2366-11ea-a145-72982b3e8f81" provisioned
+I1220 20:22:36.739785       1 controller.go:1040] provision "default/brigade-worker-01dwjfkm36xf5539dh41fw9qsd" class "nfs": trying to save persistentvolume "pvc-7535d094-2366-11ea-a145-72982b3e8f81"
+I1220 20:22:36.749077       1 controller.go:1047] provision "default/brigade-worker-01dwjfkm36xf5539dh41fw9qsd" class "nfs": persistentvolume "pvc-7535d094-2366-11ea-a145-72982b3e8f81" saved
+I1220 20:22:36.749113       1 controller.go:1088] provision "default/brigade-worker-01dwjfkm36xf5539dh41fw9qsd" class "nfs": succeeded
+I1220 20:22:36.749196       1 event.go:221] Event(v1.ObjectReference{Kind:"PersistentVolumeClaim", Namespace:"default", Name:"brigade-worker-01dwjfkm36xf5539dh41fw9qsd", UID:"7535d094-2366-11ea-a145-72982b3e8f81", APIVersion:"v1", ResourceVersion:"8941502", FieldPath:""}): type: 'Normal' reason: 'ProvisioningSucceeded' Successfully provisioned volume pvc-7535d094-2366-11ea-a145-72982b3e8f81
+I1220 20:22:43.083639       1 controller.go:1097] delete "pvc-7535d094-2366-11ea-a145-72982b3e8f81": started
+I1220 20:22:43.089786       1 controller.go:1125] delete "pvc-7535d094-2366-11ea-a145-72982b3e8f81": volume deleted
+I1220 20:22:43.116980       1 controller.go:1135] delete "pvc-7535d094-2366-11ea-a145-72982b3e8f81": persistentvolume deleted
+I1220 20:22:43.117003       1 controller.go:1137] delete "pvc-7535d094-2366-11ea-a145-72982b3e8f81": succeeded
 ```
 
 Implementation details of note:
 
-- The NFS server used is [NFS-Ganesha](https://github.com/nfs-ganesha/nfs-ganesha)
-- The Kubernetes provisioner is part of [kubernetes-incubator/external-storage](https://github.com/kubernetes-incubator/external-storage/tree/master/nfs)
-- Some Linux distros may not have the core NFS libraries installed. In such cases,
-  NFS-Ganesha may not work. You may need to do something like `apt-get install nfs-common`
-  on the nodes to install the appropriate libraris.
+- The Kubernetes nfs-provisioner is part of [kubernetes-incubator/external-storage](https://github.com/kubernetes-incubator/external-storage/tree/master/nfs)
+- If you have a pre-existing NFS Server, use the [NFS Client Provisioner](https://github.com/helm/charts/tree/master/stable/nfs-client-provisioner) chart and provisioner instead.
 
 ### Azure File Setup
 
@@ -177,9 +190,7 @@ with the existing Kubernetes cluster.)_
 
 Create the resource via `kubectl create -f azure-file-storage-class.yaml`.
 
-Finally, be sure to set `kubernetes.buildStorageClass=azurefile` on the Brigade project Helm release, or via the "Advanced" set up
-if creating via the `brig` cli.
-
+Finally, be sure to set the `buildStorageClass` and/or `cacheStorageCass` values to `azurefile` as above in the `nfs` example.
 
 ## Errata
 
