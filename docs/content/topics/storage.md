@@ -83,11 +83,11 @@ $ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 $ helm install --name nfs stable/nfs-server-provisioner
 ```
 
-By default, the chart installs with persistance disabled.  For various methods on enabling, as well as
+By default, the chart installs with persistance disabled. For various methods on enabling, as well as
 configuring other aspects of the installation, see the
 [README](https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner).
 
-This chart installs a `StorageClass` named `nfs`.  There are two options to configure Brigade
+This chart installs a `StorageClass` named `nfs`. There are two options to configure Brigade
 to use this storage class: at the server-level (for all Brigade projects) or at the project level.
 Note that project-level settings will override the server-level settings.
 
@@ -128,7 +128,7 @@ Then:
 $ helm upgrade my-project brigade/brigade-broject -f values.yaml
 ```
 
-Note: The project-level settings can also be configured during the "Advanced" set up if creating via the `brig` cli:
+Note: The project-level settings can also be configured during the "Advanced" set up if creating via the `brig` CLI:
 
 ```console
  $ brig project create
