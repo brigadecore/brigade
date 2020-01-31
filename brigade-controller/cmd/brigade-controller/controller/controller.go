@@ -13,6 +13,13 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
+const (
+	// DefaultWorkerServiceAccountName is the default Kubernetes worker service account name
+	DefaultWorkerServiceAccountName = "brigade-worker"
+	// DefaultJobServiceAccountName is the default Brigade project service account name
+	DefaultJobServiceAccountName = "brigade-worker"
+)
+
 // Config is config for setting Controller
 type Config struct {
 	Namespace                  string

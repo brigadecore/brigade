@@ -12,9 +12,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-const defaultWorkerServiceAccountName = "brigade-worker"
-const defaultJobServiceAccountName = "brigade-worker"
-
 func init() {
 	log.SetFlags(log.Lshortfile)
 }
@@ -94,14 +91,14 @@ func defaultWorkerServiceAccount() string {
 	if pp, ok := os.LookupEnv("BRIGADE_WORKER_SERVICE_ACCOUNT"); ok {
 		return pp
 	}
-	return defaultWorkerServiceAccountName
+	return controller.DefaultWorkerServiceAccountName
 }
 
 func defaultProjectServiceAccount() string {
 	if pp, ok := os.LookupEnv("BRIGADE_JOB_SERVICE_ACCOUNT"); ok {
 		return pp
 	}
-	return defaultJobServiceAccountName
+	return controller.DefaultJobServiceAccountName
 }
 
 func defaultNamespace() string {
