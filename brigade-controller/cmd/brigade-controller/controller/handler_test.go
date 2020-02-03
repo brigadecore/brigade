@@ -105,140 +105,86 @@ func TestNewWorkerPod_NoSidecar(t *testing.T) {
 	}
 }
 
-func TestNewWorkerPod_WorkerEnv_DefaultServiceAccount(t *testing.T) {
-	build := &v1.Secret{}
-	proj := &v1.Secret{
-		Data: map[string][]byte{},
-	}
-	config := &Config{
-		Namespace:                  v1.NamespaceDefault,
-		ProjectServiceAccount:      DefaultJobServiceAccountName,
-		ProjectServiceAccountRegex: DefaultJobServiceAccountName,
-	}
-
-	pod := NewWorkerPod(build, proj, config)
-
-	spec := pod.Spec
-	saEnvFound := false
-	for _, env := range spec.Containers[0].Env {
-		if env.Name == "BRIGADE_SERVICE_ACCOUNT" {
-			if env.Value != DefaultJobServiceAccountName {
-				t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT")
-			}
-			saEnvFound = true
-		}
-	}
-
-	if !saEnvFound {
-		t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT")
-	}
-
-	// The service account regex value is also expected to be set
-	regexEnvFound := false
-	for _, env := range spec.Containers[0].Env {
-		if env.Name == "BRIGADE_SERVICE_ACCOUNT_REGEX" {
-			if env.Value != DefaultJobServiceAccountName {
-				t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT_REGEX")
-			}
-			regexEnvFound = true
-		}
-	}
-
-	if !regexEnvFound {
-		t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT_REGEX")
-	}
-}
-
-func TestNewWorkerPod_WorkerEnv_ServiceAccountOverride(t *testing.T) {
-	build := &v1.Secret{}
-	proj := &v1.Secret{
-		Data: map[string][]byte{
-			"serviceAccount": []byte("my-serviceaccount"),
+func TestNewWorkerPod_WorkerEnv_ServiceAccount(t *testing.T) {
+	testcases := []struct {
+		name        string
+		data        map[string][]byte
+		config      Config
+		wantSA      string
+		wantSARegex string
+	}{
+		{"defaults",
+			map[string][]byte{},
+			Config{
+				ProjectServiceAccount:      DefaultJobServiceAccountName,
+				ProjectServiceAccountRegex: DefaultJobServiceAccountName,
+			},
+			DefaultJobServiceAccountName,
+			DefaultJobServiceAccountName,
+		},
+		{"service account override",
+			map[string][]byte{
+				"serviceAccount": []byte("my-serviceaccount"),
+			},
+			Config{
+				ProjectServiceAccount:      DefaultJobServiceAccountName,
+				ProjectServiceAccountRegex: DefaultJobServiceAccountName,
+			},
+			"my-serviceaccount",
+			"my-serviceaccount",
+		},
+		{"custom service account regex retained",
+			map[string][]byte{
+				"serviceAccount": []byte("my-serviceaccount"),
+			},
+			Config{
+				ProjectServiceAccount:      DefaultJobServiceAccountName,
+				ProjectServiceAccountRegex: "my-custom-regex-*",
+			},
+			"my-serviceaccount",
+			"my-custom-regex-*",
 		},
 	}
-	config := &Config{
-		Namespace:                  v1.NamespaceDefault,
-		ProjectServiceAccount:      DefaultJobServiceAccountName,
-		ProjectServiceAccountRegex: DefaultJobServiceAccountName,
-	}
 
-	pod := NewWorkerPod(build, proj, config)
-
-	spec := pod.Spec
-
-	saEnvFound := false
-	for _, env := range spec.Containers[0].Env {
-		if env.Name == "BRIGADE_SERVICE_ACCOUNT" {
-			if env.Value != string(proj.Data["serviceAccount"]) {
-				t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT")
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			build := &v1.Secret{}
+			proj := &v1.Secret{
+				Data: tc.data,
 			}
-			saEnvFound = true
-		}
-	}
+			config := &tc.config
 
-	if !saEnvFound {
-		t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT")
-	}
+			pod := NewWorkerPod(build, proj, config)
 
-	// The service account regex value is also expected to be updated
-	regexEnvFound := false
-	for _, env := range spec.Containers[0].Env {
-		if env.Name == "BRIGADE_SERVICE_ACCOUNT_REGEX" {
-			if env.Value != string(proj.Data["serviceAccount"]) {
-				t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT_REGEX")
+			spec := pod.Spec
+			saEnvFound := false
+			for _, env := range spec.Containers[0].Env {
+				if env.Name == "BRIGADE_SERVICE_ACCOUNT" {
+					if env.Value != tc.wantSA {
+						t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT")
+					}
+					saEnvFound = true
+				}
 			}
-			regexEnvFound = true
-		}
-	}
 
-	if !regexEnvFound {
-		t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT_REGEX")
-	}
-}
-
-func TestNewWorkerPod_WorkerEnv_ServiceAccountOverride_PreserveNonDefaultRegex(t *testing.T) {
-	build := &v1.Secret{}
-	proj := &v1.Secret{
-		Data: map[string][]byte{
-			"serviceAccount": []byte("my-serviceaccount"),
-		},
-	}
-	config := &Config{
-		Namespace:                  v1.NamespaceDefault,
-		ProjectServiceAccount:      DefaultJobServiceAccountName,
-		ProjectServiceAccountRegex: "my-custom-regex-*",
-	}
-
-	pod := NewWorkerPod(build, proj, config)
-
-	spec := pod.Spec
-
-	saEnvFound := false
-	for _, env := range spec.Containers[0].Env {
-		if env.Name == "BRIGADE_SERVICE_ACCOUNT" {
-			if env.Value != string(proj.Data["serviceAccount"]) {
-				t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT")
+			if !saEnvFound {
+				t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT")
 			}
-			saEnvFound = true
-		}
-	}
 
-	if !saEnvFound {
-		t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT")
-	}
-
-	// The service account regex value is NOT expected to be updated
-	regexEnvFound := false
-	for _, env := range spec.Containers[0].Env {
-		if env.Name == "BRIGADE_SERVICE_ACCOUNT_REGEX" {
-			if env.Value != "my-custom-regex-*" {
-				t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT_REGEX")
+			// The service account regex value is also expected to be set
+			regexEnvFound := false
+			for _, env := range spec.Containers[0].Env {
+				if env.Name == "BRIGADE_SERVICE_ACCOUNT_REGEX" {
+					if env.Value != tc.wantSARegex {
+						t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT_REGEX")
+					}
+					regexEnvFound = true
+				}
 			}
-			regexEnvFound = true
-		}
-	}
 
-	if !regexEnvFound {
-		t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT_REGEX")
+			if !regexEnvFound {
+				t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT_REGEX")
+			}
+		})
 	}
 }
