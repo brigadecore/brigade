@@ -104,3 +104,87 @@ func TestNewWorkerPod_NoSidecar(t *testing.T) {
 		t.Error("expected vcs-sidecar volume mount not to exist")
 	}
 }
+
+func TestNewWorkerPod_WorkerEnv_ServiceAccount(t *testing.T) {
+	testcases := []struct {
+		name        string
+		data        map[string][]byte
+		config      Config
+		wantSA      string
+		wantSARegex string
+	}{
+		{"defaults",
+			map[string][]byte{},
+			Config{
+				ProjectServiceAccount:      DefaultJobServiceAccountName,
+				ProjectServiceAccountRegex: DefaultJobServiceAccountName,
+			},
+			DefaultJobServiceAccountName,
+			DefaultJobServiceAccountName,
+		},
+		{"service account override",
+			map[string][]byte{
+				"serviceAccount": []byte("my-serviceaccount"),
+			},
+			Config{
+				ProjectServiceAccount:      DefaultJobServiceAccountName,
+				ProjectServiceAccountRegex: DefaultJobServiceAccountName,
+			},
+			"my-serviceaccount",
+			"my-serviceaccount",
+		},
+		{"custom service account regex retained",
+			map[string][]byte{
+				"serviceAccount": []byte("my-serviceaccount"),
+			},
+			Config{
+				ProjectServiceAccount:      DefaultJobServiceAccountName,
+				ProjectServiceAccountRegex: "my-custom-regex-*",
+			},
+			"my-serviceaccount",
+			"my-custom-regex-*",
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			build := &v1.Secret{}
+			proj := &v1.Secret{
+				Data: tc.data,
+			}
+			config := &tc.config
+
+			pod := NewWorkerPod(build, proj, config)
+
+			spec := pod.Spec
+			saEnvFound := false
+			for _, env := range spec.Containers[0].Env {
+				if env.Name == "BRIGADE_SERVICE_ACCOUNT" {
+					if env.Value != tc.wantSA {
+						t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT")
+					}
+					saEnvFound = true
+				}
+			}
+
+			if !saEnvFound {
+				t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT")
+			}
+
+			// The service account regex value is also expected to be set
+			regexEnvFound := false
+			for _, env := range spec.Containers[0].Env {
+				if env.Name == "BRIGADE_SERVICE_ACCOUNT_REGEX" {
+					if env.Value != tc.wantSARegex {
+						t.Error("Pod has incorrect value for environment variable BRIGADE_SERVICE_ACCOUNT_REGEX")
+					}
+					regexEnvFound = true
+				}
+			}
+
+			if !regexEnvFound {
+				t.Error("Pod is missing environment variable BRIGADE_SERVICE_ACCOUNT_REGEX")
+			}
+		})
+	}
+}

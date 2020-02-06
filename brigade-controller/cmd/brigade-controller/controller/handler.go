@@ -247,6 +247,10 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 	serviceAccount := config.ProjectServiceAccount
 	if string(project.Data["serviceAccount"]) != "" {
 		serviceAccount = string(project.Data["serviceAccount"])
+		// Update the service account regex if previously set to the default
+		if config.ProjectServiceAccountRegex == DefaultJobServiceAccountName {
+			config.ProjectServiceAccountRegex = serviceAccount
+		}
 	}
 
 	// Try to get cloneURL from the build first. This allows gateways to override
