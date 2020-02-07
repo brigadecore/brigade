@@ -16,41 +16,44 @@ BIN_DIR="${BIN_DIR:-"$(mktemp -d)"}"
 # hence the need to be able to opt-out
 CREATE_KIND="${CREATE_KIND:-true}"
 
-# TODO: defer to env for kubectl/kind/helm versions
-KUBECTL_PLATFORM=linux/amd64
+CLIENT_PLATFORM="${CLIENT_PLATFORM:-linux}"
+CLIENT_ARCH="${CLIENT_ARCH:-amd64}"
+
+KUBECTL_PLATFORM=${CLIENT_PLATFORM}/${CLIENT_ARCH}
 KUBECTL_VERSION=v1.17.2
 KUBECTL_EXECUTABLE=kubectl
 
-KIND_PLATFORM=kind-linux-amd64
+KIND_PLATFORM=kind-${CLIENT_PLATFORM}-${CLIENT_ARCH}
 KIND_VERSION=v0.7.0
 KIND_EXECUTABLE=kind
 
-HELM_PLATFORM=linux-amd64
+HELM_PLATFORM=${CLIENT_PLATFORM}-${CLIENT_ARCH}
 HELM_VERSION=helm-v3.0.3
 HELM_EXECUTABLE=helm3
 
 ########################################################################################################################################################
 
 function prerequisites_check(){
-    # echo "Installing gofish to handle the installation of needed binaries..."
-    # curl -fsSL https://raw.githubusercontent.com/fishworks/gofish/master/scripts/install.sh | bash && \
-    #   gofish init
-    # gofish install kubectl
+    if ! [ -x "$(command -v ${KUBECTL_EXECUTABLE})" ]; then
+      echo "Installing kubectl version ${KUBECTL_VERSION}..."
+      curl -o ${BIN_DIR}/${KUBECTL_EXECUTABLE} -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/${KUBECTL_PLATFORM}/kubectl && \
+        chmod +x ${BIN_DIR}/${KUBECTL_EXECUTABLE}
+    fi
 
-    echo "Installing kubectl version ${KUBECTL_VERSION}..."
-    curl -o ${BIN_DIR}/${KUBECTL_EXECUTABLE} -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/${KUBECTL_PLATFORM}/kubectl && \
-      chmod +x ${BIN_DIR}/${KUBECTL_EXECUTABLE}
+    if ! [ -x "$(command -v ${KIND_EXECUTABLE})" ]; then
+      echo "Installing kind version ${KIND_VERSION}..."
+      wget -O ${BIN_DIR}/${KIND_EXECUTABLE} https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/${KIND_PLATFORM} && \
+        chmod +x ${BIN_DIR}/${KIND_EXECUTABLE}
+    fi
 
-    echo "Installing kind version ${KIND_VERSION}..."
-    wget -O ${BIN_DIR}/${KIND_EXECUTABLE} https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/${KIND_PLATFORM} && \
-      chmod +x ${BIN_DIR}/${KIND_EXECUTABLE}
-
-    echo "Installing helm version ${HELM_VERSION}..."
-    wget -O ${BIN_DIR}/${HELM_VERSION}-${HELM_PLATFORM}.tar.gz https://get.helm.sh/${HELM_VERSION}-${HELM_PLATFORM}.tar.gz && \
-      tar -xvzf ${BIN_DIR}/${HELM_VERSION}-${HELM_PLATFORM}.tar.gz -C ${BIN_DIR} && \
-      rm -rf ${BIN_DIR}/${HELM_VERSION}-${HELM_PLATFORM}.tar.gz && \
-      chmod +x ${BIN_DIR}/${HELM_PLATFORM}/helm && \
-      mv ${BIN_DIR}/${HELM_PLATFORM}/helm ${BIN_DIR}/$HELM_EXECUTABLE
+    if ! [ -x "$(command -v ${HELM_EXECUTABLE})" ]; then
+      echo "Installing helm version ${HELM_VERSION}..."
+      wget -O ${BIN_DIR}/${HELM_VERSION}-${HELM_PLATFORM}.tar.gz https://get.helm.sh/${HELM_VERSION}-${HELM_PLATFORM}.tar.gz && \
+        tar -xvzf ${BIN_DIR}/${HELM_VERSION}-${HELM_PLATFORM}.tar.gz -C ${BIN_DIR} && \
+        rm -rf ${BIN_DIR}/${HELM_VERSION}-${HELM_PLATFORM}.tar.gz && \
+        chmod +x ${BIN_DIR}/${HELM_PLATFORM}/helm && \
+        mv ${BIN_DIR}/${HELM_PLATFORM}/helm ${BIN_DIR}/$HELM_EXECUTABLE
+    fi
 
     export PATH="${BIN_DIR}:${PATH}"
 }
