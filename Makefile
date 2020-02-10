@@ -15,6 +15,8 @@ GIT_VERSION = $(shell git describe --always --abbrev=7 --dirty --match=NeVeRmAtC
 ################################################################################
 
 BASE_PACKAGE_NAME := github.com/brigadecore/brigade
+CLIENT_PLATFORM ?= $(shell go env GOOS)
+CLIENT_ARCH ?= $(shell go env GOARCH)
 
 ################################################################################
 # Containerized development environment-- or lack thereof                      #
@@ -249,4 +251,13 @@ test-functional:
 
 .PHONY: e2e
 e2e:
-	./e2e/run.sh
+	CLIENT_PLATFORM=$(CLIENT_PLATFORM) CLIENT_ARCH=$(CLIENT_ARCH) ./e2e/run.sh
+
+.PHONY: e2e-docker
+e2e-docker:
+	docker run \
+		-e CREATE_KIND="${CREATE_KIND}" \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v $(PROJECT_ROOT):/go/src/$(BASE_PACKAGE_NAME) \
+		-w /go/src/$(BASE_PACKAGE_NAME) brigadecore/golang-kind:1.13.7-v0.7.0 \
+		./e2e/run.sh

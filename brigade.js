@@ -54,7 +54,9 @@ function e2e() {
   // Create a new job to run kind-based e2e tests
   // Spec'd image wraps docker:stable-dind
   // with make, bash,, git, kubectl, etc.
-  let kind = new KindJob("test-e2e");
+  // TODO: we remove this override once brigade-utils release includes
+  // https://github.com/brigadecore/brigade-utils/pull/36
+  let kind = new KindJob("test-e2e", "brigadecore/golang-kind:1.13.7-v0.7.0");
   // Add golang path setup as e2e script invokes the brig cli
   // by its main.go filepath
   kind.mountPath = localPath;
