@@ -246,8 +246,10 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 			Title:       "Brigade API",
 			Description: "Resources for Jobs, Projects, Builds",
 			License: &spec.License{
-				Name: "Apache-2.0",
-				URL:  "https://www.apache.org/licenses/LICENSE-2.0",
+				LicenseProps: spec.LicenseProps{
+					Name: "Apache-2.0",
+					URL:  "https://www.apache.org/licenses/LICENSE-2.0",
+				},
 			},
 			Version: "1.2.1",
 		},

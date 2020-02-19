@@ -80,7 +80,7 @@ func (a *Runner) SendBuild(b *brigade.Build) error {
 	// Now that everything is complete, get the pod status. If the pod failed, exit 1.
 	// Fortunately, the worker pod is marked "failed" if one of the jobs
 	// in the build fails and the error isn't handled with a .catch().
-	pod, err := a.kc.CoreV1().Pods(a.namespace).Get(podName, metav1.GetOptions{IncludeUninitialized: true})
+	pod, err := a.kc.CoreV1().Pods(a.namespace).Get(podName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
