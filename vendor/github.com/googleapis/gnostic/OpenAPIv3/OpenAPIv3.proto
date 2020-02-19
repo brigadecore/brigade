@@ -115,6 +115,7 @@ message DefaultType {
 message Discriminator {
   string property_name = 1;
   Strings mapping = 2;
+  repeated NamedAny specification_extension = 3;
 }
 
 message Document {
@@ -156,9 +157,6 @@ message ExampleOrReference {
     Example example = 1;
     Reference reference = 2;
   }
-}
-
-message Examples {
 }
 
 message ExamplesOrReferences {
@@ -212,6 +210,7 @@ message Info {
   License license = 5;
   string version = 6;
   repeated NamedAny specification_extension = 7;
+  string summary = 8;
 }
 
 message ItemsItem {
@@ -586,11 +585,11 @@ message SchemasOrReferences {
   repeated NamedSchemaOrReference additional_properties = 1;
 }
 
-// Lists the required security schemes to execute this operation. The name used for each property MUST correspond to a security scheme declared in the Security Schemes under the Components Object.  Security Requirement Objects that contain multiple schemes require that all schemes MUST be satisfied for a request to be authorized. This enables support for scenarios where multiple query parameters or HTTP headers are required to convey security information.  When a list of Security Requirement Objects is defined on the Open API object or Operation Object, only one of Security Requirement Objects in the list needs to be satisfied to authorize the request.
+// Lists the required security schemes to execute this operation. The name used for each property MUST correspond to a security scheme declared in the Security Schemes under the Components Object.  Security Requirement Objects that contain multiple schemes require that all schemes MUST be satisfied for a request to be authorized. This enables support for scenarios where multiple query parameters or HTTP headers are required to convey security information.  When a list of Security Requirement Objects is defined on the OpenAPI Object or Operation Object, only one of the Security Requirement Objects in the list needs to be satisfied to authorize the request.
 message SecurityRequirement {
 }
 
-// Defines a security scheme that can be used by the operations. Supported schemes are HTTP authentication, an API key (either as a header or as a query parameter), OAuth2's common flows (implicit, password, application and access code) as defined in RFC6749, and OpenID Connect Discovery.
+// Defines a security scheme that can be used by the operations. Supported schemes are HTTP authentication, an API key (either as a header, a cookie parameter or as a query parameter), mutual TLS (use of a client certificate), OAuth2's common flows (implicit, password, application and access code) as defined in RFC6749, and OpenID Connect.   Please note that currently (2019) the implicit flow is about to be deprecated OAuth 2.0 Security Best Current Practice. Recommended for most use case is Authorization Code Grant flow with PKCE.
 message SecurityScheme {
   string type = 1;
   string description = 2;

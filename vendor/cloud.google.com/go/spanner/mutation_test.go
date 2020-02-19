@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Google Inc. All Rights Reserved.
+Copyright 2017 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,13 +17,11 @@ limitations under the License.
 package spanner
 
 import (
-	"reflect"
 	"sort"
 	"strings"
 	"testing"
 
 	proto3 "github.com/golang/protobuf/ptypes/struct"
-
 	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 )
 
@@ -63,7 +61,7 @@ func TestMutationToProto(t *testing.T) {
 						Table:   "t_foo",
 						Columns: []string{"col1", "col2"},
 						Values: []*proto3.ListValue{
-							&proto3.ListValue{
+							{
 								Values: []*proto3.Value{intProto(1), intProto(2)},
 							},
 						},
@@ -80,7 +78,7 @@ func TestMutationToProto(t *testing.T) {
 						Table:   "t_foo",
 						Columns: []string{"col1", "col2"},
 						Values: []*proto3.ListValue{
-							&proto3.ListValue{
+							{
 								Values: []*proto3.Value{floatProto(1.0), floatProto(2.0)},
 							},
 						},
@@ -97,7 +95,7 @@ func TestMutationToProto(t *testing.T) {
 						Table:   "t_foo",
 						Columns: []string{"col1", "col2"},
 						Values: []*proto3.ListValue{
-							&proto3.ListValue{
+							{
 								Values: []*proto3.Value{stringProto("one"), floatProto(2.0)},
 							},
 						},
@@ -114,7 +112,7 @@ func TestMutationToProto(t *testing.T) {
 						Table:   "t_foo",
 						Columns: []string{"col1", "col2"},
 						Values: []*proto3.ListValue{
-							&proto3.ListValue{
+							{
 								Values: []*proto3.Value{stringProto("one"), nullProto()},
 							},
 						},
@@ -123,7 +121,7 @@ func TestMutationToProto(t *testing.T) {
 			},
 		},
 	} {
-		if got, err := test.m.proto(); err != nil || !reflect.DeepEqual(got, test.want) {
+		if got, err := test.m.proto(); err != nil || !testEqual(got, test.want) {
 			t.Errorf("%d: (%#v).proto() = (%v, %v), want (%v, nil)", i, test.m, got, err, test.want)
 		}
 	}
@@ -173,7 +171,7 @@ func mutationEqual(t *testing.T, m1, m2 Mutation) bool {
 	ms2 := newMutationColumnSorter(&m2)
 	sort.Sort(ms1)
 	sort.Sort(ms2)
-	return reflect.DeepEqual(ms1, ms2)
+	return testEqual(ms1, ms2)
 }
 
 // Test helper functions which help to generate spanner.Mutation.
@@ -316,23 +314,23 @@ func TestMutationHelpers(t *testing.T) {
 func TestBadStructs(t *testing.T) {
 	val := "i_am_not_a_struct"
 	wantErr := errNotStruct(val)
-	if _, gotErr := InsertStruct("t_test", val); !reflect.DeepEqual(gotErr, wantErr) {
+	if _, gotErr := InsertStruct("t_test", val); !testEqual(gotErr, wantErr) {
 		t.Errorf("InsertStruct(%q) returns error %v, want %v", val, gotErr, wantErr)
 	}
-	if _, gotErr := InsertOrUpdateStruct("t_test", val); !reflect.DeepEqual(gotErr, wantErr) {
+	if _, gotErr := InsertOrUpdateStruct("t_test", val); !testEqual(gotErr, wantErr) {
 		t.Errorf("InsertOrUpdateStruct(%q) returns error %v, want %v", val, gotErr, wantErr)
 	}
-	if _, gotErr := UpdateStruct("t_test", val); !reflect.DeepEqual(gotErr, wantErr) {
+	if _, gotErr := UpdateStruct("t_test", val); !testEqual(gotErr, wantErr) {
 		t.Errorf("UpdateStruct(%q) returns error %v, want %v", val, gotErr, wantErr)
 	}
-	if _, gotErr := ReplaceStruct("t_test", val); !reflect.DeepEqual(gotErr, wantErr) {
+	if _, gotErr := ReplaceStruct("t_test", val); !testEqual(gotErr, wantErr) {
 		t.Errorf("ReplaceStruct(%q) returns error %v, want %v", val, gotErr, wantErr)
 	}
 }
 
 func TestStructToMutationParams(t *testing.T) {
 	// Tests cases not covered elsewhere.
-	type S struct{ F int }
+	type S struct{ F interface{} }
 
 	for _, test := range []struct {
 		in       interface{}
@@ -344,15 +342,16 @@ func TestStructToMutationParams(t *testing.T) {
 		{3, nil, nil, errNotStruct(3)},
 		{(*S)(nil), nil, nil, nil},
 		{&S{F: 1}, []string{"F"}, []interface{}{1}, nil},
+		{&S{F: CommitTimestamp}, []string{"F"}, []interface{}{CommitTimestamp}, nil},
 	} {
 		gotCols, gotVals, gotErr := structToMutationParams(test.in)
-		if !reflect.DeepEqual(gotCols, test.wantCols) {
+		if !testEqual(gotCols, test.wantCols) {
 			t.Errorf("%#v: got cols %v, want %v", test.in, gotCols, test.wantCols)
 		}
-		if !reflect.DeepEqual(gotVals, test.wantVals) {
+		if !testEqual(gotVals, test.wantVals) {
 			t.Errorf("%#v: got vals %v, want %v", test.in, gotVals, test.wantVals)
 		}
-		if !reflect.DeepEqual(gotErr, test.wantErr) {
+		if !testEqual(gotErr, test.wantErr) {
 			t.Errorf("%#v: got err %v, want %v", test.in, gotErr, test.wantErr)
 		}
 	}
@@ -499,12 +498,12 @@ func TestEncodeMutation(t *testing.T) {
 	} {
 		gotProto, gotErr := test.mutation.proto()
 		if gotErr != nil {
-			if !reflect.DeepEqual(gotErr, test.wantErr) {
+			if !testEqual(gotErr, test.wantErr) {
 				t.Errorf("%s: %v.proto() returns error %v, want %v", test.name, test.mutation, gotErr, test.wantErr)
 			}
 			continue
 		}
-		if !reflect.DeepEqual(gotProto, test.wantProto) {
+		if !testEqual(gotProto, test.wantProto) {
 			t.Errorf("%s: %v.proto() = (%v, nil), want (%v, nil)", test.name, test.mutation, gotProto, test.wantProto)
 		}
 	}
@@ -521,11 +520,11 @@ func TestEncodeMutationArray(t *testing.T) {
 		{
 			"Multiple Mutations",
 			[]*Mutation{
-				&Mutation{opDelete, "t_test", Key{"bar"}, nil, nil},
-				&Mutation{opInsertOrUpdate, "t_test", nil, []string{"key", "val"}, []interface{}{"foo", 1}},
+				{opDelete, "t_test", Key{"bar"}, nil, nil},
+				{opInsertOrUpdate, "t_test", nil, []string{"key", "val"}, []interface{}{"foo", 1}},
 			},
 			[]*sppb.Mutation{
-				&sppb.Mutation{
+				{
 					Operation: &sppb.Mutation_Delete_{
 						Delete: &sppb.Mutation_Delete{
 							Table: "t_test",
@@ -535,7 +534,7 @@ func TestEncodeMutationArray(t *testing.T) {
 						},
 					},
 				},
-				&sppb.Mutation{
+				{
 					Operation: &sppb.Mutation_InsertOrUpdate{
 						InsertOrUpdate: &sppb.Mutation_Write{
 							Table:   "t_test",
@@ -550,8 +549,8 @@ func TestEncodeMutationArray(t *testing.T) {
 		{
 			"Multiple Mutations - Bad Mutation",
 			[]*Mutation{
-				&Mutation{opDelete, "t_test", Key{"bar"}, nil, nil},
-				&Mutation{opInsertOrUpdate, "t_test", nil, []string{"key", "val"}, []interface{}{"foo", struct{}{}}},
+				{opDelete, "t_test", Key{"bar"}, nil, nil},
+				{opInsertOrUpdate, "t_test", nil, []string{"key", "val"}, []interface{}{"foo", struct{}{}}},
 			},
 			[]*sppb.Mutation{},
 			errEncoderUnsupportedType(struct{}{}),
@@ -559,12 +558,12 @@ func TestEncodeMutationArray(t *testing.T) {
 	} {
 		gotProto, gotErr := mutationsProto(test.ms)
 		if gotErr != nil {
-			if !reflect.DeepEqual(gotErr, test.wantErr) {
+			if !testEqual(gotErr, test.wantErr) {
 				t.Errorf("%v: mutationsProto(%v) returns error %v, want %v", test.name, test.ms, gotErr, test.wantErr)
 			}
 			continue
 		}
-		if !reflect.DeepEqual(gotProto, test.want) {
+		if !testEqual(gotProto, test.want) {
 			t.Errorf("%v: mutationsProto(%v) = (%v, nil), want (%v, nil)", test.name, test.ms, gotProto, test.want)
 		}
 	}

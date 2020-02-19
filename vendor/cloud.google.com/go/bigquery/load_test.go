@@ -1,4 +1,4 @@
-// Copyright 2015 Google Inc. All Rights Reserved.
+// Copyright 2015 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import (
 	"cloud.google.com/go/internal/testutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-
 	bq "google.golang.org/api/bigquery/v2"
 )
 
@@ -74,11 +73,12 @@ func TestLoad(t *testing.T) {
 	c := &Client{projectID: "client-project-id"}
 
 	testCases := []struct {
-		dst    *Table
-		src    LoadSource
-		jobID  string
-		config LoadConfig
-		want   *bq.Job
+		dst      *Table
+		src      LoadSource
+		jobID    string
+		location string
+		config   LoadConfig
+		want     *bq.Job
 	}{
 		{
 			dst:  c.Dataset("dataset-id").Table("table-id"),
@@ -86,13 +86,26 @@ func TestLoad(t *testing.T) {
 			want: defaultLoadJob(),
 		},
 		{
+			dst:      c.Dataset("dataset-id").Table("table-id"),
+			src:      NewGCSReference("uri"),
+			location: "loc",
+			want: func() *bq.Job {
+				j := defaultLoadJob()
+				j.JobReference.Location = "loc"
+				return j
+			}(),
+		},
+		{
 			dst:   c.Dataset("dataset-id").Table("table-id"),
 			jobID: "ajob",
 			config: LoadConfig{
-				CreateDisposition: CreateNever,
-				WriteDisposition:  WriteTruncate,
-				Labels:            map[string]string{"a": "b"},
-				TimePartitioning:  &TimePartitioning{Expiration: 1234 * time.Millisecond},
+				CreateDisposition:           CreateNever,
+				WriteDisposition:            WriteTruncate,
+				Labels:                      map[string]string{"a": "b"},
+				TimePartitioning:            &TimePartitioning{Expiration: 1234 * time.Millisecond},
+				Clustering:                  &Clustering{Fields: []string{"cfield1"}},
+				DestinationEncryptionConfig: &EncryptionConfig{KMSKeyName: "keyName"},
+				SchemaUpdateOptions:         []string{"ALLOW_FIELD_ADDITION"},
 			},
 			src: NewGCSReference("uri"),
 			want: func() *bq.Job {
@@ -104,10 +117,15 @@ func TestLoad(t *testing.T) {
 					Type:         "DAY",
 					ExpirationMs: 1234,
 				}
+				j.Configuration.Load.Clustering = &bq.Clustering{
+					Fields: []string{"cfield1"},
+				}
+				j.Configuration.Load.DestinationEncryptionConfiguration = &bq.EncryptionConfiguration{KmsKeyName: "keyName"}
 				j.JobReference = &bq.JobReference{
 					JobId:     "ajob",
 					ProjectId: "client-project-id",
 				}
+				j.Configuration.Load.SchemaUpdateOptions = []string{"ALLOW_FIELD_ADDITION"}
 				return j
 			}(),
 		},
@@ -219,11 +237,98 @@ func TestLoad(t *testing.T) {
 				return j
 			}(),
 		},
+		{
+			dst: c.Dataset("dataset-id").Table("table-id"),
+			src: func() *GCSReference {
+				g := NewGCSReference("uri")
+				g.SourceFormat = Avro
+				return g
+			}(),
+			config: LoadConfig{
+				UseAvroLogicalTypes: true,
+			},
+			want: func() *bq.Job {
+				j := defaultLoadJob()
+				j.Configuration.Load.SourceFormat = "AVRO"
+				j.Configuration.Load.UseAvroLogicalTypes = true
+				return j
+			}(),
+		},
+		{
+			dst: c.Dataset("dataset-id").Table("table-id"),
+			src: func() *ReaderSource {
+				r := NewReaderSource(strings.NewReader("foo"))
+				r.SourceFormat = Avro
+				return r
+			}(),
+			config: LoadConfig{
+				UseAvroLogicalTypes: true,
+			},
+			want: func() *bq.Job {
+				j := defaultLoadJob()
+				j.Configuration.Load.SourceUris = nil
+				j.Configuration.Load.SourceFormat = "AVRO"
+				j.Configuration.Load.UseAvroLogicalTypes = true
+				return j
+			}(),
+		},
+		{
+			dst: c.Dataset("dataset-id").Table("table-id"),
+			src: func() *ReaderSource {
+				r := NewReaderSource(strings.NewReader("foo"))
+				return r
+			}(),
+			config: LoadConfig{
+				TimePartitioning: &TimePartitioning{
+					Field: "somefield",
+				},
+			},
+			want: func() *bq.Job {
+				j := defaultLoadJob()
+				j.Configuration.Load.SourceUris = nil
+				j.Configuration.Load.TimePartitioning = &bq.TimePartitioning{
+					Field: "somefield",
+					Type:  "DAY",
+				}
+				return j
+			}(),
+		},
+		{
+			dst: c.Dataset("dataset-id").Table("table-id"),
+			src: func() *ReaderSource {
+				r := NewReaderSource(strings.NewReader("foo"))
+				return r
+			}(),
+			config: LoadConfig{
+				RangePartitioning: &RangePartitioning{
+					Field: "somefield",
+					Range: &RangePartitioningRange{
+						Start:    1,
+						End:      2,
+						Interval: 3,
+					},
+				},
+			},
+			want: func() *bq.Job {
+				j := defaultLoadJob()
+				j.Configuration.Load.SourceUris = nil
+				j.Configuration.Load.RangePartitioning = &bq.RangePartitioning{
+					Field: "somefield",
+					Range: &bq.RangePartitioningRange{
+						Start:    1,
+						End:      2,
+						Interval: 3,
+					},
+				}
+				return j
+			}(),
+		},
 	}
 
 	for i, tc := range testCases {
 		loader := tc.dst.LoaderFrom(tc.src)
 		loader.JobID = tc.jobID
+		loader.Location = tc.location
 		tc.config.Src = tc.src
 		tc.config.Dst = tc.dst
 		loader.LoadConfig = tc.config

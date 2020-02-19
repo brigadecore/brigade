@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Google Inc. All Rights Reserved.
+Copyright 2017 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,8 +25,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/civil"
+	"cloud.google.com/go/internal/testutil"
 	proto "github.com/golang/protobuf/proto"
 	proto3 "github.com/golang/protobuf/ptypes/struct"
+	"github.com/google/go-cmp/cmp"
 	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 )
 
@@ -37,45 +39,45 @@ var (
 	row = Row{
 		[]*sppb.StructType_Field{
 			// STRING / STRING ARRAY
-			{"STRING", stringType()},
-			{"NULL_STRING", stringType()},
-			{"STRING_ARRAY", listType(stringType())},
-			{"NULL_STRING_ARRAY", listType(stringType())},
+			{Name: "STRING", Type: stringType()},
+			{Name: "NULL_STRING", Type: stringType()},
+			{Name: "STRING_ARRAY", Type: listType(stringType())},
+			{Name: "NULL_STRING_ARRAY", Type: listType(stringType())},
 			// BYTES / BYTES ARRAY
-			{"BYTES", bytesType()},
-			{"NULL_BYTES", bytesType()},
-			{"BYTES_ARRAY", listType(bytesType())},
-			{"NULL_BYTES_ARRAY", listType(bytesType())},
+			{Name: "BYTES", Type: bytesType()},
+			{Name: "NULL_BYTES", Type: bytesType()},
+			{Name: "BYTES_ARRAY", Type: listType(bytesType())},
+			{Name: "NULL_BYTES_ARRAY", Type: listType(bytesType())},
 			// INT64 / INT64 ARRAY
-			{"INT64", intType()},
-			{"NULL_INT64", intType()},
-			{"INT64_ARRAY", listType(intType())},
-			{"NULL_INT64_ARRAY", listType(intType())},
+			{Name: "INT64", Type: intType()},
+			{Name: "NULL_INT64", Type: intType()},
+			{Name: "INT64_ARRAY", Type: listType(intType())},
+			{Name: "NULL_INT64_ARRAY", Type: listType(intType())},
 			// BOOL / BOOL ARRAY
-			{"BOOL", boolType()},
-			{"NULL_BOOL", boolType()},
-			{"BOOL_ARRAY", listType(boolType())},
-			{"NULL_BOOL_ARRAY", listType(boolType())},
+			{Name: "BOOL", Type: boolType()},
+			{Name: "NULL_BOOL", Type: boolType()},
+			{Name: "BOOL_ARRAY", Type: listType(boolType())},
+			{Name: "NULL_BOOL_ARRAY", Type: listType(boolType())},
 			// FLOAT64 / FLOAT64 ARRAY
-			{"FLOAT64", floatType()},
-			{"NULL_FLOAT64", floatType()},
-			{"FLOAT64_ARRAY", listType(floatType())},
-			{"NULL_FLOAT64_ARRAY", listType(floatType())},
+			{Name: "FLOAT64", Type: floatType()},
+			{Name: "NULL_FLOAT64", Type: floatType()},
+			{Name: "FLOAT64_ARRAY", Type: listType(floatType())},
+			{Name: "NULL_FLOAT64_ARRAY", Type: listType(floatType())},
 			// TIMESTAMP / TIMESTAMP ARRAY
-			{"TIMESTAMP", timeType()},
-			{"NULL_TIMESTAMP", timeType()},
-			{"TIMESTAMP_ARRAY", listType(timeType())},
-			{"NULL_TIMESTAMP_ARRAY", listType(timeType())},
+			{Name: "TIMESTAMP", Type: timeType()},
+			{Name: "NULL_TIMESTAMP", Type: timeType()},
+			{Name: "TIMESTAMP_ARRAY", Type: listType(timeType())},
+			{Name: "NULL_TIMESTAMP_ARRAY", Type: listType(timeType())},
 			// DATE / DATE ARRAY
-			{"DATE", dateType()},
-			{"NULL_DATE", dateType()},
-			{"DATE_ARRAY", listType(dateType())},
-			{"NULL_DATE_ARRAY", listType(dateType())},
+			{Name: "DATE", Type: dateType()},
+			{Name: "NULL_DATE", Type: dateType()},
+			{Name: "DATE_ARRAY", Type: listType(dateType())},
+			{Name: "NULL_DATE_ARRAY", Type: listType(dateType())},
 
 			// STRUCT ARRAY
 			{
-				"STRUCT_ARRAY",
-				listType(
+				Name: "STRUCT_ARRAY",
+				Type: listType(
 					structType(
 						mkField("Col1", intType()),
 						mkField("Col2", floatType()),
@@ -84,8 +86,8 @@ var (
 				),
 			},
 			{
-				"NULL_STRUCT_ARRAY",
-				listType(
+				Name: "NULL_STRUCT_ARRAY",
+				Type: listType(
 					structType(
 						mkField("Col1", intType()),
 						mkField("Col2", floatType()),
@@ -190,11 +192,8 @@ func TestColumnValues(t *testing.T) {
 				Col3 string
 			}{
 				nil,
-				&struct {
-					Col1 NullInt64
-					Col2 NullFloat64
-					Col3 string
-				}{
+
+				{
 					NullInt64{3, true},
 					NullFloat64{33.3, true},
 					"three",
@@ -242,7 +241,7 @@ func TestColumnValues(t *testing.T) {
 			if err != nil {
 				t.Errorf("\t row.Column(%v, %T) returns error: %v, want nil", i, gotp.Interface(), err)
 			}
-			if got := reflect.Indirect(gotp).Interface(); !reflect.DeepEqual(got, want) {
+			if got := reflect.Indirect(gotp).Interface(); !testEqual(got, want) {
 				t.Errorf("\t row.Column(%v, %T) retrives %v, want %v", i, gotp.Interface(), got, want)
 			}
 			// ColumnByName
@@ -251,7 +250,7 @@ func TestColumnValues(t *testing.T) {
 			if err != nil {
 				t.Errorf("\t row.ColumnByName(%v, %T) returns error: %v, want nil", row.fields[i].Name, gotp.Interface(), err)
 			}
-			if got := reflect.Indirect(gotp).Interface(); !reflect.DeepEqual(got, want) {
+			if got := reflect.Indirect(gotp).Interface(); !testEqual(got, want) {
 				t.Errorf("\t row.ColumnByName(%v, %T) retrives %v, want %v", row.fields[i].Name, gotp.Interface(), got, want)
 			}
 		}
@@ -261,7 +260,7 @@ func TestColumnValues(t *testing.T) {
 		t.Errorf("row.Columns() returns error: %v, want nil", err)
 	}
 	for i, want := range wantVals {
-		if got := reflect.Indirect(reflect.ValueOf(vals[i])).Interface(); !reflect.DeepEqual(got, want) {
+		if got := reflect.Indirect(reflect.ValueOf(vals[i])).Interface(); !testEqual(got, want) {
 			t.Errorf("\t got %v(%T) for column[%v], want %v(%T)", got, got, row.fields[i].Name, want, want)
 		}
 	}
@@ -279,7 +278,7 @@ func TestNilDst(t *testing.T) {
 		{
 			&Row{
 				[]*sppb.StructType_Field{
-					{"Col0", stringType()},
+					{Name: "Col0", Type: stringType()},
 				},
 				[]*proto3.Value{stringProto("value")},
 			},
@@ -291,7 +290,7 @@ func TestNilDst(t *testing.T) {
 		{
 			&Row{
 				[]*sppb.StructType_Field{
-					{"Col0", stringType()},
+					{Name: "Col0", Type: stringType()},
 				},
 				[]*proto3.Value{stringProto("value")},
 			},
@@ -304,8 +303,8 @@ func TestNilDst(t *testing.T) {
 			&Row{
 				[]*sppb.StructType_Field{
 					{
-						"Col0",
-						listType(
+						Name: "Col0",
+						Type: listType(
 							structType(
 								mkField("Col1", intType()),
 								mkField("Col2", floatType()),
@@ -339,10 +338,10 @@ func TestNilDst(t *testing.T) {
 			})(nil)),
 		},
 	} {
-		if gotErr := test.r.Column(0, test.dst); !reflect.DeepEqual(gotErr, test.wantErr) {
+		if gotErr := test.r.Column(0, test.dst); !testEqual(gotErr, test.wantErr) {
 			t.Errorf("%v: test.r.Column() returns error %v, want %v", i, gotErr, test.wantErr)
 		}
-		if gotErr := test.r.ColumnByName("Col0", test.dst); !reflect.DeepEqual(gotErr, test.wantErr) {
+		if gotErr := test.r.ColumnByName("Col0", test.dst); !testEqual(gotErr, test.wantErr) {
 			t.Errorf("%v: test.r.ColumnByName() returns error %v, want %v", i, gotErr, test.wantErr)
 		}
 		// Row.Columns(T) should return nil on T == nil, otherwise, it should return test.wantErr.
@@ -350,10 +349,10 @@ func TestNilDst(t *testing.T) {
 		if test.dst == nil {
 			wantColumnsErr = nil
 		}
-		if gotErr := test.r.Columns(test.dst); !reflect.DeepEqual(gotErr, wantColumnsErr) {
+		if gotErr := test.r.Columns(test.dst); !testEqual(gotErr, wantColumnsErr) {
 			t.Errorf("%v: test.r.Columns() returns error %v, want %v", i, gotErr, wantColumnsErr)
 		}
-		if gotErr := test.r.ToStruct(test.structDst); !reflect.DeepEqual(gotErr, test.wantToStructErr) {
+		if gotErr := test.r.ToStruct(test.structDst); !testEqual(gotErr, test.wantToStructErr) {
 			t.Errorf("%v: test.r.ToStruct() returns error %v, want %v", i, gotErr, test.wantToStructErr)
 		}
 	}
@@ -401,7 +400,7 @@ func TestNullTypeErr(t *testing.T) {
 		},
 	} {
 		wantErr := errDecodeColumn(ntoi(test.colName), errDstNotForNull(test.dst))
-		if gotErr := row.ColumnByName(test.colName, test.dst); !reflect.DeepEqual(gotErr, wantErr) {
+		if gotErr := row.ColumnByName(test.colName, test.dst); !testEqual(gotErr, wantErr) {
 			t.Errorf("row.ColumnByName(%v) returns error %v, want %v", test.colName, gotErr, wantErr)
 		}
 	}
@@ -418,11 +417,11 @@ func TestColumnTypeErr(t *testing.T) {
 			etc = f.Type.ArrayElementType.Code
 		}
 		wantErr := errDecodeColumn(i, errTypeMismatch(tc, etc, badDst))
-		if gotErr := row.Column(i, badDst); !reflect.DeepEqual(gotErr, wantErr) {
+		if gotErr := row.Column(i, badDst); !testEqual(gotErr, wantErr) {
 			t.Errorf("Column(%v): decoding into destination with wrong type %T returns error %v, want %v",
 				i, badDst, gotErr, wantErr)
 		}
-		if gotErr := row.ColumnByName(f.Name, badDst); !reflect.DeepEqual(gotErr, wantErr) {
+		if gotErr := row.ColumnByName(f.Name, badDst); !testEqual(gotErr, wantErr) {
 			t.Errorf("ColumnByName(%v): decoding into destination with wrong type %T returns error %v, want %v",
 				f.Name, badDst, gotErr, wantErr)
 		}
@@ -434,7 +433,7 @@ func TestColumnTypeErr(t *testing.T) {
 	for i := 2; i < len(row.fields); i++ {
 		vals = append(vals, nil)
 	}
-	if gotErr := row.Columns(vals...); !reflect.DeepEqual(gotErr, wantErr) {
+	if gotErr := row.Columns(vals...); !testEqual(gotErr, wantErr) {
 		t.Errorf("Columns(): decoding column 1 with wrong type %T returns error %v, want %v",
 			badDst, gotErr, wantErr)
 	}
@@ -474,8 +473,8 @@ func TestInvalidColumnRequest(t *testing.T) {
 				var s string
 				r := &Row{
 					[]*sppb.StructType_Field{
-						{"Val", stringType()},
-						{"Val", stringType()},
+						{Name: "Val", Type: stringType()},
+						{Name: "Val", Type: stringType()},
 					},
 					[]*proto3.Value{stringProto("value1"), stringProto("value2")},
 				}
@@ -491,8 +490,8 @@ func TestInvalidColumnRequest(t *testing.T) {
 				}{}
 				r := &Row{
 					[]*sppb.StructType_Field{
-						{"Val", stringType()},
-						{"Val", stringType()},
+						{Name: "Val", Type: stringType()},
+						{Name: "Val", Type: stringType()},
 					},
 					[]*proto3.Value{stringProto("value1"), stringProto("value2")},
 				}
@@ -500,8 +499,8 @@ func TestInvalidColumnRequest(t *testing.T) {
 			},
 			errDupSpannerField("Val", &sppb.StructType{
 				Fields: []*sppb.StructType_Field{
-					{"Val", stringType()},
-					{"Val", stringType()},
+					{Name: "Val", Type: stringType()},
+					{Name: "Val", Type: stringType()},
 				},
 			}),
 		},
@@ -513,16 +512,18 @@ func TestInvalidColumnRequest(t *testing.T) {
 				}{}
 				r := &Row{
 					[]*sppb.StructType_Field{
-						{"", stringType()},
+						{Name: "", Type: stringType()},
 					},
 					[]*proto3.Value{stringProto("value1")},
 				}
 				return r.ToStruct(s)
 			},
-			errUnnamedField(&sppb.StructType{Fields: []*sppb.StructType_Field{{"", stringType()}}}, 0),
+			errUnnamedField(&sppb.StructType{Fields: []*sppb.StructType_Field{
+				{Name: "", Type: stringType()},
+			}}, 0),
 		},
 	} {
-		if gotErr := test.f(); !reflect.DeepEqual(gotErr, test.wantErr) {
+		if gotErr := test.f(); !testEqual(gotErr, test.wantErr) {
 			t.Errorf("%v: test.f() returns error %v, want %v", test.desc, gotErr, test.wantErr)
 		}
 	}
@@ -574,7 +575,7 @@ func TestToStructInvalidDst(t *testing.T) {
 				errTypeMismatch(sppb.TypeCode_STRING, sppb.TypeCode_TYPE_CODE_UNSPECIFIED, proto.Int64(0))),
 		},
 	} {
-		if gotErr := row.ToStruct(test.dst); !reflect.DeepEqual(gotErr, test.wantErr) {
+		if gotErr := row.ToStruct(test.dst); !testEqual(gotErr, test.wantErr) {
 			t.Errorf("%v: decoding:\ngot  %v\nwant %v", test.desc, gotErr, test.wantErr)
 		}
 	}
@@ -612,10 +613,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field is not nil, but its type is nil.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						nil,
-					},
+					{Name: "Col0", Type: nil},
 				},
 				[]*proto3.Value{listProto(stringProto("value1"), stringProto("value2"))},
 			},
@@ -626,12 +624,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field is not nil, field type is not nil, but it is an array and its array element type is nil.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						&sppb.Type{
-							Code: sppb.TypeCode_ARRAY,
-						},
-					},
+					{Name: "Col0", Type: &sppb.Type{Code: sppb.TypeCode_ARRAY}},
 				},
 				[]*proto3.Value{listProto(stringProto("value1"), stringProto("value2"))},
 			},
@@ -642,10 +635,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies valid type, value is nil.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						intType(),
-					},
+					{Name: "Col0", Type: intType()},
 				},
 				[]*proto3.Value{nil},
 			},
@@ -656,10 +646,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies INT64 type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						intType(),
-					},
+					{Name: "Col0", Type: intType()},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_StringValue)(nil)}},
 			},
@@ -670,10 +657,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies INT64 type, but value is for Number type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						intType(),
-					},
+					{Name: "Col0", Type: intType()},
 				},
 				[]*proto3.Value{floatProto(1.0)},
 			},
@@ -684,10 +668,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies INT64 type, but value is wrongly encoded.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						intType(),
-					},
+					{Name: "Col0", Type: intType()},
 				},
 				[]*proto3.Value{stringProto("&1")},
 			},
@@ -701,10 +682,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies INT64 type, but value is wrongly encoded.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						intType(),
-					},
+					{Name: "Col0", Type: intType()},
 				},
 				[]*proto3.Value{stringProto("&1")},
 			},
@@ -718,10 +696,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies STRING type, but value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						stringType(),
-					},
+					{Name: "Col0", Type: stringType()},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_StringValue)(nil)}},
 			},
@@ -732,10 +707,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies STRING type, but value is for ARRAY type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						stringType(),
-					},
+					{Name: "Col0", Type: stringType()},
 				},
 				[]*proto3.Value{listProto(stringProto("value"))},
 			},
@@ -746,10 +718,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies FLOAT64 type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						floatType(),
-					},
+					{Name: "Col0", Type: floatType()},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_NumberValue)(nil)}},
 			},
@@ -760,10 +729,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies FLOAT64 type, but value is for BOOL type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						floatType(),
-					},
+					{Name: "Col0", Type: floatType()},
 				},
 				[]*proto3.Value{boolProto(true)},
 			},
@@ -774,10 +740,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies FLOAT64 type, but value is wrongly encoded.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						floatType(),
-					},
+					{Name: "Col0", Type: floatType()},
 				},
 				[]*proto3.Value{stringProto("nan")},
 			},
@@ -788,10 +751,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies FLOAT64 type, but value is wrongly encoded.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						floatType(),
-					},
+					{Name: "Col0", Type: floatType()},
 				},
 				[]*proto3.Value{stringProto("nan")},
 			},
@@ -802,10 +762,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies BYTES type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						bytesType(),
-					},
+					{Name: "Col0", Type: bytesType()},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_StringValue)(nil)}},
 			},
@@ -816,10 +773,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies BYTES type, but value is for BOOL type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						bytesType(),
-					},
+					{Name: "Col0", Type: bytesType()},
 				},
 				[]*proto3.Value{boolProto(false)},
 			},
@@ -830,10 +784,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies BYTES type, but value is wrongly encoded.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						bytesType(),
-					},
+					{Name: "Col0", Type: bytesType()},
 				},
 				[]*proto3.Value{stringProto("&&")},
 			},
@@ -847,10 +798,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies BOOL type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						boolType(),
-					},
+					{Name: "Col0", Type: boolType()},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_BoolValue)(nil)}},
 			},
@@ -861,10 +809,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies BOOL type, but value is for STRING type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						boolType(),
-					},
+					{Name: "Col0", Type: boolType()},
 				},
 				[]*proto3.Value{stringProto("false")},
 			},
@@ -875,10 +820,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies TIMESTAMP type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						timeType(),
-					},
+					{Name: "Col0", Type: timeType()},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_StringValue)(nil)}},
 			},
@@ -889,10 +831,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies TIMESTAMP type, but value is for BOOL type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						timeType(),
-					},
+					{Name: "Col0", Type: timeType()},
 				},
 				[]*proto3.Value{boolProto(false)},
 			},
@@ -903,10 +842,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies TIMESTAMP type, but value is invalid timestamp.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						timeType(),
-					},
+					{Name: "Col0", Type: timeType()},
 				},
 				[]*proto3.Value{stringProto("junk")},
 			},
@@ -920,10 +856,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies DATE type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						dateType(),
-					},
+					{Name: "Col0", Type: dateType()},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_StringValue)(nil)}},
 			},
@@ -934,10 +867,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies DATE type, but value is for BOOL type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						dateType(),
-					},
+					{Name: "Col0", Type: dateType()},
 				},
 				[]*proto3.Value{boolProto(false)},
 			},
@@ -948,10 +878,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies DATE type, but value is invalid timestamp.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						dateType(),
-					},
+					{Name: "Col0", Type: dateType()},
 				},
 				[]*proto3.Value{stringProto("junk")},
 			},
@@ -966,10 +893,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<INT64> type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(intType()),
-					},
+					{Name: "Col0", Type: listType(intType())},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_ListValue)(nil)}},
 			},
@@ -980,10 +904,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<INT64> type, value is having a nil ListValue.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(intType()),
-					},
+					{Name: "Col0", Type: listType(intType())},
 				},
 				[]*proto3.Value{{Kind: &proto3.Value_ListValue{}}},
 			},
@@ -994,10 +915,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<INT64> type, but value is for BYTES type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(intType()),
-					},
+					{Name: "Col0", Type: listType(intType())},
 				},
 				[]*proto3.Value{bytesProto([]byte("value"))},
 			},
@@ -1008,10 +926,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<INT64> type, but value is for ARRAY<BOOL> type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(intType()),
-					},
+					{Name: "Col0", Type: listType(intType())},
 				},
 				[]*proto3.Value{listProto(boolProto(true))},
 			},
@@ -1023,10 +938,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<STRING> type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(stringType()),
-					},
+					{Name: "Col0", Type: listType(stringType())},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_ListValue)(nil)}},
 			},
@@ -1037,10 +949,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<STRING> type, value is having a nil ListValue.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(stringType()),
-					},
+					{Name: "Col0", Type: listType(stringType())},
 				},
 				[]*proto3.Value{{Kind: &proto3.Value_ListValue{}}},
 			},
@@ -1051,10 +960,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<STRING> type, but value is for BOOL type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(stringType()),
-					},
+					{Name: "Col0", Type: listType(stringType())},
 				},
 				[]*proto3.Value{boolProto(true)},
 			},
@@ -1065,10 +971,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<STRING> type, but value is for ARRAY<BOOL> type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(stringType()),
-					},
+					{Name: "Col0", Type: listType(stringType())},
 				},
 				[]*proto3.Value{listProto(boolProto(true))},
 			},
@@ -1080,10 +983,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<FLOAT64> type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(floatType()),
-					},
+					{Name: "Col0", Type: listType(floatType())},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_ListValue)(nil)}},
 			},
@@ -1094,10 +994,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<FLOAT64> type, value is having a nil ListValue.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(floatType()),
-					},
+					{Name: "Col0", Type: listType(floatType())},
 				},
 				[]*proto3.Value{{Kind: &proto3.Value_ListValue{}}},
 			},
@@ -1108,10 +1005,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<FLOAT64> type, but value is for STRING type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(floatType()),
-					},
+					{Name: "Col0", Type: listType(floatType())},
 				},
 				[]*proto3.Value{stringProto("value")},
 			},
@@ -1122,10 +1016,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<FLOAT64> type, but value is for ARRAY<BOOL> type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(floatType()),
-					},
+					{Name: "Col0", Type: listType(floatType())},
 				},
 				[]*proto3.Value{listProto(boolProto(true))},
 			},
@@ -1137,10 +1028,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<BYTES> type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(bytesType()),
-					},
+					{Name: "Col0", Type: listType(bytesType())},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_ListValue)(nil)}},
 			},
@@ -1151,10 +1039,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<BYTES> type, value is having a nil ListValue.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(bytesType()),
-					},
+					{Name: "Col0", Type: listType(bytesType())},
 				},
 				[]*proto3.Value{{Kind: &proto3.Value_ListValue{}}},
 			},
@@ -1165,10 +1050,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<BYTES> type, but value is for FLOAT64 type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(bytesType()),
-					},
+					{Name: "Col0", Type: listType(bytesType())},
 				},
 				[]*proto3.Value{floatProto(1.0)},
 			},
@@ -1179,10 +1061,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<BYTES> type, but value is for ARRAY<FLOAT64> type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(bytesType()),
-					},
+					{Name: "Col0", Type: listType(bytesType())},
 				},
 				[]*proto3.Value{listProto(floatProto(1.0))},
 			},
@@ -1194,10 +1073,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<BOOL> type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(boolType()),
-					},
+					{Name: "Col0", Type: listType(boolType())},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_ListValue)(nil)}},
 			},
@@ -1208,10 +1084,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<BOOL> type, value is having a nil ListValue.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(boolType()),
-					},
+					{Name: "Col0", Type: listType(boolType())},
 				},
 				[]*proto3.Value{{Kind: &proto3.Value_ListValue{}}},
 			},
@@ -1222,10 +1095,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<BOOL> type, but value is for FLOAT64 type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(boolType()),
-					},
+					{Name: "Col0", Type: listType(boolType())},
 				},
 				[]*proto3.Value{floatProto(1.0)},
 			},
@@ -1236,10 +1106,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<BOOL> type, but value is for ARRAY<FLOAT64> type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(boolType()),
-					},
+					{Name: "Col0", Type: listType(boolType())},
 				},
 				[]*proto3.Value{listProto(floatProto(1.0))},
 			},
@@ -1251,10 +1118,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<TIMESTAMP> type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(timeType()),
-					},
+					{Name: "Col0", Type: listType(timeType())},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_ListValue)(nil)}},
 			},
@@ -1265,10 +1129,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<TIMESTAMP> type, value is having a nil ListValue.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(timeType()),
-					},
+					{Name: "Col0", Type: listType(timeType())},
 				},
 				[]*proto3.Value{{Kind: &proto3.Value_ListValue{}}},
 			},
@@ -1279,10 +1140,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<TIMESTAMP> type, but value is for FLOAT64 type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(timeType()),
-					},
+					{Name: "Col0", Type: listType(timeType())},
 				},
 				[]*proto3.Value{floatProto(1.0)},
 			},
@@ -1293,10 +1151,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<TIMESTAMP> type, but value is for ARRAY<FLOAT64> type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(timeType()),
-					},
+					{Name: "Col0", Type: listType(timeType())},
 				},
 				[]*proto3.Value{listProto(floatProto(1.0))},
 			},
@@ -1308,10 +1163,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<DATE> type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(dateType()),
-					},
+					{Name: "Col0", Type: listType(dateType())},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_ListValue)(nil)}},
 			},
@@ -1322,10 +1174,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<DATE> type, value is having a nil ListValue.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(dateType()),
-					},
+					{Name: "Col0", Type: listType(dateType())},
 				},
 				[]*proto3.Value{{Kind: &proto3.Value_ListValue{}}},
 			},
@@ -1336,10 +1185,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<DATE> type, but value is for FLOAT64 type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(dateType()),
-					},
+					{Name: "Col0", Type: listType(dateType())},
 				},
 				[]*proto3.Value{floatProto(1.0)},
 			},
@@ -1350,10 +1196,7 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<DATE> type, but value is for ARRAY<FLOAT64> type.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(dateType()),
-					},
+					{Name: "Col0", Type: listType(dateType())},
 				},
 				[]*proto3.Value{listProto(floatProto(1.0))},
 			},
@@ -1365,16 +1208,11 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<STRUCT> type, value is having a nil Kind.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(
-							structType(
-								mkField("Col1", intType()),
-								mkField("Col2", floatType()),
-								mkField("Col3", stringType()),
-							),
-						),
-					},
+					{Name: "Col0", Type: listType(structType(
+						mkField("Col1", intType()),
+						mkField("Col2", floatType()),
+						mkField("Col3", stringType()),
+					))},
 				},
 				[]*proto3.Value{{Kind: (*proto3.Value_ListValue)(nil)}},
 			},
@@ -1389,16 +1227,11 @@ func TestBrokenRow(t *testing.T) {
 			// Field specifies ARRAY<STRUCT> type, value is having a nil ListValue.
 			&Row{
 				[]*sppb.StructType_Field{
-					{
-						"Col0",
-						listType(
-							structType(
-								mkField("Col1", intType()),
-								mkField("Col2", floatType()),
-								mkField("Col3", stringType()),
-							),
-						),
-					},
+					{Name: "Col0", Type: listType(structType(
+						mkField("Col1", intType()),
+						mkField("Col2", floatType()),
+						mkField("Col3", stringType()),
+					))},
 				},
 				[]*proto3.Value{{Kind: &proto3.Value_ListValue{}}},
 			},
@@ -1414,8 +1247,8 @@ func TestBrokenRow(t *testing.T) {
 			&Row{
 				[]*sppb.StructType_Field{
 					{
-						"Col0",
-						listType(
+						Name: "Col0",
+						Type: listType(
 							structType(
 								mkField("Col1", intType()),
 								mkField("Col2", floatType()),
@@ -1434,8 +1267,8 @@ func TestBrokenRow(t *testing.T) {
 			&Row{
 				[]*sppb.StructType_Field{
 					{
-						"Col0",
-						listType(
+						Name: "Col0",
+						Type: listType(
 							structType(
 								mkField("Col1", intType()),
 								mkField("Col2", floatType()),
@@ -1458,8 +1291,8 @@ func TestBrokenRow(t *testing.T) {
 			&Row{
 				[]*sppb.StructType_Field{
 					{
-						"Col0",
-						listType(
+						Name: "Col0",
+						Type: listType(
 							structType(
 								mkField("Col1", intType()),
 								mkField("Col2", floatType()),
@@ -1478,8 +1311,8 @@ func TestBrokenRow(t *testing.T) {
 			&Row{
 				[]*sppb.StructType_Field{
 					{
-						"Col0",
-						listType(
+						Name: "Col0",
+						Type: listType(
 							structType(
 								mkField("Col1", intType()),
 								mkField("Col2", floatType()),
@@ -1503,10 +1336,7 @@ func TestBrokenRow(t *testing.T) {
 			&Row{
 				[]*sppb.StructType_Field{
 					{
-						"Col0",
-						listType(
-							&sppb.Type{Code: sppb.TypeCode_STRUCT},
-						),
+						Name: "Col0", Type: listType(&sppb.Type{Code: sppb.TypeCode_STRUCT}),
 					},
 				},
 				[]*proto3.Value{listProto(listProto(intProto(1), floatProto(2.0), stringProto("3")))},
@@ -1524,8 +1354,8 @@ func TestBrokenRow(t *testing.T) {
 			&Row{
 				[]*sppb.StructType_Field{
 					{
-						"Col0",
-						listType(
+						Name: "Col0",
+						Type: listType(
 							structType(
 								mkField("Col1", intType()),
 								mkField("Col2", floatType()),
@@ -1560,13 +1390,13 @@ func TestBrokenRow(t *testing.T) {
 			),
 		},
 	} {
-		if gotErr := test.row.Column(0, test.dst); !reflect.DeepEqual(gotErr, test.wantErr) {
+		if gotErr := test.row.Column(0, test.dst); !testEqual(gotErr, test.wantErr) {
 			t.Errorf("%v: test.row.Column(0) got error %v, want %v", i, gotErr, test.wantErr)
 		}
-		if gotErr := test.row.ColumnByName("Col0", test.dst); !reflect.DeepEqual(gotErr, test.wantErr) {
+		if gotErr := test.row.ColumnByName("Col0", test.dst); !testEqual(gotErr, test.wantErr) {
 			t.Errorf("%v: test.row.ColumnByName(%q) got error %v, want %v", i, "Col0", gotErr, test.wantErr)
 		}
-		if gotErr := test.row.Columns(test.dst); !reflect.DeepEqual(gotErr, test.wantErr) {
+		if gotErr := test.row.Columns(test.dst); !testEqual(gotErr, test.wantErr) {
 			t.Errorf("%v: test.row.Columns(%T) got error %v, want %v", i, test.dst, gotErr, test.wantErr)
 		}
 	}
@@ -1667,11 +1497,8 @@ func TestToStruct(t *testing.T) {
 				Col3 string
 			}{
 				nil,
-				&struct {
-					Col1 int64
-					Col2 float64
-					Col3 string
-				}{3, 33.3, "three"},
+
+				{3, 33.3, "three"},
 				nil,
 			},
 			[]*struct {
@@ -1684,9 +1511,164 @@ func TestToStruct(t *testing.T) {
 	err := row.ToStruct(&s[0])
 	if err != nil {
 		t.Errorf("row.ToStruct() returns error: %v, want nil", err)
-	}
-	if !reflect.DeepEqual(s[0], s[1]) {
+	} else if !testEqual(s[0], s[1]) {
 		t.Errorf("row.ToStruct() fetches struct %v, want %v", s[0], s[1])
+	}
+}
+
+// Test Row.ToStruct() with custom types.
+func TestToStructWithCustomTypes(t *testing.T) {
+	type CustomString string
+	type CustomNullString NullString
+	type CustomBytes []byte
+	type CustomInt64 int64
+	type CustomNullInt64 NullInt64
+	type CustomBool bool
+	type CustomNullBool NullBool
+	type CustomFloat64 float64
+	type CustomNullFloat64 NullFloat64
+	type CustomTime time.Time
+	type CustomNullTime NullTime
+	type CustomDate civil.Date
+	type CustomNullDate NullDate
+
+	s := []struct {
+		// STRING / STRING ARRAY
+		PrimaryKey      CustomString       `spanner:"STRING"`
+		NullString      CustomNullString   `spanner:"NULL_STRING"`
+		StringArray     []CustomNullString `spanner:"STRING_ARRAY"`
+		NullStringArray []CustomNullString `spanner:"NULL_STRING_ARRAY"`
+		// BYTES / BYTES ARRAY
+		Bytes          CustomBytes   `spanner:"BYTES"`
+		NullBytes      CustomBytes   `spanner:"NULL_BYTES"`
+		BytesArray     []CustomBytes `spanner:"BYTES_ARRAY"`
+		NullBytesArray []CustomBytes `spanner:"NULL_BYTES_ARRAY"`
+		// INT64 / INT64 ARRAY
+		Int64          CustomInt64       `spanner:"INT64"`
+		NullInt64      CustomNullInt64   `spanner:"NULL_INT64"`
+		Int64Array     []CustomNullInt64 `spanner:"INT64_ARRAY"`
+		NullInt64Array []CustomNullInt64 `spanner:"NULL_INT64_ARRAY"`
+		// BOOL / BOOL ARRAY
+		Bool          CustomBool       `spanner:"BOOL"`
+		NullBool      CustomNullBool   `spanner:"NULL_BOOL"`
+		BoolArray     []CustomNullBool `spanner:"BOOL_ARRAY"`
+		NullBoolArray []CustomNullBool `spanner:"NULL_BOOL_ARRAY"`
+		// FLOAT64 / FLOAT64 ARRAY
+		Float64          CustomFloat64       `spanner:"FLOAT64"`
+		NullFloat64      CustomNullFloat64   `spanner:"NULL_FLOAT64"`
+		Float64Array     []CustomNullFloat64 `spanner:"FLOAT64_ARRAY"`
+		NullFloat64Array []CustomNullFloat64 `spanner:"NULL_FLOAT64_ARRAY"`
+		// TIMESTAMP / TIMESTAMP ARRAY
+		Timestamp          CustomTime       `spanner:"TIMESTAMP"`
+		NullTimestamp      CustomNullTime   `spanner:"NULL_TIMESTAMP"`
+		TimestampArray     []CustomNullTime `spanner:"TIMESTAMP_ARRAY"`
+		NullTimestampArray []CustomNullTime `spanner:"NULL_TIMESTAMP_ARRAY"`
+		// DATE / DATE ARRAY
+		Date          CustomDate       `spanner:"DATE"`
+		NullDate      CustomNullDate   `spanner:"NULL_DATE"`
+		DateArray     []CustomNullDate `spanner:"DATE_ARRAY"`
+		NullDateArray []CustomNullDate `spanner:"NULL_DATE_ARRAY"`
+
+		// STRUCT ARRAY
+		StructArray []*struct {
+			Col1 CustomInt64
+			Col2 CustomFloat64
+			Col3 CustomString
+		} `spanner:"STRUCT_ARRAY"`
+		NullStructArray []*struct {
+			Col1 CustomInt64
+			Col2 CustomFloat64
+			Col3 CustomString
+		} `spanner:"NULL_STRUCT_ARRAY"`
+	}{
+		{}, // got
+		{
+			// STRING / STRING ARRAY
+			"value",
+			CustomNullString{},
+			[]CustomNullString{{"value1", true}, {}, {"value3", true}},
+			[]CustomNullString(nil),
+			// BYTES / BYTES ARRAY
+			CustomBytes("value"),
+			CustomBytes(nil),
+			[]CustomBytes{[]byte("value1"), nil, []byte("value3")},
+			[]CustomBytes(nil),
+			// INT64 / INT64 ARRAY
+			CustomInt64(17),
+			CustomNullInt64{},
+			[]CustomNullInt64{{int64(1), true}, {int64(2), true}, {}},
+			[]CustomNullInt64(nil),
+			// BOOL / BOOL ARRAY
+			true,
+			CustomNullBool{},
+			[]CustomNullBool{{}, {true, true}, {false, true}},
+			[]CustomNullBool(nil),
+			// FLOAT64 / FLOAT64 ARRAY
+			1.7,
+			CustomNullFloat64{},
+			[]CustomNullFloat64{{}, {}, {1.7, true}},
+			[]CustomNullFloat64(nil),
+			// TIMESTAMP / TIMESTAMP ARRAY
+			CustomTime(tm),
+			CustomNullTime{},
+			[]CustomNullTime{{}, {tm, true}},
+			[]CustomNullTime(nil),
+			// DATE / DATE ARRAY
+			CustomDate(dt),
+			CustomNullDate{},
+			[]CustomNullDate{{}, {dt, true}},
+			[]CustomNullDate(nil),
+			// STRUCT ARRAY
+			[]*struct {
+				Col1 CustomInt64
+				Col2 CustomFloat64
+				Col3 CustomString
+			}{
+				nil,
+
+				{3, 33.3, "three"},
+				nil,
+			},
+			[]*struct {
+				Col1 CustomInt64
+				Col2 CustomFloat64
+				Col3 CustomString
+			}(nil),
+		}, // want
+	}
+	err := row.ToStruct(&s[0])
+	if err != nil {
+		t.Errorf("row.ToStruct() returns error: %v, want nil", err)
+	} else if !testutil.Equal(s[0], s[1], cmp.AllowUnexported(CustomTime{})) {
+		t.Errorf("row.ToStruct() fetches struct %v, want %v", s[0], s[1])
+	}
+}
+
+func TestToStructEmbedded(t *testing.T) {
+	type (
+		S1 struct{ F1 string }
+		S2 struct {
+			S1
+			F2 string
+		}
+	)
+	r := Row{
+		[]*sppb.StructType_Field{
+			{Name: "F1", Type: stringType()},
+			{Name: "F2", Type: stringType()},
+		},
+		[]*proto3.Value{
+			stringProto("v1"),
+			stringProto("v2"),
+		},
+	}
+	var got S2
+	if err := r.ToStruct(&got); err != nil {
+		t.Fatal(err)
+	}
+	want := S2{S1: S1{F1: "v1"}, F2: "v2"}
+	if !testEqual(got, want) {
+		t.Errorf("got %+v, want %+v", got, want)
 	}
 }
 
@@ -1750,9 +1732,9 @@ func TestNewRow(t *testing.T) {
 			values: []interface{}{5, "abc", GenericColumnValue{listType(intType()), listProto(intProto(91), nullProto(), intProto(87))}},
 			want: &Row{
 				[]*sppb.StructType_Field{
-					{"a", intType()},
-					{"b", stringType()},
-					{"c", listType(intType())},
+					{Name: "a", Type: intType()},
+					{Name: "b", Type: stringType()},
+					{Name: "c", Type: listType(intType())},
 				},
 				[]*proto3.Value{
 					intProto(5),
@@ -1763,11 +1745,11 @@ func TestNewRow(t *testing.T) {
 		},
 	} {
 		got, err := NewRow(test.names, test.values)
-		if !reflect.DeepEqual(err, test.wantErr) {
+		if !testEqual(err, test.wantErr) {
 			t.Errorf("NewRow(%v,%v).err = %s, want %s", test.names, test.values, err, test.wantErr)
 			continue
 		}
-		if !reflect.DeepEqual(got, test.want) {
+		if !testEqual(got, test.want) {
 			t.Errorf("NewRow(%v,%v) = %s, want %s", test.names, test.values, got, test.want)
 			continue
 		}

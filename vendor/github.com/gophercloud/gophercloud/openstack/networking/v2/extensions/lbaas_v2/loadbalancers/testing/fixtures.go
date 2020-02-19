@@ -5,13 +5,12 @@ import (
 	"net/http"
 	"testing"
 
-	th "github.com/gophercloud/gophercloud/testhelper"
-	"github.com/gophercloud/gophercloud/testhelper/client"
-
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/lbaas_v2/listeners"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/lbaas_v2/loadbalancers"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/lbaas_v2/monitors"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/lbaas_v2/pools"
+	th "github.com/gophercloud/gophercloud/testhelper"
+	"github.com/gophercloud/gophercloud/testhelper/client"
 )
 
 // LoadbalancersListBody contains the canned body of a loadbalancer list response.
@@ -26,7 +25,7 @@ const LoadbalancersListBody = `
 			"vip_subnet_id": "8a49c438-848f-467b-9655-ea1548708154",
 			"vip_address": "10.30.176.47",
 			"vip_port_id": "2a22e552-a347-44fd-b530-1f2b1b2a6735",
-			"flavor": "small",
+			"flavor_id": "60df399a-ee85-11e9-81b4-2a2ae2dbcce4",
 			"provider": "haproxy",
 			"admin_state_up": true,
 			"provisioning_status": "ACTIVE",
@@ -40,7 +39,7 @@ const LoadbalancersListBody = `
 			"vip_subnet_id": "9cedb85d-0759-4898-8a4b-fa5a5ea10086",
 			"vip_address": "10.30.176.48",
 			"vip_port_id": "2bf413c8-41a9-4477-b505-333d5cbe8b55",
-			"flavor": "medium",
+			"flavor_id": "bba40eb2-ee8c-11e9-81b4-2a2ae2dbcce4",
 			"provider": "haproxy",
 			"admin_state_up": true,
 			"provisioning_status": "PENDING_CREATE",
@@ -61,7 +60,7 @@ const SingleLoadbalancerBody = `
 		"vip_subnet_id": "9cedb85d-0759-4898-8a4b-fa5a5ea10086",
 		"vip_address": "10.30.176.48",
 		"vip_port_id": "2bf413c8-41a9-4477-b505-333d5cbe8b55",
-		"flavor": "medium",
+		"flavor_id": "bba40eb2-ee8c-11e9-81b4-2a2ae2dbcce4",
 		"provider": "haproxy",
 		"admin_state_up": true,
 		"provisioning_status": "PENDING_CREATE",
@@ -81,7 +80,7 @@ const PostUpdateLoadbalancerBody = `
 		"vip_subnet_id": "9cedb85d-0759-4898-8a4b-fa5a5ea10086",
 		"vip_address": "10.30.176.48",
 		"vip_port_id": "2bf413c8-41a9-4477-b505-333d5cbe8b55",
-		"flavor": "medium",
+		"flavor_id": "bba40eb2-ee8c-11e9-81b4-2a2ae2dbcce4",
 		"provider": "haproxy",
 		"admin_state_up": true,
 		"provisioning_status": "PENDING_CREATE",
@@ -90,8 +89,8 @@ const PostUpdateLoadbalancerBody = `
 }
 `
 
-// SingleLoadbalancerBody is the canned body of a Get request on an existing loadbalancer.
-const LoadbalancerStatuesesTree = `
+// GetLoadbalancerStatusesBody is the canned request body of a Get request on loadbalancer's status.
+const GetLoadbalancerStatusesBody = `
 {
 	"statuses" : {
 		"loadbalancer": {
@@ -102,23 +101,40 @@ const LoadbalancerStatuesesTree = `
 			"listeners": [{
 				"id": "db902c0c-d5ff-4753-b465-668ad9656918",
 				"name": "db",
+				"provisioning_status": "ACTIVE",
 				"pools": [{
 					"id": "fad389a3-9a4a-4762-a365-8c7038508b5d",
 					"name": "db",
+					"provisioning_status": "ACTIVE",
 					"healthmonitor": {
 						"id": "67306cda-815d-4354-9fe4-59e09da9c3c5",
-						"type":"PING"
+						"type":"PING",
+						"provisioning_status": "ACTIVE"
 					},
 					"members":[{
 						"id": "2a280670-c202-4b0b-a562-34077415aabf",
 						"name": "db",
 						"address": "10.0.2.11",
-						"protocol_port": 80
+						"protocol_port": 80,
+						"provisioning_status": "ACTIVE"
 					}]
 				}]
 			}]
 		}
 	}
+}
+`
+
+// LoadbalancerStatsTree is the canned request body of a Get request on loadbalancer's statistics.
+const GetLoadbalancerStatsBody = `
+{
+    "stats": {
+        "active_connections": 0,
+        "bytes_in": 9532,
+        "bytes_out": 22033,
+        "request_errors": 46,
+        "total_connections": 112
+    }
 }
 `
 
@@ -131,7 +147,7 @@ var (
 		VipSubnetID:        "8a49c438-848f-467b-9655-ea1548708154",
 		VipAddress:         "10.30.176.47",
 		VipPortID:          "2a22e552-a347-44fd-b530-1f2b1b2a6735",
-		Flavor:             "small",
+		FlavorID:           "60df399a-ee85-11e9-81b4-2a2ae2dbcce4",
 		Provider:           "haproxy",
 		AdminStateUp:       true,
 		ProvisioningStatus: "ACTIVE",
@@ -145,7 +161,7 @@ var (
 		VipSubnetID:        "9cedb85d-0759-4898-8a4b-fa5a5ea10086",
 		VipAddress:         "10.30.176.48",
 		VipPortID:          "2bf413c8-41a9-4477-b505-333d5cbe8b55",
-		Flavor:             "medium",
+		FlavorID:           "bba40eb2-ee8c-11e9-81b4-2a2ae2dbcce4",
 		Provider:           "haproxy",
 		AdminStateUp:       true,
 		ProvisioningStatus: "PENDING_CREATE",
@@ -159,35 +175,48 @@ var (
 		VipSubnetID:        "9cedb85d-0759-4898-8a4b-fa5a5ea10086",
 		VipAddress:         "10.30.176.48",
 		VipPortID:          "2bf413c8-41a9-4477-b505-333d5cbe8b55",
-		Flavor:             "medium",
+		FlavorID:           "bba40eb2-ee8c-11e9-81b4-2a2ae2dbcce4",
 		Provider:           "haproxy",
 		AdminStateUp:       true,
 		ProvisioningStatus: "PENDING_CREATE",
 		OperatingStatus:    "OFFLINE",
 	}
-	LoadbalancerStatusesTree = loadbalancers.LoadBalancer{
-		ID:                 "36e08a3e-a78f-4b40-a229-1e7e23eee1ab",
-		Name:               "db_lb",
-		ProvisioningStatus: "PENDING_UPDATE",
-		OperatingStatus:    "ACTIVE",
-		Listeners: []listeners.Listener{{
-			ID:   "db902c0c-d5ff-4753-b465-668ad9656918",
-			Name: "db",
-			Pools: []pools.Pool{{
-				ID:   "fad389a3-9a4a-4762-a365-8c7038508b5d",
-				Name: "db",
-				Monitor: monitors.Monitor{
-					ID:   "67306cda-815d-4354-9fe4-59e09da9c3c5",
-					Type: "PING",
-				},
-				Members: []pools.Member{{
-					ID:           "2a280670-c202-4b0b-a562-34077415aabf",
-					Name:         "db",
-					Address:      "10.0.2.11",
-					ProtocolPort: 80,
+	LoadbalancerStatusesTree = loadbalancers.StatusTree{
+		Loadbalancer: &loadbalancers.LoadBalancer{
+			ID:                 "36e08a3e-a78f-4b40-a229-1e7e23eee1ab",
+			Name:               "db_lb",
+			ProvisioningStatus: "PENDING_UPDATE",
+			OperatingStatus:    "ACTIVE",
+			Listeners: []listeners.Listener{{
+				ID:                 "db902c0c-d5ff-4753-b465-668ad9656918",
+				Name:               "db",
+				ProvisioningStatus: "ACTIVE",
+				Pools: []pools.Pool{{
+					ID:                 "fad389a3-9a4a-4762-a365-8c7038508b5d",
+					Name:               "db",
+					ProvisioningStatus: "ACTIVE",
+					Monitor: monitors.Monitor{
+						ID:                 "67306cda-815d-4354-9fe4-59e09da9c3c5",
+						Type:               "PING",
+						ProvisioningStatus: "ACTIVE",
+					},
+					Members: []pools.Member{{
+						ID:                 "2a280670-c202-4b0b-a562-34077415aabf",
+						Name:               "db",
+						Address:            "10.0.2.11",
+						ProtocolPort:       80,
+						ProvisioningStatus: "ACTIVE",
+					}},
 				}},
 			}},
-		}},
+		},
+	}
+	LoadbalancerStatsTree = loadbalancers.Stats{
+		ActiveConnections: 0,
+		BytesIn:           9532,
+		BytesOut:          22033,
+		RequestErrors:     46,
+		TotalConnections:  112,
 	}
 )
 
@@ -222,7 +251,7 @@ func HandleLoadbalancerCreationSuccessfully(t *testing.T, response string) {
 				"name": "db_lb",
 				"vip_subnet_id": "9cedb85d-0759-4898-8a4b-fa5a5ea10086",
 				"vip_address": "10.30.176.48",
-				"flavor": "medium",
+				"flavor_id": "bba40eb2-ee8c-11e9-81b4-2a2ae2dbcce4",
 				"provider": "haproxy",
 				"admin_state_up": true
 			}
@@ -252,7 +281,7 @@ func HandleLoadbalancerGetStatusesTree(t *testing.T) {
 		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
 		th.TestHeader(t, r, "Accept", "application/json")
 
-		fmt.Fprintf(w, LoadbalancerStatuesesTree)
+		fmt.Fprintf(w, GetLoadbalancerStatusesBody)
 	})
 }
 
@@ -280,5 +309,16 @@ func HandleLoadbalancerUpdateSuccessfully(t *testing.T) {
 		}`)
 
 		fmt.Fprintf(w, PostUpdateLoadbalancerBody)
+	})
+}
+
+// HandleLoadbalancerGetStatsTree sets up the test server to respond to a loadbalancer Get stats tree request.
+func HandleLoadbalancerGetStatsTree(t *testing.T) {
+	th.Mux.HandleFunc("/v2.0/lbaas/loadbalancers/36e08a3e-a78f-4b40-a229-1e7e23eee1ab/stats", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "GET")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+		th.TestHeader(t, r, "Accept", "application/json")
+
+		fmt.Fprintf(w, GetLoadbalancerStatsBody)
 	})
 }

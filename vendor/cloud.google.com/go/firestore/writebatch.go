@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
 package firestore
 
 import (
+	"context"
 	"errors"
 
-	pb "google.golang.org/genproto/googleapis/firestore/v1beta1"
-
-	"golang.org/x/net/context"
+	"cloud.google.com/go/internal/trace"
+	pb "google.golang.org/genproto/googleapis/firestore/v1"
 )
 
 // A WriteBatch holds multiple database updates. Build a batch with the Create, Set,
@@ -47,13 +47,13 @@ func (b *WriteBatch) add(ws []*pb.Write, err error) *WriteBatch {
 // Create adds a Create operation to the batch.
 // See DocumentRef.Create for details.
 func (b *WriteBatch) Create(dr *DocumentRef, data interface{}) *WriteBatch {
-	return b.add(dr.newReplaceWrites(data, nil, Exists(false)))
+	return b.add(dr.newCreateWrites(data))
 }
 
 // Set adds a Set operation to the batch.
 // See DocumentRef.Set for details.
 func (b *WriteBatch) Set(dr *DocumentRef, data interface{}, opts ...SetOption) *WriteBatch {
-	return b.add(dr.newReplaceWrites(data, opts, nil))
+	return b.add(dr.newSetWrites(data, opts))
 }
 
 // Delete adds a Delete operation to the batch.
@@ -62,52 +62,24 @@ func (b *WriteBatch) Delete(dr *DocumentRef, opts ...Precondition) *WriteBatch {
 	return b.add(dr.newDeleteWrites(opts))
 }
 
-// UpdateMap adds an UpdateMap operation to the batch.
-// See DocumentRef.UpdateMap for details.
-func (b *WriteBatch) UpdateMap(dr *DocumentRef, data map[string]interface{}, opts ...Precondition) *WriteBatch {
-	return b.add(dr.newUpdateMapWrites(data, opts))
-}
-
-// UpdateStruct adds an UpdateStruct operation to the batch.
-// See DocumentRef.UpdateStruct for details.
-func (b *WriteBatch) UpdateStruct(dr *DocumentRef, fieldPaths []string, data interface{}, opts ...Precondition) *WriteBatch {
-	return b.add(dr.newUpdateStructWrites(fieldPaths, data, opts))
-}
-
-// UpdatePaths adds an UpdatePaths operation to the batch.
-// See DocumentRef.UpdatePaths for details.
-func (b *WriteBatch) UpdatePaths(dr *DocumentRef, data []FieldPathUpdate, opts ...Precondition) *WriteBatch {
+// Update adds an Update operation to the batch.
+// See DocumentRef.Update for details.
+func (b *WriteBatch) Update(dr *DocumentRef, data []Update, opts ...Precondition) *WriteBatch {
 	return b.add(dr.newUpdatePathWrites(data, opts))
 }
 
 // Commit applies all the writes in the batch to the database atomically. Commit
 // returns an error if there are no writes in the batch, if any errors occurred in
 // constructing the writes, or if the Commmit operation fails.
-func (b *WriteBatch) Commit(ctx context.Context) ([]*WriteResult, error) {
-	if err := checkTransaction(ctx); err != nil {
-		return nil, err
-	}
+func (b *WriteBatch) Commit(ctx context.Context) (_ []*WriteResult, err error) {
+	ctx = trace.StartSpan(ctx, "cloud.google.com/go/firestore.WriteBatch.Commit")
+	defer func() { trace.EndSpan(ctx, err) }()
+
 	if b.err != nil {
 		return nil, b.err
 	}
 	if len(b.writes) == 0 {
 		return nil, errors.New("firestore: cannot commit empty WriteBatch")
 	}
-	db := b.c.path()
-	res, err := b.c.c.Commit(withResourceHeader(ctx, db), &pb.CommitRequest{
-		Database: db,
-		Writes:   b.writes,
-	})
-	if err != nil {
-		return nil, err
-	}
-	var wrs []*WriteResult
-	for _, pwr := range res.WriteResults {
-		wr, err := writeResultFromProto(pwr)
-		if err != nil {
-			return nil, err
-		}
-		wrs = append(wrs, wr)
-	}
-	return wrs, nil
+	return b.c.commit(ctx, b.writes)
 }

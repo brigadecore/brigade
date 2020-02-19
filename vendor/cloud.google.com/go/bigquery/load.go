@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@
 package bigquery
 
 import (
+	"context"
 	"io"
 
-	"golang.org/x/net/context"
+	"cloud.google.com/go/internal/trace"
 	bq "google.golang.org/api/bigquery/v2"
 )
 
@@ -42,16 +43,39 @@ type LoadConfig struct {
 
 	// If non-nil, the destination table is partitioned by time.
 	TimePartitioning *TimePartitioning
+
+	// If non-nil, the destination table is partitioned by integer range.
+	RangePartitioning *RangePartitioning
+
+	// Clustering specifies the data clustering configuration for the destination table.
+	Clustering *Clustering
+
+	// Custom encryption configuration (e.g., Cloud KMS keys).
+	DestinationEncryptionConfig *EncryptionConfig
+
+	// Allows the schema of the destination table to be updated as a side effect of
+	// the load job.
+	SchemaUpdateOptions []string
+
+	// For Avro-based loads, controls whether logical type annotations are used.
+	// See https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-avro#logical_types
+	// for additional information.
+	UseAvroLogicalTypes bool
 }
 
 func (l *LoadConfig) toBQ() (*bq.JobConfiguration, io.Reader) {
 	config := &bq.JobConfiguration{
 		Labels: l.Labels,
 		Load: &bq.JobConfigurationLoad{
-			CreateDisposition: string(l.CreateDisposition),
-			WriteDisposition:  string(l.WriteDisposition),
-			DestinationTable:  l.Dst.toBQ(),
-			TimePartitioning:  l.TimePartitioning.toBQ(),
+			CreateDisposition:                  string(l.CreateDisposition),
+			WriteDisposition:                   string(l.WriteDisposition),
+			DestinationTable:                   l.Dst.toBQ(),
+			TimePartitioning:                   l.TimePartitioning.toBQ(),
+			RangePartitioning:                  l.RangePartitioning.toBQ(),
+			Clustering:                         l.Clustering.toBQ(),
+			DestinationEncryptionConfiguration: l.DestinationEncryptionConfig.toBQ(),
+			SchemaUpdateOptions:                l.SchemaUpdateOptions,
+			UseAvroLogicalTypes:                l.UseAvroLogicalTypes,
 		},
 	}
 	media := l.Src.populateLoadConfig(config.Load)
@@ -60,11 +84,16 @@ func (l *LoadConfig) toBQ() (*bq.JobConfiguration, io.Reader) {
 
 func bqToLoadConfig(q *bq.JobConfiguration, c *Client) *LoadConfig {
 	lc := &LoadConfig{
-		Labels:            q.Labels,
-		CreateDisposition: TableCreateDisposition(q.Load.CreateDisposition),
-		WriteDisposition:  TableWriteDisposition(q.Load.WriteDisposition),
-		Dst:               bqToTable(q.Load.DestinationTable, c),
-		TimePartitioning:  bqToTimePartitioning(q.Load.TimePartitioning),
+		Labels:                      q.Labels,
+		CreateDisposition:           TableCreateDisposition(q.Load.CreateDisposition),
+		WriteDisposition:            TableWriteDisposition(q.Load.WriteDisposition),
+		Dst:                         bqToTable(q.Load.DestinationTable, c),
+		TimePartitioning:            bqToTimePartitioning(q.Load.TimePartitioning),
+		RangePartitioning:           bqToRangePartitioning(q.Load.RangePartitioning),
+		Clustering:                  bqToClustering(q.Load.Clustering),
+		DestinationEncryptionConfig: bqToEncryptionConfig(q.Load.DestinationEncryptionConfiguration),
+		SchemaUpdateOptions:         q.Load.SchemaUpdateOptions,
+		UseAvroLogicalTypes:         q.Load.UseAvroLogicalTypes,
 	}
 	var fc *FileConfig
 	if len(q.Load.SourceUris) == 0 {
@@ -112,7 +141,10 @@ func (t *Table) LoaderFrom(src LoadSource) *Loader {
 }
 
 // Run initiates a load job.
-func (l *Loader) Run(ctx context.Context) (*Job, error) {
+func (l *Loader) Run(ctx context.Context) (j *Job, err error) {
+	ctx = trace.StartSpan(ctx, "cloud.google.com/go/bigquery.Load.Run")
+	defer func() { trace.EndSpan(ctx, err) }()
+
 	job, media := l.newJob()
 	return l.c.insertJob(ctx, job, media)
 }
@@ -120,7 +152,7 @@ func (l *Loader) Run(ctx context.Context) (*Job, error) {
 func (l *Loader) newJob() (*bq.Job, io.Reader) {
 	config, media := l.LoadConfig.toBQ()
 	return &bq.Job{
-		JobReference:  l.JobIDConfig.createJobRef(l.c.projectID),
+		JobReference:  l.JobIDConfig.createJobRef(l.c),
 		Configuration: config,
 	}, media
 }

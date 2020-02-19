@@ -1,4 +1,4 @@
-// Copyright 2015 Google Inc. All Rights Reserved.
+// Copyright 2015 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@
 package bigquery
 
 import (
+	"context"
 	"errors"
 
-	"golang.org/x/net/context"
+	"cloud.google.com/go/internal/trace"
 	bq "google.golang.org/api/bigquery/v2"
 )
 
@@ -100,6 +101,17 @@ type QueryConfig struct {
 	// It is illegal to mix positional and named syntax.
 	Parameters []QueryParameter
 
+	// TimePartitioning specifies time-based partitioning
+	// for the destination table.
+	TimePartitioning *TimePartitioning
+
+	// RangePartitioning specifies integer range-based partitioning
+	// for the destination table.
+	RangePartitioning *RangePartitioning
+
+	// Clustering specifies the data clustering configuration for the destination table.
+	Clustering *Clustering
+
 	// The labels associated with this job.
 	Labels map[string]string
 
@@ -111,16 +123,28 @@ type QueryConfig struct {
 	// call LastStatus on the returned job to get statistics. Calling Status on a
 	// dry-run job will fail.
 	DryRun bool
+
+	// Custom encryption configuration (e.g., Cloud KMS keys).
+	DestinationEncryptionConfig *EncryptionConfig
+
+	// Allows the schema of the destination table to be updated as a side effect of
+	// the query job.
+	SchemaUpdateOptions []string
 }
 
 func (qc *QueryConfig) toBQ() (*bq.JobConfiguration, error) {
 	qconf := &bq.JobConfigurationQuery{
-		Query:              qc.Q,
-		CreateDisposition:  string(qc.CreateDisposition),
-		WriteDisposition:   string(qc.WriteDisposition),
-		AllowLargeResults:  qc.AllowLargeResults,
-		Priority:           string(qc.Priority),
-		MaximumBytesBilled: qc.MaxBytesBilled,
+		Query:                              qc.Q,
+		CreateDisposition:                  string(qc.CreateDisposition),
+		WriteDisposition:                   string(qc.WriteDisposition),
+		AllowLargeResults:                  qc.AllowLargeResults,
+		Priority:                           string(qc.Priority),
+		MaximumBytesBilled:                 qc.MaxBytesBilled,
+		TimePartitioning:                   qc.TimePartitioning.toBQ(),
+		RangePartitioning:                  qc.RangePartitioning.toBQ(),
+		Clustering:                         qc.Clustering.toBQ(),
+		DestinationEncryptionConfiguration: qc.DestinationEncryptionConfig.toBQ(),
+		SchemaUpdateOptions:                qc.SchemaUpdateOptions,
 	}
 	if len(qc.TableDefinitions) > 0 {
 		qconf.TableDefinitions = make(map[string]bq.ExternalDataConfiguration)
@@ -152,11 +176,12 @@ func (qc *QueryConfig) toBQ() (*bq.JobConfiguration, error) {
 	if len(qc.Parameters) > 0 && qc.UseLegacySQL {
 		return nil, errors.New("bigquery: cannot provide both Parameters (implying standard SQL) and UseLegacySQL")
 	}
+	ptrue := true
+	pfalse := false
 	if qc.UseLegacySQL {
-		qconf.UseLegacySql = true
+		qconf.UseLegacySql = &ptrue
 	} else {
-		qconf.UseLegacySql = false
-		qconf.ForceSendFields = append(qconf.ForceSendFields, "UseLegacySql")
+		qconf.UseLegacySql = &pfalse
 	}
 	if qc.Dst != nil && !qc.Dst.implicitTable() {
 		qconf.DestinationTable = qc.Dst.toBQ()
@@ -178,17 +203,23 @@ func (qc *QueryConfig) toBQ() (*bq.JobConfiguration, error) {
 func bqToQueryConfig(q *bq.JobConfiguration, c *Client) (*QueryConfig, error) {
 	qq := q.Query
 	qc := &QueryConfig{
-		Labels:            q.Labels,
-		DryRun:            q.DryRun,
-		Q:                 qq.Query,
-		CreateDisposition: TableCreateDisposition(qq.CreateDisposition),
-		WriteDisposition:  TableWriteDisposition(qq.WriteDisposition),
-		AllowLargeResults: qq.AllowLargeResults,
-		Priority:          QueryPriority(qq.Priority),
-		MaxBytesBilled:    qq.MaximumBytesBilled,
-		UseLegacySQL:      qq.UseLegacySql,
-		UseStandardSQL:    !qq.UseLegacySql,
+		Labels:                      q.Labels,
+		DryRun:                      q.DryRun,
+		Q:                           qq.Query,
+		CreateDisposition:           TableCreateDisposition(qq.CreateDisposition),
+		WriteDisposition:            TableWriteDisposition(qq.WriteDisposition),
+		AllowLargeResults:           qq.AllowLargeResults,
+		Priority:                    QueryPriority(qq.Priority),
+		MaxBytesBilled:              qq.MaximumBytesBilled,
+		UseLegacySQL:                qq.UseLegacySql == nil || *qq.UseLegacySql,
+		TimePartitioning:            bqToTimePartitioning(qq.TimePartitioning),
+		RangePartitioning:           bqToRangePartitioning(qq.RangePartitioning),
+		Clustering:                  bqToClustering(qq.Clustering),
+		DestinationEncryptionConfig: bqToEncryptionConfig(qq.DestinationEncryptionConfiguration),
+		SchemaUpdateOptions:         qq.SchemaUpdateOptions,
 	}
+	qc.UseStandardSQL = !qc.UseLegacySQL
+
 	if len(qq.TableDefinitions) > 0 {
 		qc.TableDefinitions = make(map[string]ExternalData)
 	}
@@ -229,7 +260,23 @@ func bqToQueryConfig(q *bq.JobConfiguration, c *Client) (*QueryConfig, error) {
 type QueryPriority string
 
 const (
-	BatchPriority       QueryPriority = "BATCH"
+	// BatchPriority specifies that the query should be scheduled with the
+	// batch priority.  BigQuery queues each batch query on your behalf, and
+	// starts the query as soon as idle resources are available, usually within
+	// a few minutes. If BigQuery hasn't started the query within 24 hours,
+	// BigQuery changes the job priority to interactive. Batch queries don't
+	// count towards your concurrent rate limit, which can make it easier to
+	// start many queries at once.
+	//
+	// More information can be found at https://cloud.google.com/bigquery/docs/running-queries#batchqueries.
+	BatchPriority QueryPriority = "BATCH"
+	// InteractivePriority specifies that the query should be scheduled with
+	// interactive priority, which means that the query is executed as soon as
+	// possible. Interactive queries count towards your concurrent rate limit
+	// and your daily limit. It is the default priority with which queries get
+	// executed.
+	//
+	// More information can be found at https://cloud.google.com/bigquery/docs/running-queries#queries.
 	InteractivePriority QueryPriority = "INTERACTIVE"
 )
 
@@ -250,12 +297,15 @@ func (c *Client) Query(q string) *Query {
 }
 
 // Run initiates a query job.
-func (q *Query) Run(ctx context.Context) (*Job, error) {
+func (q *Query) Run(ctx context.Context) (j *Job, err error) {
+	ctx = trace.StartSpan(ctx, "cloud.google.com/go/bigquery.Query.Run")
+	defer func() { trace.EndSpan(ctx, err) }()
+
 	job, err := q.newJob()
 	if err != nil {
 		return nil, err
 	}
-	j, err := q.client.insertJob(ctx, job, nil)
+	j, err = q.client.insertJob(ctx, job, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +318,7 @@ func (q *Query) newJob() (*bq.Job, error) {
 		return nil, err
 	}
 	return &bq.Job{
-		JobReference:  q.JobIDConfig.createJobRef(q.client.projectID),
+		JobReference:  q.JobIDConfig.createJobRef(q.client),
 		Configuration: config,
 	}, nil
 }

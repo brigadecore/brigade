@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@
 package firestore_test
 
 import (
+	"context"
 	"fmt"
 
 	"cloud.google.com/go/firestore"
-	"golang.org/x/net/context"
-
 	"google.golang.org/api/iterator"
 )
 
@@ -262,13 +261,13 @@ func ExampleDocumentRef_Set_merge() {
 	// To do a merging Set with struct data, specify the exact fields to overwrite.
 	// MergeAll is disallowed here, because it would probably be a mistake: the "capital"
 	// field would be overwritten with the empty string.
-	_, err = client.Doc("States/Alabama").Set(ctx, State{Population: 5.2}, firestore.Merge("pop"))
+	_, err = client.Doc("States/Alabama").Set(ctx, State{Population: 5.2}, firestore.Merge([]string{"pop"}))
 	if err != nil {
 		// TODO: Handle error.
 	}
 }
 
-func ExampleDocumentRef_UpdateMap() {
+func ExampleDocumentRef_Update() {
 	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, "project-id")
 	if err != nil {
@@ -277,50 +276,9 @@ func ExampleDocumentRef_UpdateMap() {
 	defer client.Close()
 
 	tenn := client.Doc("States/Tennessee")
-	wr, err := tenn.UpdateMap(ctx, map[string]interface{}{"pop": 6.6})
-	if err != nil {
-		// TODO: Handle error.
-	}
-	fmt.Println(wr.UpdateTime)
-}
-
-func ExampleDocumentRef_UpdateStruct() {
-	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, "project-id")
-	if err != nil {
-		// TODO: Handle error.
-	}
-	defer client.Close()
-
-	type State struct {
-		Capital    string  `firestore:"capital"`
-		Population float64 `firestore:"pop"` // in millions
-	}
-
-	tenn := client.Doc("States/Tennessee")
-	wr, err := tenn.UpdateStruct(ctx, []string{"pop"}, State{
-		Capital:    "does not matter",
-		Population: 6.6,
-	})
-	if err != nil {
-		// TODO: Handle error.
-	}
-	fmt.Println(wr.UpdateTime)
-}
-
-func ExampleDocumentRef_UpdatePaths() {
-	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, "project-id")
-	if err != nil {
-		// TODO: Handle error.
-	}
-	defer client.Close()
-
-	tenn := client.Doc("States/Tennessee")
-	wr, err := tenn.UpdatePaths(ctx, []firestore.FieldPathUpdate{
-		{Path: []string{"pop"}, Value: 6.6},
-		// This odd field path cannot be expressed using the dot-separated form:
-		{Path: []string{".", "*", "/"}, Value: "odd"},
+	wr, err := tenn.Update(ctx, []firestore.Update{
+		{Path: "pop", Value: 6.6},
+		{FieldPath: []string{".", "*", "/"}, Value: "odd"},
 	})
 	if err != nil {
 		// TODO: Handle error.
@@ -355,6 +313,24 @@ func ExampleDocumentRef_Get() {
 		// TODO: Handle error.
 	}
 	_ = docsnap // TODO: Use DocumentSnapshot.
+}
+
+func ExampleDocumentRef_Snapshots() {
+	ctx := context.Background()
+	client, err := firestore.NewClient(ctx, "project-id")
+	if err != nil {
+		// TODO: Handle error.
+	}
+	defer client.Close()
+	iter := client.Doc("States/Idaho").Snapshots(ctx)
+	defer iter.Stop()
+	for {
+		docsnap, err := iter.Next()
+		if err != nil {
+			// TODO: Handle error.
+		}
+		_ = docsnap // TODO: Use DocumentSnapshot.
+	}
 }
 
 func ExampleDocumentSnapshot_Data() {
@@ -479,6 +455,34 @@ func ExampleQuery_Documents_path_methods() {
 	_ = iter2 // TODO: Use iter2.
 }
 
+func ExampleQuery_Snapshots() {
+	ctx := context.Background()
+	client, err := firestore.NewClient(ctx, "project-id")
+	if err != nil {
+		// TODO: Handle error.
+	}
+	defer client.Close()
+
+	q := client.Collection("States").
+		Where("pop", ">", 10).
+		OrderBy("pop", firestore.Desc).
+		Limit(10)
+	qsnapIter := q.Snapshots(ctx)
+	// Listen forever for changes to the query's results.
+	for {
+		qsnap, err := qsnapIter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			// TODO: Handle error.
+		}
+		fmt.Printf("At %s there were %d results.\n", qsnap.ReadTime, qsnap.Size)
+		_ = qsnap.Documents // TODO: Iterate over the results if desired.
+		_ = qsnap.Changes   // TODO: Use the list of incremental changes if desired.
+	}
+}
+
 func ExampleDocumentIterator_Next() {
 	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, "project-id")
@@ -491,6 +495,7 @@ func ExampleDocumentIterator_Next() {
 		Where("pop", ">", 10).
 		OrderBy("pop", firestore.Desc)
 	iter := q.Documents(ctx)
+	defer iter.Stop()
 	for {
 		doc, err := iter.Next()
 		if err == iterator.Done {
@@ -542,11 +547,125 @@ func ExampleClient_RunTransaction() {
 		if err != nil {
 			return err
 		}
-		return tx.UpdateMap(nm, map[string]interface{}{
-			"pop": pop.(float64) + 0.2,
-		})
+		return tx.Update(nm, []firestore.Update{{Path: "pop", Value: pop.(float64) + 0.2}})
 	})
 	if err != nil {
 		// TODO: Handle error.
 	}
+}
+
+func ExampleArrayUnion_create() {
+	ctx := context.Background()
+	client, err := firestore.NewClient(ctx, "project-id")
+	if err != nil {
+		// TODO: Handle error.
+	}
+	defer client.Close()
+
+	wr, err := client.Doc("States/Colorado").Create(ctx, map[string]interface{}{
+		"cities": firestore.ArrayUnion("Denver", "Golden", "Boulder"),
+		"pop":    5.5,
+	})
+	if err != nil {
+		// TODO: Handle error.
+	}
+	fmt.Println(wr.UpdateTime)
+}
+
+func ExampleArrayUnion_update() {
+	ctx := context.Background()
+	client, err := firestore.NewClient(ctx, "project-id")
+	if err != nil {
+		// TODO: Handle error.
+	}
+	defer client.Close()
+
+	co := client.Doc("States/Colorado")
+	wr, err := co.Update(ctx, []firestore.Update{
+		{Path: "cities", Value: firestore.ArrayUnion("Broomfield")},
+	})
+	if err != nil {
+		// TODO: Handle error.
+	}
+	fmt.Println(wr.UpdateTime)
+}
+
+func ExampleArrayRemove_update() {
+	ctx := context.Background()
+	client, err := firestore.NewClient(ctx, "project-id")
+	if err != nil {
+		// TODO: Handle error.
+	}
+	defer client.Close()
+
+	co := client.Doc("States/Colorado")
+	wr, err := co.Update(ctx, []firestore.Update{
+		{Path: "cities", Value: firestore.ArrayRemove("Denver")},
+	})
+	if err != nil {
+		// TODO: Handle error.
+	}
+	fmt.Println(wr.UpdateTime)
+}
+
+func ExampleIncrement_create() {
+	ctx := context.Background()
+	client, err := firestore.NewClient(ctx, "project-id")
+	if err != nil {
+		// TODO: Handle error.
+	}
+	defer client.Close()
+
+	wr, err := client.Doc("States/Colorado").Create(ctx, map[string]interface{}{
+		"cities": []string{"Denver", "Golden", "Boulder"},
+		"pop":    firestore.Increment(7), // "pop" will be set to 7.
+	})
+	if err != nil {
+		// TODO: Handle error.
+	}
+	fmt.Println(wr.UpdateTime)
+}
+
+func ExampleIncrement_update() {
+	ctx := context.Background()
+	client, err := firestore.NewClient(ctx, "project-id")
+	if err != nil {
+		// TODO: Handle error.
+	}
+	defer client.Close()
+
+	co := client.Doc("States/Colorado")
+	wr, err := co.Update(ctx, []firestore.Update{
+		{Path: "pop", Value: firestore.Increment(7)}, // "pop" will incremented by 7.
+	})
+	if err != nil {
+		// TODO: Handle error.
+	}
+	fmt.Println(wr.UpdateTime)
+}
+
+func ExampleClient_CollectionGroup() {
+	// Given:
+	// France/Cities/Paris = {population: 100}
+	// Canada/Cities/Montreal = {population: 95}
+
+	ctx := context.Background()
+	client, err := firestore.NewClient(ctx, "project-id")
+	if err != nil {
+		// TODO: Handle error.
+	}
+	defer client.Close()
+
+	// Query for ANY city with >95 pop, regardless of country.
+	docs, err := client.CollectionGroup("Cities").
+		Where("pop", ">", 95).
+		OrderBy("pop", firestore.Desc).
+		Limit(10).
+		Documents(ctx).
+		GetAll()
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	_ = docs // TODO: Use docs.
 }

@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -90,5 +90,27 @@ func TestRace(t *testing.T) {
 		if p := d.Percentile(0.5); p > N {
 			t.Fatalf("d.Percentile(0.5)=%d, expected to be at most %d", p, N)
 		}
+	}
+}
+
+func BenchmarkDistribution(b *testing.B) {
+	const N int = 1e3
+
+	d := New(N)
+	for i := 0; i < N; i++ {
+		d.Record(i)
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	var index int
+	for i := 0; i < b.N; i++ {
+		if index = d.Percentile(0.5); index < 0 {
+			b.Fatalf("Invalid index: %d", index)
+		}
+	}
+	if index == 0 {
+		b.Fatal("Benchmark did not run")
 	}
 }

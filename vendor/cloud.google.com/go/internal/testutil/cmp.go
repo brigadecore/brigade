@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,8 @@
 package testutil
 
 import (
-	"fmt"
 	"math"
-	"reflect"
-	"unicode"
-	"unicode/utf8"
+	"math/big"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
@@ -31,6 +28,13 @@ var (
 	defaultCmpOptions = []cmp.Option{
 		// Use proto.Equal for protobufs
 		cmp.Comparer(proto.Equal),
+		// Use big.Rat.Cmp for big.Rats
+		cmp.Comparer(func(x, y *big.Rat) bool {
+			if x == nil || y == nil {
+				return x == y
+			}
+			return x.Cmp(y) == 0
+		}),
 		// NaNs compare equal
 		cmp.FilterValues(func(x, y float64) bool {
 			return math.IsNaN(x) && math.IsNaN(y)
@@ -54,46 +58,4 @@ func Diff(x, y interface{}, opts ...cmp.Option) string {
 	// Put default options at the end. Order doesn't matter.
 	opts = append(opts[:len(opts):len(opts)], defaultCmpOptions...)
 	return cmp.Diff(x, y, opts...)
-}
-
-// TODO(jba): remove the code below when cmpopts becomes available.
-
-// IgnoreUnexported returns an Option that only ignores the immediate unexported
-// fields of a struct, including anonymous fields of unexported types.
-// In particular, unexported fields within the struct's exported fields
-// of struct types, including anonymous fields, will not be ignored unless the
-// type of the field itself is also passed to IgnoreUnexported.
-func IgnoreUnexported(typs ...interface{}) cmp.Option {
-	ux := newUnexportedFilter(typs...)
-	return cmp.FilterPath(ux.filter, cmp.Ignore())
-}
-
-type unexportedFilter struct{ m map[reflect.Type]bool }
-
-func newUnexportedFilter(typs ...interface{}) unexportedFilter {
-	ux := unexportedFilter{m: make(map[reflect.Type]bool)}
-	for _, typ := range typs {
-		t := reflect.TypeOf(typ)
-		if t == nil || t.Kind() != reflect.Struct {
-			panic(fmt.Sprintf("invalid struct type: %T", typ))
-		}
-		ux.m[t] = true
-	}
-	return ux
-}
-func (xf unexportedFilter) filter(p cmp.Path) bool {
-	if len(p) < 2 {
-		return false
-	}
-	sf, ok := p[len(p)-1].(cmp.StructField)
-	if !ok {
-		return false
-	}
-	return xf.m[p[len(p)-2].Type()] && !isExported(sf.Name())
-}
-
-// isExported reports whether the identifier is exported.
-func isExported(id string) bool {
-	r, _ := utf8.DecodeRuneInString(id)
-	return unicode.IsUpper(r)
 }

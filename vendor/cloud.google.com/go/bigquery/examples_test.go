@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
 package bigquery_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
 )
 
@@ -127,6 +127,23 @@ func ExampleClient_Query_parameters() {
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "user", Value: "Elizabeth"},
 	}
+	// TODO: set other options on the Query.
+	// TODO: Call Query.Run or Query.Read.
+}
+
+// This example demonstrates how to run a query job on a table
+// with a customer-managed encryption key. The same
+// applies to load and copy jobs as well.
+func ExampleClient_Query_encryptionKey() {
+	ctx := context.Background()
+	client, err := bigquery.NewClient(ctx, "project-id")
+	if err != nil {
+		// TODO: Handle error.
+	}
+	q := client.Query("select name, num from t1")
+	// TODO: Replace this key with a key you have created in Cloud KMS.
+	keyName := "projects/P/locations/L/keyRings/R/cryptoKeys/K"
+	q.DestinationEncryptionConfig = &bigquery.EncryptionConfig{KMSKeyName: keyName}
 	// TODO: set other options on the Query.
 	// TODO: Call Query.Run or Query.Read.
 }
@@ -395,10 +412,12 @@ func ExampleInferSchema() {
 
 func ExampleInferSchema_tags() {
 	type Item struct {
-		Name   string
-		Size   float64
-		Count  int    `bigquery:"number"`
-		Secret []byte `bigquery:"-"`
+		Name     string
+		Size     float64
+		Count    int    `bigquery:"number"`
+		Secret   []byte `bigquery:"-"`
+		Optional bigquery.NullBool
+		OptBytes []byte `bigquery:",nullable"`
 	}
 	schema, err := bigquery.InferSchema(Item{})
 	if err != nil {
@@ -406,12 +425,14 @@ func ExampleInferSchema_tags() {
 		// TODO: Handle error.
 	}
 	for _, fs := range schema {
-		fmt.Println(fs.Name, fs.Type)
+		fmt.Println(fs.Name, fs.Type, fs.Required)
 	}
 	// Output:
-	// Name STRING
-	// Size FLOAT
-	// number INTEGER
+	// Name STRING true
+	// Size FLOAT true
+	// number INTEGER true
+	// Optional BOOLEAN false
+	// OptBytes BYTES false
 }
 
 func ExampleTable_Create() {
@@ -449,6 +470,33 @@ func ExampleTable_Create_initialize() {
 	}
 }
 
+// This example demonstrates how to create a table with
+// a customer-managed encryption key.
+func ExampleTable_Create_encryptionKey() {
+	ctx := context.Background()
+	// Infer table schema from a Go type.
+	schema, err := bigquery.InferSchema(Item{})
+	if err != nil {
+		// TODO: Handle error.
+	}
+	client, err := bigquery.NewClient(ctx, "project-id")
+	if err != nil {
+		// TODO: Handle error.
+	}
+	t := client.Dataset("my_dataset").Table("new-table")
+
+	// TODO: Replace this key with a key you have created in Cloud KMS.
+	keyName := "projects/P/locations/L/keyRings/R/cryptoKeys/K"
+	if err := t.Create(ctx,
+		&bigquery.TableMetadata{
+			Name:             "My New Table",
+			Schema:           schema,
+			EncryptionConfig: &bigquery.EncryptionConfig{KMSKeyName: keyName},
+		}); err != nil {
+		// TODO: Handle error.
+	}
+}
+
 func ExampleTable_Delete() {
 	ctx := context.Background()
 	client, err := bigquery.NewClient(ctx, "project-id")
@@ -473,26 +521,26 @@ func ExampleTable_Metadata() {
 	fmt.Println(md)
 }
 
-func ExampleTable_Uploader() {
+func ExampleTable_Inserter() {
 	ctx := context.Background()
 	client, err := bigquery.NewClient(ctx, "project-id")
 	if err != nil {
 		// TODO: Handle error.
 	}
-	u := client.Dataset("my_dataset").Table("my_table").Uploader()
-	_ = u // TODO: Use u.
+	ins := client.Dataset("my_dataset").Table("my_table").Inserter()
+	_ = ins // TODO: Use ins.
 }
 
-func ExampleTable_Uploader_options() {
+func ExampleTable_Inserter_options() {
 	ctx := context.Background()
 	client, err := bigquery.NewClient(ctx, "project-id")
 	if err != nil {
 		// TODO: Handle error.
 	}
-	u := client.Dataset("my_dataset").Table("my_table").Uploader()
-	u.SkipInvalidRows = true
-	u.IgnoreUnknownValues = true
-	_ = u // TODO: Use u.
+	ins := client.Dataset("my_dataset").Table("my_table").Inserter()
+	ins.SkipInvalidRows = true
+	ins.IgnoreUnknownValues = true
+	_ = ins // TODO: Use ins.
 }
 
 func ExampleTable_CopierFrom() {
@@ -689,33 +737,33 @@ func (i *Item) Save() (map[string]bigquery.Value, string, error) {
 	}, "", nil
 }
 
-func ExampleUploader_Put() {
+func ExampleInserter_Put() {
 	ctx := context.Background()
 	client, err := bigquery.NewClient(ctx, "project-id")
 	if err != nil {
 		// TODO: Handle error.
 	}
-	u := client.Dataset("my_dataset").Table("my_table").Uploader()
+	ins := client.Dataset("my_dataset").Table("my_table").Inserter()
 	// Item implements the ValueSaver interface.
 	items := []*Item{
 		{Name: "n1", Size: 32.6, Count: 7},
 		{Name: "n2", Size: 4, Count: 2},
 		{Name: "n3", Size: 101.5, Count: 1},
 	}
-	if err := u.Put(ctx, items); err != nil {
+	if err := ins.Put(ctx, items); err != nil {
 		// TODO: Handle error.
 	}
 }
 
 var schema bigquery.Schema
 
-func ExampleUploader_Put_structSaver() {
+func ExampleInserter_Put_structSaver() {
 	ctx := context.Background()
 	client, err := bigquery.NewClient(ctx, "project-id")
 	if err != nil {
 		// TODO: Handle error.
 	}
-	u := client.Dataset("my_dataset").Table("my_table").Uploader()
+	ins := client.Dataset("my_dataset").Table("my_table").Inserter()
 
 	type score struct {
 		Name string
@@ -728,18 +776,18 @@ func ExampleUploader_Put_structSaver() {
 		{Struct: score{Name: "n2", Num: 31}, Schema: schema, InsertID: "id2"},
 		{Struct: score{Name: "n3", Num: 7}, Schema: schema, InsertID: "id3"},
 	}
-	if err := u.Put(ctx, savers); err != nil {
+	if err := ins.Put(ctx, savers); err != nil {
 		// TODO: Handle error.
 	}
 }
 
-func ExampleUploader_Put_struct() {
+func ExampleInserter_Put_struct() {
 	ctx := context.Background()
 	client, err := bigquery.NewClient(ctx, "project-id")
 	if err != nil {
 		// TODO: Handle error.
 	}
-	u := client.Dataset("my_dataset").Table("my_table").Uploader()
+	ins := client.Dataset("my_dataset").Table("my_table").Inserter()
 
 	type score struct {
 		Name string
@@ -751,7 +799,31 @@ func ExampleUploader_Put_struct() {
 		{Name: "n3", Num: 7},
 	}
 	// Schema is inferred from the score type.
-	if err := u.Put(ctx, scores); err != nil {
+	if err := ins.Put(ctx, scores); err != nil {
+		// TODO: Handle error.
+	}
+}
+
+func ExampleInserter_Put_valuesSaver() {
+	ctx := context.Background()
+	client, err := bigquery.NewClient(ctx, "project-id")
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	ins := client.Dataset("my_dataset").Table("my_table").Inserter()
+
+	var vss []*bigquery.ValuesSaver
+	for i, name := range []string{"n1", "n2", "n3"} {
+		// Assume schema holds the table's schema.
+		vss = append(vss, &bigquery.ValuesSaver{
+			Schema:   schema,
+			InsertID: name,
+			Row:      []bigquery.Value{name, int64(i)},
+		})
+	}
+
+	if err := ins.Put(ctx, vss); err != nil {
 		// TODO: Handle error.
 	}
 }

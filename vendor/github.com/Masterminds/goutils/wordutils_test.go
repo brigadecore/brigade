@@ -18,6 +18,64 @@ func TestWrapNormalWord(t *testing.T) {
 	}
 }
 
+func TestWrapNormalWord2(t *testing.T) {
+
+	in := "Here is one line of text that is going to be wrapped after 20 columns."
+	out := "Here is one line of\ntext that is going\nto be wrapped after\n20 columns."
+	wrapLength := 20
+
+	if x := Wrap(in, wrapLength); x != out {
+		t.Errorf("Wrap(%v) = %v, want %v", in, x, out)
+	}
+}
+
+func TestWrapNormalWord3(t *testing.T) {
+
+	in := "Click here to jump to the commons website - http://commons.apache.org"
+	out := "Click here to jump\nto the commons\nwebsite -\nhttp://commons.apache.org"
+	wrapLength := 20
+
+	if x := Wrap(in, wrapLength); x != out {
+		t.Errorf("Wrap(%v) = %v, want %v", in, x, out)
+	}
+}
+
+func TestWrapNormalWord4(t *testing.T) {
+
+	in := "Click here, http://commons.apache.org, to jump to the commons website"
+	out := "Click here,\nhttp://commons.apache.org,\nto jump to the\ncommons website"
+	wrapLength := 20
+
+	if x := Wrap(in, wrapLength); x != out {
+		t.Errorf("Wrap(%v) = %v, want %v", in, x, out)
+	}
+}
+
+
+func TestNonWrapLongWord(t *testing.T) {
+	in := "123456789_123456789_123456789_123456789_1234567890"
+	out := "123456789_123456789_123456789_123456789_1234567890"
+	wrapLength := 11
+	newLineStr := "\n"
+	wrapLongWords := false
+
+	if x := WrapCustom(in, wrapLength, newLineStr, wrapLongWords); x != out {
+		t.Errorf("Wrap(%v) = %v, want %v", in, x, out)
+	}
+}
+
+func TestWrapLongWord(t *testing.T) {
+	in := "123456789_123456789_123456789_123456789_1234567890"
+	out := "123456789_1\n23456789_12\n3456789_123\n456789_1234\n567890"
+	wrapLength := 11
+	newLineStr := "\n"
+	wrapLongWords := true
+
+	if x := WrapCustom(in, wrapLength, newLineStr, wrapLongWords); x != out {
+		t.Errorf("Wrap(%v) = %v, want %v", in, x, out)
+	}
+}
+
 func TestWrapCustomLongWordFalse(t *testing.T) {
 
 	in := "BobManuelBob Bob"

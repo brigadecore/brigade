@@ -1,4 +1,4 @@
-// Copyright 2015 Google Inc. All Rights Reserved.
+// Copyright 2015 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,14 +15,12 @@
 package bigquery
 
 import (
+	"context"
 	"errors"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-
 	"cloud.google.com/go/internal/testutil"
-
-	"golang.org/x/net/context"
+	"github.com/google/go-cmp/cmp"
 	bq "google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/iterator"
 )
@@ -56,8 +54,8 @@ func (s *pageFetcherReadStub) fetchPage(ctx context.Context, t *Table, schema Sc
 	return result, nil
 }
 
-func waitForQueryStub(context.Context, string) (Schema, error) {
-	return nil, nil
+func waitForQueryStub(context.Context, string) (Schema, uint64, error) {
+	return nil, 1, nil
 }
 
 func TestRead(t *testing.T) {
@@ -156,7 +154,7 @@ func TestNoMoreValues(t *testing.T) {
 	}
 }
 
-var errBang = errors.New("bang!")
+var errBang = errors.New("bang")
 
 func errorFetchPage(context.Context, *Table, Schema, uint64, int64, string) (*fetchPageResult, error) {
 	return nil, errBang

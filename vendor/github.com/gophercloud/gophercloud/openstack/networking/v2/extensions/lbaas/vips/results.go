@@ -125,7 +125,7 @@ type commonResult struct {
 // Extract is a function that accepts a result and extracts a VirtualIP.
 func (r commonResult) Extract() (*VirtualIP, error) {
 	var s struct {
-		VirtualIP *VirtualIP `json:"vip" json:"vip"`
+		VirtualIP *VirtualIP `json:"vip"`
 	}
 	err := r.ExtractInto(&s)
 	return s.VirtualIP, err

@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,17 +15,17 @@
 package bigquery
 
 import (
+	"context"
 	"errors"
 	"math"
+	"math/big"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-
 	"cloud.google.com/go/civil"
 	"cloud.google.com/go/internal/testutil"
-	"golang.org/x/net/context"
+	"github.com/google/go-cmp/cmp"
 	bq "google.golang.org/api/bigquery/v2"
 )
 
@@ -45,11 +45,12 @@ var scalarTests = []struct {
 	{time.Date(2016, 3, 20, 4, 22, 9, 5000, time.FixedZone("neg1-2", -3720)),
 		"2016-03-20 04:22:09.000005-01:02",
 		timestampParamType},
-	{civil.Date{2016, 3, 20}, "2016-03-20", dateParamType},
-	{civil.Time{4, 5, 6, 789000000}, "04:05:06.789000", timeParamType},
-	{civil.DateTime{civil.Date{2016, 3, 20}, civil.Time{4, 5, 6, 789000000}},
+	{civil.Date{Year: 2016, Month: 3, Day: 20}, "2016-03-20", dateParamType},
+	{civil.Time{Hour: 4, Minute: 5, Second: 6, Nanosecond: 789000000}, "04:05:06.789000", timeParamType},
+	{civil.DateTime{Date: civil.Date{Year: 2016, Month: 3, Day: 20}, Time: civil.Time{Hour: 4, Minute: 5, Second: 6, Nanosecond: 789000000}},
 		"2016-03-20 04:05:06.789000",
 		dateTimeParamType},
+	{big.NewRat(12345, 1000), "12.345000000", numericParamType},
 }
 
 type (
@@ -60,7 +61,6 @@ type (
 	}
 	S2 struct {
 		D string
-		e int
 	}
 )
 
@@ -88,7 +88,7 @@ var (
 	s1ParamValue = bq.QueryParameterValue{
 		StructValues: map[string]bq.QueryParameterValue{
 			"A": sval("1"),
-			"B": bq.QueryParameterValue{
+			"B": {
 				StructValues: map[string]bq.QueryParameterValue{
 					"D": sval("s"),
 				},
@@ -264,19 +264,18 @@ func TestConvertParamValue(t *testing.T) {
 }
 
 func TestIntegration_ScalarParam(t *testing.T) {
-	timeEqualMicrosec := cmp.Comparer(func(t1, t2 time.Time) bool {
-		return t1.Round(time.Microsecond).Equal(t2.Round(time.Microsecond))
-	})
+	roundToMicros := cmp.Transformer("RoundToMicros",
+		func(t time.Time) time.Time { return t.Round(time.Microsecond) })
 	c := getClient(t)
 	for _, test := range scalarTests {
 		gotData, gotParam, err := paramRoundTrip(c, test.val)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !testutil.Equal(gotData, test.val, timeEqualMicrosec) {
+		if !testutil.Equal(gotData, test.val, roundToMicros) {
 			t.Errorf("\ngot  %#v (%T)\nwant %#v (%T)", gotData, gotData, test.val, test.val)
 		}
-		if !testutil.Equal(gotParam, test.val, timeEqualMicrosec) {
+		if !testutil.Equal(gotParam, test.val, roundToMicros) {
 			t.Errorf("\ngot  %#v (%T)\nwant %#v (%T)", gotParam, gotParam, test.val, test.val)
 		}
 	}
@@ -359,4 +358,18 @@ func paramRoundTrip(c *Client, x interface{}) (data Value, param interface{}, er
 		return nil, nil, err
 	}
 	return val[0], conf.(*QueryConfig).Parameters[0].Value, nil
+}
+
+func TestQueryParameter_toBQ(t *testing.T) {
+	in := QueryParameter{Name: "name", Value: ""}
+	want := []string{"Value"}
+	q, err := in.toBQ()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	got := q.ParameterValue.ForceSendFields
+	if !cmp.Equal(want, got) {
+		t.Fatalf("want %v, got %v", want, got)
+	}
 }

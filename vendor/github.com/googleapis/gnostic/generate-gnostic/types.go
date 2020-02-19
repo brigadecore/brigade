@@ -82,7 +82,7 @@ func (typeProperty *TypeProperty) FieldName() string {
 	if propertyName == "$ref" {
 		return "XRef"
 	}
-	return strings.Title(propertyName)
+	return strings.Title(snakeCaseToCamelCase(propertyName))
 }
 
 // TypeModel models types.
@@ -129,4 +129,13 @@ func NewTypeModel() *TypeModel {
 	typeModel := &TypeModel{}
 	typeModel.Properties = make([]*TypeProperty, 0)
 	return typeModel
+}
+
+func (typeModel *TypeModel) IsRequired(propertyName string) bool {
+	for _, requiredName := range typeModel.Required {
+		if requiredName == propertyName {
+			return true
+		}
+	}
+	return false
 }

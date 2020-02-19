@@ -1,7 +1,22 @@
 package mocks
 
+// Copyright 2017 Microsoft Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -58,7 +73,12 @@ func NewRequestWithCloseBodyContent(c string) *http.Request {
 
 // NewRequestForURL instantiates a new request using the passed URL.
 func NewRequestForURL(u string) *http.Request {
-	r, err := http.NewRequest("GET", u, NewBody(""))
+	return NewRequestWithParams("GET", u, NewBody(""))
+}
+
+// NewRequestWithParams instantiates a new request using the provided parameters.
+func NewRequestWithParams(method, u string, body io.Reader) *http.Request {
+	r, err := http.NewRequest(method, u, body)
 	if err != nil {
 		panic(fmt.Sprintf("mocks: ERROR (%v) parsing testing URL %s", err, u))
 	}
@@ -68,6 +88,19 @@ func NewRequestForURL(u string) *http.Request {
 // NewResponse instantiates a new response.
 func NewResponse() *http.Response {
 	return NewResponseWithContent("")
+}
+
+// NewResponseWithBytes instantiates a new response with the passed bytes as the body content.
+func NewResponseWithBytes(input []byte) *http.Response {
+	return &http.Response{
+		Status:     "200 OK",
+		StatusCode: 200,
+		Proto:      "HTTP/1.0",
+		ProtoMajor: 1,
+		ProtoMinor: 0,
+		Body:       NewBodyWithBytes(input),
+		Request:    NewRequest(),
+	}
 }
 
 // NewResponseWithContent instantiates a new response with the passed string as the body content.
@@ -97,6 +130,7 @@ func NewResponseWithStatus(s string, c int) *http.Response {
 func NewResponseWithBodyAndStatus(body *Body, c int, s string) *http.Response {
 	resp := NewResponse()
 	resp.Body = body
+	resp.ContentLength = body.Length()
 	resp.Status = s
 	resp.StatusCode = c
 	return resp

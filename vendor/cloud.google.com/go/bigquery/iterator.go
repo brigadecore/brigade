@@ -1,4 +1,4 @@
-// Copyright 2015 Google Inc. All Rights Reserved.
+// Copyright 2015 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,24 +15,28 @@
 package bigquery
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
-	"golang.org/x/net/context"
 	bq "google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/iterator"
 )
 
+// Construct a RowIterator.
+// If pf is nil, there are no rows in the result set.
 func newRowIterator(ctx context.Context, t *Table, pf pageFetcher) *RowIterator {
 	it := &RowIterator{
 		ctx:   ctx,
 		table: t,
 		pf:    pf,
 	}
-	it.pageInfo, it.nextFunc = iterator.NewPageInfo(
-		it.fetch,
-		func() int { return len(it.rows) },
-		func() interface{} { r := it.rows; it.rows = nil; return r })
+	if pf != nil {
+		it.pageInfo, it.nextFunc = iterator.NewPageInfo(
+			it.fetch,
+			func() int { return len(it.rows) },
+			func() interface{} { r := it.rows; it.rows = nil; return r })
+	}
 	return it
 }
 
@@ -48,9 +52,14 @@ type RowIterator struct {
 	// is also set, StartIndex is ignored.
 	StartIndex uint64
 
-	rows [][]Value
+	// The schema of the table. Available after the first call to Next.
+	Schema Schema
 
-	schema       Schema       // populated on first call to fetch
+	// The total number of rows in the result. Available after the first call to Next.
+	// May be zero just after rows were inserted.
+	TotalRows uint64
+
+	rows         [][]Value
 	structLoader structLoader // used to populate a pointer to a struct
 }
 
@@ -60,7 +69,7 @@ type RowIterator struct {
 //
 // dst may implement ValueLoader, or may be a *[]Value, *map[string]Value, or struct pointer.
 //
-// If dst is a *[]Value, it will be set to to new []Value whose i'th element
+// If dst is a *[]Value, it will be set to new []Value whose i'th element
 // will be populated with the i'th column of the row.
 //
 // If dst is a *map[string]Value, a new map will be created if dst is nil. Then
@@ -88,9 +97,15 @@ type RowIterator struct {
 // type (RECORD or nested schema) corresponds to a nested struct or struct pointer.
 // All calls to Next on the same iterator must use the same struct type.
 //
-// It is an error to attempt to read a BigQuery NULL value into a struct field.
-// If your table contains NULLs, use a *[]Value or *map[string]Value.
+// It is an error to attempt to read a BigQuery NULL value into a struct field,
+// unless the field is of type []byte or is one of the special Null types: NullInt64,
+// NullFloat64, NullBool, NullString, NullTimestamp, NullDate, NullTime or
+// NullDateTime. You can also use a *[]Value or *map[string]Value to read from a
+// table with NULLs.
 func (it *RowIterator) Next(dst interface{}) error {
+	if it.pf == nil { // There are no rows in the result set.
+		return iterator.Done
+	}
 	var vl ValueLoader
 	switch dst := dst.(type) {
 	case ValueLoader:
@@ -113,12 +128,12 @@ func (it *RowIterator) Next(dst interface{}) error {
 	if vl == nil {
 		// This can only happen if dst is a pointer to a struct. We couldn't
 		// set vl above because we need the schema.
-		if err := it.structLoader.set(dst, it.schema); err != nil {
+		if err := it.structLoader.set(dst, it.Schema); err != nil {
 			return err
 		}
 		vl = &it.structLoader
 	}
-	return vl.Load(row, it.schema)
+	return vl.Load(row, it.Schema)
 }
 
 func isStructPtr(x interface{}) bool {
@@ -130,12 +145,13 @@ func isStructPtr(x interface{}) bool {
 func (it *RowIterator) PageInfo() *iterator.PageInfo { return it.pageInfo }
 
 func (it *RowIterator) fetch(pageSize int, pageToken string) (string, error) {
-	res, err := it.pf(it.ctx, it.table, it.schema, it.StartIndex, int64(pageSize), pageToken)
+	res, err := it.pf(it.ctx, it.table, it.Schema, it.StartIndex, int64(pageSize), pageToken)
 	if err != nil {
 		return "", err
 	}
 	it.rows = append(it.rows, res.rows...)
-	it.schema = res.schema
+	it.Schema = res.schema
+	it.TotalRows = res.totalRows
 	return res.pageToken, nil
 }
 

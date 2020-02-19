@@ -2,14 +2,15 @@ package ws
 
 import (
 	"bytes"
-	"github.com/docker/spdystream"
-	"github.com/gorilla/websocket"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/docker/spdystream"
+	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{
@@ -24,7 +25,7 @@ var serverSpdyConn *spdystream.Connection
 func ExampleConn() {
 	wsconn, _, _ := websocket.DefaultDialer.Dial("ws://localhost/", http.Header{"Origin": {"http://localhost/"}})
 	conn, _ := spdystream.NewConnection(NewConnection(wsconn), false)
-	go conn.Serve(spdystream.NoOpStreamHandler, spdystream.NoAuthHandler)
+	go conn.Serve(spdystream.NoOpStreamHandler)
 	stream, _ := conn.CreateStream(http.Header{}, nil, false)
 	stream.Wait()
 }
@@ -50,7 +51,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	serverSpdyConn = spdyConn
-	go spdyConn.Serve(spdystream.MirrorStreamHandler, authStreamHandler)
+	spdyConn.Serve(authStreamHandler)
 }
 
 func TestSpdyStreamOverWs(t *testing.T) {
@@ -75,7 +76,7 @@ func TestSpdyStreamOverWs(t *testing.T) {
 	}
 	defer spdyConn.Close()
 	authenticated = true
-	go spdyConn.Serve(spdystream.NoOpStreamHandler, spdystream.RejectAuthHandler)
+	go spdyConn.Serve(spdystream.NoOpStreamHandler)
 
 	stream, streamErr := spdyConn.CreateStream(http.Header{}, nil, false)
 	if streamErr != nil {
@@ -137,15 +138,18 @@ func TestSpdyStreamOverWs(t *testing.T) {
 		t.Fatalf("Expected EOF reading from finished stream, read %d bytes", n)
 	}
 
+	// Closing again should return error since the stream is already closed
 	streamCloseErr := stream.Close()
-	if streamCloseErr != nil {
-		t.Fatalf("Error closing stream: %s", streamCloseErr)
+	if streamCloseErr == nil {
+		t.Fatalf("No error closing finished stream")
+	}
+	if streamCloseErr != spdystream.ErrWriteClosedStream {
+		t.Fatalf("Unexpected error closing stream: %s", streamCloseErr)
 	}
 
-	// Closing again should return nil
-	streamCloseErr = stream.Close()
-	if streamCloseErr != nil {
-		t.Fatalf("Error closing stream: %s", streamCloseErr)
+	streamResetErr := stream.Reset()
+	if streamResetErr != nil {
+		t.Fatalf("Error reseting stream: %s", streamResetErr)
 	}
 
 	authenticated = false
@@ -170,6 +174,10 @@ func TestSpdyStreamOverWs(t *testing.T) {
 
 var authenticated bool
 
-func authStreamHandler(header http.Header, slot uint8, parent uint32) bool {
-	return authenticated
+func authStreamHandler(stream *spdystream.Stream) {
+	if !authenticated {
+		stream.Refuse()
+		return
+	}
+	spdystream.MirrorStreamHandler(stream)
 }

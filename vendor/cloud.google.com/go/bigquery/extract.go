@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
 package bigquery
 
 import (
-	"golang.org/x/net/context"
+	"context"
+
+	"cloud.google.com/go/internal/trace"
 	bq "google.golang.org/api/bigquery/v2"
 )
 
@@ -32,6 +34,13 @@ type ExtractConfig struct {
 
 	// The labels associated with this job.
 	Labels map[string]string
+
+	// For Avro-based extracts, controls whether logical type annotations are generated.
+	//
+	// Example:  With this enabled, writing a BigQuery TIMESTAMP column will result in
+	// an integer column annotated with the appropriate timestamp-micros/millis annotation
+	// in the resulting Avro files.
+	UseAvroLogicalTypes bool
 }
 
 func (e *ExtractConfig) toBQ() *bq.JobConfiguration {
@@ -43,12 +52,13 @@ func (e *ExtractConfig) toBQ() *bq.JobConfiguration {
 	return &bq.JobConfiguration{
 		Labels: e.Labels,
 		Extract: &bq.JobConfigurationExtract{
-			DestinationUris:   append([]string{}, e.Dst.URIs...),
-			Compression:       string(e.Dst.Compression),
-			DestinationFormat: string(e.Dst.DestinationFormat),
-			FieldDelimiter:    e.Dst.FieldDelimiter,
-			SourceTable:       e.Src.toBQ(),
-			PrintHeader:       printHeader,
+			DestinationUris:     append([]string{}, e.Dst.URIs...),
+			Compression:         string(e.Dst.Compression),
+			DestinationFormat:   string(e.Dst.DestinationFormat),
+			FieldDelimiter:      e.Dst.FieldDelimiter,
+			SourceTable:         e.Src.toBQ(),
+			PrintHeader:         printHeader,
+			UseAvroLogicalTypes: e.UseAvroLogicalTypes,
 		},
 	}
 }
@@ -67,8 +77,9 @@ func bqToExtractConfig(q *bq.JobConfiguration, c *Client) *ExtractConfig {
 				},
 			},
 		},
-		DisableHeader: qe.PrintHeader != nil && !*qe.PrintHeader,
-		Src:           bqToTable(qe.SourceTable, c),
+		DisableHeader:       qe.PrintHeader != nil && !*qe.PrintHeader,
+		Src:                 bqToTable(qe.SourceTable, c),
+		UseAvroLogicalTypes: qe.UseAvroLogicalTypes,
 	}
 }
 
@@ -93,13 +104,16 @@ func (t *Table) ExtractorTo(dst *GCSReference) *Extractor {
 }
 
 // Run initiates an extract job.
-func (e *Extractor) Run(ctx context.Context) (*Job, error) {
+func (e *Extractor) Run(ctx context.Context) (j *Job, err error) {
+	ctx = trace.StartSpan(ctx, "cloud.google.com/go/bigquery.Extractor.Run")
+	defer func() { trace.EndSpan(ctx, err) }()
+
 	return e.c.insertJob(ctx, e.newJob(), nil)
 }
 
 func (e *Extractor) newJob() *bq.Job {
 	return &bq.Job{
-		JobReference:  e.JobIDConfig.createJobRef(e.c.projectID),
+		JobReference:  e.JobIDConfig.createJobRef(e.c),
 		Configuration: e.ExtractConfig.toBQ(),
 	}
 }

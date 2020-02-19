@@ -1,7 +1,6 @@
 package testing
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/gophercloud/gophercloud"
@@ -90,14 +89,14 @@ func TestV2EndpointNone(t *testing.T) {
 }
 
 func TestV2EndpointMultiple(t *testing.T) {
-	_, err := openstack.V2EndpointURL(&catalog2, gophercloud.EndpointOpts{
+	actual, err := openstack.V2EndpointURL(&catalog2, gophercloud.EndpointOpts{
 		Type:         "same",
 		Region:       "same",
 		Availability: gophercloud.AvailabilityPublic,
 	})
-	if !strings.HasPrefix(err.Error(), "Discovered 2 matching endpoints:") {
-		t.Errorf("Received unexpected error: %v", err)
-	}
+
+	th.AssertNoErr(t, err)
+	th.AssertEquals(t, "https://public.correct.com/", actual)
 }
 
 func TestV2EndpointBadAvailability(t *testing.T) {
@@ -178,6 +177,30 @@ var catalog3 = tokens3.ServiceCatalog{
 				},
 			},
 		},
+		tokens3.CatalogEntry{
+			Type: "someother",
+			Name: "someother",
+			Endpoints: []tokens3.Endpoint{
+				tokens3.Endpoint{
+					ID:        "1",
+					Region:    "someother",
+					Interface: "public",
+					URL:       "https://public.correct.com/",
+				},
+				tokens3.Endpoint{
+					ID:        "2",
+					RegionID:  "someother",
+					Interface: "admin",
+					URL:       "https://admin.correct.com/",
+				},
+				tokens3.Endpoint{
+					ID:        "3",
+					RegionID:  "someother",
+					Interface: "internal",
+					URL:       "https://internal.correct.com/",
+				},
+			},
+		},
 	},
 }
 
@@ -210,14 +233,14 @@ func TestV3EndpointNone(t *testing.T) {
 }
 
 func TestV3EndpointMultiple(t *testing.T) {
-	_, err := openstack.V3EndpointURL(&catalog3, gophercloud.EndpointOpts{
+	actual, err := openstack.V3EndpointURL(&catalog3, gophercloud.EndpointOpts{
 		Type:         "same",
 		Region:       "same",
 		Availability: gophercloud.AvailabilityPublic,
 	})
-	if !strings.HasPrefix(err.Error(), "Discovered 2 matching endpoints:") {
-		t.Errorf("Received unexpected error: %v", err)
-	}
+
+	th.AssertNoErr(t, err)
+	th.AssertEquals(t, "https://public.correct.com/", actual)
 }
 
 func TestV3EndpointBadAvailability(t *testing.T) {
@@ -228,4 +251,23 @@ func TestV3EndpointBadAvailability(t *testing.T) {
 		Availability: "wat",
 	})
 	th.CheckEquals(t, "Unexpected availability in endpoint query: wat", err.Error())
+}
+
+func TestV3EndpointWithRegionID(t *testing.T) {
+	expectedURLs := map[gophercloud.Availability]string{
+		gophercloud.AvailabilityPublic:   "https://public.correct.com/",
+		gophercloud.AvailabilityAdmin:    "https://admin.correct.com/",
+		gophercloud.AvailabilityInternal: "https://internal.correct.com/",
+	}
+
+	for availability, expected := range expectedURLs {
+		actual, err := openstack.V3EndpointURL(&catalog3, gophercloud.EndpointOpts{
+			Type:         "someother",
+			Name:         "someother",
+			Region:       "someother",
+			Availability: availability,
+		})
+		th.AssertNoErr(t, err)
+		th.CheckEquals(t, expected, actual)
+	}
 }

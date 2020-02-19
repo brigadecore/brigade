@@ -33,6 +33,40 @@ func (r commonResult) Extract() (*ShareType, error) {
 	return s.ShareType, err
 }
 
+// IDFromName is a convenience function that returns a share-type's ID given its name.
+func IDFromName(client *gophercloud.ServiceClient, name string) (string, error) {
+	r, err := List(client, &ListOpts{}).AllPages()
+	if err != nil {
+		return "", nil
+	}
+
+	ss, err := ExtractShareTypes(r)
+	if err != nil {
+		return "", err
+	}
+
+	var (
+		count int
+		id    string
+	)
+
+	for _, s := range ss {
+		if s.Name == name {
+			count++
+			id = s.ID
+		}
+	}
+
+	switch count {
+	case 0:
+		return "", gophercloud.ErrResourceNotFound{Name: name, ResourceType: "share type"}
+	case 1:
+		return id, nil
+	default:
+		return "", gophercloud.ErrMultipleResourcesFound{Name: name, Count: count, ResourceType: "share type"}
+	}
+}
+
 // CreateResult contains the response body and error from a Create request.
 type CreateResult struct {
 	commonResult

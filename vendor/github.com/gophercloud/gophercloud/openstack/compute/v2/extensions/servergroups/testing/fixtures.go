@@ -51,6 +51,25 @@ const GetOutput = `
 }
 `
 
+// GetOutputMicroversion is a sample response to a Get call with microversion set to 2.64
+const GetOutputMicroversion = `
+{
+    "server_group": {
+        "id": "616fb98f-46ca-475e-917e-2563e5a8cd19",
+        "name": "test",
+        "policies": [
+            "anti-affinity"
+        ],
+        "policy": "anti-affinity",
+        "rules": {
+          "max_server_per_host": 3
+        },
+        "members": [],
+        "metadata": {}
+    }
+}
+`
+
 // CreateOutput is a sample response to a Post call
 const CreateOutput = `
 {
@@ -60,6 +79,25 @@ const CreateOutput = `
         "policies": [
             "anti-affinity"
         ],
+        "members": [],
+        "metadata": {}
+    }
+}
+`
+
+// CreateOutputMicroversion is a sample response to a Post call with microversion set to 2.64
+const CreateOutputMicroversion = `
+{
+    "server_group": {
+        "id": "616fb98f-46ca-475e-917e-2563e5a8cd19",
+        "name": "test",
+        "policies": [
+            "anti-affinity"
+        ],
+        "policy": "anti-affinity",
+        "rules": {
+          "max_server_per_host": 3
+        },
         "members": [],
         "metadata": {}
     }
@@ -126,6 +164,18 @@ func HandleGetSuccessfully(t *testing.T) {
 	})
 }
 
+// HandleGetMicroversionSuccessfully configures the test server to respond to a Get request
+// for an existing server group with microversion set to 2.64
+func HandleGetMicroversionSuccessfully(t *testing.T) {
+	th.Mux.HandleFunc("/os-server-groups/4d8c3732-a248-40ed-bebc-539a6ffd25c0", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "GET")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+
+		w.Header().Add("Content-Type", "application/json")
+		fmt.Fprintf(w, GetOutputMicroversion)
+	})
+}
+
 // HandleCreateSuccessfully configures the test server to respond to a Create request
 // for a new server group
 func HandleCreateSuccessfully(t *testing.T) {
@@ -145,6 +195,32 @@ func HandleCreateSuccessfully(t *testing.T) {
 
 		w.Header().Add("Content-Type", "application/json")
 		fmt.Fprintf(w, CreateOutput)
+	})
+}
+
+// HandleCreateMicroversionSuccessfully configures the test server to respond to a Create request
+// for a new server group with microversion set to 2.64
+func HandleCreateMicroversionSuccessfully(t *testing.T) {
+	th.Mux.HandleFunc("/os-server-groups", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "POST")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+		th.TestJSONRequest(t, r, `
+{
+    "server_group": {
+        "name": "test",
+        "policies": [
+            "anti-affinity"
+        ],
+        "policy": "anti-affinity",
+        "rules": {
+            "max_server_per_host": 3
+        }
+    }
+}
+`)
+
+		w.Header().Add("Content-Type", "application/json")
+		fmt.Fprintf(w, CreateOutputMicroversion)
 	})
 }
 

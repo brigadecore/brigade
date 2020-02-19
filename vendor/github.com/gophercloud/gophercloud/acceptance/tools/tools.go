@@ -9,12 +9,20 @@ import (
 	"time"
 )
 
-// ErrTimeout is returned if WaitFor takes longer than 300 second to happen.
+// ErrTimeout is returned if WaitFor/WaitForTimeout take longer than their timeout duration.
 var ErrTimeout = errors.New("Timed out")
 
-// WaitFor polls a predicate function once per second to wait for a certain state to arrive.
+// WaitFor uses WaitForTimeout to poll a predicate function once per second to
+// wait for a certain state to arrive, with a default timeout of 300 seconds.
 func WaitFor(predicate func() (bool, error)) error {
-	for i := 0; i < 300; i++ {
+	return WaitForTimeout(predicate, 300*time.Second)
+}
+
+// WaitForTimeout polls a predicate function once per second to wait for a
+// certain state to arrive, or until the given timeout is reached.
+func WaitForTimeout(predicate func() (bool, error), timeout time.Duration) error {
+	startTime := time.Now()
+	for time.Since(startTime) < timeout {
 		time.Sleep(1 * time.Second)
 
 		satisfied, err := predicate()

@@ -10,9 +10,10 @@ type Protocol string
 
 // Supported attributes for create/update operations.
 const (
-	ProtocolTCP   Protocol = "TCP"
-	ProtocolHTTP  Protocol = "HTTP"
-	ProtocolHTTPS Protocol = "HTTPS"
+	ProtocolTCP             Protocol = "TCP"
+	ProtocolHTTP            Protocol = "HTTP"
+	ProtocolHTTPS           Protocol = "HTTPS"
+	ProtocolTerminatedHTTPS Protocol = "TERMINATED_HTTPS"
 )
 
 // ListOptsBuilder allows extensions to add additional parameters to the
@@ -31,6 +32,7 @@ type ListOpts struct {
 	Name            string `q:"name"`
 	AdminStateUp    *bool  `q:"admin_state_up"`
 	TenantID        string `q:"tenant_id"`
+	ProjectID       string `q:"project_id"`
 	LoadbalancerID  string `q:"loadbalancer_id"`
 	DefaultPoolID   string `q:"default_pool_id"`
 	Protocol        string `q:"protocol"`
@@ -86,8 +88,12 @@ type CreateOpts struct {
 	ProtocolPort int `json:"protocol_port" required:"true"`
 
 	// TenantID is only required if the caller has an admin role and wants
-	// to create a pool for another tenant.
+	// to create a pool for another project.
 	TenantID string `json:"tenant_id,omitempty"`
+
+	// ProjectID is only required if the caller has an admin role and wants
+	// to create a pool for another project.
+	ProjectID string `json:"project_id,omitempty"`
 
 	// Human-readable name for the Listener. Does not have to be unique.
 	Name string `json:"name,omitempty"`
@@ -149,19 +155,22 @@ type UpdateOptsBuilder interface {
 // UpdateOpts represents options for updating a Listener.
 type UpdateOpts struct {
 	// Human-readable name for the Listener. Does not have to be unique.
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
+
+	// The ID of the default pool with which the Listener is associated.
+	DefaultPoolID *string `json:"default_pool_id,omitempty"`
 
 	// Human-readable description for the Listener.
-	Description string `json:"description,omitempty"`
+	Description *string `json:"description,omitempty"`
 
 	// The maximum number of connections allowed for the Listener.
 	ConnLimit *int `json:"connection_limit,omitempty"`
 
 	// A reference to a Barbican container of TLS secrets.
-	DefaultTlsContainerRef string `json:"default_tls_container_ref,omitempty"`
+	DefaultTlsContainerRef *string `json:"default_tls_container_ref,omitempty"`
 
 	// A list of references to TLS secrets.
-	SniContainerRefs []string `json:"sni_container_refs,omitempty"`
+	SniContainerRefs *[]string `json:"sni_container_refs,omitempty"`
 
 	// The administrative state of the Listener. A valid value is true (UP)
 	// or false (DOWN).
@@ -170,12 +179,21 @@ type UpdateOpts struct {
 
 // ToListenerUpdateMap builds a request body from UpdateOpts.
 func (opts UpdateOpts) ToListenerUpdateMap() (map[string]interface{}, error) {
-	return gophercloud.BuildRequestBody(opts, "listener")
+	b, err := gophercloud.BuildRequestBody(opts, "listener")
+	if err != nil {
+		return nil, err
+	}
+
+	if m := b["listener"].(map[string]interface{}); m["default_pool_id"] == "" {
+		m["default_pool_id"] = nil
+	}
+
+	return b, nil
 }
 
 // Update is an operation which modifies the attributes of the specified
 // Listener.
-func Update(c *gophercloud.ServiceClient, id string, opts UpdateOpts) (r UpdateResult) {
+func Update(c *gophercloud.ServiceClient, id string, opts UpdateOptsBuilder) (r UpdateResult) {
 	b, err := opts.ToListenerUpdateMap()
 	if err != nil {
 		r.Err = err

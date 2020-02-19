@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,16 +17,17 @@
 package logging
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/internal/testutil"
-
 	"github.com/golang/protobuf/proto"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/api/logging/v2"
 	"google.golang.org/api/support/bundler"
 	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
 	logtypepb "google.golang.org/genproto/googleapis/logging/type"
@@ -34,7 +35,7 @@ import (
 
 func TestLoggerCreation(t *testing.T) {
 	const logID = "testing"
-	c := &Client{projectID: "PROJECT_ID"}
+	c := &Client{parent: "projects/PROJECT_ID"}
 	customResource := &mrpb.MonitoredResource{
 		Type: "global",
 		Labels: map[string]string{
@@ -179,8 +180,168 @@ func TestToProtoStruct(t *testing.T) {
 	}
 }
 
+func TestToLogEntryPayload(t *testing.T) {
+	var logger Logger
+	for _, test := range []struct {
+		in         interface{}
+		wantText   string
+		wantStruct *structpb.Struct
+	}{
+		{
+			in:       "string",
+			wantText: "string",
+		},
+		{
+			in: map[string]interface{}{"a": 1, "b": true},
+			wantStruct: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"a": {Kind: &structpb.Value_NumberValue{NumberValue: 1}},
+					"b": {Kind: &structpb.Value_BoolValue{BoolValue: true}},
+				},
+			},
+		},
+		{
+			in: json.RawMessage([]byte(`{"a": 1, "b": true}`)),
+			wantStruct: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"a": {Kind: &structpb.Value_NumberValue{NumberValue: 1}},
+					"b": {Kind: &structpb.Value_BoolValue{BoolValue: true}},
+				},
+			},
+		},
+	} {
+		e, err := logger.toLogEntry(Entry{Payload: test.in})
+		if err != nil {
+			t.Fatalf("%+v: %v", test.in, err)
+		}
+		if test.wantStruct != nil {
+			got := e.GetJsonPayload()
+			if !proto.Equal(got, test.wantStruct) {
+				t.Errorf("%+v: got %s, want %s", test.in, got, test.wantStruct)
+			}
+		} else {
+			got := e.GetTextPayload()
+			if got != test.wantText {
+				t.Errorf("%+v: got %s, want %s", test.in, got, test.wantText)
+			}
+		}
+	}
+}
+
+func TestToLogEntryTrace(t *testing.T) {
+	logger := &Logger{client: &Client{parent: "projects/P"}}
+	// Verify that we get the trace from the HTTP request if it isn't
+	// provided by the caller.
+	u := &url.URL{Scheme: "http"}
+
+	tests := []struct {
+		name string
+		in   Entry
+		want logging.LogEntry
+	}{
+		{"BlankLogEntry", Entry{}, logging.LogEntry{}},
+		{"Already set Trace", Entry{Trace: "t1"}, logging.LogEntry{Trace: "t1"}},
+		{
+			"No X-Trace-Context header",
+			Entry{
+				HTTPRequest: &HTTPRequest{
+					Request: &http.Request{URL: u, Header: http.Header{"foo": {"bar"}}},
+				},
+			},
+			logging.LogEntry{},
+		},
+		{
+			"X-Trace-Context header with all fields",
+			Entry{
+				TraceSampled: false,
+				HTTPRequest: &HTTPRequest{
+					Request: &http.Request{
+						URL:    u,
+						Header: http.Header{"X-Cloud-Trace-Context": {"105445aa7843bc8bf206b120001000/000000000000004a;o=1"}},
+					},
+				},
+			},
+			logging.LogEntry{Trace: "projects/P/traces/105445aa7843bc8bf206b120001000", SpanId: "000000000000004a", TraceSampled: true},
+		},
+		{
+			"X-Trace-Context header with all fields; TraceSampled explicitly set",
+			Entry{
+				TraceSampled: true,
+				HTTPRequest: &HTTPRequest{
+					Request: &http.Request{
+						URL:    u,
+						Header: http.Header{"X-Cloud-Trace-Context": {"105445aa7843bc8bf206b120001000/000000000000004a;o=0"}},
+					},
+				},
+			},
+			logging.LogEntry{Trace: "projects/P/traces/105445aa7843bc8bf206b120001000", SpanId: "000000000000004a", TraceSampled: true},
+		},
+		{
+			"X-Trace-Context header with all fields; TraceSampled from Header",
+			Entry{
+				HTTPRequest: &HTTPRequest{
+					Request: &http.Request{
+						URL:    u,
+						Header: http.Header{"X-Cloud-Trace-Context": {"105445aa7843bc8bf206b120001000/000000000000004a;o=1"}},
+					},
+				},
+			},
+			logging.LogEntry{Trace: "projects/P/traces/105445aa7843bc8bf206b120001000", SpanId: "000000000000004a", TraceSampled: true},
+		},
+		{
+			"X-Trace-Context header with blank span",
+			Entry{
+				HTTPRequest: &HTTPRequest{
+					Request: &http.Request{
+						URL:    u,
+						Header: http.Header{"X-Cloud-Trace-Context": {"105445aa7843bc8bf206b120001000/0;o=0"}},
+					},
+				},
+			},
+			logging.LogEntry{Trace: "projects/P/traces/105445aa7843bc8bf206b120001000"},
+		},
+		{
+			"Invalid X-Trace-Context header but already set TraceID",
+			Entry{
+				HTTPRequest: &HTTPRequest{
+					Request: &http.Request{
+						URL:    u,
+						Header: http.Header{"X-Cloud-Trace-Context": {"t3"}},
+					},
+				},
+				Trace: "t4",
+			},
+			logging.LogEntry{Trace: "t4"},
+		},
+		{
+			"Already set TraceID and SpanID",
+			Entry{Trace: "t1", SpanID: "007"},
+			logging.LogEntry{Trace: "t1", SpanId: "007"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			e, err := logger.toLogEntry(test.in)
+			if err != nil {
+				t.Fatalf("Unexpected error:: %+v: %v", test.in, err)
+			}
+			if got := e.Trace; got != test.want.Trace {
+				t.Errorf("TraceId: %+v: got %q, want %q", test.in, got, test.want.Trace)
+			}
+			if got := e.SpanId; got != test.want.SpanId {
+				t.Errorf("SpanId: %+v: got %q, want %q", test.in, got, test.want.SpanId)
+			}
+			if got := e.TraceSampled; got != test.want.TraceSampled {
+				t.Errorf("TraceSampled: %+v: got %t, want %t", test.in, got, test.want.TraceSampled)
+			}
+		})
+	}
+}
+
 func TestFromHTTPRequest(t *testing.T) {
-	const testURL = "http:://example.com/path?q=1"
+	// The test URL has invalid UTF-8 runes.
+	const testURL = "http://example.com/path?q=1&name=\xfe\xff"
 	u, err := url.Parse(testURL)
 	if err != nil {
 		t.Fatal(err)
@@ -190,8 +351,8 @@ func TestFromHTTPRequest(t *testing.T) {
 			Method: "GET",
 			URL:    u,
 			Header: map[string][]string{
-				"User-Agent": []string{"user-agent"},
-				"Referer":    []string{"referer"},
+				"User-Agent": {"user-agent"},
+				"Referer":    {"referer"},
 			},
 		},
 		RequestSize:                    100,
@@ -205,8 +366,12 @@ func TestFromHTTPRequest(t *testing.T) {
 	}
 	got := fromHTTPRequest(req)
 	want := &logtypepb.HttpRequest{
-		RequestMethod:                  "GET",
-		RequestUrl:                     testURL,
+		RequestMethod: "GET",
+
+		// RequestUrl should have its invalid utf-8 runes replaced by the Unicode replacement character U+FFFD.
+		// See Issue https://github.com/googleapis/google-cloud-go/issues/1383
+		RequestUrl: "http://example.com/path?q=1&name=" + string('\ufffd') + string('\ufffd'),
+
 		RequestSize:                    100,
 		Status:                         200,
 		ResponseSize:                   25,
@@ -220,6 +385,69 @@ func TestFromHTTPRequest(t *testing.T) {
 	}
 	if !proto.Equal(got, want) {
 		t.Errorf("got  %+v\nwant %+v", got, want)
+	}
+
+	// And finally checks directly that the error that was
+	// in https://github.com/googleapis/google-cloud-go/issues/1383
+	// doesn't not regress.
+	if _, err := proto.Marshal(got); err != nil {
+		t.Fatalf("Unexpected proto.Marshal error: %v", err)
+	}
+}
+
+func TestMonitoredResource(t *testing.T) {
+	for _, test := range []struct {
+		parent string
+		want   *mrpb.MonitoredResource
+	}{
+		{
+			"projects/P",
+			&mrpb.MonitoredResource{
+				Type:   "project",
+				Labels: map[string]string{"project_id": "P"},
+			},
+		},
+
+		{
+			"folders/F",
+			&mrpb.MonitoredResource{
+				Type:   "folder",
+				Labels: map[string]string{"folder_id": "F"},
+			},
+		},
+		{
+			"billingAccounts/B",
+			&mrpb.MonitoredResource{
+				Type:   "billing_account",
+				Labels: map[string]string{"account_id": "B"},
+			},
+		},
+		{
+			"organizations/123",
+			&mrpb.MonitoredResource{
+				Type:   "organization",
+				Labels: map[string]string{"organization_id": "123"},
+			},
+		},
+		{
+			"unknown/X",
+			&mrpb.MonitoredResource{
+				Type:   "global",
+				Labels: map[string]string{"project_id": "X"},
+			},
+		},
+		{
+			"whatever",
+			&mrpb.MonitoredResource{
+				Type:   "global",
+				Labels: map[string]string{"project_id": "whatever"},
+			},
+		},
+	} {
+		got := monitoredResource(test.parent)
+		if !testutil.Equal(got, test.want) {
+			t.Errorf("%q: got %+v, want %+v", test.parent, got, test.want)
+		}
 	}
 }
 

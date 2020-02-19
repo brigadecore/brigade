@@ -1,10 +1,149 @@
 // test
 package azure
 
+// Copyright 2017 Microsoft Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 import (
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path"
+	"path/filepath"
+	"runtime"
 	"testing"
 )
+
+const (
+	batchResourceID      = "--batch-resource-id--"
+	datalakeResourceID   = "--datalake-resource-id--"
+	graphResourceID      = "--graph-resource-id--"
+	keyvaultResourceID   = "--keyvault-resource-id--"
+	opInsightsResourceID = "--operational-insights-resource-id--"
+)
+
+// This correlates to the expected contents of ./testdata/test_environment_1.json
+var testEnvironment1 = Environment{
+	Name:                         "--unit-test--",
+	ManagementPortalURL:          "--management-portal-url",
+	PublishSettingsURL:           "--publish-settings-url--",
+	ServiceManagementEndpoint:    "--service-management-endpoint--",
+	ResourceManagerEndpoint:      "--resource-management-endpoint--",
+	ActiveDirectoryEndpoint:      "--active-directory-endpoint--",
+	GalleryEndpoint:              "--gallery-endpoint--",
+	KeyVaultEndpoint:             "--key-vault--endpoint--",
+	GraphEndpoint:                "--graph-endpoint--",
+	StorageEndpointSuffix:        "--storage-endpoint-suffix--",
+	SQLDatabaseDNSSuffix:         "--sql-database-dns-suffix--",
+	TrafficManagerDNSSuffix:      "--traffic-manager-dns-suffix--",
+	KeyVaultDNSSuffix:            "--key-vault-dns-suffix--",
+	ServiceBusEndpointSuffix:     "--service-bus-endpoint-suffix--",
+	ServiceManagementVMDNSSuffix: "--asm-vm-dns-suffix--",
+	ResourceManagerVMDNSSuffix:   "--arm-vm-dns-suffix--",
+	ContainerRegistryDNSSuffix:   "--container-registry-dns-suffix--",
+	TokenAudience:                "--token-audience",
+	ResourceIdentifiers: ResourceIdentifier{
+		Batch:               batchResourceID,
+		Datalake:            datalakeResourceID,
+		Graph:               graphResourceID,
+		KeyVault:            keyvaultResourceID,
+		OperationalInsights: opInsightsResourceID,
+	},
+}
+
+func TestEnvironment_EnvironmentFromURL_NoOverride_Success(t *testing.T) {
+	fileContents, _ := ioutil.ReadFile(filepath.Join("testdata", "test_metadata_environment_1.json"))
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fileContents))
+	}))
+	defer ts.Close()
+
+	got, err := EnvironmentFromURL(ts.URL)
+
+	if err != nil {
+		t.Error(err)
+	}
+	if got.Name != "HybridEnvironment" {
+		t.Logf("got: %v want: HybridEnvironment", got.Name)
+		t.Fail()
+	}
+}
+
+func TestEnvironment_EnvironmentFromURL_OverrideStorageSuffix_Success(t *testing.T) {
+	fileContents, _ := ioutil.ReadFile(filepath.Join("testdata", "test_metadata_environment_1.json"))
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fileContents))
+	}))
+	defer ts.Close()
+	overrideProperty := OverrideProperty{
+		Key:   EnvironmentStorageEndpointSuffix,
+		Value: "fakeStorageSuffix",
+	}
+	got, err := EnvironmentFromURL(ts.URL, overrideProperty)
+
+	if err != nil {
+		t.Error(err)
+	}
+	if got.StorageEndpointSuffix != "fakeStorageSuffix" {
+		t.Logf("got: %v want: fakeStorageSuffix", got.StorageEndpointSuffix)
+		t.Fail()
+	}
+}
+
+func TestEnvironment_EnvironmentFromURL_EmptyEndpoint_Failure(t *testing.T) {
+	_, err := EnvironmentFromURL("")
+
+	if err == nil {
+		t.Fail()
+	}
+	if err.Error() != "Metadata resource manager endpoint is empty" {
+		t.Fail()
+	}
+}
+
+func TestEnvironment_EnvironmentFromFile(t *testing.T) {
+	got, err := EnvironmentFromFile(filepath.Join("testdata", "test_environment_1.json"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	if got != testEnvironment1 {
+		t.Logf("got: %v want: %v", got, testEnvironment1)
+		t.Fail()
+	}
+}
+
+func TestEnvironment_EnvironmentFromName_Stack(t *testing.T) {
+	_, currentFile, _, _ := runtime.Caller(0)
+	prevEnvFilepathValue := os.Getenv(EnvironmentFilepathName)
+	os.Setenv(EnvironmentFilepathName, filepath.Join(path.Dir(currentFile), "testdata", "test_environment_1.json"))
+	defer os.Setenv(EnvironmentFilepathName, prevEnvFilepathValue)
+
+	got, err := EnvironmentFromName("AZURESTACKCLOUD")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if got != testEnvironment1 {
+		t.Logf("got: %v want: %v", got, testEnvironment1)
+		t.Fail()
+	}
+}
 
 func TestEnvironmentFromName(t *testing.T) {
 	name := "azurechinacloud"
@@ -59,6 +198,7 @@ func TestDeserializeEnvironment(t *testing.T) {
 		"ActiveDirectoryEndpoint": "--active-directory-endpoint--",
 		"galleryEndpoint": "--gallery-endpoint--",
 		"graphEndpoint": "--graph-endpoint--",
+		"serviceBusEndpoint": "--service-bus-endpoint--",
 		"keyVaultDNSSuffix": "--key-vault-dns-suffix--",
 		"keyVaultEndpoint": "--key-vault-endpoint--",
 		"managementPortalURL": "--management-portal-url--",
@@ -71,7 +211,14 @@ func TestDeserializeEnvironment(t *testing.T) {
 		"trafficManagerDNSSuffix": "--traffic-manager-dns-suffix--",
 		"serviceManagementVMDNSSuffix": "--asm-vm-dns-suffix--",
 		"resourceManagerVMDNSSuffix": "--arm-vm-dns-suffix--",
-		"containerRegistryDNSSuffix": "--container-registry-dns-suffix--"
+		"containerRegistryDNSSuffix": "--container-registry-dns-suffix--",
+		"resourceIdentifiers": {
+			"batch": "` + batchResourceID + `",
+			"datalake": "` + datalakeResourceID + `",
+			"graph": "` + graphResourceID + `",
+			"keyVault": "` + keyvaultResourceID + `",
+			"operationalInsights": "` + opInsightsResourceID + `"
+		}
 	}`
 
 	testSubject := Environment{}
@@ -104,6 +251,9 @@ func TestDeserializeEnvironment(t *testing.T) {
 	if "--key-vault-endpoint--" != testSubject.KeyVaultEndpoint {
 		t.Errorf("Expected KeyVaultEndpoint to be \"--key-vault-endpoint--\", but got %q", testSubject.KeyVaultEndpoint)
 	}
+	if "--service-bus-endpoint--" != testSubject.ServiceBusEndpoint {
+		t.Errorf("Expected ServiceBusEndpoint to be \"--service-bus-endpoint--\", but goet %q", testSubject.ServiceBusEndpoint)
+	}
 	if "--graph-endpoint--" != testSubject.GraphEndpoint {
 		t.Errorf("Expected GraphEndpoint to be \"--graph-endpoint--\", but got %q", testSubject.GraphEndpoint)
 	}
@@ -128,6 +278,21 @@ func TestDeserializeEnvironment(t *testing.T) {
 	if "--container-registry-dns-suffix--" != testSubject.ContainerRegistryDNSSuffix {
 		t.Errorf("Expected ContainerRegistryDNSSuffix to be \"--container-registry-dns-suffix--\", but got %q", testSubject.ContainerRegistryDNSSuffix)
 	}
+	if batchResourceID != testSubject.ResourceIdentifiers.Batch {
+		t.Errorf("Expected ResourceIdentifiers.Batch to be "+batchResourceID+", but got %q", testSubject.ResourceIdentifiers.Batch)
+	}
+	if datalakeResourceID != testSubject.ResourceIdentifiers.Datalake {
+		t.Errorf("Expected ResourceIdentifiers.Datalake to be "+datalakeResourceID+", but got %q", testSubject.ResourceIdentifiers.Datalake)
+	}
+	if graphResourceID != testSubject.ResourceIdentifiers.Graph {
+		t.Errorf("Expected ResourceIdentifiers.Graph to be "+graphResourceID+", but got %q", testSubject.ResourceIdentifiers.Graph)
+	}
+	if keyvaultResourceID != testSubject.ResourceIdentifiers.KeyVault {
+		t.Errorf("Expected ResourceIdentifiers.KeyVault to be "+keyvaultResourceID+", but got %q", testSubject.ResourceIdentifiers.KeyVault)
+	}
+	if opInsightsResourceID != testSubject.ResourceIdentifiers.OperationalInsights {
+		t.Errorf("Expected ResourceIdentifiers.OperationalInsights to be "+opInsightsResourceID+", but got %q", testSubject.ResourceIdentifiers.OperationalInsights)
+	}
 }
 
 func TestRoundTripSerialization(t *testing.T) {
@@ -141,6 +306,7 @@ func TestRoundTripSerialization(t *testing.T) {
 		GalleryEndpoint:              "--gallery-endpoint--",
 		KeyVaultEndpoint:             "--key-vault--endpoint--",
 		GraphEndpoint:                "--graph-endpoint--",
+		ServiceBusEndpoint:           "--service-bus-endpoint--",
 		StorageEndpointSuffix:        "--storage-endpoint-suffix--",
 		SQLDatabaseDNSSuffix:         "--sql-database-dns-suffix--",
 		TrafficManagerDNSSuffix:      "--traffic-manager-dns-suffix--",
@@ -149,6 +315,13 @@ func TestRoundTripSerialization(t *testing.T) {
 		ServiceManagementVMDNSSuffix: "--asm-vm-dns-suffix--",
 		ResourceManagerVMDNSSuffix:   "--arm-vm-dns-suffix--",
 		ContainerRegistryDNSSuffix:   "--container-registry-dns-suffix--",
+		ResourceIdentifiers: ResourceIdentifier{
+			Batch:               batchResourceID,
+			Datalake:            datalakeResourceID,
+			Graph:               graphResourceID,
+			KeyVault:            keyvaultResourceID,
+			OperationalInsights: opInsightsResourceID,
+		},
 	}
 
 	bytes, err := json.Marshal(env)
@@ -183,6 +356,9 @@ func TestRoundTripSerialization(t *testing.T) {
 	if env.GalleryEndpoint != testSubject.GalleryEndpoint {
 		t.Errorf("Expected GalleryEndpoint to be %q, but got %q", env.GalleryEndpoint, testSubject.GalleryEndpoint)
 	}
+	if env.ServiceBusEndpoint != testSubject.ServiceBusEndpoint {
+		t.Errorf("Expected ServiceBusEnpoint to be %q, but got %q", env.ServiceBusEndpoint, testSubject.ServiceBusEndpoint)
+	}
 	if env.KeyVaultEndpoint != testSubject.KeyVaultEndpoint {
 		t.Errorf("Expected KeyVaultEndpoint to be %q, but got %q", env.KeyVaultEndpoint, testSubject.KeyVaultEndpoint)
 	}
@@ -212,5 +388,20 @@ func TestRoundTripSerialization(t *testing.T) {
 	}
 	if env.ContainerRegistryDNSSuffix != testSubject.ContainerRegistryDNSSuffix {
 		t.Errorf("Expected ContainerRegistryDNSSuffix to be %q, but got %q", env.ContainerRegistryDNSSuffix, testSubject.ContainerRegistryDNSSuffix)
+	}
+	if env.ResourceIdentifiers.Batch != testSubject.ResourceIdentifiers.Batch {
+		t.Errorf("Expected ResourceIdentifiers.Batch to be %q, but got %q", env.ResourceIdentifiers.Batch, testSubject.ResourceIdentifiers.Batch)
+	}
+	if env.ResourceIdentifiers.Datalake != testSubject.ResourceIdentifiers.Datalake {
+		t.Errorf("Expected ResourceIdentifiers.Datalake to be %q, but got %q", env.ResourceIdentifiers.Datalake, testSubject.ResourceIdentifiers.Datalake)
+	}
+	if env.ResourceIdentifiers.Graph != testSubject.ResourceIdentifiers.Graph {
+		t.Errorf("Expected ResourceIdentifiers.Graph to be %q, but got %q", env.ResourceIdentifiers.Graph, testSubject.ResourceIdentifiers.Graph)
+	}
+	if env.ResourceIdentifiers.KeyVault != testSubject.ResourceIdentifiers.KeyVault {
+		t.Errorf("Expected ResourceIdentifiers.KeyVault to be %q, but got %q", env.ResourceIdentifiers.KeyVault, testSubject.ResourceIdentifiers.KeyVault)
+	}
+	if env.ResourceIdentifiers.OperationalInsights != testSubject.ResourceIdentifiers.OperationalInsights {
+		t.Errorf("Expected ResourceIdentifiers.OperationalInsights to be %q, but got %q", env.ResourceIdentifiers.OperationalInsights, testSubject.ResourceIdentifiers.OperationalInsights)
 	}
 }

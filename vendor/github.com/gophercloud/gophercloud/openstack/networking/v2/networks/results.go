@@ -1,6 +1,9 @@
 package networks
 
 import (
+	"encoding/json"
+	"time"
+
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/pagination"
 )
@@ -52,6 +55,9 @@ type Network struct {
 	// Human-readable name for the network. Might not be unique.
 	Name string `json:"name"`
 
+	// Description for the network
+	Description string `json:"description"`
+
 	// The administrative state of network. If false (down), the network does not
 	// forward packets.
 	AdminStateUp bool `json:"admin_state_up"`
@@ -64,11 +70,64 @@ type Network struct {
 	// Subnets associated with this network.
 	Subnets []string `json:"subnets"`
 
-	// Owner of network.
+	// TenantID is the project owner of the network.
 	TenantID string `json:"tenant_id"`
+
+	// UpdatedAt and CreatedAt contain ISO-8601 timestamps of when the state of the
+	// network last changed, and when it was created.
+	UpdatedAt time.Time `json:"-"`
+	CreatedAt time.Time `json:"-"`
+
+	// ProjectID is the project owner of the network.
+	ProjectID string `json:"project_id"`
 
 	// Specifies whether the network resource can be accessed by any tenant.
 	Shared bool `json:"shared"`
+
+	// Availability zone hints groups network nodes that run services like DHCP, L3, FW, and others.
+	// Used to make network resources highly available.
+	AvailabilityZoneHints []string `json:"availability_zone_hints"`
+
+	// Tags optionally set via extensions/attributestags
+	Tags []string `json:"tags"`
+}
+
+func (r *Network) UnmarshalJSON(b []byte) error {
+	type tmp Network
+
+	// Support for older neutron time format
+	var s1 struct {
+		tmp
+		CreatedAt gophercloud.JSONRFC3339NoZ `json:"created_at"`
+		UpdatedAt gophercloud.JSONRFC3339NoZ `json:"updated_at"`
+	}
+
+	err := json.Unmarshal(b, &s1)
+	if err == nil {
+		*r = Network(s1.tmp)
+		r.CreatedAt = time.Time(s1.CreatedAt)
+		r.UpdatedAt = time.Time(s1.UpdatedAt)
+
+		return nil
+	}
+
+	// Support for newer neutron time format
+	var s2 struct {
+		tmp
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
+
+	err = json.Unmarshal(b, &s2)
+	if err != nil {
+		return err
+	}
+
+	*r = Network(s2.tmp)
+	r.CreatedAt = time.Time(s2.CreatedAt)
+	r.UpdatedAt = time.Time(s2.UpdatedAt)
+
+	return nil
 }
 
 // NetworkPage is the page returned by a pager when traversing over a

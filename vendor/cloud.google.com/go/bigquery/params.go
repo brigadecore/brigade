@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,14 +18,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"math/big"
 	"reflect"
 	"regexp"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/civil"
 	"cloud.google.com/go/internal/fields"
-
 	bq "google.golang.org/api/bigquery/v2"
 )
 
@@ -37,17 +36,30 @@ var (
 	validFieldName = regexp.MustCompile("^[a-zA-Z_][a-zA-Z0-9_]{0,127}$")
 )
 
+const nullableTagOption = "nullable"
+
 func bqTagParser(t reflect.StructTag) (name string, keep bool, other interface{}, err error) {
-	if s := t.Get("bigquery"); s != "" {
-		if s == "-" {
-			return "", false, nil, nil
-		}
-		if !validFieldName.MatchString(s) {
-			return "", false, nil, errInvalidFieldName
-		}
-		return s, true, nil, nil
+	name, keep, opts, err := fields.ParseStandardTag("bigquery", t)
+	if err != nil {
+		return "", false, nil, err
 	}
-	return "", true, nil, nil
+	if name != "" && !validFieldName.MatchString(name) {
+		return "", false, nil, invalidFieldNameError(name)
+	}
+	for _, opt := range opts {
+		if opt != nullableTagOption {
+			return "", false, nil, fmt.Errorf(
+				"bigquery: invalid tag option %q. The only valid option is %q",
+				opt, nullableTagOption)
+		}
+	}
+	return name, keep, opts, nil
+}
+
+type invalidFieldNameError string
+
+func (e invalidFieldNameError) Error() string {
+	return fmt.Sprintf("bigquery: invalid name %q of field in struct", string(e))
 }
 
 var fieldCache = fields.NewCache(bqTagParser, nil, nil)
@@ -62,6 +74,7 @@ var (
 	timeParamType      = &bq.QueryParameterType{Type: "TIME"}
 	dateTimeParamType  = &bq.QueryParameterType{Type: "DATETIME"}
 	timestampParamType = &bq.QueryParameterType{Type: "TIMESTAMP"}
+	numericParamType   = &bq.QueryParameterType{Type: "NUMERIC"}
 )
 
 var (
@@ -69,6 +82,7 @@ var (
 	typeOfTime     = reflect.TypeOf(civil.Time{})
 	typeOfDateTime = reflect.TypeOf(civil.DateTime{})
 	typeOfGoTime   = reflect.TypeOf(time.Time{})
+	typeOfRat      = reflect.TypeOf(&big.Rat{})
 )
 
 // A QueryParameter is a parameter to a query.
@@ -89,8 +103,13 @@ type QueryParameter struct {
 	// string: STRING
 	// []byte: BYTES
 	// time.Time: TIMESTAMP
+	// *big.Rat: NUMERIC
 	// Arrays and slices of the above.
 	// Structs of the above. Only the exported fields are used.
+	//
+	// BigQuery does not support params of type GEOGRAPHY.  For users wishing
+	// to parameterize Geography values, use string parameters and cast in the
+	// SQL query, e.g. `SELECT ST_GeogFromText(@string_param) as geo`
 	//
 	// When a QueryParameter is returned inside a QueryConfig from a call to
 	// Job.Config:
@@ -130,6 +149,8 @@ func paramType(t reflect.Type) (*bq.QueryParameterType, error) {
 		return dateTimeParamType, nil
 	case typeOfGoTime:
 		return timestampParamType, nil
+	case typeOfRat:
+		return numericParamType, nil
 	}
 	switch t.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint8, reflect.Uint16, reflect.Uint32:
@@ -198,6 +219,8 @@ func paramValue(v reflect.Value) (bq.QueryParameterValue, error) {
 
 	case typeOfTime:
 		// civil.Time has nanosecond resolution, but BigQuery TIME only microsecond.
+		// (If we send nanoseconds, then when we try to read the result we get "query job
+		// missing destination table").
 		res.Value = CivilTimeString(v.Interface().(civil.Time))
 		return res, nil
 
@@ -207,6 +230,10 @@ func paramValue(v reflect.Value) (bq.QueryParameterValue, error) {
 
 	case typeOfGoTime:
 		res.Value = v.Interface().(time.Time).Format(timestampFormat)
+		return res, nil
+
+	case typeOfRat:
+		res.Value = NumericString(v.Interface().(*big.Rat))
 		return res, nil
 	}
 	switch t.Kind() {
@@ -259,6 +286,10 @@ func paramValue(v reflect.Value) (bq.QueryParameterValue, error) {
 	// None of the above: assume a scalar type. (If it's not a valid type,
 	// paramType will catch the error.)
 	res.Value = fmt.Sprint(v.Interface())
+	// Ensure empty string values are sent.
+	if res.Value == "" {
+		res.ForceSendFields = append(res.ForceSendFields, "Value")
+	}
 	return res, nil
 }
 
@@ -280,6 +311,7 @@ var paramTypeToFieldType = map[string]FieldType{
 	bytesParamType.Type:   BytesFieldType,
 	dateParamType.Type:    DateFieldType,
 	timeParamType.Type:    TimeFieldType,
+	numericParamType.Type: NumericFieldType,
 }
 
 // Convert a parameter value from the service to a Go value. This is similar to, but
@@ -299,11 +331,7 @@ func convertParamValue(qval *bq.QueryParameterValue, qtype *bq.QueryParameterTyp
 	case "TIMESTAMP":
 		return time.Parse(timestampFormat, qval.Value)
 	case "DATETIME":
-		parts := strings.Fields(qval.Value)
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("bigquery: bad DATETIME value %q", qval.Value)
-		}
-		return civil.ParseDateTime(parts[0] + "T" + parts[1])
+		return parseCivilDateTime(qval.Value)
 	default:
 		return convertBasicType(qval.Value, paramTypeToFieldType[qtype.Type])
 	}
@@ -323,7 +351,7 @@ func convertParamArray(elVals []*bq.QueryParameterValue, elType *bq.QueryParamet
 	return vals, nil
 }
 
-// convertParamValue converts a query parameter struct value into a Go value. It
+// convertParamStruct converts a query parameter struct value into a Go value. It
 // always returns a map[string]interface{}.
 func convertParamStruct(sVals map[string]bq.QueryParameterValue, sTypes []*bq.QueryParameterTypeStructTypes) (map[string]interface{}, error) {
 	vals := map[string]interface{}{}

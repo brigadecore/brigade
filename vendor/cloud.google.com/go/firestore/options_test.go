@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package firestore
 import (
 	"testing"
 
-	pb "google.golang.org/genproto/googleapis/firestore/v1beta1"
+	pb "google.golang.org/genproto/googleapis/firestore/v1"
 )
 
 func TestProcessPreconditionsForVerify(t *testing.T) {
@@ -35,19 +35,19 @@ func TestProcessPreconditionsForVerify(t *testing.T) {
 			want: nil,
 		},
 		{
-			in:   []Precondition{Exists(true)},
-			want: &pb.Precondition{&pb.Precondition_Exists{true}},
+			in:   []Precondition{Exists},
+			want: &pb.Precondition{ConditionType: &pb.Precondition_Exists{true}},
 		},
 		{
 			in:   []Precondition{LastUpdateTime(aTime)},
-			want: &pb.Precondition{&pb.Precondition_UpdateTime{aTimestamp}},
+			want: &pb.Precondition{ConditionType: &pb.Precondition_UpdateTime{aTimestamp}},
 		},
 		{
-			in:      []Precondition{Exists(true), LastUpdateTime(aTime)},
+			in:      []Precondition{Exists, LastUpdateTime(aTime)},
 			wantErr: true,
 		},
 		{
-			in:      []Precondition{Exists(true), Exists(true)},
+			in:      []Precondition{Exists, Exists},
 			wantErr: true,
 		},
 	} {
@@ -78,19 +78,19 @@ func TestProcessPreconditionsForDelete(t *testing.T) {
 			want: nil,
 		},
 		{
-			in:   []Precondition{Exists(true)},
-			want: &pb.Precondition{&pb.Precondition_Exists{true}},
+			in:   []Precondition{Exists},
+			want: &pb.Precondition{ConditionType: &pb.Precondition_Exists{true}},
 		},
 		{
 			in:   []Precondition{LastUpdateTime(aTime)},
-			want: &pb.Precondition{&pb.Precondition_UpdateTime{aTimestamp}},
+			want: &pb.Precondition{ConditionType: &pb.Precondition_UpdateTime{aTimestamp}},
 		},
 		{
-			in:      []Precondition{Exists(true), LastUpdateTime(aTime)},
+			in:      []Precondition{Exists, LastUpdateTime(aTime)},
 			wantErr: true,
 		},
 		{
-			in:      []Precondition{Exists(true), Exists(true)},
+			in:      []Precondition{Exists, Exists},
 			wantErr: true,
 		},
 	} {
@@ -114,31 +114,27 @@ func TestProcessPreconditionsForUpdate(t *testing.T) {
 	}{
 		{
 			in:   nil,
-			want: &pb.Precondition{&pb.Precondition_Exists{true}},
+			want: &pb.Precondition{ConditionType: &pb.Precondition_Exists{true}},
 		},
 		{
 			in:   []Precondition{},
-			want: &pb.Precondition{&pb.Precondition_Exists{true}},
+			want: &pb.Precondition{ConditionType: &pb.Precondition_Exists{true}},
 		},
 
 		{
-			in:      []Precondition{Exists(true)},
-			wantErr: true,
-		},
-		{
-			in:      []Precondition{Exists(false)},
+			in:      []Precondition{Exists},
 			wantErr: true,
 		},
 		{
 			in:   []Precondition{LastUpdateTime(aTime)},
-			want: &pb.Precondition{&pb.Precondition_UpdateTime{aTimestamp}},
+			want: &pb.Precondition{ConditionType: &pb.Precondition_UpdateTime{aTimestamp}},
 		},
 		{
-			in:      []Precondition{Exists(true), LastUpdateTime(aTime)},
+			in:      []Precondition{Exists, LastUpdateTime(aTime)},
 			wantErr: true,
 		},
 		{
-			in:      []Precondition{Exists(true), Exists(true)},
+			in:      []Precondition{Exists, Exists},
 			wantErr: true,
 		},
 	} {

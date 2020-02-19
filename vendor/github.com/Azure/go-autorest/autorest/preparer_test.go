@@ -1,6 +1,21 @@
 package autorest
 
+// Copyright 2017 Microsoft Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -149,6 +164,30 @@ func ExampleWithBaseURL_second() {
 	// Output: parse :: missing protocol scheme
 }
 
+// Create a request whose Body is a byte array
+func TestWithBytes(t *testing.T) {
+	input := []byte{41, 82, 109}
+
+	r, err := Prepare(&http.Request{},
+		WithBytes(&input))
+	if err != nil {
+		t.Fatalf("ERROR: %v\n", err)
+	}
+
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		t.Fatalf("ERROR: %v\n", err)
+	}
+
+	if len(b) != len(input) {
+		t.Fatalf("Expected the Body to contain %d bytes but got %d", len(input), len(b))
+	}
+
+	if !reflect.DeepEqual(b, input) {
+		t.Fatalf("Body doesn't contain the same bytes: %s (Expected %s)", b, input)
+	}
+}
+
 func ExampleWithCustomBaseURL() {
 	r, err := Prepare(&http.Request{},
 		WithCustomBaseURL("https://{account}.{service}.core.windows.net/",
@@ -224,6 +263,26 @@ func ExampleWithJSON() {
 	// Output: Request Body contains {"name":"Rob Pike","age":42}
 }
 
+// Create a request whose Body is the XML encoding of a structure
+func ExampleWithXML() {
+	t := mocks.T{Name: "Rob Pike", Age: 42}
+
+	r, err := Prepare(&http.Request{},
+		WithXML(&t))
+	if err != nil {
+		fmt.Printf("ERROR: %v\n", err)
+	}
+
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Printf("ERROR: %v\n", err)
+	} else {
+		fmt.Printf("Request Body contains %s\n", string(b))
+	}
+	// Output: Request Body contains <?xml version="1.0" encoding="UTF-8"?>
+	// <T><Name>Rob Pike</Name><Age>42</Age></T>
+}
+
 // Create a request from a path with escaped parameters
 func ExampleWithEscapedPathParameters() {
 	params := map[string]interface{}{
@@ -261,8 +320,8 @@ func ExampleWithPathParameters() {
 // Create a request with query parameters
 func ExampleWithQueryParameters() {
 	params := map[string]interface{}{
-		"q1": "value1",
-		"q2": "value2",
+		"q1": []string{"value1"},
+		"q2": []string{"value2"},
 	}
 	r, err := Prepare(&http.Request{},
 		WithBaseURL("https://microsoft.com/"),
@@ -434,6 +493,13 @@ func TestAsHead(t *testing.T) {
 	}
 }
 
+func TestAsMerge(t *testing.T) {
+	r, _ := Prepare(mocks.NewRequest(), AsMerge())
+	if r.Method != "MERGE" {
+		t.Fatal("autorest: AsMerge failed to set HTTP method header to MERGE")
+	}
+}
+
 func TestAsOptions(t *testing.T) {
 	r, _ := Prepare(mocks.NewRequest(), AsOptions())
 	if r.Method != "OPTIONS" {
@@ -469,7 +535,7 @@ func TestPrepareWithNullRequest(t *testing.T) {
 	}
 }
 
-func TestWithFormDataSetsContentLength(t *testing.T) {
+func TestWithFormData(t *testing.T) {
 	v := url.Values{}
 	v.Add("name", "Rob Pike")
 	v.Add("age", "42")
@@ -492,6 +558,10 @@ func TestWithFormDataSetsContentLength(t *testing.T) {
 
 	if r.ContentLength != int64(len(b)) {
 		t.Fatalf("autorest:WithFormData set Content-Length to %v, expected %v", r.ContentLength, len(b))
+	}
+
+	if expected, got := r.Header.Get(http.CanonicalHeaderKey(headerContentType)), mimeTypeFormPost; expected != got {
+		t.Fatalf("autorest:WithFormData Content Type not set or set to wrong value. Expected %v and got %v", expected, got)
 	}
 }
 
@@ -746,7 +816,63 @@ func TestModifyingExistingRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("autorest: Preparing an existing request returned an error (%v)", err)
 	}
-	if r.URL.String() != "https:/search?q=golang" && r.URL.Host != "bing.com" {
-		t.Fatalf("autorest: Preparing an existing request failed (%s)", r.URL)
+	if r.URL.Host != "bing.com" {
+		t.Fatalf("autorest: Preparing an existing request failed when setting the host (%s)", r.URL)
+	}
+
+	if r.URL.Path != "/search" {
+		t.Fatalf("autorest: Preparing an existing request failed when setting the path (%s)", r.URL.Path)
+	}
+
+	if r.URL.RawQuery != "q=golang" {
+		t.Fatalf("autorest: Preparing an existing request failed when setting the query parameters (%s)", r.URL.RawQuery)
+	}
+}
+
+func TestModifyingRequestWithExistingQueryParameters(t *testing.T) {
+	r, err := Prepare(
+		mocks.NewRequestForURL("https://bing.com"),
+		WithPath("search"),
+		WithQueryParameters(map[string]interface{}{"q": "golang the best"}),
+		WithQueryParameters(map[string]interface{}{"pq": "golang+encoded"}),
+		WithQueryParameters(map[string]interface{}{"zq": []string{"one", "two"}}),
+	)
+	if err != nil {
+		t.Fatalf("autorest: Preparing an existing request returned an error (%v)", err)
+	}
+
+	if r.URL.Host != "bing.com" {
+		t.Fatalf("autorest: Preparing an existing request failed when setting the host (%s)", r.URL)
+	}
+
+	if r.URL.Path != "/search" {
+		t.Fatalf("autorest: Preparing an existing request failed when setting the path (%s)", r.URL.Path)
+	}
+
+	if r.URL.RawQuery != "pq=golang+encoded&q=golang+the+best&zq=one&zq=two" {
+		t.Fatalf("autorest: Preparing an existing request failed when setting the query parameters (%s)", r.URL.RawQuery)
+	}
+}
+
+func TestGetPrepareDecorators(t *testing.T) {
+	pd := GetPrepareDecorators(context.Background())
+	if l := len(pd); l != 0 {
+		t.Fatalf("expected zero length but got %d", l)
+	}
+	pd = GetPrepareDecorators(context.Background(), WithNothing(), AsFormURLEncoded())
+	if l := len(pd); l != 2 {
+		t.Fatalf("expected length of two but got %d", l)
+	}
+}
+
+func TestWithPrepareDecorators(t *testing.T) {
+	ctx := WithPrepareDecorators(context.Background(), []PrepareDecorator{WithUserAgent("somestring")})
+	pd := GetPrepareDecorators(ctx)
+	if l := len(pd); l != 1 {
+		t.Fatalf("expected length of one but got %d", l)
+	}
+	pd = GetPrepareDecorators(ctx, WithNothing(), WithNothing())
+	if l := len(pd); l != 1 {
+		t.Fatalf("expected length of one but got %d", l)
 	}
 }

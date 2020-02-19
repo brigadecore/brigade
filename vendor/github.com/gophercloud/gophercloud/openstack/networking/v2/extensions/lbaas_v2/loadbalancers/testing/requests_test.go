@@ -63,7 +63,7 @@ func TestCreateLoadbalancer(t *testing.T) {
 		AdminStateUp: gophercloud.Enabled,
 		VipSubnetID:  "9cedb85d-0759-4898-8a4b-fa5a5ea10086",
 		VipAddress:   "10.30.176.48",
-		Flavor:       "medium",
+		FlavorID:     "bba40eb2-ee8c-11e9-81b4-2a2ae2dbcce4",
 		Provider:     "haproxy",
 	}).Extract()
 	th.AssertNoErr(t, err)
@@ -115,7 +115,7 @@ func TestGetLoadbalancerStatusesTree(t *testing.T) {
 		t.Fatalf("Unexpected Get error: %v", err)
 	}
 
-	th.CheckDeepEquals(t, LoadbalancerStatusesTree, *(actual.Loadbalancer))
+	th.CheckDeepEquals(t, LoadbalancerStatusesTree, *actual)
 }
 
 func TestDeleteLoadbalancer(t *testing.T) {
@@ -133,12 +133,44 @@ func TestUpdateLoadbalancer(t *testing.T) {
 	HandleLoadbalancerUpdateSuccessfully(t)
 
 	client := fake.ServiceClient()
+	name := "NewLoadbalancerName"
 	actual, err := loadbalancers.Update(client, "36e08a3e-a78f-4b40-a229-1e7e23eee1ab", loadbalancers.UpdateOpts{
-		Name: "NewLoadbalancerName",
+		Name: &name,
 	}).Extract()
 	if err != nil {
 		t.Fatalf("Unexpected Update error: %v", err)
 	}
 
 	th.CheckDeepEquals(t, LoadbalancerUpdated, *actual)
+}
+
+func TestCascadingDeleteLoadbalancer(t *testing.T) {
+	th.SetupHTTP()
+	defer th.TeardownHTTP()
+	HandleLoadbalancerDeletionSuccessfully(t)
+
+	sc := fake.ServiceClient()
+	sc.Type = "network"
+	err := loadbalancers.CascadingDelete(sc, "36e08a3e-a78f-4b40-a229-1e7e23eee1ab").ExtractErr()
+	if err == nil {
+		t.Fatalf("expected error running CascadingDelete with Neutron service client but didn't get one")
+	}
+
+	sc.Type = "load-balancer"
+	err = loadbalancers.CascadingDelete(sc, "36e08a3e-a78f-4b40-a229-1e7e23eee1ab").ExtractErr()
+	th.AssertNoErr(t, err)
+}
+
+func TestGetLoadbalancerStatsTree(t *testing.T) {
+	th.SetupHTTP()
+	defer th.TeardownHTTP()
+	HandleLoadbalancerGetStatsTree(t)
+
+	client := fake.ServiceClient()
+	actual, err := loadbalancers.GetStats(client, "36e08a3e-a78f-4b40-a229-1e7e23eee1ab").Extract()
+	if err != nil {
+		t.Fatalf("Unexpected Get error: %v", err)
+	}
+
+	th.CheckDeepEquals(t, LoadbalancerStatsTree, *actual)
 }

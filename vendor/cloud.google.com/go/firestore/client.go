@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,28 +15,41 @@
 package firestore
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"time"
 
-	"google.golang.org/api/iterator"
-
-	vkit "cloud.google.com/go/firestore/apiv1beta1"
-
+	vkit "cloud.google.com/go/firestore/apiv1"
+	"cloud.google.com/go/internal/trace"
 	"cloud.google.com/go/internal/version"
-	pb "google.golang.org/genproto/googleapis/firestore/v1beta1"
-
 	"github.com/golang/protobuf/ptypes"
-	"golang.org/x/net/context"
+	gax "github.com/googleapis/gax-go/v2"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+	"google.golang.org/api/transport"
+	pb "google.golang.org/genproto/googleapis/firestore/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 // resourcePrefixHeader is the name of the metadata header used to indicate
 // the resource being operated on.
 const resourcePrefixHeader = "google-cloud-resource-prefix"
+
+// DetectProjectID is a sentinel value that instructs NewClient to detect the
+// project ID. It is given in place of the projectID argument. NewClient will
+// use the project ID from the given credentials or the default credentials
+// (https://developers.google.com/accounts/docs/application-default-credentials)
+// if no credentials were provided. When providing credentials, not all
+// options will allow NewClient to extract the project ID. Specifically a JWT
+// does not have the project ID encoded.
+const DetectProjectID = "*detect-project-id*"
 
 // A Client provides access to the Firestore service.
 type Client struct {
@@ -47,7 +60,29 @@ type Client struct {
 
 // NewClient creates a new Firestore client that uses the given project.
 func NewClient(ctx context.Context, projectID string, opts ...option.ClientOption) (*Client, error) {
-	vc, err := vkit.NewClient(ctx, opts...)
+	var o []option.ClientOption
+	// If this environment variable is defined, configure the client to talk to the emulator.
+	if addr := os.Getenv("FIRESTORE_EMULATOR_HOST"); addr != "" {
+		conn, err := grpc.Dial(addr, grpc.WithInsecure(), grpc.WithPerRPCCredentials(emulatorCreds{}))
+		if err != nil {
+			return nil, fmt.Errorf("firestore: dialing address from env var FIRESTORE_EMULATOR_HOST: %s", err)
+		}
+		o = []option.ClientOption{option.WithGRPCConn(conn)}
+	}
+	o = append(o, opts...)
+
+	if projectID == DetectProjectID {
+		creds, err := transport.Creds(ctx, o...)
+		if err != nil {
+			return nil, fmt.Errorf("fetching creds: %v", err)
+		}
+		if creds.ProjectID == "" {
+			return nil, errors.New("firestore: see the docs on DetectProjectID")
+		}
+		projectID = creds.ProjectID
+	}
+
+	vc, err := vkit.NewClient(ctx, o...)
 	if err != nil {
 		return nil, err
 	}
@@ -97,6 +132,19 @@ func (c *Client) Doc(path string) *DocumentRef {
 	return doc
 }
 
+// CollectionGroup creates a reference to a group of collections that include
+// the given ID, regardless of parent document.
+//
+// For example, consider:
+// France/Cities/Paris = {population: 100}
+// Canada/Cities/Montreal = {population: 90}
+//
+// CollectionGroup can be used to query across all "Cities" regardless of
+// its parent "Countries". See ExampleCollectionGroup for a complete example.
+func (c *Client) CollectionGroup(collectionID string) *CollectionGroupRef {
+	return newCollectionGroupRef(c, c.path(), collectionID)
+}
+
 func (c *Client) idsToRef(IDs []string, dbPath string) (*CollectionRef, *DocumentRef) {
 	if len(IDs) == 0 {
 		return nil, nil
@@ -120,81 +168,97 @@ func (c *Client) idsToRef(IDs []string, dbPath string) (*CollectionRef, *Documen
 	return coll, nil
 }
 
-// GetAll retrieves multiple documents with a single call. The DocumentSnapshots are
-// returned in the order of the given DocumentRefs.
+// GetAll retrieves multiple documents with a single call. The
+// DocumentSnapshots are returned in the order of the given DocumentRefs.
+// The return value will always contain the same number of DocumentSnapshots
+// as the number of DocumentRefs in the input.
 //
-// If a document is not present, the corresponding DocumentSnapshot will be nil.
-func (c *Client) GetAll(ctx context.Context, docRefs []*DocumentRef) ([]*DocumentSnapshot, error) {
-	if err := checkTransaction(ctx); err != nil {
-		return nil, err
-	}
+// If the same DocumentRef is specified multiple times in the input, the return
+// value will contain the same number of DocumentSnapshots referencing the same
+// document.
+//
+// If a document is not present, the corresponding DocumentSnapshot's Exists
+// method will return false.
+func (c *Client) GetAll(ctx context.Context, docRefs []*DocumentRef) (_ []*DocumentSnapshot, err error) {
+	ctx = trace.StartSpan(ctx, "cloud.google.com/go/firestore.GetAll")
+	defer func() { trace.EndSpan(ctx, err) }()
+
+	return c.getAll(ctx, docRefs, nil)
+}
+
+func (c *Client) getAll(ctx context.Context, docRefs []*DocumentRef, tid []byte) ([]*DocumentSnapshot, error) {
 	var docNames []string
-	for _, dr := range docRefs {
+	docIndices := map[string][]int{} // doc name to positions in docRefs
+	for i, dr := range docRefs {
 		if dr == nil {
 			return nil, errNilDocRef
 		}
 		docNames = append(docNames, dr.Path)
+		docIndices[dr.Path] = append(docIndices[dr.Path], i)
 	}
 	req := &pb.BatchGetDocumentsRequest{
 		Database:  c.path(),
 		Documents: docNames,
+	}
+	if tid != nil {
+		req.ConsistencySelector = &pb.BatchGetDocumentsRequest_Transaction{tid}
 	}
 	streamClient, err := c.c.BatchGetDocuments(withResourceHeader(ctx, req.Database), req)
 	if err != nil {
 		return nil, err
 	}
 
-	// Read results from the stream and add them to a map.
-	docMap := map[string]*pb.Document{}
+	// Read and remember all results from the stream.
+	var resps []*pb.BatchGetDocumentsResponse
 	for {
-		res, err := streamClient.Recv()
+		resp, err := streamClient.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return nil, err
 		}
-		switch x := res.Result.(type) {
-		case *pb.BatchGetDocumentsResponse_Found:
-			docMap[x.Found.Name] = x.Found
+		resps = append(resps, resp)
+	}
 
+	// Results may arrive out of order. Put each at the right indices.
+	docs := make([]*DocumentSnapshot, len(docNames))
+	for _, resp := range resps {
+		var (
+			indices []int
+			doc     *pb.Document
+			err     error
+		)
+		switch r := resp.Result.(type) {
+		case *pb.BatchGetDocumentsResponse_Found:
+			indices = docIndices[r.Found.Name]
+			doc = r.Found
 		case *pb.BatchGetDocumentsResponse_Missing:
-			if docMap[x.Missing] != nil {
-				return nil, fmt.Errorf("firestore: %q both missing and present", x.Missing)
-			}
-			docMap[x.Missing] = nil
+			indices = docIndices[r.Missing]
+			doc = nil
 		default:
 			return nil, errors.New("firestore: unknown BatchGetDocumentsResponse result type")
 		}
-	}
-
-	// Put the documents we've gathered in the same order as the requesting slice of
-	// DocumentRefs.
-	docs := make([]*DocumentSnapshot, len(docNames))
-	for i, name := range docNames {
-		pbDoc, ok := docMap[name]
-		if !ok {
-			return nil, fmt.Errorf("firestore: passed %q to BatchGetDocuments but never saw response", name)
-		}
-		if pbDoc != nil {
-			doc, err := newDocumentSnapshot(docRefs[i], pbDoc, c)
+		for _, index := range indices {
+			if docs[index] != nil {
+				return nil, fmt.Errorf("firestore: %q seen twice", docRefs[index].Path)
+			}
+			docs[index], err = newDocumentSnapshot(docRefs[index], doc, c, resp.ReadTime)
 			if err != nil {
 				return nil, err
 			}
-			docs[i] = doc
 		}
 	}
 	return docs, nil
 }
 
-// Collections returns an interator over the top-level collections.
+// Collections returns an iterator over the top-level collections.
 func (c *Client) Collections(ctx context.Context) *CollectionIterator {
 	it := &CollectionIterator{
-		err:    checkTransaction(ctx),
 		client: c,
 		it: c.c.ListCollectionIds(
 			withResourceHeader(ctx, c.path()),
-			&pb.ListCollectionIdsRequest{Parent: c.path()}),
+			&pb.ListCollectionIdsRequest{Parent: c.path() + "/documents"}),
 	}
 	it.pageInfo, it.nextFunc = iterator.NewPageInfo(
 		it.fetch,
@@ -209,10 +273,7 @@ func (c *Client) Batch() *WriteBatch {
 }
 
 // commit calls the Commit RPC outside of a transaction.
-func (c *Client) commit(ctx context.Context, ws []*pb.Write) (*WriteResult, error) {
-	if err := checkTransaction(ctx); err != nil {
-		return nil, err
-	}
+func (c *Client) commit(ctx context.Context, ws []*pb.Write) ([]*WriteResult, error) {
 	req := &pb.CommitRequest{
 		Database: c.path(),
 		Writes:   ws,
@@ -224,7 +285,23 @@ func (c *Client) commit(ctx context.Context, ws []*pb.Write) (*WriteResult, erro
 	if len(res.WriteResults) == 0 {
 		return nil, errors.New("firestore: missing WriteResult")
 	}
-	return writeResultFromProto(res.WriteResults[0])
+	var wrs []*WriteResult
+	for _, pwr := range res.WriteResults {
+		wr, err := writeResultFromProto(pwr)
+		if err != nil {
+			return nil, err
+		}
+		wrs = append(wrs, wr)
+	}
+	return wrs, nil
+}
+
+func (c *Client) commit1(ctx context.Context, ws []*pb.Write) (*WriteResult, error) {
+	wrs, err := c.commit(ctx, ws)
+	if err != nil {
+		return nil, err
+	}
+	return wrs[0], nil
 }
 
 // A WriteResult is returned by methods that write documents.
@@ -242,4 +319,28 @@ func writeResultFromProto(wr *pb.WriteResult) (*WriteResult, error) {
 		// TODO(jba): Follow up if Delete is supposed to return a nil timestamp.
 	}
 	return &WriteResult{UpdateTime: t}, nil
+}
+
+func sleep(ctx context.Context, dur time.Duration) error {
+	switch err := gax.Sleep(ctx, dur); err {
+	case context.Canceled:
+		return status.Error(codes.Canceled, "context canceled")
+	case context.DeadlineExceeded:
+		return status.Error(codes.DeadlineExceeded, "context deadline exceeded")
+	default:
+		return err
+	}
+}
+
+// emulatorCreds is an instance of grpc.PerRPCCredentials that will configure a
+// client to act as an admin for the Firestore emulator. It always hardcodes
+// the "authorization" metadata field to contain "Bearer owner", which the
+// Firestore emulator accepts as valid admin credentials.
+type emulatorCreds struct{}
+
+func (ec emulatorCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	return map[string]string{"authorization": "Bearer owner"}, nil
+}
+func (ec emulatorCreds) RequireTransportSecurity() bool {
+	return false
 }

@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package vision
 import (
 	"testing"
 
-	"cloud.google.com/go/internal/pretty"
+	"cloud.google.com/go/internal/testutil"
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
 )
 
@@ -218,11 +218,7 @@ func TestFaceFromLandmarks(t *testing.T) {
 	}
 
 	got := FaceFromLandmarks(landmarks)
-	msg, ok, err := pretty.Diff(want, got)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !ok {
-		t.Error(msg)
+	if diff := testutil.Diff(got, want); diff != "" {
+		t.Error(diff)
 	}
 }

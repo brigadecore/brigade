@@ -3,6 +3,7 @@ package schedulerstats
 import (
 	"encoding/json"
 	"math"
+	"strconv"
 
 	"github.com/gophercloud/gophercloud/pagination"
 )
@@ -23,13 +24,13 @@ type Capabilities struct {
 	LocationInfo             string  `json:"location_info"`
 	QoSSupport               bool    `json:"QoS_support"`
 	ProvisionedCapacityGB    float64 `json:"provisioned_capacity_gb"`
-	MaxOverSubscriptionRatio float64 `json:"max_over_subscription_ratio"`
+	MaxOverSubscriptionRatio string  `json:"-"`
 	ThinProvisioningSupport  bool    `json:"thin_provisioning_support"`
 	ThickProvisioningSupport bool    `json:"thick_provisioning_support"`
 	TotalVolumes             int64   `json:"total_volumes"`
 	FilterFunction           string  `json:"filter_function"`
 	GoodnessFuction          string  `json:"goodness_function"`
-	Mutliattach              bool    `json:"multiattach"`
+	Multiattach              bool    `json:"multiattach"`
 	SparseCopyVolume         bool    `json:"sparse_copy_volume"`
 }
 
@@ -44,8 +45,9 @@ func (r *Capabilities) UnmarshalJSON(b []byte) error {
 	type tmp Capabilities
 	var s struct {
 		tmp
-		FreeCapacityGB  interface{} `json:"free_capacity_gb"`
-		TotalCapacityGB interface{} `json:"total_capacity_gb"`
+		FreeCapacityGB           interface{} `json:"free_capacity_gb"`
+		MaxOverSubscriptionRatio interface{} `json:"max_over_subscription_ratio"`
+		TotalCapacityGB          interface{} `json:"total_capacity_gb"`
 	}
 	err := json.Unmarshal(b, &s)
 	if err != nil {
@@ -71,6 +73,15 @@ func (r *Capabilities) UnmarshalJSON(b []byte) error {
 
 	r.FreeCapacityGB = parseCapacity(s.FreeCapacityGB)
 	r.TotalCapacityGB = parseCapacity(s.TotalCapacityGB)
+
+	if s.MaxOverSubscriptionRatio != nil {
+		switch t := s.MaxOverSubscriptionRatio.(type) {
+		case float64:
+			r.MaxOverSubscriptionRatio = strconv.FormatFloat(t, 'f', -1, 64)
+		case string:
+			r.MaxOverSubscriptionRatio = t
+		}
+	}
 
 	return nil
 }

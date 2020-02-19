@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,17 +15,16 @@
 package firestore
 
 import (
+	"context"
 	"testing"
 
-	pb "google.golang.org/genproto/googleapis/firestore/v1beta1"
-
-	"golang.org/x/net/context"
+	pb "google.golang.org/genproto/googleapis/firestore/v1"
 )
 
 func TestWriteBatch(t *testing.T) {
-	type update struct{ A int }
+	c, srv, cleanup := newMock(t)
+	defer cleanup()
 
-	c, srv := newMock(t)
 	docPrefix := c.Collection("C").Path + "/"
 	srv.addRPC(
 		&pb.CommitRequest{
@@ -55,38 +54,14 @@ func TestWriteBatch(t *testing.T) {
 						Delete: docPrefix + "c",
 					},
 				},
-				{ // UpdateMap
-					Operation: &pb.Write_Update{
-						Update: &pb.Document{
-							Name:   docPrefix + "d",
-							Fields: testFields,
-						},
-					},
-					UpdateMask: &pb.DocumentMask{[]string{"a"}},
-					CurrentDocument: &pb.Precondition{
-						ConditionType: &pb.Precondition_Exists{true},
-					},
-				},
-				{ // UpdateStruct
-					Operation: &pb.Write_Update{
-						Update: &pb.Document{
-							Name:   docPrefix + "e",
-							Fields: map[string]*pb.Value{"A": intval(3)},
-						},
-					},
-					UpdateMask: &pb.DocumentMask{[]string{"A"}},
-					CurrentDocument: &pb.Precondition{
-						ConditionType: &pb.Precondition_Exists{true},
-					},
-				},
-				{ // UpdatePaths
+				{ // Update
 					Operation: &pb.Write_Update{
 						Update: &pb.Document{
 							Name:   docPrefix + "f",
 							Fields: map[string]*pb.Value{"*": intval(3)},
 						},
 					},
-					UpdateMask: &pb.DocumentMask{[]string{"`*`"}},
+					UpdateMask: &pb.DocumentMask{FieldPaths: []string{"`*`"}},
 					CurrentDocument: &pb.Precondition{
 						ConditionType: &pb.Precondition_Exists{true},
 					},
@@ -105,9 +80,7 @@ func TestWriteBatch(t *testing.T) {
 		Create(c.Doc("C/a"), testData).
 		Set(c.Doc("C/b"), testData).
 		Delete(c.Doc("C/c")).
-		UpdateMap(c.Doc("C/d"), testData).
-		UpdateStruct(c.Doc("C/e"), []string{"A"}, update{A: 3}).
-		UpdatePaths(c.Doc("C/f"), []FieldPathUpdate{{Path: []string{"*"}, Value: 3}}).
+		Update(c.Doc("C/f"), []Update{{FieldPath: []string{"*"}, Value: 3}}).
 		Commit(context.Background())
 	if err != nil {
 		t.Fatal(err)
@@ -120,7 +93,9 @@ func TestWriteBatch(t *testing.T) {
 
 func TestWriteBatchErrors(t *testing.T) {
 	ctx := context.Background()
-	c, _ := newMock(t)
+	c, _, cleanup := newMock(t)
+	defer cleanup()
+
 	for _, test := range []struct {
 		desc  string
 		batch *WriteBatch
@@ -138,8 +113,10 @@ func TestWriteBatchErrors(t *testing.T) {
 			c.Batch().Create(c.Doc("a/b"), 3),
 		},
 	} {
-		if _, err := test.batch.Commit(ctx); err == nil {
-			t.Errorf("%s: got nil, want error", test.desc)
-		}
+		t.Run(test.desc, func(t *testing.T) {
+			if _, err := test.batch.Commit(ctx); err == nil {
+				t.Fatal("got nil, want error")
+			}
+		})
 	}
 }

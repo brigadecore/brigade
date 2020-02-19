@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,9 +20,8 @@ import (
 	"reflect"
 	"strings"
 
-	pb "google.golang.org/genproto/googleapis/firestore/v1beta1"
-
 	"github.com/golang/protobuf/ptypes"
+	pb "google.golang.org/genproto/googleapis/firestore/v1"
 )
 
 func setFromProtoValue(x interface{}, vproto *pb.Value, c *Client) error {
@@ -73,6 +72,14 @@ func setReflectFromProtoValue(v reflect.Value, vproto *pb.Value, c *Client) erro
 		v.Set(reflect.ValueOf(t))
 		return nil
 
+	case typeOfProtoTimestamp:
+		x, ok := val.(*pb.Value_TimestampValue)
+		if !ok {
+			return typeErr()
+		}
+		v.Set(reflect.ValueOf(x.TimestampValue))
+		return nil
+
 	case typeOfLatLng:
 		x, ok := val.(*pb.Value_GeoPointValue)
 		if !ok {
@@ -110,33 +117,56 @@ func setReflectFromProtoValue(v reflect.Value, vproto *pb.Value, c *Client) erro
 		v.SetString(x.StringValue)
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		x, ok := val.(*pb.Value_IntegerValue)
-		if !ok {
+		var i int64
+		switch x := val.(type) {
+		case *pb.Value_IntegerValue:
+			i = x.IntegerValue
+		case *pb.Value_DoubleValue:
+			f := x.DoubleValue
+			i = int64(f)
+			if float64(i) != f {
+				return fmt.Errorf("firestore: float %f does not fit into %s", f, v.Type())
+			}
+		default:
 			return typeErr()
 		}
-		i := x.IntegerValue
 		if v.OverflowInt(i) {
 			return overflowErr(v, i)
 		}
 		v.SetInt(i)
 
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32:
-		x, ok := val.(*pb.Value_IntegerValue)
-		if !ok {
+		var u uint64
+		switch x := val.(type) {
+		case *pb.Value_IntegerValue:
+			u = uint64(x.IntegerValue)
+		case *pb.Value_DoubleValue:
+			f := x.DoubleValue
+			u = uint64(f)
+			if float64(u) != f {
+				return fmt.Errorf("firestore: float %f does not fit into %s", f, v.Type())
+			}
+		default:
 			return typeErr()
 		}
-		u := uint64(x.IntegerValue)
 		if v.OverflowUint(u) {
 			return overflowErr(v, u)
 		}
 		v.SetUint(u)
 
 	case reflect.Float32, reflect.Float64:
-		x, ok := val.(*pb.Value_DoubleValue)
-		if !ok {
+		var f float64
+		switch x := val.(type) {
+		case *pb.Value_DoubleValue:
+			f = x.DoubleValue
+		case *pb.Value_IntegerValue:
+			f = float64(x.IntegerValue)
+			if int64(f) != x.IntegerValue {
+				return overflowErr(v, x.IntegerValue)
+			}
+		default:
 			return typeErr()
 		}
-		f := x.DoubleValue
 		if v.OverflowFloat(f) {
 			return overflowErr(v, f)
 		}
@@ -312,7 +342,6 @@ func createFromProtoValue(vproto *pb.Value, c *Client) (interface{}, error) {
 		return pathToDoc(v.ReferenceValue, c)
 	case *pb.Value_GeoPointValue:
 		return v.GeoPointValue, nil
-
 	case *pb.Value_ArrayValue:
 		vals := v.ArrayValue.Values
 		ret := make([]interface{}, len(vals))

@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Google Inc. All Rights Reserved.
+Copyright 2017 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,12 +17,13 @@ limitations under the License.
 package spanner_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
 	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 )
@@ -83,8 +84,7 @@ func ExampleClient_ReadWriteTransaction() {
 		var balance int64
 		row, err := txn.ReadRow(ctx, "Accounts", spanner.Key{"alice"}, []string{"balance"})
 		if err != nil {
-			// This function will be called again if this is an
-			// IsAborted error.
+			// This function will be called again if this is an IsAborted error.
 			return err
 		}
 		if err := row.Column(0, &balance); err != nil {
@@ -97,9 +97,8 @@ func ExampleClient_ReadWriteTransaction() {
 		balance -= 10
 		m := spanner.Update("Accounts", []string{"user", "balance"}, []interface{}{"alice", balance})
 		return txn.BufferWrite([]*spanner.Mutation{m})
-		// The buffered mutation will be committed.  If the commit
-		// fails with an IsAborted error, this function will be called
-		// again.
+		// The buffered mutation will be committed. If the commit fails with an
+		// IsAborted error, this function will be called again.
 	})
 	if err != nil {
 		// TODO: Handle error.
@@ -158,7 +157,8 @@ func ExampleUpdateMap() {
 	}
 }
 
-// This example is the same as the one for Update, except for the use of UpdateStruct.
+// This example is the same as the one for Update, except for the use of
+// UpdateStruct.
 func ExampleUpdateStruct() {
 	ctx := context.Background()
 	client, err := spanner.NewClient(ctx, myDB)
@@ -298,7 +298,7 @@ func ExampleRow_Size() {
 	if err != nil {
 		// TODO: Handle error.
 	}
-	fmt.Println(row.Size()) // size is 2
+	fmt.Println(row.Size()) // 2
 }
 
 func ExampleRow_ColumnName() {
@@ -311,7 +311,7 @@ func ExampleRow_ColumnName() {
 	if err != nil {
 		// TODO: Handle error.
 	}
-	fmt.Println(row.ColumnName(1)) // prints "balance"
+	fmt.Println(row.ColumnName(1)) // "balance"
 }
 
 func ExampleRow_ColumnIndex() {
@@ -427,6 +427,22 @@ func ExampleReadOnlyTransaction_ReadUsingIndex() {
 	_ = iter // TODO: iterate using Next or Do.
 }
 
+func ExampleReadOnlyTransaction_ReadWithOptions() {
+	ctx := context.Background()
+	client, err := spanner.NewClient(ctx, myDB)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// Use an index, and limit to 100 rows at most.
+	iter := client.Single().ReadWithOptions(ctx, "Users",
+		spanner.KeySets(spanner.Key{"a@example.com"}, spanner.Key{"b@example.com"}),
+		[]string{"name", "email"}, &spanner.ReadOptions{
+			Index: "UsersByEmail",
+			Limit: 100,
+		})
+	_ = iter // TODO: iterate using Next or Do.
+}
+
 func ExampleReadOnlyTransaction_ReadRow() {
 	ctx := context.Background()
 	client, err := spanner.NewClient(ctx, myDB)
@@ -459,8 +475,36 @@ func ExampleNewStatement() {
 
 func ExampleNewStatement_structLiteral() {
 	stmt := spanner.Statement{
-		SQL:    "SELECT FirstName, LastName FROM SINGERS WHERE LastName >= @start",
-		Params: map[string]interface{}{"start": "Dylan"},
+		SQL: `SELECT FirstName, LastName FROM SINGERS WHERE LastName = ("Lea", "Martin")`,
+	}
+	_ = stmt // TODO: Use stmt in Query.
+}
+
+func ExampleStructParam() {
+	stmt := spanner.Statement{
+		SQL: "SELECT * FROM SINGERS WHERE (FirstName, LastName) = @singerinfo",
+		Params: map[string]interface{}{
+			"singerinfo": struct {
+				FirstName string
+				LastName  string
+			}{"Bob", "Dylan"},
+		},
+	}
+	_ = stmt // TODO: Use stmt in Query.
+}
+
+func ExampleArrayOfStructParam() {
+	stmt := spanner.Statement{
+		SQL: "SELECT * FROM SINGERS WHERE (FirstName, LastName) IN UNNEST(@singerinfo)",
+		Params: map[string]interface{}{
+			"singerinfo": []struct {
+				FirstName string
+				LastName  string
+			}{
+				{"Ringo", "Starr"},
+				{"John", "Lennon"},
+			},
+		},
 	}
 	_ = stmt // TODO: Use stmt in Query.
 }
@@ -533,4 +577,136 @@ func ExampleGenericColumnValue_Decode() {
 	// Output:
 	// int 42
 	// string my-text
+}
+
+func ExampleClient_BatchReadOnlyTransaction() {
+	ctx := context.Background()
+	var (
+		client *spanner.Client
+		txn    *spanner.BatchReadOnlyTransaction
+		err    error
+	)
+	if client, err = spanner.NewClient(ctx, myDB); err != nil {
+		// TODO: Handle error.
+	}
+	defer client.Close()
+	if txn, err = client.BatchReadOnlyTransaction(ctx, spanner.StrongRead()); err != nil {
+		// TODO: Handle error.
+	}
+	defer txn.Close()
+
+	// Singer represents the elements in a row from the Singers table.
+	type Singer struct {
+		SingerID   int64
+		FirstName  string
+		LastName   string
+		SingerInfo []byte
+	}
+	stmt := spanner.Statement{SQL: "SELECT * FROM Singers;"}
+	partitions, err := txn.PartitionQuery(ctx, stmt, spanner.PartitionOptions{})
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// Note: here we use multiple goroutines, but you should use separate
+	// processes/machines.
+	wg := sync.WaitGroup{}
+	for i, p := range partitions {
+		wg.Add(1)
+		go func(i int, p *spanner.Partition) {
+			defer wg.Done()
+			iter := txn.Execute(ctx, p)
+			defer iter.Stop()
+			for {
+				row, err := iter.Next()
+				if err == iterator.Done {
+					break
+				} else if err != nil {
+					// TODO: Handle error.
+				}
+				var s Singer
+				if err := row.ToStruct(&s); err != nil {
+					// TODO: Handle error.
+				}
+				_ = s // TODO: Process the row.
+			}
+		}(i, p)
+	}
+	wg.Wait()
+}
+
+func ExampleCommitTimestamp() {
+	ctx := context.Background()
+	client, err := spanner.NewClient(ctx, myDB)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	type account struct {
+		User     string
+		Creation spanner.NullTime // time.Time can also be used if column isNOT NULL
+	}
+
+	a := account{User: "Joe", Creation: spanner.NullTime{spanner.CommitTimestamp, true}}
+	m, err := spanner.InsertStruct("Accounts", a)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	_, err = client.Apply(ctx, []*spanner.Mutation{m}, spanner.ApplyAtLeastOnce())
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	if r, e := client.Single().ReadRow(ctx, "Accounts", spanner.Key{"Joe"}, []string{"User", "Creation"}); e != nil {
+		// TODO: Handle error.
+	} else {
+		var got account
+		if err := r.ToStruct(&got); err != nil {
+			// TODO: Handle error.
+		}
+		_ = got // TODO: Process row.
+	}
+}
+
+func ExampleStatement_regexpContains() {
+	// Search for accounts with valid emails using regexp as per:
+	//   https://cloud.google.com/spanner/docs/functions-and-operators#regexp_contains
+	stmt := spanner.Statement{
+		SQL: `SELECT * FROM users WHERE REGEXP_CONTAINS(email, @valid_email)`,
+		Params: map[string]interface{}{
+			"valid_email": `\Q@\E`,
+		},
+	}
+	_ = stmt // TODO: Use stmt in a query.
+}
+
+func ExampleKeySets() {
+	ctx := context.Background()
+	client, err := spanner.NewClient(ctx, myDB)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// Get some rows from the Accounts table using a secondary index. In this case we get all users who are in Georgia.
+	iter := client.Single().ReadUsingIndex(context.Background(), "Accounts", "idx_state", spanner.Key{"GA"}, []string{"state"})
+
+	// Create a empty KeySet by calling the KeySets function with no parameters.
+	ks := spanner.KeySets()
+
+	// Loop the results of a previous query iterator.
+	for {
+		row, err := iter.Next()
+		if err == iterator.Done {
+			break
+		} else if err != nil {
+			// TODO: Handle error.
+		}
+		var id string
+		err = row.ColumnByName("User", &id)
+		if err != nil {
+			// TODO: Handle error.
+		}
+		ks = spanner.KeySets(spanner.KeySets(spanner.Key{id}, ks))
+	}
+
+	_ = ks //TODO: Go use the KeySet in another query.
+
 }

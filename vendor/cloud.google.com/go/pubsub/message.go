@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,13 +43,28 @@ type Message struct {
 	// This field is read-only.
 	PublishTime time.Time
 
+	// receiveTime is the time the message was received by the client.
+	receiveTime time.Time
+
+	// DeliveryAttempt is the number of times a message has been delivered.
+	// This is part of the dead lettering feature that forwards messages that
+	// fail to be processed (from nack/ack deadline timeout) to a dead letter topic.
+	// If dead lettering is enabled, this will be set on all attempts, starting
+	// with value 1. Otherwise, the value will be nil.
+	// This field is read-only.
+	//
+	// It is EXPERIMENTAL and a part of a closed alpha that may not be
+	// accessible to all users. This field is subject to change or removal
+	// without notice.
+	DeliveryAttempt *int
+
 	// size is the approximate size of the message's data and attributes.
 	size int
 
 	calledDone bool
 
 	// The done method of the iterator that created this Message.
-	doneFunc func(string, bool)
+	doneFunc func(string, bool, time.Time)
 }
 
 func toMessage(resp *pb.ReceivedMessage) (*Message, error) {
@@ -61,12 +76,20 @@ func toMessage(resp *pb.ReceivedMessage) (*Message, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var deliveryAttempt *int
+	if resp.DeliveryAttempt > 0 {
+		da := int(resp.DeliveryAttempt)
+		deliveryAttempt = &da
+	}
+
 	return &Message{
-		ackID:       resp.AckId,
-		Data:        resp.Message.Data,
-		Attributes:  resp.Message.Attributes,
-		ID:          resp.Message.MessageId,
-		PublishTime: pubTime,
+		ackID:           resp.AckId,
+		Data:            resp.Message.Data,
+		Attributes:      resp.Message.Attributes,
+		ID:              resp.Message.MessageId,
+		PublishTime:     pubTime,
+		DeliveryAttempt: deliveryAttempt,
 	}, nil
 }
 
@@ -93,5 +116,5 @@ func (m *Message) done(ack bool) {
 		return
 	}
 	m.calledDone = true
-	m.doneFunc(m.ackID, ack)
+	m.doneFunc(m.ackID, ack, m.receiveTime)
 }

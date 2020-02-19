@@ -1,10 +1,26 @@
 package autorest
 
+// Copyright 2017 Microsoft Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -215,9 +231,58 @@ func ExampleString() {
 
 func TestStringWithValidString(t *testing.T) {
 	i := 123
-	if String(i) != "123" {
-		t.Fatal("autorest: String method failed to convert integer 123 to string")
+	if got, want := String(i), "123"; got != want {
+		t.Logf("got:  %q\nwant: %q", got, want)
+		t.Fail()
 	}
+}
+
+func TestStringWithStringSlice(t *testing.T) {
+	s := []string{"string1", "string2"}
+	if got, want := String(s, ","), "string1,string2"; got != want {
+		t.Logf("got:  %q\nwant: %q", got, want)
+		t.Fail()
+	}
+}
+
+func TestStringWithEnum(t *testing.T) {
+	type TestEnumType string
+	s := TestEnumType("string1")
+	if got, want := String(s), "string1"; got != want {
+		t.Logf("got:  %q\nwant: %q", got, want)
+		t.Fail()
+	}
+}
+
+func TestStringWithEnumSlice(t *testing.T) {
+	type TestEnumType string
+	s := []TestEnumType{"string1", "string2"}
+	if got, want := String(s, ","), "string1,string2"; got != want {
+		t.Logf("got:  %q\nwant: %q", got, want)
+		t.Fail()
+	}
+}
+
+func TestStringWithIntegerSlice(t *testing.T) {
+	type TestEnumType int32
+	s := []TestEnumType{1, 2}
+	if got, want := String(s, ","), "1,2"; got != want {
+		t.Logf("got:  %q\nwant: %q", got, want)
+		t.Fail()
+	}
+}
+
+func ExampleAsStringSlice() {
+	type TestEnumType string
+
+	a := []TestEnumType{"value1", "value2"}
+	b, _ := AsStringSlice(a)
+	for _, c := range b {
+		fmt.Println(c)
+	}
+	// Output:
+	// value1
+	// value2
 }
 
 func TestEncodeWithValidPath(t *testing.T) {
@@ -269,6 +334,45 @@ func TestMapToValuesWithArrayValues(t *testing.T) {
 
 	if !isEqual(v, MapToValues(m)) {
 		t.Fatalf("autorest: MapToValues method failed to return correct values - expected(%v) got(%v)", v, MapToValues(m))
+	}
+}
+
+type someTempError struct{}
+
+func (s someTempError) Error() string {
+	return "temporary error"
+}
+func (s someTempError) Timeout() bool {
+	return true
+}
+func (s someTempError) Temporary() bool {
+	return true
+}
+
+func TestIsTemporaryNetworkErrorTrue(t *testing.T) {
+	if !IsTemporaryNetworkError(someTempError{}) {
+		t.Fatal("expected someTempError to be a temporary network error")
+	}
+	if !IsTemporaryNetworkError(errors.New("non-temporary network error")) {
+		t.Fatal("expected random error to be a temporary network error")
+	}
+}
+
+type someFatalError struct{}
+
+func (s someFatalError) Error() string {
+	return "fatal error"
+}
+func (s someFatalError) Timeout() bool {
+	return false
+}
+func (s someFatalError) Temporary() bool {
+	return false
+}
+
+func TestIsTemporaryNetworkErrorFalse(t *testing.T) {
+	if IsTemporaryNetworkError(someFatalError{}) {
+		t.Fatal("expected someFatalError to be a fatal network error")
 	}
 }
 
@@ -364,5 +468,43 @@ func withErrorRespondDecorator(e *error) RespondDecorator {
 			*e = fmt.Errorf("autorest: Faux Respond Error")
 			return *e
 		})
+	}
+}
+
+type mockDrain struct {
+	read   bool
+	closed bool
+}
+
+func (md *mockDrain) Read(b []byte) (int, error) {
+	md.read = true
+	b = append(b, 0xff)
+	return 1, io.EOF
+}
+
+func (md *mockDrain) Close() error {
+	md.closed = true
+	return nil
+}
+
+func TestDrainResponseBody(t *testing.T) {
+	err := DrainResponseBody(nil)
+	if err != nil {
+		t.Fatalf("expected nil error, got %v", err)
+	}
+	err = DrainResponseBody(&http.Response{})
+	if err != nil {
+		t.Fatalf("expected nil error, got %v", err)
+	}
+	md := &mockDrain{}
+	err = DrainResponseBody(&http.Response{Body: md})
+	if err != nil {
+		t.Fatalf("expected nil error, got %v", err)
+	}
+	if !md.closed {
+		t.Fatal("mockDrain wasn't closed")
+	}
+	if !md.read {
+		t.Fatal("mockDrain wasn't read")
 	}
 }

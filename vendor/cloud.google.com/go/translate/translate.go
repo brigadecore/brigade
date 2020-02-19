@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package translate is a client for the Google Translation API.
+// Package translate is the v2 client for the Google Translation API.
+//
+// PLEASE NOTE: We recommend using the new v3 client for new projects:
+// https://cloud.google.com/go/translate/apiv3.
+//
 // See https://cloud.google.com/translation for details.
 package translate
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
-	"google.golang.org/api/option"
-	htransport "google.golang.org/api/transport/http"
-
 	"cloud.google.com/go/internal/version"
-	raw "cloud.google.com/go/translate/internal/translate/v2"
-	"golang.org/x/net/context"
 	"golang.org/x/text/language"
+	"google.golang.org/api/option"
+	raw "google.golang.org/api/translate/v2"
+	htransport "google.golang.org/api/transport/http"
 )
 
 const userAgent = "gcloud-golang-translate/20161115"
@@ -130,7 +133,7 @@ type Options struct {
 	Model string
 }
 
-// The format of the input text. Used in Options.Format.
+// Format is the format of the input text. Used in Options.Format.
 type Format string
 
 // Constants for Options.Format.
@@ -139,7 +142,7 @@ const (
 	Text Format = "text"
 )
 
-// A Translation contains the results of translating a piece of text.
+// Translation contains the results of translating a piece of text.
 type Translation struct {
 	// Text is the input text translated into the target language.
 	Text string

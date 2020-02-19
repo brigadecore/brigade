@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Google Inc. All Rights Reserved.
+Copyright 2017 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,13 +17,11 @@ limitations under the License.
 package spanner
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
 	pbd "github.com/golang/protobuf/ptypes/duration"
 	pbt "github.com/golang/protobuf/ptypes/timestamp"
-
 	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 )
 
@@ -31,7 +29,7 @@ import (
 func TestStrong(t *testing.T) {
 	got := StrongRead()
 	want := TimestampBound{mode: strong}
-	if !reflect.DeepEqual(got, want) {
+	if !testEqual(got, want) {
 		t.Errorf("Strong() = %v; want %v", got, want)
 	}
 }
@@ -40,7 +38,7 @@ func TestStrong(t *testing.T) {
 func TestExactStaleness(t *testing.T) {
 	got := ExactStaleness(10 * time.Second)
 	want := TimestampBound{mode: exactStaleness, d: 10 * time.Second}
-	if !reflect.DeepEqual(got, want) {
+	if !testEqual(got, want) {
 		t.Errorf("ExactStaleness(10*time.Second) = %v; want %v", got, want)
 	}
 }
@@ -49,7 +47,7 @@ func TestExactStaleness(t *testing.T) {
 func TestMaxStaleness(t *testing.T) {
 	got := MaxStaleness(10 * time.Second)
 	want := TimestampBound{mode: maxStaleness, d: 10 * time.Second}
-	if !reflect.DeepEqual(got, want) {
+	if !testEqual(got, want) {
 		t.Errorf("MaxStaleness(10*time.Second) = %v; want %v", got, want)
 	}
 }
@@ -59,7 +57,7 @@ func TestMinReadTimestamp(t *testing.T) {
 	ts := time.Now()
 	got := MinReadTimestamp(ts)
 	want := TimestampBound{mode: minReadTimestamp, t: ts}
-	if !reflect.DeepEqual(got, want) {
+	if !testEqual(got, want) {
 		t.Errorf("MinReadTimestamp(%v) = %v; want %v", ts, got, want)
 	}
 }
@@ -69,7 +67,7 @@ func TestReadTimestamp(t *testing.T) {
 	ts := time.Now()
 	got := ReadTimestamp(ts)
 	want := TimestampBound{mode: readTimestamp, t: ts}
-	if !reflect.DeepEqual(got, want) {
+	if !testEqual(got, want) {
 		t.Errorf("ReadTimestamp(%v) = %v; want %v", ts, got, want)
 	}
 }
@@ -125,7 +123,7 @@ func TestDurationProto(t *testing.T) {
 	}
 	for _, test := range tests {
 		got := durationProto(test.d)
-		if !reflect.DeepEqual(got, &test.want) {
+		if !testEqual(got, &test.want) {
 			t.Errorf("durationProto(%v) = %v; want %v", test.d, got, test.want)
 		}
 	}
@@ -143,7 +141,7 @@ func TestTimeProto(t *testing.T) {
 	}
 	for _, test := range tests {
 		got := timestampProto(test.t)
-		if !reflect.DeepEqual(got, &test.want) {
+		if !testEqual(got, &test.want) {
 			t.Errorf("timestampProto(%v) = %v; want %v", test.t, got, test.want)
 		}
 	}
@@ -201,7 +199,7 @@ func TestBuildTransactionOptionsReadOnly(t *testing.T) {
 	}
 	for _, test := range tests {
 		got := buildTransactionOptionsReadOnly(test.tb, test.ts)
-		if !reflect.DeepEqual(got, &test.want) {
+		if !testEqual(got, &test.want) {
 			t.Errorf("buildTransactionOptionsReadOnly(%v,%v) = %v; want %v", test.tb, test.ts, got, test.want)
 		}
 	}

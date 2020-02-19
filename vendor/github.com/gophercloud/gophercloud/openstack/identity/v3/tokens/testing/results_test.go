@@ -50,3 +50,12 @@ func TestExtractProject(t *testing.T) {
 
 	testhelper.CheckDeepEquals(t, &ExpectedProject, project)
 }
+
+func TestExtractDomain(t *testing.T) {
+	result := getGetDomainResult(t)
+
+	domain, err := result.ExtractDomain()
+	testhelper.AssertNoErr(t, err)
+
+	testhelper.CheckDeepEquals(t, &ExpectedDomain, domain)
+}

@@ -1,10 +1,26 @@
 package autorest
 
+// Copyright 2017 Microsoft Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"reflect"
 	"sync"
@@ -165,24 +181,30 @@ func TestAfterDelayWaits(t *testing.T) {
 
 func TestAfterDelay_Cancels(t *testing.T) {
 	client := mocks.NewSender()
-	cancel := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
 	delay := 5 * time.Second
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	tt := time.Now()
+	start := time.Now()
+	end := time.Now()
+	var err error
 	go func() {
 		req := mocks.NewRequest()
-		req.Cancel = cancel
-		wg.Done()
-		SendWithSender(client, req,
+		req = req.WithContext(ctx)
+		_, err = SendWithSender(client, req,
 			AfterDelay(delay))
+		end = time.Now()
+		wg.Done()
 	}()
+	cancel()
 	wg.Wait()
-	close(cancel)
 	time.Sleep(5 * time.Millisecond)
-	if time.Since(tt) >= delay {
-		t.Fatal("autorest: AfterDelay failed to cancel")
+	if end.Sub(start) >= delay {
+		t.Fatal("autorest: AfterDelay elapsed")
+	}
+	if err == nil {
+		t.Fatal("autorest: AfterDelay didn't cancel")
 	}
 }
 
@@ -491,6 +513,15 @@ func TestDelayForBackoff(t *testing.T) {
 	}
 }
 
+func TestDelayForBackoffWithCap(t *testing.T) {
+	d := 2 * time.Second
+	start := time.Now()
+	DelayForBackoffWithCap(d, 1*time.Second, 0, nil)
+	if time.Since(start) >= d {
+		t.Fatal("autorest: DelayForBackoffWithCap delayed for too long")
+	}
+}
+
 func TestDelayForBackoff_Cancels(t *testing.T) {
 	cancel := make(chan struct{})
 	delay := 5 * time.Second
@@ -764,4 +795,220 @@ func newAcceptedResponse() *http.Response {
 	resp := mocks.NewResponseWithStatus("202 Accepted", http.StatusAccepted)
 	mocks.SetAcceptedHeaders(resp)
 	return resp
+}
+
+func TestDelayWithRetryAfterWithSuccess(t *testing.T) {
+	after, retries := 2, 2
+	totalSecs := after * retries
+
+	client := mocks.NewSender()
+	resp := mocks.NewResponseWithStatus("429 Too many requests", http.StatusTooManyRequests)
+	mocks.SetResponseHeader(resp, "Retry-After", fmt.Sprintf("%v", after))
+	client.AppendAndRepeatResponse(resp, retries)
+	client.AppendResponse(mocks.NewResponseWithStatus("200 OK", http.StatusOK))
+
+	d := time.Second * time.Duration(totalSecs)
+	start := time.Now()
+	r, _ := SendWithSender(client, mocks.NewRequest(),
+		DoRetryForStatusCodes(1, time.Duration(time.Second), http.StatusTooManyRequests),
+	)
+
+	if time.Since(start) < d {
+		t.Fatal("autorest: DelayWithRetryAfter failed stopped too soon")
+	}
+
+	Respond(r,
+		ByDiscardingBody(),
+		ByClosing())
+
+	if client.Attempts() != 3 {
+		t.Fatalf("autorest: Sender#DelayWithRetryAfter -- Got: StatusCode %v in %v attempts; Want: StatusCode 200 OK in 2 attempts -- ",
+			r.Status, client.Attempts()-1)
+	}
+}
+
+func TestDelayWithRetryAfterWithSuccessDateTime(t *testing.T) {
+	resumeAt := time.Now().Add(2 * time.Second).Round(time.Second)
+
+	client := mocks.NewSender()
+	resp := mocks.NewResponseWithStatus("503 Service temporarily unavailable", http.StatusServiceUnavailable)
+	mocks.SetResponseHeader(resp, "Retry-After", resumeAt.Format(time.RFC1123))
+	client.AppendResponse(resp)
+	client.AppendResponse(mocks.NewResponseWithStatus("200 OK", http.StatusOK))
+
+	r, _ := SendWithSender(client, mocks.NewRequest(),
+		DoRetryForStatusCodes(1, time.Duration(time.Second), http.StatusServiceUnavailable),
+	)
+
+	if time.Now().Before(resumeAt) {
+		t.Fatal("autorest: DelayWithRetryAfter failed stopped too soon")
+	}
+
+	Respond(r,
+		ByDiscardingBody(),
+		ByClosing())
+
+	if client.Attempts() != 2 {
+		t.Fatalf("autorest: Sender#DelayWithRetryAfter -- Got: StatusCode %v in %v attempts; Want: StatusCode 200 OK in 2 attempts -- ",
+			r.Status, client.Attempts()-1)
+	}
+}
+
+type temporaryError struct {
+	message string
+}
+
+func (te temporaryError) Error() string {
+	return te.message
+}
+
+func (te temporaryError) Timeout() bool {
+	return true
+}
+
+func (te temporaryError) Temporary() bool {
+	return true
+}
+
+func TestDoRetryForStatusCodes_NilResponseTemporaryError(t *testing.T) {
+	client := mocks.NewSender()
+	client.AppendResponse(nil)
+	client.SetError(temporaryError{message: "faux error"})
+
+	r, err := SendWithSender(client, mocks.NewRequest(),
+		DoRetryForStatusCodes(3, time.Duration(1*time.Second), StatusCodesForRetry...),
+	)
+
+	Respond(r,
+		ByDiscardingBody(),
+		ByClosing())
+
+	if err != nil || client.Attempts() != 2 {
+		t.Fatalf("autorest: Sender#TestDoRetryForStatusCodes_NilResponseTemporaryError -- Got: non-nil error or wrong number of attempts - %v", err)
+	}
+}
+
+func TestDoRetryForStatusCodes_NilResponseTemporaryError2(t *testing.T) {
+	client := mocks.NewSender()
+	client.AppendResponse(nil)
+	client.SetError(fmt.Errorf("faux error"))
+
+	r, err := SendWithSender(client, mocks.NewRequest(),
+		DoRetryForStatusCodes(3, time.Duration(1*time.Second), StatusCodesForRetry...),
+	)
+
+	Respond(r,
+		ByDiscardingBody(),
+		ByClosing())
+
+	if err != nil || client.Attempts() != 2 {
+		t.Fatalf("autorest: Sender#TestDoRetryForStatusCodes_NilResponseTemporaryError2 -- Got: nil error or wrong number of attempts - %v", err)
+	}
+}
+
+type fatalError struct {
+	message string
+}
+
+func (fe fatalError) Error() string {
+	return fe.message
+}
+
+func (fe fatalError) Timeout() bool {
+	return false
+}
+
+func (fe fatalError) Temporary() bool {
+	return false
+}
+
+func TestDoRetryForStatusCodes_NilResponseFatalError(t *testing.T) {
+	const retryAttempts = 3
+	client := mocks.NewSender()
+	client.AppendAndRepeatResponse(nil, retryAttempts+1)
+	client.SetAndRepeatError(fatalError{"fatal error"}, retryAttempts+1)
+
+	r, err := SendWithSender(client, mocks.NewRequest(),
+		DoRetryForStatusCodes(retryAttempts, time.Duration(1*time.Second), StatusCodesForRetry...),
+	)
+
+	Respond(r,
+		ByDiscardingBody(),
+		ByClosing())
+
+	if err == nil || client.Attempts() < retryAttempts+1 {
+		t.Fatalf("autorest: Sender#TestDoRetryForStatusCodes_NilResponseFatalError -- Got: nil error or wrong number of attempts - %v", err)
+	}
+}
+
+func TestDoRetryForStatusCodes_Cancel429(t *testing.T) {
+	retries := 6
+	client := mocks.NewSender()
+	resp := mocks.NewResponseWithStatus("429 Too many requests", http.StatusTooManyRequests)
+	client.AppendAndRepeatResponse(resp, retries)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(retries/2)*time.Second)
+	defer cancel()
+	req := mocks.NewRequest().WithContext(ctx)
+	r, err := SendWithSender(client, req,
+		DoRetryForStatusCodes(1, time.Duration(time.Second), http.StatusTooManyRequests),
+	)
+
+	if err == nil {
+		t.Fatal("unexpected nil-error")
+	}
+	if r == nil {
+		t.Fatal("unexpected nil response")
+	}
+	if r.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("expected status code 429, got: %d", r.StatusCode)
+	}
+	if client.Attempts() >= retries {
+		t.Fatalf("too many attempts: %d", client.Attempts())
+	}
+}
+
+func TestDoRetryForStatusCodes_Race(t *testing.T) {
+	// cannot use the mock sender as it's not safe for concurrent use
+	s := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	defer s.Close()
+
+	sender := DecorateSender(s.Client(),
+		DoRetryForStatusCodes(0, 0, http.StatusRequestTimeout))
+
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			req, _ := http.NewRequest(http.MethodGet, s.URL, nil)
+			if _, err := sender.Do(req); err != nil {
+				t.Fatal(err)
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+func TestGetSendDecorators(t *testing.T) {
+	sd := GetSendDecorators(context.Background())
+	if l := len(sd); l != 0 {
+		t.Fatalf("expected zero length but got %d", l)
+	}
+	sd = GetSendDecorators(context.Background(), DoCloseIfError(), DoErrorIfStatusCode())
+	if l := len(sd); l != 2 {
+		t.Fatalf("expected length of two but got %d", l)
+	}
+}
+
+func TestWithSendDecorators(t *testing.T) {
+	ctx := WithSendDecorators(context.Background(), []SendDecorator{DoRetryForAttempts(5, 5*time.Second)})
+	sd := GetSendDecorators(ctx)
+	if l := len(sd); l != 1 {
+		t.Fatalf("expected length of one but got %d", l)
+	}
+	sd = GetSendDecorators(ctx, DoCloseIfError(), DoErrorIfStatusCode())
+	if l := len(sd); l != 1 {
+		t.Fatalf("expected length of one but got %d", l)
+	}
 }

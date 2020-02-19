@@ -1,5 +1,5 @@
 /*
-Copyright 2015 Google Inc. All Rights Reserved.
+Copyright 2015 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -45,28 +45,37 @@ type Config struct {
 	AdminEndpoint     string                           // optional
 	DataEndpoint      string                           // optional
 	CertFile          string                           // optional
+	UserAgent         string                           // optional
+	AuthToken         string                           // optional
 	TokenSource       oauth2.TokenSource               // derived
 	TLSCreds          credentials.TransportCredentials // derived
 }
 
+// RequiredFlags describes the flag requirements for a cbt command.
 type RequiredFlags uint
 
-const NoneRequired RequiredFlags = 0
 const (
+	// NoneRequired specifies that not flags are required.
+	NoneRequired RequiredFlags = 0
+	// ProjectRequired specifies that the -project flag is required.
 	ProjectRequired RequiredFlags = 1 << iota
+	// InstanceRequired specifies that the -instance flag is required.
 	InstanceRequired
+	// ProjectAndInstanceRequired specifies that both -project and -instance is required.
+	ProjectAndInstanceRequired = ProjectRequired | InstanceRequired
 )
-const ProjectAndInstanceRequired RequiredFlags = ProjectRequired | InstanceRequired
 
 // RegisterFlags registers a set of standard flags for this config.
 // It should be called before flag.Parse.
 func (c *Config) RegisterFlags() {
-	flag.StringVar(&c.Project, "project", c.Project, "project ID, if unset uses gcloud configured project")
+	flag.StringVar(&c.Project, "project", c.Project, "project ID. If unset uses gcloud configured project")
 	flag.StringVar(&c.Instance, "instance", c.Instance, "Cloud Bigtable instance")
-	flag.StringVar(&c.Creds, "creds", c.Creds, "if set, use application credentials in this file")
+	flag.StringVar(&c.Creds, "creds", c.Creds, "Path to the credentials file. If set, uses the application credentials in this file")
 	flag.StringVar(&c.AdminEndpoint, "admin-endpoint", c.AdminEndpoint, "Override the admin api endpoint")
 	flag.StringVar(&c.DataEndpoint, "data-endpoint", c.DataEndpoint, "Override the data api endpoint")
 	flag.StringVar(&c.CertFile, "cert-file", c.CertFile, "Override the TLS certificates file")
+	flag.StringVar(&c.UserAgent, "user-agent", c.UserAgent, "Override the user agent string")
+	flag.StringVar(&c.AuthToken, "auth-token", c.AuthToken, "if set, use IAM Auth Token for requests")
 }
 
 // CheckFlags checks that the required config values are set.
@@ -118,10 +127,18 @@ func Load() (*Config, error) {
 		}
 		return nil, fmt.Errorf("Reading %s: %v", filename, err)
 	}
-	c := new(Config)
 	s := bufio.NewScanner(bytes.NewReader(data))
+	return readConfig(s, filename)
+}
+
+func readConfig(s *bufio.Scanner, filename string) (*Config, error) {
+	c := new(Config)
 	for s.Scan() {
 		line := s.Text()
+		// Ignore empty lines.
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
 		i := strings.Index(line, "=")
 		if i < 0 {
 			return nil, fmt.Errorf("Bad line in %s: %q", filename, line)
@@ -140,21 +157,30 @@ func Load() (*Config, error) {
 			c.AdminEndpoint = val
 		case "data-endpoint":
 			c.DataEndpoint = val
+		case "cert-file":
+			c.CertFile = val
+		case "user-agent":
+			c.UserAgent = val
+		case "auth-token":
+			c.AuthToken = val
 		}
 
 	}
 	return c, s.Err()
 }
 
+// GcloudCredential holds gcloud credential information.
 type GcloudCredential struct {
 	AccessToken string    `json:"access_token"`
 	Expiry      time.Time `json:"token_expiry"`
 }
 
+// Token creates an oauth2 token using gcloud credentials.
 func (cred *GcloudCredential) Token() *oauth2.Token {
 	return &oauth2.Token{AccessToken: cred.AccessToken, TokenType: "Bearer", Expiry: cred.Expiry}
 }
 
+// GcloudConfig holds gcloud configuration values.
 type GcloudConfig struct {
 	Configuration struct {
 		Properties struct {
@@ -166,6 +192,8 @@ type GcloudConfig struct {
 	Credential GcloudCredential `json:"credential"`
 }
 
+// GcloudCmdTokenSource holds the comamnd arguments. It is only intended to be set by the program.
+// TODO(deklerk): Can this be unexported?
 type GcloudCmdTokenSource struct {
 	Command string
 	Args    []string

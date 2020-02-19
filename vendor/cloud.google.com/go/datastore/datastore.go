@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2014 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,14 +15,16 @@
 package datastore
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"os"
 	"reflect"
 
-	"golang.org/x/net/context"
+	"cloud.google.com/go/internal/trace"
 	"google.golang.org/api/option"
+	"google.golang.org/api/transport"
 	gtransport "google.golang.org/api/transport/grpc"
 	pb "google.golang.org/genproto/googleapis/datastore/v1"
 	"google.golang.org/grpc"
@@ -36,33 +38,43 @@ const (
 // ScopeDatastore grants permissions to view and/or manage datastore entities
 const ScopeDatastore = "https://www.googleapis.com/auth/datastore"
 
+// DetectProjectID is a sentinel value that instructs NewClient to detect the
+// project ID. It is given in place of the projectID argument. NewClient will
+// use the project ID from the given credentials or the default credentials
+// (https://developers.google.com/accounts/docs/application-default-credentials)
+// if no credentials were provided. When providing credentials, not all
+// options will allow NewClient to extract the project ID. Specifically a JWT
+// does not have the project ID encoded.
+const DetectProjectID = "*detect-project-id*"
+
 // resourcePrefixHeader is the name of the metadata header used to indicate
 // the resource being operated on.
 const resourcePrefixHeader = "google-cloud-resource-prefix"
 
 // Client is a client for reading and writing data in a datastore dataset.
 type Client struct {
-	conn     *grpc.ClientConn
+	connPool gtransport.ConnPool
 	client   pb.DatastoreClient
-	endpoint string
 	dataset  string // Called dataset by the datastore API, synonym for project ID.
 }
 
-// NewClient creates a new Client for a given dataset.
-// If the project ID is empty, it is derived from the DATASTORE_PROJECT_ID environment variable.
-// If the DATASTORE_EMULATOR_HOST environment variable is set, client will use its value
-// to connect to a locally-running datastore emulator.
+// NewClient creates a new Client for a given dataset.  If the project ID is
+// empty, it is derived from the DATASTORE_PROJECT_ID environment variable.
+// If the DATASTORE_EMULATOR_HOST environment variable is set, client will use
+// its value to connect to a locally-running datastore emulator.
+// DetectProjectID can be passed as the projectID argument to instruct
+// NewClient to detect the project ID from the credentials.
 func NewClient(ctx context.Context, projectID string, opts ...option.ClientOption) (*Client, error) {
 	var o []option.ClientOption
 	// Environment variables for gcd emulator:
 	// https://cloud.google.com/datastore/docs/tools/datastore-emulator
-	// If the emulator is available, dial it directly (and don't pass any credentials).
+	// If the emulator is available, dial it without passing any credentials.
 	if addr := os.Getenv("DATASTORE_EMULATOR_HOST"); addr != "" {
-		conn, err := grpc.Dial(addr, grpc.WithInsecure())
-		if err != nil {
-			return nil, fmt.Errorf("grpc.Dial: %v", err)
+		o = []option.ClientOption{
+			option.WithEndpoint(addr),
+			option.WithoutAuthentication(),
+			option.WithGRPCDialOption(grpc.WithInsecure()),
 		}
-		o = []option.ClientOption{option.WithGRPCConn(conn)}
 	} else {
 		o = []option.ClientOption{
 			option.WithEndpoint(prodAddr),
@@ -80,20 +92,34 @@ func NewClient(ctx context.Context, projectID string, opts ...option.ClientOptio
 	if projectID == "" {
 		projectID = os.Getenv("DATASTORE_PROJECT_ID")
 	}
+
+	o = append(o, opts...)
+
+	if projectID == DetectProjectID {
+		creds, err := transport.Creds(ctx, o...)
+		if err != nil {
+			return nil, fmt.Errorf("fetching creds: %v", err)
+		}
+
+		if creds.ProjectID == "" {
+			return nil, errors.New("datastore: see the docs on DetectProjectID")
+		}
+
+		projectID = creds.ProjectID
+	}
+
 	if projectID == "" {
 		return nil, errors.New("datastore: missing project/dataset id")
 	}
-	o = append(o, opts...)
-	conn, err := gtransport.Dial(ctx, o...)
+	connPool, err := gtransport.DialPool(ctx, o...)
 	if err != nil {
 		return nil, fmt.Errorf("dialing: %v", err)
 	}
 	return &Client{
-		conn:    conn,
-		client:  newDatastoreClient(conn, projectID),
-		dataset: projectID,
+		connPool: connPool,
+		client:   newDatastoreClient(connPool, projectID),
+		dataset:  projectID,
 	}, nil
-
 }
 
 var (
@@ -257,10 +283,9 @@ func multiValid(key []*Key) error {
 // that represents S, I or P.
 //
 // As a special case, PropertyList is an invalid type for v.
-//
-// TODO(djd): multiArg is very confusing. Fold this logic into the
-// relevant Put/Get methods to make the logic less opaque.
 func checkMultiArg(v reflect.Value) (m multiArgType, elemType reflect.Type) {
+	// TODO(djd): multiArg is very confusing. Fold this logic into the
+	// relevant Put/Get methods to make the logic less opaque.
 	if v.Kind() != reflect.Slice {
 		return multiArgTypeInvalid, nil
 	}
@@ -287,7 +312,7 @@ func checkMultiArg(v reflect.Value) (m multiArgType, elemType reflect.Type) {
 
 // Close closes the Client.
 func (c *Client) Close() error {
-	return c.conn.Close()
+	return c.connPool.Close()
 }
 
 // Get loads the entity stored for key into dst, which must be a struct pointer
@@ -302,11 +327,14 @@ func (c *Client) Close() error {
 // type than the one it was stored from, or when a field is missing or
 // unexported in the destination struct. ErrFieldMismatch is only returned if
 // dst is a struct pointer.
-func (c *Client) Get(ctx context.Context, key *Key, dst interface{}) error {
+func (c *Client) Get(ctx context.Context, key *Key, dst interface{}) (err error) {
+	ctx = trace.StartSpan(ctx, "cloud.google.com/go/datastore.Get")
+	defer func() { trace.EndSpan(ctx, err) }()
+
 	if dst == nil { // get catches nil interfaces; we need to catch nil ptr here
 		return ErrInvalidEntityType
 	}
-	err := c.get(ctx, []*Key{key}, []interface{}{dst}, nil)
+	err = c.get(ctx, []*Key{key}, []interface{}{dst}, nil)
 	if me, ok := err.(MultiError); ok {
 		return me[0]
 	}
@@ -323,7 +351,12 @@ func (c *Client) Get(ctx context.Context, key *Key, dst interface{}) error {
 // As a special case, PropertyList is an invalid type for dst, even though a
 // PropertyList is a slice of structs. It is treated as invalid to avoid being
 // mistakenly passed when []PropertyList was intended.
-func (c *Client) GetMulti(ctx context.Context, keys []*Key, dst interface{}) error {
+//
+// err may be a MultiError. See ExampleMultiError to check it.
+func (c *Client) GetMulti(ctx context.Context, keys []*Key, dst interface{}) (err error) {
+	ctx = trace.StartSpan(ctx, "cloud.google.com/go/datastore.GetMulti")
+	defer func() { trace.EndSpan(ctx, err) }()
+
 	return c.get(ctx, keys, dst, nil)
 }
 
@@ -350,6 +383,9 @@ func (c *Client) get(ctx context.Context, keys []*Key, dst interface{}, opts *pb
 	for i, k := range keys {
 		if !k.valid() {
 			multiErr[i] = ErrInvalidKey
+			any = true
+		} else if k.Incomplete() {
+			multiErr[i] = fmt.Errorf("datastore: can't get the incomplete key: %v", k)
 			any = true
 		} else {
 			ks := k.String()
@@ -434,10 +470,10 @@ func (c *Client) get(ctx context.Context, keys []*Key, dst interface{}, opts *pb
 	return nil
 }
 
-// Put saves the entity src into the datastore with key k. src must be a struct
-// pointer or implement PropertyLoadSaver; if a struct pointer then any
-// unexported fields of that struct will be skipped. If k is an incomplete key,
-// the returned key will be a unique key generated by the datastore.
+// Put saves the entity src into the datastore with the given key. src must be
+// a struct pointer or implement PropertyLoadSaver; if the struct pointer has
+// any unexported fields they will be skipped. If the key is incomplete, the
+// returned key will be a unique key generated by the datastore.
 func (c *Client) Put(ctx context.Context, key *Key, src interface{}) (*Key, error) {
 	k, err := c.PutMulti(ctx, []*Key{key}, []interface{}{src})
 	if err != nil {
@@ -452,7 +488,12 @@ func (c *Client) Put(ctx context.Context, key *Key, src interface{}) (*Key, erro
 // PutMulti is a batch version of Put.
 //
 // src must satisfy the same conditions as the dst argument to GetMulti.
-func (c *Client) PutMulti(ctx context.Context, keys []*Key, src interface{}) ([]*Key, error) {
+// err may be a MultiError. See ExampleMultiError to check it.
+func (c *Client) PutMulti(ctx context.Context, keys []*Key, src interface{}) (ret []*Key, err error) {
+	// TODO(jba): rewrite in terms of Mutate.
+	ctx = trace.StartSpan(ctx, "cloud.google.com/go/datastore.PutMulti")
+	defer func() { trace.EndSpan(ctx, err) }()
+
 	mutations, err := putMutations(keys, src)
 	if err != nil {
 		return nil, err
@@ -470,7 +511,7 @@ func (c *Client) PutMulti(ctx context.Context, keys []*Key, src interface{}) ([]
 	}
 
 	// Copy any newly minted keys into the returned keys.
-	ret := make([]*Key, len(keys))
+	ret = make([]*Key, len(keys))
 	for i, key := range keys {
 		if key.Incomplete() {
 			// This key is in the mutation results.
@@ -540,7 +581,13 @@ func (c *Client) Delete(ctx context.Context, key *Key) error {
 }
 
 // DeleteMulti is a batch version of Delete.
-func (c *Client) DeleteMulti(ctx context.Context, keys []*Key) error {
+//
+// err may be a MultiError. See ExampleMultiError to check it.
+func (c *Client) DeleteMulti(ctx context.Context, keys []*Key) (err error) {
+	// TODO(jba): rewrite in terms of Mutate.
+	ctx = trace.StartSpan(ctx, "cloud.google.com/go/datastore.DeleteMulti")
+	defer func() { trace.EndSpan(ctx, err) }()
+
 	mutations, err := deleteMutations(keys)
 	if err != nil {
 		return err
@@ -558,17 +605,67 @@ func (c *Client) DeleteMulti(ctx context.Context, keys []*Key) error {
 func deleteMutations(keys []*Key) ([]*pb.Mutation, error) {
 	mutations := make([]*pb.Mutation, 0, len(keys))
 	set := make(map[string]bool, len(keys))
-	for _, k := range keys {
-		if k.Incomplete() {
-			return nil, fmt.Errorf("datastore: can't delete the incomplete key: %v", k)
+	multiErr := make(MultiError, len(keys))
+	hasErr := false
+	for i, k := range keys {
+		if !k.valid() {
+			multiErr[i] = ErrInvalidKey
+			hasErr = true
+		} else if k.Incomplete() {
+			multiErr[i] = fmt.Errorf("datastore: can't delete the incomplete key: %v", k)
+			hasErr = true
+		} else {
+			ks := k.String()
+			if !set[ks] {
+				mutations = append(mutations, &pb.Mutation{
+					Operation: &pb.Mutation_Delete{Delete: keyToProto(k)},
+				})
+			}
+			set[ks] = true
 		}
-		ks := k.String()
-		if !set[ks] {
-			mutations = append(mutations, &pb.Mutation{
-				Operation: &pb.Mutation_Delete{Delete: keyToProto(k)},
-			})
-		}
-		set[ks] = true
+	}
+	if hasErr {
+		return nil, multiErr
 	}
 	return mutations, nil
+}
+
+// Mutate applies one or more mutations. Mutations are applied in
+// non-transactional mode. If you need atomicity, use Transaction.Mutate.
+// It returns the keys of the argument Mutations, in the same order.
+//
+// If any of the mutations are invalid, Mutate returns a MultiError with the errors.
+// Mutate returns a MultiError in this case even if there is only one Mutation.
+// See ExampleMultiError to check it.
+func (c *Client) Mutate(ctx context.Context, muts ...*Mutation) (ret []*Key, err error) {
+	ctx = trace.StartSpan(ctx, "cloud.google.com/go/datastore.Mutate")
+	defer func() { trace.EndSpan(ctx, err) }()
+
+	pmuts, err := mutationProtos(muts)
+	if err != nil {
+		return nil, err
+	}
+	req := &pb.CommitRequest{
+		ProjectId: c.dataset,
+		Mutations: pmuts,
+		Mode:      pb.CommitRequest_NON_TRANSACTIONAL,
+	}
+	resp, err := c.client.Commit(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	// Copy any newly minted keys into the returned keys.
+	ret = make([]*Key, len(muts))
+	for i, mut := range muts {
+		if mut.key.Incomplete() {
+			// This key is in the mutation results.
+			ret[i], err = protoToKey(resp.MutationResults[i].Key)
+			if err != nil {
+				return nil, errors.New("datastore: internal error: server returned an invalid key")
+			}
+		} else {
+			ret[i] = mut.key
+		}
+	}
+	return ret, nil
 }

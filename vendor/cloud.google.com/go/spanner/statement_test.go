@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Google Inc. All Rights Reserved.
+Copyright 2017 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,30 +18,19 @@ package spanner
 
 import (
 	"math"
-	"reflect"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/civil"
-
 	"github.com/golang/protobuf/proto"
 	proto3 "github.com/golang/protobuf/ptypes/struct"
-
 	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 )
 
-// Test Statement.bindParams.
-func TestBindParams(t *testing.T) {
-	// Verify Statement.bindParams generates correct values and types.
+func TestConvertParams(t *testing.T) {
 	st := Statement{
 		SQL:    "SELECT id from t_foo WHERE col = @var",
 		Params: map[string]interface{}{"var": nil},
-	}
-	want := &sppb.ExecuteSqlRequest{
-		Params: &proto3.Struct{
-			Fields: map[string]*proto3.Value{"var": nil},
-		},
-		ParamTypes: map[string]*sppb.Type{"var": nil},
 	}
 	var (
 		t1, _ = time.Parse(time.RFC3339Nano, "2016-11-15T15:04:05.999999999Z")
@@ -53,7 +42,17 @@ func TestBindParams(t *testing.T) {
 		d2, _ = civil.ParseDate("0001-01-01")
 		d3, _ = civil.ParseDate("9999-12-31")
 	)
-	for i, test := range []struct {
+
+	type staticStruct struct {
+		Field int `spanner:"field"`
+	}
+
+	var (
+		s1 = staticStruct{10}
+		s2 = staticStruct{20}
+	)
+
+	for _, test := range []struct {
 		val       interface{}
 		wantField *proto3.Value
 		wantType  *sppb.Type
@@ -113,32 +112,61 @@ func TestBindParams(t *testing.T) {
 		{[]byte(nil), nullProto(), bytesType()},
 		{[][]byte(nil), nullProto(), listType(bytesType())},
 		{[][]byte{}, listProto(), listType(bytesType())},
-		{[][]byte{[]byte{1}, []byte(nil)}, listProto(bytesProto([]byte{1}), nullProto()), listType(bytesType())},
+		{[][]byte{{1}, []byte(nil)}, listProto(bytesProto([]byte{1}), nullProto()), listType(bytesType())},
 		// date
 		{d1, dateProto(d1), dateType()},
 		{NullDate{civil.Date{}, false}, nullProto(), dateType()},
 		{[]civil.Date(nil), nullProto(), listType(dateType())},
 		{[]civil.Date{}, listProto(), listType(dateType())},
 		{[]civil.Date{d1, d2, d3}, listProto(dateProto(d1), dateProto(d2), dateProto(d3)), listType(dateType())},
-		{[]NullDate{NullDate{d2, true}, NullDate{}}, listProto(dateProto(d2), nullProto()), listType(dateType())},
+		{[]NullDate{{d2, true}, {}}, listProto(dateProto(d2), nullProto()), listType(dateType())},
 		// timestamp
 		{t1, timeProto(t1), timeType()},
 		{NullTime{}, nullProto(), timeType()},
 		{[]time.Time(nil), nullProto(), listType(timeType())},
 		{[]time.Time{}, listProto(), listType(timeType())},
 		{[]time.Time{t1, t2, t3}, listProto(timeProto(t1), timeProto(t2), timeProto(t3)), listType(timeType())},
-		{[]NullTime{NullTime{t2, true}, NullTime{}}, listProto(timeProto(t2), nullProto()), listType(timeType())},
+		{[]NullTime{{t2, true}, {}}, listProto(timeProto(t2), nullProto()), listType(timeType())},
+		// Struct
+		{
+			s1,
+			listProto(intProto(10)),
+			structType(mkField("field", intType())),
+		},
+		{
+			(*struct {
+				F1 civil.Date `spanner:""`
+				F2 bool
+			})(nil),
+			nullProto(),
+			structType(
+				mkField("", dateType()),
+				mkField("F2", boolType())),
+		},
+		// Array-of-struct
+		{
+			[]staticStruct{s1, s2},
+			listProto(listProto(intProto(10)), listProto(intProto(20))),
+			listType(structType(mkField("field", intType()))),
+		},
 	} {
 		st.Params["var"] = test.val
-		want.Params.Fields["var"] = test.wantField
-		want.ParamTypes["var"] = test.wantType
-		got := &sppb.ExecuteSqlRequest{}
-		if err := st.bindParams(got); err != nil || !proto.Equal(got, want) {
+		gotParams, gotParamTypes, gotErr := st.convertParams()
+		if gotErr != nil {
+			t.Error(gotErr)
+			continue
+		}
+		gotParamField := gotParams.Fields["var"]
+		if !proto.Equal(gotParamField, test.wantField) {
 			// handle NaN
-			if test.wantType.Code == floatType().Code && proto.MarshalTextString(got) == proto.MarshalTextString(want) {
+			if test.wantType.Code == floatType().Code && proto.MarshalTextString(gotParamField) == proto.MarshalTextString(test.wantField) {
 				continue
 			}
-			t.Errorf("#%d: bind result: \n(%v, %v)\nwant\n(%v, %v)\n", i, got, err, want, nil)
+			t.Errorf("%#v: got %v, want %v\n", test.val, gotParamField, test.wantField)
+		}
+		gotParamType := gotParamTypes["var"]
+		if !proto.Equal(gotParamType, test.wantType) {
+			t.Errorf("%#v: got %v, want %v\n", test.val, gotParamType, test.wantField)
 		}
 	}
 
@@ -148,18 +176,14 @@ func TestBindParams(t *testing.T) {
 		wantErr error
 	}{
 		{
-			struct{}{},
-			errBindParam("var", struct{}{}, errEncoderUnsupportedType(struct{}{})),
-		},
-		{
 			nil,
 			errBindParam("var", nil, errNilParam),
 		},
 	} {
 		st.Params["var"] = test.val
-		var got sppb.ExecuteSqlRequest
-		if err := st.bindParams(&got); !reflect.DeepEqual(err, test.wantErr) {
-			t.Errorf("value %#v:\ngot:  %v\nwant: %v", test.val, err, test.wantErr)
+		_, _, gotErr := st.convertParams()
+		if !testEqual(gotErr, test.wantErr) {
+			t.Errorf("value %#v:\ngot:  %v\nwant: %v", test.val, gotErr, test.wantErr)
 		}
 	}
 }

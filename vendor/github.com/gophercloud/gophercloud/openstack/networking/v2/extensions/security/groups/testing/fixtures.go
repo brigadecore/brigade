@@ -1,6 +1,8 @@
 package testing
 
 import (
+	"time"
+
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 )
@@ -13,19 +15,28 @@ const SecurityGroupListResponse = `
             "id": "85cc3048-abc3-43cc-89b3-377341426ac5",
             "name": "default",
             "security_group_rules": [],
-            "tenant_id": "e4f50856753b4dc6afee5fa6b9b6c550"
+            "tenant_id": "e4f50856753b4dc6afee5fa6b9b6c550",
+            "created_at": "2019-06-30T04:15:37",
+            "updated_at": "2019-06-30T05:18:49"
         }
     ]
 }
 `
 
-var SecurityGroup1 = groups.SecGroup{
-	Description: "default",
-	ID:          "85cc3048-abc3-43cc-89b3-377341426ac5",
-	Name:        "default",
-	Rules:       []rules.SecGroupRule{},
-	TenantID:    "e4f50856753b4dc6afee5fa6b9b6c550",
-}
+var (
+	createdTime, _ = time.Parse(time.RFC3339, "2019-06-30T04:15:37Z")
+	updatedTime, _ = time.Parse(time.RFC3339, "2019-06-30T05:18:49Z")
+
+	SecurityGroup1 = groups.SecGroup{
+		Description: "default",
+		ID:          "85cc3048-abc3-43cc-89b3-377341426ac5",
+		Name:        "default",
+		Rules:       []rules.SecGroupRule{},
+		TenantID:    "e4f50856753b4dc6afee5fa6b9b6c550",
+		CreatedAt:   createdTime,
+		UpdatedAt:   updatedTime,
+	}
+)
 
 const SecurityGroupCreateRequest = `
 {
@@ -68,7 +79,9 @@ const SecurityGroupCreateResponse = `
                 "tenant_id": "e4f50856753b4dc6afee5fa6b9b6c550"
             }
         ],
-        "tenant_id": "e4f50856753b4dc6afee5fa6b9b6c550"
+        "tenant_id": "e4f50856753b4dc6afee5fa6b9b6c550",
+        "created_at": "2019-06-30T04:15:37Z",
+        "updated_at": "2019-06-30T05:18:49Z"
     }
 }
 `
@@ -113,7 +126,9 @@ const SecurityGroupUpdateResponse = `
                 "tenant_id": "e4f50856753b4dc6afee5fa6b9b6c550"
             }
         ],
-        "tenant_id": "e4f50856753b4dc6afee5fa6b9b6c550"
+        "tenant_id": "e4f50856753b4dc6afee5fa6b9b6c550",
+        "created_at": "2019-06-30T04:15:37Z",
+        "updated_at": "2019-06-30T05:18:49Z"
     }
 }
 `
@@ -150,7 +165,9 @@ const SecurityGroupGetResponse = `
                 "tenant_id": "e4f50856753b4dc6afee5fa6b9b6c550"
             }
         ],
-        "tenant_id": "e4f50856753b4dc6afee5fa6b9b6c550"
+        "tenant_id": "e4f50856753b4dc6afee5fa6b9b6c550",
+        "created_at": "2019-06-30T04:15:37Z",
+        "updated_at": "2019-06-30T05:18:49Z"
     }
 }
 `

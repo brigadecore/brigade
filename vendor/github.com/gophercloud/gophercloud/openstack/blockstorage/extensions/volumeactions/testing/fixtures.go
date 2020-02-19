@@ -276,3 +276,34 @@ func MockExtendSizeResponse(t *testing.T) {
 			fmt.Fprintf(w, `{}`)
 		})
 }
+
+func MockForceDeleteResponse(t *testing.T) {
+	th.Mux.HandleFunc("/volumes/d32019d3-bc6e-4319-9c1d-6722fc136a22/action", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "POST")
+		th.TestHeader(t, r, "X-Auth-Token", fake.TokenID)
+		th.TestBody(t, r, `{"os-force_delete":""}`)
+		w.WriteHeader(http.StatusAccepted)
+	})
+}
+
+func MockSetImageMetadataResponse(t *testing.T) {
+	th.Mux.HandleFunc("/volumes/cd281d77-8217-4830-be95-9528227c105c/action", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "POST")
+		th.TestHeader(t, r, "X-Auth-Token", fake.TokenID)
+		th.TestHeader(t, r, "Content-Type", "application/json")
+		th.TestHeader(t, r, "Accept", "application/json")
+		th.TestJSONRequest(t, r, `
+{
+	"os-set_image_metadata": {
+		"metadata": {
+			"label": "test"
+		}
+	}
+}
+		`)
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		fmt.Fprintf(w, `{}`)
+	})
+}

@@ -29,6 +29,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// +build go1.7
+
 package proto_test
 
 import (
@@ -71,8 +73,8 @@ func BenchmarkAny(b *testing.B) {
 	}
 }
 
-// BenchmarkEmpy measures the overhead of doing the minimal possible encode.
-func BenchmarkEmpy(b *testing.B) {
+// BenchmarkEmpty measures the overhead of doing the minimal possible encode.
+func BenchmarkEmpty(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		raw, err := proto.Marshal(&tpb.Message{})
 		if err != nil {
