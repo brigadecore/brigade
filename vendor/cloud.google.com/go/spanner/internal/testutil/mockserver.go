@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Google Inc. All Rights Reserved.
+Copyright 2017 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,23 +17,22 @@ limitations under the License.
 package testutil
 
 import (
+	"context"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 	"net"
+	"sync"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	proto3 "github.com/golang/protobuf/ptypes/struct"
 	pbt "github.com/golang/protobuf/ptypes/timestamp"
-
 	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -67,15 +66,18 @@ type MockCtlMsg struct {
 // MockCloudSpanner is a mock implementation of SpannerServer interface.
 // TODO: make MockCloudSpanner a full-fleged Cloud Spanner implementation.
 type MockCloudSpanner struct {
+	sppb.SpannerServer
+
 	s      *grpc.Server
 	t      *testing.T
 	addr   string
 	msgs   chan MockCtlMsg
 	readTs time.Time
-	next   int
 
-	// embed nil interface so updating proto with new methods don't fail the build
-	sppb.SpannerServer
+	mu          sync.Mutex
+	next        int
+	nextSession int
+	sessions    map[string]*sppb.Session
 }
 
 // Addr returns the listening address of mock server.
@@ -103,26 +105,31 @@ func (m *MockCloudSpanner) Done() {
 
 // CreateSession is a placeholder for SpannerServer.CreateSession.
 func (m *MockCloudSpanner) CreateSession(c context.Context, r *sppb.CreateSessionRequest) (*sppb.Session, error) {
-	m.t.Fatalf("CreateSession is unimplemented")
-	return nil, errors.New("Unimplemented")
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	name := fmt.Sprintf("session-%d", m.nextSession)
+	m.nextSession++
+	s := &sppb.Session{Name: name}
+	m.sessions[name] = s
+	return s, nil
 }
 
 // GetSession is a placeholder for SpannerServer.GetSession.
 func (m *MockCloudSpanner) GetSession(c context.Context, r *sppb.GetSessionRequest) (*sppb.Session, error) {
-	m.t.Fatalf("GetSession is unimplemented")
-	return nil, errors.New("Unimplemented")
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if s, ok := m.sessions[r.Name]; ok {
+		return s, nil
+	}
+	return nil, status.Errorf(codes.NotFound, "not found")
 }
 
 // DeleteSession is a placeholder for SpannerServer.DeleteSession.
 func (m *MockCloudSpanner) DeleteSession(c context.Context, r *sppb.DeleteSessionRequest) (*empty.Empty, error) {
-	m.t.Fatalf("DeleteSession is unimplemented")
-	return nil, errors.New("Unimplemented")
-}
-
-// ExecuteSql is a placeholder for SpannerServer.ExecuteSql.
-func (m *MockCloudSpanner) ExecuteSql(c context.Context, r *sppb.ExecuteSqlRequest) (*sppb.ResultSet, error) {
-	m.t.Fatalf("ExecuteSql is unimplemented")
-	return nil, errors.New("Unimplemented")
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.sessions, r.Name)
+	return &empty.Empty{}, nil
 }
 
 // EncodeResumeToken return mock resume token encoding for an uint64 integer.
@@ -145,14 +152,26 @@ func DecodeResumeToken(t []byte) (uint64, error) {
 func (m *MockCloudSpanner) ExecuteStreamingSql(r *sppb.ExecuteSqlRequest, s sppb.Spanner_ExecuteStreamingSqlServer) error {
 	switch r.Sql {
 	case "SELECT * from t_unavailable":
-		return grpc.Errorf(codes.Unavailable, "mock table unavailable")
+		return status.Errorf(codes.Unavailable, "mock table unavailable")
+
+	case "UPDATE t SET x = 2 WHERE x = 1":
+		err := s.Send(&sppb.PartialResultSet{
+			Stats: &sppb.ResultSetStats{RowCount: &sppb.ResultSetStats_RowCountLowerBound{3}},
+		})
+		if err != nil {
+			panic(err)
+		}
+		return nil
+
 	case "SELECT t.key key, t.value value FROM t_mock t":
 		if r.ResumeToken != nil {
 			s, err := DecodeResumeToken(r.ResumeToken)
 			if err != nil {
 				return err
 			}
+			m.mu.Lock()
 			m.next = int(s) + 1
+			m.mu.Unlock()
 		}
 		for {
 			msg, more := <-m.msgs
@@ -162,7 +181,9 @@ func (m *MockCloudSpanner) ExecuteStreamingSql(r *sppb.ExecuteSqlRequest, s sppb
 			if msg.Err == nil {
 				var rt []byte
 				if msg.ResumeToken {
+					m.mu.Lock()
 					rt = EncodeResumeToken(uint64(m.next))
+					m.mu.Unlock()
 				}
 				meta := KvMeta
 				meta.Transaction = &sppb.Transaction{
@@ -171,15 +192,18 @@ func (m *MockCloudSpanner) ExecuteStreamingSql(r *sppb.ExecuteSqlRequest, s sppb
 						Nanos:   int32(m.readTs.Nanosecond()),
 					},
 				}
+				m.mu.Lock()
+				next := m.next
+				m.next++
+				m.mu.Unlock()
 				err := s.Send(&sppb.PartialResultSet{
 					Metadata: &meta,
 					Values: []*proto3.Value{
-						{Kind: &proto3.Value_StringValue{StringValue: fmt.Sprintf("foo-%02d", m.next)}},
-						{Kind: &proto3.Value_StringValue{StringValue: fmt.Sprintf("bar-%02d", m.next)}},
+						{Kind: &proto3.Value_StringValue{StringValue: fmt.Sprintf("foo-%02d", next)}},
+						{Kind: &proto3.Value_StringValue{StringValue: fmt.Sprintf("bar-%02d", next)}},
 					},
 					ResumeToken: rt,
 				})
-				m.next = m.next + 1
 				if err != nil {
 					return err
 				}
@@ -193,34 +217,9 @@ func (m *MockCloudSpanner) ExecuteStreamingSql(r *sppb.ExecuteSqlRequest, s sppb
 	}
 }
 
-// Read is a placeholder for SpannerServer.Read.
-func (m *MockCloudSpanner) Read(c context.Context, r *sppb.ReadRequest) (*sppb.ResultSet, error) {
-	m.t.Fatalf("Read is unimplemented")
-	return nil, errors.New("Unimplemented")
-}
-
 // StreamingRead is a placeholder for SpannerServer.StreamingRead.
 func (m *MockCloudSpanner) StreamingRead(r *sppb.ReadRequest, s sppb.Spanner_StreamingReadServer) error {
-	m.t.Fatalf("StreamingRead is unimplemented")
-	return errors.New("Unimplemented")
-}
-
-// BeginTransaction is a placeholder for SpannerServer.BeginTransaction.
-func (m *MockCloudSpanner) BeginTransaction(c context.Context, r *sppb.BeginTransactionRequest) (*sppb.Transaction, error) {
-	m.t.Fatalf("BeginTransaction is unimplemented")
-	return nil, errors.New("Unimplemented")
-}
-
-// Commit is a placeholder for SpannerServer.Commit.
-func (m *MockCloudSpanner) Commit(c context.Context, r *sppb.CommitRequest) (*sppb.CommitResponse, error) {
-	m.t.Fatalf("Commit is unimplemented")
-	return nil, errors.New("Unimplemented")
-}
-
-// Rollback is a placeholder for SpannerServer.Rollback.
-func (m *MockCloudSpanner) Rollback(c context.Context, r *sppb.RollbackRequest) (*empty.Empty, error) {
-	m.t.Fatalf("Rollback is unimplemented")
-	return nil, errors.New("Unimplemented")
+	return s.Send(&sppb.PartialResultSet{})
 }
 
 // Serve runs a MockCloudSpanner listening on a random localhost address.
@@ -242,6 +241,13 @@ func (m *MockCloudSpanner) Serve() {
 	go m.s.Serve(lis)
 }
 
+// BeginTransaction is a placeholder for SpannerServer.BeginTransaction.
+func (m *MockCloudSpanner) BeginTransaction(_ context.Context, r *sppb.BeginTransactionRequest) (*sppb.Transaction, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return &sppb.Transaction{}, nil
+}
+
 // Stop terminates MockCloudSpanner and closes the serving port.
 func (m *MockCloudSpanner) Stop() {
 	m.s.Stop()
@@ -250,9 +256,10 @@ func (m *MockCloudSpanner) Stop() {
 // NewMockCloudSpanner creates a new MockCloudSpanner instance.
 func NewMockCloudSpanner(t *testing.T, ts time.Time) *MockCloudSpanner {
 	mcs := &MockCloudSpanner{
-		t:      t,
-		msgs:   make(chan MockCtlMsg, 1000),
-		readTs: ts,
+		t:        t,
+		msgs:     make(chan MockCtlMsg, 1000),
+		readTs:   ts,
+		sessions: map[string]*sppb.Session{},
 	}
 	return mcs
 }

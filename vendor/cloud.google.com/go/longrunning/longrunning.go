@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,20 +22,18 @@
 package longrunning // import "cloud.google.com/go/longrunning"
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
+	autogen "cloud.google.com/go/longrunning/autogen"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	gax "github.com/googleapis/gax-go"
-
-	"golang.org/x/net/context"
-
-	autogen "cloud.google.com/go/longrunning/autogen"
+	gax "github.com/googleapis/gax-go/v2"
 	pb "google.golang.org/genproto/googleapis/longrunning"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // ErrNoMetadata is the error returned by Metadata if the operation contains no metadata.
@@ -107,8 +105,8 @@ func (op *Operation) Poll(ctx context.Context, resp proto.Message, opts ...gax.C
 
 	switch r := op.proto.Result.(type) {
 	case *pb.Operation_Error:
-		// TODO (pongad): r.Details may contain further information
-		return grpc.Errorf(codes.Code(r.Error.Code), "%s", r.Error.Message)
+		// TODO(pongad): r.Details may contain further information
+		return status.Errorf(codes.Code(r.Error.Code), "%s", r.Error.Message)
 	case *pb.Operation_Response:
 		if resp == nil {
 			return nil
@@ -164,7 +162,7 @@ func (op *Operation) wait(ctx context.Context, resp proto.Message, bo *gax.Backo
 // Cancel starts asynchronous cancellation on a long-running operation. The server
 // makes a best effort to cancel the operation, but success is not
 // guaranteed. If the server doesn't support this method, it returns
-// grpc.Code(error) == codes.Unimplemented. Clients can use
+// status.Code(err) == codes.Unimplemented. Clients can use
 // Poll or other methods to check whether the cancellation succeeded or whether the
 // operation completed despite cancellation. On successful cancellation,
 // the operation is not deleted; instead, op.Poll returns an error
@@ -175,7 +173,7 @@ func (op *Operation) Cancel(ctx context.Context, opts ...gax.CallOption) error {
 
 // Delete deletes a long-running operation. This method indicates that the client is
 // no longer interested in the operation result. It does not cancel the
-// operation. If the server doesn't support this method, grpc.Code(error) == codes.Unimplemented.
+// operation. If the server doesn't support this method, status.Code(err) == codes.Unimplemented.
 func (op *Operation) Delete(ctx context.Context, opts ...gax.CallOption) error {
 	return op.c.DeleteOperation(ctx, &pb.DeleteOperationRequest{Name: op.Name()}, opts...)
 }

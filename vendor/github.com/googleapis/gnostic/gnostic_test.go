@@ -10,17 +10,18 @@ import (
 )
 
 func testCompiler(t *testing.T, inputFile string, referenceFile string, expectErrors bool) {
-	textFile := strings.Replace(filepath.Base(inputFile), filepath.Ext(inputFile), ".text", 1)
+	outputFormat := filepath.Ext(referenceFile)[1:]
+	outputFile := strings.Replace(filepath.Base(inputFile), filepath.Ext(inputFile), "."+outputFormat, 1)
 	errorsFile := strings.Replace(filepath.Base(inputFile), filepath.Ext(inputFile), ".errors", 1)
 	// remove any preexisting output files
-	os.Remove(textFile)
+	os.Remove(outputFile)
 	os.Remove(errorsFile)
 	// run the compiler
 	var err error
 	var cmd = exec.Command(
 		"gnostic",
 		inputFile,
-		"--text-out=.",
+		"--"+outputFormat+"-out=.",
 		"--errors-out=.",
 		"--resolve-refs")
 	//t.Log(cmd.Args)
@@ -30,19 +31,19 @@ func testCompiler(t *testing.T, inputFile string, referenceFile string, expectEr
 		t.FailNow()
 	}
 	// verify the output against a reference
-	var outputFile string
+	var testFile string
 	if expectErrors {
-		outputFile = errorsFile
+		testFile = errorsFile
 	} else {
-		outputFile = textFile
+		testFile = outputFile
 	}
-	err = exec.Command("diff", outputFile, referenceFile).Run()
+	err = exec.Command("diff", testFile, referenceFile).Run()
 	if err != nil {
 		t.Logf("Diff failed: %+v", err)
 		t.FailNow()
 	} else {
 		// if the test succeeded, clean up
-		os.Remove(textFile)
+		os.Remove(outputFile)
 		os.Remove(errorsFile)
 	}
 }
@@ -147,7 +148,7 @@ func testPlugin(t *testing.T, plugin string, inputFile string, outputFile string
 
 func TestSamplePluginWithPetstore(t *testing.T) {
 	testPlugin(t,
-		"go-sample",
+		"summary",
 		"examples/v2.0/yaml/petstore.yaml",
 		"sample-petstore.out",
 		"test/v2.0/yaml/sample-petstore.out")
@@ -189,16 +190,16 @@ func TestValidPluginInvocations(t *testing.T) {
 		"examples/v2.0/yaml/petstore.yaml",
 		"--errors-out=-",
 		// verify an invocation with no parameters
-		"--go-sample-out=!", // "!" indicates that no output should be generated
+		"--summary-out=!", // "!" indicates that no output should be generated
 		// verify single pair of parameters
-		"--go-sample-out=a=b:!",
+		"--summary-out=a=b:!",
 		// verify multiple parameters
-		"--go-sample-out=a=b,c=123,xyz=alphabetagammadelta:!",
+		"--summary-out=a=b,c=123,xyz=alphabetagammadelta:!",
 		// verify that special characters / . - _ can be included in parameter keys and values
-		"--go-sample-out=a/b/c=x/y/z:!",
-		"--go-sample-out=a.b.c=x.y.z:!",
-		"--go-sample-out=a-b-c=x-y-z:!",
-		"--go-sample-out=a_b_c=x_y_z:!",
+		"--summary-out=a/b/c=x/y/z:!",
+		"--summary-out=a.b.c=x.y.z:!",
+		"--summary-out=a-b-c=x-y-z:!",
+		"--summary-out=a_b_c=x_y_z:!",
 	).Output()
 	if len(output) != 0 {
 		t.Logf("Valid invocations generated invalid errors\n%s", string(output))
@@ -450,4 +451,18 @@ func TestPetstoreJSON_30(t *testing.T) {
 	testNormal(t,
 		"examples/v3.0/json/petstore.json",
 		"test/v3.0/petstore.text")
+}
+
+// Test that empty required fields are exported.
+
+func TestEmptyRequiredFields_v2(t *testing.T) {
+	testNormal(t,
+		"examples/v2.0/yaml/empty-v2.yaml",
+		"test/v2.0/json/empty-v2.json")
+}
+
+func TestEmptyRequiredFields_v3(t *testing.T) {
+	testNormal(t,
+		"examples/v3.0/yaml/empty-v3.yaml",
+		"test/v3.0/json/empty-v3.json")
 }

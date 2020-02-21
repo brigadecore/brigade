@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2014 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,14 +15,16 @@
 package datastore
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
 	"sort"
 	"testing"
 
+	"cloud.google.com/go/internal/testutil"
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+	"github.com/google/go-cmp/cmp"
 	pb "google.golang.org/genproto/googleapis/datastore/v1"
 	"google.golang.org/grpc"
 )
@@ -334,7 +336,7 @@ func TestSimpleQuery(t *testing.T) {
 			}
 		}
 
-		if !reflect.DeepEqual(tc.dst, tc.want) {
+		if !testutil.Equal(tc.dst, tc.want) {
 			t.Errorf("dst type %T: Entities\ngot  %+v\nwant %+v", tc.dst, tc.dst, tc.want)
 			continue
 		}
@@ -357,10 +359,10 @@ func TestQueriesAreImmutable(t *testing.T) {
 	q0 := NewQuery("foo")
 	q1 := NewQuery("foo")
 	q2 := q1.Offset(2)
-	if !reflect.DeepEqual(q0, q1) {
+	if !testutil.Equal(q0, q1, cmp.AllowUnexported(Query{})) {
 		t.Errorf("q0 and q1 were not equal")
 	}
-	if reflect.DeepEqual(q1, q2) {
+	if testutil.Equal(q1, q2, cmp.AllowUnexported(Query{})) {
 		t.Errorf("q1 and q2 were equal")
 	}
 
@@ -381,10 +383,10 @@ func TestQueriesAreImmutable(t *testing.T) {
 	q4 := f()
 	q5 := q4.Order("y")
 	q6 := q4.Order("z")
-	if !reflect.DeepEqual(q3, q5) {
+	if !testutil.Equal(q3, q5, cmp.AllowUnexported(Query{})) {
 		t.Errorf("q3 and q5 were not equal")
 	}
-	if reflect.DeepEqual(q5, q6) {
+	if testutil.Equal(q5, q6, cmp.AllowUnexported(Query{})) {
 		t.Errorf("q5 and q6 were equal")
 	}
 }
@@ -472,6 +474,7 @@ func TestNamespaceQuery(t *testing.T) {
 
 	var gs []Gopher
 
+	// Ignore errors for the rest of this test.
 	client.GetAll(ctx, NewQuery("gopher"), &gs)
 	if got, want := <-gotNamespace, ""; got != want {
 		t.Errorf("GetAll: got namespace %q, want %q", got, want)
@@ -538,6 +541,29 @@ func TestReadOptions(t *testing.T) {
 	} {
 		req := &pb.RunQueryRequest{}
 		if err := q.toProto(req); err == nil {
+			t.Errorf("%+v: got nil, wanted error", q)
+		}
+	}
+}
+
+func TestInvalidFilters(t *testing.T) {
+	client := &Client{
+		client: &fakeClient{
+			queryFn: func(req *pb.RunQueryRequest) (*pb.RunQueryResponse, error) {
+				return fakeRunQuery(req)
+			},
+		},
+	}
+
+	// Used for an invalid type
+	type MyType int
+	var v MyType = 1
+
+	for _, q := range []*Query{
+		NewQuery("SomeKey").Filter("", 0),
+		NewQuery("SomeKey").Filter("fld=", v),
+	} {
+		if _, err := client.Count(context.Background(), q); err == nil {
 			t.Errorf("%+v: got nil, wanted error", q)
 		}
 	}

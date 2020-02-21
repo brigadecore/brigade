@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 package longrunning
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -25,14 +26,12 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/duration"
-	gax "github.com/googleapis/gax-go"
-
-	"golang.org/x/net/context"
-
+	gax "github.com/googleapis/gax-go/v2"
 	pb "google.golang.org/genproto/googleapis/longrunning"
-	status "google.golang.org/genproto/googleapis/rpc/status"
+	rpcstatus "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type getterService struct {
@@ -42,7 +41,7 @@ type getterService struct {
 	// It is the running sum of the of the duration we have slept.
 	clock time.Duration
 
-	// getTimes records the the times at which GetOperation is called.
+	// getTimes records the times at which GetOperation is called.
 	getTimes []time.Duration
 
 	// results are the fake results that GetOperation should return.
@@ -156,7 +155,7 @@ func TestPollErrorResult(t *testing.T) {
 			Name: "foo",
 			Done: true,
 			Result: &pb.Operation_Error{
-				Error: &status.Status{
+				Error: &rpcstatus.Status{
 					Code:    int32(errCode),
 					Message: errMsg,
 				},
@@ -164,7 +163,7 @@ func TestPollErrorResult(t *testing.T) {
 		},
 	}
 	err := op.Poll(context.Background(), nil)
-	if got := grpc.Code(err); got != errCode {
+	if got := status.Code(err); got != errCode {
 		t.Errorf("error code, want %s, got %s", errCode, got)
 	}
 	if got := grpc.ErrorDesc(err); got != errMsg {

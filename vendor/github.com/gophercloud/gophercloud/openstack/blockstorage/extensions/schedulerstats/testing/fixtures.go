@@ -33,6 +33,7 @@ const StoragePoolsListBodyDetail = `
                 "filter_function": null,
                 "free_capacity_gb": 64765,
                 "goodness_function": null,
+                "max_over_subscription_ratio": "1.5",
                 "multiattach": false,
                 "reserved_percentage": 0,
                 "storage_protocol": "ceph",
@@ -49,6 +50,7 @@ const StoragePoolsListBodyDetail = `
                 "filter_function": null,
                 "free_capacity_gb": "unknown",
                 "goodness_function": null,
+                "max_over_subscription_ratio": 1.5,
                 "multiattach": false,
                 "reserved_percentage": 0,
                 "storage_protocol": "ceph",
@@ -67,24 +69,26 @@ var (
 	StoragePoolFake1 = schedulerstats.StoragePool{
 		Name: "rbd:cinder.volumes.ssd@cinder.volumes.ssd#cinder.volumes.ssd",
 		Capabilities: schedulerstats.Capabilities{
-			DriverVersion:     "1.2.0",
-			FreeCapacityGB:    64765,
-			StorageProtocol:   "ceph",
-			TotalCapacityGB:   787947.93,
-			VendorName:        "Open Source",
-			VolumeBackendName: "cinder.volumes.ssd",
+			DriverVersion:            "1.2.0",
+			FreeCapacityGB:           64765,
+			MaxOverSubscriptionRatio: "1.5",
+			StorageProtocol:          "ceph",
+			TotalCapacityGB:          787947.93,
+			VendorName:               "Open Source",
+			VolumeBackendName:        "cinder.volumes.ssd",
 		},
 	}
 
 	StoragePoolFake2 = schedulerstats.StoragePool{
 		Name: "rbd:cinder.volumes.hdd@cinder.volumes.hdd#cinder.volumes.hdd",
 		Capabilities: schedulerstats.Capabilities{
-			DriverVersion:     "1.2.0",
-			FreeCapacityGB:    0.0,
-			StorageProtocol:   "ceph",
-			TotalCapacityGB:   math.Inf(1),
-			VendorName:        "Open Source",
-			VolumeBackendName: "cinder.volumes.hdd",
+			DriverVersion:            "1.2.0",
+			FreeCapacityGB:           0.0,
+			MaxOverSubscriptionRatio: "1.5",
+			StorageProtocol:          "ceph",
+			TotalCapacityGB:          math.Inf(1),
+			VendorName:               "Open Source",
+			VolumeBackendName:        "cinder.volumes.hdd",
 		},
 	}
 )

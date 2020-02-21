@@ -1,5 +1,5 @@
 /*
-Copyright 2016 Google Inc. All Rights Reserved.
+Copyright 2016 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,20 +18,18 @@ limitations under the License.
 package testing
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"cloud.google.com/go/internal/testutil"
 	emptypb "github.com/golang/protobuf/ptypes/empty"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
-
-	"cloud.google.com/go/internal/testutil"
-	context "golang.org/x/net/context"
 	lpb "google.golang.org/genproto/googleapis/api/label"
 	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
 	logpb "google.golang.org/genproto/googleapis/logging/v2"
@@ -88,15 +86,20 @@ func (h *loggingHandler) DeleteLog(_ context.Context, req *logpb.DeleteLogReques
 	return &emptypb.Empty{}, nil
 }
 
-// The only project ID that WriteLogEntries will accept.
+// The only IDs that WriteLogEntries will accept.
 // Important for testing Ping.
-const validProjectID = "PROJECT_ID"
+const (
+	ValidProjectID = "PROJECT_ID"
+	ValidOrgID     = "433637338589"
+
+	SharedServiceAccount = "serviceAccount:cloud-logs@system.gserviceaccount.com"
+)
 
 // WriteLogEntries writes log entries to Stackdriver Logging. All log entries in
 // Stackdriver Logging are written by this method.
 func (h *loggingHandler) WriteLogEntries(_ context.Context, req *logpb.WriteLogEntriesRequest) (*logpb.WriteLogEntriesResponse, error) {
-	if !strings.HasPrefix(req.LogName, "projects/"+validProjectID+"/") {
-		return nil, fmt.Errorf("bad project ID: %q", req.LogName)
+	if !strings.HasPrefix(req.LogName, "projects/"+ValidProjectID+"/") && !strings.HasPrefix(req.LogName, "organizations/"+ValidOrgID+"/") {
+		return nil, fmt.Errorf("bad LogName: %q", req.LogName)
 	}
 	// TODO(jba): support insertId?
 	h.mu.Lock()
@@ -142,7 +145,7 @@ func (h *loggingHandler) ListLogEntries(_ context.Context, req *logpb.ListLogEnt
 		return nil, err
 	}
 
-	from, to, nextPageToken, err := getPage(int(req.PageSize), req.PageToken, len(entries))
+	from, to, nextPageToken, err := testutil.PageBounds(int(req.PageSize), req.PageToken, len(entries))
 	if err != nil {
 		return nil, err
 	}
@@ -150,35 +153,6 @@ func (h *loggingHandler) ListLogEntries(_ context.Context, req *logpb.ListLogEnt
 		Entries:       entries[from:to],
 		NextPageToken: nextPageToken,
 	}, nil
-}
-
-// getPage converts an incoming page size and token from an RPC request into
-// slice bounds and the outgoing next-page token.
-//
-// getPage assumes that the complete, unpaginated list of items exists as a
-// single slice. In addition to the page size and token, getPage needs the
-// length of that slice.
-//
-// getPage's first two return values should be used to construct a sub-slice of
-// the complete, unpaginated slice. E.g. if the complete slice is s, then
-// s[from:to] is the desired page. Its third return value should be set as the
-// NextPageToken field of the RPC response.
-func getPage(pageSize int, pageToken string, length int) (from, to int, nextPageToken string, err error) {
-	from, to = 0, length
-	if pageToken != "" {
-		from, err = strconv.Atoi(pageToken)
-		if err != nil {
-			return 0, 0, "", invalidArgument("bad page token")
-		}
-		if from >= length {
-			return length, length, "", nil
-		}
-	}
-	if pageSize > 0 && from+pageSize < length {
-		to = from + pageSize
-		nextPageToken = strconv.Itoa(to)
-	}
-	return from, to, nextPageToken, nil
 }
 
 func (h *loggingHandler) filterEntries(filter string) ([]*logpb.LogEntry, error) {
@@ -196,7 +170,7 @@ func (h *loggingHandler) filterEntries(filter string) ([]*logpb.LogEntry, error)
 	return entries, nil
 }
 
-var filterRegexp = regexp.MustCompile(`^logName\s*=\s*"?([-_/.%\w]+)"?$`)
+var filterRegexp = regexp.MustCompile(`^logName\s*=\s*"?([-_/.%\w]+)"?`)
 
 // returns the log name, or "" for the empty filter
 func parseFilter(filter string) (string, error) {
@@ -205,7 +179,7 @@ func parseFilter(filter string) (string, error) {
 	}
 	subs := filterRegexp.FindStringSubmatch(filter)
 	if subs == nil {
-		return "", invalidArgument("bad filter")
+		return "", invalidArgument(fmt.Sprintf("fake.go: failed to parse filter %s", filter))
 	}
 	return subs[1], nil // cannot panic by construction of regexp
 }
@@ -268,12 +242,16 @@ func (h *loggingHandler) ListMonitoredResourceDescriptors(context.Context, *logp
 func (h *loggingHandler) ListLogs(_ context.Context, req *logpb.ListLogsRequest) (*logpb.ListLogsResponse, error) {
 	// Return fixed, fake response.
 	logNames := []string{"a", "b", "c"}
-	from, to, npt, err := getPage(int(req.PageSize), req.PageToken, len(logNames))
+	from, to, npt, err := testutil.PageBounds(int(req.PageSize), req.PageToken, len(logNames))
 	if err != nil {
 		return nil, err
 	}
+	var lns []string
+	for _, ln := range logNames[from:to] {
+		lns = append(lns, req.Parent+"/logs/"+ln)
+	}
 	return &logpb.ListLogsResponse{
-		LogNames:      logNames[from:to],
+		LogNames:      lns,
 		NextPageToken: npt,
 	}, nil
 }
@@ -297,17 +275,59 @@ func (h *configHandler) CreateSink(_ context.Context, req *logpb.CreateSinkReque
 	if _, ok := h.sinks[fullName]; ok {
 		return nil, fmt.Errorf("sink with name %q already exists", fullName)
 	}
-	h.sinks[fullName] = req.Sink
+	h.setSink(fullName, req.Sink, req.UniqueWriterIdentity)
 	return req.Sink, nil
+}
+
+func (h *configHandler) setSink(name string, s *logpb.LogSink, uniqueWriterIdentity bool) {
+	if uniqueWriterIdentity {
+		s.WriterIdentity = "serviceAccount:" + name + "@gmail.com"
+	} else {
+		s.WriterIdentity = SharedServiceAccount
+	}
+	h.sinks[name] = s
 }
 
 // Creates or updates a sink.
 func (h *configHandler) UpdateSink(_ context.Context, req *logpb.UpdateSinkRequest) (*logpb.LogSink, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	sink := h.sinks[req.SinkName]
 	// Update of a non-existent sink will create it.
-	h.sinks[req.SinkName] = req.Sink
-	return req.Sink, nil
+	if sink == nil {
+		h.setSink(req.SinkName, req.Sink, req.UniqueWriterIdentity)
+		sink = req.Sink
+	} else {
+		// sink is the existing sink named req.SinkName.
+		// Update all and only the fields of sink that are specified in the update mask.
+		paths := req.UpdateMask.GetPaths()
+		if len(paths) == 0 {
+			// An empty update mask is considered to have these fields by default.
+			paths = []string{"destination", "filter", "include_children"}
+		}
+		for _, p := range paths {
+			switch p {
+			case "destination":
+				sink.Destination = req.Sink.Destination
+			case "filter":
+				sink.Filter = req.Sink.Filter
+			case "include_children":
+				sink.IncludeChildren = req.Sink.IncludeChildren
+			case "output_version_format":
+				// noop
+			default:
+				return nil, fmt.Errorf("unknown path in mask: %q", p)
+			}
+		}
+		if req.UniqueWriterIdentity {
+			if sink.WriterIdentity != SharedServiceAccount {
+				return nil, invalidArgument("cannot change unique writer identity")
+			}
+			sink.WriterIdentity = "serviceAccount:" + req.SinkName + "@gmail.com"
+		}
+	}
+	return sink, nil
+
 }
 
 // Deletes a sink.
@@ -329,7 +349,7 @@ func (h *configHandler) ListSinks(_ context.Context, req *logpb.ListSinksRequest
 	h.mu.Unlock() // safe because no *logpb.LogSink is ever modified
 	// Since map iteration varies, sort the sinks.
 	sort.Sort(sinksByName(sinks))
-	from, to, nextPageToken, err := getPage(int(req.PageSize), req.PageToken, len(sinks))
+	from, to, nextPageToken, err := testutil.PageBounds(int(req.PageSize), req.PageToken, len(sinks))
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +416,7 @@ func (h *metricHandler) ListLogMetrics(_ context.Context, req *logpb.ListLogMetr
 	h.mu.Unlock() // safe because no *logpb.LogMetric is ever modified
 	// Since map iteration varies, sort the metrics.
 	sort.Sort(metricsByName(metrics))
-	from, to, nextPageToken, err := getPage(int(req.PageSize), req.PageToken, len(metrics))
+	from, to, nextPageToken, err := testutil.PageBounds(int(req.PageSize), req.PageToken, len(metrics))
 	if err != nil {
 		return nil, err
 	}

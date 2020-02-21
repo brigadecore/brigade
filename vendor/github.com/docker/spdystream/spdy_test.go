@@ -1144,6 +1144,7 @@ var authenticated bool
 func authStreamHandler(stream *Stream) {
 	if !authenticated {
 		stream.Refuse()
+		return
 	}
 	MirrorStreamHandler(stream)
 }

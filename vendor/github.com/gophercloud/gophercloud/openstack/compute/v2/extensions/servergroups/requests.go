@@ -5,25 +5,35 @@ import (
 	"github.com/gophercloud/gophercloud/pagination"
 )
 
-// List returns a Pager that allows you to iterate over a collection of ServerGroups.
+// List returns a Pager that allows you to iterate over a collection of
+// ServerGroups.
 func List(client *gophercloud.ServiceClient) pagination.Pager {
 	return pagination.NewPager(client, listURL(client), func(r pagination.PageResult) pagination.Page {
 		return ServerGroupPage{pagination.SinglePageBase(r)}
 	})
 }
 
-// CreateOptsBuilder describes struct types that can be accepted by the Create call. Notably, the
-// CreateOpts struct in this package does.
+// CreateOptsBuilder allows extensions to add additional parameters to the
+// Create request.
 type CreateOptsBuilder interface {
 	ToServerGroupCreateMap() (map[string]interface{}, error)
 }
 
-// CreateOpts specifies a Server Group allocation request
+// CreateOpts specifies Server Group creation parameters.
 type CreateOpts struct {
-	// Name is the name of the server group
+	// Name is the name of the server group.
 	Name string `json:"name" required:"true"`
-	// Policies are the server group policies
-	Policies []string `json:"policies" required:"true"`
+
+	// Policies are the server group policies.
+	Policies []string `json:"policies,omitempty"`
+
+	// Policy specifies the name of a policy.
+	// Requires microversion 2.64 or later.
+	Policy string `json:"policy,omitempty"`
+
+	// Rules specifies the set of rules.
+	// Requires microversion 2.64 or later.
+	Rules *Rules `json:"rules,omitempty"`
 }
 
 // ToServerGroupCreateMap constructs a request body from CreateOpts.
@@ -31,7 +41,7 @@ func (opts CreateOpts) ToServerGroupCreateMap() (map[string]interface{}, error) 
 	return gophercloud.BuildRequestBody(opts, "server_group")
 }
 
-// Create requests the creation of a new Server Group
+// Create requests the creation of a new Server Group.
 func Create(client *gophercloud.ServiceClient, opts CreateOptsBuilder) (r CreateResult) {
 	b, err := opts.ToServerGroupCreateMap()
 	if err != nil {

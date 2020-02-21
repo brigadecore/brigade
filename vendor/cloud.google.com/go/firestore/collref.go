@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,23 +15,27 @@
 package firestore
 
 import (
-	"math/rand"
-	"os"
-	"reflect"
-	"sync"
-	"time"
-
-	"golang.org/x/net/context"
+	"context"
+	"crypto/rand"
+	"fmt"
 )
 
 // A CollectionRef is a reference to Firestore collection.
 type CollectionRef struct {
 	c *Client
 
-	// Typically Parent.Path, or c.path if Parent is nil.
-	// May be different if this CollectionRef was created from a stored reference
-	// to a different project/DB.
+	// The full resource path of the collection's parent. Typically Parent.Path,
+	// or c.path if Parent is nil. May be different if this CollectionRef was
+	// created from a stored reference to a different project/DB. Always
+	// includes /documents - that is, the parent is minimally considered to be
+	// "<db>/documents".
+	//
+	// For example, "projects/P/databases/D/documents/coll-1/doc-1".
 	parentPath string
+
+	// The shorter resource path of the collection. A collection "coll-2" in
+	// document "doc-1" in collection "coll-1" would be: "coll-1/doc-1/coll-2".
+	selfPath string
 
 	// Parent is the document of which this collection is a part. It is
 	// nil for top-level collections.
@@ -47,33 +51,37 @@ type CollectionRef struct {
 	Query
 }
 
-func (c1 *CollectionRef) equal(c2 *CollectionRef) bool {
-	return c1.c == c2.c &&
-		c1.parentPath == c2.parentPath &&
-		c1.Parent.equal(c2.Parent) &&
-		c1.Path == c2.Path &&
-		c1.ID == c2.ID &&
-		reflect.DeepEqual(c1.Query, c2.Query)
-}
-
 func newTopLevelCollRef(c *Client, dbPath, id string) *CollectionRef {
 	return &CollectionRef{
 		c:          c,
 		ID:         id,
-		parentPath: dbPath,
+		parentPath: dbPath + "/documents",
+		selfPath:   id,
 		Path:       dbPath + "/documents/" + id,
-		Query:      Query{c: c, collectionID: id, parentPath: dbPath},
+		Query: Query{
+			c:            c,
+			collectionID: id,
+			path:         dbPath + "/documents/" + id,
+			parentPath:   dbPath + "/documents",
+		},
 	}
 }
 
 func newCollRefWithParent(c *Client, parent *DocumentRef, id string) *CollectionRef {
+	selfPath := parent.shortPath + "/" + id
 	return &CollectionRef{
 		c:          c,
 		Parent:     parent,
 		ID:         id,
 		parentPath: parent.Path,
+		selfPath:   selfPath,
 		Path:       parent.Path + "/" + id,
-		Query:      Query{c: c, collectionID: id, parentPath: parent.Path},
+		Query: Query{
+			c:            c,
+			collectionID: id,
+			path:         parent.Path + "/" + id,
+			parentPath:   parent.Path,
+		},
 	}
 }
 
@@ -87,6 +95,9 @@ func (c *CollectionRef) Doc(id string) *DocumentRef {
 }
 
 // NewDoc returns a DocumentRef with a uniquely generated ID.
+//
+// NewDoc will panic if crypto/rand cannot generate enough bytes to make a new
+// doc ID.
 func (c *CollectionRef) NewDoc() *DocumentRef {
 	return c.Doc(uniqueID())
 }
@@ -106,19 +117,22 @@ func (c *CollectionRef) Add(ctx context.Context, data interface{}) (*DocumentRef
 	return d, wr, nil
 }
 
+// DocumentRefs returns references to all the documents in the collection, including
+// missing documents. A missing document is a document that does not exist but has
+// sub-documents.
+func (c *CollectionRef) DocumentRefs(ctx context.Context) *DocumentRefIterator {
+	return newDocumentRefIterator(ctx, c, nil)
+}
+
 const alphanum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
-var (
-	rngMu sync.Mutex
-	rng   = rand.New(rand.NewSource(time.Now().UnixNano() ^ int64(os.Getpid())))
-)
-
 func uniqueID() string {
-	var b [20]byte
-	rngMu.Lock()
-	for i := 0; i < len(b); i++ {
-		b[i] = alphanum[rng.Intn(len(alphanum))]
+	b := make([]byte, 20)
+	if _, err := rand.Read(b); err != nil {
+		panic(fmt.Sprintf("firestore: crypto/rand.Read error: %v", err))
 	}
-	rngMu.Unlock()
-	return string(b[:])
+	for i, byt := range b {
+		b[i] = alphanum[int(byt)%len(alphanum)]
+	}
+	return string(b)
 }

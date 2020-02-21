@@ -32,15 +32,15 @@
 
 [[constraint]]
   name = "k8s.io/api"
-  branch = "release-1.10"
+  version = "kubernetes-1.17.3"
 
 [[constraint]]
   name = "k8s.io/apimachinery"
-  branch = "release-1.10"
+  version = "kubernetes-1.17.3"
 
 [[constraint]]
   name = "k8s.io/client-go"
-  branch = "release-7.0"
+  version = "kubernetes-1.17.3"
 
 [[constraint]]
   name = "github.com/Masterminds/kitt"
@@ -65,10 +65,6 @@
 [[constraint]]
   name = "github.com/slok/brigadeterm"
   version = "v0.11.1"
-
-[[constraint]]
-  name = "github.com/mattn/go-runewidth"
-  version = "v0.0.2"
 
 [[constraint]]
   name = "github.com/rivo/tview"

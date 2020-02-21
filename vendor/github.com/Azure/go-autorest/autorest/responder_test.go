@@ -1,5 +1,19 @@
 package autorest
 
+// Copyright 2017 Microsoft Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 import (
 	"bytes"
 	"encoding/json"
@@ -32,6 +46,25 @@ func ExampleWithErrorUnlessOK() {
 			ByClosing())
 	}
 	// Output: GET of https://microsoft.com/a/b/c/ returned HTTP 200
+}
+
+func TestByUnmarshallingBytes(t *testing.T) {
+	expected := []byte("Lorem Ipsum Dolor")
+
+	// we'll create a fixed-sized array here, since that's the expectation
+	bytes := make([]byte, len(expected))
+
+	Respond(mocks.NewResponseWithBytes(expected),
+		ByUnmarshallingBytes(&bytes),
+		ByClosing())
+
+	if len(bytes) != len(expected) {
+		t.Fatalf("Expected Response to be %d bytes but got %d bytes", len(expected), len(bytes))
+	}
+
+	if !reflect.DeepEqual(expected, bytes) {
+		t.Fatalf("Expected Response to be %s but got %s", expected, bytes)
+	}
 }
 
 func ExampleByUnmarshallingJSON() {

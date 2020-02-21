@@ -44,6 +44,9 @@ func TestAppleDef(t *testing.T) {
 type MyDictionaryResponse struct {
 	Dictionary1 map[string]DictionaryValue `json:"dictionary1"`
 	Dictionary2 map[string]interface{}     `json:"dictionary2"`
+	Dictionary3 map[string][]byte          `json:"dictionary3"`
+	Dictionary4 map[string]string          `json:"dictionary4"`
+
 }
 type DictionaryValue struct {
 	Key1 string `json:"key1"`
@@ -63,7 +66,7 @@ func TestDictionarySupport(t *testing.T) {
 	if !schemaFound {
 		t.Errorf("could not find schema")
 	} else {
-		if got, want := len(schema.Required), 2; got != want {
+		if got, want := len(schema.Required), 4; got != want {
 			t.Errorf("got %v want %v", got, want)
 		} else {
 			if got, want := schema.Required[0], "dictionary1"; got != want {
@@ -72,8 +75,14 @@ func TestDictionarySupport(t *testing.T) {
 			if got, want := schema.Required[1], "dictionary2"; got != want {
 				t.Errorf("got %v want %v", got, want)
 			}
+			if got, want := schema.Required[2], "dictionary3"; got != want {
+				t.Errorf("got %v want %v", got, want)
+			}
+			if got, want := schema.Required[3], "dictionary4"; got != want {
+				t.Errorf("got %v want %v", got, want)
+			}
 		}
-		if got, want := len(schema.Properties), 2; got != want {
+		if got, want := len(schema.Properties), 4; got != want {
 			t.Errorf("got %v want %v", got, want)
 		} else {
 			if property, found := schema.Properties["dictionary1"]; !found {
@@ -88,6 +97,20 @@ func TestDictionarySupport(t *testing.T) {
 			} else {
 				if property.AdditionalProperties != nil {
 					t.Errorf("unexpected additional properties")
+				}
+			}
+			if property, found := schema.Properties["dictionary3"]; !found {
+				t.Errorf("could not find property")
+			} else {
+				if got, want := property.AdditionalProperties.Schema.Type[0], "string"; got != want {
+					t.Errorf("got %v want %v", got, want)
+				}
+			}
+			if property, found := schema.Properties["dictionary4"]; !found {
+				t.Errorf("could not find property")
+			} else {
+				if got, want := property.AdditionalProperties.Schema.Type[0], "string"; got != want {
+					t.Errorf("got %v want %v", got, want)
 				}
 			}
 		}

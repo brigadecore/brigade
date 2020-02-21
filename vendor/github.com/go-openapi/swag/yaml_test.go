@@ -20,9 +20,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/stretchr/testify/assert"
+	yaml "gopkg.in/yaml.v2"
 )
 
 /* currently unused:
@@ -48,7 +47,7 @@ func TestLoadHTTPBytes(t *testing.T) {
 
 	ts2 := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusOK)
-		rw.Write([]byte("the content"))
+		_, _ = rw.Write([]byte("the content"))
 	}))
 	defer ts2.Close()
 
@@ -65,7 +64,7 @@ name: a string value
 'y': some value
 `
 	var data yaml.MapSlice
-	yaml.Unmarshal([]byte(sd), &data)
+	_ = yaml.Unmarshal([]byte(sd), &data)
 
 	d, err := YAMLToJSON(data)
 	if assert.NoError(t, err) {
@@ -142,7 +141,7 @@ func TestLoadStrategy(t *testing.T) {
 
 	ts2 := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusNotFound)
-		rw.Write([]byte("\n"))
+		_, _ = rw.Write([]byte("\n"))
 	}))
 	defer ts2.Close()
 	_, err = YAMLDoc(ts2.URL)
@@ -151,7 +150,7 @@ func TestLoadStrategy(t *testing.T) {
 
 var yamlPestoreServer = func(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusOK)
-	rw.Write([]byte(yamlPetStore))
+	_, _ = rw.Write([]byte(yamlPetStore))
 }
 
 func TestWithYKey(t *testing.T) {
@@ -182,6 +181,38 @@ func TestWithYKey(t *testing.T) {
 		}
 
 	}
+}
+
+func TestMapKeyTypes(t *testing.T) {
+	d := yaml.MapSlice{
+		yaml.MapItem{Key: 12345, Value: "int"},
+		yaml.MapItem{Key: int8(1), Value: "int8"},
+		yaml.MapItem{Key: int16(12345), Value: "int16"},
+		yaml.MapItem{Key: int32(12345678), Value: "int32"},
+		yaml.MapItem{Key: int64(12345678910), Value: "int64"},
+		yaml.MapItem{Key: uint(12345), Value: "uint"},
+		yaml.MapItem{Key: uint8(1), Value: "uint8"},
+		yaml.MapItem{Key: uint16(12345), Value: "uint16"},
+		yaml.MapItem{Key: uint32(12345678), Value: "uint32"},
+		yaml.MapItem{Key: uint64(12345678910), Value: "uint64"},
+	}
+	_, err := YAMLToJSON(d)
+	assert.NoError(t, err)
+
+	dm := map[interface{}]interface{}{
+		12345:               "int",
+		int8(1):             "int8",
+		int16(12345):        "int16",
+		int32(12345678):     "int32",
+		int64(12345678910):  "int64",
+		uint(12345):         "uint",
+		uint8(1):            "uint8",
+		uint16(12345):       "uint16",
+		uint32(12345678):    "uint32",
+		uint64(12345678910): "uint64",
+	}
+	_, err = YAMLToJSON(dm)
+	assert.NoError(t, err)
 }
 
 const withQuotedYKey = `consumes:

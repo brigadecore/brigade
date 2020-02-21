@@ -37,6 +37,13 @@ func TestJoin(t *testing.T) {
 	}
 }
 
+func TestJoin_blank(t *testing.T) {
+	got := Join([]string{}, ",")
+	if got != "" {
+		t.Fatal("want", "", "got", got)
+	}
+}
+
 func TestPadRight(t *testing.T) {
 	got := PadRight("foo", 5, '-')
 	if got != "foo--" {

@@ -20,7 +20,8 @@ func HandleDownloadObjectSuccessfully(t *testing.T) {
 		th.TestMethod(t, r, "GET")
 		th.TestHeader(t, r, "X-Auth-Token", fake.TokenID)
 		th.TestHeader(t, r, "Accept", "application/json")
-		w.Header().Set("Date", "Wed, 10 Nov 2009 23:00:00 GMT")
+		w.Header().Set("Date", "Wed, 10 Nov 2009 23:00:00 UTC")
+		w.Header().Set("X-Static-Large-Object", "True")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Successful download with Gophercloud")
 	})
@@ -31,7 +32,7 @@ func HandleDownloadObjectSuccessfully(t *testing.T) {
 var ExpectedListInfo = []objects.Object{
 	{
 		Hash:         "451e372e48e0f6b1114fa0724aa79fa1",
-		LastModified: time.Date(2016, time.August, 17, 22, 11, 58, 602650000, time.UTC), //"2016-08-17T22:11:58.602650"
+		LastModified: time.Date(2016, time.August, 17, 22, 11, 58, 602650000, time.UTC),
 		Bytes:        14,
 		Name:         "goodbye",
 		ContentType:  "application/octet-stream",
@@ -42,6 +43,14 @@ var ExpectedListInfo = []objects.Object{
 		Bytes:        14,
 		Name:         "hello",
 		ContentType:  "application/octet-stream",
+	},
+}
+
+// ExpectedListSubdir is the result expected from a call to `List` when full
+// info is requested.
+var ExpectedListSubdir = []objects.Object{
+	{
+		Subdir: "directory/",
 	},
 }
 
@@ -79,6 +88,32 @@ func HandleListObjectsInfoSuccessfully(t *testing.T) {
       }
     ]`)
 		case "hello":
+			fmt.Fprintf(w, `[]`)
+		default:
+			t.Fatalf("Unexpected marker: [%s]", marker)
+		}
+	})
+}
+
+// HandleListSubdirSuccessfully creates an HTTP handler at `/testContainer` on the test handler mux that
+// responds with a `List` response when full info is requested.
+func HandleListSubdirSuccessfully(t *testing.T) {
+	th.Mux.HandleFunc("/testContainer", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "GET")
+		th.TestHeader(t, r, "X-Auth-Token", fake.TokenID)
+		th.TestHeader(t, r, "Accept", "application/json")
+
+		w.Header().Set("Content-Type", "application/json")
+		r.ParseForm()
+		marker := r.Form.Get("marker")
+		switch marker {
+		case "":
+			fmt.Fprintf(w, `[
+      {
+        "subdir": "directory/"
+      }
+    ]`)
+		case "directory/":
 			fmt.Fprintf(w, `[]`)
 		default:
 			t.Fatalf("Unexpected marker: [%s]", marker)
@@ -209,6 +244,7 @@ func HandleGetObjectSuccessfully(t *testing.T) {
 		th.TestHeader(t, r, "X-Auth-Token", fake.TokenID)
 		th.TestHeader(t, r, "Accept", "application/json")
 		w.Header().Add("X-Object-Meta-Gophercloud-Test", "objects")
+		w.Header().Add("X-Static-Large-Object", "true")
 		w.WriteHeader(http.StatusNoContent)
 	})
 }

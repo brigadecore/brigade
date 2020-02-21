@@ -1,4 +1,4 @@
-// Copyright 2017, Google Inc. All rights reserved.
+// Copyright 2017, Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
 package vision
 
 import (
-	gax "github.com/googleapis/gax-go"
-	"golang.org/x/net/context"
+	"context"
+
+	gax "github.com/googleapis/gax-go/v2"
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // AnnotateImage runs image detection and annotation for a single image.
@@ -50,7 +51,7 @@ func (c *ImageAnnotatorClient) annotateOne(ctx context.Context, img *pb.Image, i
 	// error because it preserves the code as a separate field.
 	// TODO(jba): preserve the details field.
 	if res.Error != nil {
-		return nil, grpc.Errorf(codes.Code(res.Error.Code), "%s", res.Error.Message)
+		return nil, status.Errorf(codes.Code(res.Error.Code), "%s", res.Error.Message)
 	}
 	return res, nil
 }
@@ -148,4 +149,22 @@ func (c *ImageAnnotatorClient) CropHints(ctx context.Context, img *pb.Image, ict
 		return nil, err
 	}
 	return res.CropHintsAnnotation, nil
+}
+
+// LocalizeObject runs the localizer for object detection.
+func (c *ImageAnnotatorClient) LocalizeObjects(ctx context.Context, img *pb.Image, ictx *pb.ImageContext, opts ...gax.CallOption) ([]*pb.LocalizedObjectAnnotation, error) {
+	res, err := c.annotateOne(ctx, img, ictx, pb.Feature_OBJECT_LOCALIZATION, 0, opts)
+	if err != nil {
+		return nil, err
+	}
+	return res.LocalizedObjectAnnotations, nil
+}
+
+// ProductSearch searches the image for products.
+func (c *ImageAnnotatorClient) ProductSearch(ctx context.Context, img *pb.Image, ictx *pb.ImageContext, opts ...gax.CallOption) (*pb.ProductSearchResults, error) {
+	res, err := c.annotateOne(ctx, img, ictx, pb.Feature_PRODUCT_SEARCH, 0, opts)
+	if err != nil {
+		return nil, err
+	}
+	return res.ProductSearchResults, nil
 }

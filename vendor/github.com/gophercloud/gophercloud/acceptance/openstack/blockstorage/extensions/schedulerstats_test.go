@@ -8,27 +8,28 @@ import (
 	"github.com/gophercloud/gophercloud/acceptance/clients"
 	"github.com/gophercloud/gophercloud/acceptance/tools"
 	"github.com/gophercloud/gophercloud/openstack/blockstorage/extensions/schedulerstats"
+	th "github.com/gophercloud/gophercloud/testhelper"
 )
 
 func TestSchedulerStatsList(t *testing.T) {
+	clients.RequireAdmin(t)
+	clients.SkipRelease(t, "stable/mitaka")
+	clients.SkipRelease(t, "stable/newton")
+	clients.SkipRelease(t, "stable/ocata")
+	clients.SkipRelease(t, "stable/pike")
+
 	blockClient, err := clients.NewBlockStorageV2Client()
-	if err != nil {
-		t.Fatalf("Unable to create a blockstorage client: %v", err)
-	}
+	th.AssertNoErr(t, err)
 
 	listOpts := schedulerstats.ListOpts{
 		Detail: true,
 	}
 
 	allPages, err := schedulerstats.List(blockClient, listOpts).AllPages()
-	if err != nil {
-		t.Fatalf("Unable to query schedulerstats: %v", err)
-	}
+	th.AssertNoErr(t, err)
 
 	allStats, err := schedulerstats.ExtractStoragePools(allPages)
-	if err != nil {
-		t.Fatalf("Unable to extract pools: %v", err)
-	}
+	th.AssertNoErr(t, err)
 
 	for _, stat := range allStats {
 		tools.PrintResource(t, stat)

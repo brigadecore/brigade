@@ -8,7 +8,7 @@ func TestLRU(t *testing.T) {
 		if k != v {
 			t.Fatalf("Evict values not equal (%v!=%v)", k, v)
 		}
-		evictCounter += 1
+		evictCounter++
 	}
 	l, err := NewLRU(128, onEvicted)
 	if err != nil {
@@ -108,11 +108,11 @@ func TestLRU_GetOldest_RemoveOldest(t *testing.T) {
 	}
 }
 
-// Test that Add returns true/false if an eviction occured
+// Test that Add returns true/false if an eviction occurred
 func TestLRU_Add(t *testing.T) {
 	evictCounter := 0
 	onEvicted := func(k interface{}, v interface{}) {
-		evictCounter += 1
+		evictCounter++
 	}
 
 	l, err := NewLRU(1, onEvicted)
@@ -163,5 +163,44 @@ func TestLRU_Peek(t *testing.T) {
 	l.Add(3, 3)
 	if l.Contains(1) {
 		t.Errorf("should not have updated recent-ness of 1")
+	}
+}
+
+// Test that Resize can upsize and downsize
+func TestLRU_Resize(t *testing.T) {
+	onEvictCounter := 0
+	onEvicted := func(k interface{}, v interface{}) {
+		onEvictCounter++
+	}
+	l, err := NewLRU(2, onEvicted)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	// Downsize
+	l.Add(1, 1)
+	l.Add(2, 2)
+	evicted := l.Resize(1);
+	if evicted != 1 {
+		t.Errorf("1 element should have been evicted: %v", evicted)
+	}
+	if onEvictCounter != 1 {
+		t.Errorf("onEvicted should have been called 1 time: %v", onEvictCounter)
+	}
+
+	l.Add(3, 3)
+	if l.Contains(1) {
+		t.Errorf("Element 1 should have been evicted")
+	}
+
+	// Upsize
+	evicted = l.Resize(2);
+	if evicted != 0 {
+		t.Errorf("0 elements should have been evicted: %v", evicted)
+	}
+
+	l.Add(4, 4)
+	if !l.Contains(3) || !l.Contains(4) {
+		t.Errorf("Cache should have contained 2 elements")
 	}
 }

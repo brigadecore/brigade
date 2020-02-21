@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 type testInterface interface {
@@ -174,7 +175,7 @@ func TestValidatePrimitives(t *testing.T) {
 	obj := Object{"foo": "bar", "bar": 1}
 	assert.NoError(t, validate(obj))
 	assert.NoError(t, validate(&obj))
-	assert.Equal(t, obj, Object{"foo": "bar", "bar": 1})
+	assert.Equal(t, Object{"foo": "bar", "bar": 1}, obj)
 
 	obj2 := []Object{{"foo": "bar", "bar": 1}, {"foo": "bar", "bar": 1}}
 	assert.NoError(t, validate(obj2))
@@ -183,10 +184,45 @@ func TestValidatePrimitives(t *testing.T) {
 	nu := 10
 	assert.NoError(t, validate(nu))
 	assert.NoError(t, validate(&nu))
-	assert.Equal(t, nu, 10)
+	assert.Equal(t, 10, nu)
 
 	str := "value"
 	assert.NoError(t, validate(str))
 	assert.NoError(t, validate(&str))
-	assert.Equal(t, str, "value")
+	assert.Equal(t, "value", str)
+}
+
+// structCustomValidation is a helper struct we use to check that
+// custom validation can be registered on it.
+// The `notone` binding directive is for custom validation and registered later.
+type structCustomValidation struct {
+	Integer int `binding:"notone"`
+}
+
+func notOne(f1 validator.FieldLevel) bool {
+	if val, ok := f1.Field().Interface().(int); ok {
+		return val != 1
+	}
+	return false
+}
+
+func TestValidatorEngine(t *testing.T) {
+	// This validates that the function `notOne` matches
+	// the expected function signature by `defaultValidator`
+	// and by extension the validator library.
+	engine, ok := Validator.Engine().(*validator.Validate)
+	assert.True(t, ok)
+
+	err := engine.RegisterValidation("notone", notOne)
+	// Check that we can register custom validation without error
+	assert.Nil(t, err)
+
+	// Create an instance which will fail validation
+	withOne := structCustomValidation{Integer: 1}
+	errs := validate(withOne)
+
+	// Check that we got back non-nil errs
+	assert.NotNil(t, errs)
+	// Check that the error matches expectation
+	assert.Error(t, errs, "", "", "notone")
 }

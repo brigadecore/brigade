@@ -29,7 +29,7 @@ Example to Create a Load Balancer
 		AdminStateUp: gophercloud.Enabled,
 		VipSubnetID:  "9cedb85d-0759-4898-8a4b-fa5a5ea10086",
 		VipAddress:   "10.30.176.48",
-		Flavor:       "medium",
+		FlavorID:     "60df399a-ee85-11e9-81b4-2a2ae2dbcce4",
 		Provider:     "haproxy",
 	}
 
@@ -64,6 +64,14 @@ Example to Get the Status of a Load Balancer
 
 	lbID := "d67d56a6-4a86-4688-a282-f46444705c64"
 	status, err := loadbalancers.GetStatuses(networkClient, LBID).Extract()
+	if err != nil {
+		panic(err)
+	}
+
+Example to Get the Statistics of a Load Balancer
+
+	lbID := "d67d56a6-4a86-4688-a282-f46444705c64"
+	stats, err := loadbalancers.GetStats(networkClient, LBID).Extract()
 	if err != nil {
 		panic(err)
 	}

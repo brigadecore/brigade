@@ -28,7 +28,8 @@ func (u UserResource) WebService() *restful.WebService {
 		Doc("get all users").
 		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Writes([]User{}).
-		Returns(200, "OK", []User{}))
+		Returns(200, "OK", []User{}).
+		DefaultReturns("OK", []User{}))
 
 	ws.Route(ws.GET("/{user-id}").To(u.findUser).
 		// docs
@@ -37,7 +38,8 @@ func (u UserResource) WebService() *restful.WebService {
 		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Writes(User{}). // on the response
 		Returns(200, "OK", User{}).
-		Returns(404, "Not Found", nil))
+		Returns(404, "Not Found", nil).
+		DefaultReturns("OK", User{}))
 
 	ws.Route(ws.PUT("/{user-id}").To(u.updateUser).
 		// docs

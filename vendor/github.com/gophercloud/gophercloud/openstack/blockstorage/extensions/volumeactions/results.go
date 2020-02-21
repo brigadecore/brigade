@@ -29,6 +29,12 @@ type UploadImageResult struct {
 	gophercloud.Result
 }
 
+// SetImageMetadataResult contains the response body and error from an SetImageMetadata
+// request.
+type SetImageMetadataResult struct {
+	gophercloud.ErrResult
+}
+
 // ReserveResult contains the response body and error from a Reserve request.
 type ReserveResult struct {
 	gophercloud.ErrResult
@@ -183,4 +189,9 @@ func (r UploadImageResult) Extract() (VolumeImage, error) {
 	}
 	err := r.ExtractInto(&s)
 	return s.VolumeImage, err
+}
+
+// ForceDeleteResult contains the response body and error from a ForceDelete request.
+type ForceDeleteResult struct {
+	gophercloud.ErrResult
 }

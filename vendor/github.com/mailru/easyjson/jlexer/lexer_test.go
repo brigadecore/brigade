@@ -194,7 +194,7 @@ func TestInterface(t *testing.T) {
 		{toParse: "5", want: float64(5)},
 
 		{toParse: `{}`, want: map[string]interface{}{}},
-		{toParse: `[]`, want: []interface{}(nil)},
+		{toParse: `[]`, want: []interface{}{}},
 
 		{toParse: `{"a": "b"}`, want: map[string]interface{}{"a": "b"}},
 		{toParse: `[5]`, want: []interface{}{float64(5)}},
@@ -309,6 +309,25 @@ func TestJsonNumber(t *testing.T) {
 			t.Errorf("[%d, %q] JsonNumber() value error: %v", i, test.toParse, valueErr)
 		} else if valueErr == nil && test.wantValueError {
 			t.Errorf("[%d, %q] JsonNumber() ok; want value error", i, test.toParse)
+		}
+	}
+}
+
+func TestFetchStringUnterminatedString(t *testing.T) {
+	for _, test := range []struct {
+		data []byte
+	}{
+		{data: []byte(`"sting without trailing quote`)},
+		{data: []byte(`"\"`)},
+		{data: []byte{'"'}},
+	} {
+		l := Lexer{Data: test.data}
+		l.fetchString()
+		if l.pos > len(l.Data) {
+			t.Errorf("fetchString(%s): pos should not be greater than length of Data", test.data)
+		}
+		if l.Error() == nil {
+			t.Errorf("fetchString(%s): should add parsing error", test.data)
 		}
 	}
 }

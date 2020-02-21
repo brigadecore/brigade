@@ -18,6 +18,7 @@ package fuzz
 
 import (
 	"reflect"
+	"regexp"
 	"testing"
 	"time"
 )
@@ -364,7 +365,7 @@ func TestFuzz_noCustom(t *testing.T) {
 			inner.Str = testPhrase
 		},
 	)
-	c := Continue{f: f, Rand: f.r}
+	c := Continue{fc: &fuzzerContext{fuzzer: f}, Rand: f.r}
 
 	// Fuzzer.Fuzz()
 	obj1 := Outer{}
@@ -424,5 +425,82 @@ func TestFuzz_NumElements(t *testing.T) {
 			return 3, false
 		}
 		return 4, len(obj.A) == 1
+	})
+}
+
+func TestFuzz_Maxdepth(t *testing.T) {
+	type S struct {
+		S *S
+	}
+
+	f := New().NilChance(0)
+
+	f.MaxDepth(1)
+	for i := 0; i < 100; i++ {
+		obj := S{}
+		f.Fuzz(&obj)
+
+		if obj.S != nil {
+			t.Errorf("Expected nil")
+		}
+	}
+
+	f.MaxDepth(3) // field, ptr
+	for i := 0; i < 100; i++ {
+		obj := S{}
+		f.Fuzz(&obj)
+
+		if obj.S == nil {
+			t.Errorf("Expected obj.S not nil")
+		} else if obj.S.S != nil {
+			t.Errorf("Expected obj.S.S nil")
+		}
+	}
+
+	f.MaxDepth(5) // field, ptr, field, ptr
+	for i := 0; i < 100; i++ {
+		obj := S{}
+		f.Fuzz(&obj)
+
+		if obj.S == nil {
+			t.Errorf("Expected obj.S not nil")
+		} else if obj.S.S == nil {
+			t.Errorf("Expected obj.S.S not nil")
+		} else if obj.S.S.S != nil {
+			t.Errorf("Expected obj.S.S.S nil")
+		}
+	}
+}
+
+func TestFuzz_SkipPattern(t *testing.T) {
+	obj := &struct {
+		S1    string
+		S2    string
+		XXX_S string
+		S_XXX string
+		In    struct {
+			Str    string
+			XXX_S1 string
+			S2_XXX string
+		}
+	}{}
+
+	f := New().NilChance(0).SkipFieldsWithPattern(regexp.MustCompile(`^XXX_`))
+	f.Fuzz(obj)
+
+	tryFuzz(t, f, obj, func() (int, bool) {
+		if obj.XXX_S != "" {
+			return 1, false
+		}
+		if obj.S_XXX == "" {
+			return 2, false
+		}
+		if obj.In.XXX_S1 != "" {
+			return 3, false
+		}
+		if obj.In.S2_XXX == "" {
+			return 4, false
+		}
+		return 5, true
 	})
 }

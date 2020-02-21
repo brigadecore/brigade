@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,20 +19,19 @@ package loadtest
 //   go test -bench . -cpu 1
 
 import (
+	"context"
 	"log"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc"
-
 	"cloud.google.com/go/internal/testutil"
 	"cloud.google.com/go/pubsub"
+	"google.golang.org/api/option"
 	gtransport "google.golang.org/api/transport/grpc"
 	pb "google.golang.org/genproto/googleapis/pubsub/v1"
+	"google.golang.org/grpc"
 )
 
 // These constants are designed to match the "throughput" test in

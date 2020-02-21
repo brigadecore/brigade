@@ -204,8 +204,8 @@ func TestTeamsService_ListTeamRepos(t *testing.T) {
 
 	mux.HandleFunc("/teams/1/repos", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
-		acceptHeaders := []string{mediaTypeTopicsPreview, mediaTypeNestedTeamsPreview}
-		testHeader(t, r, "Accept", strings.Join(acceptHeaders, ", "))
+		wantAcceptHeaders := []string{mediaTypeTopicsPreview, mediaTypeNestedTeamsPreview}
+		testHeader(t, r, "Accept", strings.Join(wantAcceptHeaders, ", "))
 		testFormValues(t, r, values{"page": "2"})
 		fmt.Fprint(w, `[{"id":1}]`)
 	})
@@ -228,8 +228,8 @@ func TestTeamsService_IsTeamRepo_true(t *testing.T) {
 
 	mux.HandleFunc("/teams/1/repos/o/r", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
-		acceptHeaders := []string{mediaTypeOrgPermissionRepo, mediaTypeNestedTeamsPreview}
-		testHeader(t, r, "Accept", strings.Join(acceptHeaders, ", "))
+		wantAcceptHeaders := []string{mediaTypeOrgPermissionRepo, mediaTypeNestedTeamsPreview}
+		testHeader(t, r, "Accept", strings.Join(wantAcceptHeaders, ", "))
 		fmt.Fprint(w, `{"id":1}`)
 	})
 
@@ -461,5 +461,94 @@ func TestTeamsService_ListPendingTeamInvitations(t *testing.T) {
 
 	if !reflect.DeepEqual(invitations, want) {
 		t.Errorf("Teams.ListPendingTeamInvitations returned %+v, want %+v", invitations, want)
+	}
+}
+
+func TestTeamsService_ListProjects(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	wantAcceptHeaders := []string{mediaTypeNestedTeamsPreview, mediaTypeProjectsPreview}
+	mux.HandleFunc("/teams/1/projects", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		testHeader(t, r, "Accept", strings.Join(wantAcceptHeaders, ", "))
+		fmt.Fprint(w, `[{"id":1}]`)
+	})
+
+	projects, _, err := client.Teams.ListTeamProjects(context.Background(), 1)
+	if err != nil {
+		t.Errorf("Teams.ListTeamProjects returned error: %v", err)
+	}
+
+	want := []*Project{{ID: Int64(1)}}
+	if !reflect.DeepEqual(projects, want) {
+		t.Errorf("Teams.ListTeamProjects returned %+v, want %+v", projects, want)
+	}
+}
+
+func TestTeamsService_ReviewProjects(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	wantAcceptHeaders := []string{mediaTypeNestedTeamsPreview, mediaTypeProjectsPreview}
+	mux.HandleFunc("/teams/1/projects/1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		testHeader(t, r, "Accept", strings.Join(wantAcceptHeaders, ", "))
+		fmt.Fprint(w, `{"id":1}`)
+	})
+
+	project, _, err := client.Teams.ReviewTeamProjects(context.Background(), 1, 1)
+	if err != nil {
+		t.Errorf("Teams.ReviewTeamProjects returned error: %v", err)
+	}
+
+	want := &Project{ID: Int64(1)}
+	if !reflect.DeepEqual(project, want) {
+		t.Errorf("Teams.ReviewTeamProjects returned %+v, want %+v", project, want)
+	}
+}
+
+func TestTeamsService_AddTeamProject(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	opt := &TeamProjectOptions{
+		Permission: String("admin"),
+	}
+
+	wantAcceptHeaders := []string{mediaTypeNestedTeamsPreview, mediaTypeProjectsPreview}
+	mux.HandleFunc("/teams/1/projects/1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "PUT")
+		testHeader(t, r, "Accept", strings.Join(wantAcceptHeaders, ", "))
+
+		v := &TeamProjectOptions{}
+		json.NewDecoder(r.Body).Decode(v)
+		if !reflect.DeepEqual(v, opt) {
+			t.Errorf("Request body = %+v, want %+v", v, opt)
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Teams.AddTeamProject(context.Background(), 1, 1, opt)
+	if err != nil {
+		t.Errorf("Teams.AddTeamProject returned error: %v", err)
+	}
+}
+
+func TestTeamsService_RemoveTeamProject(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	wantAcceptHeaders := []string{mediaTypeNestedTeamsPreview, mediaTypeProjectsPreview}
+	mux.HandleFunc("/teams/1/projects/1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "DELETE")
+		testHeader(t, r, "Accept", strings.Join(wantAcceptHeaders, ", "))
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Teams.RemoveTeamProject(context.Background(), 1, 1)
+	if err != nil {
+		t.Errorf("Teams.RemoveTeamProject returned error: %v", err)
 	}
 }

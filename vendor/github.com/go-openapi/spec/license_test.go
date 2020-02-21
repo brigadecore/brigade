@@ -14,15 +14,35 @@
 
 package spec
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+var license = License{
+	LicenseProps:     LicenseProps{Name: "the name", URL: "the url"},
+	VendorExtensible: VendorExtensible{Extensions: map[string]interface{}{"x-license": "custom term"}}}
+
+const licenseJSON = `{
+	"name": "the name",
+	"url": "the url",
+	"x-license": "custom term"
+}`
 
 func TestIntegrationLicense(t *testing.T) {
-	license := License{"the name", "the url"}
-	const licenseJSON = `{"name":"the name","url":"the url"}`
+
 	const licenseYAML = "name: the name\nurl: the url\n"
 
-	assertSerializeJSON(t, license, licenseJSON)
-	assertSerializeYAML(t, license, licenseYAML)
-	assertParsesJSON(t, licenseJSON, license)
-	assertParsesYAML(t, licenseYAML, license)
+	b, err := json.MarshalIndent(license, "", "\t")
+	if assert.NoError(t, err) {
+		assert.Equal(t, licenseJSON, string(b))
+	}
+
+	actual := License{}
+	err = json.Unmarshal([]byte(licenseJSON), &actual)
+	if assert.NoError(t, err) {
+		assert.EqualValues(t, license, actual)
+	}
 }

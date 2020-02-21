@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@ package firestore
 import (
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
-	pb "google.golang.org/genproto/googleapis/firestore/v1beta1"
-
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	pb "google.golang.org/genproto/googleapis/firestore/v1"
 )
 
 func TestToProtoDocument(t *testing.T) {
@@ -69,10 +69,11 @@ func TestNewDocumentSnapshot(t *testing.T) {
 		Ref:        docRef,
 		CreateTime: time.Unix(10, 0).UTC(),
 		UpdateTime: time.Unix(20, 0).UTC(),
+		ReadTime:   aTime,
 		proto:      in,
 		c:          c,
 	}
-	got, err := newDocumentSnapshot(docRef, in, c)
+	got, err := newDocumentSnapshot(docRef, in, c, aTimestamp)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +193,7 @@ func TestDataAtPath(t *testing.T) {
 	}
 }
 
-func TestExtractTransformPaths(t *testing.T) {
+func TestExtractTransforms(t *testing.T) {
 	type S struct {
 		A time.Time  `firestore:",serverTimestamp"`
 		B time.Time  `firestore:",serverTimestamp"`
@@ -204,34 +205,102 @@ func TestExtractTransformPaths(t *testing.T) {
 	}
 
 	m := map[string]interface{}{
-		"x": 1,
+		"ar":  map[string]interface{}{"k2": ArrayRemove("e", "f", "g")},
+		"au":  map[string]interface{}{"k1": ArrayUnion("a", "b", "c")},
+		"inc": map[string]interface{}{"k3": Increment(7)},
+		"x":   1,
 		"y": &S{
 			// A is a zero time: included
 			B: aTime, // not a zero time: excluded
-			// C is nil: included
+			//C is nil: included
 			D: &time.Time{}, // pointer to a zero time: included
 			E: &aTime,       // pointer to a non-zero time: excluded
-			// F is a zero time, but does not have the right tag: excluded
+			//F is a zero time, but does not have the right tag: excluded
 			G: 15, // not a time.Time
 		},
 		"z": map[string]interface{}{"w": ServerTimestamp},
 	}
-	got, err := extractTransformPaths(reflect.ValueOf(m), nil)
+	got, err := extractTransforms(reflect.ValueOf(m), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	sort.Sort(byPath(got))
-	want := []FieldPath{{"y", "A"}, {"y", "C"}, {"y", "d.d"}, {"z", "w"}}
-	if !testEqual(got, want) {
-		t.Errorf("got %#v, want %#v", got, want)
+	want := []*pb.DocumentTransform_FieldTransform{
+		{
+			FieldPath: "ar.k2",
+			TransformType: &pb.DocumentTransform_FieldTransform_RemoveAllFromArray{
+				RemoveAllFromArray: &pb.ArrayValue{Values: []*pb.Value{
+					{ValueType: &pb.Value_StringValue{"e"}},
+					{ValueType: &pb.Value_StringValue{"f"}},
+					{ValueType: &pb.Value_StringValue{"g"}},
+				}},
+			},
+		},
+		{
+			FieldPath: "au.k1",
+			TransformType: &pb.DocumentTransform_FieldTransform_AppendMissingElements{
+				AppendMissingElements: &pb.ArrayValue{Values: []*pb.Value{
+					{ValueType: &pb.Value_StringValue{"a"}},
+					{ValueType: &pb.Value_StringValue{"b"}},
+					{ValueType: &pb.Value_StringValue{"c"}},
+				}},
+			},
+		},
+		{
+			FieldPath: "inc.k3",
+			TransformType: &pb.DocumentTransform_FieldTransform_Increment{
+				Increment: &pb.Value{ValueType: &pb.Value_IntegerValue{7}},
+			},
+		},
+		{
+			FieldPath: "y.A",
+			TransformType: &pb.DocumentTransform_FieldTransform_SetToServerValue{
+				SetToServerValue: pb.DocumentTransform_FieldTransform_REQUEST_TIME,
+			},
+		},
+		{
+			FieldPath: "y.C",
+			TransformType: &pb.DocumentTransform_FieldTransform_SetToServerValue{
+				SetToServerValue: pb.DocumentTransform_FieldTransform_REQUEST_TIME,
+			},
+		},
+		{
+			FieldPath: "y.`d.d`",
+			TransformType: &pb.DocumentTransform_FieldTransform_SetToServerValue{
+				SetToServerValue: pb.DocumentTransform_FieldTransform_REQUEST_TIME,
+			},
+		},
+		{
+			FieldPath: "z.w",
+			TransformType: &pb.DocumentTransform_FieldTransform_SetToServerValue{
+				SetToServerValue: pb.DocumentTransform_FieldTransform_REQUEST_TIME,
+			},
+		},
 	}
+	if len(got) != len(want) {
+		t.Fatalf("Expected output array of size %d, got %d: %v", len(want), len(got), got)
+	}
+	sort.Sort(byDocumentTransformFieldPath(got))
+	for i, vw := range want {
+		vg := got[i]
+		if !testEqual(vw, vg) {
+			t.Fatalf("index %d: got %#v, want %#v", i, vg, vw)
+		}
+	}
+}
+
+type byDocumentTransformFieldPath []*pb.DocumentTransform_FieldTransform
+
+func (b byDocumentTransformFieldPath) Len() int      { return len(b) }
+func (b byDocumentTransformFieldPath) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
+func (b byDocumentTransformFieldPath) Less(i, j int) bool {
+	return strings.Compare(b[i].FieldPath, b[j].FieldPath) < 1
 }
 
 func TestExtractTransformPathsErrors(t *testing.T) {
 	type S struct {
 		A int `firestore:",serverTimestamp"`
 	}
-	_, err := extractTransformPaths(reflect.ValueOf(S{}), nil)
+	_, err := extractTransforms(reflect.ValueOf(S{}), nil)
 	if err == nil {
 		t.Error("got nil, want error")
 	}

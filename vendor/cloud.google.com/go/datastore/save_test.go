@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,22 +15,32 @@
 package datastore
 
 import (
-	"reflect"
 	"testing"
+	"time"
 
+	"cloud.google.com/go/internal/testutil"
 	pb "google.golang.org/genproto/googleapis/datastore/v1"
 )
 
-func TestInterfaceToProtoNilKey(t *testing.T) {
-	var iv *Key
-	pv, err := interfaceToProto(iv, false)
-	if err != nil {
-		t.Fatalf("nil key: interfaceToProto: %v", err)
-	}
-
-	_, ok := pv.ValueType.(*pb.Value_NullValue)
-	if !ok {
-		t.Errorf("nil key: type:\ngot: %T\nwant: %T", pv.ValueType, &pb.Value_NullValue{})
+func TestInterfaceToProtoNil(t *testing.T) {
+	// A nil *Key, or a nil value of any other pointer type, should convert to a NullValue.
+	for _, in := range []interface{}{
+		(*Key)(nil),
+		(*int)(nil),
+		(*string)(nil),
+		(*bool)(nil),
+		(*float64)(nil),
+		(*GeoPoint)(nil),
+		(*time.Time)(nil),
+	} {
+		got, err := interfaceToProto(in, false)
+		if err != nil {
+			t.Fatalf("%T: %v", in, err)
+		}
+		_, ok := got.ValueType.(*pb.Value_NullValue)
+		if !ok {
+			t.Errorf("%T: got: %T\nwant: %T", in, got.ValueType, &pb.Value_NullValue{})
+		}
 	}
 }
 
@@ -187,8 +197,178 @@ func TestSaveEntityNested(t *testing.T) {
 			continue
 		}
 
-		if !reflect.DeepEqual(tc.want, got) {
+		if !testutil.Equal(tc.want, got) {
 			t.Errorf("%s: compare:\ngot:  %#v\nwant: %#v", tc.desc, got, tc.want)
 		}
+	}
+}
+
+func TestSavePointers(t *testing.T) {
+	for _, test := range []struct {
+		desc string
+		in   interface{}
+		want []Property
+	}{
+		{
+			desc: "nil pointers save as nil-valued properties",
+			in:   &Pointers{},
+			want: []Property{
+				{Name: "Pi", Value: nil},
+				{Name: "Ps", Value: nil},
+				{Name: "Pb", Value: nil},
+				{Name: "Pf", Value: nil},
+				{Name: "Pg", Value: nil},
+				{Name: "Pt", Value: nil},
+			},
+		},
+		{
+			desc: "nil omitempty pointers not saved",
+			in:   &PointersOmitEmpty{},
+			want: []Property(nil),
+		},
+		{
+			desc: "non-nil omitempty zero-valued pointers are saved",
+			in:   func() *PointersOmitEmpty { pi := 0; return &PointersOmitEmpty{Pi: &pi} }(),
+			want: []Property{{Name: "Pi", Value: int64(0)}},
+		},
+		{
+			desc: "non-nil zero-valued pointers save as zero values",
+			in:   populatedPointers(),
+			want: []Property{
+				{Name: "Pi", Value: int64(0)},
+				{Name: "Ps", Value: ""},
+				{Name: "Pb", Value: false},
+				{Name: "Pf", Value: 0.0},
+				{Name: "Pg", Value: GeoPoint{}},
+				{Name: "Pt", Value: time.Time{}},
+			},
+		},
+		{
+			desc: "non-nil non-zero-valued pointers save as the appropriate values",
+			in: func() *Pointers {
+				p := populatedPointers()
+				*p.Pi = 1
+				*p.Ps = "x"
+				*p.Pb = true
+				*p.Pf = 3.14
+				*p.Pg = GeoPoint{Lat: 1, Lng: 2}
+				*p.Pt = time.Unix(100, 0)
+				return p
+			}(),
+			want: []Property{
+				{Name: "Pi", Value: int64(1)},
+				{Name: "Ps", Value: "x"},
+				{Name: "Pb", Value: true},
+				{Name: "Pf", Value: 3.14},
+				{Name: "Pg", Value: GeoPoint{Lat: 1, Lng: 2}},
+				{Name: "Pt", Value: time.Unix(100, 0)},
+			},
+		},
+	} {
+		got, err := SaveStruct(test.in)
+		if err != nil {
+			t.Fatalf("%s: %v", test.desc, err)
+		}
+		if !testutil.Equal(got, test.want) {
+			t.Errorf("%s\ngot  %#v\nwant %#v\n", test.desc, got, test.want)
+		}
+	}
+}
+
+func TestSaveEmptySlice(t *testing.T) {
+	// Zero-length slice fields are not saved.
+	for _, slice := range [][]string{nil, {}} {
+		got, err := SaveStruct(&struct{ S []string }{S: slice})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("%#v: got %d properties, wanted zero", slice, len(got))
+		}
+	}
+}
+
+func TestSaveFieldsWithInterface(t *testing.T) {
+	// We should be able to extract the underlying value behind an interface.
+	// See issue https://github.com/googleapis/google-cloud-go/issues/1474.
+
+	type n1 struct {
+		Inner interface{}
+	}
+
+	type n2 struct {
+		Inner2 *n1
+	}
+	type n3 struct {
+		N2 interface{}
+	}
+
+	cases := []struct {
+		name string
+		in   interface{}
+		want []Property
+	}{
+		{
+			name: "Non-Nil value",
+			in: &struct {
+				Value interface{}
+				ID    int
+				key   interface{}
+			}{
+				Value: "this is a string",
+				ID:    17,
+				key:   "key1",
+			},
+			want: []Property{
+				{Name: "Value", Value: "this is a string"},
+				{Name: "ID", Value: int64(17)},
+			},
+		},
+		{
+			name: "Nil value",
+			in: &struct {
+				foo interface{}
+			}{
+				foo: (*string)(nil),
+			},
+			want: nil,
+		},
+		{
+			name: "Nested",
+			in: &n3{
+				N2: &n2{
+					Inner2: &n1{
+						Inner: "Innest",
+					},
+				},
+			},
+			want: []Property{
+				{
+					Name: "N2",
+					Value: &Entity{
+						Properties: []Property{{
+							Name: "Inner2",
+							Value: &Entity{
+								Properties: []Property{{
+									Name: "Inner", Value: "Innest",
+								}},
+							},
+						}},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := SaveStruct(tt.in)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := testutil.Diff(got, tt.want); diff != "" {
+				t.Fatalf("got - want +\n%s", diff)
+			}
+		})
 	}
 }

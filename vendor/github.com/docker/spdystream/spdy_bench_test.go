@@ -60,7 +60,7 @@ func BenchmarkDialWithSPDYStream10000(b *testing.B) {
 
 		closeErr := spdyConn.Close()
 		if closeErr != nil {
-			b.Fatalf("Error closing connection: %s, closeErr")
+			b.Fatalf("Error closing connection: %s", closeErr)
 		}
 	}
 }
@@ -103,7 +103,7 @@ func benchmarkStreamWithDataAndSize(size uint64, b *testing.B) {
 
 		closeErr := spdyConn.Close()
 		if closeErr != nil {
-			b.Fatalf("Error closing connection: %s, closeErr")
+			b.Fatalf("Error closing connection: %s", closeErr)
 		}
 	}
 }

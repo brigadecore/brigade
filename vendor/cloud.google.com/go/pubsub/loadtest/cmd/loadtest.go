@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,10 +18,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"strconv"
-
-	"math/rand"
 
 	"cloud.google.com/go/pubsub/loadtest"
 	pb "cloud.google.com/go/pubsub/loadtest/pb"

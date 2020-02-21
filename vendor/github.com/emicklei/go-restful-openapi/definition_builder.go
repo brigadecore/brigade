@@ -52,8 +52,7 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	// JSON arrays, except that []byte encodes as a base64-encoded string.
 	// If we see a []byte here, treat it at as a primitive type (string)
 	// and deal with it in buildArrayTypeProperty.
-	if (st.Kind() == reflect.Slice || st.Kind() == reflect.Array) &&
-		st.Elem().Kind() == reflect.Uint8 {
+	if b.isByteArrayType(st) {
 		return nil
 	}
 	// see if we already have visited this model
@@ -330,18 +329,25 @@ func (b definitionBuilder) buildMapTypeProperty(field reflect.StructField, jsonN
 		prop.AdditionalProperties = &spec.SchemaOrBool{
 			Schema: &spec.Schema{},
 		}
-		if isPrimitive {
-			mapped := b.jsonSchemaType(elemTypeName)
-			prop.AdditionalProperties.Schema.Type = []string{mapped}
+		// golang encoding/json packages says array and slice values encode as
+		// JSON arrays, except that []byte encodes as a base64-encoded string.
+		// If we see a []byte here, treat it at as a string
+		if b.isByteArrayType(fieldType.Elem()) {
+			prop.AdditionalProperties.Schema.Type = []string{"string"}
 		} else {
-			prop.AdditionalProperties.Schema.Ref = spec.MustCreateRef("#/definitions/" + elemTypeName)
-		}
-		// add|overwrite model for element type
-		if fieldType.Elem().Kind() == reflect.Ptr {
-			fieldType = fieldType.Elem()
-		}
-		if !isPrimitive {
-			b.addModel(fieldType.Elem(), elemTypeName)
+			if isPrimitive {
+				mapped := b.jsonSchemaType(elemTypeName)
+				prop.AdditionalProperties.Schema.Type = []string{mapped}
+			} else {
+				prop.AdditionalProperties.Schema.Ref = spec.MustCreateRef("#/definitions/" + elemTypeName)
+			}
+			// add|overwrite model for element type
+			if fieldType.Elem().Kind() == reflect.Ptr {
+				fieldType = fieldType.Elem()
+			}
+			if !isPrimitive {
+				b.addModel(fieldType.Elem(), elemTypeName)
+			}
 		}
 	}
 	return jsonName, prop
@@ -416,12 +422,18 @@ func keyFrom(st reflect.Type, cfg Config) string {
 	return key
 }
 
+// Does the type represent a []byte?
+func (b definitionBuilder) isByteArrayType(t reflect.Type) bool {
+	return (t.Kind() == reflect.Slice || t.Kind() == reflect.Array) &&
+		t.Elem().Kind() == reflect.Uint8
+}
+
 // see also https://golang.org/ref/spec#Numeric_types
 func (b definitionBuilder) isPrimitiveType(modelName string) bool {
 	if len(modelName) == 0 {
 		return false
 	}
-	return strings.Contains("uint uint8 uint16 uint32 uint64 int int8 int16 int32 int64 float32 float64 bool string byte rune time.Time", modelName)
+	return strings.Contains("uint uint8 uint16 uint32 uint64 int int8 int16 int32 int64 float32 float64 bool string byte rune time.Time time.Duration", modelName)
 }
 
 // jsonNameOfField returns the name of the field as it should appear in JSON format
@@ -459,6 +471,7 @@ func (b definitionBuilder) jsonSchemaType(modelName string) string {
 		"float32":   "number",
 		"bool":      "boolean",
 		"time.Time": "string",
+		"time.Duration": "integer",
 	}
 	mapped, ok := schemaMap[modelName]
 	if !ok {
@@ -484,6 +497,8 @@ func (b definitionBuilder) jsonSchemaFormat(modelName string) string {
 		"float32":    "float",
 		"time.Time":  "date-time",
 		"*time.Time": "date-time",
+		"time.Duration": "integer",
+		"*time.Duration": "integer",
 	}
 	mapped, ok := schemaMap[modelName]
 	if !ok {

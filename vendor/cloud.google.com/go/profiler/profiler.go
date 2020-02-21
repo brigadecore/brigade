@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,10 +38,12 @@ package profiler
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"runtime"
 	"runtime/pprof"
 	"sync"
@@ -52,8 +54,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/google/pprof/profile"
-	gax "github.com/googleapis/gax-go"
-	"golang.org/x/net/context"
+	gax "github.com/googleapis/gax-go/v2"
 	"google.golang.org/api/option"
 	gtransport "google.golang.org/api/transport/grpc"
 	pb "google.golang.org/genproto/googleapis/devtools/cloudprofiler/v2"
@@ -66,7 +67,7 @@ import (
 
 var (
 	config       Config
-	startOnce    sync.Once
+	startOnce    allowUntilSuccess
 	mutexEnabled bool
 	// The functions below are stubbed to be overrideable for testing.
 	getProjectID     = gcemd.ProjectID
@@ -76,8 +77,14 @@ var (
 	stopCPUProfile   = pprof.StopCPUProfile
 	writeHeapProfile = pprof.WriteHeapProfile
 	sleep            = gax.Sleep
-	dialGRPC         = gtransport.Dial
+	dialGRPC         = gtransport.DialPool
 	onGCE            = gcemd.OnGCE
+	serviceRegexp    = regexp.MustCompile(`^[a-z]([-a-z0-9_.]{0,253}[a-z0-9])?$`)
+
+	// For testing only.
+	// When the profiling loop has exited without error and this channel is
+	// non-nil, "true" will be sent to this channel.
+	profilingDone chan bool
 )
 
 const (
@@ -85,10 +92,11 @@ const (
 	xGoogAPIMetadata = "x-goog-api-client"
 	zoneNameLabel    = "zone"
 	versionLabel     = "version"
+	languageLabel    = "language"
 	instanceLabel    = "instance"
 	scope            = "https://www.googleapis.com/auth/monitoring.write"
 
-	initialBackoff = time.Second
+	initialBackoff = time.Minute
 	// Ensure the agent will recover within 1 hour.
 	maxBackoff        = time.Hour
 	backoffMultiplier = 1.3 // Backoff envelope increases by this factor on each retry.
@@ -97,12 +105,14 @@ const (
 
 // Config is the profiler configuration.
 type Config struct {
-	// Service (or deprecated Target) must be provided to start the profiler.
-	// It specifies the name of the service under which the profiled data
-	// will be recorded and exposed at the Profiler UI for the project.
-	// You can specify an arbitrary string, but see Deployment.target at
+	// Service must be provided to start the profiler. It specifies the name of
+	// the service under which the profiled data will be recorded and exposed at
+	// the Profiler UI for the project. You can specify an arbitrary string, but
+	// see Deployment.target at
 	// https://github.com/googleapis/googleapis/blob/master/google/devtools/cloudprofiler/v2/profiler.proto
-	// for restrictions.
+	// for restrictions. If the parameter is not set, the agent will probe
+	// GAE_SERVICE environment variable which is present in Google App Engine
+	// environment.
 	// NOTE: The string should be the same across different replicas of
 	// your service so that the globally constant profiling rate is
 	// maintained. Do not put things like PID or unique pod ID in the name.
@@ -111,7 +121,8 @@ type Config struct {
 	// ServiceVersion is an optional field specifying the version of the
 	// service. It can be an arbitrary string. Profiler profiles
 	// once per minute for each version of each service in each zone.
-	// ServiceVersion defaults to an empty string.
+	// ServiceVersion defaults to GAE_VERSION environment variable if that is
+	// set, or to empty string otherwise.
 	ServiceVersion string
 
 	// DebugLogging enables detailed debug logging from profiler. It
@@ -123,8 +134,26 @@ type Config struct {
 	// than Go 1.8.
 	MutexProfiling bool
 
-	// ProjectID is the Cloud Console project ID to use instead of
-	// the one read from the VM metadata server.
+	// When true, collecting the CPU profiles is disabled.
+	NoCPUProfiling bool
+
+	// When true, collecting the allocation profiles is disabled.
+	NoAllocProfiling bool
+
+	// AllocForceGC forces garbage collection before the collection of each heap
+	// profile collected to produce the allocation profile. This increases the
+	// accuracy of allocation profiling. It defaults to false.
+	AllocForceGC bool
+
+	// When true, collecting the heap profiles is disabled.
+	NoHeapProfiling bool
+
+	// When true, collecting the goroutine profiles is disabled.
+	NoGoroutineProfiling bool
+
+	// ProjectID is the Cloud Console project ID to use instead of the one set by
+	// GOOGLE_CLOUD_PROJECT environment variable or read from the VM metadata
+	// server.
 	//
 	// Set this if you are running the agent in your local environment
 	// or anywhere else outside of Google Cloud Platform.
@@ -135,24 +164,56 @@ type Config struct {
 	// for testing.
 	APIAddr string
 
-	// Target is deprecated, use Service instead.
-	Target string
+	// Instance is the name of Compute Engine instance the profiler agent runs
+	// on. This is normally determined from the Compute Engine metadata server
+	// and doesn't need to be initialized. It needs to be set in rare cases where
+	// the metadata server is present but is flaky or otherwise misbehave.
+	Instance string
 
-	instance string
-	zone     string
+	// Zone is the zone of Compute Engine instance the profiler agent runs
+	// on. This is normally determined from the Compute Engine metadata server
+	// and doesn't need to be initialized. It needs to be set in rare cases where
+	// the metadata server is present but is flaky or otherwise misbehave.
+	Zone string
+
+	// numProfiles is the number of profiles which should be collected before
+	// the profile collection loop exits.When numProfiles is 0, profiles will
+	// be collected for the duration of the program. For testing only.
+	numProfiles int
 }
 
-// startError represents the error occured during the
-// initializating and starting of the agent.
-var startError error
+// allowUntilSuccess is an object that will perform action till
+// it succeeds once.
+// This is a modified form of Go's sync.Once
+type allowUntilSuccess struct {
+	m    sync.Mutex
+	done uint32
+}
+
+// do calls function f only if it hasnt returned nil previously.
+// Once f returns nil, do will not call function f any more.
+// This is a modified form of Go's sync.Once.Do
+func (o *allowUntilSuccess) do(f func() error) (err error) {
+	o.m.Lock()
+	defer o.m.Unlock()
+	if o.done == 0 {
+		if err = f(); err == nil {
+			o.done = 1
+		}
+	} else {
+		debugLog("profiler.Start() called again after it was previously called")
+		err = nil
+	}
+	return err
+}
 
 // Start starts a goroutine to collect and upload profiles. The
 // caller must provide the service string in the config. See
 // Config for details. Start should only be called once. Any
 // additional calls will be ignored.
 func Start(cfg Config, options ...option.ClientOption) error {
-	startOnce.Do(func() {
-		startError = start(cfg, options...)
+	startError := startOnce.do(func() error {
+		return start(cfg, options...)
 	})
 	return startError
 }
@@ -173,16 +234,21 @@ func start(cfg Config, options ...option.ClientOption) error {
 	opts := []option.ClientOption{
 		option.WithEndpoint(config.APIAddr),
 		option.WithScopes(scope),
+		option.WithUserAgent(fmt.Sprintf("gcloud-go-profiler/%s", version.Repo)),
 	}
 	opts = append(opts, options...)
 
-	conn, err := dialGRPC(ctx, opts...)
+	connPool, err := dialGRPC(ctx, opts...)
 	if err != nil {
 		debugLog("failed to dial GRPC: %v", err)
 		return err
 	}
 
-	a := initializeAgent(pb.NewProfilerServiceClient(conn))
+	a, err := initializeAgent(pb.NewProfilerServiceClient(connPool))
+	if err != nil {
+		debugLog("failed to start the profiling agent: %v", err)
+		return err
+	}
 	go pollProfilerService(withXGoogHeader(ctx), a)
 	return nil
 }
@@ -246,6 +312,7 @@ func (r *retryer) Retry(err error) (time.Duration, bool) {
 // increasing value, bounded by maxBackoff.
 func (a *agent) createProfile(ctx context.Context) *pb.Profile {
 	req := pb.CreateProfileRequest{
+		Parent:      "projects/" + a.deployment.ProjectId,
 		Deployment:  a.deployment,
 		ProfileType: a.profileTypes,
 	}
@@ -254,8 +321,12 @@ func (a *agent) createProfile(ctx context.Context) *pb.Profile {
 	md := grpcmd.New(map[string]string{})
 
 	gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
+		debugLog("creating a new profile via profiler service")
 		var err error
 		p, err = a.client.CreateProfile(ctx, &req, grpc.Trailer(&md))
+		if err != nil {
+			debugLog("failed to create profile, will retry: %v", err)
+		}
 		return err
 	}, gax.WithRetry(func() gax.Retryer {
 		return &retryer{
@@ -280,7 +351,7 @@ func (a *agent) profileAndUpload(ctx context.Context, p *pb.Profile) {
 	case pb.ProfileType_CPU:
 		duration, err := ptypes.Duration(p.Duration)
 		if err != nil {
-			debugLog("failed to get profile duration: %v", err)
+			debugLog("failed to get profile duration for CPU profile: %v", err)
 			return
 		}
 		if err := startCPUProfile(&prof); err != nil {
@@ -290,13 +361,23 @@ func (a *agent) profileAndUpload(ctx context.Context, p *pb.Profile) {
 		sleep(ctx, duration)
 		stopCPUProfile()
 	case pb.ProfileType_HEAP:
-		if err := writeHeapProfile(&prof); err != nil {
+		if err := heapProfile(&prof); err != nil {
 			debugLog("failed to write heap profile: %v", err)
+			return
+		}
+	case pb.ProfileType_HEAP_ALLOC:
+		duration, err := ptypes.Duration(p.Duration)
+		if err != nil {
+			debugLog("failed to get profile duration for allocation profile: %v", err)
+			return
+		}
+		if err := deltaAllocProfile(ctx, duration, config.AllocForceGC, &prof); err != nil {
+			debugLog("failed to collect allocation profile: %v", err)
 			return
 		}
 	case pb.ProfileType_THREADS:
 		if err := pprof.Lookup("goroutine").WriteTo(&prof, 0); err != nil {
-			debugLog("failed to create goroutine profile: %v", err)
+			debugLog("failed to collect goroutine profile: %v", err)
 			return
 		}
 	case pb.ProfileType_CONTENTION:
@@ -306,21 +387,12 @@ func (a *agent) profileAndUpload(ctx context.Context, p *pb.Profile) {
 			return
 		}
 		if err := deltaMutexProfile(ctx, duration, &prof); err != nil {
-			debugLog("failed to create mutex profile: %v", err)
+			debugLog("failed to collect mutex profile: %v", err)
 			return
 		}
 	default:
 		debugLog("unexpected profile type: %v", pt)
 		return
-	}
-
-	// Starting Go 1.9 the profiles are symbolized by runtime/pprof.
-	// TODO(jianqiaoli): Remove the symbolization code when we decide to
-	// stop supporting Go 1.8.
-	if !shouldAssumeSymbolized && pt != pb.ProfileType_CONTENTION {
-		if err := parseAndSymbolize(&prof); err != nil {
-			debugLog("failed to symbolize profile: %v", err)
-		}
 	}
 
 	p.ProfileBytes = prof.Bytes()
@@ -350,19 +422,12 @@ func deltaMutexProfile(ctx context.Context, duration time.Duration, prof *bytes.
 		return err
 	}
 
-	// TODO(jianqiaoli): Remove this check when github.com/google/pprof/issues/242
-	// is fixed.
-	if len(p0.Mapping) > 0 {
-		p0.Scale(-1)
-		p, err = profile.Merge([]*profile.Profile{p0, p})
-		if err != nil {
-			return err
-		}
+	p0.Scale(-1)
+	p, err = profile.Merge([]*profile.Profile{p0, p})
+	if err != nil {
+		return err
 	}
 
-	// The mutex profile is not symbolized by runtime.pprof until
-	// golang.org/issue/21474 is fixed in go1.10.
-	symbolize(p)
 	return p.Write(prof)
 }
 
@@ -391,29 +456,48 @@ func withXGoogHeader(ctx context.Context, keyval ...string) context.Context {
 	return grpcmd.NewOutgoingContext(ctx, md)
 }
 
-func initializeAgent(c pb.ProfilerServiceClient) *agent {
-	labels := map[string]string{}
-	if config.zone != "" {
-		labels[zoneNameLabel] = config.zone
+// initializeAgent initializes the profiling agent. It returns an error if
+// profile collection should not be started because collection is disabled
+// for all profile types.
+func initializeAgent(c pb.ProfilerServiceClient) (*agent, error) {
+	labels := map[string]string{languageLabel: "go"}
+	if config.Zone != "" {
+		labels[zoneNameLabel] = config.Zone
 	}
 	if config.ServiceVersion != "" {
 		labels[versionLabel] = config.ServiceVersion
 	}
 	d := &pb.Deployment{
 		ProjectId: config.ProjectID,
-		Target:    config.Target,
+		Target:    config.Service,
 		Labels:    labels,
 	}
 
 	profileLabels := map[string]string{}
 
-	if config.instance != "" {
-		profileLabels[instanceLabel] = config.instance
+	if config.Instance != "" {
+		profileLabels[instanceLabel] = config.Instance
 	}
 
-	profileTypes := []pb.ProfileType{pb.ProfileType_CPU, pb.ProfileType_HEAP, pb.ProfileType_THREADS}
+	var profileTypes []pb.ProfileType
+	if !config.NoCPUProfiling {
+		profileTypes = append(profileTypes, pb.ProfileType_CPU)
+	}
+	if !config.NoHeapProfiling {
+		profileTypes = append(profileTypes, pb.ProfileType_HEAP)
+	}
+	if !config.NoGoroutineProfiling {
+		profileTypes = append(profileTypes, pb.ProfileType_THREADS)
+	}
+	if !config.NoAllocProfiling {
+		profileTypes = append(profileTypes, pb.ProfileType_HEAP_ALLOC)
+	}
 	if mutexEnabled {
 		profileTypes = append(profileTypes, pb.ProfileType_CONTENTION)
+	}
+
+	if len(profileTypes) == 0 {
+		return nil, fmt.Errorf("collection is not enabled for any profile types")
 	}
 
 	return &agent{
@@ -421,43 +505,67 @@ func initializeAgent(c pb.ProfilerServiceClient) *agent {
 		deployment:    d,
 		profileLabels: profileLabels,
 		profileTypes:  profileTypes,
-	}
+	}, nil
 }
 
 func initializeConfig(cfg Config) error {
 	config = cfg
 
-	switch {
-	case config.Service != "":
-		config.Target = config.Service
-	case config.Target == "":
-		config.Target = os.Getenv("GAE_SERVICE")
+	if config.Service == "" {
+		for _, ev := range []string{"GAE_SERVICE", "K_SERVICE"} {
+			if val := os.Getenv(ev); val != "" {
+				config.Service = val
+				break
+			}
+		}
 	}
-
-	if config.Target == "" {
-		return errors.New("service name must be specified in the configuration")
+	if config.Service == "" {
+		return errors.New("service name must be configured")
+	}
+	if !serviceRegexp.MatchString(config.Service) {
+		return fmt.Errorf("service name %q does not match regular expression %v", config.Service, serviceRegexp)
 	}
 
 	if config.ServiceVersion == "" {
-		config.ServiceVersion = os.Getenv("GAE_VERSION")
+		for _, ev := range []string{"GAE_VERSION", "K_REVISION"} {
+			if val := os.Getenv(ev); val != "" {
+				config.ServiceVersion = val
+				break
+			}
+		}
 	}
 
+	if projectID := os.Getenv("GOOGLE_CLOUD_PROJECT"); config.ProjectID == "" && projectID != "" {
+		// Cloud Shell and App Engine set this environment variable to the project
+		// ID, so use it if present. In case of App Engine the project ID is also
+		// available from the GCE metadata server, but by using the environment
+		// variable saves one request to the metadata server. The environment
+		// project ID is only used if no project ID is provided in the
+		// configuration.
+		config.ProjectID = projectID
+	}
 	if onGCE() {
 		var err error
 		if config.ProjectID == "" {
 			if config.ProjectID, err = getProjectID(); err != nil {
-				return fmt.Errorf("failed to get the project ID from Compute Engine: %v", err)
+				return fmt.Errorf("failed to get the project ID from Compute Engine metadata: %v", err)
 			}
 		}
 
-		if config.zone, err = getZone(); err != nil {
-			return fmt.Errorf("failed to get zone from Compute Engine: %v", err)
+		if config.Zone == "" {
+			if config.Zone, err = getZone(); err != nil {
+				return fmt.Errorf("failed to get zone from Compute Engine metadata: %v", err)
+			}
 		}
 
-		if config.instance, err = getInstanceName(); err != nil {
-			return fmt.Errorf("failed to get instance from Compute Engine: %v", err)
+		if config.Instance == "" {
+			if config.Instance, err = getInstanceName(); err != nil {
+				if _, ok := err.(gcemd.NotDefinedError); !ok {
+					return fmt.Errorf("failed to get instance name from Compute Engine metadata: %v", err)
+				}
+				debugLog("failed to get instance name from Compute Engine metadata, will use empty name: %v", err)
+			}
 		}
-
 	} else {
 		if config.ProjectID == "" {
 			return fmt.Errorf("project ID must be specified in the configuration if running outside of GCP")
@@ -474,8 +582,14 @@ func initializeConfig(cfg Config) error {
 // server for instructions, and collects and uploads profiles as
 // requested.
 func pollProfilerService(ctx context.Context, a *agent) {
-	for {
+	debugLog("Stackdriver Profiler Go Agent version: %s", version.Repo)
+	debugLog("profiler has started")
+	for i := 0; config.numProfiles == 0 || i < config.numProfiles; i++ {
 		p := a.createProfile(ctx)
 		a.profileAndUpload(ctx, p)
+	}
+
+	if profilingDone != nil {
+		profilingDone <- true
 	}
 }

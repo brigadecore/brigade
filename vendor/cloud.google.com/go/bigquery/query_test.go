@@ -1,4 +1,4 @@
-// Copyright 2015 Google Inc. All Rights Reserved.
+// Copyright 2015 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@ package bigquery
 
 import (
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
+	"time"
 
 	"cloud.google.com/go/internal/testutil"
-
+	"github.com/google/go-cmp/cmp"
 	bq "google.golang.org/api/bigquery/v2"
 )
 
 func defaultQueryJob() *bq.Job {
+	pfalse := false
 	return &bq.Job{
 		JobReference: &bq.JobReference{JobId: "RANDOM", ProjectId: "client-project-id"},
 		Configuration: &bq.JobConfiguration{
@@ -39,8 +39,7 @@ func defaultQueryJob() *bq.Job {
 					ProjectId: "def-project-id",
 					DatasetId: "def-dataset-id",
 				},
-				UseLegacySql:    false,
-				ForceSendFields: []string{"UseLegacySql"},
+				UseLegacySql: &pfalse,
 			},
 		},
 	}
@@ -119,9 +118,7 @@ func TestQuery(t *testing.T) {
 						g.MaxBadRecords = 1
 						g.Quote = "'"
 						g.SkipLeadingRows = 2
-						g.Schema = Schema([]*FieldSchema{
-							{Name: "name", Type: StringFieldType},
-						})
+						g.Schema = Schema{{Name: "name", Type: StringFieldType}}
 						return g
 					}(),
 				},
@@ -272,8 +269,55 @@ func TestQuery(t *testing.T) {
 			},
 			want: func() *bq.Job {
 				j := defaultQueryJob()
-				j.Configuration.Query.UseLegacySql = true
+				ptrue := true
+				j.Configuration.Query.UseLegacySql = &ptrue
 				j.Configuration.Query.ForceSendFields = nil
+				return j
+			}(),
+		},
+		{
+			dst: c.Dataset("dataset-id").Table("table-id"),
+			src: &QueryConfig{
+				Q:                "query string",
+				DefaultProjectID: "def-project-id",
+				DefaultDatasetID: "def-dataset-id",
+				TimePartitioning: &TimePartitioning{},
+			},
+			want: func() *bq.Job {
+				j := defaultQueryJob()
+				j.Configuration.Query.ForceSendFields = nil
+				j.Configuration.Query.TimePartitioning = &bq.TimePartitioning{
+					Type: "DAY",
+				}
+				return j
+			}(),
+		},
+		{
+			dst: c.Dataset("dataset-id").Table("table-id"),
+			src: &QueryConfig{
+				Q:                "query string",
+				DefaultProjectID: "def-project-id",
+				DefaultDatasetID: "def-dataset-id",
+				RangePartitioning: &RangePartitioning{
+					Field: "foo",
+					Range: &RangePartitioningRange{
+						Start:    1,
+						End:      2,
+						Interval: 3,
+					},
+				},
+			},
+			want: func() *bq.Job {
+				j := defaultQueryJob()
+				j.Configuration.Query.ForceSendFields = nil
+				j.Configuration.Query.RangePartitioning = &bq.RangePartitioning{
+					Field: "foo",
+					Range: &bq.RangePartitioningRange{
+						Start:    1,
+						End:      2,
+						Interval: 3,
+					},
+				}
 				return j
 			}(),
 		},
@@ -350,9 +394,17 @@ func TestConfiguringQuery(t *testing.T) {
 	query.JobID = "ajob"
 	query.DefaultProjectID = "def-project-id"
 	query.DefaultDatasetID = "def-dataset-id"
+	query.TimePartitioning = &TimePartitioning{Expiration: 1234 * time.Second, Field: "f"}
+	query.Clustering = &Clustering{
+		Fields: []string{"cfield1"},
+	}
+	query.DestinationEncryptionConfig = &EncryptionConfig{KMSKeyName: "keyName"}
+	query.SchemaUpdateOptions = []string{"ALLOW_FIELD_ADDITION"}
+
 	// Note: Other configuration fields are tested in other tests above.
 	// A lot of that can be consolidated once Client.Copy is gone.
 
+	pfalse := false
 	want := &bq.Job{
 		Configuration: &bq.JobConfiguration{
 			Query: &bq.JobConfigurationQuery{
@@ -361,8 +413,11 @@ func TestConfiguringQuery(t *testing.T) {
 					ProjectId: "def-project-id",
 					DatasetId: "def-dataset-id",
 				},
-				UseLegacySql:    false,
-				ForceSendFields: []string{"UseLegacySql"},
+				UseLegacySql:                       &pfalse,
+				TimePartitioning:                   &bq.TimePartitioning{ExpirationMs: 1234000, Field: "f", Type: "DAY"},
+				Clustering:                         &bq.Clustering{Fields: []string{"cfield1"}},
+				DestinationEncryptionConfiguration: &bq.EncryptionConfiguration{KmsKeyName: "keyName"},
+				SchemaUpdateOptions:                []string{"ALLOW_FIELD_ADDITION"},
 			},
 		},
 		JobReference: &bq.JobReference{

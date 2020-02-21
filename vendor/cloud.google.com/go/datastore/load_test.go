@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,12 @@
 package datastore
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
+	"cloud.google.com/go/internal/testutil"
 	pb "google.golang.org/genproto/googleapis/datastore/v1"
 )
 
@@ -164,7 +167,7 @@ func TestLoadEntityNestedLegacy(t *testing.T) {
 			continue
 		}
 
-		if !reflect.DeepEqual(tc.want, dst) {
+		if !testutil.Equal(tc.want, dst) {
 			t.Errorf("%s: compare:\ngot:  %#v\nwant: %#v", tc.desc, dst, tc.want)
 		}
 	}
@@ -307,7 +310,7 @@ func TestLoadEntityNested(t *testing.T) {
 			},
 
 			want: &NestedSliceOfSimple{
-				A: []Simple{Simple{I: 3}, Simple{I: 4}},
+				A: []Simple{{I: 3}, {I: 4}},
 			},
 		},
 		{
@@ -407,7 +410,7 @@ func TestLoadEntityNested(t *testing.T) {
 			continue
 		}
 
-		if !reflect.DeepEqual(tc.want, dst) {
+		if !testutil.Equal(tc.want, dst) {
 			t.Errorf("%s: compare:\ngot:  %#v\nwant: %#v", tc.desc, dst, tc.want)
 		}
 	}
@@ -423,6 +426,83 @@ type NestedStructPtrs struct {
 type NestedSimple2 struct {
 	A *Simple
 	I int
+	U interface{}
+}
+
+type withTypedInterface struct {
+	Field fmt.Stringer
+}
+
+type withUntypedInterface struct {
+	Field interface{}
+}
+
+func TestLoadToInterface(t *testing.T) {
+	testCases := []struct {
+		name    string
+		src     *pb.Entity
+		dst     interface{}
+		want    interface{}
+		wantErr string
+	}{
+		{
+			name: "Typed interface",
+			src: &pb.Entity{
+				Key: keyToProto(testKey0),
+				Properties: map[string]*pb.Value{
+					"Field": {ValueType: &pb.Value_StringValue{
+						StringValue: "Foo",
+					}},
+				},
+			},
+			dst:     &withTypedInterface{},
+			wantErr: `datastore: cannot load field "Field" into a "datastore.withTypedInterface": "string" is not assignable to "fmt.Stringer"`,
+		},
+		{
+			name: "Untyped interface, fresh struct",
+			src: &pb.Entity{
+				Key: keyToProto(testKey0),
+				Properties: map[string]*pb.Value{
+					"Field": {ValueType: &pb.Value_StringValue{
+						StringValue: "Foo",
+					}},
+				},
+			},
+			dst:  &withUntypedInterface{},
+			want: &withUntypedInterface{Field: "Foo"},
+		},
+		{
+			name: "Untyped interface, already set",
+			src: &pb.Entity{
+				Key: keyToProto(testKey0),
+				Properties: map[string]*pb.Value{
+					"Field": {ValueType: &pb.Value_StringValue{
+						StringValue: "Newly set",
+					}},
+				},
+			},
+			dst:  &withUntypedInterface{Field: 1e9},
+			want: &withUntypedInterface{Field: "Newly set"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := loadEntityProto(tc.dst, tc.src)
+			if tc.wantErr != "" {
+				if err == nil || err.Error() != tc.wantErr {
+					t.Fatalf("Error mismatch\nGot:  %s\nWant: %s", err, tc.wantErr)
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("loadEntityProto: %v", err)
+				}
+				if diff := testutil.Diff(tc.dst, tc.want); diff != "" {
+					t.Fatalf("Mismatch: got - want +\n%s", diff)
+				}
+			}
+		})
+	}
 }
 
 func TestAlreadyPopulatedDst(t *testing.T) {
@@ -469,6 +549,7 @@ func TestAlreadyPopulatedDst(t *testing.T) {
 							Properties: map[string]*pb.Value{
 								"A": {ValueType: &pb.Value_NullValue{}},
 								"I": {ValueType: &pb.Value_IntegerValue{IntegerValue: 2}},
+								"U": {ValueType: &pb.Value_StringValue{StringValue: "replaced"}},
 							},
 						},
 					}},
@@ -481,6 +562,7 @@ func TestAlreadyPopulatedDst(t *testing.T) {
 				&NestedSimple2{
 					A: &Simple{I: 2},
 					/* I: 0 */
+					U: 1e9,
 				},
 				0,
 			},
@@ -490,6 +572,7 @@ func TestAlreadyPopulatedDst(t *testing.T) {
 				&NestedSimple2{
 					/* A: nil, */
 					I: 2,
+					U: "replaced",
 				},
 				5,
 			},
@@ -503,7 +586,7 @@ func TestAlreadyPopulatedDst(t *testing.T) {
 			continue
 		}
 
-		if !reflect.DeepEqual(tc.want, tc.dst) {
+		if !testutil.Equal(tc.want, tc.dst) {
 			t.Errorf("%s: compare:\ngot:  %#v\nwant: %#v", tc.desc, tc.dst, tc.want)
 		}
 	}
@@ -605,6 +688,110 @@ func (kl *KeyLoader4) LoadKey(k *Key) error {
 	return nil
 }
 
+type PLS1 struct {
+	A string
+}
+
+func (p *PLS1) Load(props []Property) error {
+	for _, pp := range props {
+		if pp.Name == "A" {
+			p.A = pp.Value.(string)
+		}
+	}
+	return nil
+}
+
+func (p *PLS1) Save() (props []Property, err error) {
+	return []Property{{Name: "A", Value: p.A}}, nil
+}
+
+type KeyLoader6 struct {
+	A string
+	B string
+	K *Key
+}
+
+func (kl *KeyLoader6) Load(props []Property) error {
+	for _, pp := range props {
+		if pp.Name == "A" {
+			kl.A = pp.Value.(string)
+		}
+	}
+	return &ErrFieldMismatch{
+		StructType: reflect.TypeOf(kl),
+		FieldName:  "B",
+		Reason:     "no value found",
+	}
+}
+
+func (kl *KeyLoader6) LoadKey(k *Key) error {
+	kl.K = k
+	return nil
+}
+
+func (kl *KeyLoader6) Save() (props []Property, err error) {
+	return []Property{{}}, nil
+}
+
+type KeyLoader7 struct {
+	A string
+	K *Key
+}
+
+func (kl *KeyLoader7) Load(props []Property) error {
+	for _, pp := range props {
+		if pp.Name == "A" {
+			kl.A = pp.Value.(string)
+		}
+	}
+	return nil
+}
+
+func (kl *KeyLoader7) LoadKey(k *Key) error {
+	return &ErrFieldMismatch{
+		StructType: reflect.TypeOf(kl),
+		FieldName:  "key",
+		Reason:     "no value found",
+	}
+}
+
+func (kl *KeyLoader7) Save() (props []Property, err error) {
+	return []Property{{}}, nil
+}
+
+type KeyLoader8 struct {
+	A string
+	B string
+	K *Key
+}
+
+type customLoadError struct{}
+
+func (e *customLoadError) Error() string {
+	return "custom load error"
+}
+
+func (kl *KeyLoader8) Load(props []Property) error {
+	for _, pp := range props {
+		if pp.Name == "A" {
+			kl.A = pp.Value.(string)
+		}
+	}
+	return &customLoadError{}
+}
+
+func (kl *KeyLoader8) LoadKey(k *Key) error {
+	return &ErrFieldMismatch{
+		StructType: reflect.TypeOf(kl),
+		FieldName:  "key",
+		Reason:     "no value found",
+	}
+}
+
+func (kl *KeyLoader8) Save() (props []Property, err error) {
+	return []Property{{}}, nil
+}
+
 type NotKeyLoader struct {
 	A string
 	K *Key
@@ -621,6 +808,11 @@ func (p *NotKeyLoader) Load(props []Property) error {
 
 func (p *NotKeyLoader) Save() (props []Property, err error) {
 	return []Property{{Name: "A", Value: p.A}}, nil
+}
+
+type NotPLSKeyLoader struct {
+	A string
+	K *Key `datastore:"__key__"`
 }
 
 type NestedKeyLoaders struct {
@@ -647,6 +839,21 @@ func TestKeyLoader(t *testing.T) {
 			},
 			dst: &KeyLoader1{},
 			want: &KeyLoader1{
+				A: "hello",
+				K: testKey0,
+			},
+		},
+		{
+			desc: "simple key loader with unmatched properties",
+			src: &pb.Entity{
+				Key: keyToProto(testKey0),
+				Properties: map[string]*pb.Value{
+					"A": {ValueType: &pb.Value_StringValue{StringValue: "hello"}},
+					"B": {ValueType: &pb.Value_StringValue{StringValue: "unmatched"}},
+				},
+			},
+			dst: &NotPLSKeyLoader{},
+			want: &NotPLSKeyLoader{
 				A: "hello",
 				K: testKey0,
 			},
@@ -739,17 +946,193 @@ func TestKeyLoader(t *testing.T) {
 				PLS: &NotKeyLoader{A: "something"},
 			},
 		},
+		{
+			desc: "simple key loader with ErrFieldMismatch error",
+			src: &pb.Entity{
+				Key: keyToProto(testKey0),
+				Properties: map[string]*pb.Value{
+					"A": {ValueType: &pb.Value_StringValue{StringValue: "hello"}},
+				},
+			},
+			dst: &KeyLoader6{},
+			want: &KeyLoader6{
+				A: "hello",
+				B: "",
+				K: testKey0,
+			},
+		},
+		{
+			desc: "simple key loader with ErrFieldMismatch during key load",
+			src: &pb.Entity{
+				Key: keyToProto(testKey0),
+				Properties: map[string]*pb.Value{
+					"A": {ValueType: &pb.Value_StringValue{StringValue: "hello"}},
+				},
+			},
+			dst: &KeyLoader7{},
+			want: &KeyLoader7{
+				A: "hello",
+				K: nil,
+			},
+		},
+		{
+			desc: "simple key loader with other error during Load and ErrFieldMismatch during KeyLoad",
+			src: &pb.Entity{
+				Key: keyToProto(testKey0),
+				Properties: map[string]*pb.Value{
+					"A": {ValueType: &pb.Value_StringValue{StringValue: "hello"}},
+				},
+			},
+			dst: &KeyLoader8{},
+			want: &KeyLoader8{
+				A: "hello",
+				B: "",
+				K: nil,
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		err := loadEntityProto(tc.dst, tc.src)
 		if err != nil {
-			t.Errorf("loadEntityProto: %s: %v", tc.desc, err)
-			continue
+			// While loadEntityProto may return an error, if that error is
+			// ErrFieldMismatch, then there is still data in tc.dst to compare.
+			if _, ok := err.(*ErrFieldMismatch); !ok {
+				t.Errorf("loadEntityProto: %s: %v", tc.desc, err)
+				continue
+			}
 		}
 
-		if !reflect.DeepEqual(tc.want, tc.dst) {
+		if !testutil.Equal(tc.want, tc.dst) {
 			t.Errorf("%s: compare:\ngot:  %+v\nwant: %+v", tc.desc, tc.dst, tc.want)
 		}
 	}
 }
+
+func TestLoadPointers(t *testing.T) {
+	for _, test := range []struct {
+		desc string
+		in   []Property
+		want Pointers
+	}{
+		{
+			desc: "nil properties load as nil pointers",
+			in: []Property{
+				{Name: "Pi", Value: nil},
+				{Name: "Ps", Value: nil},
+				{Name: "Pb", Value: nil},
+				{Name: "Pf", Value: nil},
+				{Name: "Pg", Value: nil},
+				{Name: "Pt", Value: nil},
+			},
+			want: Pointers{},
+		},
+		{
+			desc: "missing properties load as nil pointers",
+			in:   []Property(nil),
+			want: Pointers{},
+		},
+		{
+			desc: "non-nil properties load as the appropriate values",
+			in: []Property{
+				{Name: "Pi", Value: int64(1)},
+				{Name: "Ps", Value: "x"},
+				{Name: "Pb", Value: true},
+				{Name: "Pf", Value: 3.14},
+				{Name: "Pg", Value: GeoPoint{Lat: 1, Lng: 2}},
+				{Name: "Pt", Value: time.Unix(100, 0)},
+			},
+			want: func() Pointers {
+				p := populatedPointers()
+				*p.Pi = 1
+				*p.Ps = "x"
+				*p.Pb = true
+				*p.Pf = 3.14
+				*p.Pg = GeoPoint{Lat: 1, Lng: 2}
+				*p.Pt = time.Unix(100, 0)
+				return *p
+			}(),
+		},
+	} {
+		var got Pointers
+		if err := LoadStruct(&got, test.in); err != nil {
+			t.Fatalf("%s: %v", test.desc, err)
+		}
+		if !testutil.Equal(got, test.want) {
+			t.Errorf("%s:\ngot  %+v\nwant %+v", test.desc, got, test.want)
+		}
+	}
+}
+
+func TestLoadNonArrayIntoSlice(t *testing.T) {
+	// Loading a non-array value into a slice field results in a slice of size 1.
+	var got struct{ S []string }
+	if err := LoadStruct(&got, []Property{{Name: "S", Value: "x"}}); err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"x"}; !testutil.Equal(got.S, want) {
+		t.Errorf("got %#v, want %#v", got.S, want)
+	}
+}
+
+func TestLoadEmptyArrayIntoSlice(t *testing.T) {
+	// Loading an empty array into a slice field is a no-op.
+	var got = struct{ S []string }{[]string{"x"}}
+	if err := LoadStruct(&got, []Property{{Name: "S", Value: []interface{}{}}}); err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"x"}; !testutil.Equal(got.S, want) {
+		t.Errorf("got %#v, want %#v", got.S, want)
+	}
+}
+
+func TestLoadNull(t *testing.T) {
+	// Loading a Datastore Null into a basic type (int, float, etc.) results in a zero value.
+	// Loading a Null into a slice of basic type results in a slice of size 1 containing the zero value.
+	// (As expected from the behavior of slices and nulls with basic types.)
+	type S struct {
+		I int64
+		F float64
+		S string
+		B bool
+		A []string
+	}
+	got := S{
+		I: 1,
+		F: 1.0,
+		S: "1",
+		B: true,
+		A: []string{"X"},
+	}
+	want := S{A: []string{""}}
+	props := []Property{{Name: "I"}, {Name: "F"}, {Name: "S"}, {Name: "B"}, {Name: "A"}}
+	if err := LoadStruct(&got, props); err != nil {
+		t.Fatal(err)
+	}
+	if !testutil.Equal(got, want) {
+		t.Errorf("got %+v, want %+v", got, want)
+	}
+
+	// Loading a Null into a pointer to struct field results in a nil field.
+	got2 := struct{ X *S }{X: &S{}}
+	if err := LoadStruct(&got2, []Property{{Name: "X"}}); err != nil {
+		t.Fatal(err)
+	}
+	if got2.X != nil {
+		t.Errorf("got %v, want nil", got2.X)
+	}
+
+	// Loading a Null into a struct field is an error.
+	got3 := struct{ X S }{}
+	err := LoadStruct(&got3, []Property{{Name: "X"}})
+	if err == nil {
+		t.Error("got nil, want error")
+	}
+}
+
+// 	var got2 struct{ S []Pet }
+// 	if err := LoadStruct(&got2, []Property{{Name: "S", Value: nil}}); err != nil {
+// 		t.Fatal(err)
+// 	}
+
+// }

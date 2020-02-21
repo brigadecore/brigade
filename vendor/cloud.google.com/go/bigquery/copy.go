@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
 package bigquery
 
 import (
-	"golang.org/x/net/context"
+	"context"
+
 	bq "google.golang.org/api/bigquery/v2"
 )
 
@@ -37,6 +38,9 @@ type CopyConfig struct {
 
 	// The labels associated with this job.
 	Labels map[string]string
+
+	// Custom encryption configuration (e.g., Cloud KMS keys).
+	DestinationEncryptionConfig *EncryptionConfig
 }
 
 func (c *CopyConfig) toBQ() *bq.JobConfiguration {
@@ -47,20 +51,22 @@ func (c *CopyConfig) toBQ() *bq.JobConfiguration {
 	return &bq.JobConfiguration{
 		Labels: c.Labels,
 		Copy: &bq.JobConfigurationTableCopy{
-			CreateDisposition: string(c.CreateDisposition),
-			WriteDisposition:  string(c.WriteDisposition),
-			DestinationTable:  c.Dst.toBQ(),
-			SourceTables:      ts,
+			CreateDisposition:                  string(c.CreateDisposition),
+			WriteDisposition:                   string(c.WriteDisposition),
+			DestinationTable:                   c.Dst.toBQ(),
+			DestinationEncryptionConfiguration: c.DestinationEncryptionConfig.toBQ(),
+			SourceTables:                       ts,
 		},
 	}
 }
 
 func bqToCopyConfig(q *bq.JobConfiguration, c *Client) *CopyConfig {
 	cc := &CopyConfig{
-		Labels:            q.Labels,
-		CreateDisposition: TableCreateDisposition(q.Copy.CreateDisposition),
-		WriteDisposition:  TableWriteDisposition(q.Copy.WriteDisposition),
-		Dst:               bqToTable(q.Copy.DestinationTable, c),
+		Labels:                      q.Labels,
+		CreateDisposition:           TableCreateDisposition(q.Copy.CreateDisposition),
+		WriteDisposition:            TableWriteDisposition(q.Copy.WriteDisposition),
+		Dst:                         bqToTable(q.Copy.DestinationTable, c),
+		DestinationEncryptionConfig: bqToEncryptionConfig(q.Copy.DestinationEncryptionConfiguration),
 	}
 	for _, t := range q.Copy.SourceTables {
 		cc.Srcs = append(cc.Srcs, bqToTable(t, c))
@@ -95,7 +101,7 @@ func (c *Copier) Run(ctx context.Context) (*Job, error) {
 
 func (c *Copier) newJob() *bq.Job {
 	return &bq.Job{
-		JobReference:  c.JobIDConfig.createJobRef(c.c.projectID),
+		JobReference:  c.JobIDConfig.createJobRef(c.c),
 		Configuration: c.CopyConfig.toBQ(),
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,14 +17,18 @@ package firestore
 // A simple mock server.
 
 import (
+	"context"
 	"fmt"
+	"reflect"
+	"sort"
+	"strings"
 
 	"cloud.google.com/go/internal/testutil"
-	pb "google.golang.org/genproto/googleapis/firestore/v1beta1"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
-	"golang.org/x/net/context"
+	pb "google.golang.org/genproto/googleapis/firestore/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type mockServer struct {
@@ -41,20 +45,25 @@ type reqItem struct {
 	adjust  func(gotReq proto.Message)
 }
 
-func newMockServer() (*mockServer, error) {
+func newMockServer() (_ *mockServer, cleanup func(), _ error) {
 	srv, err := testutil.NewServer()
 	if err != nil {
-		return nil, err
+		return nil, func() {}, err
 	}
 	mock := &mockServer{Addr: srv.Addr}
 	pb.RegisterFirestoreServer(srv.Gsrv, mock)
 	srv.Start()
-	return mock, nil
+	return mock, func() {
+		srv.Close()
+	}, nil
 }
 
 // addRPC adds a (request, response) pair to the server's list of expected
 // interactions. The server will compare the incoming request with wantReq
-// using proto.Equal.
+// using proto.Equal. The response can be a message or an error.
+//
+// For the Listen RPC, resp should be a []interface{}, where each element
+// is either ListenResponse or an error.
 //
 // Passing nil for wantReq disables the request check.
 func (s *mockServer) addRPC(wantReq proto.Message, resp interface{}) {
@@ -74,7 +83,7 @@ func (s *mockServer) addRPCAdjust(wantReq proto.Message, resp interface{}, adjus
 // was expected or there are no expected rpcs.
 func (s *mockServer) popRPC(gotReq proto.Message) (interface{}, error) {
 	if len(s.reqItems) == 0 {
-		panic("out of RPCs")
+		panic(fmt.Sprintf("out of RPCs, saw %v", reflect.TypeOf(gotReq)))
 	}
 	ri := s.reqItems[0]
 	s.reqItems = s.reqItems[1:]
@@ -82,8 +91,21 @@ func (s *mockServer) popRPC(gotReq proto.Message) (interface{}, error) {
 		if ri.adjust != nil {
 			ri.adjust(gotReq)
 		}
+
+		// Sort FieldTransforms by FieldPath, since slice order is undefined and proto.Equal
+		// is strict about order.
+		switch gotReqTyped := gotReq.(type) {
+		case *pb.CommitRequest:
+			for _, w := range gotReqTyped.Writes {
+				switch opTyped := w.Operation.(type) {
+				case *pb.Write_Transform:
+					sort.Sort(ByFieldPath(opTyped.Transform.FieldTransforms))
+				}
+			}
+		}
+
 		if !proto.Equal(gotReq, ri.wantReq) {
-			return nil, fmt.Errorf("mockServer: bad request\ngot:  %T\n%s\nwant: %T\n%s",
+			return nil, fmt.Errorf("mockServer: bad request\ngot:\n%T\n%s\nwant:\n%T\n%s",
 				gotReq, proto.MarshalTextString(gotReq),
 				ri.wantReq, proto.MarshalTextString(ri.wantReq))
 		}
@@ -95,6 +117,12 @@ func (s *mockServer) popRPC(gotReq proto.Message) (interface{}, error) {
 	}
 	return resp, nil
 }
+
+func (a ByFieldPath) Len() int           { return len(a) }
+func (a ByFieldPath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByFieldPath) Less(i, j int) bool { return a[i].FieldPath < a[j].FieldPath }
+
+type ByFieldPath []*pb.DocumentTransform_FieldTransform
 
 func (s *mockServer) reset() {
 	s.reqItems = nil
@@ -173,4 +201,29 @@ func (s *mockServer) Rollback(_ context.Context, req *pb.RollbackRequest) (*empt
 		return nil, err
 	}
 	return res.(*empty.Empty), nil
+}
+
+func (s *mockServer) Listen(stream pb.Firestore_ListenServer) error {
+	req, err := stream.Recv()
+	if err != nil {
+		return err
+	}
+	responses, err := s.popRPC(req)
+	if err != nil {
+		if status.Code(err) == codes.Unknown && strings.Contains(err.Error(), "mockServer") {
+			// The stream will retry on Unknown, but we don't want that to happen if
+			// the error comes from us.
+			panic(err)
+		}
+		return err
+	}
+	for _, res := range responses.([]interface{}) {
+		if err, ok := res.(error); ok {
+			return err
+		}
+		if err := stream.Send(res.(*pb.ListenResponse)); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@ package valuecollector
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
-	"golang.org/x/debug"
+	"cloud.google.com/go/cmd/go-cloud-debug-agent/internal/debug"
+	"cloud.google.com/go/internal/testutil"
 	cd "google.golang.org/api/clouddebugger/v2"
 )
 
@@ -43,103 +43,103 @@ func TestValueCollector(t *testing.T) {
 	c := NewCollector(&Program{}, 26)
 	// Add some variables of various types, whose values we want the collector to read.
 	variablesToAdd := []debug.LocalVar{
-		{Name: "a", Var: debug.Var{int16Type, 0x1}},
-		{Name: "b", Var: debug.Var{stringType, 0x2}},
-		{Name: "c", Var: debug.Var{structType, 0x3}},
-		{Name: "d", Var: debug.Var{pointerType, 0x4}},
-		{Name: "e", Var: debug.Var{arrayType, 0x5}},
-		{Name: "f", Var: debug.Var{debugStringType, 0x6}},
-		{Name: "g", Var: debug.Var{mapType, 0x7}},
-		{Name: "h", Var: debug.Var{channelType, 0x8}},
-		{Name: "i", Var: debug.Var{sliceType, 0x9}},
+		{Name: "a", Var: debug.Var{TypeID: int16Type, Address: 0x1}},
+		{Name: "b", Var: debug.Var{TypeID: stringType, Address: 0x2}},
+		{Name: "c", Var: debug.Var{TypeID: structType, Address: 0x3}},
+		{Name: "d", Var: debug.Var{TypeID: pointerType, Address: 0x4}},
+		{Name: "e", Var: debug.Var{TypeID: arrayType, Address: 0x5}},
+		{Name: "f", Var: debug.Var{TypeID: debugStringType, Address: 0x6}},
+		{Name: "g", Var: debug.Var{TypeID: mapType, Address: 0x7}},
+		{Name: "h", Var: debug.Var{TypeID: channelType, Address: 0x8}},
+		{Name: "i", Var: debug.Var{TypeID: sliceType, Address: 0x9}},
 	}
 	expectedResults := []*cd.Variable{
-		&cd.Variable{Name: "a", VarTableIndex: 1},
-		&cd.Variable{Name: "b", VarTableIndex: 2},
-		&cd.Variable{Name: "c", VarTableIndex: 3},
-		&cd.Variable{Name: "d", VarTableIndex: 4},
-		&cd.Variable{Name: "e", VarTableIndex: 5},
-		&cd.Variable{Name: "f", VarTableIndex: 6},
-		&cd.Variable{Name: "g", VarTableIndex: 7},
-		&cd.Variable{Name: "h", VarTableIndex: 8},
-		&cd.Variable{Name: "i", VarTableIndex: 9},
+		{Name: "a", VarTableIndex: 1},
+		{Name: "b", VarTableIndex: 2},
+		{Name: "c", VarTableIndex: 3},
+		{Name: "d", VarTableIndex: 4},
+		{Name: "e", VarTableIndex: 5},
+		{Name: "f", VarTableIndex: 6},
+		{Name: "g", VarTableIndex: 7},
+		{Name: "h", VarTableIndex: 8},
+		{Name: "i", VarTableIndex: 9},
 	}
 	for i, v := range variablesToAdd {
 		added := c.AddVariable(v)
-		if !reflect.DeepEqual(added, expectedResults[i]) {
+		if !testutil.Equal(added, expectedResults[i]) {
 			t.Errorf("AddVariable: got %+v want %+v", *added, *expectedResults[i])
 		}
 	}
 	// Read the values, compare the output to what we expect.
 	v := c.ReadValues()
 	expectedValues := []*cd.Variable{
-		&cd.Variable{},
-		&cd.Variable{Value: "1"},
-		&cd.Variable{Value: `"hello"`},
-		&cd.Variable{
+		{},
+		{Value: "1"},
+		{Value: `"hello"`},
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "x", VarTableIndex: 1},
-				&cd.Variable{Name: "y", VarTableIndex: 2},
+				{Name: "x", VarTableIndex: 1},
+				{Name: "y", VarTableIndex: 2},
 			},
 		},
-		&cd.Variable{
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{VarTableIndex: 1},
+				{VarTableIndex: 1},
 			},
 			Value: "0x1",
 		},
-		&cd.Variable{
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "[0]", VarTableIndex: 10},
-				&cd.Variable{Name: "[1]", VarTableIndex: 11},
-				&cd.Variable{Name: "[2]", VarTableIndex: 12},
-				&cd.Variable{Name: "[3]", VarTableIndex: 13},
+				{Name: "[0]", VarTableIndex: 10},
+				{Name: "[1]", VarTableIndex: 11},
+				{Name: "[2]", VarTableIndex: 12},
+				{Name: "[3]", VarTableIndex: 13},
 			},
 			Value: "len = 4",
 		},
-		&cd.Variable{Value: `"world"`},
-		&cd.Variable{
+		{Value: `"world"`},
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "⚫", VarTableIndex: 14},
-				&cd.Variable{Name: "⚫", VarTableIndex: 15},
-				&cd.Variable{Name: "⚫", VarTableIndex: 16},
+				{Name: "⚫", VarTableIndex: 14},
+				{Name: "⚫", VarTableIndex: 15},
+				{Name: "⚫", VarTableIndex: 16},
 			},
 			Value: "len = 3",
 		},
-		&cd.Variable{
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "[0]", VarTableIndex: 17},
-				&cd.Variable{Name: "[1]", VarTableIndex: 18},
+				{Name: "[0]", VarTableIndex: 17},
+				{Name: "[1]", VarTableIndex: 18},
 			},
 			Value: "len = 2",
 		},
-		&cd.Variable{
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "[0]", VarTableIndex: 19},
-				&cd.Variable{Name: "[1]", VarTableIndex: 20},
+				{Name: "[0]", VarTableIndex: 19},
+				{Name: "[1]", VarTableIndex: 20},
 			},
 			Value: "len = 2",
 		},
-		&cd.Variable{Value: "100"},
-		&cd.Variable{Value: "104"},
-		&cd.Variable{Value: "108"},
-		&cd.Variable{Value: "112"},
-		&cd.Variable{
+		{Value: "100"},
+		{Value: "104"},
+		{Value: "108"},
+		{Value: "112"},
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "key", VarTableIndex: 21},
-				&cd.Variable{Name: "value", VarTableIndex: 22},
+				{Name: "key", VarTableIndex: 21},
+				{Name: "value", VarTableIndex: 22},
 			},
 		},
-		&cd.Variable{
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "key", VarTableIndex: 23},
-				&cd.Variable{Name: "value", VarTableIndex: 24},
+				{Name: "key", VarTableIndex: 23},
+				{Name: "value", VarTableIndex: 24},
 			},
 		},
-		&cd.Variable{
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "key", VarTableIndex: 25},
-				&cd.Variable{
+				{Name: "key", VarTableIndex: 25},
+				{
 					Name: "value",
 					Status: &cd.StatusMessage{
 						Description: &cd.FormatMessage{
@@ -152,21 +152,21 @@ func TestValueCollector(t *testing.T) {
 				},
 			},
 		},
-		&cd.Variable{Value: "246"},
-		&cd.Variable{Value: "210"},
-		&cd.Variable{Value: "300"},
-		&cd.Variable{Value: "304"},
-		&cd.Variable{Value: "400"},
-		&cd.Variable{Value: "404"},
-		&cd.Variable{Value: "1400"},
-		&cd.Variable{Value: "1404"},
-		&cd.Variable{Value: "2400"},
+		{Value: "246"},
+		{Value: "210"},
+		{Value: "300"},
+		{Value: "304"},
+		{Value: "400"},
+		{Value: "404"},
+		{Value: "1400"},
+		{Value: "1404"},
+		{Value: "2400"},
 	}
-	if !reflect.DeepEqual(v, expectedValues) {
+	if !testutil.Equal(v, expectedValues) {
 		t.Errorf("ReadValues: got %v want %v", v, expectedValues)
 		// Do element-by-element comparisons, for more useful error messages.
 		for i := range v {
-			if i < len(expectedValues) && !reflect.DeepEqual(v[i], expectedValues[i]) {
+			if i < len(expectedValues) && !testutil.Equal(v[i], expectedValues[i]) {
 				t.Errorf("element %d: got %+v want %+v", i, *v[i], *expectedValues[i])
 			}
 		}
@@ -195,17 +195,17 @@ func (p *Program) Value(v debug.Var) (debug.Value, error) {
 			Fields: []debug.StructField{
 				{
 					Name: "x",
-					Var:  debug.Var{int16Type, 0x1},
+					Var:  debug.Var{TypeID: int16Type, Address: 0x1},
 				},
 				{
 					Name: "y",
-					Var:  debug.Var{stringType, 0x2},
+					Var:  debug.Var{TypeID: stringType, Address: 0x2},
 				},
 			},
 		}, nil
 	case pointerType:
 		// A pointer to the first variable above.
-		return debug.Pointer{int16Type, 0x1}, nil
+		return debug.Pointer{TypeID: int16Type, Address: 0x1}, nil
 	case arrayType:
 		// An array of 4 32-bit-wide elements.
 		return debug.Array{
@@ -265,86 +265,86 @@ func TestLogString(t *testing.T) {
 		Action:           "LOG",
 		LogMessageFormat: "$0 hello, $$7world! $1 $2 $3 $4 $5$6 $7 $8",
 		EvaluatedExpressions: []*cd.Variable{
-			&cd.Variable{Name: "a", VarTableIndex: 1},
-			&cd.Variable{Name: "b", VarTableIndex: 2},
-			&cd.Variable{Name: "c", VarTableIndex: 3},
-			&cd.Variable{Name: "d", VarTableIndex: 4},
-			&cd.Variable{Name: "e", VarTableIndex: 5},
-			&cd.Variable{Name: "f", VarTableIndex: 6},
-			&cd.Variable{Name: "g", VarTableIndex: 7},
-			&cd.Variable{Name: "h", VarTableIndex: 8},
-			&cd.Variable{Name: "i", VarTableIndex: 9},
+			{Name: "a", VarTableIndex: 1},
+			{Name: "b", VarTableIndex: 2},
+			{Name: "c", VarTableIndex: 3},
+			{Name: "d", VarTableIndex: 4},
+			{Name: "e", VarTableIndex: 5},
+			{Name: "f", VarTableIndex: 6},
+			{Name: "g", VarTableIndex: 7},
+			{Name: "h", VarTableIndex: 8},
+			{Name: "i", VarTableIndex: 9},
 		},
 	}
 	varTable := []*cd.Variable{
-		&cd.Variable{},
-		&cd.Variable{Value: "1"},
-		&cd.Variable{Value: `"hello"`},
-		&cd.Variable{
+		{},
+		{Value: "1"},
+		{Value: `"hello"`},
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "x", Value: "1"},
-				&cd.Variable{Name: "y", Value: `"hello"`},
-				&cd.Variable{Name: "z", VarTableIndex: 3},
+				{Name: "x", Value: "1"},
+				{Name: "y", Value: `"hello"`},
+				{Name: "z", VarTableIndex: 3},
 			},
 		},
-		&cd.Variable{
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{VarTableIndex: 1},
+				{VarTableIndex: 1},
 			},
 			Value: "0x1",
 		},
-		&cd.Variable{
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "[0]", VarTableIndex: 10},
-				&cd.Variable{Name: "[1]", VarTableIndex: 11},
-				&cd.Variable{Name: "[2]", VarTableIndex: 12},
-				&cd.Variable{Name: "[3]", VarTableIndex: 13},
+				{Name: "[0]", VarTableIndex: 10},
+				{Name: "[1]", VarTableIndex: 11},
+				{Name: "[2]", VarTableIndex: 12},
+				{Name: "[3]", VarTableIndex: 13},
 			},
 			Value: "len = 4",
 		},
-		&cd.Variable{Value: `"world"`},
-		&cd.Variable{
+		{Value: `"world"`},
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "⚫", VarTableIndex: 14},
-				&cd.Variable{Name: "⚫", VarTableIndex: 15},
-				&cd.Variable{Name: "⚫", VarTableIndex: 16},
+				{Name: "⚫", VarTableIndex: 14},
+				{Name: "⚫", VarTableIndex: 15},
+				{Name: "⚫", VarTableIndex: 16},
 			},
 			Value: "len = 3",
 		},
-		&cd.Variable{
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "[0]", VarTableIndex: 17},
-				&cd.Variable{Name: "[1]", VarTableIndex: 18},
+				{Name: "[0]", VarTableIndex: 17},
+				{Name: "[1]", VarTableIndex: 18},
 			},
 			Value: "len = 2",
 		},
-		&cd.Variable{
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "[0]", VarTableIndex: 19},
-				&cd.Variable{Name: "[1]", VarTableIndex: 20},
+				{Name: "[0]", VarTableIndex: 19},
+				{Name: "[1]", VarTableIndex: 20},
 			},
 			Value: "len = 2",
 		},
-		&cd.Variable{Value: "100"},
-		&cd.Variable{Value: "104"},
-		&cd.Variable{Value: "108"},
-		&cd.Variable{Value: "112"},
-		&cd.Variable{
+		{Value: "100"},
+		{Value: "104"},
+		{Value: "108"},
+		{Value: "112"},
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "key", VarTableIndex: 21},
-				&cd.Variable{Name: "value", VarTableIndex: 22},
+				{Name: "key", VarTableIndex: 21},
+				{Name: "value", VarTableIndex: 22},
 			},
 		},
-		&cd.Variable{
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "key", VarTableIndex: 23},
-				&cd.Variable{Name: "value", VarTableIndex: 24},
+				{Name: "key", VarTableIndex: 23},
+				{Name: "value", VarTableIndex: 24},
 			},
 		},
-		&cd.Variable{
+		{
 			Members: []*cd.Variable{
-				&cd.Variable{Name: "key", VarTableIndex: 25},
-				&cd.Variable{
+				{Name: "key", VarTableIndex: 25},
+				{
 					Name: "value",
 					Status: &cd.StatusMessage{
 						Description: &cd.FormatMessage{
@@ -357,15 +357,15 @@ func TestLogString(t *testing.T) {
 				},
 			},
 		},
-		&cd.Variable{Value: "246"},
-		&cd.Variable{Value: "210"},
-		&cd.Variable{Value: "300"},
-		&cd.Variable{Value: "304"},
-		&cd.Variable{Value: "400"},
-		&cd.Variable{Value: "404"},
-		&cd.Variable{Value: "1400"},
-		&cd.Variable{Value: "1404"},
-		&cd.Variable{Value: "2400"},
+		{Value: "246"},
+		{Value: "210"},
+		{Value: "300"},
+		{Value: "304"},
+		{Value: "400"},
+		{Value: "404"},
+		{Value: "1400"},
+		{Value: "1404"},
+		{Value: "2400"},
 	}
 	s := LogString(bp.LogMessageFormat, bp.EvaluatedExpressions, varTable)
 	expected := `LOGPOINT: 1 hello, $7world! "hello" {x:1, y:"hello", z:...} ` +

@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,13 +19,11 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-
 	"cloud.google.com/go/internal/testutil"
+	"github.com/google/go-cmp/cmp"
 )
 
 type embed1 struct {
@@ -75,9 +73,10 @@ var intType = reflect.TypeOf(int(0))
 
 func field(name string, tval interface{}, index ...int) *Field {
 	return &Field{
-		Name:  name,
-		Type:  reflect.TypeOf(tval),
-		Index: index,
+		Name:      name,
+		Type:      reflect.TypeOf(tval),
+		Index:     index,
+		ParsedTag: []string(nil),
 	}
 }
 
@@ -87,6 +86,7 @@ func tfield(name string, tval interface{}, index ...int) *Field {
 		Type:        reflect.TypeOf(tval),
 		Index:       index,
 		NameFromTag: true,
+		ParsedTag:   []string(nil),
 	}
 }
 
@@ -102,6 +102,9 @@ func TestFieldsNoTags(t *testing.T) {
 		field("Em1", int(0), 3, 0),
 		field("Em4", int(0), 4, 2, 0),
 		field("Anonymous", Anonymous(0), 5),
+	}
+	for _, f := range want {
+		f.ParsedTag = nil
 	}
 	if msg, ok := compareFields(got, want); !ok {
 		t.Error(msg)
@@ -138,9 +141,10 @@ func TestAgainstJSONEncodingNoTags(t *testing.T) {
 		Anonymous: Anonymous(15),
 	}
 	var want S1
+	want.embed2 = &embed2{} // need this because reflection won't create it
 	jsonRoundTrip(t, s1, &want)
 	var got S1
-	got.embed2 = &embed2{} // need this because reflection won't create it
+	got.embed2 = &embed2{}
 	fields, err := NewCache(nil, nil, nil).Fields(reflect.TypeOf(got))
 	if err != nil {
 		t.Fatal(err)
@@ -177,14 +181,13 @@ func TestAgainstJSONEncodingEmbeddedTime(t *testing.T) {
 }
 
 type S2 struct {
-	NoTag      int
-	XXX        int           `json:"tag"` // tag name takes precedence
-	Anonymous  `json:"anon"` // anonymous non-structs also get their name from the tag
-	unexported int           `json:"tag"`
-	Embed      `json:"em"`   // embedded structs with tags become fields
-	Tag        int
-	YYY        int `json:"Tag"` // tag takes precedence over untagged field of the same name
-	Empty      int `json:""`    // empty tag is noop
+	NoTag     int
+	XXX       int           `json:"tag"` // tag name takes precedence
+	Anonymous `json:"anon"` // anonymous non-structs also get their name from the tag
+	Embed     `json:"em"`   // embedded structs with tags become fields
+	Tag       int
+	YYY       int `json:"Tag"` // tag takes precedence over untagged field of the same name
+	Empty     int `json:""`    // empty tag is noop
 	tEmbed1
 	tEmbed2
 }
@@ -204,15 +207,7 @@ type tEmbed2 struct {
 }
 
 func jsonTagParser(t reflect.StructTag) (name string, keep bool, other interface{}, err error) {
-	s := t.Get("json")
-	parts := strings.Split(s, ",")
-	if parts[0] == "-" {
-		return "", false, nil, nil
-	}
-	if len(parts) > 1 {
-		other = parts[1:]
-	}
-	return parts[0], true, other, nil
+	return ParseStandardTag("json", t)
 }
 
 func validateFunc(t reflect.Type) (err error) {
@@ -283,15 +278,7 @@ func TestUnexportedAnonymousNonStruct(t *testing.T) {
 	// An unexported anonymous non-struct field should not be recorded.
 	// This is currently a bug in encoding/json.
 	// https://github.com/golang/go/issues/18009
-	type (
-		u int
-		v int
-		S struct {
-			u
-			v `json:"x"`
-			int
-		}
-	)
+	type S struct{}
 
 	got, err := NewCache(jsonTagParser, nil, nil).Fields(reflect.TypeOf(S{}))
 	if err != nil {
@@ -408,7 +395,7 @@ func compareFields(got []Field, want []*Field) (msg string, ok bool) {
 	for i, g := range got {
 		w := *want[i]
 		if !fieldsEqual(&g, &w) {
-			return fmt.Sprintf("got %+v, want %+v", g, w), false
+			return fmt.Sprintf("got\n%+v\nwant\n%+v", g, w), false
 		}
 	}
 	return "", true

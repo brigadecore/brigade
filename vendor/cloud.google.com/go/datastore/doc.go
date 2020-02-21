@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
 /*
 Package datastore provides a client for Google Cloud Datastore.
 
-Note: This package is in beta.  Some backwards-incompatible changes may occur.
+See https://godoc.org/cloud.google.com/go for authentication, timeouts,
+connection pooling and similar aspects of this package.
 
 
 Basic Operations
@@ -32,18 +33,19 @@ to be generated for that entity, with a non-zero IntID.
 
 An entity's contents are a mapping from case-sensitive field names to values.
 Valid value types are:
-  - signed integers (int, int8, int16, int32 and int64),
-  - bool,
-  - string,
-  - float32 and float64,
-  - []byte (up to 1 megabyte in length),
-  - any type whose underlying type is one of the above predeclared types,
-  - *Key,
-  - GeoPoint,
-  - time.Time (stored with microsecond precision),
-  - structs whose fields are all valid value types,
-  - pointers to structs whose fields are all valid value types,
-  - slices of any of the above.
+  - Signed integers (int, int8, int16, int32 and int64)
+  - bool
+  - string
+  - float32 and float64
+  - []byte (up to 1 megabyte in length)
+  - Any type whose underlying type is one of the above predeclared types
+  - *Key
+  - GeoPoint
+  - time.Time (stored with microsecond precision, retrieved as local time)
+  - Structs whose fields are all valid value types
+  - Pointers to structs whose fields are all valid value types
+  - Slices of any of the above
+  - Pointers to a signed integer, bool, string, float32, or float64
 
 Slices of structs are valid, as are structs that contain slices.
 
@@ -86,6 +88,12 @@ GetMulti, PutMulti and DeleteMulti are batch versions of the Get, Put and
 Delete functions. They take a []*Key instead of a *Key, and may return a
 datastore.MultiError when encountering partial failure.
 
+Mutate generalizes PutMulti and DeleteMulti to a sequence of any Datastore
+mutations. It takes a series of mutations created with NewInsert, NewUpdate,
+NewUpsert and NewDelete and applies them. Datastore.Mutate uses
+non-transactional mode; if atomicity is required, use Transaction.Mutate
+instead.
+
 
 Properties
 
@@ -93,8 +101,8 @@ An entity's contents can be represented by a variety of types. These are
 typically struct pointers, but can also be any type that implements the
 PropertyLoadSaver interface. If using a struct pointer, you do not have to
 explicitly implement the PropertyLoadSaver interface; the datastore will
-automatically convert via reflection. If a struct pointer does implement that
-interface then those methods will be used in preference to the default
+automatically convert via reflection. If a struct pointer does implement
+PropertyLoadSaver then those methods will be used in preference to the default
 behavior for struct pointers. Struct pointers are more strongly typed and are
 easier to use; PropertyLoadSavers are more flexible.
 
@@ -118,18 +126,19 @@ field name. A "-" tag name means that the datastore will ignore that field.
 
 The only valid options are "omitempty", "noindex" and "flatten".
 
-If the options include "omitempty" and the value of the field is empty, then the field will be omitted on Save.
-The empty values are false, 0, any nil interface value, and any array, slice, map, or string of length zero.
-Struct field values will never be empty.
+If the options include "omitempty" and the value of the field is a zero value,
+then the field will be omitted on Save. Zero values are best defined in the
+golang spec (https://golang.org/ref/spec#The_zero_value). Struct field values
+will never be empty, except for nil pointers.
 
-If options include "noindex" then the field will not be indexed. All fields are indexed
-by default. Strings or byte slices longer than 1500 bytes cannot be indexed;
-fields used to store long strings and byte slices must be tagged with "noindex"
-or they will cause Put operations to fail.
+If options include "noindex" then the field will not be indexed. All fields
+are indexed by default. Strings or byte slices longer than 1500 bytes cannot
+be indexed; fields used to store long strings and byte slices must be tagged
+with "noindex" or they will cause Put operations to fail.
 
-For a nested struct field, the options may also include "flatten". This indicates
-that the immediate fields and any nested substruct fields of the nested struct should be
-flattened. See below for examples.
+For a nested struct field, the options may also include "flatten". This
+indicates that the immediate fields and any nested substruct fields of the
+nested struct should be flattened. See below for examples.
 
 To use multiple options together, separate them by a comma.
 The order does not matter.
@@ -154,6 +163,36 @@ Example code:
 	}
 
 
+Slice Fields
+
+A field of slice type corresponds to a Datastore array property, except for []byte, which corresponds
+to a Datastore blob.
+
+Zero-length slice fields are not saved. Slice fields of length 1 or greater are saved
+as Datastore arrays. When a zero-length Datastore array is loaded into a slice field,
+the slice field remains unchanged.
+
+If a non-array value is loaded into a slice field, the result will be a slice with
+one element, containing the value.
+
+Loading Nulls
+
+Loading a Datastore Null into a basic type (int, float, etc.) results in a zero value.
+Loading a Null into a slice of basic type results in a slice of size 1 containing the zero value.
+Loading a Null into a pointer field results in nil.
+Loading a Null into a field of struct type is an error.
+
+Pointer Fields
+
+A struct field can be a pointer to a signed integer, floating-point number, string or
+bool. Putting a non-nil pointer will store its dereferenced value. Putting a nil
+pointer will store a Datastore Null property, unless the field is marked omitempty,
+in which case no property will be stored.
+
+Loading a Null into a pointer field sets the pointer to nil. Loading any other value
+allocates new storage with the value, and sets the field to point to it.
+
+
 Key Field
 
 If the struct contains a *datastore.Key field tagged with the name "__key__",
@@ -168,22 +207,28 @@ Example code:
 		K *datastore.Key `datastore:"__key__"`
 	}
 
-	k := datastore.NameKey("Entity", "stringID", nil)
-	e := MyEntity{A: 12}
-	k, err = dsClient.Put(ctx, k, e)
-	if err != nil {
-		// Handle error.
-	}
+	func main() {
+		ctx := context.Background()
+		dsClient, err := datastore.NewClient(ctx, "my-project")
+		if err != nil {
+			// Handle error.
+		}
 
-	var entities []MyEntity
-	q := datastore.NewQuery("Entity").Filter("A =", 12).Limit(1)
-	_, err := dsClient.GetAll(ctx, q, &entities)
-	if err != nil {
-		// Handle error
-	}
+		k := datastore.NameKey("Entity", "stringID", nil)
+		e := MyEntity{A: 12}
+		if _, err := dsClient.Put(ctx, k, &e); err != nil {
+			// Handle error.
+		}
 
-	log.Println(entities[0])
-	// Prints {12 /Entity,stringID}
+		var entities []MyEntity
+		q := datastore.NewQuery("Entity").Filter("A =", 12).Limit(1)
+		if _, err := dsClient.GetAll(ctx, q, &entities); err != nil {
+			// Handle error
+		}
+
+		log.Println(entities[0])
+		// Prints {12 /Entity,stringID}
+	}
 
 
 
@@ -265,8 +310,9 @@ an Outer's properties would be equivalent to those of:
 		Z          bool
 	}
 
-Note that the "flatten" option cannot be used for Entity value fields.
-The server will reject any dotted field names for an Entity value.
+Note that the "flatten" option cannot be used for Entity value fields or
+PropertyLoadSaver implementers. The server will reject any dotted field names
+for an Entity value.
 
 
 The PropertyLoadSaver Interface
@@ -389,7 +435,9 @@ Example code:
 		q := datastore.NewQuery("Widget").
 			Filter("Price <", 1000).
 			Order("-Price")
-		for t := client.Run(ctx, q); ; {
+
+		t := client.Run(ctx, q)
+		for {
 			var x Widget
 			key, err := t.Next(&x)
 			if err == iterator.Done {
@@ -436,6 +484,9 @@ Example code:
 		fmt.Printf("Count=%d\n", count)
 	}
 
+Pass the ReadOnly option to RunInTransaction if your transaction is used only for Get,
+GetMulti or queries. Read-only transactions are more efficient.
+
 Google Cloud Datastore Emulator
 
 This package supports the Cloud Datastore emulator, which is useful for testing and
@@ -444,11 +495,5 @@ directed to the emulator instead of the production Datastore service.
 
 To install and set up the emulator and its environment variables, see the documentation
 at https://cloud.google.com/datastore/docs/tools/datastore-emulator.
-
-Authentication
-
-See examples of authorization and authentication at
-https://godoc.org/cloud.google.com/go#pkg-examples.
-
 */
 package datastore // import "cloud.google.com/go/datastore"

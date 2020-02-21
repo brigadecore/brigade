@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Google Inc. All Rights Reserved.
+Copyright 2017 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import (
 	"reflect"
 
 	proto3 "github.com/golang/protobuf/ptypes/struct"
-
 	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 	"google.golang.org/grpc/codes"
 )
@@ -177,8 +176,8 @@ func errDecodeColumn(i int, err error) error {
 	if err == nil {
 		return nil
 	}
-	se, ok := toSpannerError(err).(*Error)
-	if !ok {
+	var se *Error
+	if !errorAs(err, &se) {
 		return spannerErrorf(codes.InvalidArgument, "failed to decode column %v, error = <%v>", i, err)
 	}
 	se.decorate(fmt.Sprintf("failed to decode column %v", i))
@@ -273,12 +272,14 @@ func errToStructArgType(p interface{}) error {
 
 // ToStruct fetches the columns in a row into the fields of a struct.
 // The rules for mapping a row's columns into a struct's exported fields
-// are as the following:
-// 1. If a field has a `spanner: "column_name"` tag, then decode column
-//    'column_name' into the field. A special case is the `spanner: "-"`
-//    tag, which instructs ToStruct to ignore the field during decoding.
-// 2. Otherwise, if the name of a field matches the name of a column (ignoring case),
-//    decode the column into the field.
+// are:
+//
+//   1. If a field has a `spanner: "column_name"` tag, then decode column
+//      'column_name' into the field. A special case is the `spanner: "-"`
+//      tag, which instructs ToStruct to ignore the field during decoding.
+//
+//   2. Otherwise, if the name of a field matches the name of a column (ignoring case),
+//      decode the column into the field.
 //
 // The fields of the destination struct can be of any type that is acceptable
 // to spanner.Row.Column.
@@ -286,6 +287,10 @@ func errToStructArgType(p interface{}) error {
 // Slice and pointer fields will be set to nil if the source column is NULL, and a
 // non-nil value if the column is not NULL. To decode NULL values of other types, use
 // one of the spanner.NullXXX types as the type of the destination field.
+//
+// If ToStruct returns an error, the contents of p are undefined. Some fields may
+// have been successfully populated, while others were not; you should not use any of
+// the fields.
 func (r *Row) ToStruct(p interface{}) error {
 	// Check if p is a pointer to a struct
 	if t := reflect.TypeOf(p); t == nil || t.Kind() != reflect.Ptr || t.Elem().Kind() != reflect.Struct {

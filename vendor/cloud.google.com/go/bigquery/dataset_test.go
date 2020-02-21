@@ -1,4 +1,4 @@
-// Copyright 2015 Google Inc. All Rights Reserved.
+// Copyright 2015 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,16 +15,15 @@
 package bigquery
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-
 	"cloud.google.com/go/internal/testutil"
-
-	"golang.org/x/net/context"
+	"github.com/google/go-cmp/cmp"
 	bq "google.golang.org/api/bigquery/v2"
 	itest "google.golang.org/api/iterator/testing"
 )
@@ -37,10 +36,10 @@ type listTablesStub struct {
 
 func (s *listTablesStub) listTables(it *TableIterator, pageSize int, pageToken string) (*bq.TableList, error) {
 	if it.dataset.ProjectID != s.expectedProject {
-		return nil, errors.New("wrong project id")
+		return nil, fmt.Errorf("wrong project id: %q", it.dataset.ProjectID)
 	}
 	if it.dataset.DatasetID != s.expectedDataset {
-		return nil, errors.New("wrong dataset id")
+		return nil, fmt.Errorf("wrong dataset id: %q", it.dataset.DatasetID)
 	}
 	const maxPageSize = 2
 	if pageSize <= 0 || pageSize > maxPageSize {
@@ -93,6 +92,135 @@ func TestTables(t *testing.T) {
 	msg, ok := itest.TestIterator(outTables,
 		func() interface{} { return c.Dataset("d1").Tables(context.Background()) },
 		func(it interface{}) (interface{}, error) { return it.(*TableIterator).Next() })
+	if !ok {
+		t.Error(msg)
+	}
+}
+
+// listModelsStub services list requests by returning data from an in-memory list of values.
+type listModelsStub struct {
+	expectedProject, expectedDataset string
+	models                           []*bq.Model
+}
+
+func (s *listModelsStub) listModels(it *ModelIterator, pageSize int, pageToken string) (*bq.ListModelsResponse, error) {
+	if it.dataset.ProjectID != s.expectedProject {
+		return nil, errors.New("wrong project id")
+	}
+	if it.dataset.DatasetID != s.expectedDataset {
+		return nil, errors.New("wrong dataset id")
+	}
+	const maxPageSize = 2
+	if pageSize <= 0 || pageSize > maxPageSize {
+		pageSize = maxPageSize
+	}
+	start := 0
+	if pageToken != "" {
+		var err error
+		start, err = strconv.Atoi(pageToken)
+		if err != nil {
+			return nil, err
+		}
+	}
+	end := start + pageSize
+	if end > len(s.models) {
+		end = len(s.models)
+	}
+	nextPageToken := ""
+	if end < len(s.models) {
+		nextPageToken = strconv.Itoa(end)
+	}
+	return &bq.ListModelsResponse{
+		Models:        s.models[start:end],
+		NextPageToken: nextPageToken,
+	}, nil
+}
+
+func TestModels(t *testing.T) {
+	c := &Client{projectID: "p1"}
+	inModels := []*bq.Model{
+		{ModelReference: &bq.ModelReference{ProjectId: "p1", DatasetId: "d1", ModelId: "m1"}},
+		{ModelReference: &bq.ModelReference{ProjectId: "p1", DatasetId: "d1", ModelId: "m2"}},
+		{ModelReference: &bq.ModelReference{ProjectId: "p1", DatasetId: "d1", ModelId: "m3"}},
+	}
+	outModels := []*Model{
+		{ProjectID: "p1", DatasetID: "d1", ModelID: "m1", c: c},
+		{ProjectID: "p1", DatasetID: "d1", ModelID: "m2", c: c},
+		{ProjectID: "p1", DatasetID: "d1", ModelID: "m3", c: c},
+	}
+
+	lms := &listModelsStub{
+		expectedProject: "p1",
+		expectedDataset: "d1",
+		models:          inModels,
+	}
+	old := listModels
+	listModels = lms.listModels // cannot use t.Parallel with this test
+	defer func() { listModels = old }()
+
+	msg, ok := itest.TestIterator(outModels,
+		func() interface{} { return c.Dataset("d1").Models(context.Background()) },
+		func(it interface{}) (interface{}, error) { return it.(*ModelIterator).Next() })
+	if !ok {
+		t.Error(msg)
+	}
+}
+
+// listRoutinesStub services list requests by returning data from an in-memory list of values.
+type listRoutinesStub struct {
+	routines []*bq.Routine
+}
+
+func (s *listRoutinesStub) listRoutines(it *RoutineIterator, pageSize int, pageToken string) (*bq.ListRoutinesResponse, error) {
+	const maxPageSize = 2
+	if pageSize <= 0 || pageSize > maxPageSize {
+		pageSize = maxPageSize
+	}
+	start := 0
+	if pageToken != "" {
+		var err error
+		start, err = strconv.Atoi(pageToken)
+		if err != nil {
+			return nil, err
+		}
+	}
+	end := start + pageSize
+	if end > len(s.routines) {
+		end = len(s.routines)
+	}
+	nextPageToken := ""
+	if end < len(s.routines) {
+		nextPageToken = strconv.Itoa(end)
+	}
+	return &bq.ListRoutinesResponse{
+		Routines:      s.routines[start:end],
+		NextPageToken: nextPageToken,
+	}, nil
+}
+
+func TestRoutines(t *testing.T) {
+	c := &Client{projectID: "p1"}
+	inRoutines := []*bq.Routine{
+		{RoutineReference: &bq.RoutineReference{ProjectId: "p1", DatasetId: "d1", RoutineId: "r1"}},
+		{RoutineReference: &bq.RoutineReference{ProjectId: "p1", DatasetId: "d1", RoutineId: "r2"}},
+		{RoutineReference: &bq.RoutineReference{ProjectId: "p1", DatasetId: "d1", RoutineId: "r3"}},
+	}
+	outRoutines := []*Routine{
+		{ProjectID: "p1", DatasetID: "d1", RoutineID: "r1", c: c},
+		{ProjectID: "p1", DatasetID: "d1", RoutineID: "r2", c: c},
+		{ProjectID: "p1", DatasetID: "d1", RoutineID: "r3", c: c},
+	}
+
+	lms := &listRoutinesStub{
+		routines: inRoutines,
+	}
+	old := listRoutines
+	listRoutines = lms.listRoutines // cannot use t.Parallel with this test
+	defer func() { listRoutines = old }()
+
+	msg, ok := itest.TestIterator(outRoutines,
+		func() interface{} { return c.Dataset("d1").Routines(context.Background()) },
+		func(it interface{}) (interface{}, error) { return it.(*RoutineIterator).Next() })
 	if !ok {
 		t.Error(msg)
 	}
@@ -192,16 +320,22 @@ func TestDatasetToBQ(t *testing.T) {
 			Name:                   "name",
 			Description:            "desc",
 			DefaultTableExpiration: time.Hour,
-			Location:               "EU",
-			Labels:                 map[string]string{"x": "y"},
-			Access:                 []*AccessEntry{{Role: OwnerRole, Entity: "example.com", EntityType: DomainEntity}},
+			DefaultEncryptionConfig: &EncryptionConfig{
+				KMSKeyName: "some_key",
+			},
+			Location: "EU",
+			Labels:   map[string]string{"x": "y"},
+			Access:   []*AccessEntry{{Role: OwnerRole, Entity: "example.com", EntityType: DomainEntity}},
 		}, &bq.Dataset{
 			FriendlyName:             "name",
 			Description:              "desc",
 			DefaultTableExpirationMs: 60 * 60 * 1000,
-			Location:                 "EU",
-			Labels:                   map[string]string{"x": "y"},
-			Access:                   []*bq.DatasetAccess{{Role: "OWNER", Domain: "example.com"}},
+			DefaultEncryptionConfiguration: &bq.EncryptionConfiguration{
+				KmsKeyName: "some_key",
+			},
+			Location: "EU",
+			Labels:   map[string]string{"x": "y"},
+			Access:   []*bq.DatasetAccess{{Role: "OWNER", Domain: "example.com"}},
 		}},
 	} {
 		got, err := test.in.toBQ()
@@ -238,8 +372,11 @@ func TestBQToDatasetMetadata(t *testing.T) {
 		FriendlyName:             "name",
 		Description:              "desc",
 		DefaultTableExpirationMs: 60 * 60 * 1000,
-		Location:                 "EU",
-		Labels:                   map[string]string{"x": "y"},
+		DefaultEncryptionConfiguration: &bq.EncryptionConfiguration{
+			KmsKeyName: "some_key",
+		},
+		Location: "EU",
+		Labels:   map[string]string{"x": "y"},
 		Access: []*bq.DatasetAccess{
 			{Role: "READER", UserByEmail: "joe@example.com"},
 			{Role: "WRITER", GroupByEmail: "users@example.com"},
@@ -252,8 +389,11 @@ func TestBQToDatasetMetadata(t *testing.T) {
 		Name:                   "name",
 		Description:            "desc",
 		DefaultTableExpiration: time.Hour,
-		Location:               "EU",
-		Labels:                 map[string]string{"x": "y"},
+		DefaultEncryptionConfig: &EncryptionConfig{
+			KMSKeyName: "some_key",
+		},
+		Location: "EU",
+		Labels:   map[string]string{"x": "y"},
 		Access: []*AccessEntry{
 			{Role: ReaderRole, Entity: "joe@example.com", EntityType: UserEmailEntity},
 			{Role: WriterRole, Entity: "users@example.com", EntityType: GroupEmailEntity},
@@ -271,9 +411,12 @@ func TestBQToDatasetMetadata(t *testing.T) {
 
 func TestDatasetMetadataToUpdateToBQ(t *testing.T) {
 	dm := DatasetMetadataToUpdate{
-		Description: "desc",
-		Name:        "name",
+		Description:            "desc",
+		Name:                   "name",
 		DefaultTableExpiration: time.Hour,
+		DefaultEncryptionConfig: &EncryptionConfig{
+			KMSKeyName: "some_key",
+		},
 	}
 	dm.SetLabel("label", "value")
 	dm.DeleteLabel("del")
@@ -286,6 +429,10 @@ func TestDatasetMetadataToUpdateToBQ(t *testing.T) {
 		Description:              "desc",
 		FriendlyName:             "name",
 		DefaultTableExpirationMs: 60 * 60 * 1000,
+		DefaultEncryptionConfiguration: &bq.EncryptionConfiguration{
+			KmsKeyName:      "some_key",
+			ForceSendFields: []string{"KmsKeyName"},
+		},
 		Labels:          map[string]string{"label": "value"},
 		ForceSendFields: []string{"Description", "FriendlyName"},
 		NullFields:      []string{"Labels.del"},
@@ -302,6 +449,7 @@ func TestConvertAccessEntry(t *testing.T) {
 		{Role: WriterRole, Entity: "e", EntityType: GroupEmailEntity},
 		{Role: OwnerRole, Entity: "e", EntityType: UserEmailEntity},
 		{Role: ReaderRole, Entity: "e", EntityType: SpecialGroupEntity},
+		{Role: ReaderRole, Entity: "e", EntityType: IAMMemberEntity},
 		{Role: ReaderRole, EntityType: ViewEntity,
 			View: &Table{ProjectID: "p", DatasetID: "d", TableID: "t", c: c}},
 	} {
