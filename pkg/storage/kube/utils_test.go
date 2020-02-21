@@ -25,6 +25,6 @@ func TestStorageClassNames(t *testing.T) {
 }
 
 func createFakeStorageClasses(client kubernetes.Interface) {
-	client.Storage().StorageClasses().Create(&v1.StorageClass{ObjectMeta: metav1.ObjectMeta{Name: "sc1"}})
-	client.Storage().StorageClasses().Create(&v1.StorageClass{ObjectMeta: metav1.ObjectMeta{Name: "sc2"}})
+	client.StorageV1().StorageClasses().Create(&v1.StorageClass{ObjectMeta: metav1.ObjectMeta{Name: "sc1"}})
+	client.StorageV1().StorageClasses().Create(&v1.StorageClass{ObjectMeta: metav1.ObjectMeta{Name: "sc2"}})
 }
