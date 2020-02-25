@@ -113,6 +113,19 @@ func checkBrigadeSystem() error {
 }
 
 func reportDeployStatus(deployment apps_v1.Deployment, name string) {
+	fmt.Print(deployment, name)
+}
+
+func getDeployStatusString(deployment apps_v1.Deployment, name string) string {
 	ds := deployment.Status
-	fmt.Printf("%s replicas: Desired %d, Ready %d, Updated %d, Available %d, Unavailable %d \n", name, ds.Replicas, ds.ReadyReplicas, ds.UpdatedReplicas, ds.AvailableReplicas, ds.UnavailableReplicas)
+
+	var emoji string
+
+	if ds.Replicas == ds.ReadyReplicas {
+		emoji = "✔️"
+	} else {
+		emoji = "❌"
+	}
+
+	return fmt.Sprintf("%s %s replicas: Desired %d, Ready %d, Updated %d, Available %d, Unavailable %d \n", emoji, name, ds.Replicas, ds.ReadyReplicas, ds.UpdatedReplicas, ds.AvailableReplicas, ds.UnavailableReplicas)
 }
