@@ -13,17 +13,17 @@ import (
 )
 
 var (
-	runFile        string
-	runConfigFile  string
-	runEvent       string
-	runPayload     string
-	runJsonPayload string
-	runCommitish   string
-	runRef         string
-	runLogLevel    string
-	runNoProgress  bool
-	runNoColor     bool
-	runBackground  bool
+	runFile          string
+	runConfigFile    string
+	runEvent         string
+	runPayloadFile   string
+	runInlinePayload string
+	runCommitish     string
+	runRef           string
+	runLogLevel      string
+	runNoProgress    bool
+	runNoColor       bool
+	runBackground    bool
 )
 
 const (
@@ -47,15 +47,15 @@ To send a local JS file to the server, use the '-f' flag:
 While specifying an event is possible, use caution. Many events expect a
 particular payload.
 
-A payload can be either specified as a file or an inline JSON.
+A payload can be either specified inline or in a payload file.
 
-To specify a file, use the '-p' flag:
+To specify a payload file, use the '-p' flag:
 
 	$ brig run -p payload.json
 
-Alternatively to specify inline JSON, use the '-j' flag:
+Alternatively to specify it inline, use the '-i' flag:
 
-	$ brig run -j {"key": "value"}
+	$ brig run -i {"key": "value"}
 
 To run the job in the background, use -b/--background. Note, though, that in this
 case the exit code indicates only whether the event was submitted, not whether
@@ -65,8 +65,8 @@ the worker successfully ran to completion.
 func init() {
 	run.Flags().StringVarP(&runFile, "file", "f", "", "The JavaScript file to execute")
 	run.Flags().StringVarP(&runEvent, "event", "e", "exec", "The name of the event to fire")
-	run.Flags().StringVarP(&runPayload, "payload", "p", "", "The path to a payload file")
-	run.Flags().StringVarP(&runJsonPayload, "json-payload", "j", "", "The payload specified as a JSON")
+	run.Flags().StringVarP(&runPayloadFile, "payload-file", "p", "", "The path to a payload file")
+	run.Flags().StringVarP(&runInlinePayload, "inline-payload", "i", "", "The payload specified inline")
 	run.Flags().StringVar(&runConfigFile, "config", "", "The brigade.json config file")
 	run.Flags().StringVarP(&runCommitish, "commit", "c", "", "A VCS (git) commit")
 	run.Flags().StringVarP(&runRef, "ref", "r", defaultRef, "A VCS (git) version, tag, or branch")
@@ -98,14 +98,15 @@ var run = &cobra.Command{
 			return err
 		}
 
-		if runPayload != "" && runJsonPayload != "" {
-			return errors.New("Both payload and json-payload should not be specified")
+		if runPayloadFile != "" && runInlinePayload != "" {
+			return errors.New("Both payload-file and inline-payload should not be specified")
 		}
 
-		if runJsonPayload != "" {
-			payload := runJsonPayload
+		var payload []byte
+		if runInlinePayload != "" {
+			payload = []byte(runInlinePayload)
 		} else {
-			payload, err := readFileParam(runPayload)
+			payload, err = readFileParam(runPayloadFile)
 			if err != nil {
 				return err
 			}
