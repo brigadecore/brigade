@@ -13,16 +13,17 @@ import (
 )
 
 var (
-	runFile       string
-	runConfigFile string
-	runEvent      string
-	runPayload    string
-	runCommitish  string
-	runRef        string
-	runLogLevel   string
-	runNoProgress bool
-	runNoColor    bool
-	runBackground bool
+	runFile        string
+	runConfigFile  string
+	runEvent       string
+	runPayload     string
+	runJsonPayload string
+	runCommitish   string
+	runRef         string
+	runLogLevel    string
+	runNoProgress  bool
+	runNoColor     bool
+	runBackground  bool
 )
 
 const (
@@ -46,6 +47,16 @@ To send a local JS file to the server, use the '-f' flag:
 While specifying an event is possible, use caution. Many events expect a
 particular payload.
 
+A payload can be either specified as a file or an inline JSON.
+
+To specify a file, use the '-p' flag:
+
+	$ brig run -p payload.json
+
+Alternatively to specify inline JSON, use the '-j' flag:
+
+	$ brig run -j {"key": "value"}
+
 To run the job in the background, use -b/--background. Note, though, that in this
 case the exit code indicates only whether the event was submitted, not whether
 the worker successfully ran to completion.
@@ -55,6 +66,7 @@ func init() {
 	run.Flags().StringVarP(&runFile, "file", "f", "", "The JavaScript file to execute")
 	run.Flags().StringVarP(&runEvent, "event", "e", "exec", "The name of the event to fire")
 	run.Flags().StringVarP(&runPayload, "payload", "p", "", "The path to a payload file")
+	run.Flags().StringVarP(&runJsonPayload, "json-payload", "j", "", "The payload specified as a JSON")
 	run.Flags().StringVar(&runConfigFile, "config", "", "The brigade.json config file")
 	run.Flags().StringVarP(&runCommitish, "commit", "c", "", "A VCS (git) commit")
 	run.Flags().StringVarP(&runRef, "ref", "r", defaultRef, "A VCS (git) version, tag, or branch")
@@ -86,9 +98,17 @@ var run = &cobra.Command{
 			return err
 		}
 
-		payload, err := readFileParam(runPayload)
-		if err != nil {
-			return err
+		if runPayload != "" && runJsonPayload != "" {
+			return errors.New("Both payload and json-payload should not be specified")
+		}
+
+		if runJsonPayload != "" {
+			payload := runJsonPayload
+		} else {
+			payload, err := readFileParam(runPayload)
+			if err != nil {
+				return err
+			}
 		}
 
 		var destination io.Writer = os.Stdout
