@@ -57,6 +57,7 @@ function e2e() {
   // by its main.go filepath
   kind.mountPath = localPath;
   kind.tasks.push(
+    "apk add --update --no-cache git",
     `cd ${localPath}`,
     "CREATE_KIND=false make e2e"
   );
