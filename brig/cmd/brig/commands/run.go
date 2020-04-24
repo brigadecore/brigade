@@ -65,7 +65,7 @@ the worker successfully ran to completion.
 func init() {
 	run.Flags().StringVarP(&runFile, "file", "f", "", "The JavaScript file to execute")
 	run.Flags().StringVarP(&runEvent, "event", "e", "exec", "The name of the event to fire")
-	run.Flags().StringVarP(&runPayloadFile, "payload-file", "p", "", "The path to a payload file")
+	run.Flags().StringVarP(&runPayloadFile, "payload", "p", "", "The path to a payload file")
 	run.Flags().StringVarP(&runInlinePayload, "inline-payload", "i", "", "The payload specified inline")
 	run.Flags().StringVar(&runConfigFile, "config", "", "The brigade.json config file")
 	run.Flags().StringVarP(&runCommitish, "commit", "c", "", "A VCS (git) commit")
@@ -99,7 +99,7 @@ var run = &cobra.Command{
 		}
 
 		if runPayloadFile != "" && runInlinePayload != "" {
-			return errors.New("Both payload-file and inline-payload should not be specified")
+			return errors.New("Both payload and inline-payload should not be specified")
 		}
 
 		var payload []byte
