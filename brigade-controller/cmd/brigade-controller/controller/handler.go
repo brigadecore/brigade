@@ -273,6 +273,7 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 		{Name: "BRIGADE_PROJECT_ID", Value: bsv.String("project_id")},
 		{Name: "BRIGADE_LOG_LEVEL", Value: bsv.String("log_level")},
 		{Name: "BRIGADE_REMOTE_URL", Value: cloneURL},
+		{Name: "BRIGADE_SUBMODULES", Value: psv.String("initGitSubmodules")},
 		{Name: "BRIGADE_WORKSPACE", Value: "/vcs"},
 		{Name: "BRIGADE_PROJECT_NAMESPACE", Value: build.Namespace},
 		{Name: "BRIGADE_SERVICE_ACCOUNT", Value: serviceAccount},
