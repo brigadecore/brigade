@@ -13,7 +13,7 @@ import (
 	core "k8s.io/client-go/testing"
 )
 
-const expectedEnvironmentLength = 19
+const expectedEnvironmentLength = 20
 
 func TestController(t *testing.T) {
 	createdPod := false

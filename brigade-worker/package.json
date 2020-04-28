@@ -27,7 +27,7 @@
     "@types/sinon": "^7.0.11",
     "@types/ws": "6.0.1",
     "chai": "^4.1.0",
-    "mocha": "^6.2.0",
+    "mocha": "^6.2.3",
     "mock-require": "^3.0.3",
     "prettier": "^1.9.1",
     "rimraf": "^2.6.2",
@@ -43,8 +43,5 @@
     "module-alias": "^2.2.0",
     "pretty-error": "^2.1.1",
     "ulid": "^0.2.0"
-  },
-  "resolutions": {
-    "minimist": "^1.2.3"
   }
 }
