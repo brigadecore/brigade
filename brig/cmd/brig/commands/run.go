@@ -13,16 +13,17 @@ import (
 )
 
 var (
-	runFile       string
-	runConfigFile string
-	runEvent      string
-	runPayload    string
-	runCommitish  string
-	runRef        string
-	runLogLevel   string
-	runNoProgress bool
-	runNoColor    bool
-	runBackground bool
+	runFile          string
+	runConfigFile    string
+	runEvent         string
+	runPayloadFile   string
+	runInlinePayload string
+	runCommitish     string
+	runRef           string
+	runLogLevel      string
+	runNoProgress    bool
+	runNoColor       bool
+	runBackground    bool
 )
 
 const (
@@ -46,6 +47,16 @@ To send a local JS file to the server, use the '-f' flag:
 While specifying an event is possible, use caution. Many events expect a
 particular payload.
 
+A payload can be either specified inline or in a payload file.
+
+To specify a payload file, use the '-p' flag:
+
+	$ brig run -p payload.json
+
+Alternatively to specify it inline, use the '-i' flag:
+
+	$ brig run -i {"key": "value"}
+
 To run the job in the background, use -b/--background. Note, though, that in this
 case the exit code indicates only whether the event was submitted, not whether
 the worker successfully ran to completion.
@@ -54,7 +65,8 @@ the worker successfully ran to completion.
 func init() {
 	run.Flags().StringVarP(&runFile, "file", "f", "", "The JavaScript file to execute")
 	run.Flags().StringVarP(&runEvent, "event", "e", "exec", "The name of the event to fire")
-	run.Flags().StringVarP(&runPayload, "payload", "p", "", "The path to a payload file")
+	run.Flags().StringVarP(&runPayloadFile, "payload", "p", "", "The path to a payload file")
+	run.Flags().StringVarP(&runInlinePayload, "inline-payload", "i", "", "The payload specified inline")
 	run.Flags().StringVar(&runConfigFile, "config", "", "The brigade.json config file")
 	run.Flags().StringVarP(&runCommitish, "commit", "c", "", "A VCS (git) commit")
 	run.Flags().StringVarP(&runRef, "ref", "r", defaultRef, "A VCS (git) version, tag, or branch")
@@ -86,9 +98,18 @@ var run = &cobra.Command{
 			return err
 		}
 
-		payload, err := readFileParam(runPayload)
-		if err != nil {
-			return err
+		if runPayloadFile != "" && runInlinePayload != "" {
+			return errors.New("Both payload and inline-payload should not be specified")
+		}
+
+		var payload []byte
+		if runInlinePayload != "" {
+			payload = []byte(runInlinePayload)
+		} else {
+			payload, err = readFileParam(runPayloadFile)
+			if err != nil {
+				return err
+			}
 		}
 
 		var destination io.Writer = os.Stdout
