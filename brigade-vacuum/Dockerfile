@@ -1,4 +1,4 @@
-FROM quay.io/deis/lightweight-docker-go:v0.7.0
+FROM krancour/go-tools:v0.1.0
 ARG LDFLAGS
 ENV CGO_ENABLED=0
 WORKDIR /go/src/github.com/brigadecore/brigade
