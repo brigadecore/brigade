@@ -79,7 +79,7 @@ IMMUTABLE_DOCKER_TAG := $(VERSION)
 
 .PHONY: dep
 dep:
-	$(GO_DOCKER_CMD) dep ensure -v
+	$(GO_DOCKER_CMD) go mod tidy && go vendor
 
 .PHONY: format
 format: format-go format-js
@@ -112,7 +112,7 @@ test: verify-vendored-code lint test-unit verify-vendored-code-js test-js
 # tracked, vendored dependencies
 .PHONY: verify-vendored-code
 verify-vendored-code:
-	$(GO_DOCKER_CMD) dep check
+	$(GO_DOCKER_CMD) go mod verify
 
 .PHONY: lint
 lint:
