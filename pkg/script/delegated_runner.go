@@ -2,6 +2,7 @@ package script
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -80,7 +81,7 @@ func (a *Runner) SendBuild(b *brigade.Build) error {
 	// Now that everything is complete, get the pod status. If the pod failed, exit 1.
 	// Fortunately, the worker pod is marked "failed" if one of the jobs
 	// in the build fails and the error isn't handled with a .catch().
-	pod, err := a.kc.CoreV1().Pods(a.namespace).Get(podName, metav1.GetOptions{})
+	pod, err := a.kc.CoreV1().Pods(a.namespace).Get(context.TODO(), podName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -124,7 +125,7 @@ func (a *Runner) waitForWorker(buildID string) error {
 	opts := metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("heritage=brigade,component=build,build=%s", buildID),
 	}
-	req, err := a.kc.CoreV1().Pods(a.namespace).Watch(opts)
+	req, err := a.kc.CoreV1().Pods(a.namespace).Watch(context.TODO(), opts)
 	if err != nil {
 		return err
 	}
@@ -172,7 +173,7 @@ func (a *Runner) podLog(name string, w io.Writer) error {
 		TailLines: &tailAllLines,
 	})
 
-	readCloser, err := req.Timeout(waitTimeout).Stream()
+	readCloser, err := req.Timeout(waitTimeout).Stream(context.TODO())
 	if err != nil {
 		return err
 	}

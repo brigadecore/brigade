@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -44,7 +45,7 @@ func TestCreateBuild(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	secrets, _ := k.CoreV1().Secrets("default").List(metav1.ListOptions{})
+	secrets, _ := k.CoreV1().Secrets("default").List(context.TODO(), metav1.ListOptions{})
 	if len(secrets.Items) != 1 {
 		t.Fatalf("Build was not stored as secret")
 	}
@@ -56,7 +57,7 @@ func TestDeleteBuild(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	secrets, _ := k.CoreV1().Secrets("default").List(metav1.ListOptions{})
+	secrets, _ := k.CoreV1().Secrets("default").List(context.TODO(), metav1.ListOptions{})
 	if len(secrets.Items) != 1 {
 		t.Fatalf("Build was not stored as secret")
 	}
@@ -65,7 +66,7 @@ func TestDeleteBuild(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	secrets, _ = k.CoreV1().Secrets("default").List(metav1.ListOptions{})
+	secrets, _ = k.CoreV1().Secrets("default").List(context.TODO(), metav1.ListOptions{})
 	if len(secrets.Items) != 0 {
 		t.Fatalf("Build was not deleted")
 	}

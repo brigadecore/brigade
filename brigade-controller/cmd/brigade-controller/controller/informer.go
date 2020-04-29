@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"log"
 
 	v1 "k8s.io/api/core/v1"
@@ -16,11 +17,11 @@ func (c *Controller) createIndexerInformer() {
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				options.FieldSelector = selector
-				return c.clientset.CoreV1().Secrets(c.Namespace).List(options)
+				return c.clientset.CoreV1().Secrets(c.Namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				options.FieldSelector = selector
-				return c.clientset.CoreV1().Secrets(c.Namespace).Watch(options)
+				return c.clientset.CoreV1().Secrets(c.Namespace).Watch(context.TODO(), options)
 			},
 		},
 		&v1.Secret{},

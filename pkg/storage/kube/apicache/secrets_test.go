@@ -1,6 +1,7 @@
 package apicache
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -49,11 +50,11 @@ func TestSecretStore(t *testing.T) {
 		},
 	}
 
-	if _, err := client.CoreV1().Secrets("default").Create(&secret1); err != nil {
+	if _, err := client.CoreV1().Secrets("default").Create(context.TODO(), &secret1, metaV1.CreateOptions{}); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := client.CoreV1().Secrets("default").Create(&secret2); err != nil {
+	if _, err := client.CoreV1().Secrets("default").Create(context.TODO(), &secret2, metaV1.CreateOptions{}); err != nil {
 		t.Fatal(err)
 	}
 

@@ -1,6 +1,7 @@
 package vacuum
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -23,14 +24,14 @@ const (
 func TestRun_Age(t *testing.T) {
 	client := setupFakeClient()
 
-	secrets, err := client.CoreV1().Secrets(v1.NamespaceDefault).List(meta.ListOptions{})
+	secrets, err := client.CoreV1().Secrets(v1.NamespaceDefault).List(context.TODO(), meta.ListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(secrets.Items) != 6 {
 		t.Fatalf("expected 6 secrets, got %d", len(secrets.Items))
 	}
-	pods, err := client.CoreV1().Pods(v1.NamespaceDefault).List(meta.ListOptions{})
+	pods, err := client.CoreV1().Pods(v1.NamespaceDefault).List(context.TODO(), meta.ListOptions{})
 	if err != nil {
 		t.Fatal("no pods returned")
 	}
@@ -45,11 +46,11 @@ func TestRun_Age(t *testing.T) {
 
 	verifyPodsDeleted(t, client, testBuildPod1Name, testJobPod11Name, testBuildPod2Name, testJobPod21Name, testJobPod22Name)
 
-	secrets, _ = client.CoreV1().Secrets(v1.NamespaceDefault).List(meta.ListOptions{})
+	secrets, _ = client.CoreV1().Secrets(v1.NamespaceDefault).List(context.TODO(), meta.ListOptions{})
 	if len(secrets.Items) != 1 {
 		t.Fatalf("expected 1 secret, got %d", len(secrets.Items))
 	}
-	pods, _ = client.CoreV1().Pods(v1.NamespaceDefault).List(meta.ListOptions{})
+	pods, _ = client.CoreV1().Pods(v1.NamespaceDefault).List(context.TODO(), meta.ListOptions{})
 	if len(pods.Items) != 1 {
 		t.Fatalf("expected 1 pods, got %d", len(pods.Items))
 	}
@@ -64,11 +65,11 @@ func TestRun_Max(t *testing.T) {
 
 	verifyPodsDeleted(t, client, testBuildPod1Name, testJobPod11Name, testBuildPod2Name, testJobPod21Name, testJobPod22Name)
 
-	secrets, _ := client.CoreV1().Secrets(v1.NamespaceDefault).List(meta.ListOptions{})
+	secrets, _ := client.CoreV1().Secrets(v1.NamespaceDefault).List(context.TODO(), meta.ListOptions{})
 	if len(secrets.Items) != 1 {
 		t.Errorf("expected 1 secret, got %d", len(secrets.Items))
 	}
-	pods, _ := client.CoreV1().Pods(v1.NamespaceDefault).List(meta.ListOptions{})
+	pods, _ := client.CoreV1().Pods(v1.NamespaceDefault).List(context.TODO(), meta.ListOptions{})
 	if len(pods.Items) != 1 {
 		t.Errorf("expected 1 pods, got %d", len(pods.Items))
 	}
@@ -86,7 +87,7 @@ func TestRun_Max(t *testing.T) {
 func TestRun_SkipRunningBuilds(t *testing.T) {
 	client := setupFakeClient()
 
-	secrets, err := client.CoreV1().Secrets(v1.NamespaceDefault).List(meta.ListOptions{})
+	secrets, err := client.CoreV1().Secrets(v1.NamespaceDefault).List(context.TODO(), meta.ListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,11 +100,11 @@ func TestRun_SkipRunningBuilds(t *testing.T) {
 	verifyPodsExist(t, client, testBuildPod2Name, testJobPod21Name, testJobPod22Name)
 	verifyPodsDeleted(t, client, testBuildPod1Name, testJobPod11Name)
 
-	secrets, _ = client.CoreV1().Secrets(v1.NamespaceDefault).List(meta.ListOptions{})
+	secrets, _ = client.CoreV1().Secrets(v1.NamespaceDefault).List(context.TODO(), meta.ListOptions{})
 	if len(secrets.Items) != 4 {
 		t.Fatalf("expected 4 secret, got %d", len(secrets.Items))
 	}
-	pods, _ := client.CoreV1().Pods(v1.NamespaceDefault).List(meta.ListOptions{})
+	pods, _ := client.CoreV1().Pods(v1.NamespaceDefault).List(context.TODO(), meta.ListOptions{})
 	if len(pods.Items) != 4 {
 		t.Fatalf("expected 4 pods, got %d", len(pods.Items))
 	}
@@ -111,7 +112,7 @@ func TestRun_SkipRunningBuilds(t *testing.T) {
 
 func verifyPodsDeleted(t *testing.T, client kubernetes.Interface, podNames ...string) {
 	for _, podName := range podNames {
-		_, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(podName, meta.GetOptions{})
+		_, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(context.TODO(), podName, meta.GetOptions{})
 		if !errors.IsNotFound(err) {
 			t.Errorf("expected Pod %s to be deleted", podName)
 		}
@@ -120,7 +121,7 @@ func verifyPodsDeleted(t *testing.T, client kubernetes.Interface, podNames ...st
 
 func verifyPodsExist(t *testing.T, client kubernetes.Interface, podNames ...string) {
 	for _, podName := range podNames {
-		_, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(podName, meta.GetOptions{})
+		_, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(context.TODO(), podName, meta.GetOptions{})
 		if errors.IsNotFound(err) {
 			t.Errorf("Pod %s cannot be found (was it deleted?)", podName)
 		}
@@ -214,12 +215,12 @@ func setupFakeClient() kubernetes.Interface {
 	}
 
 	cs := client.CoreV1().Secrets(v1.NamespaceDefault)
-	cs.Create(&buildSecret)
-	cs.Create(&jobSecret)
-	cs.Create(&buildSecret2)
-	cs.Create(&jobSecret21)
-	cs.Create(&jobSecret22)
-	cs.Create(&unrelatedSecret)
+	cs.Create(context.TODO(), &buildSecret, meta.CreateOptions{})
+	cs.Create(context.TODO(), &jobSecret, meta.CreateOptions{})
+	cs.Create(context.TODO(), &buildSecret2, meta.CreateOptions{})
+	cs.Create(context.TODO(), &jobSecret21, meta.CreateOptions{})
+	cs.Create(context.TODO(), &jobSecret22, meta.CreateOptions{})
+	cs.Create(context.TODO(), &unrelatedSecret, meta.CreateOptions{})
 
 	buildPod := v1.Pod{
 		ObjectMeta: meta.ObjectMeta{
@@ -352,12 +353,12 @@ func setupFakeClient() kubernetes.Interface {
 	}
 
 	cb := client.CoreV1().Pods(v1.NamespaceDefault)
-	cb.Create(&buildPod)
-	cb.Create(&jobPod)
-	cb.Create(&buildPod2)
-	cb.Create(&jobPod21)
-	cb.Create(&jobPod22)
-	cb.Create(&unrelatedPod)
+	cb.Create(context.TODO(), &buildPod, meta.CreateOptions{})
+	cb.Create(context.TODO(), &jobPod, meta.CreateOptions{})
+	cb.Create(context.TODO(), &buildPod2, meta.CreateOptions{})
+	cb.Create(context.TODO(), &jobPod21, meta.CreateOptions{})
+	cb.Create(context.TODO(), &jobPod22, meta.CreateOptions{})
+	cb.Create(context.TODO(), &unrelatedPod, meta.CreateOptions{})
 
 	return client
 }

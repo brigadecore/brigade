@@ -1,9 +1,11 @@
 package kube
 
 import (
+	"context"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
@@ -150,7 +152,7 @@ func fakeStore() (kubernetes.Interface, storage.Store) {
 }
 
 func createFakeWorker(client kubernetes.Interface, pod v1.Pod) {
-	client.CoreV1().Pods("default").Create(&pod)
+	client.CoreV1().Pods("default").Create(context.TODO(), &pod, meta.CreateOptions{})
 }
 
 func createFakeJob(client kubernetes.Interface, pod v1.Pod) {
@@ -158,5 +160,5 @@ func createFakeJob(client kubernetes.Interface, pod v1.Pod) {
 }
 
 func createFakeProject(client kubernetes.Interface, secret *v1.Secret) {
-	client.CoreV1().Secrets("default").Create(secret)
+	client.CoreV1().Secrets("default").Create(context.TODO(), secret, meta.CreateOptions{})
 }

@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -92,7 +93,7 @@ func TestCreateProject(t *testing.T) {
 	}
 
 	id := brigade.ProjectID(n)
-	secret, err := k.CoreV1().Secrets("default").Get(id, meta.GetOptions{})
+	secret, err := k.CoreV1().Secrets("default").Get(context.TODO(), id, meta.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +164,7 @@ func TestReplaceProject(t *testing.T) {
 		t.Fatal(err)
 	}
 	// make sure it's there
-	if _, err := k.CoreV1().Secrets("default").Get("brigade-fakeID", meta.GetOptions{}); err != nil {
+	if _, err := k.CoreV1().Secrets("default").Get(context.TODO(), "brigade-fakeID", meta.GetOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	// create another one with different ID
@@ -188,7 +189,7 @@ func TestReplaceProject(t *testing.T) {
 		t.Fatal(err)
 	}
 	// make sure it worked, get it as well
-	updatedSecret, err := k.CoreV1().Secrets("default").Get("brigade-fakeID", meta.GetOptions{})
+	updatedSecret, err := k.CoreV1().Secrets("default").Get(context.TODO(), "brigade-fakeID", meta.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,7 +213,7 @@ func TestDeleteProject(t *testing.T) {
 	if err := s.CreateProject(p); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := k.CoreV1().Secrets("default").Get("fake", meta.GetOptions{}); err != nil {
+	if _, err := k.CoreV1().Secrets("default").Get(context.TODO(), "fake", meta.GetOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.DeleteProject("fake"); err != nil {

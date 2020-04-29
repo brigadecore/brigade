@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -141,7 +142,7 @@ func TestGetBuildListCountTwo(t *testing.T) {
 // Build3 started 3 minutes ago and finished 1 minute ago and belongs to a different project than build1 and build2
 func createFakeBuilds(t *testing.T, client kubernetes.Interface) {
 	stubProject1Secret := createStubProjectSecret(stubProject1ID)
-	_, err := client.CoreV1().Secrets("default").Create(stubProject1Secret)
+	_, err := client.CoreV1().Secrets("default").Create(context.TODO(), stubProject1Secret, metav1.CreateOptions{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -161,11 +162,11 @@ func createFakeBuilds(t *testing.T, client kubernetes.Interface) {
 			},
 		},
 	})
-	_, err = client.CoreV1().Pods("default").Create(stubWorker1Pod)
+	_, err = client.CoreV1().Pods("default").Create(context.TODO(), stubWorker1Pod, metav1.CreateOptions{})
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = client.CoreV1().Secrets("default").Create(stubBuild1Secret)
+	_, err = client.CoreV1().Secrets("default").Create(context.TODO(), stubBuild1Secret, metav1.CreateOptions{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -184,11 +185,11 @@ func createFakeBuilds(t *testing.T, client kubernetes.Interface) {
 			},
 		},
 	})
-	_, err = client.CoreV1().Pods("default").Create(stubWorker2Pod)
+	_, err = client.CoreV1().Pods("default").Create(context.TODO(), stubWorker2Pod, metav1.CreateOptions{})
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = client.CoreV1().Secrets("default").Create(stubBuild2Secret)
+	_, err = client.CoreV1().Secrets("default").Create(context.TODO(), stubBuild2Secret, metav1.CreateOptions{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -208,11 +209,11 @@ func createFakeBuilds(t *testing.T, client kubernetes.Interface) {
 			},
 		},
 	})
-	_, err = client.CoreV1().Pods("default").Create(stubWorker3Pod)
+	_, err = client.CoreV1().Pods("default").Create(context.TODO(), stubWorker3Pod, metav1.CreateOptions{})
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = client.CoreV1().Secrets("default").Create(stubBuild3Secret)
+	_, err = client.CoreV1().Secrets("default").Create(context.TODO(), stubBuild3Secret, metav1.CreateOptions{})
 	if err != nil {
 		t.Error(err)
 	}

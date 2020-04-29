@@ -1,6 +1,7 @@
 package apicache
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -21,10 +22,10 @@ func TestNewListStoreWithoutHasSyncedChan(t *testing.T) {
 		resyncPeriod: time.Millisecond * time.Duration(100),
 		expectedType: &v1.Secret{},
 		listFunc: func(client kubernetes.Interface, namespace string, options metaV1.ListOptions) (runtime.Object, error) {
-			return client.CoreV1().Secrets(namespace).List(options)
+			return client.CoreV1().Secrets(namespace).List(context.TODO(), options)
 		},
 		watchFunc: func(client kubernetes.Interface, namespace string, options metaV1.ListOptions) (watch.Interface, error) {
-			return client.CoreV1().Secrets(namespace).Watch(options)
+			return client.CoreV1().Secrets(namespace).Watch(context.TODO(), options)
 		},
 	}, nil)
 
@@ -44,10 +45,10 @@ func TestNewListStoreInvokeWatchFunctions(t *testing.T) {
 		resyncPeriod: 1,
 		expectedType: &v1.Secret{},
 		listFunc: func(client kubernetes.Interface, namespace string, options metaV1.ListOptions) (runtime.Object, error) {
-			return client.CoreV1().Secrets(namespace).List(options)
+			return client.CoreV1().Secrets(namespace).List(context.TODO(), options)
 		},
 		watchFunc: func(client kubernetes.Interface, namespace string, options metaV1.ListOptions) (watch.Interface, error) {
-			return client.CoreV1().Secrets(namespace).Watch(options)
+			return client.CoreV1().Secrets(namespace).Watch(context.TODO(), options)
 		},
 	}, hasSynced)
 
@@ -65,7 +66,7 @@ func TestNewListStoreInvokeWatchFunctions(t *testing.T) {
 		},
 	}
 
-	created, err := client.CoreV1().Secrets("default").Create(&secret)
+	created, err := client.CoreV1().Secrets("default").Create(context.TODO(), &secret, metaV1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,13 +77,13 @@ func TestNewListStoreInvokeWatchFunctions(t *testing.T) {
 		t.Fatal("expected store to contain one object")
 	}
 
-	if _, err := client.CoreV1().Secrets("default").Update(created); err != nil {
+	if _, err := client.CoreV1().Secrets("default").Update(context.TODO(), created, metaV1.UpdateOptions{}); err != nil {
 		t.Fatal(err)
 	}
 
 	<-hasSynced
 
-	if err := client.CoreV1().Secrets("default").Delete(created.Name, nil); err != nil {
+	if err := client.CoreV1().Secrets("default").Delete(context.TODO(), created.Name, metaV1.DeleteOptions{}); err != nil {
 		t.Fatal(err)
 	}
 }
