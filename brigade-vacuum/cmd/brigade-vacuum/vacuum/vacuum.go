@@ -1,16 +1,17 @@
 package vacuum
 
 import (
+	"context"
 	"log"
 	"sort"
 	"time"
 
-	"github.com/brigadecore/brigade/pkg/storage"
-	"github.com/brigadecore/brigade/pkg/storage/kube"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/brigadecore/brigade/pkg/storage"
+	"github.com/brigadecore/brigade/pkg/storage/kube"
 )
 
 // NoMaxBuilds indicates that there is no maximum number of builds.
@@ -51,7 +52,7 @@ func (v *Vacuum) Run() error {
 
 	if !v.age.IsZero() {
 		log.Printf("Pruning records older than %s", v.age)
-		secrets, err := v.client.CoreV1().Secrets(v.namespace).List(opts)
+		secrets, err := v.client.CoreV1().Secrets(v.namespace).List(context.TODO(), opts)
 		if err != nil {
 			return err
 		}
@@ -77,7 +78,7 @@ func (v *Vacuum) Run() error {
 	}
 
 	// We need to re-load the secrets list and see if we are still over the max.
-	secrets, err := v.client.CoreV1().Secrets(v.namespace).List(opts)
+	secrets, err := v.client.CoreV1().Secrets(v.namespace).List(context.TODO(), opts)
 	if err != nil {
 		return err
 	}

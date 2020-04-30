@@ -1,6 +1,7 @@
 package apicache
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -49,11 +50,11 @@ func TestPodStore(t *testing.T) {
 		},
 	}
 
-	if _, err := client.CoreV1().Pods("default").Create(&pod1); err != nil {
+	if _, err := client.CoreV1().Pods("default").Create(context.TODO(), &pod1, metaV1.CreateOptions{}); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := client.CoreV1().Pods("default").Create(&pod2); err != nil {
+	if _, err := client.CoreV1().Pods("default").Create(context.TODO(), &pod2, metaV1.CreateOptions{}); err != nil {
 		t.Fatal(err)
 	}
 

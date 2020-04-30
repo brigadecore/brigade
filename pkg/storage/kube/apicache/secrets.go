@@ -1,6 +1,7 @@
 package apicache
 
 import (
+	"context"
 	"sort"
 	"time"
 
@@ -20,10 +21,10 @@ func newSecretStore(client kubernetes.Interface, namespace string, resyncPeriod 
 		resyncPeriod: resyncPeriod,
 		expectedType: &v1.Secret{},
 		listFunc: func(client kubernetes.Interface, namespace string, options metaV1.ListOptions) (runtime.Object, error) {
-			return client.CoreV1().Secrets(namespace).List(options)
+			return client.CoreV1().Secrets(namespace).List(context.TODO(), options)
 		},
 		watchFunc: func(client kubernetes.Interface, namespace string, options metaV1.ListOptions) (watch.Interface, error) {
-			return client.CoreV1().Secrets(namespace).Watch(options)
+			return client.CoreV1().Secrets(namespace).Watch(context.TODO(), options)
 		},
 	}, synced)
 }

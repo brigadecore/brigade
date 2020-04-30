@@ -1,20 +1,19 @@
 package kube
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math/rand"
 	"strings"
 	"time"
 
+	"github.com/oklog/ulid"
+	v1 "k8s.io/api/core/v1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/brigadecore/brigade/pkg/brigade"
 	"github.com/brigadecore/brigade/pkg/storage"
-
-	"github.com/oklog/ulid"
-
-	v1 "k8s.io/api/core/v1"
-
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const secretTypeBuild = "brigade.sh/build"
@@ -27,7 +26,7 @@ func (s *store) GetBuild(id string) (*brigade.Build, error) {
 
 	labels := fmt.Sprint("heritage=brigade,component=build,build=", build.ID)
 	listOption := meta.ListOptions{LabelSelector: labels}
-	secrets, err := s.client.CoreV1().Secrets(s.namespace).List(listOption)
+	secrets, err := s.client.CoreV1().Secrets(s.namespace).List(context.TODO(), listOption)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +45,7 @@ func (s *store) DeleteBuild(bid string, options storage.DeleteBuildOptions) erro
 		LabelSelector: fmt.Sprintf(jobFilter, bid),
 	}
 	delOpts := meta.NewDeleteOptions(0)
-	pods, err := s.client.CoreV1().Pods(s.namespace).List(opts)
+	pods, err := s.client.CoreV1().Pods(s.namespace).List(context.TODO(), opts)
 	if err != nil {
 		return err
 	}
@@ -62,18 +61,18 @@ func (s *store) DeleteBuild(bid string, options storage.DeleteBuildOptions) erro
 	}
 	for _, p := range pods.Items {
 		log.Printf("Deleting pod %q", p.Name)
-		if err := s.client.CoreV1().Pods(s.namespace).Delete(p.Name, delOpts); err != nil {
+		if err := s.client.CoreV1().Pods(s.namespace).Delete(context.TODO(), p.Name, *delOpts); err != nil {
 			log.Printf("failed to delete job pod %s (continuing): %s", p.Name, err)
 		}
 	}
 
-	secrets, err := s.client.CoreV1().Secrets(s.namespace).List(opts)
+	secrets, err := s.client.CoreV1().Secrets(s.namespace).List(context.TODO(), opts)
 	if err != nil {
 		return err
 	}
 	for _, sec := range secrets.Items {
 		log.Printf("Deleting secret %q", sec.Name)
-		if err := s.client.CoreV1().Secrets(s.namespace).Delete(sec.Name, delOpts); err != nil {
+		if err := s.client.CoreV1().Secrets(s.namespace).Delete(context.TODO(), sec.Name, *delOpts); err != nil {
 			log.Printf("failed to delete job secret %s (continuing): %s", sec.Name, err)
 		}
 	}
@@ -121,7 +120,7 @@ func (s *store) CreateBuild(build *brigade.Build) error {
 		},
 	}
 
-	_, err := s.client.CoreV1().Secrets(s.namespace).Create(&secret)
+	_, err := s.client.CoreV1().Secrets(s.namespace).Create(context.TODO(), &secret, meta.CreateOptions{})
 	return err
 }
 
@@ -129,12 +128,12 @@ func (s *store) CreateBuild(build *brigade.Build) error {
 func (s *store) GetBuilds() ([]*brigade.Build, error) {
 	lo := meta.ListOptions{LabelSelector: "heritage=brigade,component=build"}
 
-	secretList, err := s.client.CoreV1().Secrets(s.namespace).List(lo)
+	secretList, err := s.client.CoreV1().Secrets(s.namespace).List(context.TODO(), lo)
 	if err != nil {
 		return nil, err
 	}
 
-	podList, err := s.client.CoreV1().Pods(s.namespace).List(lo)
+	podList, err := s.client.CoreV1().Pods(s.namespace).List(context.TODO(), lo)
 	if err != nil {
 		return nil, err
 	}

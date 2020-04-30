@@ -1,12 +1,11 @@
 package kube
 
 import (
+	"context"
 	"testing"
 
 	v1 "k8s.io/api/storage/v1"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -25,6 +24,14 @@ func TestStorageClassNames(t *testing.T) {
 }
 
 func createFakeStorageClasses(client kubernetes.Interface) {
-	client.StorageV1().StorageClasses().Create(&v1.StorageClass{ObjectMeta: metav1.ObjectMeta{Name: "sc1"}})
-	client.StorageV1().StorageClasses().Create(&v1.StorageClass{ObjectMeta: metav1.ObjectMeta{Name: "sc2"}})
+	client.StorageV1().StorageClasses().Create(
+		context.TODO(),
+		&v1.StorageClass{ObjectMeta: metav1.ObjectMeta{Name: "sc1"}},
+		metav1.CreateOptions{},
+	)
+	client.StorageV1().StorageClasses().Create(
+		context.TODO(),
+		&v1.StorageClass{ObjectMeta: metav1.ObjectMeta{Name: "sc2"}},
+		metav1.CreateOptions{},
+	)
 }
