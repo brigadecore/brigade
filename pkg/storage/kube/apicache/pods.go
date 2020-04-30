@@ -1,6 +1,7 @@
 package apicache
 
 import (
+	"context"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -19,10 +20,10 @@ func newPodStore(client kubernetes.Interface, namespace string, resyncPeriod tim
 		resyncPeriod: resyncPeriod,
 		expectedType: &v1.Pod{},
 		listFunc: func(client kubernetes.Interface, namespace string, options metaV1.ListOptions) (runtime.Object, error) {
-			return client.CoreV1().Pods(namespace).List(options)
+			return client.CoreV1().Pods(namespace).List(context.TODO(), options)
 		},
 		watchFunc: func(client kubernetes.Interface, namespace string, options metaV1.ListOptions) (watch.Interface, error) {
-			return client.CoreV1().Pods(namespace).Watch(options)
+			return client.CoreV1().Pods(namespace).Watch(context.TODO(), options)
 		},
 	}, synced)
 }

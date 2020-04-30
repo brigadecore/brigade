@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -46,7 +47,7 @@ func checkBrigadeSystem() error {
 	}
 
 	// check deployments
-	deployList, err := c.AppsV1().Deployments(globalNamespace).List(meta_v1.ListOptions{})
+	deployList, err := c.AppsV1().Deployments(globalNamespace).List(context.TODO(), meta_v1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -85,7 +86,7 @@ func checkBrigadeSystem() error {
 	}
 
 	// check vacuum cronjob
-	cjList, err := c.BatchV1beta1().CronJobs(globalNamespace).List(meta_v1.ListOptions{})
+	cjList, err := c.BatchV1beta1().CronJobs(globalNamespace).List(context.TODO(), meta_v1.ListOptions{})
 	if err != nil {
 		return err
 	}

@@ -1,19 +1,19 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"strconv"
 
 	"github.com/brigadecore/brigade/pkg/storage/kube"
 )
@@ -44,7 +44,7 @@ func (c *Controller) syncSecret(build *v1.Secret) error {
 
 	podClient := c.clientset.CoreV1().Pods(build.Namespace)
 
-	if _, err := podClient.Get(build.Name, metav1.GetOptions{}); err != nil {
+	if _, err := podClient.Get(context.TODO(), build.Name, metav1.GetOptions{}); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
@@ -55,13 +55,13 @@ func (c *Controller) syncSecret(build *v1.Secret) error {
 		}
 
 		secretClient := c.clientset.CoreV1().Secrets(build.Namespace)
-		project, err := secretClient.Get(pid, metav1.GetOptions{})
+		project, err := secretClient.Get(context.TODO(), pid, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 
 		pod := NewWorkerPod(build, project, c.Config)
-		if _, err := podClient.Create(&pod); err != nil {
+		if _, err := podClient.Create(context.TODO(), &pod, metav1.CreateOptions{}); err != nil {
 			return err
 		}
 		log.Printf("Started %s for %q [%s] at %d", pod.Name, data["event_type"], data["commit_id"], pod.CreationTimestamp.Unix())
@@ -73,7 +73,7 @@ func (c *Controller) syncSecret(build *v1.Secret) error {
 func (c *Controller) updateBuildStatus(build *v1.Secret) error {
 	buildCopy := build.DeepCopy()
 	buildCopy.Labels["status"] = "accepted"
-	_, err := c.clientset.CoreV1().Secrets(build.Namespace).Update(buildCopy)
+	_, err := c.clientset.CoreV1().Secrets(build.Namespace).Update(context.TODO(), buildCopy, metav1.UpdateOptions{})
 	return err
 }
 

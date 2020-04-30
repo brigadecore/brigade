@@ -2,6 +2,7 @@ package kube
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"math"
@@ -20,7 +21,7 @@ import (
 func (s *store) GetWorker(buildID string) (*brigade.Worker, error) {
 	labels := labels.Set{"heritage": "brigade", "component": "build", "build": buildID}
 	listOption := meta.ListOptions{LabelSelector: labels.AsSelector().String()}
-	pods, err := s.client.CoreV1().Pods(s.namespace).List(listOption)
+	pods, err := s.client.CoreV1().Pods(s.namespace).List(context.TODO(), listOption)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +96,7 @@ func (s *store) getWorkerLogStream(follow bool, worker *brigade.Worker, containe
 	}
 	req := s.client.CoreV1().Pods(s.namespace).GetLogs(worker.ID, opts)
 
-	readCloser, err := req.Stream()
+	readCloser, err := req.Stream(context.TODO())
 	if err != nil {
 		return nil, err
 	}

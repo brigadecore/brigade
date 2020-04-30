@@ -2,6 +2,7 @@ package kube
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"math"
@@ -16,7 +17,7 @@ import (
 func (s *store) GetJob(id string) (*brigade.Job, error) {
 	labels := labels.Set{"heritage": "brigade"}
 	listOption := meta.ListOptions{LabelSelector: labels.AsSelector().String()}
-	pods, err := s.client.CoreV1().Pods(s.namespace).List(listOption)
+	pods, err := s.client.CoreV1().Pods(s.namespace).List(context.TODO(), listOption)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +37,7 @@ func (s *store) GetBuildJobs(build *brigade.Build) ([]*brigade.Job, error) {
 	// Load the pods that ran as part of this build.
 	lo := meta.ListOptions{LabelSelector: fmt.Sprintf("heritage=brigade,component=job,build=%s,project=%s", build.ID, build.ProjectID)}
 
-	podList, err := s.client.CoreV1().Pods(s.namespace).List(lo)
+	podList, err := s.client.CoreV1().Pods(s.namespace).List(context.TODO(), lo)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +74,7 @@ func (s *store) getJobLogStream(follow bool, job *brigade.Job) (io.ReadCloser, e
 		TailLines: &tailAllLines,
 	})
 
-	readCloser, err := req.Stream()
+	readCloser, err := req.Stream(context.TODO())
 	if err != nil {
 		return nil, err
 	}

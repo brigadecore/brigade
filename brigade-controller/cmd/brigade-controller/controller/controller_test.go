@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -67,15 +68,15 @@ func TestController(t *testing.T) {
 	defer close(stop)
 	go controller.Run(1, stop)
 
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &secret, meta.CreateOptions{})
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &project, meta.CreateOptions{})
 
 	// Let's wait for the controller to create the pod
 	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
 		return createdPod, nil
 	})
 
-	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(context.TODO(), secret.Name, meta.GetOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -147,7 +148,7 @@ func TestController(t *testing.T) {
 		t.Errorf("Unexpected node selector: %s", os)
 	}
 
-	sec, err := client.CoreV1().Secrets(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	sec, err := client.CoreV1().Secrets(v1.NamespaceDefault).Get(context.TODO(), secret.Name, meta.GetOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -212,15 +213,15 @@ func TestController_WithScript(t *testing.T) {
 	defer close(stop)
 	go controller.Run(1, stop)
 
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &secret, meta.CreateOptions{})
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &project, meta.CreateOptions{})
 
 	// Let's wait for the controller to create the pod
 	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
 		return createdPod, nil
 	})
 
-	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(context.TODO(), secret.Name, meta.GetOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -298,15 +299,15 @@ func TestController_NoSidecar(t *testing.T) {
 	defer close(stop)
 	go controller.Run(1, stop)
 
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &secret, meta.CreateOptions{})
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &project, meta.CreateOptions{})
 
 	// Let's wait for the controller to create the pod
 	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
 		return createdPod, nil
 	})
 
-	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(context.TODO(), secret.Name, meta.GetOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -377,15 +378,15 @@ func TestController_WithWorkerCommand(t *testing.T) {
 	defer close(stop)
 	go controller.Run(1, stop)
 
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &secret, meta.CreateOptions{})
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &project, meta.CreateOptions{})
 
 	// Let's wait for the controller to create the pod
 	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
 		return createdPod, nil
 	})
 
-	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(context.TODO(), secret.Name, meta.GetOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -516,15 +517,15 @@ func TestController_WithProjectSpecificWorkerConfig(t *testing.T) {
 			defer close(stop)
 			go controller.Run(1, stop)
 
-			client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
-			client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+			client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &secret, meta.CreateOptions{})
+			client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &project, meta.CreateOptions{})
 
 			// Let's wait for the controller to create the pod
 			wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
 				return createdPod, nil
 			})
 
-			pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+			pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(context.TODO(), secret.Name, meta.GetOptions{})
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -640,15 +641,15 @@ func TestController_WithWorkerResources(t *testing.T) {
 	defer close(stop)
 	go controller.Run(1, stop)
 
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &secret, meta.CreateOptions{})
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &project, meta.CreateOptions{})
 
 	// Let's wait for the controller to create the pod
 	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
 		return createdPod, nil
 	})
 
-	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(context.TODO(), secret.Name, meta.GetOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -733,15 +734,15 @@ func TestController_WithSidecarResources(t *testing.T) {
 	defer close(stop)
 	go controller.Run(1, stop)
 
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &secret, meta.CreateOptions{})
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &project, meta.CreateOptions{})
 
 	// Let's wait for the controller to create the pod
 	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
 		return createdPod, nil
 	})
 
-	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(context.TODO(), secret.Name, meta.GetOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -824,15 +825,15 @@ func TestController_WithDefaultServiceAccount(t *testing.T) {
 	defer close(stop)
 	go controller.Run(1, stop)
 
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &secret, meta.CreateOptions{})
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &project, meta.CreateOptions{})
 
 	// Let's wait for the controller to create the pod
 	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
 		return createdPod, nil
 	})
 
-	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(context.TODO(), secret.Name, meta.GetOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -914,15 +915,15 @@ func TestController_WithRegexServiceAccount(t *testing.T) {
 	defer close(stop)
 	go controller.Run(1, stop)
 
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &secret, meta.CreateOptions{})
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &project, meta.CreateOptions{})
 
 	// Let's wait for the controller to create the pod
 	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
 		return createdPod, nil
 	})
 
-	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(context.TODO(), secret.Name, meta.GetOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1005,15 +1006,15 @@ func TestController_WithOverrideServiceAccount(t *testing.T) {
 	defer close(stop)
 	go controller.Run(1, stop)
 
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
-	client.CoreV1().Secrets(v1.NamespaceDefault).Create(&project)
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &secret, meta.CreateOptions{})
+	client.CoreV1().Secrets(v1.NamespaceDefault).Create(context.TODO(), &project, meta.CreateOptions{})
 
 	// Let's wait for the controller to create the pod
 	wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
 		return createdPod, nil
 	})
 
-	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(secret.Name, meta.GetOptions{})
+	pod, err := client.CoreV1().Pods(v1.NamespaceDefault).Get(context.TODO(), secret.Name, meta.GetOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

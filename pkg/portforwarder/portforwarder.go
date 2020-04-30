@@ -18,6 +18,7 @@ limitations under the License.
 package portforwarder
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -140,7 +141,7 @@ func getAvailablePort(localPort int) (int, error) {
 
 func getPod(clientset *kubernetes.Clientset, namespace string, selector labels.Selector) (*v1.Pod, error) {
 	options := metav1.ListOptions{LabelSelector: selector.String()}
-	pods, err := clientset.CoreV1().Pods(namespace).List(options)
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), options)
 	if err != nil {
 		return nil, err
 	}
