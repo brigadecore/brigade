@@ -24,6 +24,8 @@ CLIENT_ARCH ?= $(shell go env GOARCH)
 
 ifneq ($(SKIP_DOCKER),true)
 	PROJECT_ROOT := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+	# https://github.com/krancour/go-tools
+	# https://hub.docker.com/repository/docker/krancour/go-tools
 	GO_DEV_IMAGE := krancour/go-tools:v0.1.0
 	JS_DEV_IMAGE := node:12.3.1-stretch
 
@@ -77,8 +79,8 @@ IMMUTABLE_DOCKER_TAG := $(VERSION)
 # Utility targets                                                              #
 ################################################################################
 
-.PHONY: dep
-dep:
+.PHONY: resolve-dependencies
+resolve-dependencies:
 	$(GO_DOCKER_CMD) sh -c 'go mod tidy && go vendor'
 
 .PHONY: format
