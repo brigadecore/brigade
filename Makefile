@@ -79,7 +79,7 @@ IMMUTABLE_DOCKER_TAG := $(VERSION)
 
 .PHONY: dep
 dep:
-	$(GO_DOCKER_CMD) go mod tidy && go vendor
+	$(GO_DOCKER_CMD) sh -c 'go mod tidy && go vendor'
 
 .PHONY: format
 format: format-go format-js
