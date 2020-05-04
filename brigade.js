@@ -3,7 +3,7 @@
 // Be careful when editing!
 // ============================================================================
 const { events, Job, Group } = require("brigadier");
-const { Check, KindJob } = require("@brigadecore/brigade-utils");
+const { Check, GitHubRelease, KindJob } = require("@brigadecore/brigade-utils");
 
 const projectName = "brigade";
 const projectOrg = "brigadecore";
@@ -17,8 +17,6 @@ const localPath = gopath + `/src/github.com/${projectOrg}/${projectName}`;
 const jsImg = "node:12.3.1-stretch";
 
 const releaseTagRegex = /^refs\/tags\/(v[0-9]+(?:\.[0-9]+)*(?:\-.+)?)$/;
-
-const noopJob = { run: () => { return Promise.resolve() } };
 
 function goTest() {
   // Create a new job to run Go tests
@@ -144,56 +142,30 @@ function runTests(e, p, jobFunc) {
   return check.run();
 }
 
-function githubRelease(p, tag) {
-  if (!p.secrets.ghToken) {
-    throw new Error("Project must have 'secrets.ghToken' set");
-  }
-  // Cross-compile binaries for a given release and upload them to GitHub.
-  var job = new Job("release", goImg);
+let releaseStorage = {
+  enabled: true,
+  path: "/release-assets",
+};
+
+function buildBrig(tag) {
+  var job = new Job("build-brig", goImg);
+  job.storage = releaseStorage;
   job.shell = "/bin/bash";
   job.mountPath = localPath;
-  parts = p.repo.name.split("/", 2);
-  // Set a few environment variables.
-  job.env = {
-    "SKIP_DOCKER": "true",
-    "GITHUB_USER": parts[0],
-    "GITHUB_REPO": parts[1],
-    "GITHUB_TOKEN": p.secrets.ghToken,
-  };
   job.tasks = [
-    "go get github.com/aktau/github-release",
     `cd ${localPath}`,
-    `VERSION=${tag} make build-brig`,
-    `last_tag=$(git describe --tags ${tag}^ --abbrev=0 --always)`,
-    `github-release release \
-      -t ${tag} \
-      -n "${parts[1]} ${tag}" \
-      -d "$(git log --no-merges --pretty=format:'- %s %H (%aN)' HEAD ^$last_tag)" 2>&1 | sed -e "s/\${GITHUB_TOKEN}/<REDACTED>/"`,
-    `for bin in ./bin/*; do \
-      github-release upload -f $bin -n $(basename $bin) -t ${tag} 2>&1 | sed -e "s/\${GITHUB_TOKEN}/<REDACTED>/"; \
-    done`
+    `SKIP_DOCKER=true VERSION=${tag} make build-brig`,
+    `cp -r bin/* ${releaseStorage.path}`
   ];
-  console.log(job.tasks);
-  console.log(`releases at https://github.com/${p.repo.name}/releases/tag/${tag}`);
   return job;
 }
 
-function slackNotify(title, msg, project) {
-  if (project.secrets.SLACK_WEBHOOK) {
-    var job = new Job(`${projectName}-slack-notify`, "technosophos/slack-notify:latest");
-    job.env = {
-      "SLACK_WEBHOOK": project.secrets.SLACK_WEBHOOK,
-      "SLACK_USERNAME": "brigade-ci",
-      "SLACK_TITLE": title,
-      "SLACK_MESSAGE": msg,
-      "SLACK_COLOR": "#00ff00"
-    };
-    job.tasks = ["/slack-notify"];
-    return job;
-  }
-  console.log(`Slack Notification for '${title}' not sent; no SLACK_WEBHOOK secret found.`);
-  return noopJob;
+function githubRelease(p, tag) {
+  var job = new GitHubRelease(p, tag, releaseStorage.path);
+  job.storage = releaseStorage;
+  return job;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Event Handlers
@@ -222,23 +194,19 @@ events.on("push", (e, p) => {
       jsTest(),
       e2e()
     ])
-      .then(() => {
-        Group.runEach([
-          buildAndPublishImages(p, version),
-          githubRelease(p, version),
-          slackNotify(
-            "Brigade Release",
-            `${version} release now on GitHub! <https://github.com/${p.repo.name}/releases/tag/${version}>`,
-            p
-          )
-        ])
-      });
+    .then(() => {
+      Group.runEach([
+        buildAndPublishImages(p, version),
+        buildBrig(version),
+        githubRelease(p, version)
+      ]);
+    });
   } else {
     if (e.revision.ref.startsWith('refs/tags')) {
       console.log(`Ref ${e.revision.ref} does not match expected official release tag regex (${releaseTagRegex}); not releasing.`);
     }
   }
-})
+});
 
 events.on("check_suite:requested", runSuite);
 events.on("check_suite:rerequested", runSuite);
