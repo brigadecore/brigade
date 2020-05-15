@@ -13,7 +13,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v31/github"
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/brigadecore/brigade/pkg/storage/kube"

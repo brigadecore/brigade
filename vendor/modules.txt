@@ -122,11 +122,10 @@ github.com/go-openapi/spec
 # github.com/go-openapi/swag v0.19.7
 ## explicit
 github.com/go-openapi/swag
-# github.com/go-playground/locales v0.13.0
+# github.com/go-playground/locales v0.12.1
 github.com/go-playground/locales
 github.com/go-playground/locales/currency
-# github.com/go-playground/universal-translator v0.17.0
-## explicit
+# github.com/go-playground/universal-translator v0.16.0
 github.com/go-playground/universal-translator
 # github.com/gogo/protobuf v1.3.1
 github.com/gogo/protobuf/proto
@@ -143,11 +142,10 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/go-github v17.0.0+incompatible
+# github.com/google/go-github/v31 v31.0.0
 ## explicit
-github.com/google/go-github/github
+github.com/google/go-github/v31/github
 # github.com/google/go-querystring v1.0.0
-## explicit
 github.com/google/go-querystring/query
 # github.com/google/gofuzz v1.1.0
 github.com/google/gofuzz
@@ -230,6 +228,13 @@ github.com/spf13/pflag
 # github.com/ugorji/go/codec v1.1.7
 github.com/ugorji/go/codec
 # golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
+golang.org/x/crypto/cast5
+golang.org/x/crypto/openpgp
+golang.org/x/crypto/openpgp/armor
+golang.org/x/crypto/openpgp/elgamal
+golang.org/x/crypto/openpgp/errors
+golang.org/x/crypto/openpgp/packet
+golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/ssh/terminal
 # golang.org/x/net v0.0.0-20200202094626-16171245cfb2
 golang.org/x/net/context
