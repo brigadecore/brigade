@@ -81,7 +81,7 @@ IMMUTABLE_DOCKER_TAG := $(VERSION)
 
 .PHONY: resolve-dependencies
 resolve-dependencies:
-	$(GO_DOCKER_CMD) sh -c 'go mod tidy && go vendor'
+	$(GO_DOCKER_CMD) sh -c 'go mod tidy && go mod vendor'
 
 .PHONY: format
 format: format-go format-js
