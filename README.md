@@ -1,6 +1,6 @@
 # Brigade: Event-based Scripting for Kubernetes
 
-![Build Status](https://badges.deislabs.io/v1/github/build/brigadecore/brigade/badge.svg?branch=master)
+![Build Status](https://badges.deislabs.io/v1/github/check/27316/brigadecore/brigade/badge.svg?branch=master)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2688/badge)](https://bestpractices.coreinfrastructure.org/projects/2688)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbrigadecore%2Fbrigade.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbrigadecore%2Fbrigade?ref=badge_shield)
 

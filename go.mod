@@ -23,9 +23,7 @@ require (
 	github.com/go-openapi/jsonreference v0.19.3 // indirect
 	github.com/go-openapi/spec v0.19.6
 	github.com/go-openapi/swag v0.19.7 // indirect
-	github.com/go-playground/universal-translator v0.17.0 // indirect
-	github.com/google/go-github v17.0.0+incompatible
-	github.com/google/go-querystring v1.0.0 // indirect
+	github.com/google/go-github/v31 v31.0.0
 	github.com/googleapis/gnostic v0.4.0 // indirect
 	github.com/gophercloud/gophercloud v0.8.0 // indirect
 	github.com/gosuri/uitable v0.0.4
@@ -40,7 +38,7 @@ require (
 	github.com/oklog/ulid v1.3.1
 	github.com/rivo/tview v0.0.0-20180728193050-6614b16d9037
 	github.com/slok/brigadeterm v0.11.1
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v1.0.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sys v0.0.0-20200219091948-cb0a6d8edb6c // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
