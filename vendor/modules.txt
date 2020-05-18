@@ -222,7 +222,7 @@ github.com/slok/brigadeterm/pkg/model/brigade
 github.com/slok/brigadeterm/pkg/service/brigade
 github.com/slok/brigadeterm/pkg/ui
 github.com/slok/brigadeterm/pkg/ui/page
-# github.com/spf13/cobra v0.0.5
+# github.com/spf13/cobra v1.0.0
 ## explicit
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
