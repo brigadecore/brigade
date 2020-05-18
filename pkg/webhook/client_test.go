@@ -9,8 +9,8 @@ import (
 func TestGHClient(t *testing.T) {
 	gh := brigade.Github{
 		Token:     "totallyFake",
-		BaseURL:   "http://example.com/base/",
-		UploadURL: "http://example.com/upload/",
+		BaseURL:   "http://example.com/base/api/v3/",
+		UploadURL: "http://example.com/upload/api/v3/",
 	}
 
 	c, err := ghClient(gh)
@@ -19,9 +19,9 @@ func TestGHClient(t *testing.T) {
 	}
 
 	if c.BaseURL.String() != gh.BaseURL {
-		t.Errorf("Expected %q, got %q", c.BaseURL.String(), gh.BaseURL)
+		t.Errorf("Expected %q, got %q", gh.BaseURL, c.BaseURL.String())
 	}
 	if c.UploadURL.String() != gh.UploadURL {
-		t.Errorf("Expected %q, got %q", c.UploadURL.String(), gh.UploadURL)
+		t.Errorf("Expected %q, got %q", gh.UploadURL, c.UploadURL.String())
 	}
 }
