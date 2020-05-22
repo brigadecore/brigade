@@ -162,8 +162,13 @@ load-all-images: $(addsuffix -load-image,$(IMAGES))
 	@kind load docker-image $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
 			|| echo >&2 "kind not installed or error loading image: $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
 
-# Cross-compile binaries for brig
+# Build brig according to CLIENT_PLATFORM
 build-brig:
+	$(GO_DOCKER_CMD) bash -c \
+		'GOOS="$(CLIENT_PLATFORM)" GOARCH="$(CLIENT_ARCH)" CGO_ENABLED=0 go build -ldflags "$(LDFLAGS)" -o ./bin/brig ./brig/cmd/brig'
+
+# Cross-compile binaries for brig
+xbuild-brig:
 	$(GO_DOCKER_CMD) bash -c "LDFLAGS=\"$(LDFLAGS)\" scripts/build-brig.sh"
 
 .PHONY: push
