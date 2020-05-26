@@ -154,7 +154,7 @@ function buildBrig(tag) {
   job.mountPath = localPath;
   job.tasks = [
     `cd ${localPath}`,
-    `SKIP_DOCKER=true VERSION=${tag} make build-brig`,
+    `SKIP_DOCKER=true VERSION=${tag} make xbuild-brig`,
     `cp -r bin/* ${releaseStorage.path}`
   ];
   return job;

@@ -164,11 +164,17 @@ To build just the Docker images, run:
 $ make build-all-images
 ```
 
-To build just the client binaries (for Mac, Linux, and Windows on amd64), run
-this:
+To build just the client binary for your OS, run this:
 
 ```console
 $ make build-brig
+```
+
+To build all the supported client binaries (for Mac, Linux, and Windows on amd64), run
+this:
+
+```console
+$ make xbuild-brig
 ```
 
 ## Pushing Images
