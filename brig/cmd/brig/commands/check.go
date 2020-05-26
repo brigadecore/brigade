@@ -76,7 +76,7 @@ func checkBrigadeSystem() error {
 	}
 
 	if !apiDeploymentFound {
-		fmt.Printf("Info: Brigade API Server Deployment not found")
+		fmt.Println("Info: Brigade API Server Deployment not found")
 	}
 	if !controllerDeploymentFound {
 		fmt.Println("Error: Brigade Controller Deployment not found")
@@ -114,7 +114,7 @@ func checkBrigadeSystem() error {
 }
 
 func reportDeployStatus(deployment apps_v1.Deployment, name string) {
-	fmt.Print(deployment, name)
+	fmt.Print(getDeployStatusString(deployment, name))
 }
 
 func getDeployStatusString(deployment apps_v1.Deployment, name string) string {
