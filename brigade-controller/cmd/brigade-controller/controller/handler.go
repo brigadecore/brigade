@@ -164,6 +164,28 @@ func NewWorkerPod(build, project *v1.Secret, config *Config) v1.Pod {
 		RestartPolicy:  v1.RestartPolicyNever,
 	}
 
+	if config.WorkerNodePoolKey != "" && config.WorkerNodePoolValue != "" {
+		log.Printf("Adding affinity, worker pods will be scheduled to nodepool %s", config.WorkerNodePoolValue)
+		affinities := v1.Affinity{
+			NodeAffinity: &v1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+					NodeSelectorTerms: []v1.NodeSelectorTerm{
+						{
+							MatchExpressions: []v1.NodeSelectorRequirement{
+								{
+									Key:      config.WorkerNodePoolKey,
+									Operator: v1.NodeSelectorOpIn,
+									Values:   []string{config.WorkerNodePoolValue},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		spec.Affinity = &affinities
+	}
+
 	if scriptName := project.Data["defaultScriptName"]; len(scriptName) > 0 {
 		attachConfigMap(&spec, string(scriptName), "/etc/brigade-default-script")
 	}
@@ -314,6 +336,14 @@ func workerEnv(project, build *v1.Secret, config *Config) []v1.EnvVar {
 		} else {
 			envs = append(envs, v1.EnvVar{Name: "BRIGADE_CONFIG", Value: filepath.Join("/vcs", brigadeConfigPath)})
 		}
+	}
+
+	if config.WorkerNodePoolKey != "" {
+		envs = append(envs, v1.EnvVar{Name: "BRIGADE_WORKER_NODEPOOL_KEY", Value: config.WorkerNodePoolKey})
+	}
+
+	if config.WorkerNodePoolValue != "" {
+		envs = append(envs, v1.EnvVar{Name: "BRIGADE_WORKER_NODEPOOL_VALUE", Value: config.WorkerNodePoolValue})
 	}
 
 	return envs

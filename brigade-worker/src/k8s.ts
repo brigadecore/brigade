@@ -92,7 +92,9 @@ export var options: KubernetesOptions = {
   serviceAccount: "brigade-worker",
   mountPath: "/src",
   defaultBuildStorageClass: "",
-  defaultCacheStorageClass: ""
+  defaultCacheStorageClass: "",
+  workerNodePoolKey: "",
+  workerNodePoolValue: "",
 };
 
 /**
@@ -103,6 +105,8 @@ export class KubernetesOptions {
   mountPath: string;
   defaultBuildStorageClass: string;
   defaultCacheStorageClass: string;
+  workerNodePoolKey: string;
+  workerNodePoolValue: string;
 }
 
 class K8sResult implements jobs.Result {
@@ -480,6 +484,52 @@ export class JobRunner implements jobs.JobRunner {
         this.runner.spec.containers[i].securityContext.privileged = true;
       }
     }
+
+    // Checking if we need to create an affinity
+    // Azure specific
+    // affinity:
+    //   nodeAffinity:
+    //     requiredDuringSchedulingIgnoredDuringExecution:
+    //       nodeSelectorTerms:
+    //       - matchExpressions:
+    //         - key: agentpool
+    //           operator: In
+    //           values:
+    //           - nodepool01
+
+    if (options.workerNodePoolKey.length > 0 && options.workerNodePoolValue.length >0) {
+      //creating affinity from the bottom up
+
+      // creating match expression
+      let matchExpressions = new kubernetes.V1NodeSelectorRequirement();
+      matchExpressions.key = options.workerNodePoolKey;
+      matchExpressions.operator = "In";
+      matchExpressions.values = [];
+      matchExpressions.values.push(options.workerNodePoolValue);
+
+      // creating nodeSelectorTerm
+      let nodeSelectorTerms = new kubernetes.V1NodeSelectorTerm();
+      nodeSelectorTerms.matchExpressions = [];
+      nodeSelectorTerms.matchExpressions.push(matchExpressions);
+
+      //creating nodeSelector
+      let nodeSelector = new kubernetes.V1NodeSelector();
+      nodeSelector.nodeSelectorTerms = [];
+      nodeSelector.nodeSelectorTerms.push(nodeSelectorTerms);
+
+      // creating nodeAffinity
+      let nodeAffinity = new kubernetes.V1NodeAffinity();
+      nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution = nodeSelector;
+
+      let affinity = new kubernetes.V1Affinity();
+
+      // creating Affinity
+      affinity.nodeAffinity = nodeAffinity;
+
+      // modifying mod spec
+      this.runner.spec.affinity = affinity;
+    }
+
     return this;
   }
 

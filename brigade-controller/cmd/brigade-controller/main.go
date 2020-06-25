@@ -26,6 +26,8 @@ func main() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	flag.StringVar(&master, "master", "", "master url")
 	flag.StringVar(&ctrConfig.Namespace, "namespace", defaultNamespace(), "kubernetes namespace")
+	flag.StringVar(&ctrConfig.WorkerNodePoolKey, "worker-node-pool-key", "", "worker nodepool key name")
+	flag.StringVar(&ctrConfig.WorkerNodePoolValue, "worker-node-pool-value", "", "worker nodepool key value")
 	flag.StringVar(&ctrConfig.WorkerImage, "worker-image", defaultWorkerImage(), "kubernetes worker image")
 	flag.StringVar(&ctrConfig.WorkerCommand, "worker-command", defaultWorkerCommand(), "kubernetes worker command")
 	flag.StringVar(&ctrConfig.WorkerPullPolicy, "worker-pull-policy", defaultWorkerPullPolicy(), "kubernetes worker image pull policy")
