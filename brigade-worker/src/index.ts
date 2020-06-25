@@ -168,10 +168,10 @@ if (process.env.BRIGADE_DEFAULT_CACHE_STORAGE_CLASS) {
 }
 if (process.env.BRIGADE_WORKER_NODEPOOL_KEY) {
     options.workerNodePoolKey = process.env.BRIGADE_WORKER_NODEPOOL_KEY
- }
+}
 if (process.env.BRIGADE_WORKER_NODEPOOL_VALUE) {
     options.workerNodePoolValue = process.env.BRIGADE_WORKER_NODEPOOL_VALUE
- }
+}
  
 
 // Run the app.

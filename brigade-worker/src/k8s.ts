@@ -486,7 +486,8 @@ export class JobRunner implements jobs.JobRunner {
     }
 
     // Checking if we need to create an affinity
-    // Azure specific
+
+    // Azure specific example (other providers will have different value for a key)
     // affinity:
     //   nodeAffinity:
     //     requiredDuringSchedulingIgnoredDuringExecution:
