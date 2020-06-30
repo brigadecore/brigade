@@ -7,6 +7,7 @@ aliases:
   - /topics/cli/brig.md
   - /topics/dependencies/brig.md
   - /intro/brig.md
+  - /intro/topics/brig.md
 ---
 
 # Brig: The Brigade CLI
