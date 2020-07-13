@@ -390,9 +390,9 @@ Brigade 2.0:
        are to minimize Kubernetes' use as anything other than a substrate for
        workload execution and to isolate Brigade's touchpoints with Kubernetes
        to specific components.
-    1. Some degree of freedom to "drop down" to Kubernetes may be retained to
-       enable implementation of advanced / fringe use cases, but the need to
-       utilize this should be _exceptional._
+   1. "Dropping down" to Kubernetes should be required only when implementing
+      advanced use cases that call for modifications to a project's underlying
+      Kubernetes namespace or service accounts.
 
 1. The UX must be both simplified and improved while striving to remain
    recognizable and comfortable for experienced Brigade users.
