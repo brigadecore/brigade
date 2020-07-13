@@ -176,7 +176,7 @@ Refer to:
 
 * [Issue #960](https://github.com/brigadecore/brigade/issues/960)
 * [Issue #1034](https://github.com/brigadecore/brigade/issues/1034)
-* [Issue #1035](brigade/issues/1035)
+* [Issue #1035](https://github.com/brigadecore/brigade/issues/1035)
 * [Issue #1037](https://github.com/brigadecore/brigade/issues/1037)
 
 ### Resource Contention
