@@ -239,12 +239,23 @@ workflows that have been defined differently (for instance, using YAML or
 TypeScript). This concept was even demonstrated live in a [KubeCon 2019
 talk](https://youtu.be/o2D5XI9jhYA?t=1418).
 
-Though it has been proven possible, the method of achieving this remains
-cumbersome. For one, producing alternative workers is onerous because workers
-receive input through two different channels: dozens of environment variables
-and Kubernetes API calls to read project secrets. Understanding what inputs need
-to be obtained from where requires the developers of alternative worker images
-to dig deep into Brigade documentation and code.
+Though it has been proven possible, implementing an alternative worker remains
+onerous due to at least two factors:
+
+1. Workers receive input through two different channels: environment variables
+   and an unmounted Kubernetes secret that must, inconveniently, be accessed
+   through Kubernetes API calls. Understanding what inputs need to be obtained
+   from which source requires the developers of alternative worker images to dig
+   deep into Brigade documentation and code. An opportunity exist to settle on a
+   single mode of worker input.
+
+1. Job pods spawned by workers must be labeled in a specific manner or risk
+   incompatibility with the rest of Brigade. For instance, jobs cannot be
+   discovered and their statuses observed if they are labeled incorrectly.
+   Getting the labels right, again, requires the developers of alternative
+   worker images to dig deep into Brigade documentation and code. An opportunity
+   exists to abstract the minutia of job creation away from worker code into,
+   for instance, a "jobs API."
 
 Support for alternative workers is also cumbersome and unintuitive from a UX
 perspective since Brigade makes unnecessary assumptions that do not hold for all
@@ -483,6 +494,11 @@ N.B.: In the case of projects, JSON schema can be reused by IDEs to validate
 project definitions as they are edited. The author proposes this UX to be
 superior to the current `brig project create` process.
 
+As with Kubernetes, Brigade 2.0's API surface is likely to be logically
+decomposed into several smaller APIs foucsed on specific  areas of concern to
+facilitate ease of use and different authentication models to suit the needs of
+different clients. (Refer to the [authentication section](#authentication)).
+
 ### Service Layer
 
 Brigade 2.0's service layer will implement high level, vendor neutral business
@@ -639,8 +655,8 @@ hard-deleting the account. Users who require their Brigade access to be revoked
 can therefore have their accounts _locked_ (instead of deleted) by a user
 manager.
 
-Non-human users-- such as event gateways-- will utilize service accounts that
-human Brigade administrators may manage directly using the CLI/API. Service
+Some non-human users-- such as event gateways-- will utilize service accounts
+that human Brigade administrators may manage directly using the CLI/API. Service
 accounts will authenticate by means of non-expiring but revokable bearer tokens.
 (Note these are _not_ Kubernetes service accounts; but _Brigade_ service
 accounts.)
@@ -649,12 +665,17 @@ N.B.: For symmetry with user accounts, service accounts, once created, cannot be
 deleted, but can only be locked if access must be revoked. This also helps to
 maintain the relational integrity of the underlying data store.
 
-Lastly, the scheduling agent is, necessarily, a _special class of user_ that can
-carry out operations disallowed for _all_ other users (including "root"). These
-include updating the observed status of an executing worker or job. Being a
-special class of user, the controller will authenticate to the API using a
+The scheduling agent is, necessarily, a _special class of non-human user_ that
+can carry out operations disallowed for _all_ other users (including "root").
+These include updating the observed status of an executing worker or job. Being
+a special class of user, the controller will authenticate to the API using a
 shared secret that is mutually agreed upon at the time of deployment /
 re-deployment / upgrade.
+
+Lastly, every worker (another non-human user) should be uniquely authorized to
+create jobs associated with itself. (i.e. No one _but_ a given worker should
+ever create jobs _for_ that worker.) Given this, every worker will be granted a
+bearer token to facilitate sessionless authenthication to the jobs API only.
 
 To prevent session hijacking by means of root password theft or bearer token
 theft, Brigade API servers in remote clusters should secure API traffic using
