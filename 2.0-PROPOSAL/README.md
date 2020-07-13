@@ -494,10 +494,11 @@ N.B.: In the case of projects, JSON schema can be reused by IDEs to validate
 project definitions as they are edited. The author proposes this UX to be
 superior to the current `brig project create` process.
 
-As with Kubernetes, Brigade 2.0's API surface is likely to be logically
-decomposed into several smaller APIs foucsed on specific  areas of concern to
-facilitate ease of use and different authentication models to suit the needs of
-different clients. (Refer to the [authentication section](#authentication)).
+As with Kubernetes, Brigade 2.0's API surface may benefit from being logically
+decomposed into several smaller APIs focused on specific areas of concern. This
+would both provide for ease of use and support the varying authentication models
+required by different clients. (Refer to the [authentication
+section](#authentication)).
 
 ### Service Layer
 
