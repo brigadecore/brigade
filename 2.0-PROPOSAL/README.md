@@ -516,24 +516,15 @@ favored. i.e. A relational database is unlikely to yield any significant
 advantages and would also introduce object-relational impedance that can
 otherwise be avoided.
 
-Further, after careful consideration of MongoDB, Cassandra, and CouchDB, as well
-as cursory consideration of a few other options, MongoDB is proposed as the
-underlying data store based on several factors:
-
-1. Development concerns:
-    1. Programming model has lowest impedence with proposed domain model
-    1. Expressive query language
-    1. Atomic updates to single documents without the need for transactions 
-    1. Widespread developer familiarity
-1. Operational concerns:
-    1. Deployable in-cluster using existing Helm charts; can be included in
-       default Brigade install
-    1. Deployable in a wide array of configurations to cover both
-       evaluation/development _and_ production 
-    1. Managed instances of MongoDB (or wire-compatible services) readily
-       available from (or in) the leading public clouds
-    1. Demonstrated ability to scale
-1. Permissive (enough) license
+After careful consideration of Cassandra, CouchDB, Postgres (which does support
+JSON documents), and MongoDB, as well as cursory consideration of a few other
+options, MongoDB is proposed to be the data store that Brigade 2.0 will depend
+upon by default. Apart from handily satisfying the requirements from a
+development perspective, its schemaless nature introduces no complication in
+terms of how database migrations might be automated, and it is easily included
+in a default Brigade 2.0 installation ("batteries included"), and several
+options exist for provisioning managed MongoDB or wire-compatible services in
+the leading public clouds.
 
 N.B.: Criticisms of MongoDB such as [this one from
 Jepsen](http://jepsen.io/analyses/mongodb-4.2.6) were carefully considered and
@@ -541,6 +532,11 @@ determined to be inapplicable with respect to the proposed use. Likewise, known
 [licensing
 constraints](https://www.mongodb.com/licensing/server-side-public-license/faq)
 were also carefully considered and judged inapplicable for the use case.
+
+It is also proposed that through careful use of abstractions and interfaces,
+Brigade 2.0 be as loosely coupled as possible to the underlying data store in
+order to preserve the possibility of future releases supporting alternative
+storage.
 
 ### Scheduling
 
@@ -558,28 +554,26 @@ To bridge the gap between the synchronous and asynchronous components of this
 subsystem, a message bus capable of ensuring reliable transmission of messages
 with at-least-once delivery guarantees will be required.
 
-After careful consideration of Kafka, ActiveMQ, RabbitMQ, and Redis (using the
-[reliable queue](https://redis.io/commands/rpoplpush#pattern-reliable-queue)
-pattern), Kafka is proposed to be used for this purpose based on several
-factors:
+Further, a solution is required that facilitates "fair scheduling," which in
+this context means that any given project placing an event on the queue behind
+a peer project's very large volume of events does not unfairly wait a long time
+to be allocated some of the system's capacity.
 
-1. Development concerns:
-    1. Gentle learning curve
-    1. Accommodates desired delivery semantics:
-        1. At least once delivery
-        1. Event delivery order preserved / guaranteed on a per-project basis
-        1. Fair scheduling of events on a backed up queue can be solved with
-           nominal effort
-    1. Widespread developer familiarity
-1. Operational concerns:
-    1. Deployable in-cluster using existing Helm charts; can be included in
-       default Brigade install
-    1. Deployable in a wide array of configurations to cover both
-       evaluation/development _and_ production 
-    1. Managed instances of Kafka (or wire-compatible services) readily
-       available from (or in) the leading public clouds
-    1. Demonstrated ability to scale
-1. Permissive license
+After careful consideration of Redis (using the [reliable queue
+pattern](https://redis.io/commands/rpoplpush#pattern-reliable-queue)), Kafka,
+NATS, the AMQP 0-9-1 protocol (supported by the like of RabbitMQ), and the AMQP
+1.0 protocol (suported by the likes of ActiveMQ), AMQP 1.0 is proposed to be the
+protocol that Brigade 2.0 will depend upon (by default) for its messaging needs.
+Apart from handily satisfying the requirements from a development perspective,
+AMQP 1.0 is an OASIS standard, ActiveMQ Artemis (which supports the protocol)
+can easily be included in a default Brigade 2.0 installation ("batteries
+included"), and numerous options exist for provisioning managed AMQP
+1.0-compatible services in the leading public clouds.
+
+It is also proposed that through careful use of abstractions and interfaces,
+Brigade 2.0 be as loosely coupled as possible to the underlying message bus in
+order to preserve the possibility of future releases supporting alternative
+messaging products or protocols.
 
 ### Logging
 
