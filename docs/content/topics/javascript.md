@@ -274,6 +274,14 @@ A `JobHost` object provides preferences for the host upon which the job is execu
   Not all clusters support all OSes.
 - `name: string`: The name of the host (node) upon which the job will run. This is
   highly system dependent.
+- `nodeSelector: Map<string, string>`: Labels which are used as selectors when choosing a node on which to run this job.
+In the following example job nodeSelector is set.  
+```javascript
+var job = new Job("job-on-specific-group-of-nodes");
+
+// We want to schedule job pod on a specific group of nodes:
+job.host.nodeSelector.set('nodegroup', 'brigade-node');
+```
 
 ### The `JobStorage` class
 
