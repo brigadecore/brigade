@@ -278,13 +278,15 @@ To learn more about the Generic Gateway, check our docs [here](https://docs.brig
 
 ## Kashti
 
-You can also see the Project/Build output combination details in [Kashti](https://github.com/brigadecore/kashti). Kashti is by default visible only from within the cluster, so you need a `kubectl port-forward` from your local machine to the Kubernetes Service for Kashti.
+You can also see the Project/Build output combination details in [Kashti](https://github.com/brigadecore/kashti). Kashti is by default visible only from within the cluster, and `brig` has a helper command to create a port forwarding session from the Kashti service on Kubernetes to your local machine:
 
 ```bash
-kubectl port-forward service/brigade-kashti 8000:80
+brig dashboard
+Connecting to kashti at http://localhost:8081...
+Connected! When you are finished with this session, enter CTRL+C.
 ```
 
-Then, you can navigate to `http://localhost:8000` to see Kashti dashboard with your Project and Build. Feel free to check [brigadeterm](https://github.com/slok/brigadeterm) which is similar to Kashti but runs inside your terminal.
+Then, you can navigate to `http://localhost:8081` to see Kashti dashboard with your Project and Build. You can also use `brig term` to see a terminal dashboard.
 
 ## Vacuum
 
