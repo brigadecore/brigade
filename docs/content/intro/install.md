@@ -13,7 +13,7 @@ Brigade projects are managed via [brig](#brig). Here are the steps:
 
 1. Make sure `helm` is installed, and `helm version` returns the correct server.
 2. Add the Brigade repo: `helm repo add brigade https://brigadecore.github.io/charts`
-3. Install Brigade: `helm install brigade/brigade --name brigade-server`
+3. Install Brigade: `helm install brigade-server brigade/brigade`
 4. Create a Brigade project: `brig project create`
 
 At this point, you have a running Brigade service. You can use `helm get brigade-server` and other Helm tools to examine your running Brigade server.
