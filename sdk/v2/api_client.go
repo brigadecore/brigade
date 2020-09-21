@@ -3,6 +3,7 @@ package sdk
 import (
 	"github.com/brigadecore/brigade/sdk/v2/authx"
 	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/system"
 )
 
@@ -22,11 +23,15 @@ type apiClient struct {
 }
 
 // NewAPIClient returns a Brigade client.
-func NewAPIClient(apiAddress, apiToken string, allowInsecure bool) APIClient {
+func NewAPIClient(
+	apiAddress string,
+	apiToken string,
+	opts *restmachinery.APIClientOptions,
+) APIClient {
 	return &apiClient{
-		authxClient:  authx.NewAPIClient(apiAddress, apiToken, allowInsecure),
-		coreClient:   core.NewAPIClient(apiAddress, apiToken, allowInsecure),
-		systemClient: system.NewAPIClient(apiAddress, apiToken, allowInsecure),
+		authxClient:  authx.NewAPIClient(apiAddress, apiToken, opts),
+		coreClient:   core.NewAPIClient(apiAddress, apiToken, opts),
+		systemClient: system.NewAPIClient(apiAddress, apiToken, opts),
 	}
 }
 

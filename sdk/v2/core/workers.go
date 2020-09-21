@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -259,21 +258,11 @@ type workersClient struct {
 func NewWorkersClient(
 	apiAddress string,
 	apiToken string,
-	allowInsecure bool,
+	opts *restmachinery.APIClientOptions,
 ) WorkersClient {
 	return &workersClient{
-		BaseClient: &restmachinery.BaseClient{
-			APIAddress: apiAddress,
-			APIToken:   apiToken,
-			HTTPClient: &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: allowInsecure,
-					},
-				},
-			},
-		},
-		jobsClient: NewJobsClient(apiAddress, apiToken, allowInsecure),
+		BaseClient: restmachinery.NewBaseClient(apiAddress, apiToken, opts),
+		jobsClient: NewJobsClient(apiAddress, apiToken, opts),
 	}
 }
 

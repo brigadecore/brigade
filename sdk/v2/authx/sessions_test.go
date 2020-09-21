@@ -20,11 +20,7 @@ func TestOIDCAuthDetailsMarshalJSON(t *testing.T) {
 }
 
 func TestNewSessionsClient(t *testing.T) {
-	client := NewSessionsClient(
-		testAPIAddress,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewSessionsClient(testAPIAddress, testAPIToken, nil)
 	require.IsType(t, &sessionsClient{}, client)
 	requireBaseClient(t, client.(*sessionsClient).BaseClient)
 }
@@ -48,11 +44,7 @@ func TestSessionsClientCreateRootSession(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSessionsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewSessionsClient(server.URL, testAPIToken, nil)
 	token, err := client.CreateRootSession(context.Background(), testRootPassword)
 	require.NoError(t, err)
 	require.Equal(t, testSessionToken, token)
@@ -76,11 +68,7 @@ func TestSessionsClientCreateUserSession(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSessionsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewSessionsClient(server.URL, testAPIToken, nil)
 	OIDCAuthDetails, err := client.CreateUserSession(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, testOIDCAuthDetails, OIDCAuthDetails)
@@ -98,11 +86,7 @@ func TestSessionsClientDelete(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSessionsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewSessionsClient(server.URL, testAPIToken, nil)
 	err := client.Delete(context.Background())
 	require.NoError(t, err)
 }

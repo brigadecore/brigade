@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewAPIClient(t *testing.T) {
-	client := NewAPIClient(testAPIAddress, testAPIToken, testClientAllowInsecure)
+	client := NewAPIClient(testAPIAddress, testAPIToken, nil)
 	require.IsType(t, &apiClient{}, client)
 	require.NotNil(t, client.(*apiClient).rolesClient)
 	require.Equal(t, client.(*apiClient).rolesClient, client.Roles())

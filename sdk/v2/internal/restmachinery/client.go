@@ -3,6 +3,7 @@ package restmachinery
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+// APIClientOptions encapsulates optional API client configuration.
+type APIClientOptions struct {
+	// AllowInsecureConnections indicates whether SSL-related errors whould be
+	// ignored when connecting to the API server.
+	AllowInsecureConnections bool
+}
+
 // BaseClient provides "API machinery" used by all the specialized API clients.
 // Its various functions remove the tedium from common API-related operations
 // like managing authentication headers, encoding request bodies, interpretting
@@ -23,6 +31,28 @@ type BaseClient struct {
 	APIAddress string
 	APIToken   string
 	HTTPClient *http.Client
+}
+
+// NewBaseClient returns a new BaseClient.
+func NewBaseClient(
+	apiAddress string,
+	apiToken string,
+	opts *APIClientOptions,
+) *BaseClient {
+	if opts == nil {
+		opts = &APIClientOptions{}
+	}
+	return &BaseClient{
+		APIAddress: apiAddress,
+		APIToken:   apiToken,
+		HTTPClient: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: opts.AllowInsecureConnections,
+				},
+			},
+		},
+	}
 }
 
 // BasicAuthHeaders returns a map[string]string populated with a Basic Auth

@@ -1,5 +1,7 @@
 package authx
 
+import "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+
 // APIClient is the root of a tree of more specialized API clients within the
 // authx package.
 type APIClient interface {
@@ -25,18 +27,18 @@ type apiClient struct {
 // specialized API clients within the authx package. It will initialize all
 // clients in the tree so they are ready for immediate use.
 func NewAPIClient(
-	apiAddress,
+	apiAddress string,
 	apiToken string,
-	allowInsecure bool,
+	opts *restmachinery.APIClientOptions,
 ) APIClient {
 	return &apiClient{
 		serviceAccountsClient: NewServiceAccountsClient(
 			apiAddress,
 			apiToken,
-			allowInsecure,
+			opts,
 		),
-		sessionsClient: NewSessionsClient(apiAddress, apiToken, allowInsecure),
-		usersClient:    NewUsersClient(apiAddress, apiToken, allowInsecure),
+		sessionsClient: NewSessionsClient(apiAddress, apiToken, opts),
+		usersClient:    NewUsersClient(apiAddress, apiToken, opts),
 	}
 }
 

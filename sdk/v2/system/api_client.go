@@ -1,5 +1,7 @@
 package system
 
+import "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+
 // APIClient is the root of a tree of more specialized API clients within the
 // system package.
 type APIClient interface {
@@ -15,9 +17,13 @@ type apiClient struct {
 // NewAPIClient returns an APIClient, which is the root of a tree of more
 // specialized API clients within the system package. It will initialize all
 // clients in the tree so they are ready for immediate use.
-func NewAPIClient(apiAddress, apiToken string, allowInsecure bool) APIClient {
+func NewAPIClient(
+	apiAddress string,
+	apiToken string,
+	opts *restmachinery.APIClientOptions,
+) APIClient {
 	return &apiClient{
-		rolesClient: NewRolesClient(apiAddress, apiToken, allowInsecure),
+		rolesClient: NewRolesClient(apiAddress, apiToken, opts),
 	}
 }
 

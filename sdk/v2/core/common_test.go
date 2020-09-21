@@ -19,9 +19,8 @@ import (
 // coverage... for not testing the tests. :sigh:
 
 const (
-	testAPIAddress          = "localhost:8080"
-	testAPIToken            = "11235813213455"
-	testClientAllowInsecure = true
+	testAPIAddress = "localhost:8080"
+	testAPIToken   = "11235813213455"
 )
 
 func requireAPIVersionAndType(
@@ -39,6 +38,7 @@ func requireAPIVersionAndType(
 }
 
 func requireBaseClient(t *testing.T, baseClient *restmachinery.BaseClient) {
+	require.NotNil(t, baseClient)
 	require.Equal(t, testAPIAddress, baseClient.APIAddress)
 	require.Equal(t, testAPIToken, baseClient.APIToken)
 	require.IsType(t, &http.Client{}, baseClient.HTTPClient)
@@ -47,10 +47,5 @@ func requireBaseClient(t *testing.T, baseClient *restmachinery.BaseClient) {
 		t,
 		&tls.Config{},
 		baseClient.HTTPClient.Transport.(*http.Transport).TLSClientConfig,
-	)
-	require.Equal(
-		t,
-		testClientAllowInsecure,
-		baseClient.HTTPClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify, // nolint: lll
 	)
 }

@@ -60,11 +60,7 @@ func TestLogsClientStream(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewLogsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewLogsClient(server.URL, testAPIToken, nil)
 	logsCh, _, err := client.Stream(
 		context.Background(),
 		testEventID,

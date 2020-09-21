@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -92,20 +91,10 @@ type secretsClient struct {
 func NewSecretsClient(
 	apiAddress string,
 	apiToken string,
-	allowInsecure bool,
+	opts *restmachinery.APIClientOptions,
 ) SecretsClient {
 	return &secretsClient{
-		BaseClient: &restmachinery.BaseClient{
-			APIAddress: apiAddress,
-			APIToken:   apiToken,
-			HTTPClient: &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: allowInsecure,
-					},
-				},
-			},
-		},
+		BaseClient: restmachinery.NewBaseClient(apiAddress, apiToken, opts),
 	}
 }
 

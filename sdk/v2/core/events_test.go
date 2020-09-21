@@ -22,11 +22,7 @@ func TestListMarshalJSON(t *testing.T) {
 }
 
 func TestNewEventsClient(t *testing.T) {
-	client := NewEventsClient(
-		testAPIAddress,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewEventsClient(testAPIAddress, testAPIToken, nil)
 	require.IsType(t, &eventsClient{}, client)
 	requireBaseClient(t, client.(*eventsClient).BaseClient)
 	require.NotNil(t, client.(*eventsClient).workersClient)
@@ -73,11 +69,7 @@ func TestEventsClientCreate(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewEventsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewEventsClient(server.URL, testAPIToken, nil)
 	events, err := client.Create(
 		context.Background(),
 		testEvent,
@@ -122,11 +114,7 @@ func TestEventsClientList(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewEventsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewEventsClient(server.URL, testAPIToken, nil)
 	events, err := client.List(
 		context.Background(),
 		EventsSelector{
@@ -162,11 +150,7 @@ func TestEventsClientGet(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewEventsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewEventsClient(server.URL, testAPIToken, nil)
 	event, err := client.Get(context.Background(), testEvent.ID)
 	require.NoError(t, err)
 	require.Equal(t, testEvent, event)
@@ -188,11 +172,7 @@ func TestEventsClientCancel(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewEventsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewEventsClient(server.URL, testAPIToken, nil)
 	err := client.Cancel(context.Background(), testEventID)
 	require.NoError(t, err)
 }
@@ -222,11 +202,7 @@ func TestEventsClientCancelMany(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewEventsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewEventsClient(server.URL, testAPIToken, nil)
 	result, err := client.CancelMany(
 		context.Background(),
 		EventsSelector{
@@ -254,11 +230,7 @@ func TestEventsClientDelete(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewEventsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewEventsClient(server.URL, testAPIToken, nil)
 	err := client.Delete(context.Background(), testEventID)
 	require.NoError(t, err)
 }
@@ -288,11 +260,7 @@ func TestEventsClientDeleteMany(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewEventsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewEventsClient(server.URL, testAPIToken, nil)
 	result, err := client.DeleteMany(
 		context.Background(),
 		EventsSelector{

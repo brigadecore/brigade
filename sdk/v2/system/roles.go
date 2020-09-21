@@ -2,7 +2,6 @@ package system
 
 import (
 	"context"
-	"crypto/tls"
 	"net/http"
 
 	"github.com/brigadecore/brigade/sdk/v2/authx"
@@ -35,20 +34,10 @@ type rolesClient struct {
 func NewRolesClient(
 	apiAddress string,
 	apiToken string,
-	allowInsecure bool,
+	opts *restmachinery.APIClientOptions,
 ) RolesClient {
 	return &rolesClient{
-		BaseClient: &restmachinery.BaseClient{
-			APIAddress: apiAddress,
-			APIToken:   apiToken,
-			HTTPClient: &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: allowInsecure,
-					},
-				},
-			},
-		},
+		BaseClient: restmachinery.NewBaseClient(apiAddress, apiToken, opts),
 	}
 }
 

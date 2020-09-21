@@ -252,39 +252,3 @@ func TestBaseClientSubmitRequest(t *testing.T) {
 		})
 	}
 }
-
-// 	testProject := Project{
-// 		ObjectMeta: meta.ObjectMeta{
-// 			ID: "bluebook",
-// 		},
-// 	}
-// 	server := httptest.NewServer(
-// 		http.HandlerFunc(
-// 			func(w http.ResponseWriter, r *http.Request) {
-// 				defer r.Body.Close()
-// 				require.Equal(t, http.MethodPost, r.Method)
-// 				require.Equal(t, "/v2/projects", r.URL.Path)
-// 				bodyBytes, err := ioutil.ReadAll(r.Body)
-// 				require.NoError(t, err)
-// 				project := Project{}
-// 				err = json.Unmarshal(bodyBytes, &project)
-// 				require.NoError(t, err)
-// 				require.Equal(t, testProject, project)
-// 				w.WriteHeader(http.StatusCreated)
-// 				fmt.Fprintln(w, string(bodyBytes))
-// 			},
-// 		),
-// 	)
-// 	defer server.Close()
-// 	client := NewProjectsClient(
-// 		server.URL,
-// 		testAPIToken,
-// 		testClientAllowInsecure,
-// 	)
-// 	project, err := client.Create(
-// 		context.Background(),
-// 		testProject,
-// 	)
-// 	require.NoError(t, err)
-// 	require.Equal(t, testProject, project)
-// }

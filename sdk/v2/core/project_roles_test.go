@@ -14,11 +14,7 @@ import (
 )
 
 func TestNewProjectRolesClient(t *testing.T) {
-	client := NewProjectRolesClient(
-		testAPIAddress,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewProjectRolesClient(testAPIAddress, testAPIToken, nil)
 	require.IsType(t, &projectRolesClient{}, client)
 	requireBaseClient(t, client.(*projectRolesClient).BaseClient)
 }
@@ -51,11 +47,7 @@ func TestProjectRolesClientGrant(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewProjectRolesClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewProjectRolesClient(server.URL, testAPIToken, nil)
 	err := client.Grant(
 		context.Background(),
 		testProjectID,
@@ -100,11 +92,7 @@ func TestProjectRolesClientRevoke(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewProjectRolesClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewProjectRolesClient(server.URL, testAPIToken, nil)
 	err := client.Revoke(context.Background(), testProjectID, testRoleAssignment)
 	require.NoError(t, err)
 }

@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -186,22 +185,12 @@ type eventsClient struct {
 func NewEventsClient(
 	apiAddress string,
 	apiToken string,
-	allowInsecure bool,
+	opts *restmachinery.APIClientOptions,
 ) EventsClient {
 	return &eventsClient{
-		BaseClient: &restmachinery.BaseClient{
-			APIAddress: apiAddress,
-			APIToken:   apiToken,
-			HTTPClient: &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: allowInsecure,
-					},
-				},
-			},
-		},
-		workersClient: NewWorkersClient(apiAddress, apiToken, allowInsecure),
-		logsClient:    NewLogsClient(apiAddress, apiToken, allowInsecure),
+		BaseClient:    restmachinery.NewBaseClient(apiAddress, apiToken, opts),
+		workersClient: NewWorkersClient(apiAddress, apiToken, opts),
+		logsClient:    NewLogsClient(apiAddress, apiToken, opts),
 	}
 }
 

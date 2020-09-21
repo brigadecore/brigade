@@ -2,7 +2,6 @@ package authx
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"net/http"
 
@@ -81,20 +80,10 @@ type sessionsClient struct {
 func NewSessionsClient(
 	apiAddress string,
 	apiToken string,
-	allowInsecure bool,
+	opts *restmachinery.APIClientOptions,
 ) SessionsClient {
 	return &sessionsClient{
-		BaseClient: &restmachinery.BaseClient{
-			APIAddress: apiAddress,
-			APIToken:   apiToken,
-			HTTPClient: &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: allowInsecure,
-					},
-				},
-			},
-		},
+		BaseClient: restmachinery.NewBaseClient(apiAddress, apiToken, opts),
 	}
 }
 

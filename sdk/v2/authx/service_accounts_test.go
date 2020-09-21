@@ -22,11 +22,7 @@ func TestServiceMarshalJSON(t *testing.T) {
 }
 
 func TestNewServiceAccountsClient(t *testing.T) {
-	client := NewServiceAccountsClient(
-		testAPIAddress,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewServiceAccountsClient(testAPIAddress, testAPIToken, nil)
 	require.IsType(t, &serviceAccountsClient{}, client)
 	requireBaseClient(t, client.(*serviceAccountsClient).BaseClient)
 }
@@ -60,11 +56,7 @@ func TestServiceAccountsClientCreate(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewServiceAccountsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewServiceAccountsClient(server.URL, testAPIToken, nil)
 	token, err := client.Create(
 		context.Background(),
 		testServiceAccount,
@@ -101,11 +93,7 @@ func TestServiceAccountsClientList(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewServiceAccountsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewServiceAccountsClient(server.URL, testAPIToken, nil)
 	serviceAccounts, err := client.List(
 		context.Background(),
 		ServiceAccountsSelector{},
@@ -138,11 +126,7 @@ func TestServiceAccountsClientGet(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewServiceAccountsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewServiceAccountsClient(server.URL, testAPIToken, nil)
 	serviceAccount, err := client.Get(context.Background(), testServiceAccount.ID)
 	require.NoError(t, err)
 	require.Equal(t, testServiceAccount, serviceAccount)
@@ -164,11 +148,7 @@ func TestServiceAccountsClientLock(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewServiceAccountsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewServiceAccountsClient(server.URL, testAPIToken, nil)
 	err := client.Lock(context.Background(), testServiceAccountID)
 	require.NoError(t, err)
 }
@@ -195,11 +175,7 @@ func TestServiceAccountsClientUnlock(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewServiceAccountsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewServiceAccountsClient(server.URL, testAPIToken, nil)
 	token, err := client.Unlock(context.Background(), testServiceAccountID)
 	require.NoError(t, err)
 	require.Equal(t, testServiceAccountToken, token)

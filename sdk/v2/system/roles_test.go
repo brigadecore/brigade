@@ -13,11 +13,7 @@ import (
 )
 
 func TestNewRolesClient(t *testing.T) {
-	client := NewRolesClient(
-		testAPIAddress,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewRolesClient(testAPIAddress, testAPIToken, nil)
 	require.IsType(t, &rolesClient{}, client)
 	requireBaseClient(t, client.(*rolesClient).BaseClient)
 }
@@ -45,11 +41,7 @@ func TestRolesClientGrant(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewRolesClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewRolesClient(server.URL, testAPIToken, nil)
 	err := client.Grant(context.Background(), testRoleAssignment)
 	require.NoError(t, err)
 }
@@ -85,11 +77,7 @@ func TestRolesClientRevoke(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewRolesClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewRolesClient(server.URL, testAPIToken, nil)
 	err := client.Revoke(context.Background(), testRoleAssignment)
 	require.NoError(t, err)
 }

@@ -22,11 +22,7 @@ func TestSecretMarshalJSON(t *testing.T) {
 }
 
 func TestNewSecretsClient(t *testing.T) {
-	client := NewSecretsClient(
-		testAPIAddress,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewSecretsClient(testAPIAddress, testAPIToken, nil)
 	require.IsType(t, &secretsClient{}, client)
 	requireBaseClient(t, client.(*secretsClient).BaseClient)
 }
@@ -62,11 +58,7 @@ func TestSecretsClientList(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSecretsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewSecretsClient(server.URL, testAPIToken, nil)
 	secrets, err :=
 		client.List(context.Background(), testProjectID, meta.ListOptions{})
 	require.NoError(t, err)
@@ -104,11 +96,7 @@ func TestSecretsClientSet(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSecretsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewSecretsClient(server.URL, testAPIToken, nil)
 	err := client.Set(context.Background(), testProjectID, testSecret)
 	require.NoError(t, err)
 }
@@ -134,11 +122,7 @@ func TestSecretsClientUnset(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSecretsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewSecretsClient(server.URL, testAPIToken, nil)
 	err := client.Unset(context.Background(), testProjectID, testSecretKey)
 	require.NoError(t, err)
 }

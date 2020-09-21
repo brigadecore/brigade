@@ -2,7 +2,6 @@ package authx
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -110,20 +109,10 @@ type serviceAccountsClient struct {
 func NewServiceAccountsClient(
 	apiAddress string,
 	apiToken string,
-	allowInsecure bool,
+	opts *restmachinery.APIClientOptions,
 ) ServiceAccountsClient {
 	return &serviceAccountsClient{
-		BaseClient: &restmachinery.BaseClient{
-			APIAddress: apiAddress,
-			APIToken:   apiToken,
-			HTTPClient: &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: allowInsecure,
-					},
-				},
-			},
-		},
+		BaseClient: restmachinery.NewBaseClient(apiAddress, apiToken, opts),
 	}
 }
 

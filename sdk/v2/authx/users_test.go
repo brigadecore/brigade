@@ -21,11 +21,7 @@ func TestUserMarshalJSON(t *testing.T) {
 }
 
 func TestNewUsersClient(t *testing.T) {
-	client := NewUsersClient(
-		testAPIAddress,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewUsersClient(testAPIAddress, testAPIToken, nil)
 	require.IsType(t, &usersClient{}, client)
 	requireBaseClient(t, client.(*usersClient).BaseClient)
 }
@@ -58,11 +54,7 @@ func TestUsersClientList(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewUsersClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewUsersClient(server.URL, testAPIToken, nil)
 	users, err := client.List(
 		context.Background(),
 		UsersSelector{},
@@ -95,11 +87,7 @@ func TestUsersClientGet(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewUsersClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewUsersClient(server.URL, testAPIToken, nil)
 	user, err := client.Get(context.Background(), testUser.ID)
 	require.NoError(t, err)
 	require.Equal(t, testUser, user)
@@ -121,11 +109,7 @@ func TestUsersClientLock(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewUsersClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewUsersClient(server.URL, testAPIToken, nil)
 	err := client.Lock(context.Background(), testUserID)
 	require.NoError(t, err)
 }
@@ -146,11 +130,7 @@ func TestUsersClientUnlock(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewUsersClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewUsersClient(server.URL, testAPIToken, nil)
 	err := client.Unlock(context.Background(), testUserID)
 	require.NoError(t, err)
 }

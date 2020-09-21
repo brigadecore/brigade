@@ -58,11 +58,7 @@ func TestJobsClientCreate(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewJobsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewJobsClient(server.URL, testAPIToken, nil)
 	err := client.Create(
 		context.Background(),
 		testEventID,
@@ -93,11 +89,7 @@ func TestJobsClientStart(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewJobsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewJobsClient(server.URL, testAPIToken, nil)
 	err := client.Start(context.Background(), testEventID, testJobName)
 	require.NoError(t, err)
 }
@@ -129,11 +121,7 @@ func TestJobsClientGetStatus(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewJobsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewJobsClient(server.URL, testAPIToken, nil)
 	jobStatus, err :=
 		client.GetStatus(context.Background(), testEventID, testJobName)
 	require.NoError(t, err)
@@ -174,11 +162,7 @@ func TestJobsClientWatchStatus(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewJobsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewJobsClient(server.URL, testAPIToken, nil)
 	statusCh, _, err := client.WatchStatus(
 		context.Background(),
 		testEventID,
@@ -225,11 +209,7 @@ func TestJobClientUpdateStatus(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewJobsClient(
-		server.URL,
-		testAPIToken,
-		testClientAllowInsecure,
-	)
+	client := NewJobsClient(server.URL, testAPIToken, nil)
 	err := client.UpdateStatus(
 		context.Background(),
 		testEventID,
