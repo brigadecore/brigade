@@ -1,6 +1,6 @@
 module github.com/brigadecore/brigade/sdk/v2
 
-go 1.14
+go 1.15
 
 require (
 	github.com/pkg/errors v0.9.1

@@ -18,7 +18,7 @@ ifneq ($(SKIP_DOCKER),true)
 	PROJECT_ROOT := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 	# https://github.com/krancour/go-tools
 	# https://hub.docker.com/repository/docker/krancour/go-tools
-	GO_DEV_IMAGE := krancour/go-tools:v0.3.0
+	GO_DEV_IMAGE := krancour/go-tools:v0.4.0
 
 	GO_DOCKER_CMD := docker run \
 		-it \
