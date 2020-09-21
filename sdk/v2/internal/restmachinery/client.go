@@ -130,6 +130,7 @@ func (b *BaseClient) ExecuteRequest(
 // the HTTP response. This is a lower-level function than executeRequest().
 // It is used by executeRequest(), but is also suitable for uses in cases where
 // specialized response handling is required.
+// nolint: gocyclo
 func (b *BaseClient) SubmitRequest(
 	ctx context.Context,
 	req OutboundRequest,
