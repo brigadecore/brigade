@@ -3,10 +3,10 @@
 The Brigade 2 SDK for Go provides Go language bindings for the new Brigade 2
 API.
 
-This SDK remains under development, but has been made publicly availably sooner
-rather than later in order to unblock Brigade contibutors who wish to work on
+This SDK remains under development, but has been made publicly available sooner
+rather than later in order to unblock Brigade contributors who wish to work on
 Brigade 2 compatible gateways (or other tools). It should be _relatively_
-stable, but please do expect occassional, minor breakages at this juncture.
+stable, but please do expect occasional, minor breakages at this juncture.
 
 As Brigade 2 development continues, its own non-API components, including its
 scheduler and CLI, will eventually become consumers of this SDK. In the meantime
@@ -26,8 +26,8 @@ import "github.com/brigadecore/brigade/sdk/v2"
 // ...
 
 client, err := sdk.NewAPIClient(
-	apiAddress, // The address of the Brigade 2 Prototpye API server, beginning with http:// or https//
-	apiToken, // An API token obtained using the Brigade 2 Prototpye CLI
+	apiAddress, // The address of the Brigade 2 Prototype API server, beginning with http:// or https//
+	apiToken, // An API token obtained using the Brigade 2 Prototype CLI
 	insecure, // boolean indicating whether TLS errors (if applicable) are tolerated
 )
 if err != nil {
@@ -58,8 +58,8 @@ import "github.com/brigadecore/brigade/sdk/v2/core"
 // ...
 
 client, err := core.NewEventsClient(
-  apiAddress, // The address of the Brigade 2 Prototpye API server, beginning with http:// or https://
-	apiToken, // An API token obtained using the Brigade 2 Prototpye CLI
+  apiAddress, // The address of the Brigade 2 Prototype API server, beginning with http:// or https://
+	apiToken, // An API token obtained using the Brigade 2 Prototype CLI
 	insecure, // boolean indicating whether TLS errors (if applicable) are tolerated
 )
 if err != nil {
