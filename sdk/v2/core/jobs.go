@@ -109,8 +109,8 @@ type JobContainerSpec struct {
 	// requires git configuration to have been specified at the Project and/or
 	// Event levels.
 	UseSource bool `json:"useSource"`
-	// SourceMountPath specifie the path in the OCI container's file system where,
-	// if applicable, source code retrieved from a git repository should be
+	// SourceMountPath specifies the path in the OCI container's file system
+	// where, if applicable, source code retrieved from a git repository should be
 	// mounted.
 	SourceMountPath string `json:"sourceMountPath,omitempty"`
 	// Privileged indicates whether the OCI container should operate in a

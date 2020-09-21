@@ -167,9 +167,9 @@ type ProjectsClient interface {
 
 type projectsClient struct {
 	*restmachinery.BaseClient
-	// rolesClient is a specialized client for Project Role managament.
+	// rolesClient is a specialized client for Project Role management.
 	rolesClient ProjectRolesClient
-	// secretsClient is a specialized client for Secret managament.
+	// secretsClient is a specialized client for Secret management.
 	secretsClient SecretsClient
 }
 

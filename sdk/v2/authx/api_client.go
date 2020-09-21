@@ -19,7 +19,7 @@ type apiClient struct {
 	serviceAccountsClient ServiceAccountsClient
 	// sessionsClient is a specialized client for Session management.
 	sessionsClient SessionsClient
-	// usersClient is a specialized client for User managament.
+	// usersClient is a specialized client for User management.
 	usersClient UsersClient
 }
 

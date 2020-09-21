@@ -40,7 +40,7 @@ func TestBaseClientBearerTokenAuthHeaders(t *testing.T) {
 func TestBaseClientAppendListQueryParams(t *testing.T) {
 	queryParams := map[string]string{}
 	listOpts := meta.ListOptions{
-		Continue: "whereileftoff",
+		Continue: "where i left off",
 		Limit:    10,
 	}
 	client := BaseClient{}

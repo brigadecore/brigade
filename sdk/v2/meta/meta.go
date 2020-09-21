@@ -7,12 +7,12 @@ import "time"
 const APIVersion = "brigade.sh/v2"
 
 // TypeMeta represents metadata about a resource type to help clients and
-// servers mutually head off potential confusion over types (and versions of
+// servers mutually head off potential confusion over types (and versions
 // thereof) sent over the wire.
 type TypeMeta struct {
 	// Kind specifies the type of a serialized resource.
 	Kind string `json:"kind,omitempty"`
-	// APIVersion specifiesthe major version of the Brigade API with which the
+	// APIVersion specifies the major version of the Brigade API with which the
 	// client or server having serialized the resource is compatible.
 	APIVersion string `json:"apiVersion,omitempty"`
 }
@@ -30,12 +30,12 @@ type ObjectMeta struct {
 
 // ListMeta is metadata for ordered collections of resources.
 type ListMeta struct {
-	// Continue, when non-empty is an opaque value created by and understood by an
-	// API operation that returns partial (pageable) results. Submitting this
+	// Continue, when non-empty, is an opaque value created by and understood by
+	// an API operation that returns partial (pageable) results. Submitting this
 	// value with subsequent requests to the same operation specifies to that
 	// operation which page to return next.
 	Continue string `json:"continue,omitempty"`
-	// RemainingItemCount, when non-nil indicates that an API operation returned
+	// RemainingItemCount, when non-nil, indicates that an API operation returned
 	// partial (pageable) results and indicates how many results remain.
 	RemainingItemCount int64 `json:"remainingItemCount,omitempty"`
 }

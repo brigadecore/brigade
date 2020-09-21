@@ -36,7 +36,7 @@ func TestSecretsClientList(t *testing.T) {
 				Value: "people",
 			},
 			{
-				Key:   "whodidit",
+				Key:   "whodunit",
 				Value: "thebutler",
 			},
 		},

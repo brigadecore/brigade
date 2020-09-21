@@ -11,7 +11,7 @@ import (
 
 // OIDCAuthDetails encapsulates all information required for a client
 // authenticating by means of OpenID Connect to complete the authentication
-// process using a third-party OIDC identiy provider.
+// process using a third-party OIDC identity provider.
 type OIDCAuthDetails struct {
 	// OAuth2State is an opaque token issued by Brigade that must be sent to the
 	// OIDC identity provider as a query parameter when the OIDC authentication
@@ -31,7 +31,7 @@ type OIDCAuthDetails struct {
 	// a Session. It remains unactivated (useless) until the OIDC authentication
 	// workflow is successfully completed. Clients may expect that that the token
 	// expires (at an interval determined by a system administrator) and, for
-	// simplicity, is NOT refreshable. When the token has expired, it
+	// simplicity, is NOT refreshable. When the token has expired,
 	// re-authentication is required.
 	Token string `json:"token,omitempty"`
 }
