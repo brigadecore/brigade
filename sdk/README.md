@@ -31,7 +31,7 @@ client, err := sdk.NewAPIClient(
 	insecure, // boolean indicating whether TLS errors (if applicable) are tolerated
 )
 if err != nil {
-  // ...
+	// ...
 }
 ```
 
@@ -58,12 +58,12 @@ import "github.com/brigadecore/brigade/sdk/v2/core"
 // ...
 
 client, err := core.NewEventsClient(
-  apiAddress, // The address of the Brigade 2 Prototype API server, beginning with http:// or https://
+	apiAddress, // The address of the Brigade 2 Prototype API server, beginning with http:// or https://
 	apiToken, // An API token obtained using the Brigade 2 Prototype CLI
 	insecure, // boolean indicating whether TLS errors (if applicable) are tolerated
 )
 if err != nil {
-  // ...
+	// ...
 }
 ```
 
