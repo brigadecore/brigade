@@ -93,5 +93,5 @@ type ErrNotSupported struct {
 }
 
 func (e *ErrNotSupported) Error() string {
-	return e.Details
+	return fmt.Sprintf("Request not supported: %s", e.Details)
 }
