@@ -94,11 +94,7 @@ func TestServiceAccountsClientList(t *testing.T) {
 	)
 	defer server.Close()
 	client := NewServiceAccountsClient(server.URL, testAPIToken, nil)
-	serviceAccounts, err := client.List(
-		context.Background(),
-		ServiceAccountsSelector{},
-		meta.ListOptions{},
-	)
+	serviceAccounts, err := client.List(context.Background(), nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, testServiceAccounts, serviceAccounts)
 }

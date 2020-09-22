@@ -85,8 +85,8 @@ type ServiceAccountsClient interface {
 	// List returns a ServiceAccountList.
 	List(
 		context.Context,
-		ServiceAccountsSelector,
-		meta.ListOptions,
+		*ServiceAccountsSelector,
+		*meta.ListOptions,
 	) (ServiceAccountList, error)
 	// Get retrieves a single ServiceAccount specified by its identifier.
 	Get(context.Context, string) (ServiceAccount, error)
@@ -135,8 +135,8 @@ func (s *serviceAccountsClient) Create(
 
 func (s *serviceAccountsClient) List(
 	ctx context.Context,
-	_ ServiceAccountsSelector,
-	opts meta.ListOptions,
+	_ *ServiceAccountsSelector,
+	opts *meta.ListOptions,
 ) (ServiceAccountList, error) {
 	serviceAccounts := ServiceAccountList{}
 	return serviceAccounts, s.ExecuteRequest(

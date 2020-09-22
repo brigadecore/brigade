@@ -55,11 +55,7 @@ func TestUsersClientList(t *testing.T) {
 	)
 	defer server.Close()
 	client := NewUsersClient(server.URL, testAPIToken, nil)
-	users, err := client.List(
-		context.Background(),
-		UsersSelector{},
-		meta.ListOptions{},
-	)
+	users, err := client.List(context.Background(), nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, testUsers, users)
 }

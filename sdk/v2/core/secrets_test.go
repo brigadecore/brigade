@@ -9,7 +9,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,8 +58,7 @@ func TestSecretsClientList(t *testing.T) {
 	)
 	defer server.Close()
 	client := NewSecretsClient(server.URL, testAPIToken, nil)
-	secrets, err :=
-		client.List(context.Background(), testProjectID, meta.ListOptions{})
+	secrets, err := client.List(context.Background(), testProjectID, nil)
 	require.NoError(t, err)
 	require.Equal(t, testSecrets, secrets)
 }

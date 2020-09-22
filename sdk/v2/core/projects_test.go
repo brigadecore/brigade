@@ -118,11 +118,7 @@ func TestProjectsClientList(t *testing.T) {
 	)
 	defer server.Close()
 	client := NewProjectsClient(server.URL, testAPIToken, nil)
-	projects, err := client.List(
-		context.Background(),
-		ProjectsSelector{},
-		meta.ListOptions{},
-	)
+	projects, err := client.List(context.Background(), nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, testProjects, projects)
 }

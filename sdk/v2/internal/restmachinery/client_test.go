@@ -44,7 +44,7 @@ func TestBaseClientAppendListQueryParams(t *testing.T) {
 		Limit:    10,
 	}
 	client := BaseClient{}
-	queryParams = client.AppendListQueryParams(queryParams, listOpts)
+	queryParams = client.AppendListQueryParams(queryParams, &listOpts)
 	cntinue, ok := queryParams["continue"]
 	require.True(t, ok)
 	require.Equal(t, listOpts.Continue, cntinue)

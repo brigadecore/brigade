@@ -78,7 +78,7 @@ type UsersSelector struct{}
 // API.
 type UsersClient interface {
 	// List returns a UserList.
-	List(context.Context, UsersSelector, meta.ListOptions) (UserList, error)
+	List(context.Context, *UsersSelector, *meta.ListOptions) (UserList, error)
 	// Get retrieves a single User specified by their identifier.
 	Get(context.Context, string) (User, error)
 
@@ -108,8 +108,8 @@ func NewUsersClient(
 
 func (u *usersClient) List(
 	ctx context.Context,
-	_ UsersSelector,
-	opts meta.ListOptions,
+	_ *UsersSelector,
+	opts *meta.ListOptions,
 ) (UserList, error) {
 	users := UserList{}
 	return users, u.ExecuteRequest(

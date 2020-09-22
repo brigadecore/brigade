@@ -151,7 +151,11 @@ type ProjectsClient interface {
 	CreateFromBytes(context.Context, []byte) (Project, error)
 	// List returns a ProjectList, with its Items (Projects) ordered
 	// alphabetically by Project ID.
-	List(context.Context, ProjectsSelector, meta.ListOptions) (ProjectList, error)
+	List(
+		context.Context,
+		*ProjectsSelector,
+		*meta.ListOptions,
+	) (ProjectList, error)
 	// Get retrieves a single Project specified by its identifier.
 	Get(context.Context, string) (Project, error)
 	// Update updates an existing Project.
@@ -233,8 +237,8 @@ func (p *projectsClient) CreateFromBytes(
 
 func (p *projectsClient) List(
 	ctx context.Context,
-	_ ProjectsSelector,
-	opts meta.ListOptions,
+	_ *ProjectsSelector,
+	opts *meta.ListOptions,
 ) (ProjectList, error) {
 	projects := ProjectList{}
 	return projects, p.ExecuteRequest(

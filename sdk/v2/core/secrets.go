@@ -71,7 +71,7 @@ type SecretsClient interface {
 	List(
 		ctx context.Context,
 		projectID string,
-		opts meta.ListOptions,
+		opts *meta.ListOptions,
 	) (SecretList, error)
 	// Set sets the value of a new Secret or updates the value of an existing
 	// Secret. If the specified Key does not exist, it is created. If the
@@ -101,7 +101,7 @@ func NewSecretsClient(
 func (s *secretsClient) List(
 	ctx context.Context,
 	projectID string,
-	opts meta.ListOptions,
+	opts *meta.ListOptions,
 ) (SecretList, error) {
 	secrets := SecretList{}
 	return secrets, s.ExecuteRequest(

@@ -49,8 +49,8 @@ type LogsClient interface {
 	Stream(
 		ctx context.Context,
 		eventID string,
-		selector LogsSelector,
-		opts LogStreamOptions,
+		selector *LogsSelector,
+		opts *LogStreamOptions,
 	) (<-chan LogEntry, <-chan error, error)
 }
 
@@ -72,17 +72,19 @@ func NewLogsClient(
 func (l *logsClient) Stream(
 	ctx context.Context,
 	eventID string,
-	selector LogsSelector,
-	opts LogStreamOptions,
+	selector *LogsSelector,
+	opts *LogStreamOptions,
 ) (<-chan LogEntry, <-chan error, error) {
 	queryParams := map[string]string{}
-	if selector.Job != "" {
-		queryParams["job"] = selector.Job
+	if selector != nil {
+		if selector.Job != "" {
+			queryParams["job"] = selector.Job
+		}
+		if selector.Container != "" {
+			queryParams["container"] = selector.Container
+		}
 	}
-	if selector.Container != "" {
-		queryParams["container"] = selector.Container
-	}
-	if opts.Follow {
+	if opts != nil && opts.Follow {
 		queryParams["follow"] = "true"
 	}
 

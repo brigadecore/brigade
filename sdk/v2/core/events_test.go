@@ -117,11 +117,11 @@ func TestEventsClientList(t *testing.T) {
 	client := NewEventsClient(server.URL, testAPIToken, nil)
 	events, err := client.List(
 		context.Background(),
-		EventsSelector{
+		&EventsSelector{
 			ProjectID:    testProjectID,
 			WorkerPhases: []WorkerPhase{WorkerPhaseRunning},
 		},
-		meta.ListOptions{},
+		nil,
 	)
 	require.NoError(t, err)
 	require.Equal(t, testEvents, events)

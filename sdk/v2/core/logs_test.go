@@ -70,8 +70,8 @@ func TestLogsClientStream(t *testing.T) {
 	logsCh, _, err := client.Stream(
 		context.Background(),
 		testEventID,
-		testSelector,
-		testOpts,
+		&testSelector,
+		&testOpts,
 	)
 	require.NoError(t, err)
 	select {

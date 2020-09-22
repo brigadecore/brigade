@@ -157,7 +157,7 @@ type EventsClient interface {
 	// List returns an EventList, with its Items (Events) ordered by age, newest
 	// first. Criteria for which Events should be retrieved can be specified using
 	// the EventsSelector parameter.
-	List(context.Context, EventsSelector, meta.ListOptions) (EventList, error)
+	List(context.Context, *EventsSelector, *meta.ListOptions) (EventList, error)
 	// Get retrieves a single Event specified by its identifier.
 	Get(context.Context, string) (Event, error)
 	// Cancel cancels a single Event specified by its identifier.
@@ -217,8 +217,8 @@ func (e *eventsClient) Create(
 
 func (e *eventsClient) List(
 	ctx context.Context,
-	selector EventsSelector,
-	opts meta.ListOptions,
+	selector *EventsSelector,
+	opts *meta.ListOptions,
 ) (EventList, error) {
 	queryParams := map[string]string{}
 	if selector.ProjectID != "" {

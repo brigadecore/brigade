@@ -84,10 +84,13 @@ func (b *BaseClient) BearerTokenAuthHeaders() map[string]string {
 // provided, a new one is instantiated.
 func (b *BaseClient) AppendListQueryParams(
 	queryParams map[string]string,
-	opts meta.ListOptions,
+	opts *meta.ListOptions,
 ) map[string]string {
 	if queryParams == nil {
 		queryParams = map[string]string{}
+	}
+	if opts == nil {
+		return queryParams
 	}
 	if opts.Continue != "" {
 		queryParams["continue"] = opts.Continue
