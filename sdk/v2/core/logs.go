@@ -19,19 +19,21 @@ type LogEntry struct {
 	Message string `json:"message,omitempty"`
 }
 
-// LogsSelector represents useful criteria for selecting logs for streaming from
-// a specific container of a Worker or Job.
+// LogsSelector represents useful criteria for selecting logs to be streamed
+// from any container belonging to some Worker OR any container belonging to
+// Jobs spawned by that Worker.
 type LogsSelector struct {
-	// Job specifies, by name, a Job spawned by the Worker. If this field is
-	// left blank, it is presumed logs are desired for the Worker itself.
+	// Job specifies, by name, a Job spawned by some Worker. If not specified, log
+	// streaming operations presume logs are desired for the Worker itself.
 	Job string
-	// Container specifies, by name, a container belonging to the Worker or Job
-	// whose logs are being retrieved. If left blank, a container with the same
-	// name as the Worker or Job is assumed.
+	// Container specifies, by name, a container belonging to some Worker or, if
+	// Job is specified, that Job. If not specified, log streaming operations
+	// presume logs are desired from a container having the same name as the
+	// selected Worker or Job.
 	Container string
 }
 
-// LogStreamOptions represents useful options for streaming logs from a specific
+// LogStreamOptions represents useful options for streaming logs from some
 // container of a Worker or Job.
 type LogStreamOptions struct {
 	// Follow indicates whether the stream should conclude after the last
