@@ -11,38 +11,6 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 )
 
-// UsersSelector represents useful filter criteria when selecting multiple Users
-// for API group operations like list. It currently has no fields, but exists to
-// preserve the possibility of future expansion without having to change client
-// function signatures.
-type UsersSelector struct{}
-
-// UserList is an ordered and pageable list of Users.
-type UserList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of Users.
-	Items []User `json:"items,omitempty"`
-}
-
-// MarshalJSON amends UserList instances with type metadata so that clients do
-// not need to be concerned with the tedium of doing so.
-func (u UserList) MarshalJSON() ([]byte, error) {
-	type Alias UserList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "UserList",
-			},
-			Alias: (Alias)(u),
-		},
-	)
-}
-
 // User represents a (human) Brigade user.
 type User struct {
 	// ObjectMeta encapsulates User metadata.
@@ -73,6 +41,38 @@ func (u User) MarshalJSON() ([]byte, error) {
 		},
 	)
 }
+
+// UserList is an ordered and pageable list of Users.
+type UserList struct {
+	// ListMeta contains list metadata.
+	meta.ListMeta `json:"metadata"`
+	// Items is a slice of Users.
+	Items []User `json:"items,omitempty"`
+}
+
+// MarshalJSON amends UserList instances with type metadata so that clients do
+// not need to be concerned with the tedium of doing so.
+func (u UserList) MarshalJSON() ([]byte, error) {
+	type Alias UserList
+	return json.Marshal(
+		struct {
+			meta.TypeMeta `json:",inline"`
+			Alias         `json:",inline"`
+		}{
+			TypeMeta: meta.TypeMeta{
+				APIVersion: meta.APIVersion,
+				Kind:       "UserList",
+			},
+			Alias: (Alias)(u),
+		},
+	)
+}
+
+// UsersSelector represents useful filter criteria when selecting multiple Users
+// for API group operations like list. It currently has no fields, but exists to
+// preserve the possibility of future expansion without having to change client
+// function signatures.
+type UsersSelector struct{}
 
 // UsersClient is the specialized client for managing Users with the Brigade
 // API.

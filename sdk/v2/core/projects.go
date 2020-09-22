@@ -10,38 +10,6 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 )
 
-// ProjectsSelector represents useful filter criteria when selecting multiple
-// Projects for API group operations like list. It currently has no fields, but
-// exists to preserve the possibility of future expansion without having to
-// change client function signatures.
-type ProjectsSelector struct{}
-
-// ProjectList is an ordered and pageable list of ProjectS.
-type ProjectList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of Projects.
-	Items []Project `json:"items,omitempty"`
-}
-
-// MarshalJSON amends ProjectList instances with type metadata so that clients
-// do not need to be concerned with the tedium of doing so.
-func (p ProjectList) MarshalJSON() ([]byte, error) {
-	type Alias ProjectList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "ProjectList",
-			},
-			Alias: (Alias)(p),
-		},
-	)
-}
-
 // Project is Brigade's fundamental configuration, management, and isolation
 // construct.
 // - Configuration: Users define Projects to pair EventSubscriptions with
@@ -86,6 +54,38 @@ func (p Project) MarshalJSON() ([]byte, error) {
 		},
 	)
 }
+
+// ProjectList is an ordered and pageable list of ProjectS.
+type ProjectList struct {
+	// ListMeta contains list metadata.
+	meta.ListMeta `json:"metadata"`
+	// Items is a slice of Projects.
+	Items []Project `json:"items,omitempty"`
+}
+
+// MarshalJSON amends ProjectList instances with type metadata so that clients
+// do not need to be concerned with the tedium of doing so.
+func (p ProjectList) MarshalJSON() ([]byte, error) {
+	type Alias ProjectList
+	return json.Marshal(
+		struct {
+			meta.TypeMeta `json:",inline"`
+			Alias         `json:",inline"`
+		}{
+			TypeMeta: meta.TypeMeta{
+				APIVersion: meta.APIVersion,
+				Kind:       "ProjectList",
+			},
+			Alias: (Alias)(p),
+		},
+	)
+}
+
+// ProjectsSelector represents useful filter criteria when selecting multiple
+// Projects for API group operations like list. It currently has no fields, but
+// exists to preserve the possibility of future expansion without having to
+// change client function signatures.
+type ProjectsSelector struct{}
 
 // ProjectSpec is the technical component of a Project. It pairs
 // EventSubscriptions with a prototypical WorkerSpec that is used as a template

@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestServiceAccountListMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, ServiceAccountList{}, "ServiceAccountList")
+func TestServiceAccountMarshalJSON(t *testing.T) {
+	requireAPIVersionAndType(t, ServiceAccount{}, "ServiceAccount")
 }
 
-func TestServiceMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, ServiceAccount{}, "ServiceAccount")
+func TestServiceAccountListMarshalJSON(t *testing.T) {
+	requireAPIVersionAndType(t, ServiceAccountList{}, "ServiceAccountList")
 }
 
 func TestNewServiceAccountsClient(t *testing.T) {

@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestProjectListMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, ProjectList{}, "ProjectList")
-}
-
 func TestProjectMarshalJSON(t *testing.T) {
 	requireAPIVersionAndType(t, Project{}, "Project")
+}
+
+func TestProjectListMarshalJSON(t *testing.T) {
+	requireAPIVersionAndType(t, ProjectList{}, "ProjectList")
 }
 
 func TestNewProjectsClient(t *testing.T) {

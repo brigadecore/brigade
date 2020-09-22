@@ -10,32 +10,6 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 )
 
-// SecretList is an ordered and pageable list of Secrets.
-type SecretList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of Secrets.
-	Items []Secret `json:"items,omitempty"`
-}
-
-// MarshalJSON amends SecretList instances with type metadata so that clients do
-// not need to be concerned with the tedium of doing so.
-func (s SecretList) MarshalJSON() ([]byte, error) {
-	type Alias SecretList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "SecretList",
-			},
-			Alias: (Alias)(s),
-		},
-	)
-}
-
 // Secret represents Project-level sensitive information.
 type Secret struct {
 	// Key is a key by which the secret can referred.
@@ -56,6 +30,32 @@ func (s Secret) MarshalJSON() ([]byte, error) {
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
 				Kind:       "Secret",
+			},
+			Alias: (Alias)(s),
+		},
+	)
+}
+
+// SecretList is an ordered and pageable list of Secrets.
+type SecretList struct {
+	// ListMeta contains list metadata.
+	meta.ListMeta `json:"metadata"`
+	// Items is a slice of Secrets.
+	Items []Secret `json:"items,omitempty"`
+}
+
+// MarshalJSON amends SecretList instances with type metadata so that clients do
+// not need to be concerned with the tedium of doing so.
+func (s SecretList) MarshalJSON() ([]byte, error) {
+	type Alias SecretList
+	return json.Marshal(
+		struct {
+			meta.TypeMeta `json:",inline"`
+			Alias         `json:",inline"`
+		}{
+			TypeMeta: meta.TypeMeta{
+				APIVersion: meta.APIVersion,
+				Kind:       "SecretList",
 			},
 			Alias: (Alias)(s),
 		},

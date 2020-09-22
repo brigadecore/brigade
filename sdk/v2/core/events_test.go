@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEventListMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, EventList{}, "EventList")
+func TestEventMarshalJSON(t *testing.T) {
+	requireAPIVersionAndType(t, Event{}, "Event")
 }
 
-func TestListMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, Event{}, "Event")
+func TestEventListMarshalJSON(t *testing.T) {
+	requireAPIVersionAndType(t, EventList{}, "EventList")
 }
 
 func TestNewEventsClient(t *testing.T) {

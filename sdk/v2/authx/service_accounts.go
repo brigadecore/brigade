@@ -11,38 +11,6 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 )
 
-// ServiceAccountsSelector represents useful filter criteria when selecting
-// multiple ServiceAccounts for API group operations like list. It currently has
-// no fields, but exists to preserve the possibility of future expansion without
-// having to change client function signatures.
-type ServiceAccountsSelector struct{}
-
-// ServiceAccountList is an ordered and pageable list of ServiceAccounts.
-type ServiceAccountList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of ServiceAccounts.
-	Items []ServiceAccount `json:"items,omitempty"`
-}
-
-// MarshalJSON amends ServiceAccountList instances with type metadata so that
-// clients do not need to be concerned with the tedium of doing so.
-func (s ServiceAccountList) MarshalJSON() ([]byte, error) {
-	type Alias ServiceAccountList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "ServiceAccountList",
-			},
-			Alias: (Alias)(s),
-		},
-	)
-}
-
 // ServiceAccount represents a non-human Brigade user, such as an Event
 // gateway.
 type ServiceAccount struct {
@@ -76,6 +44,38 @@ func (s ServiceAccount) MarshalJSON() ([]byte, error) {
 		},
 	)
 }
+
+// ServiceAccountList is an ordered and pageable list of ServiceAccounts.
+type ServiceAccountList struct {
+	// ListMeta contains list metadata.
+	meta.ListMeta `json:"metadata"`
+	// Items is a slice of ServiceAccounts.
+	Items []ServiceAccount `json:"items,omitempty"`
+}
+
+// MarshalJSON amends ServiceAccountList instances with type metadata so that
+// clients do not need to be concerned with the tedium of doing so.
+func (s ServiceAccountList) MarshalJSON() ([]byte, error) {
+	type Alias ServiceAccountList
+	return json.Marshal(
+		struct {
+			meta.TypeMeta `json:",inline"`
+			Alias         `json:",inline"`
+		}{
+			TypeMeta: meta.TypeMeta{
+				APIVersion: meta.APIVersion,
+				Kind:       "ServiceAccountList",
+			},
+			Alias: (Alias)(s),
+		},
+	)
+}
+
+// ServiceAccountsSelector represents useful filter criteria when selecting
+// multiple ServiceAccounts for API group operations like list. It currently has
+// no fields, but exists to preserve the possibility of future expansion without
+// having to change client function signatures.
+type ServiceAccountsSelector struct{}
 
 // ServiceAccountsClient is the specialized client for managing ServiceAccounts
 // with the Brigade API.

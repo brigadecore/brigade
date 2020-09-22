@@ -13,6 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNewLogsClient(t *testing.T) {
+	client := NewLogsClient(testAPIAddress, testAPIToken, nil)
+	require.IsType(t, &logsClient{}, client)
+	requireBaseClient(t, client.(*logsClient).BaseClient)
+}
+
 func TestLogsClientStream(t *testing.T) {
 	const testEventID = "12345"
 	testSelector := LogsSelector{

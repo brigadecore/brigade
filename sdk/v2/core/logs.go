@@ -11,6 +11,14 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 )
 
+// LogEntry represents one line of output from an OCI container.
+type LogEntry struct {
+	// Time is the time the line was written.
+	Time *time.Time `json:"time,omitempty"`
+	// Message is a single line of log output from an OCI container.
+	Message string `json:"message,omitempty"`
+}
+
 // LogsSelector represents useful criteria for selecting logs for streaming from
 // a specific container of a Worker or Job.
 type LogsSelector struct {
@@ -31,14 +39,6 @@ type LogStreamOptions struct {
 	// until closed by the client (true), continuing to send new lines as they
 	// become available.
 	Follow bool `json:"follow"`
-}
-
-// LogEntry represents one line of output from an OCI container.
-type LogEntry struct {
-	// Time is the time the line was written.
-	Time *time.Time `json:"time,omitempty"`
-	// Message is a single line of log output from an OCI container.
-	Message string `json:"message,omitempty"`
 }
 
 // LogsClient is the specialized client for managing Logs with the Brigade API.
