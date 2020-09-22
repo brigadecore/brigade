@@ -55,8 +55,7 @@ type ServiceAccount struct {
 	// by an administrator. If this field's value is nil, the ServiceAccount is
 	// not locked.
 	Locked *time.Time `json:"locked,omitempty"`
-	// Roles is a slice of Roles (both system-level and project-level) assigned to
-	// this ServiceAccount.
+	// Roles is a slice of Roles assigned to this ServiceAccount.
 	Roles []Role `json:"roles,omitempty"`
 }
 

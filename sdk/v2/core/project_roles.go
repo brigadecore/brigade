@@ -9,6 +9,23 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 )
 
+// RoleTypeProject represents a project-level Role.
+const RoleTypeProject authx.RoleType = "PROJECT"
+
+const (
+	// RoleNameProjectAdmin is the name of a project-level Role that enables
+	// principals to manage all aspects of a given Project, including the
+	// Project's secrets.
+	RoleNameProjectAdmin authx.RoleName = "PROJECT_ADMIN"
+	// RoleNameProjectDeveloper is the name of a project-level Role that enables
+	// principals to update Projects. This Role does NOT enable event creation
+	// or secret management.
+	RoleNameProjectDeveloper authx.RoleName = "PROJECT_DEVELOPER"
+	// RoleNameProjectUser is the name of a project-level Role that enables
+	// principals to create and manage Events for a Project.
+	RoleNameProjectUser authx.RoleName = "PROJECT_USER"
+)
+
 // ProjectRolesClient is the specialized client for managing project-level
 // RoleAssignments with the Brigade API.
 type ProjectRolesClient interface {

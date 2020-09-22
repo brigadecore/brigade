@@ -8,6 +8,25 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 )
 
+// RoleTypeSystem represents a system-level Role.
+const RoleTypeSystem authx.RoleType = "SYSTEM"
+
+const (
+	// RoleNameAdmin is the name of a system-level Role that enables principals to
+	// manage Users, ServiceAccounts, and system-level permissions for Users and
+	// ServiceAccounts.
+	RoleNameAdmin authx.RoleName = "ADMIN"
+	// RoleNameEventCreator is the name of a system-level Role that enables
+	// principals to create Events for all Projects.
+	RoleNameEventCreator authx.RoleName = "EVENT_CREATOR"
+	// RoleNameProjectCreator is the name of a system-level Role that enables
+	// principals to create new Projects.
+	RoleNameProjectCreator authx.RoleName = "PROJECT_CREATOR"
+	// RoleNameReader is the name of a system-level Role that enables global read
+	// access.
+	RoleNameReader authx.RoleName = "READER"
+)
+
 // RolesClient is the specialized client for managing system-level
 // RoleAssignments with the Brigade API.
 type RolesClient interface {

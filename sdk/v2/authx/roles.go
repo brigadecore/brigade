@@ -9,44 +9,10 @@ import (
 // RoleName is a type whose value maps to a well-defined Brigade Role.
 type RoleName string
 
-const (
-	// RoleNameAdmin is the name of a system-level Role that enables principals to
-	// manage Users, ServiceAccounts, and system-level permissions for Users and
-	// ServiceAccounts.
-	RoleNameAdmin RoleName = "ADMIN"
-	// RoleNameEventCreator is the name of a system-level Role that enables
-	// principals to create Events for all Projects.
-	RoleNameEventCreator RoleName = "EVENT_CREATOR"
-	// RoleNameProjectAdmin is the name of a project-level Role that enables
-	// principals to manage all aspects of a given Project, including the
-	// Project's secrets.
-	RoleNameProjectAdmin RoleName = "PROJECT_ADMIN"
-	// RoleNameProjectCreator is the name of a system-level Role that enables
-	// principals to create new Projects.
-	RoleNameProjectCreator RoleName = "PROJECT_CREATOR"
-	// RoleNameProjectDeveloper is the name of a project-level Role that enables
-	// principals to update Projects. This Role does NOT enable event creation
-	// or secret management.
-	RoleNameProjectDeveloper RoleName = "PROJECT_DEVELOPER"
-	// RoleNameProjectUser is the name of a project-level Role that enables
-	// principals to create and manage Events for a Project.
-	RoleNameProjectUser RoleName = "PROJECT_USER"
-	// RoleNameReader is the name of a system-level Role that enables global read
-	// access.
-	RoleNameReader RoleName = "READER"
-)
-
-// RoleType is a type whose values can be used to disambiguate one type of Role
-// from another. This allows, for instance, system-level Roles to be
+// RoleType is a type whose values can be used to differentiate one type of Role
+// from another. This allows (for instance) system-level Roles to be
 // differentiated from project-level Roles.
 type RoleType string
-
-const (
-	// RoleTypeProject represents a project-level Role.
-	RoleTypeProject RoleType = "PROJECT"
-	// RoleTypeSystem represents a system-level Role.
-	RoleTypeSystem RoleType = "SYSTEM"
-)
 
 // Role represents a set of permissions, with domain-specific meaning, held by a
 // principal, such as a User or ServiceAccount.
