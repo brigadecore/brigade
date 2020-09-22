@@ -60,7 +60,7 @@ type Event struct {
 	// to begin with) is that event payloads may contain REFERENCES to sensitive
 	// details that are useful only to properly configured Workers.
 	Payload string `json:"payload,omitempty"`
-	// Worker contains details of the worker that will/is/has handle(d) the Event.
+	// Worker contains details of the Worker assigned to handle the Event.
 	Worker *Worker `json:"worker,omitempty"`
 }
 
@@ -114,7 +114,7 @@ type EventsSelector struct {
 	// ProjectID specifies that Events belonging to the indicated Project should
 	// be selected.
 	ProjectID string
-	// WorkerPhases specifies that Events with their Worker's in any of the
+	// WorkerPhases specifies that Events with their Workers in any of the
 	// indicated phases should be selected.
 	WorkerPhases []WorkerPhase
 }
@@ -149,11 +149,14 @@ type DeleteManyEventsResult struct {
 // EventsClient is the specialized client for managing Events with the Brigade
 // API.
 type EventsClient interface {
-	// Create creates a new Event.
+	// Create creates one new Event if the Event provided references a Project by
+	// ID. Otherwise, the Event provided is treated as a template and zero or more
+	// discrete Events may be created-- one for each subscribed Project. An
+	// EventList is returned containing all newly created Events.
 	Create(context.Context, Event) (EventList, error)
 	// List returns an EventList, with its Items (Events) ordered by age, newest
 	// first. Criteria for which Events should be retrieved can be specified using
-	// the EventListOptions parameter.
+	// the EventsSelector parameter.
 	List(context.Context, EventsSelector, meta.ListOptions) (EventList, error)
 	// Get retrieves a single Event specified by its identifier.
 	Get(context.Context, string) (Event, error)

@@ -2,7 +2,7 @@ package meta
 
 import "fmt"
 
-// ErrAuthentication represents an error asserting an principal's identity.
+// ErrAuthentication represents an error asserting a principal's identity.
 type ErrAuthentication struct {
 	// Reason is a natural language explanation for why authentication failed.
 	Reason string `json:"reason,omitempty"`

@@ -53,7 +53,7 @@ const (
 	WorkerPhaseTimedOut WorkerPhase = "TIMED_OUT"
 	// WorkerPhaseUnknown represents the state wherein a worker's state is
 	// unknown. Note that this is possible if and only if the underlying Worker
-	// execution substrate (Kubernetes), for some unanticipated, reason does not
+	// execution substrate (Kubernetes), for some unanticipated reason, does not
 	// know the Worker's (Pod's) state.
 	WorkerPhaseUnknown WorkerPhase = "UNKNOWN"
 )
@@ -118,8 +118,11 @@ type Worker struct {
 type WorkerSpec struct {
 	// Container specifies the details of an OCI container that forms the
 	// cornerstone of the Worker.
-	Container    *ContainerSpec `json:"container,omitempty"`
-	UseWorkspace bool           `json:"useWorkspace"`
+	Container *ContainerSpec `json:"container,omitempty"`
+	// UseWorkspace indicates whether the Worker and/or any Jobs it may spawn
+	// requires access to a shared workspace. When false, no such workspace is
+	// provisioned prior to Worker creation.
+	UseWorkspace bool `json:"useWorkspace"`
 	// WorkspaceSize specifies the size of a volume that will be provisioned as
 	// a shared workspace for the Worker and any Jobs it spawns.
 	// The value can be expressed in bytes (as a plain integer) or as a

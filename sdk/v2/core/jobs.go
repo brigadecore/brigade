@@ -36,7 +36,7 @@ const (
 	JobPhaseTimedOut JobPhase = "TIMED_OUT"
 	// JobPhaseUnknown represents the state wherein a Job's state is unknown. Note
 	// that this is possible if and only if the underlying Job execution substrate
-	// (Kubernetes), for some unanticipated, reason does not know the Job's
+	// (Kubernetes), for some unanticipated reason, does not know the Job's
 	// (Pod's) state.
 	JobPhaseUnknown WorkerPhase = "UNKNOWN"
 )
@@ -175,7 +175,7 @@ func (j JobStatus) MarshalJSON() ([]byte, error) {
 // JobsClient is the specialized client for managing Event Jobs with the
 // Brigade API.
 type JobsClient interface {
-	// Create, given an Event identifier and JobSpec, creates a new pending Job
+	// Create, given an Event identifier and Job, creates a new pending Job
 	// and schedules it for execution.
 	Create(
 		ctx context.Context,

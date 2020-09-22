@@ -56,7 +56,7 @@ func (o OIDCAuthDetails) MarshalJSON() ([]byte, error) {
 
 // SessionsClient is the specialized client for managing Brigade API Sessions.
 type SessionsClient interface {
-	// CreateRootSession creates a Session for the root user (if enabled by th
+	// CreateRootSession creates a Session for the root user (if enabled by the
 	// system administrator) and returns a Token with a short expiry period
 	// (determined by a system administrator). In contrast to most other
 	// operations exposed by the Brigade API, a valid token is not required to

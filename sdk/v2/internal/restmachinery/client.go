@@ -25,7 +25,7 @@ type APIClientOptions struct {
 
 // BaseClient provides "API machinery" used by all the specialized API clients.
 // Its various functions remove the tedium from common API-related operations
-// like managing authentication headers, encoding request bodies, interpretting
+// like managing authentication headers, encoding request bodies, interpreting
 // response codes, decoding responses bodies, and more.
 type BaseClient struct {
 	APIAddress string

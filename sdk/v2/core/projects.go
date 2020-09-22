@@ -55,7 +55,7 @@ func (p Project) MarshalJSON() ([]byte, error) {
 	)
 }
 
-// ProjectList is an ordered and pageable list of ProjectS.
+// ProjectList is an ordered and pageable list of Projects.
 type ProjectList struct {
 	// ListMeta contains list metadata.
 	meta.ListMeta `json:"metadata"`
@@ -91,7 +91,7 @@ type ProjectsSelector struct{}
 // EventSubscriptions with a prototypical WorkerSpec that is used as a template
 // for creating new Workers.
 type ProjectSpec struct {
-	// EventSubscription defines a set of trigger conditions under which a new
+	// EventSubscriptions defines a set of trigger conditions under which a new
 	// Worker should be created.
 	EventSubscriptions []EventSubscription `json:"eventSubscriptions,omitempty"`
 	// WorkerTemplate is a prototypical WorkerSpec.
@@ -103,15 +103,27 @@ type ProjectSpec struct {
 // Worker. An Event matches a subscription if it meets ALL of the specified
 // criteria.
 type EventSubscription struct {
-	// Source specifies the origin of an Event (e.g. a gateway).
+	// Source specifies the origin of an Event (e.g. a gateway). This is a
+	// required field.
 	Source string `json:"source,omitempty"`
-	// Types enumerates specific Events of interest from the specified source.
-	// This is useful in narrowing a subscription when a source also emits many
-	// events that are NOT of interest.
+	// Types enumerates specific Events of interest from the specified Source.
+	// This is useful in narrowing a subscription when a Source also emits many
+	// Event types that are NOT of interest. This is a required field. The value
+	// "*" may be utilized to denote that ALL events from originating from the
+	// specified Source are of interest.
 	Types []string `json:"types,omitempty"`
-	// Labels enumerates specific key/value pairs with which Events of interest
-	// must be labeled. An event must have ALL of these labels to match this
-	// subscription.
+	// Labels defines an EXACT set of key/value pairs with which Events of
+	// interest must be labeled. An Event having additional labels not included in
+	// the subscription does NOT match that subscription. Likewise a subscription
+	// having additional labels not included in the Event does NOT match that
+	// Event. This strict requirement prevents accidental subscriptions. For
+	// instance, consider an Event gateway brokering events from GitHub. If Events
+	// (per that gateway's own documentation) were labeled `repo=<repository
+	// name>`, no would-be subscriber to Events from that gateway will succeed
+	// unless their subscription includes that matching label. This effectively
+	// PREVENTS a scenario where a subscriber who has forgotten to apply
+	// applicable labels accidentally subscribes to ALL events from the GitHub
+	// gateway, regardless of the repository of origin.
 	Labels Labels `json:"labels,omitempty"`
 }
 
