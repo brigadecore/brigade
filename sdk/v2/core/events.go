@@ -87,7 +87,7 @@ type Event struct {
 	// Git contains git-specific Event details. These can be used to override
 	// similar details defined at the Project level. This is useful for scenarios
 	// wherein an Event may need to convey an alternative source, branch, etc.
-	Git *EventGitConfig `json:"git,omitempty"`
+	Git *GitDetails `json:"git,omitempty"`
 	// Payload optionally contains Event details provided by the upstream system
 	// that was the original source of the event. Payloads MUST NOT contain
 	// sensitive information. Since Projects SUBSCRIBE to Events, the potential
@@ -119,9 +119,9 @@ func (e Event) MarshalJSON() ([]byte, error) {
 	)
 }
 
-// EventGitConfig represents git-specific Event details. These may override
-// similar details set at the Project level.
-type EventGitConfig struct {
+// GitDetails represents git-specific Event details. These may override
+// Project-level GitConfig.
+type GitDetails struct {
 	// CloneURL specifies the location from where a source code repository may
 	// be cloned.
 	CloneURL string `json:"cloneURL,omitempty"`

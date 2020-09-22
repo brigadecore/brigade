@@ -127,7 +127,7 @@ type WorkerSpec struct {
 	// Power-of-two equivalents may also be used: Ei, Pi, Ti, Gi, Mi, Ki.
 	WorkspaceSize string `json:"workspaceSize,omitempty"`
 	// Git contains git-specific Worker details.
-	Git *WorkerGitConfig `json:"git,omitempty"`
+	Git *GitConfig `json:"git,omitempty"`
 	// Kubernetes contains Kubernetes-specific Worker details.
 	Kubernetes *WorkerKubernetesConfig `json:"kubernetes,omitempty"`
 	// JobPolicies specifies policies for any Jobs spawned by the Worker.
@@ -145,8 +145,8 @@ type WorkerSpec struct {
 	DefaultConfigFiles map[string]string `json:"defaultConfigFiles,omitempty"`
 }
 
-// WorkerGitConfig represents git-specific Worker details.
-type WorkerGitConfig struct {
+// GitConfig represents git-specific Worker details.
+type GitConfig struct {
 	// CloneURL specifies the location from where a source code repository may
 	// be cloned.
 	CloneURL string `json:"cloneURL,omitempty"`
