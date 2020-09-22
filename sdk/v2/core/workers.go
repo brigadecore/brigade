@@ -129,7 +129,7 @@ type WorkerSpec struct {
 	// Git contains git-specific Worker details.
 	Git *GitConfig `json:"git,omitempty"`
 	// Kubernetes contains Kubernetes-specific Worker details.
-	Kubernetes *WorkerKubernetesConfig `json:"kubernetes,omitempty"`
+	Kubernetes *KubernetesConfig `json:"kubernetes,omitempty"`
 	// JobPolicies specifies policies for any Jobs spawned by the Worker.
 	JobPolicies *JobPolicies `json:"jobPolicies,omitempty"`
 	// LogLevel specifies the desired granularity of Worker log output.
@@ -159,14 +159,13 @@ type GitConfig struct {
 	InitSubmodules bool `json:"initSubmodules"`
 }
 
-// WorkerKubernetesConfig represents Kubernetes-specific Worker configuration.
-type WorkerKubernetesConfig struct {
+// KubernetesConfig represents Kubernetes-specific Worker or Job configuration.
+type KubernetesConfig struct {
 	// ImagePullSecrets enumerates any image pull secrets that Kubernetes may use
-	// when pulling the OCI image on which the Worker's container is based. The
-	// default worker image is publicly available on Docker Hub and as such this
-	// field only needs to be utilized in the case of private, custom worker
-	// images. The image pull secrets in question must be created out-of-band by a
-	// sufficiently authorized user of the Kubernetes cluster.
+	// when pulling the OCI image on which a Worker's or Job's container is based.
+	// This field only needs to be utilized in the case of private, custom Worker
+	// or Job images. The image pull secrets in question must be created
+	// out-of-band by a sufficiently authorized user of the Kubernetes cluster.
 	ImagePullSecrets []string `json:"imagePullSecrets,omitempty"`
 }
 
@@ -179,19 +178,6 @@ type JobPolicies struct {
 	// Jobs that mount the underlying host's Docker socket into its own file
 	// system.
 	AllowDockerSocketMount bool `json:"allowDockerSocketMount"`
-	// Kubernetes specifies Kubernetes-specific policies for any Jobs spawned by
-	// the Worker.
-	Kubernetes *KubernetesJobPolicies `json:"kubernetes,omitempty"`
-}
-
-// KubernetesJobPolicies represents Kubernetes-specific policies for any Jobs
-// spawned by a Worker.
-type KubernetesJobPolicies struct {
-	// ImagePullSecrets enumerates any image pull secrets that Kubernetes may use
-	// when pulling the OCI image on which the Jobs' containers are based. The
-	// image pull secrets in question must be created out-of-band by a
-	// sufficiently authorized user of the Kubernetes cluster.
-	ImagePullSecrets []string `json:"imagePullSecrets,omitempty"`
 }
 
 // WorkerStatus represents the status of a Worker.

@@ -34,7 +34,7 @@ type Project struct {
 	// modify a Project's environment to facilitate certain advanced use cases.
 	// Clients MUST leave the value of this field nil when using the API to create
 	// or update a Project.
-	Kubernetes *KubernetesConfig `json:"kubernetes,omitempty"`
+	Kubernetes *KubernetesDetails `json:"kubernetes,omitempty"`
 }
 
 // MarshalJSON amends Project instances with type metadata so that clients do
@@ -115,11 +115,8 @@ type EventSubscription struct {
 	Labels Labels `json:"labels,omitempty"`
 }
 
-// KubernetesConfig represents Kubernetes-specific configuration. This is used
-// primarily at the Project level, but is also denormalized onto Events so that
-// Event handling doesn't required a Project lookup to obtain
-// Kubernetes-specific configuration.
-type KubernetesConfig struct {
+// KubernetesDetails represents Kubernetes-specific configuration.
+type KubernetesDetails struct {
 	// Namespace is the dedicated Kubernetes namespace for the Project. This is
 	// NOT specified by clients when creating a new Project. The namespace is
 	// created by / assigned by the system. This detail is a necessity to prevent
