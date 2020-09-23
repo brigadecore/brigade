@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
 // Secret represents Project-level sensitive information.
@@ -83,7 +84,7 @@ type SecretsClient interface {
 }
 
 type secretsClient struct {
-	*restmachinery.BaseClient
+	*rm.BaseClient
 }
 
 // NewSecretsClient returns a specialized client for managing
@@ -94,7 +95,7 @@ func NewSecretsClient(
 	opts *restmachinery.APIClientOptions,
 ) SecretsClient {
 	return &secretsClient{
-		BaseClient: restmachinery.NewBaseClient(apiAddress, apiToken, opts),
+		BaseClient: rm.NewBaseClient(apiAddress, apiToken, opts),
 	}
 }
 
@@ -106,7 +107,7 @@ func (s *secretsClient) List(
 	secrets := SecretList{}
 	return secrets, s.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/projects/%s/secrets", projectID),
 			AuthHeaders: s.BearerTokenAuthHeaders(),
@@ -124,7 +125,7 @@ func (s *secretsClient) Set(
 ) error {
 	return s.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method: http.MethodPut,
 			Path: fmt.Sprintf(
 				"v2/projects/%s/secrets/%s",
@@ -145,7 +146,7 @@ func (s *secretsClient) Unset(
 ) error {
 	return s.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method: http.MethodDelete,
 			Path: fmt.Sprintf(
 				"v2/projects/%s/secrets/%s",

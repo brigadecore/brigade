@@ -8,7 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
 // LogEntry represents one line of output from an OCI container.
@@ -57,7 +58,7 @@ type LogsClient interface {
 }
 
 type logsClient struct {
-	*restmachinery.BaseClient
+	*rm.BaseClient
 }
 
 // NewLogsClient returns a specialized client for managing Event Logs.
@@ -67,7 +68,7 @@ func NewLogsClient(
 	opts *restmachinery.APIClientOptions,
 ) LogsClient {
 	return &logsClient{
-		BaseClient: restmachinery.NewBaseClient(apiAddress, apiToken, opts),
+		BaseClient: rm.NewBaseClient(apiAddress, apiToken, opts),
 	}
 }
 
@@ -92,7 +93,7 @@ func (l *logsClient) Stream(
 
 	resp, err := l.SubmitRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/events/%s/logs", eventID),
 			AuthHeaders: l.BearerTokenAuthHeaders(),

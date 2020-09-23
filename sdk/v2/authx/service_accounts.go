@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
 // ServiceAccount represents a non-human Brigade user, such as an Event
@@ -100,7 +101,7 @@ type ServiceAccountsClient interface {
 }
 
 type serviceAccountsClient struct {
-	*restmachinery.BaseClient
+	*rm.BaseClient
 }
 
 // NewServiceAccountsClient returns a specialized client for managing
@@ -111,7 +112,7 @@ func NewServiceAccountsClient(
 	opts *restmachinery.APIClientOptions,
 ) ServiceAccountsClient {
 	return &serviceAccountsClient{
-		BaseClient: restmachinery.NewBaseClient(apiAddress, apiToken, opts),
+		BaseClient: rm.NewBaseClient(apiAddress, apiToken, opts),
 	}
 }
 
@@ -122,7 +123,7 @@ func (s *serviceAccountsClient) Create(
 	token := Token{}
 	return token, s.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/service-accounts",
 			AuthHeaders: s.BearerTokenAuthHeaders(),
@@ -141,7 +142,7 @@ func (s *serviceAccountsClient) List(
 	serviceAccounts := ServiceAccountList{}
 	return serviceAccounts, s.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        "v2/service-accounts",
 			AuthHeaders: s.BearerTokenAuthHeaders(),
@@ -159,7 +160,7 @@ func (s *serviceAccountsClient) Get(
 	serviceAccount := ServiceAccount{}
 	return serviceAccount, s.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/service-accounts/%s", id),
 			AuthHeaders: s.BearerTokenAuthHeaders(),
@@ -172,7 +173,7 @@ func (s *serviceAccountsClient) Get(
 func (s *serviceAccountsClient) Lock(ctx context.Context, id string) error {
 	return s.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/service-accounts/%s/lock", id),
 			AuthHeaders: s.BearerTokenAuthHeaders(),
@@ -188,7 +189,7 @@ func (s *serviceAccountsClient) Unlock(
 	token := Token{}
 	return token, s.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        fmt.Sprintf("v2/service-accounts/%s/lock", id),
 			AuthHeaders: s.BearerTokenAuthHeaders(),

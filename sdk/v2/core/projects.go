@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
 // Project is Brigade's fundamental configuration, management, and isolation
@@ -179,7 +180,7 @@ type ProjectsClient interface {
 }
 
 type projectsClient struct {
-	*restmachinery.BaseClient
+	*rm.BaseClient
 	// rolesClient is a specialized client for Project Role management.
 	rolesClient ProjectRolesClient
 	// secretsClient is a specialized client for Secret management.
@@ -193,7 +194,7 @@ func NewProjectsClient(
 	opts *restmachinery.APIClientOptions,
 ) ProjectsClient {
 	return &projectsClient{
-		BaseClient:    restmachinery.NewBaseClient(apiAddress, apiToken, opts),
+		BaseClient:    rm.NewBaseClient(apiAddress, apiToken, opts),
 		rolesClient:   NewProjectRolesClient(apiAddress, apiToken, opts),
 		secretsClient: NewSecretsClient(apiAddress, apiToken, opts),
 	}
@@ -206,7 +207,7 @@ func (p *projectsClient) Create(
 	createdProject := Project{}
 	return createdProject, p.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/projects",
 			AuthHeaders: p.BearerTokenAuthHeaders(),
@@ -224,7 +225,7 @@ func (p *projectsClient) CreateFromBytes(
 	createdProject := Project{}
 	return createdProject, p.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/projects",
 			AuthHeaders: p.BearerTokenAuthHeaders(),
@@ -243,7 +244,7 @@ func (p *projectsClient) List(
 	projects := ProjectList{}
 	return projects, p.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        "v2/projects",
 			AuthHeaders: p.BearerTokenAuthHeaders(),
@@ -261,7 +262,7 @@ func (p *projectsClient) Get(
 	project := Project{}
 	return project, p.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/projects/%s", id),
 			AuthHeaders: p.BearerTokenAuthHeaders(),
@@ -278,7 +279,7 @@ func (p *projectsClient) Update(
 	updatedProject := Project{}
 	return updatedProject, p.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/projects/%s", project.ID),
 			AuthHeaders: p.BearerTokenAuthHeaders(),
@@ -297,7 +298,7 @@ func (p *projectsClient) UpdateFromBytes(
 	updatedProject := Project{}
 	return updatedProject, p.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/projects/%s", projectID),
 			AuthHeaders: p.BearerTokenAuthHeaders(),
@@ -311,7 +312,7 @@ func (p *projectsClient) UpdateFromBytes(
 func (p *projectsClient) Delete(ctx context.Context, id string) error {
 	return p.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        fmt.Sprintf("v2/projects/%s", id),
 			AuthHeaders: p.BearerTokenAuthHeaders(),

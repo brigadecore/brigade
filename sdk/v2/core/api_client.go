@@ -1,6 +1,6 @@
 package core
 
-import "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+import "github.com/brigadecore/brigade/sdk/v2/restmachinery"
 
 // APIClient is the root of a tree of more specialized API clients within the
 // core package.

@@ -21,14 +21,19 @@ $ go get github.com/brigadecore/brigade/sdk/v2
 In your gateway code:
 
 ```golang
-import "github.com/brigadecore/brigade/sdk/v2"
+import (
+	"github.com/brigadecore/brigade/sdk/v2"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+)
 
 // ...
 
 client, err := sdk.NewAPIClient(
 	apiAddress, // The address of the Brigade 2 Prototype API server, beginning with http:// or https//
 	apiToken, // An API token obtained using the Brigade 2 Prototype CLI
-	insecure, // boolean indicating whether TLS errors (if applicable) are tolerated
+	&restmachinery.APIClientOptions {
+		AllowInsecureConnections: false, // Do not ignore SSL errors
+	},
 )
 if err != nil {
 	// ...
@@ -53,14 +58,19 @@ would make sense for gateways (whose job is simply to broker events from
 upstream systems):
 
 ```golang
-import "github.com/brigadecore/brigade/sdk/v2/core"
+import (
+	"github.com/brigadecore/brigade/sdk/v2"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+)
 
 // ...
 
 client, err := core.NewEventsClient(
 	apiAddress, // The address of the Brigade 2 Prototype API server, beginning with http:// or https://
 	apiToken, // An API token obtained using the Brigade 2 Prototype CLI
-	insecure, // boolean indicating whether TLS errors (if applicable) are tolerated
+	&restmachinery.APIClientOptions {
+		AllowInsecureConnections: false, // Do not ignore SSL errors
+	},
 )
 if err != nil {
 	// ...
