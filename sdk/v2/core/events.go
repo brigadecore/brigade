@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
 // Event represents an occurrence in some upstream system. Once accepted into
@@ -179,7 +180,7 @@ type EventsClient interface {
 }
 
 type eventsClient struct {
-	*restmachinery.BaseClient
+	*rm.BaseClient
 	workersClient WorkersClient
 	logsClient    LogsClient
 }
@@ -191,7 +192,7 @@ func NewEventsClient(
 	opts *restmachinery.APIClientOptions,
 ) EventsClient {
 	return &eventsClient{
-		BaseClient:    restmachinery.NewBaseClient(apiAddress, apiToken, opts),
+		BaseClient:    rm.NewBaseClient(apiAddress, apiToken, opts),
 		workersClient: NewWorkersClient(apiAddress, apiToken, opts),
 		logsClient:    NewLogsClient(apiAddress, apiToken, opts),
 	}
@@ -204,7 +205,7 @@ func (e *eventsClient) Create(
 	events := EventList{}
 	return events, e.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/events",
 			AuthHeaders: e.BearerTokenAuthHeaders(),
@@ -234,7 +235,7 @@ func (e *eventsClient) List(
 	events := EventList{}
 	return events, e.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        "v2/events",
 			AuthHeaders: e.BearerTokenAuthHeaders(),
@@ -252,7 +253,7 @@ func (e *eventsClient) Get(
 	event := Event{}
 	return event, e.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/events/%s", id),
 			AuthHeaders: e.BearerTokenAuthHeaders(),
@@ -265,7 +266,7 @@ func (e *eventsClient) Get(
 func (e *eventsClient) Cancel(ctx context.Context, id string) error {
 	return e.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/events/%s/cancellation", id),
 			AuthHeaders: e.BearerTokenAuthHeaders(),
@@ -292,7 +293,7 @@ func (e *eventsClient) CancelMany(
 	result := CancelManyEventsResult{}
 	return result, e.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/events/cancellations",
 			AuthHeaders: e.BearerTokenAuthHeaders(),
@@ -306,7 +307,7 @@ func (e *eventsClient) CancelMany(
 func (e *eventsClient) Delete(ctx context.Context, id string) error {
 	return e.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        fmt.Sprintf("v2/events/%s", id),
 			AuthHeaders: e.BearerTokenAuthHeaders(),
@@ -333,7 +334,7 @@ func (e *eventsClient) DeleteMany(
 	result := DeleteManyEventsResult{}
 	return result, e.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        "v2/events",
 			AuthHeaders: e.BearerTokenAuthHeaders(),

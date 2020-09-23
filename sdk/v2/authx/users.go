@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
 // User represents a (human) Brigade user.
@@ -92,7 +93,7 @@ type UsersClient interface {
 }
 
 type usersClient struct {
-	*restmachinery.BaseClient
+	*rm.BaseClient
 }
 
 // NewUsersClient returns a specialized client for managing Users.
@@ -102,7 +103,7 @@ func NewUsersClient(
 	opts *restmachinery.APIClientOptions,
 ) UsersClient {
 	return &usersClient{
-		BaseClient: restmachinery.NewBaseClient(apiAddress, apiToken, opts),
+		BaseClient: rm.NewBaseClient(apiAddress, apiToken, opts),
 	}
 }
 
@@ -114,7 +115,7 @@ func (u *usersClient) List(
 	users := UserList{}
 	return users, u.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        "v2/users",
 			AuthHeaders: u.BearerTokenAuthHeaders(),
@@ -129,7 +130,7 @@ func (u *usersClient) Get(ctx context.Context, id string) (User, error) {
 	user := User{}
 	return user, u.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/users/%s", id),
 			AuthHeaders: u.BearerTokenAuthHeaders(),
@@ -142,7 +143,7 @@ func (u *usersClient) Get(ctx context.Context, id string) (User, error) {
 func (u *usersClient) Lock(ctx context.Context, id string) error {
 	return u.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/users/%s/lock", id),
 			AuthHeaders: u.BearerTokenAuthHeaders(),
@@ -154,7 +155,7 @@ func (u *usersClient) Lock(ctx context.Context, id string) error {
 func (u *usersClient) Unlock(ctx context.Context, id string) error {
 	return u.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        fmt.Sprintf("v2/users/%s/lock", id),
 			AuthHeaders: u.BearerTokenAuthHeaders(),

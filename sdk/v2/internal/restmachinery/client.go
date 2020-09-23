@@ -13,15 +13,9 @@ import (
 	"strconv"
 
 	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 	"github.com/pkg/errors"
 )
-
-// APIClientOptions encapsulates optional API client configuration.
-type APIClientOptions struct {
-	// AllowInsecureConnections indicates whether SSL-related errors should be
-	// ignored when connecting to the API server.
-	AllowInsecureConnections bool
-}
 
 // BaseClient provides "API machinery" used by all the specialized API clients.
 // Its various functions remove the tedium from common API-related operations
@@ -37,10 +31,10 @@ type BaseClient struct {
 func NewBaseClient(
 	apiAddress string,
 	apiToken string,
-	opts *APIClientOptions,
+	opts *restmachinery.APIClientOptions,
 ) *BaseClient {
 	if opts == nil {
-		opts = &APIClientOptions{}
+		opts = &restmachinery.APIClientOptions{}
 	}
 	return &BaseClient{
 		APIAddress: apiAddress,

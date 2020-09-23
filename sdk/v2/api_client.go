@@ -3,7 +3,7 @@ package sdk
 import (
 	"github.com/brigadecore/brigade/sdk/v2/authx"
 	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/system"
 )
 

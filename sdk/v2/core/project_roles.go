@@ -6,7 +6,8 @@ import (
 	"net/http"
 
 	"github.com/brigadecore/brigade/sdk/v2/authx"
-	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
 // RoleTypeProject represents a project-level Role.
@@ -51,7 +52,7 @@ type ProjectRolesClient interface {
 }
 
 type projectRolesClient struct {
-	*restmachinery.BaseClient
+	*rm.BaseClient
 }
 
 // NewProjectRolesClient returns a specialized client for managing Project
@@ -62,7 +63,7 @@ func NewProjectRolesClient(
 	opts *restmachinery.APIClientOptions,
 ) ProjectRolesClient {
 	return &projectRolesClient{
-		BaseClient: restmachinery.NewBaseClient(apiAddress, apiToken, opts),
+		BaseClient: rm.NewBaseClient(apiAddress, apiToken, opts),
 	}
 }
 
@@ -73,7 +74,7 @@ func (p *projectRolesClient) Grant(
 ) error {
 	return p.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method: http.MethodPost,
 			Path: fmt.Sprintf(
 				"v2/projects/%s/role-assignments",
@@ -98,7 +99,7 @@ func (p *projectRolesClient) Revoke(
 	}
 	return p.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method: http.MethodDelete,
 			Path: fmt.Sprintf(
 				"v2/projects/%s/role-assignments",

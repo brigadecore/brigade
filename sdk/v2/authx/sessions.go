@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
 // OIDCAuthDetails encapsulates all information required for a client
@@ -72,7 +73,7 @@ type SessionsClient interface {
 }
 
 type sessionsClient struct {
-	*restmachinery.BaseClient
+	*rm.BaseClient
 }
 
 // NewSessionsClient returns a specialized client for managing Brigade API
@@ -83,7 +84,7 @@ func NewSessionsClient(
 	opts *restmachinery.APIClientOptions,
 ) SessionsClient {
 	return &sessionsClient{
-		BaseClient: restmachinery.NewBaseClient(apiAddress, apiToken, opts),
+		BaseClient: rm.NewBaseClient(apiAddress, apiToken, opts),
 	}
 }
 
@@ -94,7 +95,7 @@ func (s *sessionsClient) CreateRootSession(
 	token := Token{}
 	return token, s.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/sessions",
 			AuthHeaders: s.BasicAuthHeaders("root", password),
@@ -113,7 +114,7 @@ func (s *sessionsClient) CreateUserSession(
 	oidcAuthDetails := OIDCAuthDetails{}
 	return oidcAuthDetails, s.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/sessions",
 			SuccessCode: http.StatusCreated,
@@ -125,7 +126,7 @@ func (s *sessionsClient) CreateUserSession(
 func (s *sessionsClient) Delete(ctx context.Context) error {
 	return s.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        "v2/session",
 			AuthHeaders: s.BearerTokenAuthHeaders(),
