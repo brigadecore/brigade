@@ -1,6 +1,0 @@
-{
-    "type":   "com.example.file.created",
-    "source": "/providers/Example.COM/storage/account#fileServices/default/{new-file}",
-    "id":     "ea35b24ede421",
-    "specversion": "0.2"
-}

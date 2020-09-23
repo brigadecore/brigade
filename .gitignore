@@ -1,18 +1,10 @@
-/bin/
-/**/rootfs
-/brigade-worker/dist/
-/brigade-worker/doc/
-/tests/testdata/*-generated.*
-/.dockerignore
+.gocache/
+bin/
+coverage.txt
 .DS_Store
 
 # IDEs
 .vscode/
+.devcontainer/
 .idea/
 .swp
-
-# Docs
-docs/public/*
-
-# Developer
-pvt/
