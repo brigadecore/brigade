@@ -5,7 +5,8 @@ import (
 	"net/http"
 
 	"github.com/brigadecore/brigade/sdk/v2/authx"
-	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
 // RoleTypeSystem represents a system-level Role.
@@ -45,7 +46,7 @@ type RolesClient interface {
 }
 
 type rolesClient struct {
-	*restmachinery.BaseClient
+	*rm.BaseClient
 }
 
 // NewRolesClient returns a specialized client for managing System
@@ -56,7 +57,7 @@ func NewRolesClient(
 	opts *restmachinery.APIClientOptions,
 ) RolesClient {
 	return &rolesClient{
-		BaseClient: restmachinery.NewBaseClient(apiAddress, apiToken, opts),
+		BaseClient: rm.NewBaseClient(apiAddress, apiToken, opts),
 	}
 }
 
@@ -66,7 +67,7 @@ func (r *rolesClient) Grant(
 ) error {
 	return r.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/system/role-assignments",
 			AuthHeaders: r.BearerTokenAuthHeaders(),
@@ -87,7 +88,7 @@ func (r *rolesClient) Revoke(
 	}
 	return r.ExecuteRequest(
 		ctx,
-		restmachinery.OutboundRequest{
+		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        "v2/system/role-assignments",
 			AuthHeaders: r.BearerTokenAuthHeaders(),

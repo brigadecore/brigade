@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +37,7 @@ func requireAPIVersionAndType(
 	require.Equal(t, expectedType, objMap["kind"])
 }
 
-func requireBaseClient(t *testing.T, baseClient *restmachinery.BaseClient) {
+func requireBaseClient(t *testing.T, baseClient *rm.BaseClient) {
 	require.NotNil(t, baseClient)
 	require.Equal(t, testAPIAddress, baseClient.APIAddress)
 	require.Equal(t, testAPIToken, baseClient.APIToken)
