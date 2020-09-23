@@ -109,7 +109,7 @@ type EventSubscription struct {
 	// Types enumerates specific Events of interest from the specified Source.
 	// This is useful in narrowing a subscription when a Source also emits many
 	// Event types that are NOT of interest. This is a required field. The value
-	// "*" may be utilized to denote that ALL events from originating from the
+	// "*" may be utilized to denote that ALL events originating from the
 	// specified Source are of interest.
 	Types []string `json:"types,omitempty"`
 	// Labels defines an EXACT set of key/value pairs with which Events of
