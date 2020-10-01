@@ -1,9 +1,0 @@
-[environments]
-
-    [environments.development]
-    name = "brigade"
-    namespace = "default"
-    set = ["ingress.enabled=true"]
-    wait = false
-    watch = false
-    watch_delay = 2
