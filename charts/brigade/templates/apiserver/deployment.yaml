@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "brigade.apiserver.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.apiserver.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.apiserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "brigade.selectorLabels" . | nindent 6 }}
+      {{- include "brigade.apiserver.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade.selectorLabels" . | nindent 8 }}
+        {{- include "brigade.apiserver.labels" . | nindent 8 }}
+      annotations:
+        checksum/apiserver-secret: {{ include (print $.Template.BasePath "/apiserver/secret.yaml") . | sha256sum }}
+        {{- if .Values.apiserver.tls.enabled }}
+        checksum/cert-secret: {{ include (print $.Template.BasePath "/apiserver/cert-secret.yaml") . | sha256sum }}
+        {{- end }}
+    spec:
+      containers:
+      - name: apiserver
+        image: {{ .Values.apiserver.image.repository }}:{{ default .Chart.AppVersion .Values.apiserver.image.tag }}
+        imagePullPolicy: {{ .Values.apiserver.image.pullPolicy }}
+        args:
+        - --logtostderr=true
+        env:
+        - name: API_ADDRESS
+          {{- if .Values.apiserver.tls.enabled }}
+          value: https://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          {{- else }}
+          value: http://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          {{- end }}
+        - name: ROOT_USER_ENABLED
+          value: {{ quote .Values.apiserver.rootUser.enabled }}
+        {{- if .Values.apiserver.rootUser.enabled }}
+        - name: ROOT_USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: root-user-password
+        {{- end }}
+        - name: OIDC_ENABLED
+          value: {{ quote .Values.apiserver.oidc.enabled }}
+        {{- if .Values.apiserver.oidc.enabled }}
+        - name: OIDC_PROVIDER_URL
+          value: {{ .Values.apiserver.oidc.providerURL }}
+        - name: OIDC_CLIENT_ID
+          value: {{ .Values.apiserver.oidc.clientID }}
+        - name: OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: oidc-client-secret
+        - name: OIDC_REDIRECT_URL_BASE
+          {{- if or (and (not .Values.apiserver.ingress.enabled) .Values.apiserver.tls.enabled) (and .Values.apiserver.ingress.enabled .Values.apiserver.ingress.tls.enabled) }}
+          value: https://{{ .Values.apiserver.host }}
+          {{- else }}
+          value: http://{{ .Values.apiserver.host }}
+          {{- end }}
+        {{- end }}
+        - name: TLS_ENABLED
+          value: {{ quote .Values.apiserver.tls.enabled }}
+        {{- if .Values.apiserver.tls.enabled }}
+        - name: TLS_CERT_PATH
+          value: /app/certs/tls.crt
+        - name: TLS_KEY_PATH
+          value: /app/certs/tls.key
+        {{- end }}
+        {{- if .Values.mongodb.enabled }}
+        - name: DATABASE_HOST
+          value: {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }}.{{ .Release.Namespace }}.svc.cluster.local
+        - name: DATABASE_PORT
+          value: {{ quote .Values.mongodb.service.port }}
+        - name: DATABASE_NAME
+          value: {{ .Values.mongodb.mongodbDatabase }}
+        - name: DATABASE_REPLICA_SET
+          value: {{ .Values.mongodb.replicaSet.name }}
+        - name: DATABASE_USERNAME
+          value: {{ .Values.mongodb.mongodbUsername }}
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }}
+              key: mongodb-password
+        {{- else }}
+        - name: DATABASE_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: mongodb-connection-string
+        - name: DATABASE_NAME
+          value: {{ .Values.externalMongodb.database }}
+        {{- end }}
+        {{- if .Values.apiserver.tls.enabled }}
+        volumeMounts:
+        - name: cert
+          mountPath: /app/certs
+          readOnly: true
+        {{- end }}
+      {{- if .Values.apiserver.tls.enabled }}
+      volumes:
+      - name: cert
+        secret:
+          secretName: {{ include "brigade.apiserver.fullname" . }}-cert
+      {{- end }}
+      {{- with .Values.apiserver.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.apiserver.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
