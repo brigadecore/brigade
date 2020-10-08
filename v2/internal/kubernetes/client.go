@@ -8,8 +8,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// Client returns a new Kubernetes *kubernetes.Clientset.
-func Client() (*kubernetes.Clientset, error) {
+// Client returns an implementation of kubernetes.Interface.
+func Client() (kubernetes.Interface, error) {
 	masterURL := os.GetEnvVar("KUBE_MASTER", "")
 	kubeConfigPath := os.GetEnvVar("KUBE_CONFIG", "")
 

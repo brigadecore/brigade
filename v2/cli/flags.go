@@ -14,12 +14,18 @@ const (
 	flagYes      = "yes"
 )
 
+const (
+	flagOutputJSON  = "json"
+	flagOutputTable = "table"
+	flagOutputYAML  = "yaml"
+)
+
 var (
 	cliFlagOutput = &cli.StringFlag{
 		Name:    flagOutput,
 		Aliases: []string{"o"},
 		Usage: "Return output in the specified format; supported formats: table, " +
 			"yaml, json",
-		Value: "table",
+		Value: flagOutputTable,
 	}
 )

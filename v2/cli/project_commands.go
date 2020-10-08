@@ -166,7 +166,7 @@ func projectList(c *cli.Context) error {
 		}
 
 		switch strings.ToLower(output) {
-		case "table":
+		case flagOutputTable:
 			table := uitable.New()
 			table.AddRow("ID", "DESCRIPTION", "AGE")
 			for _, project := range projects.Items {
@@ -178,7 +178,7 @@ func projectList(c *cli.Context) error {
 			}
 			fmt.Println(table)
 
-		case "yaml":
+		case flagOutputYAML:
 			yamlBytes, err := yaml.Marshal(projects)
 			if err != nil {
 				return errors.Wrap(
@@ -188,7 +188,7 @@ func projectList(c *cli.Context) error {
 			}
 			fmt.Println(string(yamlBytes))
 
-		case "json":
+		case flagOutputJSON:
 			prettyJSON, err := json.MarshalIndent(projects, "", "  ")
 			if err != nil {
 				return errors.Wrap(
@@ -240,7 +240,7 @@ func projectGet(c *cli.Context) error {
 	}
 
 	switch strings.ToLower(output) {
-	case "table":
+	case flagOutputTable:
 		table := uitable.New()
 		table.AddRow("ID", "DESCRIPTION", "AGE")
 		var age string
@@ -254,7 +254,7 @@ func projectGet(c *cli.Context) error {
 		)
 		fmt.Println(table)
 
-	case "yaml":
+	case flagOutputYAML:
 		yamlBytes, err := yaml.Marshal(project)
 		if err != nil {
 			return errors.Wrap(
@@ -264,7 +264,7 @@ func projectGet(c *cli.Context) error {
 		}
 		fmt.Println(string(yamlBytes))
 
-	case "json":
+	case flagOutputJSON:
 		prettyJSON, err := json.MarshalIndent(project, "", "  ")
 		if err != nil {
 			return errors.Wrap(

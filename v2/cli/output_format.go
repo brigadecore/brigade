@@ -11,9 +11,9 @@ import (
 // format is requested.
 func validateOutputFormat(outputFormat string) error {
 	switch strings.ToLower(outputFormat) {
-	case "table":
-	case "yaml":
-	case "json":
+	case flagOutputTable:
+	case flagOutputYAML:
+	case flagOutputJSON:
 	default:
 		return errors.Errorf("unknown output format %q", outputFormat)
 	}
