@@ -195,6 +195,8 @@ func (b *BaseClient) SubmitRequest(
 			apiErr = &meta.ErrNotFound{}
 		case http.StatusConflict:
 			apiErr = &meta.ErrConflict{}
+		case http.StatusNotImplemented:
+			apiErr = &meta.ErrNotSupported{}
 		case http.StatusInternalServerError:
 			apiErr = &meta.ErrInternalServer{}
 		default:
