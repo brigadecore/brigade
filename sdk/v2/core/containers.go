@@ -18,7 +18,7 @@ const (
 
 // ContainerSpec represents the technical details of an OCI container.
 type ContainerSpec struct {
-	// Image specified the OCI image on which the container should be based.
+	// Image specifies the OCI image on which the container should be based.
 	Image string `json:"image,omitempty"`
 	// ImagePullPolicy specifies whether a container host already having the
 	// specified OCI image should attempt to re-pull that image prior to launching
