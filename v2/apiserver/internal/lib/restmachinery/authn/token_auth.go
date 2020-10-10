@@ -104,7 +104,7 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 				w,
 				http.StatusUnauthorized,
 				&meta.ErrAuthentication{
-					Reason: `Authorization" header is malformed.`,
+					Reason: `"Authorization" header is malformed.`,
 				},
 			)
 			return
