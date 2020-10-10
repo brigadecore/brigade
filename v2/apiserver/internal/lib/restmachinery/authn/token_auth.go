@@ -89,7 +89,7 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 				w,
 				http.StatusUnauthorized,
 				&meta.ErrAuthentication{
-					Reason: `Authorization" header is missing.`,
+					Reason: `"Authorization" header is missing.`,
 				},
 			)
 			return
