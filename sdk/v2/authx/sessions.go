@@ -14,17 +14,6 @@ import (
 // authenticating by means of OpenID Connect to complete the authentication
 // process using a third-party OIDC identity provider.
 type OIDCAuthDetails struct {
-	// OAuth2State is an opaque token issued by Brigade that must be sent to the
-	// OIDC identity provider as a query parameter when the OIDC authentication
-	// workflow continues (in the user's web browser). The OIDC identity provider
-	// includes this token when it issues a callback to the Brigade API server
-	// after successful authentication. This permits the Brigade API server to
-	// correlate the successful authentication by the OIDC identity provider with
-	// an existing, but as-yet-unactivated token. This proof of authentication
-	// allows Brigade to activate the token and associate it with the User that
-	// the OIDC identity provider indicates has successfully completed
-	// authentication.
-	OAuth2State string `json:"oauth2State,omitempty"`
 	// AuthURL is a URL that can be requested in a user's web browser to complete
 	// authentication via a third-party OIDC identity provider.
 	AuthURL string `json:"authURL,omitempty"`

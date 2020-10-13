@@ -1,15 +1,16 @@
 // ============================================================================
-// NOTE: This is a Birgade 1.x script for now.
+// NOTE: This is a Brigade 1.x script for now.
 // ============================================================================
 const { events, Job } = require("brigadier");
 const { Check } = require("@brigadecore/brigade-utils");
 
-const img = "krancour/go-tools:v0.4.0";
+const goImg = "krancour/go-tools:v0.4.0";
+const dockerImg = "docker:stable-dind";
 const localPath = "/workspaces/brigade";
 
 // Run Go unit tests
 function testUnitGo() {
-  var job = new Job("test-unit-go", img);
+  var job = new Job("test-unit-go", goImg);
   job.mountPath = localPath;
   job.env = {
     "SKIP_DOCKER": "true"
@@ -23,7 +24,7 @@ function testUnitGo() {
 
 // Run Go lint checks
 function lintGo() {
-  var job = new Job("lint-go", img);
+  var job = new Job("lint-go", goImg);
   job.mountPath = localPath;
   job.env = {
     "SKIP_DOCKER": "true"
@@ -36,6 +37,35 @@ function lintGo() {
   return job;
 }
 
+// Build the API server
+function buildAPIServer() {
+  var job = new Job("build-apiserver", dockerImg);
+  job.mountPath = localPath;
+  job.privileged = true;
+  job.tasks = [
+    "apk add --update --no-cache make git",
+    "dockerd-entrypoint.sh &",
+    "sleep 20",
+    `cd ${localPath}`,
+    "make build-apiserver"
+  ];
+  return job;
+}
+
+// Build the CLI
+function buildCLI() {
+  var job = new Job("build-cli", goImg);
+  job.mountPath = localPath;
+  job.env = {
+    "SKIP_DOCKER": "true"
+  };
+  job.tasks = [
+    `cd ${localPath}`,
+    "make xbuild-cli"
+  ];
+  return job;
+}
+
 function runSuite(e, p) {
   // Important: To prevent Promise.all() from failing fast, we catch and
   // return all errors. This ensures Promise.all() always resolves. We then
@@ -44,8 +74,10 @@ function runSuite(e, p) {
   //
   // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all#Promise.all_fail-fast_behaviour
   return Promise.all([
-    runTests(e, p, testUnitGo).catch((err) => { return err }),
-    runTests(e, p, lintGo).catch((err) => { return err }),
+    run(e, p, testUnitGo).catch((err) => { return err }),
+    run(e, p, lintGo).catch((err) => { return err }),
+    run(e, p, buildAPIServer).catch((err) => { return err }),
+    run(e, p, buildCLI).catch((err) => { return err })
   ]).then((values) => {
     values.forEach((value) => {
       if (value instanceof Error) throw value;
@@ -58,17 +90,21 @@ function runCheck(e, p) {
   name = payload.body.check_run.name;
   // Determine which check to run
   switch (name) {
-    case "test-unit":
-      return runTests(e, p, testUnit);
-    case "lint":
-      return runTests(e, p, lint);
+    case "test-unit-go":
+      return run(e, p, testUnitGo);
+    case "lint-go":
+      return run(e, p, lintGo);
+    case "build-apiserver":
+      return run(e, p, buildAPIServer);
+    case "build-cli":
+      return run(e, p, buildCLI);
     default:
       throw new Error(`No check found with name: ${name}`);
   }
 }
 
-// runTests is a Check Run that is run as part of a Checks Suite
-function runTests(e, p, jobFunc) {
+// run is a Check Run that is run as part of a Checks Suite
+function run(e, p, jobFunc) {
   console.log("Check requested");
   var check = new Check(e, p, jobFunc(), `https://brigadecore.github.io/kashti/builds/${e.buildID}`);
   return check.run();

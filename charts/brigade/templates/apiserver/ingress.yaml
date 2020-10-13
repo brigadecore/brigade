@@ -1,0 +1,35 @@
+{{- if .Values.apiserver.ingress.enabled }}
+{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion }}
+apiVersion: networking.k8s.io/v1beta1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ include "brigade.apiserver.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.apiserver.labels" . | nindent 4 }}
+  {{- with .Values.apiserver.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  rules:
+  - host: {{ .Values.apiserver.host }}
+    http:
+      paths:
+      - backend:
+          serviceName: {{ include "brigade.apiserver.fullname" . }}
+          {{- if .Values.apiserver.tls.enabled }}
+          servicePort: 443
+          {{- else }}
+          servicePort: 80
+          {{- end }}
+  {{- if .Values.apiserver.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - {{ .Values.apiserver.host }}
+    secretName: {{ include "brigade.apiserver.fullname" . }}-ingress-cert
+  {{- end }}
+{{- end }}

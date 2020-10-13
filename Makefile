@@ -65,7 +65,9 @@ IMMUTABLE_DOCKER_TAG := $(VERSION)
 lint-go:
 	$(GO_DOCKER_CMD) sh -c ' \
 		cd sdk/v2 && \
-		golangci-lint run --config ../../golangci.yaml \
+		golangci-lint run --config ../../golangci.yaml && \
+		cd ../../v2 && \
+		golangci-lint run --config ../golangci.yaml \
 	'
 
 .PHONY: test-unit-go
@@ -74,9 +76,82 @@ test-unit-go:
 		cd sdk/v2 && \
 		go test \
 			-v \
-			-timeout=30s \
+			-timeout=60s \
+			-race \
+			-coverprofile=coverage.txt \
+			-covermode=atomic \
+			./... && \
+		cd ../../v2 && \
+		go test \
+			-v \
+			-timeout=60s \
 			-race \
 			-coverprofile=coverage.txt \
 			-covermode=atomic \
 			./... \
 	'
+
+################################################################################
+# Build / Publish                                                              #
+################################################################################
+
+.PHONY: build
+build: build-images xbuild-cli
+
+.PHONY: build-images
+build-images: build-apiserver
+
+.PHONY: build-apiserver
+build-apiserver:
+	docker build \
+		-f v2/apiserver/Dockerfile \
+		-t $(DOCKER_IMAGE_PREFIX)brigade-apiserver:$(IMMUTABLE_DOCKER_TAG) \
+		--build-arg VERSION='$(VERSION)' \
+		--build-arg COMMIT='$(GIT_VERSION)' \
+		.
+	docker tag $(DOCKER_IMAGE_PREFIX)brigade-apiserver:$(IMMUTABLE_DOCKER_TAG) $(DOCKER_IMAGE_PREFIX)brigade-apiserver:$(MUTABLE_DOCKER_TAG)
+
+.PHONY: build-cli
+build-cli:
+	$(GO_DOCKER_CMD) sh -c ' \
+		cd v2 && \
+		OSES=$(shell go env GOOS) \
+		ARCHS=$(shell go env GOARCH) \
+		VERSION="$(VERSION)" \
+		COMMIT="$(GIT_VERSION)" \
+		../scripts/build-cli.sh \
+	'
+
+.PHONY: xbuild-cli
+xbuild-cli:
+	$(GO_DOCKER_CMD) sh -c ' \
+		cd v2 && \
+		VERSION="$(VERSION)" \
+		COMMIT="$(GIT_VERSION)" \
+		../scripts/build-cli.sh \
+	'
+
+.PHONY: push-images
+push-images: push-apiserver
+
+.PHONY: push-apiserver
+push-apiserver: build-apiserver
+	docker push $(DOCKER_IMAGE_PREFIX)brigade-apiserver:$(IMMUTABLE_DOCKER_TAG)
+	docker push $(DOCKER_IMAGE_PREFIX)brigade-apiserver:$(MUTABLE_DOCKER_TAG)
+
+################################################################################
+# Temporary hacks to facilitate early development.                             #
+# Longer term, we'll devise an improved workflow.                              #
+################################################################################
+
+.PHONY: hack
+hack: push-images build-cli
+	kubectl get namespace brigade || kubectl create namespace brigade
+	helm upgrade brigade charts/brigade \
+		--install \
+		--namespace brigade \
+		--set apiserver.image.repository=$(DOCKER_IMAGE_PREFIX)brigade-apiserver \
+		--set apiserver.image.tag=$(IMMUTABLE_DOCKER_TAG) \
+		--set apiserver.image.pullPolicy=Always \
+		--set apiserver.service.type=NodePort \
+		--set apiserver.service.nodePort=31600
