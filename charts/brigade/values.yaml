@@ -1,0 +1,603 @@
+## Default values for brigade
+## This is a YAML-formatted file.
+## Declare variables to be passed into your templates.
+
+rbac:
+  enabled: true
+
+## All settings for the API server
+apiserver:
+
+  replicas: 1
+
+  ## Host should be set acccurately for a variety of reasons. This is used in
+  ## ingress resources, cert generation, and in creating URLs for Open ID
+  ## Connect "three legged" authentication.
+  host: localhost:31600
+
+  image:
+    repository: krancour/brigade-apiserver
+    ## tag should only be specified if you want to override Chart.appVersion
+    ## The default tag is the value of .Chart.AppVersion
+    # tag:
+    pullPolicy: IfNotPresent
+
+  rootUser:
+    enabled: true
+    # TODO: This should probably be generated
+    password: F00Bar!!!
+
+  oidc:
+    ## Whether to enable OpenID Connect. OpenID Connect (an authentication
+    ## protocol built on top of OAuth2) delegates authentication to a trusted
+    ## public or private identity provider. This is HIGHLY recommended for any
+    ## installation of Brigade with an anticipated user base of n > 1.
+    ##
+    ## OpenID Connect support REQUIRES TLS to be enabled.
+    enabled: false
+    ## ProviderURL examples:
+    ##
+    ##   Google Identity Platform:
+    ##     https://accounts.google.com
+    ##
+    ##   Azure Active Directory: 
+    ##     https://login.microsoftonline.com/{tenant id}/v2.0
+    ##
+    ## Any OpenID Connect provider SHOULD work, but we've tested with those
+    ## above.
+    # providerURL: ""
+    ## The API server uses the client ID and client secret to authenticate
+    ## itself to the OpenID Connect identity provider.
+    # clientID: ""
+    # clientSecret: ""
+
+  tls:
+    ## Whether to enable TLS. If true then you MUST either set
+    ## generateSelfSignedCert to true (which is its default) OR provide your own
+    ## certificate using the cert and key fields. TLS SHOULD always be enabled,
+    ## even when ingress is used because other components within the Kubernetes
+    ## cluster (e.g. Brigade gateways) will interact with the apiserver and
+    ## will not go through the ingress controller to do so, but SHOULD still
+    ## interact over a secure connection. It is advised that this be disabled
+    ## ONLY if utilizing a service mesh to enforce secure connections to the
+    ## apiserver for you.
+    enabled: true
+    ## Whether to generate a self-signed certificate. If true, a new certificate
+    ## will be generated for every revision of the corresponding Helm release.
+    ## Since the certificate is self-signed, it will not be trusted by clients
+    ## and should absolutely not be used for production, but having this enabled
+    ## as a sensible default effectively discourages the more heavy-handed
+    ## option to disable TLS entirely. If TLS is enabled and cert generation is
+    ## DISABLED, users MUST provide their own cert and private key below.
+    generateSelfSignedCert: true
+    cert: base 64 encoded cert goes here
+    key: base 64 encoded key goes here
+
+  ingress:
+    ## Whether to enable ingress. By default, this is disabled and the
+    ## apiserver's service is of type LoadBalancer instead. Enabling ingress is
+    ## advanced usage.
+    enabled: false
+    ## Optionally use annotations specified by your ingress controller's
+    ## documentation to customize the behavior of the ingress resource.
+    annotations:
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    tls:
+      ## Whether to enable TLS. If true then you MUST either set
+      ## generateSelfSignedCert to true (which is its default) OR provide your
+      ## own certificate using the cert and key fields. Note that if your
+      ## ingress controller can provision certificates on yur behalf using ACME
+      ## (for instance) or other means, then TLS should be disabled below.
+      enabled: false
+      ## Whether to generate a self-signed certificate. If true, a new
+      ## certificate will be generated for every revision of the corresponding
+      ## Helm release. Since the certificate is self-signed, it will not be
+      ## trusted by clients and should absolutely not be used for production,
+      ## but having this enabled as a sensible default effectively discourages
+      ## the more heavy-handed option to disable TLS entirely. If ingress TLS is
+      ## enabled and cert generation is DISABLED, users MUST provide their own
+      ## cert and private key below.
+      generateSelfSignedCert: true
+      cert: base 64 encoded cert goes here
+      key: base 64 encoded key goes here
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as
+    # a conscious choice for the user. This also increases chances charts run on
+    # environments with little resources, such as Minikube. If you do want to
+    # specify resources, uncomment the following lines, adjust them as
+    # necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  service:
+    ## If you're going to use an ingress controller, you can change the service
+    ## type to CLusterIP.
+    type: NodePort
+    # nodePort: 31600
+
+externalMongodb:
+
+  isCosmosdb: false
+  connectionString: mongodb://<username>:<password>@<host>:<port>/<database>?<options>
+  database: <database>
+
+mongodb:
+
+  enabled: true
+
+  ## Global Docker image parameters
+  ## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+  ## Current available global Docker image parameters: imageRegistry and imagePullSecrets
+  ##
+  # global:
+  #   imageRegistry: myRegistryName
+  #   imagePullSecrets:
+  #     - myRegistryKeySecretName
+  #   storageClass: myStorageClass
+
+  image:
+    ## Bitnami MongoDB registry
+    ##
+    registry: docker.io
+    ## Bitnami MongoDB image name
+    ##
+    repository: bitnami/mongodb
+    ## Bitnami MongoDB image tag
+    ## ref: https://hub.docker.com/r/bitnami/mongodb/tags/
+    ##
+    tag: 4.0.14-debian-9-r0
+    ## Specify a imagePullPolicy
+    ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+    ##
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ##
+    # pullSecrets:
+    #   - myRegistryKeySecretName
+
+    ## Set to true if you would like to see extra information on logs
+    ## It turns on Bitnami debugging in minideb-extras-base
+    ## ref:  https://github.com/bitnami/minideb-extras-base
+    debug: false
+
+  ## String to partially override mongodb.fullname template (will maintain the release name)
+  ##
+  # nameOverride:
+
+  ## String to fully override mongodb.fullname template
+  ##
+  # fullnameOverride:
+
+  ## Init containers parameters:
+  ## volumePermissions: Change the owner and group of the persistent volume mountpoint to runAsUser:fsGroup values from the securityContext section.
+  ##
+  volumePermissions:
+    enabled: false
+    image:
+      registry: docker.io
+      repository: bitnami/minideb
+      tag: stretch
+      pullPolicy: Always
+      ## Optionally specify an array of imagePullSecrets.
+      ## Secrets must be manually created in the namespace.
+      ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+      ##
+      # pullSecrets:
+      #   - myRegistryKeySecretName
+    resources: {}
+
+  ## Enable authentication
+  ## ref: https://docs.mongodb.com/manual/tutorial/enable-authentication/
+  #
+  usePassword: true
+  # existingSecret: name-of-existing-secret
+
+  ## MongoDB admin password
+  ## ref: https://github.com/bitnami/bitnami-docker-mongodb/blob/master/README.md#setting-the-root-password-on-first-run
+  ##
+  # mongodbRootPassword:
+
+  ## MongoDB custom user and database
+  ## ref: https://github.com/bitnami/bitnami-docker-mongodb/blob/master/README.md#creating-a-user-and-database-on-first-run
+  ##
+  mongodbUsername: brigade
+  mongodbPassword: foobar
+  mongodbDatabase: brigade
+
+  ## Whether enable/disable IPv6 on MongoDB
+  ## ref: https://github.com/bitnami/bitnami-docker-mongodb/blob/master/README.md#enabling/disabling-ipv6
+  ##
+  mongodbEnableIPv6: false
+
+  ## Whether enable/disable DirectoryPerDB on MongoDB
+  ## ref: https://github.com/bitnami/bitnami-docker-mongodb/blob/master/README.md#enabling/disabling-directoryperdb
+  ##
+  mongodbDirectoryPerDB: false
+
+  ## MongoDB System Log configuration
+  ## ref: https://github.com/bitnami/bitnami-docker-mongodb#configuring-system-log-verbosity-level
+  ##
+  mongodbSystemLogVerbosity: 0
+  mongodbDisableSystemLog: false
+
+  ## MongoDB additional command line flags
+  ##
+  ## Can be used to specify command line flags, for example:
+  ##
+  ## mongodbExtraFlags:
+  ##  - "--wiredTigerCacheSizeGB=2"
+  mongodbExtraFlags: []
+
+  ## Pod Security Context
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+  ##
+  securityContext:
+    enabled: true
+    fsGroup: 1001
+    runAsUser: 1001
+
+  ## Kubernetes Cluster Domain
+  clusterDomain: cluster.local
+
+  ## Kubernetes service type
+  service:
+    ## Specify an explicit service name.
+    # name: svc-mongo
+    ## Provide any additional annotations which may be required.
+    ## The value is evaluated as a template, so, for example, the value can depend on .Release or .Chart
+    annotations: {}
+    type: NodePort
+    # clusterIP: None
+    port: 27017
+
+    ## Specify the nodePort value for the LoadBalancer and NodePort service types.
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+    ##
+    # nodePort:
+
+    ## Specify the externalIP value ClusterIP service type.
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#external-ips
+    # externalIPs: []
+
+    ## Specify the loadBalancerIP value for LoadBalancer service types.
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
+    ##
+    # loadBalancerIP:
+
+    ## Specify the loadBalancerSourceRanges value for LoadBalancer service types.
+    ## ref: https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
+    ##
+    # loadBalancerSourceRanges: []
+
+  # Add custom extra environment variables to all the MongoDB containers
+  # extraEnvVars:
+
+  ## Setting up replication
+  ## ref: https://github.com/bitnami/bitnami-docker-mongodb#setting-up-a-replication
+  #
+  replicaSet:
+    ## Whether to create a MongoDB replica set for high availability or not
+    enabled: true
+    useHostnames: true
+
+    ## Name of the replica set
+    ##
+    name: rs0
+
+    ## Key used for replica set authentication
+    ##
+    # key: key
+
+    ## Number of replicas per each node type
+    ##
+    replicas:
+      secondary: 0
+      arbiter: 1
+
+    ## Pod Disruption Budget
+    ## ref: https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
+    pdb:
+      enabled: true
+      minAvailable:
+        primary: 1
+        secondary: 1
+        arbiter: 1
+      # maxUnavailable:
+        # primary: 1
+        # secondary: 1
+        # arbiter: 1
+
+  # Annotations to be added to the deployment or statefulsets
+  annotations: {}
+
+  # Additional labels to apply to the deployment or statefulsets
+  labels: {}
+
+  # Annotations to be added to MongoDB pods
+  podAnnotations: {}
+
+  # Additional pod labels to apply
+  podLabels: {}
+
+  ## Use an alternate scheduler, e.g. "stork".
+  ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
+  ##
+  # schedulerName:
+
+  ## Configure resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ##
+  resources: {}
+  # Define separate resources per arbiter, which are less then primary or secondary
+  # used only when replica set is enabled
+  resourcesArbiter: {}
+  # limits:
+  #   cpu: 500m
+  #   memory: 512Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 256Mi
+
+  ## Pod priority
+  ## https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+  # priorityClassName: ""
+
+  ## Node selector
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  nodeSelector: {}
+
+  ## Affinity
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  affinity: {}
+  # Define separate affinity for arbiter pod
+  affinityArbiter: {}
+
+  ## Tolerations
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  tolerations: []
+
+  ## updateStrategy for MongoDB Primary, Secondary and Arbitrer statefulsets
+  ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
+  updateStrategy:
+    type: RollingUpdate
+
+  ## Enable persistence using Persistent Volume Claims
+  ## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+  ##
+  persistence:
+    enabled: false
+    ## A manually managed Persistent Volume and Claim
+    ## Requires persistence.enabled: true
+    ## If defined, PVC must be created manually before volume will be bound
+    ##
+    # existingClaim:
+
+    ## The path the volume will be mounted at, useful when using different
+    ## MongoDB images.
+    ##
+    mountPath: /bitnami/mongodb
+
+    ## The subdirectory of the volume to mount to, useful in dev environments
+    ## and one PV for multiple services.
+    ##
+    subPath: ""
+
+    ## mongodb data Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    ##   GKE, AWS & OpenStack)
+    ##
+    # storageClass: "-"
+    accessModes:
+      - ReadWriteOnce
+    size: 8Gi
+    annotations: {}
+
+  ## Configure the ingress resource that allows you to access the
+  ## MongoDB installation. Set up the URL
+  ## ref: http://kubernetes.io/docs/user-guide/ingress/
+  ##
+  ingress:
+    ## Set to true to enable ingress record generation
+    enabled: false
+
+    ## Set this to true in order to add the corresponding annotations for cert-manager
+    certManager: false
+
+    ## Ingress annotations done as key:value pairs
+    ## For a full list of possible ingress annotations, please see
+    ## ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+    ##
+    ## If tls is set to true, annotation ingress.kubernetes.io/secure-backends: "true" will automatically be set
+    ## If certManager is set to true, annotation kubernetes.io/tls-acme: "true" will automatically be set
+    annotations:
+    #  kubernetes.io/ingress.class: nginx
+
+    ## The list of hostnames to be covered with this ingress record.
+    ## Most likely this will be just one host, but in the event more hosts are needed, this is an array
+    hosts:
+    - name: mongodb.local
+      path: /
+
+    ## The tls configuration for the ingress
+    ## see: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
+    tls:
+    - hosts:
+        - mongodb.local
+      secretName: mongodb.local-tls
+
+    secrets:
+    ## If you're providing your own certificates, please use this to add the certificates as secrets
+    ## key and certificate should start with -----BEGIN CERTIFICATE----- or
+    ## -----BEGIN RSA PRIVATE KEY-----
+    ##
+    ## name should line up with a tlsSecret set further up
+    ## If you're using cert-manager, this is unneeded, as it will create the secret for you if it is not set
+    ##
+    ## It is also possible to create and manage the certificates outside of this helm chart
+    ## Please see README.md for more information
+    # - name: airflow.local-tls
+    #   key:
+    #   certificate:
+
+  ## Configure the options for init containers to be run before the main app containers
+  ## are started. All init containers are run sequentially and must exit without errors
+  ## for the next one to be started.
+  ## ref: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+  # extraInitContainers: |
+  #   - name: do-something
+  #     image: busybox
+  #     command: ['do', 'something']
+
+  ## Configure extra options for liveness and readiness probes
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes)
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+
+  # Define custom config map with init scripts
+  initConfigMap: {}
+  #  name: "init-config-map"
+
+  ## Entries for the MongoDB config file. For documentation of all options, see:
+  ##   http://docs.mongodb.org/manual/reference/configuration-options/
+  ##
+  configmap:
+  #  # where and how to store data.
+  #  storage:
+  #    dbPath: /bitnami/mongodb/data/db
+  #    journal:
+  #      enabled: true
+  #    directoryPerDB: false
+  #  # where to write logging data.
+  #  systemLog:
+  #    destination: file
+  #    quiet: false
+  #    logAppend: true
+  #    logRotate: reopen
+  #    path: /opt/bitnami/mongodb/logs/mongodb.log
+  #    verbosity: 0
+  #  # network interfaces
+  #  net:
+  #    port: 27017
+  #    unixDomainSocket:
+  #      enabled: true
+  #      pathPrefix: /opt/bitnami/mongodb/tmp
+  #    ipv6: false
+  #    bindIpAll: true
+  #  # replica set options
+  #  #replication:
+  #    #replSetName: replicaset
+  #    #enableMajorityReadConcern: true
+  #  # process management options
+  #  processManagement:
+  #     fork: false
+  #     pidFilePath: /opt/bitnami/mongodb/tmp/mongodb.pid
+  #  # set parameter options
+  #  setParameter:
+  #     enableLocalhostAuthBypass: true
+  #  # security options
+  #  security:
+  #    authorization: disabled
+  #    #keyFile: /opt/bitnami/mongodb/conf/keyfile
+
+  ## Prometheus Exporter / Metrics
+  ##
+  metrics:
+    enabled: false
+
+    image:
+      registry: docker.io
+      repository: bitnami/mongodb-exporter
+      tag: 0.10.0-debian-9-r77
+      pullPolicy: IfNotPresent
+      ## Optionally specify an array of imagePullSecrets.
+      ## Secrets must be manually created in the namespace.
+      ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+      ##
+      # pullSecrets:
+      #   - myRegistryKeySecretName
+
+    ## String with extra arguments to the metrics exporter
+    ## ref: https://github.com/percona/mongodb_exporter/blob/master/mongodb_exporter.go
+    extraArgs: ""
+
+    ## Metrics exporter resource requests and limits
+    ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+    ##
+    # resources: {}
+
+    ## Metrics exporter liveness and readiness probes
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes)
+    livenessProbe:
+      enabled: false
+      initialDelaySeconds: 15
+      periodSeconds: 5
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    readinessProbe:
+      enabled: false
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 1
+      failureThreshold: 3
+      successThreshold: 1
+
+    ## Metrics exporter pod Annotation
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9216"
+
+    ## Prometheus Service Monitor
+    ## ref: https://github.com/coreos/prometheus-operator
+    ##      https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md
+    serviceMonitor:
+      ## If the operator is installed in your cluster, set to true to create a Service Monitor Entry
+      enabled: false
+
+      ## Specify a namespace if needed
+      # namespace: monitoring
+
+      ## Used to pass Labels that are used by the Prometheus installed in your cluster to select Service Monitors to work with
+      ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#prometheusspec
+      additionalLabels: {}
+
+      ## Specify Metric Relabellings to add to the scrape endpoint
+      ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      # relabellings:
+
+      alerting:
+        ## Define individual alerting rules as required
+        ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#rulegroup
+        ##      https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+        rules: {}
+
+        ## Used to pass Labels that are used by the Prometheus installed in your cluster to select Prometheus Rules to work with
+        ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#prometheusspec
+        additionalLabels: {}

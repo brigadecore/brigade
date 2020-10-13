@@ -1,0 +1,18 @@
+apiVersion: v3
+name: brigade
+description: |
+  A Helm chart for Brigade
+type: application
+version: 0.1.0
+# Note that we use appVersion to get images, so make sure this is correct.
+appVersion: v0.1.0
+sources:
+- https://github.com/brigadecore/brigade
+maintainers:
+- name: Kent Rancourt
+  email: kent.rancourt@gmail.com
+dependencies:
+- name: mongodb
+  version: ~7.6.5
+  repository: https://kubernetes-charts.storage.googleapis.com/
+  condition: mongodb.enabled
