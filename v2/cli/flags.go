@@ -9,8 +9,11 @@ const (
 	flagInsecure = "insecure"
 	flagOutput   = "output"
 	flagPassword = "password"
+	flagProject  = "project"
 	flagRoot     = "root"
 	flagServer   = "server"
+	flagSet      = "set"
+	flagUnset    = "unset"
 	flagYes      = "yes"
 )
 
