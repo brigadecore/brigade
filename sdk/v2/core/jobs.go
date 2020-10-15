@@ -51,6 +51,24 @@ type Job struct {
 	Status *JobStatus `json:"status"`
 }
 
+// MarshalJSON amends Job instances with type metadata so that clients do not
+// need to be concerned with the tedium of doing so.
+func (j Job) MarshalJSON() ([]byte, error) {
+	type Alias Job
+	return json.Marshal(
+		struct {
+			meta.TypeMeta `json:",inline"`
+			Alias         `json:",inline"`
+		}{
+			TypeMeta: meta.TypeMeta{
+				APIVersion: meta.APIVersion,
+				Kind:       "Job",
+			},
+			Alias: (Alias)(j),
+		},
+	)
+}
+
 // JobSpec is the technical blueprint for a Job.
 type JobSpec struct {
 	// PrimaryContainer specifies the details of an OCI container that forms the
@@ -74,24 +92,6 @@ type JobSpec struct {
 	// non-default operating system (i.e. Windows) or specific hardware (e.g. a
 	// GPU.)
 	Host *JobHost `json:"host,omitempty"`
-}
-
-// MarshalJSON amends JobSpec instances with type metadata so that clients do
-// not need to be concerned with the tedium of doing so.
-func (j JobSpec) MarshalJSON() ([]byte, error) {
-	type Alias JobSpec
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "JobSpec",
-			},
-			Alias: (Alias)(j),
-		},
-	)
 }
 
 // JobContainerSpec amends the ContainerSpec type with additional Job-specific
