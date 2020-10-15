@@ -18,7 +18,7 @@ var testSchema = gojsonschema.NewBytesLoader(
 	[]byte(`
 		{
 			"$schema": "http://json-schema.org/draft-07/schema#",
-			"$id": "github.com/lovethedrake/drakecore/config.schema.json",
+			"$id": "github.com/brigadecore/brigade/v2/test.schema.json",
 
 			"title": "Project",
 			"type": "object",
