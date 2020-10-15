@@ -13,6 +13,12 @@ import (
 // mock implementation for testing purposes. Adding only the subset of functions
 // that we actually use limits the effort involved in creating such mocks.
 type Collection interface {
+	// CountDocuments returns the number of documents in the collection.
+	CountDocuments(
+		ctx context.Context,
+		filter interface{},
+		opts ...*options.CountOptions,
+	) (int64, error)
 	// DeleteOne executes a delete command to delete at most one document from the
 	// collection.
 	DeleteOne(
@@ -20,6 +26,13 @@ type Collection interface {
 		filter interface{},
 		opts ...*options.DeleteOptions,
 	) (*mongo.DeleteResult, error)
+	// Find executes a find command and returns a Cursor over the matching
+	// documents in the collection.
+	Find(
+		ctx context.Context,
+		filter interface{},
+		opts ...*options.FindOptions,
+	) (*mongo.Cursor, error)
 	// FindOne executes a find command and returns a SingleResult for one document
 	// in the collection.
 	FindOne(

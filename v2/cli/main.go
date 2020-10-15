@@ -28,6 +28,7 @@ func main() {
 	app.Commands = []*cli.Command{
 		loginCommand,
 		logoutCommand,
+		projectCommand,
 	}
 	fmt.Println()
 	if err := app.RunContext(signals.Context(), os.Args); err != nil {

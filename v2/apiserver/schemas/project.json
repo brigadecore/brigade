@@ -1,0 +1,341 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "github.com/brigadecore/brigade/v2/project.schema.json",
+
+	"definitions": {
+
+		"empty": {
+			"type": "string",
+			"enum": [
+				""
+			]
+		},
+
+		"identifier": {
+			"type": "string",
+			"pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
+			"minLength": 3,
+			"maxLength": 50
+		},
+
+		"description": {
+			"type": "string",
+			"minLength": 3,
+			"maxLength": 80
+		},
+
+		"url": {
+			"type": "string",
+			"pattern": "^[\\w:/\\-\\.\\?=]*$",
+			"minLength": 5,
+			"maxLength": 250
+		},
+
+		"label": {
+			"type": "string",
+			"pattern": "^[\\w:/\\-\\.\\?=\\*]*$",
+			"minLength": 1,
+			"maxLength": 250
+		},
+
+		"apiVersion": {
+			"type": "string",
+			"description": "The major version of the Brigade API with which this object conforms",
+			"enum": ["brigade.sh/v2"]
+		},
+
+		"kind": {
+			"type": "string",
+			"description": "The type of object represented by the document",
+			"enum": ["Project"]
+		},
+
+		"objectMeta": {
+			"type": "object",
+			"description": "Project metadata",
+			"required": ["id"],
+			"additionalProperties": false,
+			"properties": {
+				"id": {
+					"allOf": [
+						{
+							"$ref": "#/definitions/identifier"
+						}
+					],
+					"description": "A meaningful identifier for the project"
+				}
+			}
+		},
+
+		"projectSpec": {
+			"type": "object",
+			"description": "Project specification",
+			"required": ["workerTemplate"],
+			"additionalProperties": false,
+			"properties": {
+				"eventSubscriptions": {
+					"type": [
+						"array",
+						"null"
+					],
+					"description": "The events that this project subscribes to",
+					"items": {
+						"$ref": "#/definitions/eventSubscription"
+					}
+				},
+				"workerTemplate": {
+					"$ref": "#/definitions/workerSpec"
+				}
+			}
+		},
+
+		"eventSubscription": {
+			"type": "object",
+			"description": "Describes a set of events that the project is subscribed to",
+			"required": ["source", "types"],
+			"additionalProperties": false,
+			"properties": {
+				"source": {
+					"allOf": [
+						{
+							"$ref": "#/definitions/url"
+						}
+					],
+					"description": "The name of the event source"
+				},
+				"types": {
+					"type": "array",
+					"description": "Types of events from the source",
+					"minItems": 1,
+					"items": {
+						"$ref": "#/definitions/label"
+					}
+				},
+				"labels": {
+					"type": [
+						"object",
+						"null"
+					],
+					"additionalProperties": true,
+					"patternProperties": {
+						"^[\\w:/\\-\\.\\?=\\*]*$": {
+							"$ref": "#/definitions/label"
+						}
+					}
+				}
+			}
+		},
+
+		"containerSpec": {
+			"type": "object",
+			"description": "Configuration for an OCI container",
+			"additionalProperties": false,
+			"properties": {
+				"image": {
+					"type": "string",
+					"description": "A URI for an OCI image"
+				},
+				"imagePullPolicy": {
+					"type": "string",
+					"description": "Pull policy for the OCI image",
+					"enum": [
+						"",
+						"IfNotPresent",
+						"Always"
+					]
+				},
+				"command": {
+					"type": "array",
+					"description": "The command to execute within the container",
+					"items": {
+						"type": "string"
+					}
+				},
+				"arguments": {
+					"type": "array",
+					"description": "Arguments to the command to execute within the container",
+					"items": {
+						"type": "string"
+					}
+				},
+				"environment": {
+					"type": [
+						"object",
+						"null"
+					],
+					"description": "A map of environment variables and their values",
+					"additionalProperties": {
+						"type": "string"
+					}
+				}
+			}
+		},
+
+		"jobPolicies": {
+			"type": "object",
+			"description": "Policies for any job containers the worker container might fan out to",
+			"additionalProperties": false,
+			"properties": {
+				"allowPrivileged": {
+					"type": "boolean",
+					"description": "Whether job containers are permitted to be run as privileged"
+				},
+				"allowDockerSocketMount": {
+					"type": "boolean",
+					"description": "Whether job containers are permitted to mount the host's Docker socket"
+				},
+				"kubernetes": {
+					"$ref": "#/definitions/kubernetesJobPolicies"
+				}
+			}
+		},
+
+		"kubernetesJobPolicies": {
+			"type": "object",
+			"description": "Jobs configuration pertaining specifically to Kubernetes",
+			"additionalProperties": false,
+			"properties": {
+				"imagePullSecrets": {
+					"type": [
+						"array",
+						"null"
+					],
+					"description": "Kubernetes secrets that can be used as image pull secrets for job images",
+					"items": {
+						"$ref": "#/definitions/identifier"
+					}
+				}
+			}
+		},
+
+		"gitConfig": {
+			"type": "object",
+			"description": "Worker configuration pertaining specifically to git",
+			"additionalProperties": false,
+			"properties": {
+				"cloneURL": {
+					"oneOf": [
+						{
+							"$ref": "#/definitions/empty"
+						},
+						{
+							"$ref": "#/definitions/url"
+						}
+					],
+					"description": "The URL for cloning a git project"
+				},
+				"initSubmodules": {
+					"type": "boolean",
+					"description": "Whether to initialize git submodules"
+				}
+			}
+		},
+
+		"kubernetesConfig": {
+			"type": "object",
+			"description": "Worker configuration pertaining specifically to Kubernetes",
+			"additionalProperties": false,
+			"properties": {
+				"imagePullSecrets": {
+					"type": [
+						"array",
+						"null"
+					],
+					"description": "Kubernetes secrets that can be used as image pull secrets for the worker's images",
+					"items": {
+						"$ref": "#/definitions/identifier"
+					}
+				}
+			}
+		},
+
+		"workerSpec": {
+			"type": "object",
+			"description": "Configuration for the Brigade worker",
+			"additionalProperties": false,
+			"properties": {
+				"container": {
+					"allOf": [
+						{
+							"$ref": "#/definitions/containerSpec"
+						}
+					],
+					"description": "Specification for the worker's container"
+				},
+				"useWorkspace": {
+					"type": "boolean",
+					"description": "Whether the worker will require a shared workspace for itself and any jobs it spawns"	
+				},
+				"workspaceSize": {
+					"type": "string",
+					"description": "The amount of storage to be provisioned for a worker"
+				},
+				"git": {
+					"$ref": "#/definitions/gitConfig"
+				},
+				"kubernetes": {
+					"$ref": "#/definitions/kubernetesConfig"
+				},
+				"jobPolicies": {
+					"$ref": "#/definitions/jobPolicies"
+				},
+				"logLevel": {
+					"type": "string",
+					"description": "Log level to be observed by the worker",
+					"enum": [
+						"",
+						"DEBUG",
+						"INFO",
+						"WARN",
+						"ERROR"
+					]
+				},
+				"configFilesDirectory": {
+					"type": "string",
+					"description": "A directory relative to the workspace where all configuration files needed by the worker can be located"
+				},
+				"defaultConfigFiles": {
+					"type": [
+						"object",
+						"null"
+					],
+					"description": "A map of config file / script contents indexed by filename-- useful for projects that don't utilize any VCS",
+					"additionalProperties": {
+						"type": "string"
+					}
+				}
+			}
+		}
+
+	},
+
+	"title": "Project",
+	"type": "object",
+	"required": ["apiVersion", "kind", "metadata", "spec"],
+	"additionalProperties": false,
+	"properties": {
+		"apiVersion": {
+			"$ref": "#/definitions/apiVersion"
+		},
+		"kind": {
+			"$ref": "#/definitions/kind"
+		},
+		"metadata": {
+			"$ref": "#/definitions/objectMeta"
+		},
+		"description": {
+			"oneOf": [
+				{
+					"$ref": "#/definitions/empty"
+				},
+				{
+					"$ref": "#/definitions/description"
+				}
+			],
+			"description": "A brief description of the project"
+		},
+		"spec": {
+			"$ref": "#/definitions/projectSpec"
+		}
+	}
+}

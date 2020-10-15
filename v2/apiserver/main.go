@@ -1,16 +1,23 @@
 package main
 
+// nolint: lll
 import (
 	"log"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
-	authxMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/authx/mongodb" // nolint: lll
+	authxMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/authx/mongodb"
 	authxREST "github.com/brigadecore/brigade/v2/apiserver/internal/authx/rest"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
+	coreKubernetes "github.com/brigadecore/brigade/v2/apiserver/internal/core/kubernetes"
+	coreMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/core/mongodb"
+	coreREST "github.com/brigadecore/brigade/v2/apiserver/internal/core/rest"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery/authn"
+	"github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/brigadecore/brigade/v2/internal/signals"
 	"github.com/brigadecore/brigade/v2/internal/version"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 // main wires up the dependency graph for the API server, then runs the API
@@ -25,6 +32,7 @@ func main() {
 	ctx := signals.Context()
 
 	// Data stores
+	var projectsStore core.ProjectsStore
 	var sessionsStore authx.SessionsStore
 	var usersStore authx.UsersStore
 	{
@@ -32,9 +40,26 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		projectsStore = coreMongodb.NewProjectsStore(database)
 		sessionsStore = authxMongodb.NewSessionsStore(database)
 		usersStore = authxMongodb.NewUsersStore(database)
 	}
+
+	// Substrate
+	var substrate core.Substrate
+	{
+		kubeClient, err := kubernetes.Client()
+		if err != nil {
+			log.Fatal(err)
+		}
+		substrate = coreKubernetes.NewSubstrate(kubeClient)
+	}
+
+	// Projects service
+	projectsService := core.NewProjectsService(
+		projectsStore,
+		substrate,
+	)
 
 	// Session service
 	var sessionsService authx.SessionsService
@@ -72,6 +97,13 @@ func main() {
 				&authxREST.SessionsEndpoints{
 					AuthFilter: authFilter,
 					Service:    sessionsService,
+				},
+				&coreREST.ProjectsEndpoints{
+					AuthFilter: authFilter,
+					ProjectSchemaLoader: gojsonschema.NewReferenceLoader(
+						"file:///brigade/schemas/project.json",
+					),
+					Service: projectsService,
 				},
 			},
 			&apiServerConfig,
