@@ -266,6 +266,10 @@ type ProjectsStore interface {
 		context.Context,
 		meta.ListOptions,
 	) (ProjectList, error)
+	ListSubscribers(
+		ctx context.Context,
+		event Event,
+	) (ProjectList, error)
 	// Get returns a Project having the indicated ID. If no such Project exists,
 	// implementations MUST return a *meta.ErrNotFound error.
 	Get(context.Context, string) (Project, error)

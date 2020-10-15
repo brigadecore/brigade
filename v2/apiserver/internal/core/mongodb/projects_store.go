@@ -88,6 +88,42 @@ func (p *projectsStore) List(
 	return projects, nil
 }
 
+func (p *projectsStore) ListSubscribers(
+	ctx context.Context,
+	event core.Event,
+) (core.ProjectList, error) {
+	projects := core.ProjectList{}
+	subscriptionMatchCriteria := bson.M{
+		"source": event.Source,
+		"types": bson.M{
+			"$in": []string{event.Type, "*"},
+		},
+	}
+	if len(event.Labels) > 0 {
+		subscriptionMatchCriteria["labels"] = bson.M{
+			"labels": event.Labels,
+		}
+	}
+	findOptions := options.Find()
+	findOptions.SetSort(bson.M{"id": 1})
+	cur, err := p.collection.Find(
+		ctx,
+		bson.M{
+			"spec.eventSubscriptions": bson.M{
+				"$elemMatch": subscriptionMatchCriteria,
+			},
+		},
+		findOptions,
+	)
+	if err != nil {
+		return projects, errors.Wrap(err, "error finding projects")
+	}
+	if err := cur.All(ctx, &projects.Items); err != nil {
+		return projects, errors.Wrap(err, "error decoding projects")
+	}
+	return projects, nil
+}
+
 func (p *projectsStore) Get(
 	ctx context.Context,
 	id string,
