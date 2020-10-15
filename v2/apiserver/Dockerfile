@@ -18,4 +18,5 @@ RUN go build \
 FROM scratch
 COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=0 /src/bin/ /brigade/bin/
+COPY v2/apiserver/schemas/ /brigade/schemas/
 ENTRYPOINT ["/brigade/bin/apiserver"]

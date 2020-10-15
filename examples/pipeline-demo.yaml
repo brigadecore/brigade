@@ -1,0 +1,26 @@
+apiVersion: brigade.sh/v2
+kind: Project
+metadata:
+  id: pipeline-demo
+description: A project that demonstrates a simple pipeline
+spec:
+  workerTemplate:
+    defaultConfigFiles:
+      brigade.js: |-
+        const { events, Job } = require("brigadier");
+
+        events.on("github.com/brigadecore/brigade/cli:exec", (e) => {
+          let fooJob = new Job("foo", "debian:latest");
+          fooJob.primaryContainer.command = ["echo"];
+          fooJob.primaryContainer.arguments = ["foo"];
+
+          let barJob = new Job("bar", "debian:latest");
+          barJob.primaryContainer.command = ["echo"];
+          barJob.primaryContainer.arguments = ["bar"];
+
+          fooJob.run().then(() => {
+            return barJob.run();
+          }).catch(e => {
+            console.error(e);
+          });
+        });

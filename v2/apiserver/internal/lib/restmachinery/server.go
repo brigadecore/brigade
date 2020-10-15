@@ -55,9 +55,8 @@ type Server interface {
 }
 
 type server struct {
-	endpoints []Endpoints
-	config    ServerConfig
-	router    *mux.Router
+	config ServerConfig
+	router *mux.Router
 }
 
 // NewServer returns a new REST API server that serves the provided Endpoints.
@@ -77,9 +76,8 @@ func NewServer(endpoints []Endpoints, config *ServerConfig) Server {
 	}
 
 	return &server{
-		endpoints: endpoints,
-		config:    *config,
-		router:    router,
+		config: *config,
+		router: router,
 	}
 }
 
