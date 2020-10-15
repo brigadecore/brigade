@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestJobSpecMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, JobSpec{}, "JobSpec")
+func TestJobMarshalJSON(t *testing.T) {
+	requireAPIVersionAndType(t, Job{}, "Job")
 }
 
 func TestJobStatusMarshalJSON(t *testing.T) {
