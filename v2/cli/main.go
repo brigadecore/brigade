@@ -26,6 +26,7 @@ func main() {
 		},
 	}
 	app.Commands = []*cli.Command{
+		eventCommand,
 		loginCommand,
 		logoutCommand,
 		projectCommand,
