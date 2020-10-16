@@ -236,8 +236,8 @@ func generateCert(t *testing.T) ([]byte, []byte) {
 		Subject: pkix.Name{
 			CommonName: "localhost",
 		},
-		NotBefore: time.Now(),
-		NotAfter:  time.Now().Add(time.Hour * 24),
+		NotBefore: time.Now().UTC(),
+		NotAfter:  time.Now().UTC().Add(time.Hour * 24),
 	}
 
 	certBytes, err := x509.CreateCertificate(

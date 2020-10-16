@@ -309,7 +309,7 @@ func (s *sessionsService) CreateRootSession(
 		}
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	expiryTime := now.Add(time.Hour)
 	session := Session{
 		ObjectMeta: meta.ObjectMeta{
@@ -350,7 +350,7 @@ func (s *sessionsService) CreateUserSession(
 		HashedOAuth2State: crypto.Hash("", oauth2State),
 		HashedToken:       crypto.Hash("", token),
 	}
-	now := time.Now()
+	now := time.Now().UTC()
 	session.Created = &now
 	if err := s.sessionsStore.Create(ctx, session); err != nil {
 		return OIDCAuthDetails{}, errors.Wrapf(
@@ -435,7 +435,7 @@ func (s *sessionsService) Authenticate(
 		ctx,
 		session.ID,
 		user.ID,
-		time.Now().Add(time.Hour),
+		time.Now().UTC().Add(time.Hour),
 	); err != nil {
 		return errors.Wrapf(
 			err,

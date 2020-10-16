@@ -173,7 +173,7 @@ func (p *projectsService) Create(
 	ctx context.Context,
 	project Project,
 ) (Project, error) {
-	now := time.Now()
+	now := time.Now().UTC()
 	project.Created = &now
 
 	// Add substrate-specific details BEFORE we persist.
