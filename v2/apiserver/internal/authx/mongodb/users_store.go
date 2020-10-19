@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// usersStore is a a MongoDB-based implementation of the authx.UsersStore
+// usersStore is a MongoDB-based implementation of the authx.UsersStore
 // interface.
 type usersStore struct {
 	collection mongodb.Collection
