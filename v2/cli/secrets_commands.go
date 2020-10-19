@@ -67,7 +67,7 @@ var secretsCommand = &cli.Command{
 				&cli.StringSliceFlag{
 					Name:     flagUnset,
 					Aliases:  []string{"u"},
-					Usage:    "Clear a secret haveing the specified key (required)",
+					Usage:    "Clear a secret having the specified key (required)",
 					Required: true,
 				},
 			},

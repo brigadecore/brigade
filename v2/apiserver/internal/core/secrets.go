@@ -90,7 +90,7 @@ type SecretsService interface {
 		projectID string,
 		opts meta.ListOptions,
 	) (SecretList, error)
-	// Set set the value of a new Secret or updates the value of an existing
+	// Set sets the value of a new Secret or updates the value of an existing
 	// Secret. If the specified Project does not exist, implementations MUST
 	// return a *meta.ErrNotFound error. If the specified Key does not exist, it
 	// is created. If the specified Key does exist, its corresponding Value is
