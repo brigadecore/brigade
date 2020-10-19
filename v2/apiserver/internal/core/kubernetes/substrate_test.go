@@ -2,9 +2,12 @@ package kubernetes
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
+	uuid "github.com/satori/go.uuid"
+
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -319,7 +322,7 @@ func TestSubstrateCreateProject(t *testing.T) {
 			kubeClient := testCase.setup()
 			s := &substrate{
 				generateNewNamespaceFn: func(string) string {
-					return "foo"
+					return testNamespace
 				},
 				kubeClient: kubeClient,
 			}
@@ -385,7 +388,7 @@ func TestSubstrateDeleteProject(t *testing.T) {
 			kubeClient := testCase.setup()
 			s := &substrate{
 				generateNewNamespaceFn: func(string) string {
-					return "foo"
+					return testNamespace
 				},
 				kubeClient: kubeClient,
 			}
@@ -399,4 +402,15 @@ func TestSubstrateDeleteProject(t *testing.T) {
 			testCase.assertions(err, kubeClient)
 		})
 	}
+}
+
+func TestGenerateNewNamespace(t *testing.T) {
+	const testProjectID = "foo"
+	namespace := generateNewNamespace(testProjectID)
+	tokens := strings.SplitN(namespace, "-", 3)
+	require.Len(t, tokens, 3)
+	require.Equal(t, "brigade", tokens[0])
+	require.Equal(t, testProjectID, tokens[1])
+	_, err := uuid.FromString(tokens[2])
+	require.NoError(t, err)
 }
