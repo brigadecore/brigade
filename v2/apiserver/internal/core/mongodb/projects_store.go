@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// projectsStore is a a MongoDB-based implementation of the core.ProjectsStore
+// projectsStore is a MongoDB-based implementation of the core.ProjectsStore
 // interface.
 type projectsStore struct {
 	collection mongodb.Collection

@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestCreateProject(t *testing.T) {
+func TestSubstrateCreateProject(t *testing.T) {
 	const testNamespace = "foo"
 	testCases := []struct {
 		name       string
@@ -329,7 +329,7 @@ func TestCreateProject(t *testing.T) {
 	}
 }
 
-func TestDeleteProject(t *testing.T) {
+func TestSubstrateDeleteProject(t *testing.T) {
 	const testNamespace = "foo"
 	testCases := []struct {
 		name       string

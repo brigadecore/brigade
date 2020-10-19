@@ -31,8 +31,14 @@ func main() {
 
 	ctx := signals.Context()
 
+	kubeClient, err := kubernetes.Client()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Data stores
 	var projectsStore core.ProjectsStore
+	var secretsStore core.SecretsStore
 	var sessionsStore authx.SessionsStore
 	var usersStore authx.UsersStore
 	{
@@ -41,25 +47,22 @@ func main() {
 			log.Fatal(err)
 		}
 		projectsStore = coreMongodb.NewProjectsStore(database)
+		secretsStore = coreKubernetes.NewSecretsStore(kubeClient)
 		sessionsStore = authxMongodb.NewSessionsStore(database)
 		usersStore = authxMongodb.NewUsersStore(database)
 	}
 
 	// Substrate
-	var substrate core.Substrate
-	{
-		kubeClient, err := kubernetes.Client()
-		if err != nil {
-			log.Fatal(err)
-		}
-		substrate = coreKubernetes.NewSubstrate(kubeClient)
-	}
+	substrate := coreKubernetes.NewSubstrate(kubeClient)
 
 	// Projects service
 	projectsService := core.NewProjectsService(
 		projectsStore,
 		substrate,
 	)
+
+	// Secrets service
+	secretsService := core.NewSecretsService(projectsStore, secretsStore)
 
 	// Session service
 	var sessionsService authx.SessionsService
@@ -94,16 +97,23 @@ func main() {
 		}
 		apiServer = restmachinery.NewServer(
 			[]restmachinery.Endpoints{
-				&authxREST.SessionsEndpoints{
-					AuthFilter: authFilter,
-					Service:    sessionsService,
-				},
 				&coreREST.ProjectsEndpoints{
 					AuthFilter: authFilter,
 					ProjectSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/project.json",
 					),
 					Service: projectsService,
+				},
+				&coreREST.SecretsEndpoints{
+					AuthFilter: authFilter,
+					SecretSchemaLoader: gojsonschema.NewReferenceLoader(
+						"file:///brigade/schemas/secret.json",
+					),
+					Service: secretsService,
+				},
+				&authxREST.SessionsEndpoints{
+					AuthFilter: authFilter,
+					Service:    sessionsService,
 				},
 			},
 			&apiServerConfig,

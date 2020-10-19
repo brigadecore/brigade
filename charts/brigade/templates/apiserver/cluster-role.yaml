@@ -17,8 +17,15 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - serviceaccounts
   - secrets
+  verbs:
+  - create
+  - get
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
   verbs:
   - create
 - apiGroups:
