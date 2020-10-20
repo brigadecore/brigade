@@ -167,6 +167,7 @@ func (b *BaseClient) SubmitRequest(
 		}
 		r.URL.RawQuery = q.Encode()
 	}
+	r.Header.Add("Accept", "application/json")
 	for k, v := range req.AuthHeaders {
 		r.Header.Add(k, v)
 	}
