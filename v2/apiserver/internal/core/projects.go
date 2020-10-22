@@ -173,7 +173,7 @@ func (p *projectsService) Create(
 	ctx context.Context,
 	project Project,
 ) (Project, error) {
-	now := time.Now()
+	now := time.Now().UTC()
 	project.Created = &now
 
 	// Add substrate-specific details BEFORE we persist.
@@ -265,6 +265,10 @@ type ProjectsStore interface {
 	List(
 		context.Context,
 		meta.ListOptions,
+	) (ProjectList, error)
+	ListSubscribers(
+		ctx context.Context,
+		event Event,
 	) (ProjectList, error)
 	// Get returns a Project having the indicated ID. If no such Project exists,
 	// implementations MUST return a *meta.ErrNotFound error.

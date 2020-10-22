@@ -166,7 +166,7 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 			)
 			return
 		}
-		if session.Expires != nil && time.Now().After(*session.Expires) {
+		if session.Expires != nil && time.Now().UTC().After(*session.Expires) {
 			t.writeResponse(
 				w,
 				http.StatusUnauthorized,

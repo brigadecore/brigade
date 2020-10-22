@@ -20,7 +20,7 @@ type seeded struct {
 
 // NewSeeded returns a seeded, concurrency-safe random number generator.
 func NewSeeded() Seeded {
-	rnd := mathrand.New(mathrand.NewSource(time.Now().UnixNano()))
+	rnd := mathrand.New(mathrand.NewSource(time.Now().UTC().UnixNano()))
 	return &seeded{
 		seededRand: rnd,
 		mut:        &sync.Mutex{},

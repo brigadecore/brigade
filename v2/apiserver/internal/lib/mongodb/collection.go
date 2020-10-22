@@ -19,6 +19,13 @@ type Collection interface {
 		filter interface{},
 		opts ...*options.CountOptions,
 	) (int64, error)
+	// DeleteMany executes a delete command to delete documents from the
+	// collection.
+	DeleteMany(
+		ctx context.Context,
+		filter interface{},
+		opts ...*options.DeleteOptions,
+	) (*mongo.DeleteResult, error)
 	// DeleteOne executes a delete command to delete at most one document from the
 	// collection.
 	DeleteOne(
@@ -47,6 +54,14 @@ type Collection interface {
 		document interface{},
 		opts ...*options.InsertOneOptions,
 	) (*mongo.InsertOneResult, error)
+	// UpdateMany executes an update command to update documents in the
+	// collection.
+	UpdateMany(
+		ctx context.Context,
+		filter interface{},
+		update interface{},
+		opts ...*options.UpdateOptions,
+	) (*mongo.UpdateResult, error)
 	// UpdateOne executes an update command to update at most one document in the
 	// collection.
 	UpdateOne(

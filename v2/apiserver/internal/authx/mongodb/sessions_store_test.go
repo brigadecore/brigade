@@ -248,7 +248,7 @@ func TestSessionsStoreAuthenticate(t *testing.T) {
 		testSessionID = "12345"
 		testUserID    = "tony@starkindustries.com"
 	)
-	var testExpiryTime = time.Now().Add(time.Hour)
+	var testExpiryTime = time.Now().UTC().Add(time.Hour)
 
 	testCases := []struct {
 		name       string

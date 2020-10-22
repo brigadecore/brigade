@@ -37,6 +37,7 @@ func main() {
 	}
 
 	// Data stores
+	var eventsStore core.EventsStore
 	var projectsStore core.ProjectsStore
 	var secretsStore core.SecretsStore
 	var sessionsStore authx.SessionsStore
@@ -46,6 +47,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		eventsStore = coreMongodb.NewEventsStore(database)
 		projectsStore = coreMongodb.NewProjectsStore(database)
 		secretsStore = coreKubernetes.NewSecretsStore(kubeClient)
 		sessionsStore = authxMongodb.NewSessionsStore(database)
@@ -55,11 +57,11 @@ func main() {
 	// Substrate
 	substrate := coreKubernetes.NewSubstrate(kubeClient)
 
+	// Events service
+	eventsService := core.NewEventsService(projectsStore, eventsStore, substrate)
+
 	// Projects service
-	projectsService := core.NewProjectsService(
-		projectsStore,
-		substrate,
-	)
+	projectsService := core.NewProjectsService(projectsStore, substrate)
 
 	// Secrets service
 	secretsService := core.NewSecretsService(projectsStore, secretsStore)
@@ -97,6 +99,13 @@ func main() {
 		}
 		apiServer = restmachinery.NewServer(
 			[]restmachinery.Endpoints{
+				&coreREST.EventsEndpoints{
+					AuthFilter: authFilter,
+					EventSchemaLoader: gojsonschema.NewReferenceLoader(
+						"file:///brigade/schemas/event.json",
+					),
+					Service: eventsService,
+				},
 				&coreREST.ProjectsEndpoints{
 					AuthFilter: authFilter,
 					ProjectSchemaLoader: gojsonschema.NewReferenceLoader(

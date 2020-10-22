@@ -1,7 +1,77 @@
 package core
 
+import "time"
+
 // LogLevel represents the desired granularity of Worker log output.
 type LogLevel string
+
+// LogLevelInfo represents INFO level granularity in Worker log output.
+const LogLevelInfo LogLevel = "INFO"
+
+// WorkerPhase represents where a Worker is within its lifecycle.
+type WorkerPhase string
+
+const (
+	// WorkerPhaseAborted represents the state wherein a worker was forcefully
+	// stopped during execution.
+	WorkerPhaseAborted WorkerPhase = "ABORTED"
+	// WorkerPhaseCanceled represents the state wherein a pending worker was
+	// canceled prior to execution.
+	WorkerPhaseCanceled WorkerPhase = "CANCELED"
+	// WorkerPhaseFailed represents the state wherein a worker has run to
+	// completion but experienced errors.
+	WorkerPhaseFailed WorkerPhase = "FAILED"
+	// WorkerPhasePending represents the state wherein a worker is awaiting
+	// execution.
+	WorkerPhasePending WorkerPhase = "PENDING"
+	// WorkerPhaseRunning represents the state wherein a worker is currently
+	// being executed.
+	WorkerPhaseRunning WorkerPhase = "RUNNING"
+	// WorkerPhaseSucceeded represents the state where a worker has run to
+	// completion without error.
+	WorkerPhaseSucceeded WorkerPhase = "SUCCEEDED"
+	// WorkerPhaseTimedOut represents the state wherein a worker has has not
+	// completed within a designated timeframe.
+	WorkerPhaseTimedOut WorkerPhase = "TIMED_OUT"
+	// WorkerPhaseUnknown represents the state wherein a worker's state is
+	// unknown. Note that this is possible if and only if the underlying Worker
+	// execution substrate (Kubernetes), for some unanticipated, reason does not
+	// know the Worker's (Pod's) state.
+	WorkerPhaseUnknown WorkerPhase = "UNKNOWN"
+)
+
+// WorkerPhasesAll returns a slice of WorkerPhases containing ALL possible
+// phases. Note that instead of utilizing a package-level slice, this a function
+// returns ad-hoc copies of the slice in order to preclude the possibility of
+// this important collection being modified at runtime.
+func WorkerPhasesAll() []WorkerPhase {
+	return []WorkerPhase{
+		WorkerPhaseAborted,
+		WorkerPhaseCanceled,
+		WorkerPhaseFailed,
+		WorkerPhasePending,
+		WorkerPhaseRunning,
+		WorkerPhaseSucceeded,
+		WorkerPhaseTimedOut,
+		WorkerPhaseUnknown,
+	}
+}
+
+// Worker represents a component that orchestrates handling of a single Event.
+type Worker struct {
+	// Spec is the technical blueprint for the Worker.
+	Spec WorkerSpec `json:"spec" bson:"spec"`
+	// Status contains details of the Worker's current state.
+	Status WorkerStatus `json:"status" bson:"status"`
+	// Token is an API token that grants a Worker permission to create new Jobs
+	// only for the Event to which it belongs.
+	Token string `json:"-" bson:"-"`
+	// HashedToken is a secure hash of the Token field.
+	HashedToken string `json:"-" bson:"hashedToken"`
+	// Jobs contains details of all Jobs spawned by the Worker during handling of
+	// the Event.
+	Jobs map[string]Job `json:"jobs,omitempty" bson:"jobs,omitempty"`
+}
 
 // WorkerSpec is the technical blueprint for a Worker.
 type WorkerSpec struct {
@@ -74,4 +144,16 @@ type JobPolicies struct {
 	// Jobs that mount the underlying host's Docker socket into its own file
 	// system.
 	AllowDockerSocketMount bool `json:"allowDockerSocketMount" bson:"allowDockerSocketMount"` // nolint: lll
+}
+
+// WorkerStatus represents the status of a Worker.
+type WorkerStatus struct {
+	// Started indicates the time the Worker began execution. It will be nil for
+	// a Worker that is not yet executing.
+	Started *time.Time `json:"started,omitempty" bson:"started,omitempty"`
+	// Ended indicates the time the Worker concluded execution. It will be nil
+	// for a Worker that is not done executing (or hasn't started).
+	Ended *time.Time `json:"ended,omitempty" bson:"ended,omitempty"`
+	// Phase indicates where the Worker is in its lifecycle.
+	Phase WorkerPhase `json:"phase,omitempty" bson:"phase,omitempty"`
 }

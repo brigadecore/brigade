@@ -11,6 +11,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -247,4 +249,74 @@ func (s *substrate) DeleteProject(
 
 func generateNewNamespace(projectID string) string {
 	return fmt.Sprintf("brigade-%s-%s", projectID, uuid.NewV4().String())
+}
+
+func (s *substrate) DeleteWorkerAndJobs(
+	ctx context.Context,
+	project core.Project,
+	event core.Event,
+) error {
+	matchesEvent, _ := labels.NewRequirement(
+		myk8s.LabelEvent,
+		selection.Equals,
+		[]string{event.ID},
+	)
+	labelSelector := labels.NewSelector()
+	labelSelector = labelSelector.Add(*matchesEvent)
+
+	// Delete all pods related to this Event
+	if err := s.kubeClient.CoreV1().Pods(
+		project.Kubernetes.Namespace,
+	).DeleteCollection(
+		ctx,
+		metav1.DeleteOptions{},
+		metav1.ListOptions{
+			LabelSelector: labelSelector.String(),
+		},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting event %q pods in namespace %q",
+			event.ID,
+			project.Kubernetes.Namespace,
+		)
+	}
+
+	// Delete all persistent volume claims related to this Event
+	if err := s.kubeClient.CoreV1().PersistentVolumeClaims(
+		project.Kubernetes.Namespace,
+	).DeleteCollection(
+		ctx,
+		metav1.DeleteOptions{},
+		metav1.ListOptions{
+			LabelSelector: labelSelector.String(),
+		},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting event %q persistent volume claims in namespace %q",
+			event.ID,
+			project.Kubernetes.Namespace,
+		)
+	}
+
+	// Delete all secrets related to this Event
+	if err := s.kubeClient.CoreV1().Secrets(
+		project.Kubernetes.Namespace,
+	).DeleteCollection(
+		ctx,
+		metav1.DeleteOptions{},
+		metav1.ListOptions{
+			LabelSelector: labelSelector.String(),
+		},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting event %q secrets in namespace %q",
+			event.ID,
+			project.Kubernetes.Namespace,
+		)
+	}
+
+	return nil
 }
