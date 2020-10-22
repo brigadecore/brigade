@@ -158,7 +158,7 @@ func serviceAccountList(c *cli.Context) error {
 		}
 
 		switch strings.ToLower(output) {
-		case "table":
+		case flagOutputTable:
 			table := uitable.New()
 			table.AddRow("ID", "DESCRIPTION", "AGE", "LOCKED?")
 			for _, serviceAccounts := range serviceAccounts.Items {
@@ -171,7 +171,7 @@ func serviceAccountList(c *cli.Context) error {
 			}
 			fmt.Println(table)
 
-		case "yaml":
+		case flagOutputYAML:
 			yamlBytes, err := yaml.Marshal(serviceAccounts)
 			if err != nil {
 				return errors.Wrap(
@@ -181,7 +181,7 @@ func serviceAccountList(c *cli.Context) error {
 			}
 			fmt.Println(string(yamlBytes))
 
-		case "json":
+		case flagOutputJSON:
 			prettyJSON, err := json.MarshalIndent(serviceAccounts, "", "  ")
 			if err != nil {
 				return errors.Wrap(
@@ -234,7 +234,7 @@ func serviceAccountGet(c *cli.Context) error {
 	}
 
 	switch strings.ToLower(output) {
-	case "table":
+	case flagOutputTable:
 		table := uitable.New()
 		table.AddRow("ID", "DESCRIPTION", "AGE", "LOCKED?")
 		var age string
@@ -249,7 +249,7 @@ func serviceAccountGet(c *cli.Context) error {
 		)
 		fmt.Println(table)
 
-	case "yaml":
+	case flagOutputYAML:
 		yamlBytes, err := yaml.Marshal(serviceAccount)
 		if err != nil {
 			return errors.Wrap(
@@ -259,7 +259,7 @@ func serviceAccountGet(c *cli.Context) error {
 		}
 		fmt.Println(string(yamlBytes))
 
-	case "json":
+	case flagOutputJSON:
 		prettyJSON, err := json.MarshalIndent(serviceAccount, "", "  ")
 		if err != nil {
 			return errors.Wrap(

@@ -40,6 +40,7 @@ func main() {
 	var eventsStore core.EventsStore
 	var projectsStore core.ProjectsStore
 	var secretsStore core.SecretsStore
+	var serviceAccountsStore authx.ServiceAccountsStore
 	var sessionsStore authx.SessionsStore
 	var usersStore authx.UsersStore
 	{
@@ -56,6 +57,10 @@ func main() {
 			log.Fatal(err)
 		}
 		secretsStore = coreKubernetes.NewSecretsStore(kubeClient)
+		serviceAccountsStore, err = authxMongodb.NewServiceAccountsStore(database)
+		if err != nil {
+			log.Fatal(err)
+		}
 		sessionsStore, err = authxMongodb.NewSessionsStore(database)
 		if err != nil {
 			log.Fatal(err)
@@ -74,6 +79,10 @@ func main() {
 
 	// Projects service
 	projectsService := core.NewProjectsService(projectsStore, substrate)
+
+	// ServiceAccounts service
+	serviceAccountsService :=
+		authx.NewServiceAccountsService(serviceAccountsStore)
 
 	// Secrets service
 	secretsService := core.NewSecretsService(projectsStore, secretsStore)
@@ -131,6 +140,13 @@ func main() {
 						"file:///brigade/schemas/secret.json",
 					),
 					Service: secretsService,
+				},
+				&authxREST.ServiceAccountEndpoints{
+					AuthFilter: authFilter,
+					ServiceAccountSchemaLoader: gojsonschema.NewReferenceLoader(
+						"file:///brigade/schemas/service-account.json",
+					),
+					Service: serviceAccountsService,
 				},
 				&authxREST.SessionsEndpoints{
 					AuthFilter: authFilter,

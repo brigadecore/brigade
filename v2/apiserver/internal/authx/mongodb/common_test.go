@@ -190,6 +190,49 @@ func mockSingleResult(obj interface{}) (*mongo.SingleResult, error) {
 	return res, nil
 }
 
+func mockCursor(objs ...interface{}) (*mongo.Cursor, error) {
+	if objs == nil {
+		objs = []interface{}{}
+	}
+	docBytes, err := bson.Marshal(
+		bson.M{
+			"ok": 1,
+			"cursor": bson.M{
+				// id 0 indicates this is the last chunk of data and prevents going back
+				// to the server for more, which we defintely don't want since there is
+				// no server. :)
+				"id":         int64(0),
+				"firstBatch": objs,
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	cursorResponse, err :=
+		driver.NewCursorResponse(docBytes, nil, description.Server{})
+	if err != nil {
+		return nil, err
+	}
+	batchCursor, err :=
+		driver.NewBatchCursor(cursorResponse, nil, nil, driver.CursorOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Build the codec registry so that the data can actually be decoded
+	registryBuilder := bsoncodec.NewRegistryBuilder()
+	defaultValueDecoders := bsoncodec.DefaultValueDecoders{}
+	defaultValueDecoders.RegisterDefaultDecoders(registryBuilder)
+	registry := registryBuilder.Build()
+
+	cursor := &mongo.Cursor{}
+	setUnexportedField(cursor, "bc", batchCursor)
+	setUnexportedField(cursor, "registry", registry)
+
+	return cursor, nil
+}
+
 func setUnexportedField(
 	objPtr interface{},
 	fieldName string,
