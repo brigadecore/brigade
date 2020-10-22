@@ -47,11 +47,23 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		eventsStore = coreMongodb.NewEventsStore(database)
-		projectsStore = coreMongodb.NewProjectsStore(database)
+		eventsStore, err = coreMongodb.NewEventsStore(database)
+		if err != nil {
+			log.Fatal(err)
+		}
+		projectsStore, err = coreMongodb.NewProjectsStore(database)
+		if err != nil {
+			log.Fatal(err)
+		}
 		secretsStore = coreKubernetes.NewSecretsStore(kubeClient)
-		sessionsStore = authxMongodb.NewSessionsStore(database)
-		usersStore = authxMongodb.NewUsersStore(database)
+		sessionsStore, err = authxMongodb.NewSessionsStore(database)
+		if err != nil {
+			log.Fatal(err)
+		}
+		usersStore, err = authxMongodb.NewUsersStore(database)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// Substrate

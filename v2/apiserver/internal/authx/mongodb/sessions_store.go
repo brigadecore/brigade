@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // sessionsStore is a MongoDB-based implementation of the authx.SessionsStore
@@ -20,10 +21,38 @@ type sessionsStore struct {
 
 // NewSessionsStore returns a MongoDB-based implementation of the
 // authx.SessionsStore interface.
-func NewSessionsStore(database *mongo.Database) authx.SessionsStore {
-	return &sessionsStore{
-		collection: database.Collection("sessions"),
+func NewSessionsStore(database *mongo.Database) (authx.SessionsStore, error) {
+	ctx, cancel :=
+		context.WithTimeout(context.Background(), createIndexTimeout)
+	defer cancel()
+	unique := true
+	collection := database.Collection("sessions")
+	if _, err := collection.Indexes().CreateMany(
+		ctx,
+		[]mongo.IndexModel{
+			{
+				Keys: bson.M{
+					"id": 1,
+				},
+				Options: &options.IndexOptions{
+					Unique: &unique,
+				},
+			},
+			{
+				Keys: bson.M{
+					"hashedToken": 1,
+				},
+				Options: &options.IndexOptions{
+					Unique: &unique,
+				},
+			},
+		},
+	); err != nil {
+		return nil, errors.Wrap(err, "error adding indexes to sessions collection")
 	}
+	return &sessionsStore{
+		collection: collection,
+	}, nil
 }
 
 func (s *sessionsStore) Create(

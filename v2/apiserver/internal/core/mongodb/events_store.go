@@ -24,10 +24,30 @@ type eventsStore struct {
 
 // NewEventsStore returns a MongoDB-based implementation of the core.EventsStore
 // interface.
-func NewEventsStore(database *mongo.Database) core.EventsStore {
-	return &eventsStore{
-		collection: database.Collection("events"),
+func NewEventsStore(database *mongo.Database) (core.EventsStore, error) {
+	ctx, cancel :=
+		context.WithTimeout(context.Background(), createIndexTimeout)
+	defer cancel()
+	unique := true
+	collection := database.Collection("events")
+	if _, err := collection.Indexes().CreateMany(
+		ctx,
+		[]mongo.IndexModel{
+			{
+				Keys: bson.M{
+					"id": 1,
+				},
+				Options: &options.IndexOptions{
+					Unique: &unique,
+				},
+			},
+		},
+	); err != nil {
+		return nil, errors.Wrap(err, "error adding indexes to events collection")
 	}
+	return &eventsStore{
+		collection: collection,
+	}, nil
 }
 
 func (e *eventsStore) Create(ctx context.Context, event core.Event) error {
