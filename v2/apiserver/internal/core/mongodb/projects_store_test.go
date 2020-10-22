@@ -194,6 +194,99 @@ func TestProjectsStoreList(t *testing.T) {
 	}
 }
 
+func TestProjectsStoreListSubscribers(t *testing.T) {
+	testProject1 := core.Project{
+		ObjectMeta: meta.ObjectMeta{
+			ID: "project1",
+		},
+	}
+	testProject2 := core.Project{
+		ObjectMeta: meta.ObjectMeta{
+			ID: "project2",
+		},
+	}
+	testEvent := core.Event{
+		Source: "github.com/krancour/fake-gateway",
+		Type:   "push",
+		Labels: core.Labels{
+			"foo": "bar",
+			"bat": "baz",
+		},
+	}
+	testCases := []struct {
+		name       string
+		collection mongodb.Collection
+		assertions func(subscribers core.ProjectList, err error)
+	}{
+		{
+			name: "error finding subscribers",
+			collection: &mockCollection{
+				FindFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOptions,
+				) (*mongo.Cursor, error) {
+					return nil, errors.New("something went wrong")
+				},
+			},
+			assertions: func(subscribers core.ProjectList, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error finding projects")
+			},
+		},
+
+		{
+			name: "found no subscribers",
+			collection: &mockCollection{
+				FindFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOptions,
+				) (*mongo.Cursor, error) {
+					cursor, err := mockCursor()
+					require.NoError(t, err)
+					return cursor, nil
+				},
+			},
+			assertions: func(subscribers core.ProjectList, err error) {
+				require.NoError(t, err)
+				require.Empty(t, subscribers.Items)
+			},
+		},
+
+		{
+			name: "found subscribers",
+			collection: &mockCollection{
+				FindFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOptions,
+				) (*mongo.Cursor, error) {
+					cursor, err := mockCursor(testProject1, testProject2)
+					require.NoError(t, err)
+					return cursor, nil
+				},
+			},
+			assertions: func(subscribers core.ProjectList, err error) {
+				require.NoError(t, err)
+				require.Len(t, subscribers.Items, 2)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &projectsStore{
+				collection: testCase.collection,
+			}
+			subscribers, err :=
+				store.ListSubscribers(context.Background(), testEvent)
+			testCase.assertions(subscribers, err)
+		})
+	}
+}
+
 func TestProjectsStoreGet(t *testing.T) {
 	const testProjectID = "blue-book"
 	testCases := []struct {

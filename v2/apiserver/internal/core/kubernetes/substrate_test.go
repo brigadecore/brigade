@@ -2,9 +2,12 @@ package kubernetes
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -12,6 +15,13 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
+
+func TestNewSubstrate(t *testing.T) {
+	testClient := fake.NewSimpleClientset()
+	s := NewSubstrate(testClient)
+	require.IsType(t, &substrate{}, s)
+	require.Same(t, testClient, s.(*substrate).kubeClient)
+}
 
 func TestSubstrateCreateProject(t *testing.T) {
 	const testNamespace = "foo"
@@ -319,7 +329,7 @@ func TestSubstrateCreateProject(t *testing.T) {
 			kubeClient := testCase.setup()
 			s := &substrate{
 				generateNewNamespaceFn: func(string) string {
-					return "foo"
+					return testNamespace
 				},
 				kubeClient: kubeClient,
 			}
@@ -385,7 +395,7 @@ func TestSubstrateDeleteProject(t *testing.T) {
 			kubeClient := testCase.setup()
 			s := &substrate{
 				generateNewNamespaceFn: func(string) string {
-					return "foo"
+					return testNamespace
 				},
 				kubeClient: kubeClient,
 			}
@@ -399,4 +409,47 @@ func TestSubstrateDeleteProject(t *testing.T) {
 			testCase.assertions(err, kubeClient)
 		})
 	}
+}
+
+// TODO: Find a better way to test this. Unfortunately, the DeleteCollection
+// function on a *fake.ClientSet doesn't ACTUALLY delete collections of
+// resources based on the labels provided.
+//
+// Refer to: https://github.com/kubernetes/client-go/issues/609
+//
+// This makes it basically impossible to assert what we'd LIKE to assert here--
+// that resources labeled with the correct Event ID are deleted while other
+// resources are left alone. We'll settle for invoking DeleteWorkerAndJobs(...)
+// and asserting we get no error-- so we at least get some test coverage for
+// this function. We'll have to make sure this behavior is well-covered by
+// integration or e2e tests in the future.
+func TestSubstrateDeleteWorkerAndJobs(t *testing.T) {
+	s := &substrate{
+		kubeClient: fake.NewSimpleClientset(),
+	}
+	err := s.DeleteWorkerAndJobs(
+		context.Background(),
+		core.Project{
+			Kubernetes: &core.KubernetesDetails{
+				Namespace: "foo",
+			},
+		},
+		core.Event{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "bar",
+			},
+		},
+	)
+	require.NoError(t, err)
+}
+
+func TestGenerateNewNamespace(t *testing.T) {
+	const testProjectID = "foo"
+	namespace := generateNewNamespace(testProjectID)
+	tokens := strings.SplitN(namespace, "-", 3)
+	require.Len(t, tokens, 3)
+	require.Equal(t, "brigade", tokens[0])
+	require.Equal(t, testProjectID, tokens[1])
+	_, err := uuid.FromString(tokens[2])
+	require.NoError(t, err)
 }

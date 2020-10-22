@@ -39,6 +39,7 @@ func shouldContinue(remainingItemCount int64) (bool, error) {
 				"%d results remain. Fetch more?",
 				remainingItemCount,
 			),
+			Default: true,
 		},
 		&shouldContinue,
 	); err != nil {

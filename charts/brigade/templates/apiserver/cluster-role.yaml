@@ -22,12 +22,20 @@ rules:
   - create
   - get
   - patch
+  - deletecollection
 - apiGroups:
   - ""
   resources:
   - serviceaccounts
   verbs:
   - create
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - persistentvolumeclaims
+  verbs:
+  - deletecollection
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:

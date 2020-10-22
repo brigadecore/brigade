@@ -89,7 +89,7 @@ func (s *sessionsStore) Authenticate(
 		bson.M{
 			"$set": bson.M{
 				"userID":        userID,
-				"authenticated": time.Now(),
+				"authenticated": time.Now().UTC(),
 				"expires":       expires,
 			},
 		},

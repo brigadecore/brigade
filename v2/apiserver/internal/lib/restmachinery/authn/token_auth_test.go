@@ -102,7 +102,7 @@ func TestTokenAuthFilterWithAuthenticatedSession(t *testing.T) {
 	const testSessionID = "foobar"
 	filter := &tokenAuthFilter{
 		findSessionFn: func(context.Context, string) (authx.Session, error) {
-			now := time.Now()
+			now := time.Now().UTC()
 			expiry := now.Add(time.Minute)
 			return authx.Session{
 				ObjectMeta: meta.ObjectMeta{

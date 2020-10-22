@@ -20,6 +20,12 @@ type mockCollection struct {
 		opts ...*options.CountOptions,
 	) (int64, error)
 
+	DeleteManyFn func(
+		ctx context.Context,
+		filter interface{},
+		opts ...*options.DeleteOptions,
+	) (*mongo.DeleteResult, error)
+
 	DeleteOneFn func(
 		ctx context.Context,
 		filter interface{},
@@ -44,6 +50,13 @@ type mockCollection struct {
 		opts ...*options.InsertOneOptions,
 	) (*mongo.InsertOneResult, error)
 
+	UpdateManyFn func(
+		ctx context.Context,
+		filter interface{},
+		update interface{},
+		opts ...*options.UpdateOptions,
+	) (*mongo.UpdateResult, error)
+
 	UpdateOneFn func(
 		ctx context.Context,
 		filter interface{},
@@ -58,6 +71,14 @@ func (m *mockCollection) CountDocuments(
 	opts ...*options.CountOptions,
 ) (int64, error) {
 	return m.CountDocumentsFn(ctx, filter, opts...)
+}
+
+func (m *mockCollection) DeleteMany(
+	ctx context.Context,
+	filter interface{},
+	opts ...*options.DeleteOptions,
+) (*mongo.DeleteResult, error) {
+	return m.DeleteManyFn(ctx, filter, opts...)
 }
 
 func (m *mockCollection) DeleteOne(
@@ -90,6 +111,15 @@ func (m *mockCollection) InsertOne(
 	opts ...*options.InsertOneOptions,
 ) (*mongo.InsertOneResult, error) {
 	return m.InsertOneFn(ctx, document, opts...)
+}
+
+func (m *mockCollection) UpdateMany(
+	ctx context.Context,
+	filter interface{},
+	update interface{},
+	opts ...*options.UpdateOptions,
+) (*mongo.UpdateResult, error) {
+	return m.UpdateManyFn(ctx, filter, update, opts...)
 }
 
 func (m *mockCollection) UpdateOne(
