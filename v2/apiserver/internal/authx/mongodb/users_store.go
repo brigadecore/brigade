@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // usersStore is a MongoDB-based implementation of the authx.UsersStore
@@ -20,10 +21,28 @@ type usersStore struct {
 
 // NewUsersStore returns a MongoDB-based implementation of the authx.UsersStore
 // interface.
-func NewUsersStore(database *mongo.Database) authx.UsersStore {
-	return &usersStore{
-		collection: database.Collection("users"),
+func NewUsersStore(database *mongo.Database) (authx.UsersStore, error) {
+	ctx, cancel :=
+		context.WithTimeout(context.Background(), createIndexTimeout)
+	defer cancel()
+	unique := true
+	collection := database.Collection("users")
+	if _, err := collection.Indexes().CreateOne(
+		ctx,
+		mongo.IndexModel{
+			Keys: bson.M{
+				"id": 1,
+			},
+			Options: &options.IndexOptions{
+				Unique: &unique,
+			},
+		},
+	); err != nil {
+		return nil, errors.Wrap(err, "error adding indexes to users collection")
 	}
+	return &usersStore{
+		collection: collection,
+	}, nil
 }
 
 func (u *usersStore) Create(ctx context.Context, user authx.User) error {

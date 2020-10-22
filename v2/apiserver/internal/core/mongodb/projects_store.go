@@ -21,10 +21,33 @@ type projectsStore struct {
 
 // NewProjectsStore returns a MongoDB-based implementation of the
 // core.ProjectsStore interface.
-func NewProjectsStore(database *mongo.Database) core.ProjectsStore {
-	return &projectsStore{
-		collection: database.Collection("projects"),
+func NewProjectsStore(database *mongo.Database) (core.ProjectsStore, error) {
+	ctx, cancel :=
+		context.WithTimeout(context.Background(), createIndexTimeout)
+	defer cancel()
+	unique := true
+	collection := database.Collection("projects")
+	if _, err := collection.Indexes().CreateMany(
+		ctx,
+		[]mongo.IndexModel{
+			{
+				Keys: bson.M{
+					"id": 1,
+				},
+				Options: &options.IndexOptions{
+					Unique: &unique,
+				},
+			},
+		},
+	); err != nil {
+		return nil, errors.Wrap(
+			err,
+			"error adding indexes to projects collection",
+		)
 	}
+	return &projectsStore{
+		collection: collection,
+	}, nil
 }
 
 func (p *projectsStore) Create(
