@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
@@ -59,6 +60,44 @@ func (u *usersStore) Create(ctx context.Context, user authx.User) error {
 	return nil
 }
 
+func (u *usersStore) List(
+	ctx context.Context,
+	opts meta.ListOptions,
+) (authx.UserList, error) {
+	users := authx.UserList{}
+
+	criteria := bson.M{}
+	if opts.Continue != "" {
+		criteria["id"] = bson.M{"$gt": opts.Continue}
+	}
+
+	findOptions := options.Find()
+	findOptions.SetSort(bson.M{"id": 1})
+	findOptions.SetLimit(opts.Limit)
+	cur, err := u.collection.Find(ctx, criteria, findOptions)
+	if err != nil {
+		return users, errors.Wrap(err, "error finding users")
+	}
+	if err := cur.All(ctx, &users.Items); err != nil {
+		return users, errors.Wrap(err, "error decoding users")
+	}
+
+	if int64(len(users.Items)) == opts.Limit {
+		continueID := users.Items[opts.Limit-1].ID
+		criteria["id"] = bson.M{"$gt": continueID}
+		remaining, err := u.collection.CountDocuments(ctx, criteria)
+		if err != nil {
+			return users, errors.Wrap(err, "error counting remaining users")
+		}
+		if remaining > 0 {
+			users.Continue = continueID
+			users.RemainingItemCount = remaining
+		}
+	}
+
+	return users, nil
+}
+
 func (u *usersStore) Get(
 	ctx context.Context,
 	id string,
@@ -76,4 +115,48 @@ func (u *usersStore) Get(
 		return user, errors.Wrapf(err, "error finding/decoding user %q", id)
 	}
 	return user, nil
+}
+
+func (u *usersStore) Lock(ctx context.Context, id string) error {
+	res, err := u.collection.UpdateOne(
+		ctx,
+		bson.M{"id": id},
+		bson.M{
+			"$set": bson.M{
+				"locked": time.Now().UTC(),
+			},
+		},
+	)
+	if err != nil {
+		return errors.Wrapf(err, "error updating user %q", id)
+	}
+	if res.MatchedCount == 0 {
+		return &meta.ErrNotFound{
+			Type: "User",
+			ID:   id,
+		}
+	}
+	return nil
+}
+
+func (u *usersStore) Unlock(ctx context.Context, id string) error {
+	res, err := u.collection.UpdateOne(
+		ctx,
+		bson.M{"id": id},
+		bson.M{
+			"$set": bson.M{
+				"locked": nil,
+			},
+		},
+	)
+	if err != nil {
+		return errors.Wrapf(err, "error updating user %q", id)
+	}
+	if res.MatchedCount == 0 {
+		return &meta.ErrNotFound{
+			Type: "User",
+			ID:   id,
+		}
+	}
+	return nil
 }

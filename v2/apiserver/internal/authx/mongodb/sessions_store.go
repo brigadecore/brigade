@@ -148,3 +148,11 @@ func (s *sessionsStore) Delete(ctx context.Context, id string) error {
 	}
 	return nil
 }
+
+func (s *sessionsStore) DeleteByUser(ctx context.Context, userID string) error {
+	if _, err :=
+		s.collection.DeleteMany(ctx, bson.M{"userID": userID}); err != nil {
+		return errors.Wrapf(err, "error deleting sessions for user %q", userID)
+	}
+	return nil
+}
