@@ -46,16 +46,12 @@ func NewUsersStore(database *mongo.Database) (authx.UsersStore, error) {
 }
 
 func (u *usersStore) Create(ctx context.Context, user authx.User) error {
-	if _, err :=
-		u.collection.InsertOne(ctx, user); err != nil {
-		if writeException, ok := err.(mongo.WriteException); ok {
-			if len(writeException.WriteErrors) == 1 &&
-				writeException.WriteErrors[0].Code == 11000 {
-				return &meta.ErrConflict{
-					Type:   "User",
-					ID:     user.ID,
-					Reason: fmt.Sprintf("A user with the ID %q already exists.", user.ID),
-				}
+	if _, err := u.collection.InsertOne(ctx, user); err != nil {
+		if mongodb.IsDuplicateKeyError(err) {
+			return &meta.ErrConflict{
+				Type:   "User",
+				ID:     user.ID,
+				Reason: fmt.Sprintf("A user with the ID %q already exists.", user.ID),
 			}
 		}
 		return errors.Wrapf(err, "error inserting new user %q", user.ID)
