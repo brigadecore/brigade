@@ -55,17 +55,14 @@ func (p *projectsStore) Create(
 	project core.Project,
 ) error {
 	if _, err := p.collection.InsertOne(ctx, project); err != nil {
-		if writeException, ok := err.(mongo.WriteException); ok {
-			if len(writeException.WriteErrors) == 1 &&
-				writeException.WriteErrors[0].Code == 11000 {
-				return &meta.ErrConflict{
-					Type: "Project",
-					ID:   project.ID,
-					Reason: fmt.Sprintf(
-						"A project with the ID %q already exists.",
-						project.ID,
-					),
-				}
+		if mongodb.IsDuplicateKeyError(err) {
+			return &meta.ErrConflict{
+				Type: "Project",
+				ID:   project.ID,
+				Reason: fmt.Sprintf(
+					"A project with the ID %q already exists.",
+					project.ID,
+				),
 			}
 		}
 		return errors.Wrapf(err, "error inserting new project %q", project.ID)
