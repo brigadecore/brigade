@@ -31,6 +31,7 @@ func main() {
 		logoutCommand,
 		projectCommand,
 		serviceAccountCommand,
+		userCommand,
 	}
 	fmt.Println()
 	if err := app.RunContext(signals.Context(), os.Args); err != nil {
