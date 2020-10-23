@@ -86,12 +86,12 @@ func TestEventsServiceCreate(t *testing.T) {
 					Project,
 					Event,
 				) (Event, error) {
-					return Event{}, errors.New("error creating single project")
+					return Event{}, errors.New("error creating single event")
 				},
 			},
 			assertions: func(_ EventList, err error) {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), "error creating single project")
+				require.Contains(t, err.Error(), "error creating single event")
 			},
 		},
 		{
@@ -170,12 +170,12 @@ func TestEventsServiceCreate(t *testing.T) {
 					Project,
 					Event,
 				) (Event, error) {
-					return Event{}, errors.New("error creating single project")
+					return Event{}, errors.New("error creating single event")
 				},
 			},
 			assertions: func(_ EventList, err error) {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), "error creating single project")
+				require.Contains(t, err.Error(), "error creating single event")
 			},
 		},
 		{
