@@ -360,7 +360,7 @@ func (s *sessionsService) CreateUserSession(
 		)
 	}
 	return OIDCAuthDetails{
-		Token:   crypto.NewToken(256),
+		Token:   token,
 		AuthURL: s.config.OAuth2Helper.AuthCodeURL(oauth2State),
 	}, nil
 }
