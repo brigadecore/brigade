@@ -410,3 +410,59 @@ func TestSessionsStoreDelete(t *testing.T) {
 		})
 	}
 }
+
+func TestSessionsStoreDeleteByUser(t *testing.T) {
+	testCases := []struct {
+		name       string
+		collection mongodb.Collection
+		assertions func(err error)
+	}{
+
+		{
+			name: "unanticipated error",
+			collection: &mockCollection{
+				DeleteManyFn: func(
+					context.Context,
+					interface{},
+					...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return nil, errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error deleting sessions for user")
+			},
+		},
+
+		{
+			name: "success",
+			collection: &mockCollection{
+				DeleteManyFn: func(
+					context.Context,
+					interface{},
+					...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return nil, nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &sessionsStore{
+				collection: testCase.collection,
+			}
+			err := store.DeleteByUser(
+				context.Background(),
+				"tony@starkindustries.com",
+			)
+			testCase.assertions(err)
+		})
+	}
+}
