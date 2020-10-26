@@ -742,7 +742,8 @@ type mockSessionsStore struct {
 		userID string,
 		expires time.Time,
 	) error
-	DeleteFn func(context.Context, string) error
+	DeleteFn       func(context.Context, string) error
+	DeleteByUserFn func(context.Context, string) error
 }
 
 func (m *mockSessionsStore) Create(ctx context.Context, session Session) error {
@@ -774,6 +775,13 @@ func (m *mockSessionsStore) Authenticate(
 
 func (m *mockSessionsStore) Delete(ctx context.Context, id string) error {
 	return m.DeleteFn(ctx, id)
+}
+
+func (m *mockSessionsStore) DeleteByUser(
+	ctx context.Context,
+	userID string,
+) error {
+	return m.DeleteByUserFn(ctx, userID)
 }
 
 type mockOAuth2Helper struct {
