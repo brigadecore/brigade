@@ -285,6 +285,98 @@ func TestServiceAccountsStoreGet(t *testing.T) {
 	}
 }
 
+func TestServiceAccountsStoreGetByHashedToken(t *testing.T) {
+	const testServiceAccountID = "jarvis"
+	const testHashedToken = "abcdefghijklmnopqrstuvwxyz"
+	testCases := []struct {
+		name       string
+		collection mongodb.Collection
+		assertions func(authx.ServiceAccount, error)
+	}{
+
+		{
+			name: "service account not found",
+			collection: &mockCollection{
+				FindOneFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOneOptions,
+				) *mongo.SingleResult {
+					res, err := mockSingleResult(mongo.ErrNoDocuments)
+					require.NoError(t, err)
+					return res
+				},
+			},
+			assertions: func(_ authx.ServiceAccount, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotFound{}, err)
+				require.Equal(t, "ServiceAccount", err.(*meta.ErrNotFound).Type)
+				require.Empty(t, err.(*meta.ErrNotFound).ID)
+			},
+		},
+
+		{
+			name: "unanticipated error",
+			collection: &mockCollection{
+				FindOneFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOneOptions,
+				) *mongo.SingleResult {
+					res, err := mockSingleResult(errors.New("something went wrong"))
+					require.NoError(t, err)
+					return res
+				},
+			},
+			assertions: func(_ authx.ServiceAccount, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(
+					t,
+					err.Error(),
+					"error finding/decoding service account by hashed token",
+				)
+			},
+		},
+
+		{
+			name: "service account found",
+			collection: &mockCollection{
+				FindOneFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOneOptions,
+				) *mongo.SingleResult {
+					res, err := mockSingleResult(
+						authx.ServiceAccount{
+							ObjectMeta: meta.ObjectMeta{
+								ID: testServiceAccountID,
+							},
+						},
+					)
+					require.NoError(t, err)
+					return res
+				},
+			},
+			assertions: func(serviceAccount authx.ServiceAccount, err error) {
+				require.NoError(t, err)
+				require.Equal(t, testServiceAccountID, serviceAccount.ID)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &serviceAccountsStore{
+				collection: testCase.collection,
+			}
+			serviceAccount, err :=
+				store.GetByHashedToken(context.Background(), testHashedToken)
+			testCase.assertions(serviceAccount, err)
+		})
+	}
+}
+
 func TestServiceAccountsLock(t *testing.T) {
 	const testServiceAccountID = "jarvis"
 

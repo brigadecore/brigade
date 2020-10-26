@@ -82,6 +82,10 @@ type ServiceAccountsService interface {
 	// specified ServiceAccount does not exist, implementations MUST return a
 	// *meta.ErrNotFound error.
 	Get(context.Context, string) (ServiceAccount, error)
+	// GetByToken retrieves a single ServiceAccount specified by token. If no
+	// such ServiceAccount exists, implementations MUST return a *meta.ErrNotFound
+	// error.
+	GetByToken(context.Context, string) (ServiceAccount, error)
 
 	// Lock revokes system access for a single ServiceAccount specified by its
 	// identifier. If the specified ServiceAccount does not exist, implementations
@@ -158,6 +162,23 @@ func (s *serviceAccountsService) Get(
 	return serviceAccount, nil
 }
 
+func (s *serviceAccountsService) GetByToken(
+	ctx context.Context,
+	token string,
+) (ServiceAccount, error) {
+	serviceAccount, err := s.store.GetByHashedToken(
+		ctx,
+		crypto.Hash("", token),
+	)
+	if err != nil {
+		return serviceAccount, errors.Wrap(
+			err,
+			"error retrieving service account from store by token",
+		)
+	}
+	return serviceAccount, nil
+}
+
 func (s *serviceAccountsService) Lock(ctx context.Context, id string) error {
 	if err := s.store.Lock(ctx, id); err != nil {
 		return errors.Wrapf(
@@ -204,6 +225,10 @@ type ServiceAccountsStore interface {
 	// the specified ServiceAccount does not exist, implementations MUST return
 	// a *meta.ErrNotFound error.
 	Get(context.Context, string) (ServiceAccount, error)
+	// GetByHashedToken retrieves a single ServiceAccount having the provided
+	// hashed token from the underlying data store. If no such ServiceAccount
+	// exists, implementations MUST return a *meta.ErrNotFound error.
+	GetByHashedToken(context.Context, string) (ServiceAccount, error)
 
 	// Lock updates the specified ServiceAccount in the underlying data store to
 	// reflect that it has been locked out of the system. If the specified
