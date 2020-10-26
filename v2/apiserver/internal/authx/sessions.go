@@ -497,4 +497,6 @@ type SessionsStore interface {
 	// Delete deletes the specified Session. If no Session having the given
 	// identifier is found, implementations MUST return a *meta.ErrNotFound error.
 	Delete(context.Context, string) error
+	// DeleteByUser deletes all sessions belonging to the specified User.
+	DeleteByUser(ctx context.Context, userID string) error
 }

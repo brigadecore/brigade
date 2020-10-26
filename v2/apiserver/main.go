@@ -101,12 +101,13 @@ func main() {
 		)
 	}
 
+	// Users service
+	usersService := authx.NewUsersService(usersStore, sessionsStore)
+
 	// Server
 	var apiServer restmachinery.Server
 	{
-		// TODO: Once the UsersService is implemented, replace the store function
-		// below with the service function.
-		authFilterConfig, err := authn.GetTokenAuthFilterConfig(usersStore.Get)
+		authFilterConfig, err := authn.GetTokenAuthFilterConfig(usersService.Get)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -152,6 +153,10 @@ func main() {
 				&authxREST.SessionsEndpoints{
 					AuthFilter: authFilter,
 					Service:    sessionsService,
+				},
+				&authxREST.UsersEndpoints{
+					AuthFilter: authFilter,
+					Service:    usersService,
 				},
 			},
 			&apiServerConfig,
