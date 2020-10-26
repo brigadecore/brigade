@@ -149,18 +149,20 @@ type UsersStore interface {
 	// List retrieves a UserList from the underlying data store, with its Items
 	// (Users) ordered by ID.
 	List(context.Context, meta.ListOptions) (UserList, error)
-	// Get retrieves a single User from the underlying data store. If the
-	// specified User does not exist, implementations MUST return a
-	// *meta.ErrNotFound error.
+	// Get retrieves a single User from the underlying data store. Implementations
+	// MUST use a case insensitive query for this operation. If the specified User
+	// does not exist, implementations MUST return a *meta.ErrNotFound error.
 	Get(context.Context, string) (User, error)
 
 	// Lock updates the specified User in the underlying data store to reflect
-	// that it has been locked out of the system. If the specified User does not
-	// exist, implementations MUST return a *meta.ErrNotFound error.
+	// that it has been locked out of the system. Implementations MUST use a case
+	// insensitive update statement for this operation. If the specified User does
+	// not exist, implementations MUST return a *meta.ErrNotFound error.
 	Lock(context.Context, string) error
 	// Unlock updates the specified User in the underlying data store to reflect
 	// that its system access (after presumably having been revoked) has been
-	// restored. If the specified User does not exist, implementations MUST return
-	// a *meta.ErrNotFound error.
+	// restored. Implementations MUST use a case insensitive update statement for
+	// this operation. If the specified User does not exist, implementations MUST
+	// return a *meta.ErrNotFound error.
 	Unlock(ctx context.Context, id string) error
 }

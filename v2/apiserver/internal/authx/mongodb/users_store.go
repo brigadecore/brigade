@@ -14,6 +14,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var caseInsensitiveIDCollation = &options.Collation{
+	Locale:   "en",
+	Strength: 1,
+}
+
 // usersStore is a MongoDB-based implementation of the authx.UsersStore
 // interface.
 type usersStore struct {
@@ -35,7 +40,8 @@ func NewUsersStore(database *mongo.Database) (authx.UsersStore, error) {
 				"id": 1,
 			},
 			Options: &options.IndexOptions{
-				Unique: &unique,
+				Collation: caseInsensitiveIDCollation,
+				Unique:    &unique,
 			},
 		},
 	); err != nil {
@@ -103,7 +109,13 @@ func (u *usersStore) Get(
 	id string,
 ) (authx.User, error) {
 	user := authx.User{}
-	res := u.collection.FindOne(ctx, bson.M{"id": id})
+	res := u.collection.FindOne(
+		ctx,
+		bson.M{"id": id},
+		&options.FindOneOptions{
+			Collation: caseInsensitiveIDCollation,
+		},
+	)
 	err := res.Decode(&user)
 	if err == mongo.ErrNoDocuments {
 		return user, &meta.ErrNotFound{
@@ -126,6 +138,9 @@ func (u *usersStore) Lock(ctx context.Context, id string) error {
 				"locked": time.Now().UTC(),
 			},
 		},
+		&options.UpdateOptions{
+			Collation: caseInsensitiveIDCollation,
+		},
 	)
 	if err != nil {
 		return errors.Wrapf(err, "error updating user %q", id)
@@ -147,6 +162,9 @@ func (u *usersStore) Unlock(ctx context.Context, id string) error {
 			"$set": bson.M{
 				"locked": nil,
 			},
+		},
+		&options.UpdateOptions{
+			Collation: caseInsensitiveIDCollation,
 		},
 	)
 	if err != nil {
