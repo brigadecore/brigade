@@ -56,7 +56,11 @@ func GetTokenAuthFilterConfig(
 // extracting an opaque bearer token form the HTTP Authorization header and
 // using that token to locate an established Session.
 type tokenAuthFilter struct {
-	findSessionFn func(
+	findServiceAccountByTokenFn func(
+		ctx context.Context,
+		token string,
+	) (authx.ServiceAccount, error)
+	findSessionByTokenFn func(
 		ctx context.Context,
 		token string,
 	) (authx.Session, error)
@@ -68,6 +72,10 @@ type tokenAuthFilter struct {
 // authentication by extracting an opaque bearer token form the HTTP
 // Authorization header and using that token to locate an established Session.
 func NewTokenAuthFilter(
+	findServiceAccountByTokenFn func(
+		ctx context.Context,
+		token string,
+	) (authx.ServiceAccount, error),
 	findSessionFn func(ctx context.Context, token string) (authx.Session, error),
 	config *TokenAuthFilterConfig,
 ) restmachinery.Filter {
@@ -75,8 +83,9 @@ func NewTokenAuthFilter(
 		config = &TokenAuthFilterConfig{}
 	}
 	return &tokenAuthFilter{
-		findSessionFn: findSessionFn,
-		config:        *config,
+		findServiceAccountByTokenFn: findServiceAccountByTokenFn,
+		findSessionByTokenFn:        findSessionFn,
+		config:                      *config,
 	}
 }
 
@@ -111,7 +120,29 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 		}
 		token := headerValueParts[1]
 
-		session, err := t.findSessionFn(r.Context(), token)
+		// Is it a ServiceAccount's token?
+		if serviceAccount, err :=
+			t.findServiceAccountByTokenFn(r.Context(), token); err != nil {
+			if _, ok := errors.Cause(err).(*meta.ErrNotFound); !ok {
+				log.Println(err)
+				t.writeResponse(
+					w,
+					http.StatusInternalServerError,
+					&meta.ErrInternalServer{},
+				)
+				return
+			}
+		} else {
+			if serviceAccount.Locked != nil {
+				http.Error(w, "{}", http.StatusForbidden)
+				return
+			}
+			ctx := authx.ContextWithPrincipal(r.Context(), &serviceAccount)
+			handle(w, r.WithContext(ctx))
+			return
+		}
+
+		session, err := t.findSessionByTokenFn(r.Context(), token)
 		if err != nil {
 			if _, ok := errors.Cause(err).(*meta.ErrNotFound); ok {
 				t.writeResponse(
