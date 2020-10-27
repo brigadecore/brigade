@@ -112,6 +112,7 @@ func main() {
 			log.Fatal(err)
 		}
 		authFilter := authn.NewTokenAuthFilter(
+			serviceAccountsService.GetByToken,
 			sessionsService.GetByToken,
 			&authFilterConfig,
 		)

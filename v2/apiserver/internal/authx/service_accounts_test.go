@@ -121,47 +121,6 @@ func TestServiceAccountsServiceList(t *testing.T) {
 	}
 }
 
-type mockServiceAccountStore struct {
-	CreateFn func(context.Context, ServiceAccount) error
-	ListFn   func(context.Context, meta.ListOptions) (ServiceAccountList, error)
-	GetFn    func(context.Context, string) (ServiceAccount, error)
-	LockFn   func(context.Context, string) error
-	UnlockFn func(ctx context.Context, id string, newHashedToken string) error
-}
-
-func (m *mockServiceAccountStore) Create(
-	ctx context.Context,
-	serviceAccount ServiceAccount,
-) error {
-	return m.CreateFn(ctx, serviceAccount)
-}
-
-func (m *mockServiceAccountStore) List(
-	ctx context.Context,
-	opts meta.ListOptions,
-) (ServiceAccountList, error) {
-	return m.ListFn(ctx, opts)
-}
-
-func (m *mockServiceAccountStore) Get(
-	ctx context.Context,
-	id string,
-) (ServiceAccount, error) {
-	return m.GetFn(ctx, id)
-}
-
-func (m *mockServiceAccountStore) Lock(ctx context.Context, id string) error {
-	return m.LockFn(ctx, id)
-}
-
-func (m *mockServiceAccountStore) Unlock(
-	ctx context.Context,
-	id string,
-	newHashedToken string,
-) error {
-	return m.UnlockFn(ctx, id, newHashedToken)
-}
-
 func TestServiceAccountsServiceGet(t *testing.T) {
 	testCases := []struct {
 		name       string
@@ -201,6 +160,60 @@ func TestServiceAccountsServiceGet(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			_, err :=
 				testCase.service.Get(context.Background(), "jarvis")
+			testCase.assertions(err)
+		})
+	}
+}
+
+func TestServiceAccountsServiceGetByToken(t *testing.T) {
+	const testToken = "abcdefghijklmnopqrstuvwxyz"
+	testCases := []struct {
+		name       string
+		service    ServiceAccountsService
+		assertions func(error)
+	}{
+		{
+			name: "error getting service account from store",
+			service: &serviceAccountsService{
+				store: &mockServiceAccountStore{
+					GetByHashedTokenFn: func(
+						context.Context,
+						string,
+					) (ServiceAccount, error) {
+						return ServiceAccount{}, errors.New("error getting service account")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error getting service account")
+				require.Contains(
+					t, err.Error(),
+					"error retrieving service account from store by token",
+				)
+			},
+		},
+		{
+			name: "success",
+			service: &serviceAccountsService{
+				store: &mockServiceAccountStore{
+					GetByHashedTokenFn: func(
+						context.Context,
+						string,
+					) (ServiceAccount, error) {
+						return ServiceAccount{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			_, err :=
+				testCase.service.GetByToken(context.Background(), testToken)
 			testCase.assertions(err)
 		})
 	}
@@ -291,4 +304,60 @@ func TestServiceAccountsUnlock(t *testing.T) {
 			testCase.assertions(token, err)
 		})
 	}
+}
+
+type mockServiceAccountStore struct {
+	CreateFn func(context.Context, ServiceAccount) error
+	ListFn   func(
+		context.Context,
+		meta.ListOptions,
+	) (ServiceAccountList, error)
+	GetFn              func(context.Context, string) (ServiceAccount, error)
+	GetByHashedTokenFn func(context.Context, string) (ServiceAccount, error)
+	LockFn             func(context.Context, string) error
+	UnlockFn           func(
+		ctx context.Context,
+		id string,
+		newHashedToken string,
+	) error
+}
+
+func (m *mockServiceAccountStore) Create(
+	ctx context.Context,
+	serviceAccount ServiceAccount,
+) error {
+	return m.CreateFn(ctx, serviceAccount)
+}
+
+func (m *mockServiceAccountStore) List(
+	ctx context.Context,
+	opts meta.ListOptions,
+) (ServiceAccountList, error) {
+	return m.ListFn(ctx, opts)
+}
+
+func (m *mockServiceAccountStore) Get(
+	ctx context.Context,
+	id string,
+) (ServiceAccount, error) {
+	return m.GetFn(ctx, id)
+}
+
+func (m *mockServiceAccountStore) GetByHashedToken(
+	ctx context.Context,
+	token string,
+) (ServiceAccount, error) {
+	return m.GetByHashedTokenFn(ctx, token)
+}
+
+func (m *mockServiceAccountStore) Lock(ctx context.Context, id string) error {
+	return m.LockFn(ctx, id)
+}
+
+func (m *mockServiceAccountStore) Unlock(
+	ctx context.Context,
+	id string,
+	newHashedToken string,
+) error {
+	return m.UnlockFn(ctx, id, newHashedToken)
 }

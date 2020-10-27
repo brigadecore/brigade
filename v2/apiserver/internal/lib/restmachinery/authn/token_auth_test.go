@@ -2,6 +2,7 @@ package authn
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -10,125 +11,528 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestTokenAuthFilterWithHeaderMissing(t *testing.T) {
-	filter := &tokenAuthFilter{
-		config: TokenAuthFilterConfig{
-			OpenIDConnectEnabled: true,
-		},
-	}
-	req, err := http.NewRequest(http.MethodGet, "/", nil)
-	require.NoError(t, err)
-	rr := httptest.NewRecorder()
-	handlerCalled := false
-	filter.Decorate(func(http.ResponseWriter, *http.Request) {
-		handlerCalled = true
-	})(rr, req)
-	require.Equal(t, http.StatusUnauthorized, rr.Code)
-	require.False(t, handlerCalled)
-}
+func TestFilter(t *testing.T) {
+	const testSessionID = "123456789"
 
-func TestTokenAuthFilterWithHeaderNotBearer(t *testing.T) {
-	filter := &tokenAuthFilter{
-		config: TokenAuthFilterConfig{
-			OpenIDConnectEnabled: true,
-		},
-	}
-	req, err := http.NewRequest(http.MethodGet, "/", nil)
-	require.NoError(t, err)
-	req.Header.Add("Authorization", "Digest foo")
-	rr := httptest.NewRecorder()
-	handlerCalled := false
-	filter.Decorate(func(http.ResponseWriter, *http.Request) {
-		handlerCalled = true
-	})(rr, req)
-	require.Equal(t, http.StatusUnauthorized, rr.Code)
-	require.False(t, handlerCalled)
-}
-
-func TestTokenAuthFilterWithTokenInvalid(t *testing.T) {
-	filter := &tokenAuthFilter{
-		findSessionFn: func(context.Context, string) (authx.Session, error) {
-			return authx.Session{}, &meta.ErrNotFound{}
-		},
-		config: TokenAuthFilterConfig{
-			OpenIDConnectEnabled: true,
-		},
-	}
-	req, err := http.NewRequest(http.MethodGet, "/", nil)
-	require.NoError(t, err)
-	req.Header.Add(
-		"Authorization",
-		fmt.Sprintf("Bearer %s", "foo"),
-	)
-	rr := httptest.NewRecorder()
-	handlerCalled := false
-	filter.Decorate(func(http.ResponseWriter, *http.Request) {
-		handlerCalled = true
-	})(rr, req)
-	require.Equal(t, http.StatusUnauthorized, rr.Code)
-	require.False(t, handlerCalled)
-}
-
-func TestTokenAuthFilterWithUnauthenticatedSession(t *testing.T) {
-	filter := &tokenAuthFilter{
-		findSessionFn: func(context.Context, string) (authx.Session, error) {
-			return authx.Session{}, nil
-		},
-		config: TokenAuthFilterConfig{
-			OpenIDConnectEnabled: true,
-			FindUserFn: func(context.Context, string) (authx.User, error) {
-				return authx.User{}, nil
+	testCases := []struct {
+		name       string
+		filter     *tokenAuthFilter
+		handler    func(w http.ResponseWriter, r *http.Request)
+		setup      func() *http.Request
+		assertions func(handlerCalled bool, rr *httptest.ResponseRecorder)
+	}{
+		{
+			name:   "auth header missing",
+			filter: &tokenAuthFilter{},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, rr.Code)
+				assert.False(t, handlerCalled)
 			},
 		},
-	}
-	req, err := http.NewRequest(http.MethodGet, "/", nil)
-	require.NoError(t, err)
-	req.Header.Add("Authorization", "Bearer foobar")
-	rr := httptest.NewRecorder()
-	var handlerCalled bool
-	filter.Decorate(func(_ http.ResponseWriter, r *http.Request) {
-		handlerCalled = true
-		require.Nil(t, authx.PrincipalFromContext(r.Context()))
-		require.Empty(t, authx.SessionIDFromContext(r.Context()))
-	})(rr, req)
-	require.Equal(t, http.StatusUnauthorized, rr.Code)
-	require.False(t, handlerCalled)
-}
 
-func TestTokenAuthFilterWithAuthenticatedSession(t *testing.T) {
-	const testSessionID = "foobar"
-	filter := &tokenAuthFilter{
-		findSessionFn: func(context.Context, string) (authx.Session, error) {
-			now := time.Now().UTC()
-			expiry := now.Add(time.Minute)
-			return authx.Session{
-				ObjectMeta: meta.ObjectMeta{
-					ID: testSessionID,
+		{
+			name:   "auth header not bearer",
+			filter: &tokenAuthFilter{},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add("Authorization", "Digest foo")
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, rr.Code)
+				assert.False(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "error finding service account",
+			filter: &tokenAuthFilter{
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					return authx.ServiceAccount{}, errors.New("something went wrong")
 				},
-				Authenticated: &now,
-				Expires:       &expiry,
-			}, nil
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, rr.Code)
+				require.False(t, handlerCalled)
+			},
 		},
-		config: TokenAuthFilterConfig{
-			OpenIDConnectEnabled: true,
-			FindUserFn: func(context.Context, string) (authx.User, error) {
-				return authx.User{}, nil
+
+		{
+			name: "service account found; locked",
+			filter: &tokenAuthFilter{
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					now := time.Now().UTC()
+					return authx.ServiceAccount{
+						Locked: &now,
+					}, nil
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusForbidden, rr.Code)
+				assert.False(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "service account found; not locked",
+			filter: &tokenAuthFilter{
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					return authx.ServiceAccount{}, nil
+				},
+			},
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				principal := authx.PrincipalFromContext(r.Context())
+				require.NotNil(t, principal)
+				require.IsType(t, &authx.ServiceAccount{}, principal)
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, rr.Code)
+				assert.True(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "error finding session",
+			filter: &tokenAuthFilter{
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				},
+				findSessionByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.Session, error) {
+					return authx.Session{}, errors.New("something went wrong")
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, rr.Code)
+				assert.False(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "session not found",
+			filter: &tokenAuthFilter{
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				},
+				findSessionByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.Session, error) {
+					return authx.Session{}, &meta.ErrNotFound{}
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, rr.Code)
+				assert.False(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "root session found; root access disabled",
+			filter: &tokenAuthFilter{
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				},
+				findSessionByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.Session, error) {
+					return authx.Session{
+						Root: true,
+					}, nil
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, rr.Code)
+				assert.False(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "root session found; success",
+			filter: &tokenAuthFilter{
+				config: TokenAuthFilterConfig{
+					RootUserEnabled: true,
+				},
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				},
+				findSessionByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.Session, error) {
+					auth := time.Now().UTC()
+					exp := auth.Add(time.Hour)
+					return authx.Session{
+						Root:          true,
+						Authenticated: &auth,
+						Expires:       &exp,
+					}, nil
+				},
+			},
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				principal := authx.PrincipalFromContext(r.Context())
+				require.NotNil(t, principal)
+				require.Same(t, authx.Root, principal)
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, rr.Code)
+				assert.True(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "user session found; oidc disabled",
+			filter: &tokenAuthFilter{
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				},
+				findSessionByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.Session, error) {
+					return authx.Session{}, nil
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, rr.Code)
+				assert.False(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "user session found; token not activated",
+			filter: &tokenAuthFilter{
+				config: TokenAuthFilterConfig{
+					OpenIDConnectEnabled: true,
+				},
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				},
+				findSessionByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.Session, error) {
+					return authx.Session{}, nil
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, rr.Code)
+				assert.False(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "user session found; token expired",
+			filter: &tokenAuthFilter{
+				config: TokenAuthFilterConfig{
+					OpenIDConnectEnabled: true,
+				},
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				},
+				findSessionByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.Session, error) {
+					auth := time.Now().UTC().Add(-2 * time.Hour)
+					exp := auth.Add(time.Hour)
+					return authx.Session{
+						Authenticated: &auth,
+						Expires:       &exp,
+					}, nil
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, rr.Code)
+				assert.False(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "user session found; token valid; error finding user",
+			filter: &tokenAuthFilter{
+				config: TokenAuthFilterConfig{
+					OpenIDConnectEnabled: true,
+					FindUserFn: func(ctx context.Context, id string) (authx.User, error) {
+						return authx.User{}, errors.New("something went wrong")
+					},
+				},
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				},
+				findSessionByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.Session, error) {
+					auth := time.Now().UTC()
+					exp := auth.Add(time.Hour)
+					return authx.Session{
+						Authenticated: &auth,
+						Expires:       &exp,
+					}, nil
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, rr.Code)
+				assert.False(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "user session found; token valid; user locked",
+			filter: &tokenAuthFilter{
+				config: TokenAuthFilterConfig{
+					OpenIDConnectEnabled: true,
+					FindUserFn: func(ctx context.Context, id string) (authx.User, error) {
+						now := time.Now().UTC()
+						return authx.User{
+							Locked: &now,
+						}, nil
+					},
+				},
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				},
+				findSessionByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.Session, error) {
+					auth := time.Now().UTC()
+					exp := auth.Add(time.Hour)
+					return authx.Session{
+						Authenticated: &auth,
+						Expires:       &exp,
+					}, nil
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusForbidden, rr.Code)
+				assert.False(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "user session found; success",
+			filter: &tokenAuthFilter{
+				config: TokenAuthFilterConfig{
+					OpenIDConnectEnabled: true,
+					FindUserFn: func(ctx context.Context, id string) (authx.User, error) {
+						return authx.User{}, nil
+					},
+				},
+				findServiceAccountByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.ServiceAccount, error) {
+					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				},
+				findSessionByTokenFn: func(
+					context.Context,
+					string,
+				) (authx.Session, error) {
+					auth := time.Now().UTC()
+					exp := auth.Add(time.Hour)
+					return authx.Session{
+						ObjectMeta: meta.ObjectMeta{
+							ID: testSessionID,
+						},
+						Authenticated: &auth,
+						Expires:       &exp,
+					}, nil
+				},
+			},
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				principal := authx.PrincipalFromContext(r.Context())
+				require.NotNil(t, principal)
+				require.IsType(t, &authx.User{}, principal)
+				sessionID := authx.SessionIDFromContext(r.Context())
+				require.Equal(t, testSessionID, sessionID)
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add(
+					"Authorization",
+					fmt.Sprintf("Bearer %s", "foo"),
+				)
+				return req
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, rr.Code)
+				assert.True(t, handlerCalled)
 			},
 		},
 	}
-	req, err := http.NewRequest(http.MethodGet, "/", nil)
-	require.NoError(t, err)
-	req.Header.Add("Authorization", "Bearer foobar")
-	rr := httptest.NewRecorder()
-	var handlerCalled bool
-	filter.Decorate(func(_ http.ResponseWriter, r *http.Request) {
-		handlerCalled = true
-		require.NotNil(t, authx.PrincipalFromContext(r.Context()))
-		require.Equal(t, testSessionID, authx.SessionIDFromContext(r.Context()))
-	})(rr, req)
-	require.Equal(t, http.StatusOK, rr.Code)
-	require.True(t, handlerCalled)
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			rr := httptest.NewRecorder()
+			req := testCase.setup()
+			handlerCalled := false
+			testCase.filter.Decorate(func(w http.ResponseWriter, r *http.Request) {
+				handlerCalled = true
+				if testCase.handler != nil {
+					testCase.handler(w, r)
+				}
+			})(rr, req)
+			testCase.assertions(handlerCalled, rr)
+		})
+	}
 }

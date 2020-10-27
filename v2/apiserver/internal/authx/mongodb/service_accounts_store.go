@@ -30,24 +30,34 @@ func NewServiceAccountsStore(
 	defer cancel()
 	unique := true
 	collection := database.Collection("service-accounts")
-	if _, err := collection.Indexes().CreateOne(
+	if _, err := collection.Indexes().CreateMany(
 		ctx,
-		mongo.IndexModel{
-			Keys: bson.M{
-				"id": 1,
+		[]mongo.IndexModel{
+			{
+				Keys: bson.M{
+					"id": 1,
+				},
+				Options: &options.IndexOptions{
+					Unique: &unique,
+				},
 			},
-			Options: &options.IndexOptions{
-				Unique: &unique,
+			{
+				Keys: bson.M{
+					"hashedToken": 1,
+				},
+				Options: &options.IndexOptions{
+					Unique: &unique,
+				},
 			},
 		},
 	); err != nil {
 		return nil, errors.Wrap(
 			err,
-			"error adding index to service accounts collection",
+			"error adding indexes to service accounts collection",
 		)
 	}
 	return &serviceAccountsStore{
-		collection: database.Collection("service-accounts"),
+		collection: collection,
 	}, nil
 }
 
@@ -132,6 +142,26 @@ func (s *serviceAccountsStore) Get(
 	if err != nil {
 		return serviceAccount,
 			errors.Wrapf(res.Err(), "error finding/decoding service account %q", id)
+	}
+	return serviceAccount, nil
+}
+
+func (s *serviceAccountsStore) GetByHashedToken(
+	ctx context.Context,
+	hashedToken string,
+) (authx.ServiceAccount, error) {
+	serviceAccount := authx.ServiceAccount{}
+	res :=
+		s.collection.FindOne(ctx, bson.M{"hashedToken": hashedToken})
+	err := res.Decode(&serviceAccount)
+	if err == mongo.ErrNoDocuments {
+		return serviceAccount, &meta.ErrNotFound{
+			Type: "ServiceAccount",
+		}
+	}
+	if err != nil {
+		return serviceAccount,
+			errors.Wrap(err, "error finding/decoding service account by hashed token")
 	}
 	return serviceAccount, nil
 }
