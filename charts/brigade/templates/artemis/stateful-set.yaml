@@ -1,0 +1,107 @@
+{{- if not .Values.artemis.ha.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "brigade.artemis.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.artemis.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "brigade.artemis.fullname" . }}-internal
+  replicas: {{ .Values.artemis.replicas }}
+  updateStrategy:
+    type: OnDelete
+  selector:
+    matchLabels:
+      {{- include "brigade.selectorLabels" . | nindent 6 }}
+      {{- include "brigade.artemis.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade.selectorLabels" . | nindent 8 }}
+        {{- include "brigade.artemis.labels" . | nindent 8 }}
+      annotations:
+        checksum/common-config: {{ include (print $.Template.BasePath "/artemis/common-config.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/artemis/config.yaml") . | sha256sum }}
+    spec:
+      initContainers:
+      - name: config
+        image: {{ .Values.artemis.image.repository }}:{{ .Values.artemis.image.tag }}
+        imagePullPolicy: {{ .Values.artemis.image.pullPolicy }}
+        command: ["/bin/sh", "/opt/config/configure-node.sh"]
+        volumeMounts:
+          - name: common-config
+            mountPath: /opt/common-config
+          - name: config
+            mountPath: /opt/config
+          - name: config-overrides
+            mountPath: /var/lib/artemis/etc-override
+      containers:
+      - name: artemis
+        image: {{ .Values.artemis.image.repository }}:{{ .Values.artemis.image.tag }}
+        imagePullPolicy: {{ .Values.artemis.image.pullPolicy }}
+        resources:
+          {{- toYaml .Values.artemis.resources | indent 10 }}
+        env:
+        - name: ARTEMIS_USERNAME
+          value: {{ .Values.artemis.username }}
+        - name: ARTEMIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.artemis.fullname" . }}
+              key: password
+        - name: ARTEMIS_PERF_JOURNAL
+          value: {{ .Values.artemis.persistence.testJournalPerformance }}
+        ports:
+        - name: http
+          containerPort: 8161
+        - name: core
+          containerPort: 61616
+        - name: amqp
+          containerPort: 5672
+        livenessProbe:
+          tcpSocket:
+            port: core
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: core
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        volumeMounts:
+        - name: config-overrides
+          mountPath: /var/lib/artemis/etc-override
+        - name: data
+          mountPath: /var/lib/artemis/data
+      volumes:
+      - name: config-overrides
+        emptyDir: {}
+      - name: common-config
+        secret:
+          secretName: {{ include "brigade.artemis.fullname" . }}-common-config
+      - name: config
+        configMap:
+          name: {{ include "brigade.artemis.fullname" . }}
+      {{- if not .Values.artemis.persistence.enabled }}
+      - name: data
+        emptyDir: {}
+      {{- end }}
+      {{- if .Values.artemis.persistence.enabled }}
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsNonRoot: true
+      {{- end }}
+  {{- if .Values.artemis.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      storageClassName: {{ .Values.artemis.persistence.storageClass }}
+      accessModes: [ {{ .Values.artemis.persistence.accessMode }} ]
+      resources:
+        requests:
+          storage: {{ .Values.artemis.persistence.size }}
+  {{- end}}
+{{- end }}

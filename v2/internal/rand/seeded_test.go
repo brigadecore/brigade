@@ -17,10 +17,16 @@ func TestNewSeeded(t *testing.T) {
 
 func TestIntn(t *testing.T) {
 	// We have no visibility into the underlying *mathrand.Rand, so we'll test
-	// that it is indeed seeded by comparing the results of Intn ro results from
-	// unseeded Rand. We use a very large n to reduce the liklihood of a
-	// coincidental match.
+	// that it is indeed seeded by comparing the results of Intn to results from
+	// the unseeded random number generator in the math/rand package. We use a
+	// very large n to reduce the likelihood of a coincidental match.
 	const n = 2147483647
-	seededRand := NewSeeded()
-	require.NotEqual(t, rand.Intn(n), seededRand.Intn(n))
+	require.NotEqual(t, rand.Intn(n), NewSeeded().Intn(n))
+}
+
+func TestFloat64(t *testing.T) {
+	// We have no visibility into the underlying *mathrand.Rand, so we'll test
+	// that it is indeed seeded by comparing the results of Float64 to results
+	// from the unseeded random number generator in the math/rand package.
+	require.NotEqual(t, rand.Float64(), NewSeeded().Float64())
 }

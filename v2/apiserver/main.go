@@ -12,6 +12,8 @@ import (
 	coreMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/core/mongodb"
 	coreREST "github.com/brigadecore/brigade/v2/apiserver/internal/core/rest"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery/authn"
 	"github.com/brigadecore/brigade/v2/internal/kubernetes"
@@ -71,8 +73,18 @@ func main() {
 		}
 	}
 
+	// Message sending abstraction
+	var queueWriterFactory queue.WriterFactory
+	{
+		config, err := amqp.GetWriterFactoryConfig()
+		if err != nil {
+			log.Fatal(err)
+		}
+		queueWriterFactory = amqp.NewWriterFactory(config)
+	}
+
 	// Substrate
-	substrate := coreKubernetes.NewSubstrate(kubeClient)
+	substrate := coreKubernetes.NewSubstrate(kubeClient, queueWriterFactory)
 
 	// Events service
 	eventsService := core.NewEventsService(projectsStore, eventsStore, substrate)

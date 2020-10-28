@@ -601,3 +601,78 @@ mongodb:
         ## Used to pass Labels that are used by the Prometheus installed in your cluster to select Prometheus Rules to work with
         ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#prometheusspec
         additionalLabels: {}
+
+artemis:
+
+  ## It is recommended NOT to scale Artemis beyond a single node. While
+  ## Brigade's architecture can tolerate queues distributed across multiple
+  ## nodes, it also derives no specific benefit from that topology. This being
+  ## the case, there is a benefit to using only a single Artemis node-- namely
+  ## that non-distributed queues are guaranteed to be properly FIFO, whilst no
+  ## such guarantee can be made with respect to distributed queues. Using a
+  ## single node therefore results in improved fairness in scheduling.
+  ##
+  ## The option to scale beyond a single node is preserved to account for
+  ## operators who may eventually transition to an EXTERNAL AMQP 1.0 message
+  ## broker that uses distributed queues and who may wish to experiment with
+  ## such a configuration in advance.
+  replicas: 1
+
+  image:
+    repository: vromero/activemq-artemis
+    tag: 2.15.0
+    pullPolicy: IfNotPresent
+
+  username: brigade
+  ## If not specified, a random password is automatically selected. It will
+  ## change on every upgrade, so choosing one up front may improve availability
+  ## during upgrades.
+  password: artemis
+
+  ## Persist data to a volume
+  persistence:
+    enabled: true
+    testJournalPerformance: AUTO
+    ## If defined, volume.beta.kubernetes.io/storage-class: <storageClass>
+    ## Default: volume.alpha.kubernetes.io/storage-class: default
+    ##
+    # storageClass:
+    accessMode: ReadWriteOnce
+    size: 8Gi
+
+  ## Whether to run in a highly available configuration. This would be a good
+  ## idea in a producton environment, but shouldn't be needed otherwise.
+  ha:
+    enabled: false
+    ## Valid values are "hard" and "soft"
+    antiAffinity: soft
+
+  resources: {}
+    ## We usually recommend not to specify default resources and to leave this
+    ## as a conscious choice for the user. This also increases chances charts
+    ## run on environments with little resources, such as Minikube. If you do
+    ## want to specify resources, uncomment the following lines, adjust them as
+    ## necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  service:
+    type: NodePort
+
+externalAMQP:
+  address:
+  username:
+  password:
+
+azureServiceBus:
+  address:
+  username:
+  password:
