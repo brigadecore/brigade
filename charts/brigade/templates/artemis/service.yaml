@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "brigade.artemis.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.artemis.labels" . | nindent 4 }}
+  {{- if .Values.artemis.ha.enabled }}
+  annotations:
+    # Exclude unready secondary nodes from DNS
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "false"
+  {{- end }}
+spec:
+  type: {{ .Values.artemis.service.type }}
+  ports:
+  - port: 5672
+    targetPort: 5672
+  selector:
+    {{- include "brigade.selectorLabels" . | nindent 8 }}
+    {{- include "brigade.artemis.labels" . | nindent 8 }}

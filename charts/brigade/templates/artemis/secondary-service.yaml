@@ -1,0 +1,21 @@
+{{- if .Values.artemis.ha.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "brigade.artemis.fullname" . }}-secondary
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.artemis.secondary.labels" . | nindent 4 }}
+  annotations:
+    # Make sure DNS is resolvable during initialization.
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  clusterIP: None
+  selector:
+    {{- include "brigade.selectorLabels" . | nindent 8 }}
+    {{- include "brigade.artemis.secondary.labels" . | nindent 8 }}
+  ports:
+  - name: core
+    port: 61616
+    targetPort: core
+{{- end }}

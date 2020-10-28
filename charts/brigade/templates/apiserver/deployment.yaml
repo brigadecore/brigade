@@ -97,6 +97,15 @@ spec:
         - name: DATABASE_NAME
           value: {{ .Values.externalMongodb.database }}
         {{- end }}
+        - name: AMQP_ADDRESS
+          value: amqp://{{ include "brigade.artemis.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:5672
+        - name: AMQP_USERNAME
+          value: {{ .Values.artemis.username }}
+        - name: AMQP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.artemis.fullname" . }}
+              key: password
         {{- if .Values.apiserver.tls.enabled }}
         volumeMounts:
         - name: cert

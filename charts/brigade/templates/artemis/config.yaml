@@ -1,0 +1,24 @@
+{{- if not .Values.artemis.ha.enabled }}
+{{- $root := . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "brigade.artemis.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.artemis.labels" . | nindent 4 }}
+data:
+
+  configure-node.sh: |-
+    set -e
+
+    echo Copying common configuration
+    cp /opt/common-config/common-config-template.xml /var/lib/artemis/etc-override/broker-10.xml
+
+    echo Setting the connector-ref to ${HOSTNAME}
+          xmlstarlet ed -L \
+            -N activemq="urn:activemq" \
+            -N core="urn:activemq:core" \
+            -u "/activemq:configuration/core:core/core:cluster-connections/core:cluster-connection[@name='{{ include "brigade.artemis.fullname" $root }}']/core:connector-ref" \
+            -v "${HOSTNAME}" /var/lib/artemis/etc-override/broker-10.xml
+{{- end }}

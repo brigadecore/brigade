@@ -24,6 +24,10 @@ If release name contains chart name it will be used as a full name.
 {{ include "brigade.fullname" . | printf "%s-apiserver" }}
 {{- end -}}
 
+{{- define "brigade.artemis.fullname" -}}
+{{ include "brigade.fullname" . | printf "%s-artemis" }}
+{{- end -}}
+
 {{/*
 Create chart name and version as used by the chart label.
 */}}
@@ -53,6 +57,20 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "brigade.apiserver.labels" -}}
 app.kubernetes.io/component: apiserver
+{{- end -}}
+
+{{- define "brigade.artemis.labels" -}}
+app.kubernetes.io/component: artemis
+{{- end -}}
+
+{{- define "brigade.artemis.primary.labels" -}}
+{{ include "brigade.artemis.labels" . }}
+app.kubernetes.io/role: primary
+{{- end -}}
+
+{{- define "brigade.artemis.secondary.labels" -}}
+{{ include "brigade.artemis.labels" . }}
+app.kubernetes.io/role: secondary
 {{- end -}}
 
 {{- define "call-nested" }}
