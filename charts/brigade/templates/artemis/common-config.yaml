@@ -1,0 +1,93 @@
+{{- $root := . }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "brigade.artemis.fullname" . }}-common-config
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.artemis.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  common-config-template.xml: |-
+    <configuration xmlns="urn:activemq" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:activemq /schema/artemis-configuration.xsd">
+      <core xmlns="urn:activemq:core" xsi:schemaLocation="urn:activemq:core ">
+
+        <cluster-user>exampleUser</cluster-user>
+        <cluster-password>secret</cluster-password>
+
+        <connectors>
+          {{- range $i,$t := until (int .Values.artemis.replicas) }}
+          {{- if not $root.Values.artemis.ha.enabled }}
+          <connector name="{{ include "brigade.artemis.fullname" $root }}-{{ $i }}">
+            tcp://{{ include "brigade.artemis.fullname" $root }}-{{ $i }}.{{ include "brigade.artemis.fullname" $root }}-internal.{{ $root.Release.Namespace }}.svc.cluster.local:61616
+          </connector>
+          {{- else }}
+          {{- range tuple "primary" "secondary" }}
+          <connector name="{{ include "brigade.artemis.fullname" $root }}-{{ . }}-{{ $i }}">
+            tcp://{{ include "brigade.artemis.fullname" $root }}-{{ . }}-{{ $i }}.{{ include "brigade.artemis.fullname" $root }}-{{ . }}.{{ $root.Release.Namespace }}.svc.cluster.local:61616
+          </connector>
+          {{- end }}
+          {{- end }}
+          {{- end }}
+        </connectors>
+
+        <cluster-connections>
+          <cluster-connection name="{{ include "brigade.artemis.fullname" . }}">
+            <connector-ref>netty-connector</connector-ref>
+            <retry-interval>500</retry-interval>
+            <retry-interval-multiplier>1.1</retry-interval-multiplier>
+            <max-retry-interval>5000</max-retry-interval>
+            <initial-connect-attempts>-1</initial-connect-attempts>
+            <reconnect-attempts>-1</reconnect-attempts>
+
+            <message-load-balancing>ON_DEMAND</message-load-balancing>
+            <max-hops>1</max-hops>
+
+            <static-connectors>
+            {{- range $i,$t := until (int .Values.artemis.replicas) }}
+              {{- if not $root.Values.artemis.ha.enabled }}
+              <connector-ref>{{ include "brigade.artemis.fullname" $root }}-{{ $i }}</connector-ref>
+              {{- else }}
+              {{- range tuple "primary" "secondary" }}
+              <connector-ref>{{ include "brigade.artemis.fullname" $root }}-{{ . }}-{{ $i }}</connector-ref>
+              {{- end }}
+              {{- end }}
+            {{- end }}
+            </static-connectors>
+
+          </cluster-connection>
+        </cluster-connections>
+
+        <address-settings>
+          <address-setting match="workers.#">
+            <dead-letter-address>DLQ</dead-letter-address>
+            <expiry-address>ExpiryQueue</expiry-address>
+            <redelivery-delay>0</redelivery-delay>
+            <!-- with -1 only the global-max-size is in use for limiting -->
+            <max-size-bytes>-1</max-size-bytes>
+            <message-counter-history-day-limit>10</message-counter-history-day-limit>
+            <address-full-policy>PAGE</address-full-policy>
+            <auto-create-queues>true</auto-create-queues>
+            <default-queue-routing-type>ANYCAST</default-queue-routing-type>
+            <auto-create-addresses>true</auto-create-addresses>
+            <default-address-routing-type>ANYCAST</default-address-routing-type>
+            <redistribution-delay>0</redistribution-delay>
+          </address-setting>
+          <address-setting match="jobs.#">
+            <dead-letter-address>DLQ</dead-letter-address>
+            <expiry-address>ExpiryQueue</expiry-address>
+            <redelivery-delay>0</redelivery-delay>
+            <!-- with -1 only the global-max-size is in use for limiting -->
+            <max-size-bytes>-1</max-size-bytes>
+            <message-counter-history-day-limit>10</message-counter-history-day-limit>
+            <address-full-policy>PAGE</address-full-policy>
+            <auto-create-queues>true</auto-create-queues>
+            <default-queue-routing-type>ANYCAST</default-queue-routing-type>
+            <auto-create-addresses>true</auto-create-addresses>
+            <default-address-routing-type>ANYCAST</default-address-routing-type>
+            <redistribution-delay>0</redistribution-delay>
+          </address-setting>
+        </address-settings>
+
+      </core>
+    </configuration>

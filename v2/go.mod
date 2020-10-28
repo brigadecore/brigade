@@ -6,6 +6,7 @@ replace github.com/brigadecore/brigade/sdk/v2 => ../sdk/v2
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
+	github.com/Azure/go-amqp v0.13.1
 	github.com/bacongobbler/browser v1.1.0
 	github.com/brigadecore/brigade/sdk/v2 v2.0.0-20200923171232-9f56c474d8bf
 	github.com/coreos/go-oidc v2.2.1+incompatible
