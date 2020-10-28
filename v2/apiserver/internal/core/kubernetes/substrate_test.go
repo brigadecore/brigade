@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
@@ -18,9 +19,11 @@ import (
 
 func TestNewSubstrate(t *testing.T) {
 	testClient := fake.NewSimpleClientset()
-	s := NewSubstrate(testClient)
+	testQueueWriterFactory := &mockQueueWriterFactory{}
+	s := NewSubstrate(testClient, testQueueWriterFactory)
 	require.IsType(t, &substrate{}, s)
 	require.Same(t, testClient, s.(*substrate).kubeClient)
+	require.Same(t, testQueueWriterFactory, s.(*substrate).queueWriterFactory)
 }
 
 func TestSubstrateCreateProject(t *testing.T) {
@@ -452,4 +455,19 @@ func TestGenerateNewNamespace(t *testing.T) {
 	require.Equal(t, testProjectID, tokens[1])
 	_, err := uuid.FromString(tokens[2])
 	require.NoError(t, err)
+}
+
+type mockQueueWriterFactory struct {
+	NewWriterFn func(queueName string) (queue.Writer, error)
+	CloseFn     func(context.Context) error
+}
+
+func (m *mockQueueWriterFactory) NewWriter(
+	queueName string,
+) (queue.Writer, error) {
+	return m.NewWriterFn(queueName)
+}
+
+func (m *mockQueueWriterFactory) Close(ctx context.Context) error {
+	return m.CloseFn(ctx)
 }

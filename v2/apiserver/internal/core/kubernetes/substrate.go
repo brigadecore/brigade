@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -21,16 +22,19 @@ import (
 type substrate struct {
 	generateNewNamespaceFn func(projectID string) string
 	kubeClient             kubernetes.Interface
+	queueWriterFactory     queue.WriterFactory
 }
 
 // NewSubstrate returns a Kubernetes-based implementation of the core.Substrate
 // interface.
 func NewSubstrate(
 	kubeClient kubernetes.Interface,
+	queueWriterFactory queue.WriterFactory,
 ) core.Substrate {
 	return &substrate{
 		generateNewNamespaceFn: generateNewNamespace,
 		kubeClient:             kubeClient,
+		queueWriterFactory:     queueWriterFactory,
 	}
 }
 
