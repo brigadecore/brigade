@@ -13,6 +13,10 @@ type Substrate interface {
 	// DeleteProject removes all Project-related resources from the substrate.
 	DeleteProject(context.Context, Project) error
 
+	// ScheduleWorker prepares the substrate for the Event's worker and schedules
+	// the Worker for async / eventual execution.
+	ScheduleWorker(context.Context, Project, Event) error
+
 	// DeleteWorkerAndJobs deletes all substrate resources pertaining to the
 	// specified Event's Worker and Jobs.
 	DeleteWorkerAndJobs(context.Context, Project, Event) error

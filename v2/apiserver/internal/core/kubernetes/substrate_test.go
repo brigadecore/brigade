@@ -2,6 +2,8 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -20,10 +22,12 @@ import (
 func TestNewSubstrate(t *testing.T) {
 	testClient := fake.NewSimpleClientset()
 	testQueueWriterFactory := &mockQueueWriterFactory{}
-	s := NewSubstrate(testClient, testQueueWriterFactory)
+	testConfig := SubstrateConfig{}
+	s := NewSubstrate(testClient, testQueueWriterFactory, testConfig)
 	require.IsType(t, &substrate{}, s)
 	require.Same(t, testClient, s.(*substrate).kubeClient)
 	require.Same(t, testQueueWriterFactory, s.(*substrate).queueWriterFactory)
+	require.Equal(t, testConfig, s.(*substrate).config)
 }
 
 func TestSubstrateCreateProject(t *testing.T) {
@@ -414,6 +418,195 @@ func TestSubstrateDeleteProject(t *testing.T) {
 	}
 }
 
+func TestSubstrateScheduleWorker(t *testing.T) {
+	const testNamespace = "foo"
+	const testEventID = "12345"
+	testCases := []struct {
+		name       string
+		setup      func() core.Substrate
+		assertions func(error)
+	}{
+		{
+			name: "error getting project secret",
+			setup: func() core.Substrate {
+				return &substrate{
+					kubeClient: fake.NewSimpleClientset(),
+				}
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(
+					t,
+					err.Error(),
+					"error finding secret \"project-secrets\"",
+				)
+			},
+		},
+
+		{
+			name: "error creating event secret",
+			setup: func() core.Substrate {
+				kubeClient := fake.NewSimpleClientset()
+				_, err := kubeClient.CoreV1().Secrets(testNamespace).Create(
+					context.Background(),
+					&corev1.Secret{
+						ObjectMeta: v1.ObjectMeta{
+							Name: "project-secrets",
+						},
+					},
+					v1.CreateOptions{},
+				)
+				require.NoError(t, err)
+				// We'll force an error creating the event secret by having it already
+				// exist
+				_, err = kubeClient.CoreV1().Secrets(testNamespace).Create(
+					context.Background(),
+					&corev1.Secret{
+						ObjectMeta: v1.ObjectMeta{
+							Name: fmt.Sprintf("event-%s", testEventID),
+						},
+					},
+					v1.CreateOptions{},
+				)
+				require.NoError(t, err)
+				return &substrate{
+					kubeClient: kubeClient,
+				}
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error creating secret")
+			},
+		},
+
+		{
+			name: "error creating queue writer",
+			setup: func() core.Substrate {
+				kubeClient := fake.NewSimpleClientset()
+				_, err := kubeClient.CoreV1().Secrets(testNamespace).Create(
+					context.Background(),
+					&corev1.Secret{
+						ObjectMeta: v1.ObjectMeta{
+							Name: "project-secrets",
+						},
+					},
+					v1.CreateOptions{},
+				)
+				require.NoError(t, err)
+				return &substrate{
+					kubeClient: kubeClient,
+					queueWriterFactory: &mockQueueWriterFactory{
+						NewWriterFn: func(queueName string) (queue.Writer, error) {
+							return nil, errors.New("something went wrong")
+						},
+					},
+				}
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error creating queue writer")
+			},
+		},
+
+		{
+			name: "error writing to queue",
+			setup: func() core.Substrate {
+				kubeClient := fake.NewSimpleClientset()
+				_, err := kubeClient.CoreV1().Secrets(testNamespace).Create(
+					context.Background(),
+					&corev1.Secret{
+						ObjectMeta: v1.ObjectMeta{
+							Name: "project-secrets",
+						},
+					},
+					v1.CreateOptions{},
+				)
+				require.NoError(t, err)
+				return &substrate{
+					kubeClient: kubeClient,
+					queueWriterFactory: &mockQueueWriterFactory{
+						NewWriterFn: func(queueName string) (queue.Writer, error) {
+							return &mockQueueWriter{
+								WriteFn: func(context.Context, string) error {
+									return errors.New("something went wrong")
+								},
+								CloseFn: func(context.Context) error {
+									return nil
+								},
+							}, nil
+						},
+					},
+				}
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(
+					t,
+					err.Error(),
+					"error submitting execution task for event",
+				)
+			},
+		},
+
+		{
+			name: "success",
+			setup: func() core.Substrate {
+				kubeClient := fake.NewSimpleClientset()
+				_, err := kubeClient.CoreV1().Secrets(testNamespace).Create(
+					context.Background(),
+					&corev1.Secret{
+						ObjectMeta: v1.ObjectMeta{
+							Name: "project-secrets",
+						},
+					},
+					v1.CreateOptions{},
+				)
+				require.NoError(t, err)
+				return &substrate{
+					kubeClient: kubeClient,
+					queueWriterFactory: &mockQueueWriterFactory{
+						NewWriterFn: func(queueName string) (queue.Writer, error) {
+							return &mockQueueWriter{
+								WriteFn: func(context.Context, string) error {
+									return nil
+								},
+								CloseFn: func(context.Context) error {
+									return nil
+								},
+							}, nil
+						},
+					},
+				}
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			substrate := testCase.setup()
+			err := substrate.ScheduleWorker(
+				context.Background(),
+				core.Project{
+					Kubernetes: &core.KubernetesDetails{
+						Namespace: testNamespace,
+					},
+				},
+				core.Event{
+					ObjectMeta: meta.ObjectMeta{
+						ID: testEventID,
+					},
+				},
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
 // TODO: Find a better way to test this. Unfortunately, the DeleteCollection
 // function on a *fake.ClientSet doesn't ACTUALLY delete collections of
 // resources based on the labels provided.
@@ -469,5 +662,18 @@ func (m *mockQueueWriterFactory) NewWriter(
 }
 
 func (m *mockQueueWriterFactory) Close(ctx context.Context) error {
+	return m.CloseFn(ctx)
+}
+
+type mockQueueWriter struct {
+	WriteFn func(context.Context, string) error
+	CloseFn func(context.Context) error
+}
+
+func (m *mockQueueWriter) Write(ctx context.Context, msg string) error {
+	return m.WriteFn(ctx, msg)
+}
+
+func (m *mockQueueWriter) Close(ctx context.Context) error {
 	return m.CloseFn(ctx)
 }
