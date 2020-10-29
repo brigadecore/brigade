@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	amqp "github.com/Azure/go-amqp"
+	"github.com/Azure/go-amqp"
 	myamqp "github.com/brigadecore/brigade/v2/apiserver/internal/lib/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	"github.com/brigadecore/brigade/v2/internal/os"
@@ -55,7 +55,7 @@ type writerFactory struct {
 }
 
 // NewWriterFactory returns an an AMQP-based implementation of the
-// queue.WriterFactory.
+// queue.WriterFactory interface.
 func NewWriterFactory(config WriterFactoryConfig) queue.WriterFactory {
 	w := &writerFactory{
 		address: config.Address,
