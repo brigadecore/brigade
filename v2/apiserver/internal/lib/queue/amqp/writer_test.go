@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/Azure/go-amqp"
-	myamqp "github.com/brigadecore/brigade/v2/apiserver/internal/lib/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
+	myamqp "github.com/brigadecore/brigade/v2/internal/amqp"
 	"github.com/stretchr/testify/require"
 )
 
