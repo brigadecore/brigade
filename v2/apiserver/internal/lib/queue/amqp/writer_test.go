@@ -289,14 +289,21 @@ func (m *mockAMQPClient) Close() error {
 }
 
 type mockAMQPSession struct {
-	NewSenderFn func(opts ...amqp.LinkOption) (myamqp.Sender, error)
-	CloseFn     func(ctx context.Context) error
+	NewSenderFn   func(opts ...amqp.LinkOption) (myamqp.Sender, error)
+	NewReceiverFn func(opts ...amqp.LinkOption) (myamqp.Receiver, error)
+	CloseFn       func(ctx context.Context) error
 }
 
 func (m *mockAMQPSession) NewSender(
 	opts ...amqp.LinkOption,
 ) (myamqp.Sender, error) {
 	return m.NewSenderFn(opts...)
+}
+
+func (m *mockAMQPSession) NewReceiver(
+	opts ...amqp.LinkOption,
+) (myamqp.Receiver, error) {
+	return m.NewReceiverFn(opts...)
 }
 
 func (m *mockAMQPSession) Close(ctx context.Context) error {
