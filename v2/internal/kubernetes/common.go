@@ -6,4 +6,5 @@ const (
 	LabelEvent     = "brigade.sh/event"
 
 	SecretTypeProjectSecrets = "brigade.sh/project-secrets"
+	SecretTypeEvent          = "brigade.sh/event"
 )

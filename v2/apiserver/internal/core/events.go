@@ -365,16 +365,15 @@ func (e *eventsService) createSingleEvent(
 		)
 	}
 
-	// // TODO: Enable the following after message queue is working
-	// // Prepare the substrate for the Worker and schedule the Worker for async /
-	// // eventual execution
-	// if err = e.substrate.ScheduleWorker(ctx, project, event); err != nil {
-	// 	return event, errors.Wrapf(
-	// 		err,
-	// 		"error scheduling event %q worker on the substrate",
-	// 		event.ID,
-	// 	)
-	// }
+	// Prepare the substrate for the Worker and schedule the Worker for async /
+	// eventual execution
+	if err := e.substrate.ScheduleWorker(ctx, project, event); err != nil {
+		return event, errors.Wrapf(
+			err,
+			"error scheduling event %q worker on the substrate",
+			event.ID,
+		)
+	}
 
 	return event, nil
 }

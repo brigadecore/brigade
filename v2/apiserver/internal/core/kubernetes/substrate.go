@@ -2,11 +2,14 @@ package kubernetes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
+	"github.com/brigadecore/brigade/v2/internal/os"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	corev1 "k8s.io/api/core/v1"
@@ -17,12 +20,34 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// SubstrateConfig encapsulates several configuration options for the
+// Kubernetes-based Substrate.
+type SubstrateConfig struct {
+	// APIAddress is the address of the Brigade API server. The substrate will use
+	// this information whenever it needs to tell another component where to find
+	// the API server.
+	APIAddress string
+}
+
+// GetSubstrateConfig returns SubstrateConfig based on configuration obtained
+// from environment variables.
+func GetSubstrateConfig() (SubstrateConfig, error) {
+	config := SubstrateConfig{}
+	var err error
+	config.APIAddress, err = os.GetRequiredEnvVar("API_ADDRESS")
+	if err != nil {
+		return config, err
+	}
+	return config, nil
+}
+
 // substrate is a Kubernetes-based implementation of the core.Substrate
 // interface.
 type substrate struct {
 	generateNewNamespaceFn func(projectID string) string
 	kubeClient             kubernetes.Interface
 	queueWriterFactory     queue.WriterFactory
+	config                 SubstrateConfig
 }
 
 // NewSubstrate returns a Kubernetes-based implementation of the core.Substrate
@@ -30,11 +55,13 @@ type substrate struct {
 func NewSubstrate(
 	kubeClient kubernetes.Interface,
 	queueWriterFactory queue.WriterFactory,
+	config SubstrateConfig,
 ) core.Substrate {
 	return &substrate{
 		generateNewNamespaceFn: generateNewNamespace,
 		kubeClient:             kubeClient,
 		queueWriterFactory:     queueWriterFactory,
+		config:                 config,
 	}
 }
 
@@ -251,8 +278,147 @@ func (s *substrate) DeleteProject(
 	return nil
 }
 
-func generateNewNamespace(projectID string) string {
-	return fmt.Sprintf("brigade-%s-%s", projectID, uuid.NewV4().String())
+func (s *substrate) ScheduleWorker(
+	ctx context.Context,
+	project core.Project,
+	event core.Event,
+) error {
+	// Create a Kubernetes secret containing relevant Event and Project details.
+	// This is created PRIOR to scheduling so that these details will reflect an
+	// accurate snapshot of Project configuration at the time the Event was
+	// created.
+
+	projectSecretsSecret, err := s.kubeClient.CoreV1().Secrets(
+		project.Kubernetes.Namespace,
+	).Get(ctx, "project-secrets", metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error finding secret \"project-secrets\" in namespace %q",
+			project.Kubernetes.Namespace,
+		)
+	}
+	secrets := map[string]string{}
+	for key, value := range projectSecretsSecret.Data {
+		secrets[key] = string(value)
+	}
+
+	type proj struct {
+		ID         string                 `json:"id"`
+		Kubernetes core.KubernetesDetails `json:"kubernetes"`
+		Secrets    map[string]string      `json:"secrets"`
+	}
+
+	type worker struct {
+		APIAddress           string            `json:"apiAddress"`
+		APIToken             string            `json:"apiToken"`
+		LogLevel             core.LogLevel     `json:"logLevel"`
+		ConfigFilesDirectory string            `json:"configFilesDirectory"`
+		DefaultConfigFiles   map[string]string `json:"defaultConfigFiles" bson:"defaultConfigFiles"` // nolint: lll
+	}
+
+	// Create a secret with event details
+	eventJSON, err := json.MarshalIndent(
+		struct {
+			ID         string `json:"id"`
+			Project    proj   `json:"project"`
+			Source     string `json:"source"`
+			Type       string `json:"type"`
+			ShortTitle string `json:"shortTitle"`
+			LongTitle  string `json:"longTitle"`
+			Payload    string `json:"payload"`
+			Worker     worker `json:"worker"`
+		}{
+			ID: event.ID,
+			Project: proj{
+				ID:         event.ProjectID,
+				Kubernetes: *project.Kubernetes,
+				Secrets:    secrets,
+			},
+			Source:     event.Source,
+			Type:       event.Type,
+			ShortTitle: event.ShortTitle,
+			LongTitle:  event.LongTitle,
+			Payload:    event.Payload,
+			Worker: worker{
+				APIAddress:           s.config.APIAddress,
+				APIToken:             event.Worker.Token,
+				LogLevel:             event.Worker.Spec.LogLevel,
+				ConfigFilesDirectory: event.Worker.Spec.ConfigFilesDirectory,
+				DefaultConfigFiles:   event.Worker.Spec.DefaultConfigFiles,
+			},
+		},
+		"",
+		"  ",
+	)
+	if err != nil {
+		return errors.Wrapf(err, "error marshaling event %q", event.ID)
+	}
+
+	data := map[string][]byte{}
+	data["event.json"] = eventJSON
+	// Special treatment for secrets named gitSSHKey and gitSSHCert. If they're
+	// defined, add them to this secret so the worker's VCS init container (if
+	// applicable) has easy access to them.
+	if gitSSHKey, ok := projectSecretsSecret.Data["gitSSHKey"]; ok {
+		data["gitSSHKey"] = gitSSHKey
+	}
+	if gitSSHCert, ok := projectSecretsSecret.Data["gitSSHCert"]; ok {
+		data["gitSSHCert"] = gitSSHCert
+	}
+
+	if _, err = s.kubeClient.CoreV1().Secrets(
+		project.Kubernetes.Namespace,
+	).Create(
+		ctx,
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: fmt.Sprintf("event-%s", event.ID),
+				Labels: map[string]string{
+					myk8s.LabelComponent: "event",
+					myk8s.LabelProject:   event.ProjectID,
+					myk8s.LabelEvent:     event.ID,
+				},
+			},
+			Type: myk8s.SecretTypeEvent,
+			Data: data,
+		},
+		metav1.CreateOptions{},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error creating secret %q in namespace %q",
+			event.ID,
+			project.Kubernetes.Namespace,
+		)
+	}
+
+	queueWriter, err := s.queueWriterFactory.NewWriter(
+		fmt.Sprintf("workers.%s", event.ProjectID),
+	)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error creating queue writer for project %q workers",
+			event.ProjectID,
+		)
+	}
+	defer func() {
+		closeCtx, cancelCloseCtx :=
+			context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelCloseCtx()
+		queueWriter.Close(closeCtx)
+	}()
+
+	if err := queueWriter.Write(ctx, event.ID); err != nil {
+		return errors.Wrapf(
+			err,
+			"error submitting execution task for event %q worker",
+			event.ID,
+		)
+	}
+
+	return nil
 }
 
 func (s *substrate) DeleteWorkerAndJobs(
@@ -323,4 +489,8 @@ func (s *substrate) DeleteWorkerAndJobs(
 	}
 
 	return nil
+}
+
+func generateNewNamespace(projectID string) string {
+	return fmt.Sprintf("brigade-%s-%s", projectID, uuid.NewV4().String())
 }

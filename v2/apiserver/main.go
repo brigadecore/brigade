@@ -84,7 +84,18 @@ func main() {
 	}
 
 	// Substrate
-	substrate := coreKubernetes.NewSubstrate(kubeClient, queueWriterFactory)
+	var substrate core.Substrate
+	{
+		config, err := coreKubernetes.GetSubstrateConfig()
+		if err != nil {
+			log.Fatal(err)
+		}
+		substrate = coreKubernetes.NewSubstrate(
+			kubeClient,
+			queueWriterFactory,
+			config,
+		)
+	}
 
 	// Events service
 	eventsService := core.NewEventsService(projectsStore, eventsStore, substrate)

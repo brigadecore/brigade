@@ -233,7 +233,7 @@ func TestEventsServiceCreateSingleEvent(t *testing.T) {
 		assertions func(Event, error)
 	}{
 		{
-			name: "error creating project in store",
+			name: "error creating event in store",
 			service: &eventsService{
 				eventsStore: &mockEventsStore{
 					CreateFn: func(context.Context, Event) error {
@@ -248,10 +248,35 @@ func TestEventsServiceCreateSingleEvent(t *testing.T) {
 			},
 		},
 		{
+			name: "error scheduling worker in substrate",
+			service: &eventsService{
+				eventsStore: &mockEventsStore{
+					CreateFn: func(context.Context, Event) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					ScheduleWorkerFn: func(c context.Context, p Project, e Event) error {
+						return errors.New("substrate error")
+					},
+				},
+			},
+			assertions: func(_ Event, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error scheduling event")
+				require.Contains(t, err.Error(), "substrate error")
+			},
+		},
+		{
 			name: "success",
 			service: &eventsService{
 				eventsStore: &mockEventsStore{
 					CreateFn: func(context.Context, Event) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					ScheduleWorkerFn: func(c context.Context, p Project, e Event) error {
 						return nil
 					},
 				},
