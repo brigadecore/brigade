@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "brigade.scheduler.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.scheduler.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "brigade.selectorLabels" . | nindent 6 }}
+      {{- include "brigade.scheduler.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade.selectorLabels" . | nindent 8 }}
+        {{- include "brigade.scheduler.labels" . | nindent 8 }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/scheduler/secret.yaml") . | sha256sum }}
+    spec:
+      serviceAccount: {{ include "brigade.scheduler.fullname" . }}
+      containers:
+      - name: scheduler
+        image: {{ .Values.scheduler.image.repository }}:{{ default .Chart.AppVersion .Values.scheduler.image.tag }}
+        imagePullPolicy: {{ .Values.scheduler.image.pullPolicy }}
+        args:
+        - --logtostderr=true
+        env:
+        - name: API_ADDRESS
+          {{- if .Values.apiserver.tls.enabled }}
+          value: https://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          {{- else }}
+          value: http://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          {{- end }}
+        - name: API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.scheduler.fullname" . }}
+              key: api-token
+        - name: API_IGNORE_CERT_WARNINGS
+          value: {{ quote (and .Values.apiserver.tls.enabled .Values.scheduler.tls.ignoreCertWarnings) }}
+        - name: AMQP_ADDRESS
+          value: amqp://{{ include "brigade.artemis.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:5672
+        - name: AMQP_USERNAME
+          value: {{ .Values.artemis.username }}
+        - name: AMQP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.artemis.fullname" . }}
+              key: password
+      {{- with .Values.scheduler.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.scheduler.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
