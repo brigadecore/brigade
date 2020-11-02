@@ -9,11 +9,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 )
 
@@ -36,16 +38,17 @@ func NewBaseClient(
 	if opts == nil {
 		opts = &restmachinery.APIClientOptions{}
 	}
+	retryClient := retryablehttp.NewClient()
+	retryClient.HTTPClient.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: opts.AllowInsecureConnections,
+		},
+	}
+	retryClient.Logger = log.New(ioutil.Discard, "", log.LstdFlags)
 	return &BaseClient{
 		APIAddress: apiAddress,
 		APIToken:   apiToken,
-		HTTPClient: &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: opts.AllowInsecureConnections,
-				},
-			},
-		},
+		HTTPClient: retryClient.StandardClient(),
 	}
 }
 
