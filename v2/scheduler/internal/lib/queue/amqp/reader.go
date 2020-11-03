@@ -2,7 +2,6 @@ package amqp
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
@@ -157,7 +156,6 @@ func (q *readerFactory) Close(context.Context) error {
 	if err := q.amqpClient.Close(); err != nil {
 		return errors.Wrapf(err, "error closing AMQP client")
 	}
-	log.Println("DEBUG: closed AMQP-based queue reader factory")
 	return nil
 }
 

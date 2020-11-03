@@ -54,7 +54,7 @@ func TestGetReaderFactoryConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "SUCCESS not set",
+			name: "success",
 			setup: func() {
 				os.Setenv("AMQP_PASSWORD", "bat")
 			},
