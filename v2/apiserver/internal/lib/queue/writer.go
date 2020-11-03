@@ -7,7 +7,7 @@ import "context"
 // specific queue (or similar channel) of some (presumably asynchronous)
 // messaging system.
 type WriterFactory interface {
-	// NewWriter returns an implementation of the Writer interface for capable of
+	// NewWriter returns an implementation of the Writer interface capable of
 	// writing messages to a specific queue (or similar channel) of some
 	// (presumably asynchronous) messaging system.
 	NewWriter(queueName string) (Writer, error)
