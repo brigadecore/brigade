@@ -8,24 +8,24 @@ import (
 	"testing"
 
 	"github.com/Azure/go-amqp"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	myamqp "github.com/brigadecore/brigade/v2/internal/amqp"
+	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetWriterFactoryConfig(t *testing.T) {
+func TestGetReaderFactoryConfig(t *testing.T) {
 	// Note that unit testing in Go does NOT clear environment variables between
 	// tests, which can sometimes be a pain, but it's fine here-- so each of these
 	// test cases builds on the previous case.
 	testCases := []struct {
 		name       string
 		setup      func()
-		assertions func(WriterFactoryConfig, error)
+		assertions func(ReaderFactoryConfig, error)
 	}{
 		{
 			name:  "AMQP_ADDRESS not set",
 			setup: func() {},
-			assertions: func(_ WriterFactoryConfig, err error) {
+			assertions: func(_ ReaderFactoryConfig, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "AMQP_ADDRESS")
@@ -36,7 +36,7 @@ func TestGetWriterFactoryConfig(t *testing.T) {
 			setup: func() {
 				os.Setenv("AMQP_ADDRESS", "foo")
 			},
-			assertions: func(_ WriterFactoryConfig, err error) {
+			assertions: func(_ ReaderFactoryConfig, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "AMQP_USERNAME")
@@ -47,7 +47,7 @@ func TestGetWriterFactoryConfig(t *testing.T) {
 			setup: func() {
 				os.Setenv("AMQP_USERNAME", "bar")
 			},
-			assertions: func(_ WriterFactoryConfig, err error) {
+			assertions: func(_ ReaderFactoryConfig, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "AMQP_PASSWORD")
@@ -58,11 +58,11 @@ func TestGetWriterFactoryConfig(t *testing.T) {
 			setup: func() {
 				os.Setenv("AMQP_PASSWORD", "bat")
 			},
-			assertions: func(config WriterFactoryConfig, err error) {
+			assertions: func(config ReaderFactoryConfig, err error) {
 				require.NoError(t, err)
 				require.Equal(
 					t,
-					WriterFactoryConfig{
+					ReaderFactoryConfig{
 						Address:  "foo",
 						Username: "bar",
 						Password: "bat",
@@ -75,59 +75,61 @@ func TestGetWriterFactoryConfig(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			testCase.setup()
-			config, err := GetWriterFactoryConfig()
+			config, err := GetReaderFactoryConfig()
 			testCase.assertions(config, err)
 		})
 	}
 }
 
-func TestNewWriterFactory(t *testing.T) {
+func TestNewReaderFactory(t *testing.T) {
 	const testAddress = "foo"
-	wf := NewWriterFactory(
-		WriterFactoryConfig{
+	rf := NewReaderFactory(
+		ReaderFactoryConfig{
 			Address: testAddress,
 		},
 	)
-	require.IsType(t, &writerFactory{}, wf)
-	require.Equal(t, testAddress, wf.(*writerFactory).address)
-	require.NotEmpty(t, wf.(*writerFactory).dialOpts)
+	require.IsType(t, &readerFactory{}, rf)
+	require.Equal(t, testAddress, rf.(*readerFactory).address)
+	require.NotEmpty(t, rf.(*readerFactory).dialOpts)
 	// Assert we're not connected yet. (It connects lazily.)
-	require.Nil(t, wf.(*writerFactory).amqpClient)
-	require.NotNil(t, wf.(*writerFactory).amqpClientMu)
-	require.NotNil(t, wf.(*writerFactory).connectFn)
+	require.Nil(t, rf.(*readerFactory).amqpClient)
+	require.NotNil(t, rf.(*readerFactory).amqpClientMu)
+	require.NotNil(t, rf.(*readerFactory).connectFn)
 }
 
-func TestWriterFactoryNewWriter(t *testing.T) {
+func TestReaderFactoryNewReader(t *testing.T) {
 	const testQueueName = "foo"
-	wf := &writerFactory{
+	rf := &readerFactory{
 		amqpClient: &mockAMQPClient{
 			NewSessionFn: func(opts ...amqp.SessionOption) (myamqp.Session, error) {
 				return &mockAMQPSession{
-					NewSenderFn: func(opts ...amqp.LinkOption) (myamqp.Sender, error) {
-						return &mockAMQPSender{}, nil
+					NewReceiverFn: func(
+						opts ...amqp.LinkOption,
+					) (myamqp.Receiver, error) {
+						return &mockAMQPReceiver{}, nil
 					},
 				}, nil
 			},
 		},
 		amqpClientMu: &sync.Mutex{},
 	}
-	w, err := wf.NewWriter(testQueueName)
+	w, err := rf.NewReader(testQueueName)
 	require.NoError(t, err)
-	require.IsType(t, &writer{}, w)
-	require.Equal(t, testQueueName, w.(*writer).queueName)
-	require.NotNil(t, w.(*writer).amqpSession)
-	require.NotNil(t, w.(*writer).amqpSender)
+	require.IsType(t, &reader{}, w)
+	require.Equal(t, testQueueName, w.(*reader).queueName)
+	require.NotNil(t, w.(*reader).amqpSession)
+	require.NotNil(t, w.(*reader).amqpReceiver)
 }
 
-func TestWriterFactoryClose(t *testing.T) {
+func TestReadFactoryClose(t *testing.T) {
 	testCases := []struct {
 		name          string
-		writerFactory queue.WriterFactory
+		readerFactory queue.ReaderFactory
 		assertions    func(error)
 	}{
 		{
 			name: "error closing underlying amqp connection",
-			writerFactory: &writerFactory{
+			readerFactory: &readerFactory{
 				amqpClient: &mockAMQPClient{
 					CloseFn: func() error {
 						return errors.New("something went wrong")
@@ -142,7 +144,7 @@ func TestWriterFactoryClose(t *testing.T) {
 		},
 		{
 			name: "success",
-			writerFactory: &writerFactory{
+			readerFactory: &readerFactory{
 				amqpClient: &mockAMQPClient{
 					CloseFn: func() error {
 						return nil
@@ -156,39 +158,39 @@ func TestWriterFactoryClose(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			err := testCase.writerFactory.Close(context.Background())
+			err := testCase.readerFactory.Close(context.Background())
 			testCase.assertions(err)
 		})
 	}
 }
 
-func TestWriterWrite(t *testing.T) {
+func TestReaderRead(t *testing.T) {
 	testCases := []struct {
 		name       string
-		writer     queue.Writer
+		reader     queue.Reader
 		assertions func(error)
 	}{
 		{
-			name: "error sending message",
-			writer: &writer{
-				amqpSender: &mockAMQPSender{
-					SendFn: func(context.Context, *amqp.Message) error {
-						return errors.New("something went wrong")
+			name: "error receiving message",
+			reader: &reader{
+				amqpReceiver: &mockAMQPReceiver{
+					ReceiveFn: func(context.Context) (*amqp.Message, error) {
+						return nil, errors.New("something went wrong")
 					},
 				},
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error sending amqp message")
+				require.Contains(t, err.Error(), "error receiving AMQP message")
 			},
 		},
 		{
 			name: "success",
-			writer: &writer{
-				amqpSender: &mockAMQPSender{
-					SendFn: func(context.Context, *amqp.Message) error {
-						return nil
+			reader: &reader{
+				amqpReceiver: &mockAMQPReceiver{
+					ReceiveFn: func(context.Context) (*amqp.Message, error) {
+						return &amqp.Message{}, nil
 					},
 				},
 			},
@@ -199,22 +201,22 @@ func TestWriterWrite(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			err := testCase.writer.Write(context.Background(), "message in a bottle")
+			_, err := testCase.reader.Read(context.Background())
 			testCase.assertions(err)
 		})
 	}
 }
 
-func TestWriterClose(t *testing.T) {
+func TestReaderClose(t *testing.T) {
 	testCases := []struct {
 		name       string
-		writer     queue.Writer
+		reader     queue.Reader
 		assertions func(error)
 	}{
 		{
-			name: "error closing underlying sender",
-			writer: &writer{
-				amqpSender: &mockAMQPSender{
+			name: "error closing underlying receiver",
+			reader: &reader{
+				amqpReceiver: &mockAMQPReceiver{
 					CloseFn: func(ctx context.Context) error {
 						return errors.New("something went wrong")
 					},
@@ -223,13 +225,13 @@ func TestWriterClose(t *testing.T) {
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error closing AMQP sender")
+				require.Contains(t, err.Error(), "error closing AMQP receiver")
 			},
 		},
 		{
 			name: "error closing underlying session",
-			writer: &writer{
-				amqpSender: &mockAMQPSender{
+			reader: &reader{
+				amqpReceiver: &mockAMQPReceiver{
 					CloseFn: func(ctx context.Context) error {
 						return nil
 					},
@@ -248,8 +250,8 @@ func TestWriterClose(t *testing.T) {
 		},
 		{
 			name: "success",
-			writer: &writer{
-				amqpSender: &mockAMQPSender{
+			reader: &reader{
+				amqpReceiver: &mockAMQPReceiver{
 					CloseFn: func(ctx context.Context) error {
 						return nil
 					},
@@ -267,7 +269,7 @@ func TestWriterClose(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			err := testCase.writer.Close(context.Background())
+			err := testCase.reader.Close(context.Background())
 			testCase.assertions(err)
 		})
 	}
@@ -310,15 +312,15 @@ func (m *mockAMQPSession) Close(ctx context.Context) error {
 	return m.CloseFn(ctx)
 }
 
-type mockAMQPSender struct {
-	SendFn  func(ctx context.Context, msg *amqp.Message) error
-	CloseFn func(ctx context.Context) error
+type mockAMQPReceiver struct {
+	ReceiveFn func(ctx context.Context) (*amqp.Message, error)
+	CloseFn   func(ctx context.Context) error
 }
 
-func (m *mockAMQPSender) Send(ctx context.Context, msg *amqp.Message) error {
-	return m.SendFn(ctx, msg)
+func (m *mockAMQPReceiver) Receive(ctx context.Context) (*amqp.Message, error) {
+	return m.ReceiveFn(ctx)
 }
 
-func (m *mockAMQPSender) Close(ctx context.Context) error {
+func (m *mockAMQPReceiver) Close(ctx context.Context) error {
 	return m.CloseFn(ctx)
 }

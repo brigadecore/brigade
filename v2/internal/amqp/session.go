@@ -16,6 +16,8 @@ import (
 type Session interface {
 	// NewSender opens a new sender link on the session.
 	NewSender(opts ...amqp.LinkOption) (Sender, error)
+	// NewReceiver opens a new receiver link on the session.
+	NewReceiver(opts ...amqp.LinkOption) (Receiver, error)
 	// Close gracefully closes the session.
 	Close(ctx context.Context) error
 }
@@ -28,6 +30,13 @@ func (s *session) NewSender(opts ...amqp.LinkOption) (Sender, error) {
 	sndr, err := s.session.NewSender(opts...)
 	return &sender{
 		sender: sndr,
+	}, err
+}
+
+func (s *session) NewReceiver(opts ...amqp.LinkOption) (Receiver, error) {
+	rcvr, err := s.session.NewReceiver(opts...)
+	return &receiver{
+		receiver: rcvr,
 	}, err
 }
 
