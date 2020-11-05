@@ -8,7 +8,6 @@ import (
 	"github.com/Azure/go-amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	myamqp "github.com/brigadecore/brigade/v2/internal/amqp"
-	"github.com/brigadecore/brigade/v2/internal/os"
 	"github.com/brigadecore/brigade/v2/internal/retries"
 	"github.com/pkg/errors"
 )
@@ -25,23 +24,6 @@ type WriterFactoryConfig struct {
 	// Password is the SASL password to use when connection to the AMQP-based
 	// messaging server.
 	Password string
-}
-
-// GetWriterFactoryConfig returns WriterFactoryConfig based on configuration
-// obtained from environment variables.
-func GetWriterFactoryConfig() (WriterFactoryConfig, error) {
-	config := WriterFactoryConfig{}
-	var err error
-	config.Address, err = os.GetRequiredEnvVar("AMQP_ADDRESS")
-	if err != nil {
-		return config, err
-	}
-	config.Username, err = os.GetRequiredEnvVar("AMQP_USERNAME")
-	if err != nil {
-		return config, err
-	}
-	config.Password, err = os.GetRequiredEnvVar("AMQP_PASSWORD")
-	return config, err
 }
 
 // writerFactory is an AMQP-based implementation of the queue.WriterFactory

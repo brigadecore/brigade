@@ -11,7 +11,6 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
-	"github.com/brigadecore/brigade/v2/internal/os"
 	"github.com/pkg/errors"
 )
 
@@ -27,28 +26,6 @@ type TokenAuthFilterConfig struct {
 	// FindUserFn is a function for locating a User. This field is applicable only
 	// when value of the OpenIDConnectEnabled field is true.
 	FindUserFn func(ctx context.Context, id string) (authx.User, error)
-}
-
-// GetTokenAuthFilterConfig returns TokenAuthFilterConfig based on configuration
-// obtained from environment variables.
-func GetTokenAuthFilterConfig(
-	findUserFn func(ctx context.Context, id string) (authx.User, error),
-) (TokenAuthFilterConfig, error) {
-	config := TokenAuthFilterConfig{
-		FindUserFn: findUserFn,
-	}
-	var err error
-	config.RootUserEnabled, err =
-		os.GetBoolFromEnvVar("ROOT_USER_ENABLED", false)
-	if err != nil {
-		return config, nil
-	}
-	config.OpenIDConnectEnabled, err =
-		os.GetBoolFromEnvVar("OIDC_ENABLED", false)
-	if err != nil {
-		return config, nil
-	}
-	return config, nil
 }
 
 // tokenAuthFilter is an implementation of the restmachinery.Filter interface

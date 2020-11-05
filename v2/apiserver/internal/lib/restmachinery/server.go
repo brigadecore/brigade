@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/v2/internal/file"
-	"github.com/brigadecore/brigade/v2/internal/os"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -19,32 +18,6 @@ type ServerConfig struct {
 	TLSEnabled  bool
 	TLSCertPath string
 	TLSKeyPath  string
-}
-
-// GetServerConfig returns ServerConfig based on configuration obtained from
-// environment variables.
-func GetServerConfig() (ServerConfig, error) {
-	config := ServerConfig{}
-	var err error
-	config.Port, err = os.GetIntFromEnvVar("API_SERVER_PORT", 8080)
-	if err != nil {
-		return config, err
-	}
-	config.TLSEnabled, err = os.GetBoolFromEnvVar("TLS_ENABLED", false)
-	if err != nil {
-		return config, err
-	}
-	if config.TLSEnabled {
-		config.TLSCertPath, err = os.GetRequiredEnvVar("TLS_CERT_PATH")
-		if err != nil {
-			return config, err
-		}
-		config.TLSKeyPath, err = os.GetRequiredEnvVar("TLS_KEY_PATH")
-		if err != nil {
-			return config, err
-		}
-	}
-	return config, nil
 }
 
 // Server is an interface for the REST API server.
