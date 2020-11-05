@@ -9,7 +9,6 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
-	"github.com/brigadecore/brigade/v2/internal/os"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	corev1 "k8s.io/api/core/v1"
@@ -27,18 +26,6 @@ type SubstrateConfig struct {
 	// this information whenever it needs to tell another component where to find
 	// the API server.
 	APIAddress string
-}
-
-// GetSubstrateConfig returns SubstrateConfig based on configuration obtained
-// from environment variables.
-func GetSubstrateConfig() (SubstrateConfig, error) {
-	config := SubstrateConfig{}
-	var err error
-	config.APIAddress, err = os.GetRequiredEnvVar("API_ADDRESS")
-	if err != nil {
-		return config, err
-	}
-	return config, nil
 }
 
 // substrate is a Kubernetes-based implementation of the core.Substrate

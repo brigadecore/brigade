@@ -11,7 +11,6 @@ import (
 	coreKubernetes "github.com/brigadecore/brigade/v2/apiserver/internal/core/kubernetes"
 	coreMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/core/mongodb"
 	coreREST "github.com/brigadecore/brigade/v2/apiserver/internal/core/rest"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
@@ -46,7 +45,7 @@ func main() {
 	var sessionsStore authx.SessionsStore
 	var usersStore authx.UsersStore
 	{
-		database, err := mongodb.Database(ctx)
+		database, err := database(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -76,7 +75,7 @@ func main() {
 	// Message sending abstraction
 	var queueWriterFactory queue.WriterFactory
 	{
-		config, err := amqp.GetWriterFactoryConfig()
+		config, err := writerFactoryConfig()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -86,7 +85,7 @@ func main() {
 	// Substrate
 	var substrate core.Substrate
 	{
-		config, err := coreKubernetes.GetSubstrateConfig()
+		config, err := substrateConfig()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -113,7 +112,7 @@ func main() {
 	// Session service
 	var sessionsService authx.SessionsService
 	{
-		config, err := authx.GetSessionsServiceConfig(ctx)
+		config, err := sessionsServiceConfig(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -130,7 +129,7 @@ func main() {
 	// Server
 	var apiServer restmachinery.Server
 	{
-		authFilterConfig, err := authn.GetTokenAuthFilterConfig(usersService.Get)
+		authFilterConfig, err := tokenAuthFilterConfig(usersService.Get)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -139,7 +138,7 @@ func main() {
 			sessionsService.GetByToken,
 			&authFilterConfig,
 		)
-		apiServerConfig, err := restmachinery.GetServerConfig()
+		apiServerConfig, err := serverConfig()
 		if err != nil {
 			log.Fatal(err)
 		}

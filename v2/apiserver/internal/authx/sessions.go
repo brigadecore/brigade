@@ -3,12 +3,10 @@ package authx
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
-	"github.com/brigadecore/brigade/v2/internal/os"
 	"github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -147,65 +145,6 @@ type SessionsServiceConfig struct {
 	// field is applicable only when value of the OpenIDConnectEnabled field is
 	// true.
 	OpenIDConnectTokenVerifier OpenIDConnectTokenVerifier
-}
-
-// GetSessionsServiceConfig returns SessionsServiceConfig based on configuration
-// obtained from environment variables.
-func GetSessionsServiceConfig(
-	ctx context.Context,
-) (SessionsServiceConfig, error) {
-	config := SessionsServiceConfig{}
-	var err error
-	config.RootUserEnabled, err = os.GetBoolFromEnvVar("ROOT_USER_ENABLED", false)
-	if err != nil {
-		return config, err
-	}
-	config.OpenIDConnectEnabled, err =
-		os.GetBoolFromEnvVar("OIDC_ENABLED", false)
-	if err != nil {
-		return config, err
-	}
-	if config.RootUserEnabled {
-		config.RootUserPassword, err = os.GetRequiredEnvVar("ROOT_USER_PASSWORD")
-		if err != nil {
-			return config, err
-		}
-	}
-	if config.OpenIDConnectEnabled {
-		providerURL, err := os.GetRequiredEnvVar("OIDC_PROVIDER_URL")
-		if err != nil {
-			return config, err
-		}
-		provider, err := oidc.NewProvider(ctx, providerURL)
-		if err != nil {
-			return config, err
-		}
-		clientID, err := os.GetRequiredEnvVar("OIDC_CLIENT_ID")
-		if err != nil {
-			return config, err
-		}
-		clientSecret, err := os.GetRequiredEnvVar("OIDC_CLIENT_SECRET")
-		if err != nil {
-			return config, err
-		}
-		redirectURLBase, err := os.GetRequiredEnvVar("OIDC_REDIRECT_URL_BASE")
-		if err != nil {
-			return config, err
-		}
-		config.OAuth2Helper = &oauth2.Config{
-			Endpoint:     provider.Endpoint(),
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-			RedirectURL:  fmt.Sprintf("%s/%s", redirectURLBase, "v2/session/auth"),
-			Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
-		}
-		config.OpenIDConnectTokenVerifier = provider.Verifier(
-			&oidc.Config{
-				ClientID: clientID,
-			},
-		)
-	}
-	return config, nil
 }
 
 // SessionsService is the specialized interface for managing Sessions. It's
