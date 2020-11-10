@@ -3,7 +3,6 @@ package amqp
 import (
 	"context"
 	"errors"
-	"os"
 	"sync"
 	"testing"
 
@@ -12,74 +11,6 @@ import (
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/stretchr/testify/require"
 )
-
-func TestGetReaderFactoryConfig(t *testing.T) {
-	// Note that unit testing in Go does NOT clear environment variables between
-	// tests, which can sometimes be a pain, but it's fine here-- so each of these
-	// test cases builds on the previous case.
-	testCases := []struct {
-		name       string
-		setup      func()
-		assertions func(ReaderFactoryConfig, error)
-	}{
-		{
-			name:  "AMQP_ADDRESS not set",
-			setup: func() {},
-			assertions: func(_ ReaderFactoryConfig, err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "value not found for")
-				require.Contains(t, err.Error(), "AMQP_ADDRESS")
-			},
-		},
-		{
-			name: "AMQP_USERNAME not set",
-			setup: func() {
-				os.Setenv("AMQP_ADDRESS", "foo")
-			},
-			assertions: func(_ ReaderFactoryConfig, err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "value not found for")
-				require.Contains(t, err.Error(), "AMQP_USERNAME")
-			},
-		},
-		{
-			name: "AMQP_PASSWORD not set",
-			setup: func() {
-				os.Setenv("AMQP_USERNAME", "bar")
-			},
-			assertions: func(_ ReaderFactoryConfig, err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "value not found for")
-				require.Contains(t, err.Error(), "AMQP_PASSWORD")
-			},
-		},
-		{
-			name: "success",
-			setup: func() {
-				os.Setenv("AMQP_PASSWORD", "bat")
-			},
-			assertions: func(config ReaderFactoryConfig, err error) {
-				require.NoError(t, err)
-				require.Equal(
-					t,
-					ReaderFactoryConfig{
-						Address:  "foo",
-						Username: "bar",
-						Password: "bat",
-					},
-					config,
-				)
-			},
-		},
-	}
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			testCase.setup()
-			config, err := GetReaderFactoryConfig()
-			testCase.assertions(config, err)
-		})
-	}
-}
 
 func TestNewReaderFactory(t *testing.T) {
 	const testAddress = "foo"

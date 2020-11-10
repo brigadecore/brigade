@@ -7,7 +7,6 @@ import (
 
 	"github.com/Azure/go-amqp"
 	myamqp "github.com/brigadecore/brigade/v2/internal/amqp"
-	"github.com/brigadecore/brigade/v2/internal/os"
 	"github.com/brigadecore/brigade/v2/internal/retries"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/pkg/errors"
@@ -25,23 +24,6 @@ type ReaderFactoryConfig struct {
 	// Password is the SASL password to use when connection to the AMQP-based
 	// messaging server.
 	Password string
-}
-
-// GetReaderFactoryConfig returns ReaderFactoryConfig based on configuration
-// obtained from environment variables.
-func GetReaderFactoryConfig() (ReaderFactoryConfig, error) {
-	config := ReaderFactoryConfig{}
-	var err error
-	config.Address, err = os.GetRequiredEnvVar("AMQP_ADDRESS")
-	if err != nil {
-		return config, err
-	}
-	config.Username, err = os.GetRequiredEnvVar("AMQP_USERNAME")
-	if err != nil {
-		return config, err
-	}
-	config.Password, err = os.GetRequiredEnvVar("AMQP_PASSWORD")
-	return config, err
 }
 
 // readerFactory is an AMQP-based implementation of the queue.ReaderFactory
