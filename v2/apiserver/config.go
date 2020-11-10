@@ -7,6 +7,7 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core/kubernetes"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery/authn"
@@ -172,7 +173,15 @@ func tokenAuthFilterConfig(
 	}
 	config.OpenIDConnectEnabled, err =
 		os.GetBoolFromEnvVar("OIDC_ENABLED", false)
-	return config, err
+	if err != nil {
+		return config, err
+	}
+	schedulerToken, err := os.GetRequiredEnvVar("SCHEDULER_TOKEN")
+	if err != nil {
+		return config, err
+	}
+	config.HashedSchedulerToken = crypto.Hash("", schedulerToken)
+	return config, nil
 }
 
 // serverConfig returns a restmachinery.ServerConfig based on configuration
