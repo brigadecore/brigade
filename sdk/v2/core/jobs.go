@@ -39,7 +39,7 @@ const (
 	// that this is possible if and only if the underlying Job execution substrate
 	// (Kubernetes), for some unanticipated reason, does not know the Job's
 	// (Pod's) state.
-	JobPhaseUnknown WorkerPhase = "UNKNOWN"
+	JobPhaseUnknown JobPhase = "UNKNOWN"
 )
 
 // Job represents a component spawned by a Worker to complete a single task
