@@ -21,6 +21,10 @@ const (
 	// JobPhaseRunning represents the state wherein a Job is currently
 	// being executed.
 	JobPhaseRunning JobPhase = "RUNNING"
+	// JobPhaseSchedulingFailed represents the state wherein a job was not
+	// scheduled due to some unexpected and unrecoverable error encountered by the
+	// scheduler.
+	JobPhaseSchedulingFailed WorkerPhase = "SCHEDULING_FAILED"
 	// JobPhaseSucceeded represents the state where a Job has run to
 	// completion without error.
 	JobPhaseSucceeded JobPhase = "SUCCEEDED"
