@@ -13,4 +13,6 @@ func TestNewAPIClient(t *testing.T) {
 	require.Equal(t, client.(*apiClient).projectsClient, client.Projects())
 	require.NotNil(t, client.(*apiClient).eventsClient)
 	require.Equal(t, client.(*apiClient).eventsClient, client.Events())
+	require.NotNil(t, client.(*apiClient).substrateClient)
+	require.Equal(t, client.(*apiClient).substrateClient, client.Substrate())
 }
