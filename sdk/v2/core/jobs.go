@@ -29,6 +29,10 @@ const (
 	// JobPhaseRunning represents the state wherein a Job is currently
 	// being executed.
 	JobPhaseRunning JobPhase = "RUNNING"
+	// JobPhaseSchedulingFailed represents the state wherein a job was not
+	// scheduled due to some unexpected and unrecoverable error encountered by the
+	// scheduler.
+	JobPhaseSchedulingFailed JobPhase = "SCHEDULING_FAILED"
 	// JobPhaseSucceeded represents the state where a Job has run to
 	// completion without error.
 	JobPhaseSucceeded JobPhase = "SUCCEEDED"
@@ -39,7 +43,7 @@ const (
 	// that this is possible if and only if the underlying Job execution substrate
 	// (Kubernetes), for some unanticipated reason, does not know the Job's
 	// (Pod's) state.
-	JobPhaseUnknown WorkerPhase = "UNKNOWN"
+	JobPhaseUnknown JobPhase = "UNKNOWN"
 )
 
 // Job represents a component spawned by a Worker to complete a single task

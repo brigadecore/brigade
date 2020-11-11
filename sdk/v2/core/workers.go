@@ -46,6 +46,10 @@ const (
 	// WorkerPhaseRunning represents the state wherein a worker is currently
 	// being executed.
 	WorkerPhaseRunning WorkerPhase = "RUNNING"
+	// WorkerPhaseSchedulingFailed represents the state wherein a worker was not
+	// scheduled due to some unexpected and unrecoverable error encountered by the
+	// scheduler.
+	WorkerPhaseSchedulingFailed WorkerPhase = "SCHEDULING_FAILED"
 	// WorkerPhaseSucceeded represents the state where a worker has run to
 	// completion without error.
 	WorkerPhaseSucceeded WorkerPhase = "SUCCEEDED"

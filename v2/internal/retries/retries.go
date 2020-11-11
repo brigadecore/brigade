@@ -2,7 +2,6 @@ package retries
 
 import (
 	"context"
-	"log"
 	"math"
 	"time"
 
@@ -53,7 +52,7 @@ func ManageRetries(
 			return err
 		}
 		failedAttempts++
-		if failedAttempts == maxAttempts {
+		if maxAttempts > 0 && failedAttempts == maxAttempts {
 			if err == nil {
 				return errors.Errorf(
 					"failed %d attempt(s) to %s",
@@ -68,16 +67,8 @@ func ManageRetries(
 				process,
 			)
 		}
-		delay := jitteredExpBackoffFn(failedAttempts, maxBackoff)
-		log.Printf(
-			"WARNING: failed %d attempts(s) to %s; will retry in %s: %s",
-			failedAttempts,
-			process,
-			delay,
-			err,
-		)
 		select {
-		case <-time.After(delay):
+		case <-time.After(jitteredExpBackoffFn(failedAttempts, maxBackoff)):
 		case <-ctx.Done():
 			return ctx.Err()
 		}
