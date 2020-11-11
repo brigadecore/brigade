@@ -123,6 +123,9 @@ func main() {
 		)
 	}
 
+	// Substrate service
+	substrateService := core.NewSubstrateService(substrate)
+
 	// Users service
 	usersService := authx.NewUsersService(usersStore, sessionsStore)
 
@@ -175,6 +178,10 @@ func main() {
 				&authxREST.SessionsEndpoints{
 					AuthFilter: authFilter,
 					Service:    sessionsService,
+				},
+				&coreREST.SubstrateEndpoints{
+					AuthFilter: authFilter,
+					Service:    substrateService,
 				},
 				&authxREST.UsersEndpoints{
 					AuthFilter: authFilter,

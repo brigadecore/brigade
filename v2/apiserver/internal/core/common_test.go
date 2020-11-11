@@ -126,13 +126,27 @@ func (m *mockEventsStore) DeleteMany(
 }
 
 type mockSubstrate struct {
-	CreateProjectFn func(
+	CountRunningWorkersFn func(context.Context) (SubstrateWorkerCount, error)
+	CountRunningJobsFn    func(context.Context) (SubstrateJobCount, error)
+	CreateProjectFn       func(
 		ctx context.Context,
 		project Project,
 	) (Project, error)
 	DeleteProjectFn       func(context.Context, Project) error
 	ScheduleWorkerFn      func(context.Context, Project, Event) error
 	DeleteWorkerAndJobsFn func(context.Context, Project, Event) error
+}
+
+func (m *mockSubstrate) CountRunningWorkers(
+	ctx context.Context,
+) (SubstrateWorkerCount, error) {
+	return m.CountRunningWorkersFn(ctx)
+}
+
+func (m *mockSubstrate) CountRunningJobs(
+	ctx context.Context,
+) (SubstrateJobCount, error) {
+	return m.CountRunningJobsFn(ctx)
 }
 
 func (m *mockSubstrate) CreateProject(
