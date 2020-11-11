@@ -66,6 +66,7 @@ func TestReadFactoryClose(t *testing.T) {
 						return errors.New("something went wrong")
 					},
 				},
+				amqpClientMu: &sync.Mutex{},
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -81,6 +82,7 @@ func TestReadFactoryClose(t *testing.T) {
 						return nil
 					},
 				},
+				amqpClientMu: &sync.Mutex{},
 			},
 			assertions: func(err error) {
 				require.NoError(t, err)

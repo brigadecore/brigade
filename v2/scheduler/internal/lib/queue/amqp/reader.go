@@ -135,6 +135,11 @@ func (q *readerFactory) NewReader(queueName string) (queue.Reader, error) {
 }
 
 func (q *readerFactory) Close(context.Context) error {
+	q.amqpClientMu.Lock()
+	defer q.amqpClientMu.Unlock()
+	if q.amqpClient == nil {
+		return nil
+	}
 	if err := q.amqpClient.Close(); err != nil {
 		return errors.Wrapf(err, "error closing AMQP client")
 	}
