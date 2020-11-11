@@ -14,10 +14,41 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
 )
+
+var workerPodsSelector = labels.Set(
+	map[string]string{
+		myk8s.LabelComponent: "worker",
+	},
+).AsSelector().String()
+
+var jobPodsSelector = labels.Set(
+	map[string]string{
+		myk8s.LabelComponent: "job",
+	},
+).AsSelector().String()
+
+var runningPodsSelector = fields.Set(
+	map[string]string{
+		"status.phase": string(corev1.PodRunning),
+	},
+).AsSelector().String()
+
+var pendingPodsSelector = fields.Set(
+	map[string]string{
+		"status.phase": string(corev1.PodPending),
+	},
+).AsSelector().String()
+
+var unknownPhasePodsSelector = fields.Set(
+	map[string]string{
+		"status.phase": string(corev1.PodUnknown),
+	},
+).AsSelector().String()
 
 // SubstrateConfig encapsulates several configuration options for the
 // Kubernetes-based Substrate.
@@ -50,6 +81,24 @@ func NewSubstrate(
 		queueWriterFactory:     queueWriterFactory,
 		config:                 config,
 	}
+}
+
+func (s *substrate) CountRunningWorkers(
+	ctx context.Context,
+) (core.SubstrateWorkerCount, error) {
+	count := core.SubstrateWorkerCount{}
+	var err error
+	count.Count, err = s.countRunningPods(ctx, workerPodsSelector)
+	return count, err
+}
+
+func (s *substrate) CountRunningJobs(
+	ctx context.Context,
+) (core.SubstrateJobCount, error) {
+	count := core.SubstrateJobCount{}
+	var err error
+	count.Count, err = s.countRunningPods(ctx, jobPodsSelector)
+	return count, err
 }
 
 func (s *substrate) CreateProject(
@@ -480,4 +529,42 @@ func (s *substrate) DeleteWorkerAndJobs(
 
 func generateNewNamespace(projectID string) string {
 	return fmt.Sprintf("brigade-%s-%s", projectID, uuid.NewV4().String())
+}
+
+func (s *substrate) countRunningPods(
+	ctx context.Context,
+	labelSelector string,
+) (int, error) {
+	phaseSelectors := []string{
+		pendingPodsSelector,
+		runningPodsSelector,
+		unknownPhasePodsSelector,
+	}
+	// Use a set to assist in counting. This helps prevent us from double-counting
+	// a pod if its phase changes from pending to running while we're counting.
+	podsSet := map[string]struct{}{}
+	for _, phaseSelector := range phaseSelectors {
+		var cont string
+		for {
+			pods, err := s.kubeClient.CoreV1().Pods("").List(
+				ctx,
+				metav1.ListOptions{
+					LabelSelector: labelSelector,
+					FieldSelector: phaseSelector,
+					Continue:      cont,
+				},
+			)
+			if err != nil {
+				return 0, errors.Wrap(err, "error counting pods")
+			}
+			for _, pod := range pods.Items {
+				podsSet[fmt.Sprintf("%s:%s", pod.Namespace, pod.Name)] = struct{}{}
+			}
+			cont = pods.Continue
+			if cont == "" {
+				break
+			}
+		}
+	}
+	return len(podsSet), nil
 }

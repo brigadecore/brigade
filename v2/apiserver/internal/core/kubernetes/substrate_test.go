@@ -10,6 +10,7 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/brigadecore/brigade/v2/internal/kubernetes"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -28,6 +29,98 @@ func TestNewSubstrate(t *testing.T) {
 	require.Same(t, testClient, s.(*substrate).kubeClient)
 	require.Same(t, testQueueWriterFactory, s.(*substrate).queueWriterFactory)
 	require.Equal(t, testConfig, s.(*substrate).config)
+}
+
+func TestSubstrateCountRunningWorkers(t *testing.T) {
+	const testNamespace = "foo"
+	kubeClient := fake.NewSimpleClientset()
+	podsClient := kubeClient.CoreV1().Pods(testNamespace)
+	// This pod doesn't have correct labels
+	_, err := podsClient.Create(
+		context.Background(),
+		&corev1.Pod{
+			ObjectMeta: v1.ObjectMeta{
+				Name: "bar",
+				Labels: map[string]string{
+					kubernetes.LabelComponent: "job",
+				},
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+			},
+		},
+		v1.CreateOptions{},
+	)
+	require.NoError(t, err)
+	// This pod has correct labels
+	_, err = podsClient.Create(
+		context.Background(),
+		&corev1.Pod{
+			ObjectMeta: v1.ObjectMeta{
+				Name: "bat",
+				Labels: map[string]string{
+					kubernetes.LabelComponent: "worker",
+				},
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+			},
+		},
+		v1.CreateOptions{},
+	)
+	require.NoError(t, err)
+	s := &substrate{
+		kubeClient: kubeClient,
+	}
+	count, err := s.CountRunningWorkers(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, 1, count.Count)
+}
+
+func TestSubstrateCountRunningJobs(t *testing.T) {
+	const testNamespace = "foo"
+	kubeClient := fake.NewSimpleClientset()
+	podsClient := kubeClient.CoreV1().Pods(testNamespace)
+	// This pod doesn't have correct labels
+	_, err := podsClient.Create(
+		context.Background(),
+		&corev1.Pod{
+			ObjectMeta: v1.ObjectMeta{
+				Name: "bar",
+				Labels: map[string]string{
+					kubernetes.LabelComponent: "worker",
+				},
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+			},
+		},
+		v1.CreateOptions{},
+	)
+	require.NoError(t, err)
+	// This pod has correct labels
+	_, err = podsClient.Create(
+		context.Background(),
+		&corev1.Pod{
+			ObjectMeta: v1.ObjectMeta{
+				Name: "bat",
+				Labels: map[string]string{
+					kubernetes.LabelComponent: "job",
+				},
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+			},
+		},
+		v1.CreateOptions{},
+	)
+	require.NoError(t, err)
+	s := &substrate{
+		kubeClient: kubeClient,
+	}
+	count, err := s.CountRunningJobs(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, 1, count.Count)
 }
 
 func TestSubstrateCreateProject(t *testing.T) {

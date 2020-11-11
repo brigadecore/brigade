@@ -9,6 +9,9 @@ type APIClient interface {
 	Events() EventsClient
 	// Projects returns a specialized client for Project management.
 	Projects() ProjectsClient
+	// Substrate returns a specialized client for monitoring the state of the
+	// substrate.
+	Substrate() SubstrateClient
 }
 
 type apiClient struct {
@@ -16,6 +19,8 @@ type apiClient struct {
 	eventsClient EventsClient
 	// projectsClient is a specialized client for Project management.
 	projectsClient ProjectsClient
+	// substrateClient is a specialized client for substrate monitoring.
+	substrateClient SubstrateClient
 }
 
 // NewAPIClient returns an APIClient, which is the root of a tree of more
@@ -27,8 +32,9 @@ func NewAPIClient(
 	opts *restmachinery.APIClientOptions,
 ) APIClient {
 	return &apiClient{
-		eventsClient:   NewEventsClient(apiAddress, apiToken, opts),
-		projectsClient: NewProjectsClient(apiAddress, apiToken, opts),
+		eventsClient:    NewEventsClient(apiAddress, apiToken, opts),
+		projectsClient:  NewProjectsClient(apiAddress, apiToken, opts),
+		substrateClient: NewSubstrateClient(apiAddress, apiToken, opts),
 	}
 }
 
@@ -38,4 +44,8 @@ func (a *apiClient) Events() EventsClient {
 
 func (a *apiClient) Projects() ProjectsClient {
 	return a.projectsClient
+}
+
+func (a *apiClient) Substrate() SubstrateClient {
+	return a.substrateClient
 }
