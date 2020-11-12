@@ -2,7 +2,11 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/pkg/errors"
 )
 
 // JobPhase represents where a Job is within its lifecycle.
@@ -138,17 +142,6 @@ type JobStatus struct {
 // etc.) to keep business logic reusable and consistent while the underlying
 // tech stack remains free to change.
 type JobsService interface {
-	// Create, given an Event identifier and JobSpec, creates a new Job and starts
-	// it on Brigade's workload execution substrate. If the specified Event does
-	// not exist, implementations MUST return a *meta.ErrNotFound error. If the
-	// specified Event already has a Job with the specified name, implementations
-	// MUST return a *meta.ErrConflict error.
-	Create(
-		ctx context.Context,
-		eventID string,
-		jobName string,
-		job Job,
-	) error
 	// Start, given an Event identifier and Job name, starts that Job on
 	// Brigade's workload execution substrate. If the specified Event or specified
 	// Job thereof does not exist, implementations MUST return a *meta.ErrNotFound
@@ -158,31 +151,74 @@ type JobsService interface {
 		eventID string,
 		jobName string,
 	) error
-	// GetStatus, given an Event identifier and Job name, returns the Job's
-	// status. If the specified Event or specified Job thereof does not exist,
-	// implementations MUST return a *meta.ErrNotFound error.
-	GetStatus(
-		ctx context.Context,
-		eventID string,
-		jobName string,
-	) (JobStatus, error)
-	// WatchStatus, given an Event identifier and Job name, returns a channel over
-	// which the Job's status is streamed. The channel receives a new JobStatus
-	// every time there is any change in that status. If the specified Event or
-	// specified Job thereof does not exist, implementations MUST return a
-	// *meta.ErrNotFound error.
-	WatchStatus(
-		ctx context.Context,
-		eventID string,
-		jobName string,
-	) (<-chan JobStatus, error)
-	// UpdateStatus, given an Event identifier and Job name, updates the status of
-	// that Job. If the specified Event or specified Job thereof does not exist,
-	// implementations MUST return a *meta.ErrNotFound error.
-	UpdateStatus(
-		ctx context.Context,
-		eventID string,
-		jobName string,
-		status JobStatus,
-	) error
+}
+
+type jobsService struct {
+	projectsStore ProjectsStore
+	eventsStore   EventsStore
+	// jobsStore     JobsStore
+	substrate Substrate
+}
+
+// NewJobsService returns a specialized interface for managing Jobs.
+func NewJobsService(
+	projectsStore ProjectsStore,
+	eventsStore EventsStore,
+	substrate Substrate,
+) JobsService {
+	return &jobsService{
+		projectsStore: projectsStore,
+		eventsStore:   eventsStore,
+		substrate:     substrate,
+	}
+}
+
+func (j *jobsService) Start(
+	ctx context.Context,
+	eventID string,
+	jobName string,
+) error {
+	event, err := j.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+	job, ok := event.Worker.Jobs[jobName]
+	if !ok {
+		return &meta.ErrNotFound{
+			Type: "Job",
+			ID:   jobName,
+		}
+	}
+
+	if job.Status.Phase != JobPhasePending {
+		return &meta.ErrConflict{
+			Type: "Job",
+			ID:   jobName,
+			Reason: fmt.Sprintf(
+				"Event %q job %q has already been started.",
+				eventID,
+				jobName,
+			),
+		}
+	}
+
+	project, err := j.projectsStore.Get(ctx, event.ProjectID)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error retrieving project %q from store",
+			event.ProjectID,
+		)
+	}
+
+	if err = j.substrate.StartJob(ctx, project, event, jobName); err != nil {
+		return errors.Wrapf(
+			err,
+			"error starting event %q job %q",
+			event.ID,
+			jobName,
+		)
+	}
+
+	return nil
 }

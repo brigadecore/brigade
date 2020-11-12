@@ -125,6 +125,14 @@ type Substrate interface {
 	// StartWorker starts an Event's Worker on the substrate.
 	StartWorker(context.Context, Project, Event) error
 
+	// StartJob starts a Job on the substrate.
+	StartJob(
+		ctx context.Context,
+		project Project,
+		event Event,
+		jobName string,
+	) error
+
 	// DeleteWorkerAndJobs deletes all substrate resources pertaining to the
 	// specified Event's Worker and Jobs.
 	DeleteWorkerAndJobs(context.Context, Project, Event) error
