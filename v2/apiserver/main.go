@@ -129,6 +129,13 @@ func main() {
 	// Users service
 	usersService := authx.NewUsersService(usersStore, sessionsStore)
 
+	// Workers service
+	workersService := core.NewWorkersService(
+		projectsStore,
+		eventsStore,
+		substrate,
+	)
+
 	// Server
 	var apiServer restmachinery.Server
 	{
@@ -186,6 +193,10 @@ func main() {
 				&authxREST.UsersEndpoints{
 					AuthFilter: authFilter,
 					Service:    usersService,
+				},
+				&coreREST.WorkersEndpoints{
+					AuthFilter: authFilter,
+					Service:    workersService,
 				},
 			},
 			&apiServerConfig,

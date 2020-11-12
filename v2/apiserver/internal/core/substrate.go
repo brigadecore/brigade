@@ -122,6 +122,8 @@ type Substrate interface {
 	// ScheduleWorker prepares the substrate for the Event's worker and schedules
 	// the Worker for async / eventual execution.
 	ScheduleWorker(context.Context, Project, Event) error
+	// StartWorker starts an Event's Worker on the substrate.
+	StartWorker(context.Context, Project, Event) error
 
 	// DeleteWorkerAndJobs deletes all substrate resources pertaining to the
 	// specified Event's Worker and Jobs.
