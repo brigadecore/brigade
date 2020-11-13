@@ -64,6 +64,11 @@ spec:
           value: http://{{ .Values.apiserver.host }}
           {{- end }}
         {{- end }}
+        - name: SCHEDULER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.scheduler.fullname" . }}
+              key: api-token
         - name: TLS_ENABLED
           value: {{ quote .Values.apiserver.tls.enabled }}
         {{- if .Values.apiserver.tls.enabled }}
