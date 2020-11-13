@@ -3,13 +3,13 @@ package authn
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -55,6 +55,30 @@ func TestFilter(t *testing.T) {
 		},
 
 		{
+			name: "token belongs to scheduler",
+			filter: &tokenAuthFilter{
+				config: TokenAuthFilterConfig{
+					HashedSchedulerToken: crypto.Hash("", "foo"),
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add("Authorization", "Bearer foo")
+				return req
+			},
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				principal := authx.PrincipalFromContext(r.Context())
+				require.NotNil(t, principal)
+				require.Same(t, authx.Scheduler, principal)
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, rr.Code)
+				assert.True(t, handlerCalled)
+			},
+		},
+
+		{
 			name: "error finding service account",
 			filter: &tokenAuthFilter{
 				findServiceAccountByTokenFn: func(
@@ -67,10 +91,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
@@ -95,10 +116,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
@@ -125,10 +143,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
@@ -156,10 +171,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
@@ -187,10 +199,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
@@ -220,10 +229,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
@@ -265,10 +271,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
@@ -296,10 +299,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
@@ -330,10 +330,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
@@ -369,10 +366,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
@@ -411,10 +405,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
@@ -456,10 +447,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
@@ -508,10 +496,7 @@ func TestFilter(t *testing.T) {
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
 				require.NoError(t, err)
-				req.Header.Add(
-					"Authorization",
-					fmt.Sprintf("Bearer %s", "foo"),
-				)
+				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/pkg/errors"
@@ -26,6 +27,9 @@ type TokenAuthFilterConfig struct {
 	// FindUserFn is a function for locating a User. This field is applicable only
 	// when value of the OpenIDConnectEnabled field is true.
 	FindUserFn func(ctx context.Context, id string) (authx.User, error)
+	// HashedSchedulerToken is a secure hash of the token used by the scheduler
+	// component.
+	HashedSchedulerToken string
 }
 
 // tokenAuthFilter is an implementation of the restmachinery.Filter interface
@@ -96,6 +100,13 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		token := headerValueParts[1]
+
+		// Is it the Scheduler's token?
+		if crypto.Hash("", token) == t.config.HashedSchedulerToken {
+			ctx := authx.ContextWithPrincipal(r.Context(), authx.Scheduler)
+			handle(w, r.WithContext(ctx))
+			return
+		}
 
 		// Is it a ServiceAccount's token?
 		if serviceAccount, err :=

@@ -353,9 +353,20 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "success",
+			name: "SCHEDULER_TOKEN not set",
 			setup: func() {
 				os.Setenv("OIDC_ENABLED", "true")
+			},
+			assertions: func(_ authn.TokenAuthFilterConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "SCHEDULER_TOKEN")
+			},
+		},
+		{
+			name: "success",
+			setup: func() {
+				os.Setenv("SCHEDULER_TOKEN", "foo")
 			},
 			assertions: func(config authn.TokenAuthFilterConfig, err error) {
 				require.NoError(t, err)
