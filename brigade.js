@@ -39,7 +39,17 @@ function lintGo() {
 
 // Build the API server
 function buildAPIServer() {
-  var job = new Job("build-apiserver", dockerImg);
+  return buildImage("apiserver");
+}
+
+// Build the scheduler
+function buildScheduler() {
+  return buildImage("scheduler");
+}
+
+// Build the API server
+function buildImage(imageName) {
+  var job = new Job(`build-${imageName}`, dockerImg);
   job.mountPath = localPath;
   job.privileged = true;
   job.tasks = [
@@ -47,7 +57,7 @@ function buildAPIServer() {
     "dockerd-entrypoint.sh &",
     "sleep 20",
     `cd ${localPath}`,
-    "make build-apiserver"
+    `make build-${imageName}`
   ];
   return job;
 }
@@ -73,13 +83,11 @@ function runSuite(e, p) {
   // throw it so the whole build will fail.
   //
   // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all#Promise.all_fail-fast_behaviour
-  //
-  // Note: as provided language string is used in job naming, it must consist
-  // of lowercase letters and hyphens only (per Brigade/K8s restrictions)
   return Promise.all([
     run(e, p, testUnitGo).catch((err) => { return err }),
     run(e, p, lintGo).catch((err) => { return err }),
     run(e, p, buildAPIServer).catch((err) => { return err }),
+    run(e, p, buildScheduler).catch((err) => { return err }),
     run(e, p, buildCLI).catch((err) => { return err })
   ]).then((values) => {
     values.forEach((value) => {
@@ -99,6 +107,8 @@ function runCheck(e, p) {
       return run(e, p, lintGo);
     case "build-apiserver":
       return run(e, p, buildAPIServer);
+    case "build-scheduler":
+      return run(e, p, buildScheduler);
     case "build-cli":
       return run(e, p, buildCLI);
     default:
