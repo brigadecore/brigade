@@ -24,6 +24,10 @@ If release name contains chart name it will be used as a full name.
 {{ include "brigade.fullname" . | printf "%s-apiserver" }}
 {{- end -}}
 
+{{- define "brigade.scheduler.fullname" -}}
+{{ include "brigade.fullname" . | printf "%s-scheduler" }}
+{{- end -}}
+
 {{- define "brigade.artemis.fullname" -}}
 {{ include "brigade.fullname" . | printf "%s-artemis" }}
 {{- end -}}
@@ -57,6 +61,10 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "brigade.apiserver.labels" -}}
 app.kubernetes.io/component: apiserver
+{{- end -}}
+
+{{- define "brigade.scheduler.labels" -}}
+app.kubernetes.io/component: scheduler
 {{- end -}}
 
 {{- define "brigade.artemis.labels" -}}
