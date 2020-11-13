@@ -2,8 +2,12 @@ package authx
 
 import "context"
 
-// Root is a singleton that represents Brigade's "root" user.
-var Root = &root{}
+var (
+	// Root is a singleton that represents Brigade's "root" user.
+	Root = &root{}
+	// Scheduler is a singleton that represents Brigade's scheduler component.
+	Scheduler = &scheduler{}
+)
 
 // Principal is an interface for any sort of security principal (human user,
 // service account, etc.)
@@ -11,6 +15,8 @@ type Principal interface{}
 
 // root is an implementation of the Principal interface for the "root" user.
 type root struct{}
+
+type scheduler struct{}
 
 type principalContextKey struct{}
 
