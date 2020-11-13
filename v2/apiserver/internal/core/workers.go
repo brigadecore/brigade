@@ -1,6 +1,13 @@
 package core
 
-import "time"
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/pkg/errors"
+)
 
 // LogLevel represents the desired granularity of Worker log output.
 type LogLevel string
@@ -160,4 +167,66 @@ type WorkerStatus struct {
 	Ended *time.Time `json:"ended,omitempty" bson:"ended,omitempty"`
 	// Phase indicates where the Worker is in its lifecycle.
 	Phase WorkerPhase `json:"phase,omitempty" bson:"phase,omitempty"`
+}
+
+// WorkersService is the specialized interface for managing Workers. It's
+// decoupled from underlying technology choices (e.g. data store, message bus,
+// etc.) to keep business logic reusable and consistent while the underlying
+// tech stack remains free to change.
+type WorkersService interface {
+	// Start starts the indicated Event's Worker on Brigade's workload
+	// execution substrate. If the specified Event does not exist, implementations
+	// MUST return a *meta.ErrNotFound.
+	Start(ctx context.Context, eventID string) error
+}
+
+type workersService struct {
+	projectsStore ProjectsStore
+	eventsStore   EventsStore
+	substrate     Substrate
+}
+
+// NewWorkersService returns a specialized interface for managing Workers.
+func NewWorkersService(
+	projectsStore ProjectsStore,
+	eventsStore EventsStore,
+	substrate Substrate,
+) WorkersService {
+	return &workersService{
+		projectsStore: projectsStore,
+		eventsStore:   eventsStore,
+		substrate:     substrate,
+	}
+}
+
+func (w *workersService) Start(ctx context.Context, eventID string) error {
+	event, err := w.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+
+	if event.Worker.Status.Phase != WorkerPhasePending {
+		return &meta.ErrConflict{
+			Type: "Event",
+			ID:   event.ID,
+			Reason: fmt.Sprintf(
+				"Event %q worker has already been started.",
+				event.ID,
+			),
+		}
+	}
+
+	project, err := w.projectsStore.Get(ctx, event.ProjectID)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error retrieving project %q from store",
+			event.ProjectID,
+		)
+	}
+
+	if err = w.substrate.StartWorker(ctx, project, event); err != nil {
+		return errors.Wrapf(err, "error starting worker for event %q", event.ID)
+	}
+	return nil
 }

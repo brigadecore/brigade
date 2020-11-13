@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
@@ -13,6 +14,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -57,6 +59,17 @@ type SubstrateConfig struct {
 	// this information whenever it needs to tell another component where to find
 	// the API server.
 	APIAddress string
+	// DefaultWorkerImage is the name of the OCI image that will be used for the
+	// Worker pod's container[0] if none is specified in a Project's
+	// configuration. The expected format is [REGISTRY/][ORG/]IMAGE_NAME[:TAG].
+	DefaultWorkerImage string
+	// DefaultWorkerImagePullPolicy is the ImagePullPolicy that will be used for
+	// the Worker pod's container[0] if none is specified in a Project's
+	// configuration.
+	DefaultWorkerImagePullPolicy core.ImagePullPolicy
+	// WorkspaceStorageClass is the Kubernetes StorageClass that should be used
+	// for a Worker's shared storage.
+	WorkspaceStorageClass string
 }
 
 // substrate is a Kubernetes-based implementation of the core.Substrate
@@ -66,6 +79,23 @@ type substrate struct {
 	kubeClient             kubernetes.Interface
 	queueWriterFactory     queue.WriterFactory
 	config                 SubstrateConfig
+	// The following behaviors are overridable for test purposes
+	createWorkspacePVCFn func(context.Context, core.Project, core.Event) error
+	createWorkerPodFn    func(context.Context, core.Project, core.Event) error
+	createJobSecretFn    func(
+		ctx context.Context,
+		project core.Project,
+		event core.Event,
+		jobName string,
+		jobSpec core.JobSpec,
+	) error
+	createJobPodFn func(
+		ctx context.Context,
+		project core.Project,
+		event core.Event,
+		jobName string,
+		jobSpec core.JobSpec,
+	) error
 }
 
 // NewSubstrate returns a Kubernetes-based implementation of the core.Substrate
@@ -75,12 +105,17 @@ func NewSubstrate(
 	queueWriterFactory queue.WriterFactory,
 	config SubstrateConfig,
 ) core.Substrate {
-	return &substrate{
+	s := &substrate{
 		generateNewNamespaceFn: generateNewNamespace,
 		kubeClient:             kubeClient,
 		queueWriterFactory:     queueWriterFactory,
 		config:                 config,
 	}
+	s.createWorkspacePVCFn = s.createWorkspacePVC
+	s.createWorkerPodFn = s.createWorkerPod
+	s.createJobSecretFn = s.createJobSecret
+	s.createJobPodFn = s.createJobPod
+	return s
 }
 
 func (s *substrate) CountRunningWorkers(
@@ -457,6 +492,58 @@ func (s *substrate) ScheduleWorker(
 	return nil
 }
 
+func (s *substrate) StartWorker(
+	ctx context.Context,
+	project core.Project,
+	event core.Event,
+) error {
+	if event.Worker.Spec.UseWorkspace {
+		if err := s.createWorkspacePVCFn(ctx, project, event); err != nil {
+			return errors.Wrapf(
+				err,
+				"error creating workspace for event %q worker",
+				event.ID,
+			)
+		}
+	}
+	if err := s.createWorkerPodFn(ctx, project, event); err != nil {
+		return errors.Wrapf(
+			err,
+			"error creating pod for event %q worker",
+			event.ID,
+		)
+	}
+	return nil
+}
+
+func (s *substrate) StartJob(
+	ctx context.Context,
+	project core.Project,
+	event core.Event,
+	jobName string,
+) error {
+	jobSpec := event.Worker.Jobs[jobName].Spec
+	if err :=
+		s.createJobSecretFn(ctx, project, event, jobName, jobSpec); err != nil {
+		return errors.Wrapf(
+			err,
+			"error creating secret for event %q job %q",
+			event.ID,
+			jobName,
+		)
+	}
+	if err :=
+		s.createJobPodFn(ctx, project, event, jobName, jobSpec); err != nil {
+		return errors.Wrapf(
+			err,
+			"error creating pod for event %q job %q",
+			event.ID,
+			jobName,
+		)
+	}
+	return nil
+}
+
 func (s *substrate) DeleteWorkerAndJobs(
 	ctx context.Context,
 	project core.Project,
@@ -567,4 +654,590 @@ func (s *substrate) countRunningPods(
 		}
 	}
 	return len(podsSet), nil
+}
+
+func (s *substrate) createWorkspacePVC(
+	ctx context.Context,
+	project core.Project,
+	event core.Event,
+) error {
+	storageQuantityStr := event.Worker.Spec.WorkspaceSize
+	if storageQuantityStr == "" {
+		storageQuantityStr = "1G"
+	}
+	storageQuantity, err := resource.ParseQuantity(storageQuantityStr)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error parsing storage quantity %q for event %q worker",
+			storageQuantityStr,
+			event.ID,
+		)
+	}
+
+	workspacePVC := corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("workspace-%s", event.ID),
+			Namespace: project.Kubernetes.Namespace,
+			Labels: map[string]string{
+				myk8s.LabelComponent: "workspace",
+				myk8s.LabelProject:   event.ProjectID,
+				myk8s.LabelEvent:     event.ID,
+			},
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			StorageClassName: &s.config.WorkspaceStorageClass,
+			AccessModes: []corev1.PersistentVolumeAccessMode{
+				corev1.ReadWriteMany,
+			},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					"storage": storageQuantity,
+				},
+			},
+		},
+	}
+
+	pvcClient :=
+		s.kubeClient.CoreV1().PersistentVolumeClaims(project.Kubernetes.Namespace)
+	if _, err := pvcClient.Create(
+		ctx,
+		&workspacePVC,
+		metav1.CreateOptions{},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error creating workspace PVC for event %q worker",
+			event.ID,
+		)
+	}
+
+	return nil
+}
+
+func (s *substrate) createWorkerPod(
+	ctx context.Context,
+	project core.Project,
+	event core.Event,
+) error {
+	imagePullSecrets := []corev1.LocalObjectReference{}
+	if event.Worker.Spec.Kubernetes != nil {
+		for _, imagePullSecret := range event.Worker.Spec.Kubernetes.ImagePullSecrets { // nolint: lll
+			imagePullSecrets = append(
+				imagePullSecrets,
+				corev1.LocalObjectReference{
+					Name: imagePullSecret,
+				},
+			)
+		}
+	}
+
+	if event.Worker.Spec.Container == nil {
+		event.Worker.Spec.Container = &core.ContainerSpec{}
+	}
+	image := event.Worker.Spec.Container.Image
+	if image == "" {
+		image = s.config.DefaultWorkerImage
+	}
+	imagePullPolicy := event.Worker.Spec.Container.ImagePullPolicy
+	if imagePullPolicy == "" {
+		imagePullPolicy = s.config.DefaultWorkerImagePullPolicy
+	}
+
+	volumes := []corev1.Volume{
+		{
+			Name: "event",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: fmt.Sprintf("event-%s", event.ID),
+				},
+			},
+		},
+	}
+	if event.Worker.Spec.UseWorkspace {
+		volumes = append(
+			volumes,
+			corev1.Volume{
+				Name: "workspace",
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: fmt.Sprintf("workspace-%s", event.ID),
+					},
+				},
+			},
+		)
+	}
+
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "event",
+			MountPath: "/var/event",
+			ReadOnly:  true,
+		},
+	}
+	if event.Worker.Spec.UseWorkspace {
+		volumeMounts = append(
+			volumeMounts,
+			corev1.VolumeMount{
+				Name:      "workspace",
+				MountPath: "/var/workspace",
+				ReadOnly:  true,
+			},
+		)
+	}
+
+	initContainers := []corev1.Container{}
+	if event.Worker.Spec.Git != nil && event.Worker.Spec.Git.CloneURL != "" {
+		volumes = append(
+			volumes,
+			corev1.Volume{
+				Name: "vcs",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+		)
+
+		vcsVolumeMount := corev1.VolumeMount{
+			Name:      "vcs",
+			MountPath: "/var/vcs",
+		}
+
+		volumeMounts = append(volumeMounts, vcsVolumeMount)
+
+		initContainers = append(
+			initContainers,
+			corev1.Container{
+				Name: "vcs",
+				// TODO: For now, we're using the Brigade 1.x git init image, but for
+				// the sake of consistency and to lower the bar for creating additional
+				// VCS integrations, we should develop a new/improved image that gets
+				// input from a chunk of JSON, just like the actual worker image does.
+				Image:           "brigadecore/git-sidecar:v1.4.0",
+				ImagePullPolicy: corev1.PullAlways,
+				VolumeMounts: []corev1.VolumeMount{
+					vcsVolumeMount,
+				},
+				Env: []corev1.EnvVar{
+					{
+						Name:  "BRIGADE_REMOTE_URL",
+						Value: event.Worker.Spec.Git.CloneURL,
+					},
+					{
+						Name:  "BRIGADE_COMMIT_ID",
+						Value: event.Worker.Spec.Git.Commit,
+					},
+					{
+						Name:  "BRIGADE_COMMIT_REF",
+						Value: event.Worker.Spec.Git.Ref,
+					},
+					{
+						Name: "BRIGADE_REPO_KEY",
+						ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: fmt.Sprintf("event-%s", event.ID),
+								},
+								Key: "gitSSHKey",
+							},
+						},
+					},
+					{
+						Name: "BRIGADE_REPO_SSH_CERT",
+						ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: fmt.Sprintf("event-%s", event.ID),
+								},
+								Key: "gitSSHCert",
+							},
+						},
+					},
+					{
+						Name:  "BRIGADE_SUBMODULES",
+						Value: strconv.FormatBool(event.Worker.Spec.Git.InitSubmodules),
+					},
+					{
+						Name:  "BRIGADE_WORKSPACE",
+						Value: "/var/vcs",
+					},
+				},
+			},
+		)
+	}
+
+	env := []corev1.EnvVar{}
+	for key, val := range event.Worker.Spec.Container.Environment {
+		env = append(
+			env,
+			corev1.EnvVar{
+				Name:  key,
+				Value: val,
+			},
+		)
+	}
+
+	workerPod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("worker-%s", event.ID),
+			Namespace: project.Kubernetes.Namespace,
+			Labels: map[string]string{
+				myk8s.LabelComponent: "worker",
+				myk8s.LabelProject:   event.ProjectID,
+				myk8s.LabelEvent:     event.ID,
+			},
+		},
+		Spec: corev1.PodSpec{
+			ServiceAccountName: "workers",
+			ImagePullSecrets:   imagePullSecrets,
+			RestartPolicy:      corev1.RestartPolicyNever,
+			InitContainers:     initContainers,
+			Containers: []corev1.Container{
+				{
+					Name:            "worker",
+					Image:           image,
+					ImagePullPolicy: corev1.PullPolicy(imagePullPolicy),
+					Command:         event.Worker.Spec.Container.Command,
+					Args:            event.Worker.Spec.Container.Arguments,
+					Env:             env,
+					VolumeMounts:    volumeMounts,
+				},
+			},
+			Volumes: volumes,
+		},
+	}
+
+	podClient := s.kubeClient.CoreV1().Pods(project.Kubernetes.Namespace)
+	if _, err := podClient.Create(
+		ctx,
+		&workerPod,
+		metav1.CreateOptions{},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error creating pod for event %q worker",
+			event.ID,
+		)
+	}
+
+	return nil
+}
+
+func (s *substrate) createJobSecret(
+	ctx context.Context,
+	project core.Project,
+	event core.Event,
+	jobName string,
+	jobSpec core.JobSpec,
+) error {
+
+	jobSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("job-%s-%s", event.ID, jobName),
+			Namespace: project.Kubernetes.Namespace,
+			Labels: map[string]string{
+				myk8s.LabelComponent: "job",
+				myk8s.LabelProject:   event.ProjectID,
+				myk8s.LabelEvent:     event.ID,
+				myk8s.LabelJob:       jobName,
+			},
+		},
+		Type:       myk8s.SecretTypeJobSecrets,
+		StringData: map[string]string{},
+	}
+
+	for k, v := range jobSpec.PrimaryContainer.Environment {
+		jobSecret.StringData[fmt.Sprintf("%s.%s", jobName, k)] = v
+	}
+	for sidecarName, sidecareSpec := range jobSpec.SidecarContainers {
+		for k, v := range sidecareSpec.Environment {
+			jobSecret.StringData[fmt.Sprintf("%s.%s", sidecarName, k)] = v
+		}
+	}
+
+	secretsClient := s.kubeClient.CoreV1().Secrets(project.Kubernetes.Namespace)
+	if _, err := secretsClient.Create(
+		ctx,
+		&jobSecret,
+		metav1.CreateOptions{},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error creating secret for event %q job %q",
+			event.ID,
+			jobName,
+		)
+	}
+
+	return nil
+}
+
+// nolint: gocyclo
+func (s *substrate) createJobPod(
+	ctx context.Context,
+	project core.Project,
+	event core.Event,
+	jobName string,
+	jobSpec core.JobSpec,
+) error {
+	// Determine if ANY of the job's containers:
+	//   1. Use shared workspace
+	//   2. Use source code from git
+	//   3. Mount the host's Docker socket
+	var useWorkspace = jobSpec.PrimaryContainer.UseWorkspace
+	var useSource = jobSpec.PrimaryContainer.UseSource
+	var useDockerSocket = jobSpec.PrimaryContainer.UseHostDockerSocket
+	for _, sidecarContainer := range jobSpec.SidecarContainers {
+		if sidecarContainer.UseWorkspace {
+			useWorkspace = true
+		}
+		if sidecarContainer.UseSource {
+			useSource = true
+		}
+		if sidecarContainer.UseHostDockerSocket {
+			useDockerSocket = true
+		}
+	}
+
+	imagePullSecrets := []corev1.LocalObjectReference{}
+	if event.Worker.Spec.Kubernetes != nil {
+		imagePullSecrets = make(
+			[]corev1.LocalObjectReference,
+			len(event.Worker.Spec.Kubernetes.ImagePullSecrets),
+		)
+		for i, imagePullSecret := range event.Worker.Spec.Kubernetes.ImagePullSecrets { // nolint: lll
+			imagePullSecrets[i] = corev1.LocalObjectReference{
+				Name: imagePullSecret,
+			}
+		}
+	}
+
+	volumes := []corev1.Volume{}
+	if useWorkspace {
+		volumes = []corev1.Volume{
+			{
+				Name: "workspace",
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: fmt.Sprintf("workspace-%s", event.ID),
+					},
+				},
+			},
+		}
+	}
+	if useSource &&
+		event.Worker.Spec.Git != nil &&
+		event.Worker.Spec.Git.CloneURL != "" {
+		volumes = append(
+			volumes,
+			corev1.Volume{
+				Name: "vcs",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+		)
+	}
+	if useDockerSocket {
+		volumes = append(
+			volumes,
+			corev1.Volume{
+				Name: "docker-socket",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/var/run/docker.sock",
+					},
+				},
+			},
+		)
+	}
+
+	initContainers := []corev1.Container{}
+	if useSource &&
+		event.Worker.Spec.Git != nil &&
+		event.Worker.Spec.Git.CloneURL != "" {
+		initContainers = []corev1.Container{
+			{
+				Name:            "vcs",
+				Image:           "brigadecore/git-sidecar:v1.4.0",
+				ImagePullPolicy: corev1.PullAlways,
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "vcs",
+						MountPath: "/var/vcs",
+					},
+				},
+				Env: []corev1.EnvVar{
+					{
+						Name:  "BRIGADE_REMOTE_URL",
+						Value: event.Worker.Spec.Git.CloneURL,
+					},
+					{
+						Name:  "BRIGADE_COMMIT_ID",
+						Value: event.Worker.Spec.Git.Commit,
+					},
+					{
+						Name:  "BRIGADE_COMMIT_REF",
+						Value: event.Worker.Spec.Git.Ref,
+					},
+					{
+						Name: "BRIGADE_REPO_KEY",
+						ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: fmt.Sprintf("event-%s", event.ID),
+								},
+								Key: "gitSSHKey",
+							},
+						},
+					},
+					{
+						Name: "BRIGADE_REPO_SSH_CERT",
+						ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: fmt.Sprintf("event-%s", event.ID),
+								},
+								Key: "gitSSHCert",
+							},
+						},
+					},
+					{
+						Name:  "BRIGADE_SUBMODULES",
+						Value: strconv.FormatBool(event.Worker.Spec.Git.InitSubmodules),
+					},
+					{
+						Name:  "BRIGADE_WORKSPACE",
+						Value: "/var/vcs",
+					},
+				},
+			},
+		}
+	}
+
+	// This slice is big enough to hold the primary container AND all (if any)
+	// sidecar containers.
+	containers := make([]corev1.Container, len(jobSpec.SidecarContainers)+1)
+
+	// The primary container will be the 0 container in this list.
+	containers[0] = getContainerFromSpec(
+		event.ID,
+		jobName,
+		jobName,
+		jobSpec.PrimaryContainer,
+	)
+
+	// Now add all the sidecars...
+	i := 1
+	for sidecarName, sidecarSpec := range jobSpec.SidecarContainers {
+		containers[i] = getContainerFromSpec(
+			event.ID,
+			jobName,
+			sidecarName,
+			sidecarSpec,
+		)
+		i++
+	}
+
+	jobPod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("job-%s-%s", event.ID, jobName),
+			Namespace: project.Kubernetes.Namespace,
+			Labels: map[string]string{
+				myk8s.LabelComponent: "job",
+				myk8s.LabelProject:   event.ProjectID,
+				myk8s.LabelEvent:     event.ID,
+				myk8s.LabelJob:       jobName,
+			},
+		},
+		Spec: corev1.PodSpec{
+			ServiceAccountName: "jobs",
+			ImagePullSecrets:   imagePullSecrets,
+			RestartPolicy:      corev1.RestartPolicyNever,
+			InitContainers:     initContainers,
+			Containers:         containers,
+			Volumes:            volumes,
+		},
+	}
+
+	podClient := s.kubeClient.CoreV1().Pods(project.Kubernetes.Namespace)
+	if _, err := podClient.Create(
+		ctx,
+		&jobPod,
+		metav1.CreateOptions{},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error creating pod for event %q job %q",
+			event.ID,
+			jobName,
+		)
+	}
+
+	return nil
+}
+
+func getContainerFromSpec(
+	eventID string,
+	jobName string,
+	containerName string,
+	spec core.JobContainerSpec,
+) corev1.Container {
+	container := corev1.Container{
+		Name:            containerName, // Primary container takes the job's name
+		Image:           spec.Image,
+		ImagePullPolicy: corev1.PullPolicy(spec.ImagePullPolicy),
+		Command:         spec.Command,
+		Args:            spec.Arguments,
+		Env:             make([]corev1.EnvVar, len(spec.Environment)),
+		VolumeMounts:    []corev1.VolumeMount{},
+	}
+	i := 0
+	for key := range spec.Environment {
+		container.Env[i] = corev1.EnvVar{
+			Name: key,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: fmt.Sprintf("job-%s-%s", eventID, jobName),
+					},
+					Key: fmt.Sprintf("%s.%s", containerName, key),
+				},
+			},
+		}
+		i++
+	}
+	if spec.UseWorkspace {
+		container.VolumeMounts = []corev1.VolumeMount{
+			{
+				Name:      "workspace",
+				MountPath: spec.WorkspaceMountPath,
+			},
+		}
+	}
+	if spec.UseSource {
+		container.VolumeMounts = append(
+			container.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      "vcs",
+				MountPath: spec.SourceMountPath,
+			},
+		)
+	}
+	if spec.UseHostDockerSocket {
+		container.VolumeMounts = append(
+			container.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      "docker-socket",
+				MountPath: "/var/run/docker.sock",
+			},
+		)
+	}
+	if spec.Privileged {
+		tru := true
+		container.SecurityContext = &corev1.SecurityContext{
+			Privileged: &tru,
+		}
+	}
+	return container
 }

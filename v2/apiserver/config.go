@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core/kubernetes"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue/amqp"
@@ -95,6 +96,22 @@ func substrateConfig() (kubernetes.SubstrateConfig, error) {
 	config := kubernetes.SubstrateConfig{}
 	var err error
 	config.APIAddress, err = os.GetRequiredEnvVar("API_ADDRESS")
+	if err != nil {
+		return config, err
+	}
+	config.DefaultWorkerImage, err = os.GetRequiredEnvVar("DEFAULT_WORKER_IMAGE")
+	if err != nil {
+		return config, err
+	}
+	defaultWorkerImagePullPolicyStr, err :=
+		os.GetRequiredEnvVar("DEFAULT_WORKER_IMAGE_PULL_POLICY")
+	if err != nil {
+		return config, err
+	}
+	config.DefaultWorkerImagePullPolicy =
+		core.ImagePullPolicy(defaultWorkerImagePullPolicyStr)
+	config.WorkspaceStorageClass, err =
+		os.GetRequiredEnvVar("WORKSPACE_STORAGE_CLASS")
 	return config, err
 }
 
