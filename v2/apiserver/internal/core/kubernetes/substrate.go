@@ -1120,120 +1120,22 @@ func (s *substrate) createJobPod(
 	containers := make([]corev1.Container, len(jobSpec.SidecarContainers)+1)
 
 	// The primary container will be the 0 container in this list.
-	containers[0] = corev1.Container{
-		Name:            jobName, // Primary container takes the job's name
-		Image:           jobSpec.PrimaryContainer.Image,
-		ImagePullPolicy: corev1.PullPolicy(jobSpec.PrimaryContainer.ImagePullPolicy), // nolint: lll
-		Command:         jobSpec.PrimaryContainer.Command,
-		Args:            jobSpec.PrimaryContainer.Arguments,
-		Env:             make([]corev1.EnvVar, len(jobSpec.PrimaryContainer.Environment)), // nolint: lll
-		VolumeMounts:    []corev1.VolumeMount{},
-	}
-	i := 0
-	for key := range jobSpec.PrimaryContainer.Environment {
-		containers[0].Env[i] = corev1.EnvVar{
-			Name: key,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: fmt.Sprintf("job-%s-%s", event.ID, jobName),
-					},
-					Key: fmt.Sprintf("%s.%s", jobName, key),
-				},
-			},
-		}
-		i++
-	}
-	if jobSpec.PrimaryContainer.UseWorkspace {
-		containers[0].VolumeMounts = []corev1.VolumeMount{
-			{
-				Name:      "workspace",
-				MountPath: jobSpec.PrimaryContainer.WorkspaceMountPath,
-			},
-		}
-	}
-	if jobSpec.PrimaryContainer.UseSource {
-		containers[0].VolumeMounts = append(
-			containers[0].VolumeMounts,
-			corev1.VolumeMount{
-				Name:      "vcs",
-				MountPath: jobSpec.PrimaryContainer.SourceMountPath,
-			},
-		)
-	}
-	if jobSpec.PrimaryContainer.UseHostDockerSocket {
-		containers[0].VolumeMounts = append(
-			containers[0].VolumeMounts,
-			corev1.VolumeMount{
-				Name:      "docker-socket",
-				MountPath: "/var/run/docker.sock",
-			},
-		)
-	}
-	if jobSpec.PrimaryContainer.Privileged {
-		tru := true
-		containers[0].SecurityContext = &corev1.SecurityContext{
-			Privileged: &tru,
-		}
-	}
+	containers[0] = getContainerFromSpec(
+		event.ID,
+		jobName,
+		jobName,
+		jobSpec.PrimaryContainer,
+	)
 
 	// Now add all the sidecars...
-	i = 1
+	i := 1
 	for sidecarName, sidecarSpec := range jobSpec.SidecarContainers {
-		containers[i] = corev1.Container{
-			Name:            sidecarName,
-			ImagePullPolicy: corev1.PullPolicy(sidecarSpec.ImagePullPolicy),
-			Command:         sidecarSpec.Command,
-			Args:            sidecarSpec.Arguments,
-			Env:             make([]corev1.EnvVar, len(sidecarSpec.Environment)),
-		}
-		j := 0
-		for key := range sidecarSpec.Environment {
-			containers[i].Env[j] = corev1.EnvVar{
-				Name: key,
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: fmt.Sprintf("job-%s-%s", event.ID, jobName),
-						},
-						Key: fmt.Sprintf("%s.%s", sidecarName, key),
-					},
-				},
-			}
-			j++
-		}
-		if sidecarSpec.UseWorkspace {
-			containers[i].VolumeMounts = []corev1.VolumeMount{
-				{
-					Name:      "workspace",
-					MountPath: sidecarSpec.WorkspaceMountPath,
-				},
-			}
-		}
-		if sidecarSpec.UseSource {
-			containers[i].VolumeMounts = append(
-				containers[i].VolumeMounts,
-				corev1.VolumeMount{
-					Name:      "vcs",
-					MountPath: sidecarSpec.SourceMountPath,
-				},
-			)
-		}
-		if sidecarSpec.UseHostDockerSocket {
-			containers[i].VolumeMounts = append(
-				containers[i].VolumeMounts,
-				corev1.VolumeMount{
-					Name:      "docker-socket",
-					MountPath: "/var/run/docker.sock",
-				},
-			)
-		}
-		if sidecarSpec.Privileged {
-			tru := true
-			containers[i].SecurityContext = &corev1.SecurityContext{
-				Privileged: &tru,
-			}
-		}
+		containers[i] = getContainerFromSpec(
+			event.ID,
+			jobName,
+			sidecarName,
+			sidecarSpec,
+		)
 		i++
 	}
 
@@ -1273,4 +1175,69 @@ func (s *substrate) createJobPod(
 	}
 
 	return nil
+}
+
+func getContainerFromSpec(
+	eventID string,
+	jobName string,
+	containerName string,
+	spec core.JobContainerSpec,
+) corev1.Container {
+	container := corev1.Container{
+		Name:            containerName, // Primary container takes the job's name
+		Image:           spec.Image,
+		ImagePullPolicy: corev1.PullPolicy(spec.ImagePullPolicy),
+		Command:         spec.Command,
+		Args:            spec.Arguments,
+		Env:             make([]corev1.EnvVar, len(spec.Environment)),
+		VolumeMounts:    []corev1.VolumeMount{},
+	}
+	i := 0
+	for key := range spec.Environment {
+		container.Env[i] = corev1.EnvVar{
+			Name: key,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: fmt.Sprintf("job-%s-%s", eventID, jobName),
+					},
+					Key: fmt.Sprintf("%s.%s", containerName, key),
+				},
+			},
+		}
+		i++
+	}
+	if spec.UseWorkspace {
+		container.VolumeMounts = []corev1.VolumeMount{
+			{
+				Name:      "workspace",
+				MountPath: spec.WorkspaceMountPath,
+			},
+		}
+	}
+	if spec.UseSource {
+		container.VolumeMounts = append(
+			container.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      "vcs",
+				MountPath: spec.SourceMountPath,
+			},
+		)
+	}
+	if spec.UseHostDockerSocket {
+		container.VolumeMounts = append(
+			container.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      "docker-socket",
+				MountPath: "/var/run/docker.sock",
+			},
+		)
+	}
+	if spec.Privileged {
+		tru := true
+		container.SecurityContext = &corev1.SecurityContext{
+			Privileged: &tru,
+		}
+	}
+	return container
 }
