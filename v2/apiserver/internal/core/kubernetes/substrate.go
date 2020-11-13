@@ -59,9 +59,9 @@ type SubstrateConfig struct {
 	// this information whenever it needs to tell another component where to find
 	// the API server.
 	APIAddress string
-	// DefaultWorkerImage is the name/version of the OCI image that will be used
-	// for the Worker pod's container[0] if none is specified in a Project's
-	// configuration.
+	// DefaultWorkerImage is the name of the OCI image that will be used for the
+	// Worker pod's container[0] if none is specified in a Project's
+	// configuration. The expected format is [REGISTRY/][ORG/]IMAGE_NAME[:TAG].
 	DefaultWorkerImage string
 	// DefaultWorkerImagePullPolicy is the ImagePullPolicy that will be used for
 	// the Worker pod's container[0] if none is specified in a Project's
