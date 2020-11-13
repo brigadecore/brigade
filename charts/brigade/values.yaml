@@ -125,6 +125,17 @@ apiserver:
     type: NodePort
     # nodePort: 31600
 
+worker:
+
+  image:
+    repository: krancour/brigade-worker
+    ## tag should only be specified if you want to override Chart.appVersion
+    ## The default tag is the value of .Chart.AppVersion
+    # tag:
+    pullPolicy: IfNotPresent
+
+  workspaceStorageClass: nfs
+
 externalMongodb:
 
   isCosmosdb: false

@@ -111,6 +111,12 @@ spec:
             secretKeyRef:
               name: {{ include "brigade.artemis.fullname" . }}
               key: password
+        - name: DEFAULT_WORKER_IMAGE
+          value: {{ .Values.worker.image.repository }}:{{ default .Chart.AppVersion .Values.worker.image.tag }}
+        - name: DEFAULT_WORKER_IMAGE_PULL_POLICY
+          value: {{ .Values.worker.image.pullPolicy }}
+        - name: WORKSPACE_STORAGE_CLASS
+          value: {{ .Values.worker.workspaceStorageClass }}
         {{- if .Values.apiserver.tls.enabled }}
         volumeMounts:
         - name: cert
