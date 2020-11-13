@@ -10,13 +10,14 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
-	"github.com/brigadecore/brigade/v2/internal/kubernetes"
+	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -42,7 +43,7 @@ func TestSubstrateCountRunningWorkers(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name: "bar",
 				Labels: map[string]string{
-					kubernetes.LabelComponent: "job",
+					myk8s.LabelComponent: "job",
 				},
 			},
 			Status: corev1.PodStatus{
@@ -59,7 +60,7 @@ func TestSubstrateCountRunningWorkers(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name: "bat",
 				Labels: map[string]string{
-					kubernetes.LabelComponent: "worker",
+					myk8s.LabelComponent: "worker",
 				},
 			},
 			Status: corev1.PodStatus{
@@ -88,7 +89,7 @@ func TestSubstrateCountRunningJobs(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name: "bar",
 				Labels: map[string]string{
-					kubernetes.LabelComponent: "worker",
+					myk8s.LabelComponent: "worker",
 				},
 			},
 			Status: corev1.PodStatus{
@@ -105,7 +106,7 @@ func TestSubstrateCountRunningJobs(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name: "bat",
 				Labels: map[string]string{
-					kubernetes.LabelComponent: "job",
+					myk8s.LabelComponent: "job",
 				},
 			},
 			Status: corev1.PodStatus{
@@ -700,6 +701,194 @@ func TestSubstrateScheduleWorker(t *testing.T) {
 	}
 }
 
+func TestSubstrateStartWorker(t *testing.T) {
+	testCases := []struct {
+		name       string
+		substrate  core.Substrate
+		assertions func(error)
+	}{
+		{
+			name: "error creating workspace",
+			substrate: &substrate{
+				createWorkspacePVCFn: func(
+					context.Context,
+					core.Project,
+					core.Event,
+				) error {
+					return errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error creating workspace for event")
+			},
+		},
+		{
+			name: "error creating worker pod",
+			substrate: &substrate{
+				createWorkspacePVCFn: func(
+					context.Context,
+					core.Project,
+					core.Event,
+				) error {
+					return nil
+				},
+				createWorkerPodFn: func(
+					context.Context,
+					core.Project,
+					core.Event,
+				) error {
+					return errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error creating pod for event")
+			},
+		},
+		{
+			name: "success",
+			substrate: &substrate{
+				createWorkspacePVCFn: func(
+					context.Context,
+					core.Project,
+					core.Event,
+				) error {
+					return nil
+				},
+				createWorkerPodFn: func(
+					context.Context,
+					core.Project,
+					core.Event,
+				) error {
+					return nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.substrate.StartWorker(
+				context.Background(),
+				core.Project{},
+				core.Event{
+					Worker: core.Worker{
+						Spec: core.WorkerSpec{
+							UseWorkspace: true,
+						},
+					},
+				},
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
+func TestSubstrateStartJob(t *testing.T) {
+	const testJobName = "foo"
+	testCases := []struct {
+		name       string
+		substrate  core.Substrate
+		assertions func(error)
+	}{
+		{
+			name: "error creating job secret",
+			substrate: &substrate{
+				createJobSecretFn: func(
+					context.Context,
+					core.Project,
+					core.Event,
+					string,
+					core.JobSpec,
+				) error {
+					return errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error creating secret for event")
+			},
+		},
+		{
+			name: "error creating job pod",
+			substrate: &substrate{
+				createJobSecretFn: func(
+					context.Context,
+					core.Project,
+					core.Event,
+					string,
+					core.JobSpec,
+				) error {
+					return nil
+				},
+				createJobPodFn: func(
+					context.Context,
+					core.Project,
+					core.Event,
+					string,
+					core.JobSpec,
+				) error {
+					return errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error creating pod for event")
+			},
+		},
+		{
+			name: "success",
+			substrate: &substrate{
+				createJobSecretFn: func(
+					context.Context,
+					core.Project,
+					core.Event,
+					string,
+					core.JobSpec,
+				) error {
+					return nil
+				},
+				createJobPodFn: func(
+					context.Context,
+					core.Project,
+					core.Event,
+					string,
+					core.JobSpec,
+				) error {
+					return nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.substrate.StartJob(
+				context.Background(),
+				core.Project{},
+				core.Event{
+					Worker: core.Worker{
+						Spec: core.WorkerSpec{
+							UseWorkspace: true,
+						},
+					},
+				},
+				testJobName,
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
 // TODO: Find a better way to test this. Unfortunately, the DeleteCollection
 // function on a *fake.ClientSet doesn't ACTUALLY delete collections of
 // resources based on the labels provided.
@@ -730,6 +919,464 @@ func TestSubstrateDeleteWorkerAndJobs(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+}
+
+func TestSubstrateCreateWorkspacePVC(t *testing.T) {
+	testProject := core.Project{
+		Kubernetes: &core.KubernetesDetails{
+			Namespace: "foo",
+		},
+	}
+	const testEventID = "123456789"
+	testCases := []struct {
+		name       string
+		event      core.Event
+		setup      func() *substrate
+		assertions func(kubernetes.Interface, error)
+	}{
+		{
+			name: "unparsable storage quantity",
+			event: core.Event{
+				Worker: core.Worker{
+					Spec: core.WorkerSpec{
+						WorkspaceSize: "10ZillionBytes",
+					},
+				},
+			},
+			setup: func() *substrate {
+				return &substrate{}
+			},
+			assertions: func(_ kubernetes.Interface, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error parsing storage quantity")
+			},
+		},
+		{
+			name: "error creating pvc",
+			event: core.Event{
+				ObjectMeta: meta.ObjectMeta{
+					ID: testEventID,
+				},
+			},
+			setup: func() *substrate {
+				kubeClient := fake.NewSimpleClientset()
+				// Ensure a failure by pre-creating a PVC with the expected name
+				_, err := kubeClient.CoreV1().PersistentVolumeClaims(
+					testProject.Kubernetes.Namespace,
+				).Create(
+					context.Background(),
+					&corev1.PersistentVolumeClaim{
+						ObjectMeta: v1.ObjectMeta{
+							Name: fmt.Sprintf("workspace-%s", testEventID),
+						},
+					},
+					v1.CreateOptions{},
+				)
+				require.NoError(t, err)
+				return &substrate{
+					kubeClient: kubeClient,
+				}
+			},
+			assertions: func(_ kubernetes.Interface, err error) {
+				require.Error(t, err)
+				require.Contains(
+					t,
+					err.Error(),
+					"error creating workspace PVC for event",
+				)
+			},
+		},
+		{
+			name: "success",
+			event: core.Event{
+				ObjectMeta: meta.ObjectMeta{
+					ID: testEventID,
+				},
+			},
+			setup: func() *substrate {
+				return &substrate{
+					kubeClient: fake.NewSimpleClientset(),
+				}
+			},
+			assertions: func(kubeClient kubernetes.Interface, err error) {
+				require.NoError(t, err)
+				pvc, err := kubeClient.CoreV1().PersistentVolumeClaims(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					fmt.Sprintf("workspace-%s", testEventID),
+					v1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, pvc)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			substrate := testCase.setup()
+			err := substrate.createWorkspacePVC(
+				context.Background(),
+				testProject,
+				testCase.event,
+			)
+			testCase.assertions(substrate.kubeClient, err)
+		})
+	}
+}
+
+func TestSubstrateCreateWorkerPod(t *testing.T) {
+	testProject := core.Project{
+		Kubernetes: &core.KubernetesDetails{
+			Namespace: "foo",
+		},
+	}
+	testEvent := core.Event{
+		ObjectMeta: meta.ObjectMeta{
+			ID: "123456789",
+		},
+		Worker: core.Worker{
+			Spec: core.WorkerSpec{
+				Kubernetes: &core.KubernetesConfig{
+					ImagePullSecrets: []string{"foo", "bar"},
+				},
+				UseWorkspace: true,
+				Git: &core.GitConfig{
+					CloneURL: "a fake clone url",
+				},
+				Container: &core.ContainerSpec{
+					Environment: map[string]string{
+						"FOO": "bar",
+					},
+				},
+			},
+		},
+	}
+	testCases := []struct {
+		name       string
+		setup      func() *substrate
+		assertions func(kubernetes.Interface, error)
+	}{
+		{
+			name: "error creating pod",
+			setup: func() *substrate {
+				kubeClient := fake.NewSimpleClientset()
+				// Ensure a failure by pre-creating a pod with the expected name
+				_, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Create(
+					context.Background(),
+					&corev1.Pod{
+						ObjectMeta: v1.ObjectMeta{
+							Name: fmt.Sprintf("worker-%s", testEvent.ID),
+						},
+					},
+					v1.CreateOptions{},
+				)
+				require.NoError(t, err)
+				return &substrate{
+					kubeClient: kubeClient,
+				}
+			},
+			assertions: func(_ kubernetes.Interface, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error creating pod for event")
+			},
+		},
+		{
+			name: "success",
+			setup: func() *substrate {
+				return &substrate{
+					kubeClient: fake.NewSimpleClientset(),
+				}
+			},
+			assertions: func(kubeClient kubernetes.Interface, err error) {
+				require.NoError(t, err)
+				pod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					fmt.Sprintf("worker-%s", testEvent.ID),
+					v1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, pod)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			substrate := testCase.setup()
+			err := substrate.createWorkerPod(
+				context.Background(),
+				testProject,
+				testEvent,
+			)
+			testCase.assertions(substrate.kubeClient, err)
+		})
+	}
+}
+
+func TestSubstrateCreateJobSecret(t *testing.T) {
+	testProject := core.Project{
+		Kubernetes: &core.KubernetesDetails{
+			Namespace: "foo",
+		},
+	}
+	testEvent := core.Event{
+		ObjectMeta: meta.ObjectMeta{
+			ID: "123456789",
+		},
+	}
+	const testJobName = "italian"
+	testJobSpec := core.JobSpec{
+		PrimaryContainer: core.JobContainerSpec{
+			ContainerSpec: core.ContainerSpec{
+				Environment: map[string]string{
+					"FOO": "bar",
+				},
+			},
+		},
+		SidecarContainers: map[string]core.JobContainerSpec{
+			"helper": {
+				ContainerSpec: core.ContainerSpec{
+					Environment: map[string]string{
+						"BAT": "baz",
+					},
+				},
+			},
+		},
+	}
+	testCases := []struct {
+		name       string
+		setup      func() *substrate
+		assertions func(kubernetes.Interface, error)
+	}{
+		{
+			name: "error creating secret",
+			setup: func() *substrate {
+				kubeClient := fake.NewSimpleClientset()
+				// Ensure a failure by pre-creating a secret with the expected name
+				_, err := kubeClient.CoreV1().Secrets(
+					testProject.Kubernetes.Namespace,
+				).Create(
+					context.Background(),
+					&corev1.Secret{
+						ObjectMeta: v1.ObjectMeta{
+							Name: fmt.Sprintf("job-%s-%s", testEvent.ID, testJobName),
+						},
+					},
+					v1.CreateOptions{},
+				)
+				require.NoError(t, err)
+				return &substrate{
+					kubeClient: kubeClient,
+				}
+			},
+			assertions: func(_ kubernetes.Interface, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error creating secret for event")
+			},
+		},
+		{
+			name: "success",
+			setup: func() *substrate {
+				return &substrate{
+					kubeClient: fake.NewSimpleClientset(),
+				}
+			},
+			assertions: func(kubeClient kubernetes.Interface, err error) {
+				require.NoError(t, err)
+				secret, err := kubeClient.CoreV1().Secrets(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					fmt.Sprintf("job-%s-%s", testEvent.ID, testJobName),
+					v1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, secret)
+				val, ok := secret.StringData["italian.FOO"]
+				require.True(t, ok)
+				require.Equal(t, "bar", string(val))
+				val, ok = secret.StringData["helper.BAT"]
+				require.True(t, ok)
+				require.Equal(t, "baz", string(val))
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			substrate := testCase.setup()
+			err := substrate.createJobSecret(
+				context.Background(),
+				testProject,
+				testEvent,
+				testJobName,
+				testJobSpec,
+			)
+			testCase.assertions(substrate.kubeClient, err)
+		})
+	}
+}
+
+func TestSubstrateCreateJobPod(t *testing.T) {
+	testProject := core.Project{
+		Kubernetes: &core.KubernetesDetails{
+			Namespace: "foo",
+		},
+	}
+	testEvent := core.Event{
+		ObjectMeta: meta.ObjectMeta{
+			ID: "123456789",
+		},
+		Worker: core.Worker{
+			Spec: core.WorkerSpec{
+				Git: &core.GitConfig{
+					CloneURL: "a fake git repo url",
+				},
+				Kubernetes: &core.KubernetesConfig{
+					ImagePullSecrets: []string{"foo", "bar"},
+				},
+			},
+		},
+	}
+	const testJobName = "italian"
+	testJobSpec := core.JobSpec{
+		PrimaryContainer: core.JobContainerSpec{
+			ContainerSpec: core.ContainerSpec{
+				Environment: map[string]string{
+					"FOO": "bar",
+				},
+			},
+			UseWorkspace:        true,
+			UseSource:           true,
+			UseHostDockerSocket: true,
+			Privileged:          true,
+		},
+		SidecarContainers: map[string]core.JobContainerSpec{
+			"helper": {
+				ContainerSpec: core.ContainerSpec{
+					Environment: map[string]string{
+						"BAT": "baz",
+					},
+				},
+				UseWorkspace:        true,
+				UseSource:           true,
+				UseHostDockerSocket: true,
+				Privileged:          true,
+			},
+		},
+	}
+	testCases := []struct {
+		name       string
+		setup      func() *substrate
+		assertions func(kubernetes.Interface, error)
+	}{
+		{
+			name: "error creating pod",
+			setup: func() *substrate {
+				kubeClient := fake.NewSimpleClientset()
+				// Ensure a failure by pre-creating a pod with the expected name
+				_, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Create(
+					context.Background(),
+					&corev1.Pod{
+						ObjectMeta: v1.ObjectMeta{
+							Name: fmt.Sprintf("job-%s-%s", testEvent.ID, testJobName),
+						},
+					},
+					v1.CreateOptions{},
+				)
+				require.NoError(t, err)
+				return &substrate{
+					kubeClient: kubeClient,
+				}
+			},
+			assertions: func(_ kubernetes.Interface, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error creating pod for event")
+			},
+		},
+		{
+			name: "success",
+			setup: func() *substrate {
+				return &substrate{
+					kubeClient: fake.NewSimpleClientset(),
+				}
+			},
+			assertions: func(kubeClient kubernetes.Interface, err error) {
+				require.NoError(t, err)
+				pod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					fmt.Sprintf("job-%s-%s", testEvent.ID, testJobName),
+					v1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, pod)
+				// Volumes:
+				require.Len(t, pod.Spec.Volumes, 3)
+				require.Equal(t, "workspace", pod.Spec.Volumes[0].Name)
+				require.Equal(t, "vcs", pod.Spec.Volumes[1].Name)
+				require.Equal(t, "docker-socket", pod.Spec.Volumes[2].Name)
+				// Init container:
+				require.Len(t, pod.Spec.InitContainers, 1)
+				require.Equal(t, "vcs", pod.Spec.InitContainers[0].Name)
+				require.Len(t, pod.Spec.InitContainers[0].VolumeMounts, 1)
+				require.Equal(t, "vcs", pod.Spec.InitContainers[0].VolumeMounts[0].Name)
+				// Containers:
+				require.Len(t, pod.Spec.Containers, 2)
+				// Primary container:
+				require.Equal(t, testJobName, pod.Spec.Containers[0].Name)
+				require.Len(t, pod.Spec.Containers[0].Env, 1)
+				require.Equal(t, "FOO", pod.Spec.Containers[0].Env[0].Name)
+				require.Len(t, pod.Spec.Containers[0].VolumeMounts, 3)
+				require.Equal(
+					t,
+					"workspace",
+					pod.Spec.Containers[0].VolumeMounts[0].Name,
+				)
+				require.Equal(t, "vcs", pod.Spec.Containers[0].VolumeMounts[1].Name)
+				require.Equal(
+					t,
+					"docker-socket",
+					pod.Spec.Containers[0].VolumeMounts[2].Name,
+				)
+				// Sidecar container:
+				require.Equal(t, "helper", pod.Spec.Containers[1].Name)
+				require.Len(t, pod.Spec.Containers[1].Env, 1)
+				require.Equal(t, "BAT", pod.Spec.Containers[1].Env[0].Name)
+				require.Len(t, pod.Spec.Containers[1].VolumeMounts, 3)
+				require.Equal(
+					t,
+					"workspace",
+					pod.Spec.Containers[1].VolumeMounts[0].Name,
+				)
+				require.Equal(t, "vcs", pod.Spec.Containers[1].VolumeMounts[1].Name)
+				require.Equal(
+					t,
+					"docker-socket",
+					pod.Spec.Containers[1].VolumeMounts[2].Name,
+				)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			substrate := testCase.setup()
+			err := substrate.createJobPod(
+				context.Background(),
+				testProject,
+				testEvent,
+				testJobName,
+				testJobSpec,
+			)
+			testCase.assertions(substrate.kubeClient, err)
+		})
+	}
 }
 
 func TestGenerateNewNamespace(t *testing.T) {

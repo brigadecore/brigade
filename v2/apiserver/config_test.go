@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core/kubernetes"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
@@ -177,6 +178,9 @@ func TestWriterFactoryConfig(t *testing.T) {
 
 func TestSubstrateConfig(t *testing.T) {
 	const testAPIAddress = "http://localhost"
+	const testDefaultWorkerImage = "brigadecore/brigade-worker:2.0.0"
+	const testDefaultWorkerImagePullPolicy = core.ImagePullPolicy("IfNotPresent")
+	const testWorkspaceStorageClass = "nfs"
 	testCases := []struct {
 		name       string
 		setup      func()
@@ -192,13 +196,60 @@ func TestSubstrateConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "success",
+			name: "DEFAULT_WORKER_IMAGE not set",
 			setup: func() {
 				os.Setenv("API_ADDRESS", testAPIAddress)
+			},
+			assertions: func(_ kubernetes.SubstrateConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "DEFAULT_WORKER_IMAGE")
+			},
+		},
+		{
+			name: "DEFAULT_WORKER_IMAGE_PULL_POLICY not set",
+			setup: func() {
+				os.Setenv("DEFAULT_WORKER_IMAGE", testDefaultWorkerImage)
+			},
+			assertions: func(_ kubernetes.SubstrateConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "DEFAULT_WORKER_IMAGE_PULL_POLICY")
+			},
+		},
+		{
+			name: "WORKSPACE_STORAGE_CLASS not set",
+			setup: func() {
+				os.Setenv(
+					"DEFAULT_WORKER_IMAGE_PULL_POLICY",
+					string(testDefaultWorkerImagePullPolicy),
+				)
+			},
+			assertions: func(_ kubernetes.SubstrateConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "WORKSPACE_STORAGE_CLASS")
+			},
+		},
+		{
+			name: "success",
+			setup: func() {
+				os.Setenv("WORKSPACE_STORAGE_CLASS", testWorkspaceStorageClass)
 			},
 			assertions: func(config kubernetes.SubstrateConfig, err error) {
 				require.NoError(t, err)
 				require.Equal(t, testAPIAddress, config.APIAddress)
+				require.Equal(t, testDefaultWorkerImage, config.DefaultWorkerImage)
+				require.Equal(
+					t,
+					testDefaultWorkerImagePullPolicy,
+					config.DefaultWorkerImagePullPolicy,
+				)
+				require.Equal(
+					t,
+					testWorkspaceStorageClass,
+					config.WorkspaceStorageClass,
+				)
 			},
 		},
 	}

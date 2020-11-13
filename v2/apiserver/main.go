@@ -99,6 +99,9 @@ func main() {
 	// Events service
 	eventsService := core.NewEventsService(projectsStore, eventsStore, substrate)
 
+	// Jobs service
+	jobsService := core.NewJobsService(projectsStore, eventsStore, substrate)
+
 	// Projects service
 	projectsService := core.NewProjectsService(projectsStore, substrate)
 
@@ -129,6 +132,13 @@ func main() {
 	// Users service
 	usersService := authx.NewUsersService(usersStore, sessionsStore)
 
+	// Workers service
+	workersService := core.NewWorkersService(
+		projectsStore,
+		eventsStore,
+		substrate,
+	)
+
 	// Server
 	var apiServer restmachinery.Server
 	{
@@ -153,6 +163,10 @@ func main() {
 						"file:///brigade/schemas/event.json",
 					),
 					Service: eventsService,
+				},
+				&coreREST.JobsEndpoints{
+					AuthFilter: authFilter,
+					Service:    jobsService,
 				},
 				&coreREST.ProjectsEndpoints{
 					AuthFilter: authFilter,
@@ -186,6 +200,10 @@ func main() {
 				&authxREST.UsersEndpoints{
 					AuthFilter: authFilter,
 					Service:    usersService,
+				},
+				&coreREST.WorkersEndpoints{
+					AuthFilter: authFilter,
+					Service:    workersService,
 				},
 			},
 			&apiServerConfig,
