@@ -1,0 +1,161 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "github.com/brigadecore/brigade/v2/job.schema.json",
+
+	"definitions": {
+
+		"apiVersion": {
+			"type": "string",
+			"description": "The major version of the Brigade API with which this object conforms",
+			"enum": ["brigade.sh/v2"]
+		},
+
+		"kind": {
+			"type": "string",
+			"description": "The type of object represented by the document",
+			"enum": ["Job"]
+		},
+
+		"containerSpec": {
+			"type": "object",
+			"description": "Configuration for an OCI container",
+			"additionalProperties": false,
+			"properties": {
+				"image": {
+					"type": "string",
+					"description": "A URI for an OCI image"
+				},
+				"imagePullPolicy": {
+					"type": "string",
+					"description": "Pull policy for the OCI image",
+					"enum": [
+						"",
+						"IfNotPresent",
+						"Always"
+					]
+				},
+				"command": {
+					"type": "array",
+					"description": "The command to execute within the container",
+					"items": {
+						"type": "string"
+					}
+				},
+				"arguments": {
+					"type": "array",
+					"description": "Arguments to the command to execute within the container",
+					"items": {
+						"type": "string"
+					}
+				},
+				"environment": {
+					"type": [
+						"object",
+						"null"
+					],
+					"description": "A map of environment variables and their values",
+					"additionalProperties": {
+						"type": "string"
+					}
+				},
+				"useWorkspace": {
+					"type": "boolean",
+					"description": "Whether the worker will require a shared workspace for itself and any jobs it spawns"	
+				},
+				"workspaceMountPath": {
+					"type": "string",
+					"description": "If applicable, location in the file system where the shared workspace volume should be mounted"
+				},
+				"useSource": {
+					"type": "boolean",
+					"description": "Whether source needs to be obtained from source control for this container to run"
+				},
+				"sourceMountPath": {
+					"type": "string",
+					"description": "If applicable, location in the file system where source should be mounted"
+				},
+				"privileged": {
+					"type": "boolean",
+					"description": "Whether the container wishes to run in privileged mode"
+				},
+				"useHostDockerSocket": {
+					"type": "boolean",
+					"description": "Whether the container wishes to mount the host's Docker socket"
+				}
+			}
+		},
+
+		"host": {
+			"type": "object",
+			"description": "Host selection details for a job",
+			"additionalProperties": false,
+			"properties": {
+				"os": {
+					"type": "string",
+					"description": "Operating system required on the host to host the job's containers successfully",
+					"enum": [
+						"",
+						"linux",
+						"windows"
+					]
+				},
+				"nodeSelector": {
+					"type": "object",
+					"descriptions": "Labels that must bre present on a host to host the job's containers successfully",
+					"additionalProperties": {
+						"type": "string"
+					}
+				}
+			}
+		},
+
+		"jobSpec": {
+			"type": "object",
+			"description": "The job's specification",
+			"required": ["primaryContainer"],
+			"additionalProperties": false,
+			"properties": {
+				"primaryContainer": {
+					"allOf": [
+						{
+							"$ref": "#/definitions/containerSpec"
+						}
+					],
+					"description": "Specification for the job's primary container"
+				},
+				"sidecarContainers": {
+					"type": "object",
+					"description": "Specification for the job's sidecar containers, if any",
+					"additionalProperties": {
+						"$ref": "#/definitions/containerSpec"
+					}
+				},
+				"timeoutSeconds": {
+					"type": "integer",
+					"description": "Job timeout in seconds"
+				},
+				"host": {
+					"$ref": "#/definitions/host"
+				}
+			}
+		}
+
+	},
+
+	"title": "Job",
+	"type": "object",
+	"required": ["apiVersion", "kind", "spec"],
+	"additionalProperties": false,
+	"properties": {
+		"apiVersion": {
+			"$ref": "#/definitions/apiVersion"
+		},
+		"kind": {
+			"$ref": "#/definitions/kind"
+		},
+		"spec": {
+			"$ref": "#/definitions/jobSpec"
+		}
+	}
+
+}

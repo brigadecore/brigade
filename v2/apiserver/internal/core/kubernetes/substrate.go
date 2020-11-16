@@ -503,6 +503,44 @@ func (s *substrate) StartWorker(
 	return nil
 }
 
+func (s *substrate) ScheduleJob(
+	ctx context.Context,
+	project core.Project,
+	event core.Event,
+	jobName string,
+) error {
+	// Schedule job for asynchronous execution
+	queueWriter, err := s.queueWriterFactory.NewWriter(
+		fmt.Sprintf("jobs.%s", event.ProjectID),
+	)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error creating queue writer for project %q jobs",
+			event.ProjectID,
+		)
+	}
+	defer func() {
+		closeCtx, cancelCloseCtx :=
+			context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelCloseCtx()
+		queueWriter.Close(closeCtx)
+	}()
+
+	if err := queueWriter.Write(
+		ctx,
+		fmt.Sprintf("%s:%s", event.ID, jobName),
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error submitting execution task for event %q job %q",
+			event.ID,
+			jobName,
+		)
+	}
+	return nil
+}
+
 func (s *substrate) StartJob(
 	ctx context.Context,
 	project core.Project,
