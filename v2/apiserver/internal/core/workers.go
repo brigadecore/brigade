@@ -178,11 +178,19 @@ type WorkersService interface {
 	// execution substrate. If the specified Event does not exist, implementations
 	// MUST return a *meta.ErrNotFound.
 	Start(ctx context.Context, eventID string) error
+	// UpdateStatus updates the status of an Event's Worker. If the specified
+	// Event does not exist, implementations MUST return a *meta.ErrNotFound.
+	UpdateStatus(
+		ctx context.Context,
+		eventID string,
+		status WorkerStatus,
+	) error
 }
 
 type workersService struct {
 	projectsStore ProjectsStore
 	eventsStore   EventsStore
+	workersStore  WorkersStore
 	substrate     Substrate
 }
 
@@ -190,11 +198,13 @@ type workersService struct {
 func NewWorkersService(
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
+	workersStore WorkersStore,
 	substrate Substrate,
 ) WorkersService {
 	return &workersService{
 		projectsStore: projectsStore,
 		eventsStore:   eventsStore,
+		workersStore:  workersStore,
 		substrate:     substrate,
 	}
 }
@@ -236,4 +246,33 @@ func (w *workersService) Start(ctx context.Context, eventID string) error {
 		return errors.Wrapf(err, "error starting worker for event %q", event.ID)
 	}
 	return nil
+}
+
+func (w *workersService) UpdateStatus(
+	ctx context.Context,
+	eventID string,
+	status WorkerStatus,
+) error {
+	if err := w.workersStore.UpdateStatus(
+		ctx,
+		eventID,
+		status,
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error updating status of event %q worker in store",
+			eventID,
+		)
+	}
+	return nil
+}
+
+// WorkersStore is an interface for components that implement Worker persistence
+// concerns.
+type WorkersStore interface {
+	UpdateStatus(
+		ctx context.Context,
+		eventID string,
+		status WorkerStatus,
+	) error
 }

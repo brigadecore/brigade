@@ -11,15 +11,17 @@ import (
 func TestNewWorkersService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}
+	workersStore := &mockWorkersStore{}
 	substrate := &mockSubstrate{}
-	svc := NewWorkersService(projectsStore, eventsStore, substrate)
+	svc := NewWorkersService(projectsStore, eventsStore, workersStore, substrate)
 	require.Same(t, projectsStore, svc.(*workersService).projectsStore)
 	require.Same(t, eventsStore, svc.(*workersService).eventsStore)
+	require.Same(t, workersStore, svc.(*workersService).workersStore)
 	require.Same(t, substrate, svc.(*workersService).substrate)
 }
 
 func TestWorkersServiceStart(t *testing.T) {
-	testEventID := "123456789"
+	const testEventID = "123456789"
 	testCases := []struct {
 		name       string
 		service    WorkersService
@@ -153,4 +155,68 @@ func TestWorkersServiceStart(t *testing.T) {
 			testCase.assertions(err)
 		})
 	}
+}
+
+func TestWorkersServiceUpdateStatus(t *testing.T) {
+	testEventID := "123456789"
+	testCases := []struct {
+		name       string
+		service    WorkersService
+		assertions func(error)
+	}{
+		{
+			name: "error updating worker in store",
+			service: &workersService{
+				workersStore: &mockWorkersStore{
+					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error updating status of event")
+			},
+		},
+		{
+			name: "success",
+			service: &workersService{
+				workersStore: &mockWorkersStore{
+					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.service.UpdateStatus(
+				context.Background(),
+				testEventID,
+				WorkerStatus{},
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
+type mockWorkersStore struct {
+	UpdateStatusFn func(
+		ctx context.Context,
+		eventID string,
+		status WorkerStatus,
+	) error
+}
+
+func (m *mockWorkersStore) UpdateStatus(
+	ctx context.Context,
+	eventID string,
+	status WorkerStatus,
+) error {
+	return m.UpdateStatusFn(ctx, eventID, status)
 }
