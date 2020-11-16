@@ -225,6 +225,13 @@ func (w *workersService) Start(ctx context.Context, eventID string) error {
 		)
 	}
 
+	// TODO: We should consider changing the Worker's phase here so that if the
+	// observer is down, the Worker doesn't continue to appear in a pending state.
+	// The scheduler uses at least once delivery semantics. If a Worker continued
+	// to appear in a pending state despite having been started, the possibility
+	// exists that the scheduler could try to start the same Worker more than
+	// once.
+
 	if err = w.substrate.StartWorker(ctx, project, event); err != nil {
 		return errors.Wrapf(err, "error starting worker for event %q", event.ID)
 	}
