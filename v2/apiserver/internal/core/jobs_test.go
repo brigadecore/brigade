@@ -12,10 +12,12 @@ import (
 func TestNewjobsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}
+	jobsStore := &mockJobsStore{}
 	substrate := &mockSubstrate{}
-	svc := NewJobsService(projectsStore, eventsStore, substrate)
+	svc := NewJobsService(projectsStore, eventsStore, jobsStore, substrate)
 	require.Same(t, projectsStore, svc.(*jobsService).projectsStore)
 	require.Same(t, eventsStore, svc.(*jobsService).eventsStore)
+	require.Same(t, jobsStore, svc.(*jobsService).jobsStore)
 	require.Same(t, substrate, svc.(*jobsService).substrate)
 }
 
@@ -186,4 +188,82 @@ func TestJobsServiceStart(t *testing.T) {
 			testCase.assertions(err)
 		})
 	}
+}
+
+func TestJobsServiceUpdateStatus(t *testing.T) {
+	const testEventID = "123456789"
+	const testJobName = "italian"
+	testCases := []struct {
+		name       string
+		service    JobsService
+		assertions func(error)
+	}{
+		{
+			name: "error updating job in store",
+			service: &jobsService{
+				jobsStore: &mockJobsStore{
+					UpdateStatusFn: func(
+						context.Context,
+						string,
+						string,
+						JobStatus,
+					) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error updating status of event")
+			},
+		},
+		{
+			name: "success",
+			service: &jobsService{
+				jobsStore: &mockJobsStore{
+					UpdateStatusFn: func(
+						context.Context,
+						string,
+						string,
+						JobStatus,
+					) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.service.UpdateStatus(
+				context.Background(),
+				testEventID,
+				testJobName,
+				JobStatus{},
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
+type mockJobsStore struct {
+	UpdateStatusFn func(
+		ctx context.Context,
+		eventID string,
+		jobName string,
+		status JobStatus,
+	) error
+}
+
+func (m *mockJobsStore) UpdateStatus(
+	ctx context.Context,
+	eventID string,
+	jobName string,
+	status JobStatus,
+) error {
+	return m.UpdateStatusFn(ctx, eventID, jobName, status)
 }
