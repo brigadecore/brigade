@@ -39,17 +39,23 @@ func main() {
 
 	// Data stores
 	var eventsStore core.EventsStore
+	var jobsStore core.JobsStore
 	var projectsStore core.ProjectsStore
 	var secretsStore core.SecretsStore
 	var serviceAccountsStore authx.ServiceAccountsStore
 	var sessionsStore authx.SessionsStore
 	var usersStore authx.UsersStore
+	var workersStore core.WorkersStore
 	{
 		database, err := database(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}
 		eventsStore, err = coreMongodb.NewEventsStore(database)
+		if err != nil {
+			log.Fatal(err)
+		}
+		jobsStore, err = coreMongodb.NewJobsStore(database)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -67,6 +73,10 @@ func main() {
 			log.Fatal(err)
 		}
 		usersStore, err = authxMongodb.NewUsersStore(database)
+		if err != nil {
+			log.Fatal(err)
+		}
+		workersStore, err = coreMongodb.NewWorkersStore(database)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -100,7 +110,12 @@ func main() {
 	eventsService := core.NewEventsService(projectsStore, eventsStore, substrate)
 
 	// Jobs service
-	jobsService := core.NewJobsService(projectsStore, eventsStore, substrate)
+	jobsService := core.NewJobsService(
+		projectsStore,
+		eventsStore,
+		jobsStore,
+		substrate,
+	)
 
 	// Projects service
 	projectsService := core.NewProjectsService(projectsStore, substrate)
@@ -136,6 +151,7 @@ func main() {
 	workersService := core.NewWorkersService(
 		projectsStore,
 		eventsStore,
+		workersStore,
 		substrate,
 	)
 
@@ -166,7 +182,10 @@ func main() {
 				},
 				&coreREST.JobsEndpoints{
 					AuthFilter: authFilter,
-					Service:    jobsService,
+					JobStatusSchemaLoader: gojsonschema.NewReferenceLoader(
+						"file:///brigade/schemas/job-status.json",
+					),
+					Service: jobsService,
 				},
 				&coreREST.ProjectsEndpoints{
 					AuthFilter: authFilter,
@@ -203,7 +222,10 @@ func main() {
 				},
 				&coreREST.WorkersEndpoints{
 					AuthFilter: authFilter,
-					Service:    workersService,
+					WorkerStatusSchemaLoader: gojsonschema.NewReferenceLoader(
+						"file:///brigade/schemas/worker-status.json",
+					),
+					Service: workersService,
 				},
 			},
 			&apiServerConfig,
