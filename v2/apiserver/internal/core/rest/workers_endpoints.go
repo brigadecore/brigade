@@ -1,11 +1,17 @@
 package rest
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -25,6 +31,12 @@ func (w *WorkersEndpoints) Register(router *mux.Router) {
 		"/v2/events/{eventID}/worker/start",
 		w.AuthFilter.Decorate(w.start),
 	).Methods(http.MethodPut)
+
+	// Get/stream worker status
+	router.HandleFunc(
+		"/v2/events/{eventID}/worker/status",
+		w.AuthFilter.Decorate(w.getOrStreamStatus),
+	).Methods(http.MethodGet)
 
 	// Update worker status
 	router.HandleFunc(
@@ -50,6 +62,60 @@ func (w *WorkersEndpoints) start(wr http.ResponseWriter, r *http.Request) {
 			SuccessCode: http.StatusOK,
 		},
 	)
+}
+
+func (w *WorkersEndpoints) getOrStreamStatus(
+	wr http.ResponseWriter,
+	r *http.Request,
+) {
+	eventID := mux.Vars(r)["eventID"]
+	// nolint: errcheck
+	watch, _ := strconv.ParseBool(r.URL.Query().Get("watch"))
+
+	if !watch {
+		restmachinery.ServeRequest(
+			restmachinery.InboundRequest{
+				W: wr,
+				R: r,
+				EndpointLogic: func() (interface{}, error) {
+					return w.Service.GetStatus(r.Context(), eventID)
+				},
+				SuccessCode: http.StatusOK,
+			},
+		)
+		return
+	}
+
+	statusCh, err := w.Service.WatchStatus(r.Context(), eventID)
+	if err != nil {
+		if _, ok := errors.Cause(err).(*meta.ErrNotFound); ok {
+			restmachinery.WriteAPIResponse(wr, http.StatusNotFound, errors.Cause(err))
+			return
+		}
+		log.Printf(
+			"error retrieving worker status stream for event %q: %s",
+			eventID,
+			err,
+		)
+		restmachinery.WriteAPIResponse(
+			wr,
+			http.StatusInternalServerError,
+			&meta.ErrInternalServer{},
+		)
+		return
+	}
+
+	wr.Header().Set("Content-Type", "text/event-stream")
+	wr.(http.Flusher).Flush()
+	for status := range statusCh {
+		statusBytes, err := json.Marshal(status)
+		if err != nil {
+			log.Println(errors.Wrapf(err, "error marshaling worker status"))
+			return
+		}
+		fmt.Fprint(wr, string(statusBytes))
+		wr.(http.Flusher).Flush()
+	}
 }
 
 func (w *WorkersEndpoints) updateStatus(
