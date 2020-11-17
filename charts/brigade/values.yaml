@@ -16,7 +16,7 @@ apiserver:
   host: localhost:31600
 
   image:
-    repository: krancour/brigade-apiserver
+    repository: brigadecore/brigade-apiserver
     ## tag should only be specified if you want to override Chart.appVersion
     ## The default tag is the value of .Chart.AppVersion
     # tag:
@@ -128,7 +128,7 @@ apiserver:
 scheduler:
 
   image:
-    repository: krancour/brigade-scheduler
+    repository: brigadecore/brigade-scheduler
     ## tag should only be specified if you want to override Chart.appVersion
     ## The default tag is the value of .Chart.AppVersion
     # tag:
@@ -154,10 +154,22 @@ scheduler:
 
   tolerations: []
 
+observer:
+
+  image:
+    repository: brigadecore/brigade-observer
+    ## tag should only be specified if you want to override Chart.appVersion
+    ## The default tag is the value of .Chart.AppVersion
+    # tag:
+    pullPolicy: IfNotPresent
+
+  tls:
+    ignoreCertWarnings: true
+
 worker:
 
   image:
-    repository: krancour/brigade-worker
+    repository: brigadecore/brigade-worker
     ## tag should only be specified if you want to override Chart.appVersion
     ## The default tag is the value of .Chart.AppVersion
     # tag:
