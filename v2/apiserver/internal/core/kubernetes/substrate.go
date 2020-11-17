@@ -21,18 +21,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var workerPodsSelector = labels.Set(
-	map[string]string{
-		myk8s.LabelComponent: "worker",
-	},
-).AsSelector().String()
-
-var jobPodsSelector = labels.Set(
-	map[string]string{
-		myk8s.LabelComponent: "job",
-	},
-).AsSelector().String()
-
 var runningPodsSelector = fields.Set(
 	map[string]string{
 		"status.phase": string(corev1.PodRunning),
@@ -122,7 +110,7 @@ func (s *substrate) CountRunningWorkers(
 ) (core.SubstrateWorkerCount, error) {
 	count := core.SubstrateWorkerCount{}
 	var err error
-	count.Count, err = s.countRunningPods(ctx, workerPodsSelector)
+	count.Count, err = s.countRunningPods(ctx, myk8s.WorkerPodsSelector())
 	return count, err
 }
 
@@ -131,7 +119,7 @@ func (s *substrate) CountRunningJobs(
 ) (core.SubstrateJobCount, error) {
 	count := core.SubstrateJobCount{}
 	var err error
-	count.Count, err = s.countRunningPods(ctx, jobPodsSelector)
+	count.Count, err = s.countRunningPods(ctx, myk8s.JobPodsSelector())
 	return count, err
 }
 
