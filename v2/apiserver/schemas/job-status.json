@@ -1,0 +1,48 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "github.com/brigadecore/brigade/v2/job-status.schema.json",
+
+	"definitions": {
+
+		"apiVersion": {
+			"type": "string",
+			"description": "The major version of the Brigade API with which this object conforms",
+			"enum": ["brigade.sh/v2"]
+		},
+
+		"kind": {
+			"type": "string",
+			"description": "The type of object represented by the document",
+			"enum": ["JobStatus"]
+		}
+
+	},
+
+	"title": "JobStatus",
+	"type": "object",
+	"required": ["apiVersion", "kind", "phase"],
+	"additionalProperties": false,
+	"properties": {
+		"apiVersion": {
+			"$ref": "#/definitions/apiVersion"
+		},
+		"kind": {
+			"$ref": "#/definitions/kind"
+		},
+		"started": {
+			"type": [ "string", "null" ],
+			"format": "date-time",
+			"description": "The time at which the job started"
+		},
+		"ended": {
+			"type": [ "string", "null" ],
+			"format": "date-time",
+			"description": "The time at which the job completed"
+		},
+		"phase": {
+			"type": "string",
+			"description": "The job's phase",
+			"enum": [ "RUNNING", "ABORTED", "SUCCEEDED", "FAILED", "UNKNOWN" ]
+		}
+	}
+}
