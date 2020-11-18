@@ -151,24 +151,35 @@ type JobsService interface {
 		eventID string,
 		jobName string,
 	) error
+	// UpdateStatus, given an Event identifier and Job name, updates the status of
+	// that Job. If the specified Event or specified Job thereof does not exist,
+	// implementations MUST return a *meta.ErrNotFound error.
+	UpdateStatus(
+		ctx context.Context,
+		eventID string,
+		jobName string,
+		status JobStatus,
+	) error
 }
 
 type jobsService struct {
 	projectsStore ProjectsStore
 	eventsStore   EventsStore
-	// jobsStore     JobsStore
-	substrate Substrate
+	jobsStore     JobsStore
+	substrate     Substrate
 }
 
 // NewJobsService returns a specialized interface for managing Jobs.
 func NewJobsService(
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
+	jobsStore JobsStore,
 	substrate Substrate,
 ) JobsService {
 	return &jobsService{
 		projectsStore: projectsStore,
 		eventsStore:   eventsStore,
+		jobsStore:     jobsStore,
 		substrate:     substrate,
 	}
 }
@@ -211,6 +222,12 @@ func (j *jobsService) Start(
 		)
 	}
 
+	// TODO: We should consider changing the Jobs's phase here so that if the
+	// observer is down, the Job doesn't continue to appear in a pending state.
+	// The scheduler uses at least once delivery semantics. If a Job continued to
+	// appear in a pending state despite having been started, the possibility
+	// exists that the scheduler could try to start the same Job more than once.
+
 	if err = j.substrate.StartJob(ctx, project, event, jobName); err != nil {
 		return errors.Wrapf(
 			err,
@@ -221,4 +238,40 @@ func (j *jobsService) Start(
 	}
 
 	return nil
+}
+
+func (j *jobsService) UpdateStatus(
+	ctx context.Context,
+	eventID string,
+	jobName string,
+	status JobStatus,
+) error {
+	if err := j.jobsStore.UpdateStatus(
+		ctx,
+		eventID,
+		jobName,
+		status,
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error updating status of event %q worker job %q in store",
+			eventID,
+			jobName,
+		)
+	}
+	return nil
+}
+
+// JobsStore is an interface for components that implement Job persistence
+// concerns.
+type JobsStore interface {
+	// UpdateStatus updates the status of the specified Job in the underlying data
+	// store. If the specified job is not found, implementations MUST return a
+	// *meta.ErrNotFound error.
+	UpdateStatus(
+		ctx context.Context,
+		eventID string,
+		jobName string,
+		status JobStatus,
+	) error
 }
