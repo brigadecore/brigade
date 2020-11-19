@@ -35,6 +35,7 @@ rules:
   - pods
   - persistentvolumeclaims
   verbs:
+  - create
   - deletecollection
 - apiGroups:
   - rbac.authorization.k8s.io
