@@ -17,6 +17,21 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - persistentvolumeclaims
+  verbs:
+  - create
+  - deletecollection
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - deletecollection
+  - list
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - create
@@ -29,14 +44,6 @@ rules:
   - serviceaccounts
   verbs:
   - create
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - persistentvolumeclaims
-  verbs:
-  - create
-  - deletecollection
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
