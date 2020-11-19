@@ -198,6 +198,11 @@ func tokenAuthFilterConfig(
 		return config, err
 	}
 	config.HashedSchedulerToken = crypto.Hash("", schedulerToken)
+	observerToken, err := os.GetRequiredEnvVar("OBSERVER_TOKEN")
+	if err != nil {
+		return config, err
+	}
+	config.HashedObserverToken = crypto.Hash("", observerToken)
 	return config, nil
 }
 

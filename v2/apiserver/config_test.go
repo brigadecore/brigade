@@ -415,9 +415,20 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "success",
+			name: "OBSERVER_TOKEN not set",
 			setup: func() {
 				os.Setenv("SCHEDULER_TOKEN", "foo")
+			},
+			assertions: func(_ authn.TokenAuthFilterConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "OBSERVER_TOKEN")
+			},
+		},
+		{
+			name: "success",
+			setup: func() {
+				os.Setenv("OBSERVER_TOKEN", "bar")
 			},
 			assertions: func(config authn.TokenAuthFilterConfig, err error) {
 				require.NoError(t, err)

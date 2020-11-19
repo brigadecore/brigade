@@ -79,6 +79,30 @@ func TestFilter(t *testing.T) {
 		},
 
 		{
+			name: "token belongs to observer",
+			filter: &tokenAuthFilter{
+				config: TokenAuthFilterConfig{
+					HashedObserverToken: crypto.Hash("", "foo"),
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add("Authorization", "Bearer foo")
+				return req
+			},
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				principal := authx.PrincipalFromContext(r.Context())
+				require.NotNil(t, principal)
+				require.Same(t, authx.Observer, principal)
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, rr.Code)
+				assert.True(t, handlerCalled)
+			},
+		},
+
+		{
 			name: "error finding service account",
 			filter: &tokenAuthFilter{
 				findServiceAccountByTokenFn: func(
