@@ -202,6 +202,10 @@ type EventsService interface {
 	// Get retrieves a single Event specified by its identifier. If no such event
 	// is found, implementations MUST return a *meta.ErrNotFound error.
 	Get(context.Context, string) (Event, error)
+	// GetByWorkerToken retrieves a single Event specified by its Worker's token.
+	// If no such event is found, implementations MUST return a *meta.ErrNotFound
+	// error.
+	GetByWorkerToken(context.Context, string) (Event, error)
 	// Cancel cancels a single Event specified by its identifier. If no such event
 	// is found, implementations MUST return a *meta.ErrNotFound error.
 	// Implementations MUST only cancel events whose Workers have not already
@@ -409,6 +413,23 @@ func (e *eventsService) Get(
 	return event, nil
 }
 
+func (e *eventsService) GetByWorkerToken(
+	ctx context.Context,
+	workerToken string,
+) (Event, error) {
+	// No authz is required here because this is only ever called by the system
+	// itself.
+
+	event, err := e.eventsStore.GetByHashedWorkerToken(
+		ctx,
+		crypto.Hash("", workerToken),
+	)
+	if err != nil {
+		return event, errors.Wrap(err, "error retrieving event from store")
+	}
+	return event, nil
+}
+
 func (e *eventsService) Cancel(ctx context.Context, id string) error {
 	event, err := e.eventsStore.Get(ctx, id)
 	if err != nil {
@@ -612,6 +633,10 @@ type EventsStore interface {
 	// specified Event does not exist, implementations MUST return a
 	// *meta.ErrNotFound error.
 	Get(context.Context, string) (Event, error)
+	// GetByHashedWorkerToken retrieves a single Event from the underlying data
+	// store by the provided hashed Worker token. If no such Event exists,
+	// implementations MUST return a *meta.ErrNotFound error.
+	GetByHashedWorkerToken(context.Context, string) (Event, error)
 	// Cancel updates the specified Event in the underlying data store to reflect
 	// that it has been canceled. Implementations MAY assume the Event's existence
 	// has been pre-confirmed by the caller. Implementations MUST only cancel

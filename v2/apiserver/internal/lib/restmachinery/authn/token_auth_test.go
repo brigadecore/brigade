@@ -5,10 +5,12 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/assert"
@@ -103,8 +105,55 @@ func TestFilter(t *testing.T) {
 		},
 
 		{
+			name: "error finding event by worker token",
+			filter: &tokenAuthFilter{
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, errors.New("something went wrong")
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add("Authorization", "Bearer foo")
+				return req
+			},
+			handler: func(w http.ResponseWriter, r *http.Request) {},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, rr.Code)
+				assert.False(t, handlerCalled)
+			},
+		},
+
+		{
+			name: "token belongs to a worker",
+			filter: &tokenAuthFilter{
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, nil
+				},
+			},
+			setup: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/", nil)
+				require.NoError(t, err)
+				req.Header.Add("Authorization", "Bearer foo")
+				return req
+			},
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				principal := authx.PrincipalFromContext(r.Context())
+				require.NotNil(t, principal)
+				require.Equal(t, "*authx.worker", reflect.TypeOf(principal).String())
+			},
+			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, rr.Code)
+				assert.True(t, handlerCalled)
+			},
+		},
+
+		{
 			name: "error finding service account",
 			filter: &tokenAuthFilter{
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
+				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
@@ -127,6 +176,9 @@ func TestFilter(t *testing.T) {
 		{
 			name: "service account found; locked",
 			filter: &tokenAuthFilter{
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
+				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
@@ -152,6 +204,9 @@ func TestFilter(t *testing.T) {
 		{
 			name: "service account found; not locked",
 			filter: &tokenAuthFilter{
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
+				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
@@ -179,6 +234,9 @@ func TestFilter(t *testing.T) {
 		{
 			name: "error finding session",
 			filter: &tokenAuthFilter{
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
+				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
@@ -207,6 +265,9 @@ func TestFilter(t *testing.T) {
 		{
 			name: "session not found",
 			filter: &tokenAuthFilter{
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
+				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
@@ -235,6 +296,9 @@ func TestFilter(t *testing.T) {
 		{
 			name: "root session found; root access disabled",
 			filter: &tokenAuthFilter{
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
+				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
@@ -267,6 +331,9 @@ func TestFilter(t *testing.T) {
 			filter: &tokenAuthFilter{
 				config: TokenAuthFilterConfig{
 					RootUserEnabled: true,
+				},
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
 				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
@@ -307,6 +374,9 @@ func TestFilter(t *testing.T) {
 		{
 			name: "user session found; oidc disabled",
 			filter: &tokenAuthFilter{
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
+				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
@@ -338,6 +408,9 @@ func TestFilter(t *testing.T) {
 				config: TokenAuthFilterConfig{
 					OpenIDConnectEnabled: true,
 				},
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
+				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
@@ -368,6 +441,9 @@ func TestFilter(t *testing.T) {
 			filter: &tokenAuthFilter{
 				config: TokenAuthFilterConfig{
 					OpenIDConnectEnabled: true,
+				},
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
 				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
@@ -407,6 +483,9 @@ func TestFilter(t *testing.T) {
 					FindUserFn: func(ctx context.Context, id string) (authx.User, error) {
 						return authx.User{}, errors.New("something went wrong")
 					},
+				},
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
 				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
@@ -450,6 +529,9 @@ func TestFilter(t *testing.T) {
 						}, nil
 					},
 				},
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
+				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
@@ -488,6 +570,9 @@ func TestFilter(t *testing.T) {
 					FindUserFn: func(ctx context.Context, id string) (authx.User, error) {
 						return authx.User{}, nil
 					},
+				},
+				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
+					return core.Event{}, &meta.ErrNotFound{}
 				},
 				findServiceAccountByTokenFn: func(
 					context.Context,
