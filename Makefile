@@ -99,17 +99,17 @@ test-unit-go:
 build: build-images xbuild-cli
 
 .PHONY: build-images
-build-images: build-apiserver
+build-images: build-apiserver build-scheduler
 
-.PHONY: build-apiserver
-build-apiserver:
+.PHONY: build-%
+build-%:
 	docker build \
-		-f v2/apiserver/Dockerfile \
-		-t $(DOCKER_IMAGE_PREFIX)brigade-apiserver:$(IMMUTABLE_DOCKER_TAG) \
+		-f v2/$*/Dockerfile \
+		-t $(DOCKER_IMAGE_PREFIX)brigade-$*:$(IMMUTABLE_DOCKER_TAG) \
 		--build-arg VERSION='$(VERSION)' \
 		--build-arg COMMIT='$(GIT_VERSION)' \
 		.
-	docker tag $(DOCKER_IMAGE_PREFIX)brigade-apiserver:$(IMMUTABLE_DOCKER_TAG) $(DOCKER_IMAGE_PREFIX)brigade-apiserver:$(MUTABLE_DOCKER_TAG)
+	docker tag $(DOCKER_IMAGE_PREFIX)brigade-$*:$(IMMUTABLE_DOCKER_TAG) $(DOCKER_IMAGE_PREFIX)brigade-$*:$(MUTABLE_DOCKER_TAG)
 
 .PHONY: build-cli
 build-cli:
@@ -132,12 +132,12 @@ xbuild-cli:
 	'
 
 .PHONY: push-images
-push-images: push-apiserver
+push-images: push-apiserver push-scheduler
 
-.PHONY: push-apiserver
-push-apiserver: build-apiserver
-	docker push $(DOCKER_IMAGE_PREFIX)brigade-apiserver:$(IMMUTABLE_DOCKER_TAG)
-	docker push $(DOCKER_IMAGE_PREFIX)brigade-apiserver:$(MUTABLE_DOCKER_TAG)
+.PHONY: push-%
+push-%: build-%
+	docker push $(DOCKER_IMAGE_PREFIX)brigade-$*:$(IMMUTABLE_DOCKER_TAG)
+	docker push $(DOCKER_IMAGE_PREFIX)brigade-$*:$(MUTABLE_DOCKER_TAG)
 
 ################################################################################
 # Temporary hacks to facilitate early development.                             #
@@ -154,4 +154,7 @@ hack: push-images build-cli
 		--set apiserver.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set apiserver.image.pullPolicy=Always \
 		--set apiserver.service.type=NodePort \
-		--set apiserver.service.nodePort=31600
+		--set apiserver.service.nodePort=31600 \
+		--set scheduler.image.repository=$(DOCKER_IMAGE_PREFIX)brigade-scheduler \
+		--set scheduler.image.tag=$(IMMUTABLE_DOCKER_TAG) \
+		--set scheduler.image.pullPolicy=Always \
