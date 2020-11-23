@@ -31,6 +31,12 @@ func (j *JobsEndpoints) Register(router *mux.Router) {
 		"/v2/events/{eventID}/worker/jobs/{jobName}/status",
 		j.AuthFilter.Decorate(j.updateStatus),
 	).Methods(http.MethodPut)
+
+	// Clean up a job
+	router.HandleFunc(
+		"/v2/events/{eventID}/worker/jobs/{jobName}/cleanup",
+		j.AuthFilter.Decorate(j.cleanup),
+	).Methods(http.MethodPut)
 }
 
 func (j *JobsEndpoints) start(w http.ResponseWriter, r *http.Request) {
@@ -67,6 +73,26 @@ func (j *JobsEndpoints) updateStatus(
 					mux.Vars(r)["eventID"],
 					mux.Vars(r)["jobName"],
 					status,
+				)
+			},
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (j *JobsEndpoints) cleanup(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	restmachinery.ServeRequest(
+		restmachinery.InboundRequest{
+			W: w,
+			R: r,
+			EndpointLogic: func() (interface{}, error) {
+				return nil, j.Service.Cleanup(
+					r.Context(),
+					mux.Vars(r)["eventID"],
+					mux.Vars(r)["jobName"],
 				)
 			},
 			SuccessCode: http.StatusOK,

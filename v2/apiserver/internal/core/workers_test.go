@@ -205,6 +205,82 @@ func TestWorkersServiceUpdateStatus(t *testing.T) {
 	}
 }
 
+func TestWorkersServiceCleanup(t *testing.T) {
+	const testEventID = "123456789"
+	testCases := []struct {
+		name       string
+		service    WorkersService
+		assertions func(error)
+	}{
+		{
+			name: "error getting event from store",
+			service: &workersService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "error getting project from store",
+			service: &workersService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving project")
+			},
+		},
+		{
+			name: "error deleting worker and jobs from substrate",
+			service: &workersService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				substrate: &mockSubstrate{
+					DeleteWorkerAndJobsFn: func(context.Context, Project, Event) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error deleting event")
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.service.Cleanup(context.Background(), testEventID)
+			testCase.assertions(err)
+		})
+	}
+}
+
 type mockWorkersStore struct {
 	UpdateStatusFn func(
 		ctx context.Context,

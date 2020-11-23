@@ -18,7 +18,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -544,18 +543,70 @@ func (s *substrate) StartJob(
 	return nil
 }
 
+func (s *substrate) DeleteJob(
+	ctx context.Context,
+	project core.Project,
+	event core.Event,
+	jobName string,
+) error {
+	labelSelector := labels.Set(
+		map[string]string{
+			myk8s.LabelEvent: event.ID,
+			myk8s.LabelJob:   jobName,
+		},
+	).AsSelector().String()
+
+	// Delete all pods related to this Job
+	if err := s.kubeClient.CoreV1().Pods(
+		project.Kubernetes.Namespace,
+	).DeleteCollection(
+		ctx,
+		metav1.DeleteOptions{},
+		metav1.ListOptions{
+			LabelSelector: labelSelector,
+		},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting event %q job %q pods in namespace %q",
+			event.ID,
+			jobName,
+			project.Kubernetes.Namespace,
+		)
+	}
+
+	// Delete all secrets related to this Job
+	if err := s.kubeClient.CoreV1().Secrets(
+		project.Kubernetes.Namespace,
+	).DeleteCollection(
+		ctx,
+		metav1.DeleteOptions{},
+		metav1.ListOptions{
+			LabelSelector: labelSelector,
+		},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting event %q job %q secrets in namespace %q",
+			event.ID,
+			jobName,
+			project.Kubernetes.Namespace,
+		)
+	}
+
+	return nil
+}
+
 func (s *substrate) DeleteWorkerAndJobs(
 	ctx context.Context,
 	project core.Project,
 	event core.Event,
 ) error {
-	matchesEvent, _ := labels.NewRequirement(
-		myk8s.LabelEvent,
-		selection.Equals,
-		[]string{event.ID},
-	)
-	labelSelector := labels.NewSelector()
-	labelSelector = labelSelector.Add(*matchesEvent)
+	labelSelector := labels.Set(
+		map[string]string{
+			myk8s.LabelEvent: event.ID,
+		},
+	).AsSelector().String()
 
 	// Delete all pods related to this Event
 	if err := s.kubeClient.CoreV1().Pods(
@@ -564,7 +615,7 @@ func (s *substrate) DeleteWorkerAndJobs(
 		ctx,
 		metav1.DeleteOptions{},
 		metav1.ListOptions{
-			LabelSelector: labelSelector.String(),
+			LabelSelector: labelSelector,
 		},
 	); err != nil {
 		return errors.Wrapf(
@@ -582,7 +633,7 @@ func (s *substrate) DeleteWorkerAndJobs(
 		ctx,
 		metav1.DeleteOptions{},
 		metav1.ListOptions{
-			LabelSelector: labelSelector.String(),
+			LabelSelector: labelSelector,
 		},
 	); err != nil {
 		return errors.Wrapf(
@@ -600,7 +651,7 @@ func (s *substrate) DeleteWorkerAndJobs(
 		ctx,
 		metav1.DeleteOptions{},
 		metav1.ListOptions{
-			LabelSelector: labelSelector.String(),
+			LabelSelector: labelSelector,
 		},
 	); err != nil {
 		return errors.Wrapf(
