@@ -10,6 +10,7 @@ import (
 	"github.com/brigadecore/brigade/v2/internal/file"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/rs/cors"
 )
 
 // ServerConfig represents optional configuration for a REST API server.
@@ -28,8 +29,8 @@ type Server interface {
 }
 
 type server struct {
-	config ServerConfig
-	router *mux.Router
+	config  ServerConfig
+	handler http.Handler
 }
 
 // NewServer returns a new REST API server that serves the provided Endpoints.
@@ -50,7 +51,11 @@ func NewServer(endpoints []Endpoints, config *ServerConfig) Server {
 
 	return &server{
 		config: *config,
-		router: router,
+		handler: cors.New(
+			cors.Options{
+				AllowedMethods: []string{"DELETE", "GET", "POST", "PUT"},
+			},
+		).Handler(router),
 	}
 }
 
@@ -59,7 +64,7 @@ func NewServer(endpoints []Endpoints, config *ServerConfig) Server {
 func (s *server) ListenAndServe(ctx context.Context) error {
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", s.config.Port),
-		Handler: s.router,
+		Handler: s.handler,
 	}
 
 	errCh := make(chan error)
