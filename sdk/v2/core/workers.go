@@ -239,6 +239,7 @@ type WorkersClient interface {
 		eventID string,
 		status WorkerStatus,
 	) error
+	Cleanup(ctx context.Context, eventID string) error
 
 	Jobs() JobsClient
 }
@@ -329,6 +330,18 @@ func (w *workersClient) UpdateStatus(
 			Path:        fmt.Sprintf("v2/events/%s/worker/status", eventID),
 			AuthHeaders: w.BearerTokenAuthHeaders(),
 			ReqBodyObj:  status,
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (w *workersClient) Cleanup(ctx context.Context, eventID string) error {
+	return w.ExecuteRequest(
+		ctx,
+		rm.OutboundRequest{
+			Method:      http.MethodPut,
+			Path:        fmt.Sprintf("v2/events/%s/worker/cleanup", eventID),
+			AuthHeaders: w.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)

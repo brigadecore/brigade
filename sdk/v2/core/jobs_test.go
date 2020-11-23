@@ -218,3 +218,35 @@ func TestJobClientUpdateStatus(t *testing.T) {
 	)
 	require.NoError(t, err)
 }
+
+func TestJobClientCleanup(t *testing.T) {
+	const testEventID = "12345"
+	const testJobName = "Italian"
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				defer r.Body.Close()
+				require.Equal(t, http.MethodPut, r.Method)
+				require.Equal(
+					t,
+					fmt.Sprintf(
+						"/v2/events/%s/worker/jobs/%s/cleanup",
+						testEventID,
+						testJobName,
+					),
+					r.URL.Path,
+				)
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintln(w, "{}")
+			},
+		),
+	)
+	defer server.Close()
+	client := NewJobsClient(server.URL, testAPIToken, nil)
+	err := client.Cleanup(
+		context.Background(),
+		testEventID,
+		testJobName,
+	)
+	require.NoError(t, err)
+}
