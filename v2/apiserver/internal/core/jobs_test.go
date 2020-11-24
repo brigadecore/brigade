@@ -345,7 +345,7 @@ func TestJobsServiceCleanup(t *testing.T) {
 			},
 		},
 		{
-			name: "error deleting job from substrate",
+			name: "success",
 			service: &jobsService{
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
