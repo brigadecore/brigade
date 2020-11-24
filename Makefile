@@ -99,7 +99,7 @@ test-unit-go:
 build: build-images xbuild-cli
 
 .PHONY: build-images
-build-images: build-apiserver build-scheduler
+build-images: build-apiserver build-scheduler build-observer
 
 .PHONY: build-%
 build-%:
@@ -132,7 +132,7 @@ xbuild-cli:
 	'
 
 .PHONY: push-images
-push-images: push-apiserver push-scheduler
+push-images: push-apiserver push-scheduler push-observer
 
 .PHONY: push-%
 push-%: build-%
@@ -158,3 +158,6 @@ hack: push-images build-cli
 		--set scheduler.image.repository=$(DOCKER_IMAGE_PREFIX)brigade-scheduler \
 		--set scheduler.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set scheduler.image.pullPolicy=Always \
+		--set observer.image.repository=$(DOCKER_IMAGE_PREFIX)brigade-observer \
+		--set observer.image.tag=$(IMMUTABLE_DOCKER_TAG) \
+		--set observer.image.pullPolicy=Always
