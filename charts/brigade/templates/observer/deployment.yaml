@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "brigade.observer.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.observer.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "brigade.selectorLabels" . | nindent 6 }}
+      {{- include "brigade.observer.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade.selectorLabels" . | nindent 8 }}
+        {{- include "brigade.observer.labels" . | nindent 8 }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/observer/secret.yaml") . | sha256sum }}
+    spec:
+      serviceAccount: {{ include "brigade.observer.fullname" . }}
+      containers:
+      - name: observer
+        image: {{ .Values.observer.image.repository }}:{{ default .Chart.AppVersion .Values.observer.image.tag }}
+        imagePullPolicy: {{ .Values.observer.image.pullPolicy }}
+        args:
+        - --logtostderr=true
+        env:
+        - name: API_ADDRESS
+          {{- if .Values.apiserver.tls.enabled }}
+          value: https://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          {{- else }}
+          value: http://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          {{- end }}
+        - name: API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.observer.fullname" . }}
+              key: api-token
+        - name: API_IGNORE_CERT_WARNINGS
+          value: {{ quote (and .Values.apiserver.tls.enabled .Values.observer.tls.ignoreCertWarnings) }}
+      {{- with .Values.observer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.observer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

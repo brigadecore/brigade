@@ -30,6 +30,9 @@ type TokenAuthFilterConfig struct {
 	// HashedSchedulerToken is a secure hash of the token used by the scheduler
 	// component.
 	HashedSchedulerToken string
+	// HashedObserverToken is a secure hash of the token used by the observer
+	// component.
+	HashedObserverToken string
 }
 
 // tokenAuthFilter is an implementation of the restmachinery.Filter interface
@@ -71,6 +74,7 @@ func NewTokenAuthFilter(
 }
 
 // Decorate decorates one http.HandlerFunc with another.
+// nolint: gocyclo
 func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		headerValue := r.Header.Get("Authorization")
@@ -104,6 +108,13 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 		// Is it the Scheduler's token?
 		if crypto.Hash("", token) == t.config.HashedSchedulerToken {
 			ctx := authx.ContextWithPrincipal(r.Context(), authx.Scheduler)
+			handle(w, r.WithContext(ctx))
+			return
+		}
+
+		// Is it the Observer's token?
+		if crypto.Hash("", token) == t.config.HashedObserverToken {
+			ctx := authx.ContextWithPrincipal(r.Context(), authx.Observer)
 			handle(w, r.WithContext(ctx))
 			return
 		}

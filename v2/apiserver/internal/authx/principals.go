@@ -7,6 +7,8 @@ var (
 	Root = &root{}
 	// Scheduler is a singleton that represents Brigade's scheduler component.
 	Scheduler = &scheduler{}
+	// Observer is a singleton that represents Brigade's observer component.
+	Observer = &observer{}
 )
 
 // Principal is an interface for any sort of security principal (human user,
@@ -17,6 +19,8 @@ type Principal interface{}
 type root struct{}
 
 type scheduler struct{}
+
+type observer struct{}
 
 type principalContextKey struct{}
 
