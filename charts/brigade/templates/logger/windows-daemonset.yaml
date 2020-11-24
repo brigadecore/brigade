@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "brigade.logger.windows.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.logger.windows.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "brigade.selectorLabels" . | nindent 6 }}
+      {{- include "brigade.logger.windows.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade.selectorLabels" . | nindent 8 }}
+        {{- include "brigade.logger.windows.labels" . | nindent 8 }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/logger/secret.yaml") . | sha256sum }}
+    spec:
+      serviceAccount: {{ include "brigade.logger.fullname" . }}
+      containers:
+      - name: logger
+        image: {{ .Values.logger.windows.image.repository }}:{{ default .Chart.AppVersion .Values.logger.windows.image.tag }}
+        imagePullPolicy: {{ .Values.logger.windows.image.pullPolicy }}
+        volumeMounts:
+        - name: var-log
+          mountPath: /var/log
+        - name: docker-containers
+          mountPath: /ProgramData/docker/containers
+          readOnly: true
+        - name: logger-config
+          mountPath: /fluentd/etc
+      volumes:
+      - name: var-log
+        hostPath:
+          path: /var/log
+      - name: docker-containers
+        hostPath:
+          path: /ProgramData/docker/containers
+      - name: logger-config
+        secret:
+          secretName: {{ include "brigade.logger.fullname" . }}
+      {{- with .Values.logger.windows.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.logger.windows.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
