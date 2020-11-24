@@ -31,6 +31,12 @@ func (w *WorkersEndpoints) Register(router *mux.Router) {
 		"/v2/events/{eventID}/worker/status",
 		w.AuthFilter.Decorate(w.updateStatus),
 	).Methods(http.MethodPut)
+
+	// Clean up a worker
+	router.HandleFunc(
+		"/v2/events/{eventID}/worker/cleanup",
+		w.AuthFilter.Decorate(w.cleanup),
+	).Methods(http.MethodPut)
 }
 
 func (w *WorkersEndpoints) start(wr http.ResponseWriter, r *http.Request) {
@@ -60,6 +66,23 @@ func (w *WorkersEndpoints) updateStatus(
 			EndpointLogic: func() (interface{}, error) {
 				return nil,
 					w.Service.UpdateStatus(r.Context(), mux.Vars(r)["eventID"], status)
+			},
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (w *WorkersEndpoints) cleanup(
+	wr http.ResponseWriter,
+	r *http.Request,
+) {
+	restmachinery.ServeRequest(
+		restmachinery.InboundRequest{
+			W: wr,
+			R: r,
+			EndpointLogic: func() (interface{}, error) {
+				return nil,
+					w.Service.Cleanup(r.Context(), mux.Vars(r)["eventID"])
 			},
 			SuccessCode: http.StatusOK,
 		},

@@ -901,6 +901,41 @@ func TestSubstrateStartJob(t *testing.T) {
 // and asserting we get no error-- so we at least get some test coverage for
 // this function. We'll have to make sure this behavior is well-covered by
 // integration or e2e tests in the future.
+func TestSubstrateDeleteJob(t *testing.T) {
+	const testEventID = "123456789"
+	const testJobName = "italian"
+	s := &substrate{
+		kubeClient: fake.NewSimpleClientset(),
+	}
+	err := s.DeleteJob(
+		context.Background(),
+		core.Project{
+			Kubernetes: &core.KubernetesDetails{
+				Namespace: "foo",
+			},
+		},
+		core.Event{
+			ObjectMeta: meta.ObjectMeta{
+				ID: testEventID,
+			},
+		},
+		testJobName,
+	)
+	require.NoError(t, err)
+}
+
+// TODO: Find a better way to test this. Unfortunately, the DeleteCollection
+// function on a *fake.ClientSet doesn't ACTUALLY delete collections of
+// resources based on the labels provided.
+//
+// Refer to: https://github.com/kubernetes/client-go/issues/609
+//
+// This makes it basically impossible to assert what we'd LIKE to assert here--
+// that resources labeled with the correct Event ID are deleted while other
+// resources are left alone. We'll settle for invoking DeleteWorkerAndJobs(...)
+// and asserting we get no error-- so we at least get some test coverage for
+// this function. We'll have to make sure this behavior is well-covered by
+// integration or e2e tests in the future.
 func TestSubstrateDeleteWorkerAndJobs(t *testing.T) {
 	s := &substrate{
 		kubeClient: fake.NewSimpleClientset(),

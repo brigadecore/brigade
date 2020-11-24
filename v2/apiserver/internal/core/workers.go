@@ -185,6 +185,9 @@ type WorkersService interface {
 		eventID string,
 		status WorkerStatus,
 	) error
+	// Cleanup removes Worker-related resources from the substrate, presumably
+	// upon completion, without deleting the Worker from the data store.
+	Cleanup(ctx context.Context, eventID string) error
 }
 
 type workersService struct {
@@ -261,6 +264,32 @@ func (w *workersService) UpdateStatus(
 		return errors.Wrapf(
 			err,
 			"error updating status of event %q worker in store",
+			eventID,
+		)
+	}
+	return nil
+}
+
+func (w *workersService) Cleanup(
+	ctx context.Context,
+	eventID string,
+) error {
+	event, err := w.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+	project, err := w.projectsStore.Get(ctx, event.ProjectID)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error retrieving project %q from store",
+			event.ProjectID,
+		)
+	}
+	if err = w.substrate.DeleteWorkerAndJobs(ctx, project, event); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting event %q worker and jobs from the substrate",
 			eventID,
 		)
 	}

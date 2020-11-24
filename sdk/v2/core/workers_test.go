@@ -149,3 +149,26 @@ func TestWorkersClientUpdateStatus(t *testing.T) {
 	)
 	require.NoError(t, err)
 }
+
+func TestWorkersClientCleanup(t *testing.T) {
+	const testEventID = "12345"
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				defer r.Body.Close()
+				require.Equal(t, http.MethodPut, r.Method)
+				require.Equal(
+					t,
+					fmt.Sprintf("/v2/events/%s/worker/cleanup", testEventID),
+					r.URL.Path,
+				)
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintln(w, "{}")
+			},
+		),
+	)
+	defer server.Close()
+	client := NewWorkersClient(server.URL, testAPIToken, nil)
+	err := client.Cleanup(context.Background(), testEventID)
+	require.NoError(t, err)
+}

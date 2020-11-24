@@ -160,6 +160,9 @@ type JobsService interface {
 		jobName string,
 		status JobStatus,
 	) error
+	// Cleanup removes Job-related resources from the substrate, presumably
+	// upon completion, without deleting the Job from the data store.
+	Cleanup(ctx context.Context, eventID, jobName string) error
 }
 
 type jobsService struct {
@@ -255,6 +258,41 @@ func (j *jobsService) UpdateStatus(
 		return errors.Wrapf(
 			err,
 			"error updating status of event %q worker job %q in store",
+			eventID,
+			jobName,
+		)
+	}
+	return nil
+}
+
+func (j *jobsService) Cleanup(
+	ctx context.Context,
+	eventID string,
+	jobName string,
+) error {
+	event, err := j.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+	_, ok := event.Worker.Jobs[jobName]
+	if !ok {
+		return &meta.ErrNotFound{
+			Type: "Job",
+			ID:   jobName,
+		}
+	}
+	project, err := j.projectsStore.Get(ctx, event.ProjectID)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error retrieving project %q from store",
+			event.ProjectID,
+		)
+	}
+	if err = j.substrate.DeleteJob(ctx, project, event, jobName); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting event %q jobs %q from the substrate",
 			eventID,
 			jobName,
 		)
