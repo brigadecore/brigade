@@ -133,6 +133,14 @@ type Substrate interface {
 		jobName string,
 	) error
 
+	// DeleteJob deletes all substrate resources pertaining to the specified Job.
+	DeleteJob(
+		ctx context.Context,
+		project Project,
+		event Event,
+		jobName string,
+	) error
+
 	// DeleteWorkerAndJobs deletes all substrate resources pertaining to the
 	// specified Event's Worker and Jobs.
 	DeleteWorkerAndJobs(context.Context, Project, Event) error

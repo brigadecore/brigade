@@ -217,6 +217,7 @@ type JobsClient interface {
 		jobName string,
 		status JobStatus,
 	) error
+	Cleanup(ctx context.Context, eventID, jobName string) error
 }
 
 type jobsClient struct {
@@ -344,6 +345,26 @@ func (j *jobsClient) UpdateStatus(
 			),
 			AuthHeaders: j.BearerTokenAuthHeaders(),
 			ReqBodyObj:  status,
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (j *jobsClient) Cleanup(
+	ctx context.Context,
+	eventID,
+	jobName string,
+) error {
+	return j.ExecuteRequest(
+		ctx,
+		rm.OutboundRequest{
+			Method: http.MethodPut,
+			Path: fmt.Sprintf(
+				"v2/events/%s/worker/jobs/%s/cleanup",
+				eventID,
+				jobName,
+			),
+			AuthHeaders: j.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)

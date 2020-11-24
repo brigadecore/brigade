@@ -250,6 +250,142 @@ func TestJobsServiceUpdateStatus(t *testing.T) {
 	}
 }
 
+func TestJobsServiceCleanup(t *testing.T) {
+	const testEventID = "123456789"
+	const testJobName = "italian"
+	testCases := []struct {
+		name       string
+		service    JobsService
+		assertions func(error)
+	}{
+		{
+			name: "error getting event from store",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "event has no such job",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotFound{}, err)
+			},
+		},
+		{
+			name: "error getting project from store",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: map[string]Job{
+									testJobName: {},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving project")
+			},
+		},
+		{
+			name: "error deleting job from substrate",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: map[string]Job{
+									testJobName: {},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				substrate: &mockSubstrate{
+					DeleteJobFn: func(context.Context, Project, Event, string) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error deleting event")
+			},
+		},
+		{
+			name: "error deleting job from substrate",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: map[string]Job{
+									testJobName: {},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				substrate: &mockSubstrate{
+					DeleteJobFn: func(context.Context, Project, Event, string) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.service.Cleanup(
+				context.Background(),
+				testEventID,
+				testJobName,
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
 type mockJobsStore struct {
 	UpdateStatusFn func(
 		ctx context.Context,
