@@ -272,6 +272,29 @@ func TestWorkersServiceCleanup(t *testing.T) {
 				require.Contains(t, err.Error(), "error deleting event")
 			},
 		},
+		{
+			name: "success",
+			service: &workersService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				substrate: &mockSubstrate{
+					DeleteWorkerAndJobsFn: func(context.Context, Project, Event) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
