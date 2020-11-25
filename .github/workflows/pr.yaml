@@ -1,0 +1,16 @@
+name: Brigade v2 PR
+
+on:
+  pull_request:
+    branches:
+    - v2
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build Windows logger agent
+        run: docker build - < v2/logger/Dockerfile.winserv-2019
