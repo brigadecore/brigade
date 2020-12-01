@@ -177,6 +177,66 @@ worker:
 
   workspaceStorageClass: nfs
 
+logger:
+
+  linux:
+
+    image:
+      repository: brigadecore/brigade-logger-linux
+      ## tag should only be specified if you want to override Chart.appVersion
+      ## The default tag is the value of .Chart.AppVersion
+      # tag:
+      pullPolicy: IfNotPresent
+
+    resources: {}
+      # We usually recommend not to specify default resources and to leave this
+      # as a conscious choice for the user. This also increases chances charts
+      # run on environments with little resources, such as Minikube. If you do
+      # want to specify resources, uncomment the following lines, adjust them as
+      # necessary, and remove the curly braces after 'resources:'.
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+
+    nodeSelector:
+      beta.kubernetes.io/os: linux
+
+    tolerations: []
+
+  windows:
+
+    image:
+      repository: brigadecore/brigade-logger-windows
+      ## tag should only be specified if you want to override Chart.appVersion
+      ## The default tag is the value of .Chart.AppVersion
+      # tag:
+      pullPolicy: IfNotPresent
+
+    resources: {}
+      # We usually recommend not to specify default resources and to leave this
+      # as a conscious choice for the user. This also increases chances charts
+      # run on environments with little resources, such as Minikube. If you do
+      # want to specify resources, uncomment the following lines, adjust them as
+      # necessary, and remove the curly braces after 'resources:'.
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+
+    nodeSelector:
+      beta.kubernetes.io/os: windows
+
+    tolerations:
+    - effect: NoSchedule
+      key: os
+      operator: Equal
+      value: windows
+
 externalMongodb:
 
   isCosmosdb: false

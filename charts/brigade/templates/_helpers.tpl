@@ -36,6 +36,18 @@ If release name contains chart name it will be used as a full name.
 {{ include "brigade.fullname" . | printf "%s-artemis" }}
 {{- end -}}
 
+{{- define "brigade.logger.fullname" -}}
+{{ include "brigade.fullname" . | printf "%s-logger" }}
+{{- end -}}
+
+{{- define "brigade.logger.linux.fullname" -}}
+{{ include "brigade.logger.fullname" . | printf "%s-linux" }}
+{{- end -}}
+
+{{- define "brigade.logger.windows.fullname" -}}
+{{ include "brigade.logger.fullname" . | printf "%s-windows" }}
+{{- end -}}
+
 {{/*
 Create chart name and version as used by the chart label.
 */}}
@@ -87,6 +99,20 @@ app.kubernetes.io/role: primary
 {{- define "brigade.artemis.secondary.labels" -}}
 {{ include "brigade.artemis.labels" . }}
 app.kubernetes.io/role: secondary
+{{- end -}}
+
+{{- define "brigade.logger.labels" -}}
+app.kubernetes.io/component: logger
+{{- end -}}
+
+{{- define "brigade.logger.linux.labels" -}}
+{{ include "brigade.logger.labels" . }}
+app.kubernetes.io/os: linux
+{{- end -}}
+
+{{- define "brigade.logger.windows.labels" -}}
+{{ include "brigade.logger.labels" . }}
+app.kubernetes.io/os: windows
 {{- end -}}
 
 {{- define "call-nested" }}

@@ -101,6 +101,13 @@ build: build-images xbuild-cli
 .PHONY: build-images
 build-images: build-apiserver build-scheduler build-observer
 
+.PHONY: build-logger-linux
+build-logger-linux:
+	docker build \
+		-t $(DOCKER_IMAGE_PREFIX)brigade-logger-linux:$(IMMUTABLE_DOCKER_TAG) \
+		- < v2/logger/Dockerfile.linux
+	docker tag $(DOCKER_IMAGE_PREFIX)brigade-logger-linux:$(IMMUTABLE_DOCKER_TAG) $(DOCKER_IMAGE_PREFIX)brigade-logger-linux:$(MUTABLE_DOCKER_TAG)
+
 .PHONY: build-%
 build-%:
 	docker build \
@@ -132,6 +139,7 @@ xbuild-cli:
 	'
 
 .PHONY: push-images
+push-images: push-apiserver push-scheduler push-observer push-logger-linux
 push-images: push-apiserver push-scheduler push-observer
 
 .PHONY: push-%
@@ -161,3 +169,7 @@ hack: push-images build-cli
 		--set observer.image.repository=$(DOCKER_IMAGE_PREFIX)brigade-observer \
 		--set observer.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set observer.image.pullPolicy=Always
+		--set observer.image.pullPolicy=Always \
+		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)brigade-logger-linux \
+		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
+		--set logger.linux.image.pullPolicy=Always
