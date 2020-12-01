@@ -1,0 +1,141 @@
+package kubernetes
+
+import (
+	"bufio"
+	"context"
+	"fmt"
+	"io"
+	"strings"
+	"time"
+
+	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
+	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+)
+
+// logsStore is a Kubernetes-based implementation of the core.LogsStore
+// interface.
+type logsStore struct {
+	kubeClient kubernetes.Interface
+}
+
+// NewLogsStore returns a Kubernetes-based implementation of the core.LogsStore
+// interface. It can stream logs directly from a Worker or Job's underlying pod.
+// In practice, this is useful for very near-term retrieval of Worker and Job
+// logs without incurring the latency inherent in other implementations that
+// rely on a log aggregator having forwarded and stored log entries. This
+// implementation will error, however, once the relevant pod has been deleted.
+// Callers should be prepared to fall back on another implementation of the
+// core.LogsStore interface, with the assumption that by the time a Worker's or
+// Job's pod has been deleted, all of its logs have been aggregated and stored.
+func NewLogsStore(kubeClient kubernetes.Interface) core.LogsStore {
+	return &logsStore{
+		kubeClient: kubeClient,
+	}
+}
+
+func (l *logsStore) StreamLogs(
+	ctx context.Context,
+	project core.Project,
+	event core.Event,
+	selector core.LogsSelector,
+	opts core.LogStreamOptions,
+) (<-chan core.LogEntry, error) {
+	podName, containerName := criteriaFromSelector(event.ID, selector)
+
+	req := l.kubeClient.CoreV1().Pods(project.Kubernetes.Namespace).GetLogs(
+		podName,
+		&v1.PodLogOptions{
+			Container:  containerName,
+			Timestamps: true,
+		},
+	)
+	podLogs, err := req.Stream(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(
+			err,
+			"error opening log stream for pod %q in namespace %q",
+			podName,
+			project.Kubernetes.Namespace,
+		)
+	}
+
+	logEntryCh := make(chan core.LogEntry)
+
+	go func() {
+		defer podLogs.Close()
+		defer close(logEntryCh)
+		buffer := bufio.NewReader(podLogs)
+		for {
+			logEntry := core.LogEntry{}
+			logLine, err := buffer.ReadString('\n')
+			if err == io.EOF {
+				break
+			}
+			// The last character should be a newline that we don't want, so let's
+			// remove that
+			logLine = logLine[:len(logLine)-1]
+			logLineParts := strings.SplitN(logLine, " ", 2)
+			if len(logLineParts) == 2 {
+				timeStr := logLineParts[0]
+				t, err := time.Parse(time.RFC3339, timeStr)
+				if err == nil {
+					logEntry.Time = &t
+				}
+				logEntry.Message = logLineParts[1]
+			} else {
+				logEntry.Message = logLine
+			}
+			select {
+			case logEntryCh <- logEntry:
+			case <-ctx.Done():
+				return
+			}
+		}
+		podLogs.Close()
+		if opts.Follow {
+			// If following, we let this goroutine hang until the context times out or
+			// is canceled. Why? When logs are followed from COLD storage (e.g.
+			// MongoDB) we never know whether the log aggregator has stored all the
+			// logs we're trying to stream, so we don't disconnect since there's a
+			// possibility there is more coming. We leave it up to the client to
+			// decide to disconnect. For consistency, we're leaving it up to the
+			// client to disconnect here as well. We can revisit this if we can make
+			// the COLD log storage smarter about knowing when it has reached the end
+			// of a stream, in which case both warm and cold storage could both
+			// disconnect when the end of a stream is reached and they would still be
+			// consistent with one another.
+			<-ctx.Done()
+		}
+	}()
+
+	return logEntryCh, nil
+}
+
+func criteriaFromSelector(
+	eventID string,
+	selector core.LogsSelector,
+) (string, string) {
+	var podName, containerName string
+	// If no job was specified, we want worker logs
+	if selector.Job == "" {
+		podName = fmt.Sprintf("worker-%s", eventID)
+		// If no container was specified, we want the "worker" container
+		if selector.Container == "" {
+			containerName = "worker"
+		} else { // We want the one specified
+			containerName = selector.Container
+		}
+	} else { // We want job logs
+		podName = fmt.Sprintf("job-%s-%s", eventID, selector.Job)
+		// If no container was specified, we want the one with the same name as the
+		// job
+		if selector.Container == "" {
+			containerName = selector.Job
+		} else { // We want the one specified
+			containerName = selector.Container
+		}
+	}
+	return podName, containerName
+}
