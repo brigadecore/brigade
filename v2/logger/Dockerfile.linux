@@ -1,3 +1,6 @@
+# This Dockerfile builds a custom Fluentd image that layers in the Fluentd
+# plugins we rely upon on top of a standard Fluentd image.
+
 FROM fluent/fluentd:v1.11.5-debian-1.0
 
 USER root

@@ -1,3 +1,17 @@
+# This Dockerfile builds a custom Fluentd image for Windows. It is significantly
+# derived from a Dockerfile maintained by the Fluentd project:
+#
+# https://github.com/fluent/fluentd-docker-image/blob/master/v1.11/windows/Dockerfile
+#
+# That upstream Dockerfile, however, builds an image derived from the
+# mcr.microsoft.com/windows/servercore:1903 base image. The resulting image is
+# incompatible with the kernel on AKS Windows nodes. Ours builds on top of
+# mcr.microsoft.com/windows/servercore:ltsc2019 instead to ensure AKS
+# compatibility.
+#
+# Additionally, this Dockerfile layers in all the Fluentd plugins upon which we
+# depend.
+
 FROM mcr.microsoft.com/windows/servercore:ltsc2019
 
 RUN powershell -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"

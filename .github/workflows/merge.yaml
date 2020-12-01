@@ -12,6 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      # TODO: We should also publish the image
       - name: Build Windows logger agent
         run: |
           docker build -f v2/logger/Dockerfile.winserv-2019 v2/logger
