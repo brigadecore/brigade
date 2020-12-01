@@ -52,7 +52,11 @@ function buildObserver() {
   return buildImage("observer");
 }
 
-// Build the API server
+// Build the Linux logging agent
+function buildLoggerLinux() {
+  return buildImage("logger-linux");
+}
+
 function buildImage(imageName) {
   var job = new Job(`build-${imageName}`, dockerImg);
   job.mountPath = localPath;
@@ -94,6 +98,7 @@ function runSuite(e, p) {
     run(e, p, buildAPIServer).catch((err) => { return err }),
     run(e, p, buildScheduler).catch((err) => { return err }),
     run(e, p, buildObserver).catch((err) => { return err }),
+    run(e, p, buildLoggerLinux).catch((err) => { return err }),
     run(e, p, buildCLI).catch((err) => { return err })
   ]).then((values) => {
     values.forEach((value) => {
@@ -117,6 +122,8 @@ function runCheck(e, p) {
       return run(e, p, buildScheduler);
     case "build-observer":
       return run(e, p, buildObserver);
+    case "build-logger-linux":
+      return run(e, p, buildLoggerLinux);
     case "build-cli":
       return run(e, p, buildCLI);
     default:
