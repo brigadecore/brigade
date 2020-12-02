@@ -140,7 +140,6 @@ xbuild-cli:
 
 .PHONY: push-images
 push-images: push-apiserver push-scheduler push-observer push-logger-linux
-push-images: push-apiserver push-scheduler push-observer
 
 .PHONY: push-%
 push-%: build-%
