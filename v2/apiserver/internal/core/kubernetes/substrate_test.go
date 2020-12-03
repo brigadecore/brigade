@@ -3,7 +3,6 @@ package kubernetes
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -557,7 +556,7 @@ func TestSubstrateScheduleWorker(t *testing.T) {
 					context.Background(),
 					&corev1.Secret{
 						ObjectMeta: v1.ObjectMeta{
-							Name: fmt.Sprintf("event-%s", testEventID),
+							Name: myk8s.EventSecretName(testEventID),
 						},
 					},
 					v1.CreateOptions{},
@@ -1002,7 +1001,7 @@ func TestSubstrateCreateWorkspacePVC(t *testing.T) {
 					context.Background(),
 					&corev1.PersistentVolumeClaim{
 						ObjectMeta: v1.ObjectMeta{
-							Name: fmt.Sprintf("workspace-%s", testEventID),
+							Name: myk8s.WorkspacePVCName(testEventID),
 						},
 					},
 					v1.CreateOptions{},
@@ -1039,7 +1038,7 @@ func TestSubstrateCreateWorkspacePVC(t *testing.T) {
 					testProject.Kubernetes.Namespace,
 				).Get(
 					context.Background(),
-					fmt.Sprintf("workspace-%s", testEventID),
+					myk8s.WorkspacePVCName(testEventID),
 					v1.GetOptions{},
 				)
 				require.NoError(t, err)
@@ -1103,7 +1102,7 @@ func TestSubstrateCreateWorkerPod(t *testing.T) {
 					context.Background(),
 					&corev1.Pod{
 						ObjectMeta: v1.ObjectMeta{
-							Name: fmt.Sprintf("worker-%s", testEvent.ID),
+							Name: myk8s.WorkerPodName(testEvent.ID),
 						},
 					},
 					v1.CreateOptions{},
@@ -1131,7 +1130,7 @@ func TestSubstrateCreateWorkerPod(t *testing.T) {
 					testProject.Kubernetes.Namespace,
 				).Get(
 					context.Background(),
-					fmt.Sprintf("worker-%s", testEvent.ID),
+					myk8s.WorkerPodName(testEvent.ID),
 					v1.GetOptions{},
 				)
 				require.NoError(t, err)
@@ -1198,7 +1197,7 @@ func TestSubstrateCreateJobSecret(t *testing.T) {
 					context.Background(),
 					&corev1.Secret{
 						ObjectMeta: v1.ObjectMeta{
-							Name: fmt.Sprintf("job-%s-%s", testEvent.ID, testJobName),
+							Name: myk8s.JobSecretName(testEvent.ID, testJobName),
 						},
 					},
 					v1.CreateOptions{},
@@ -1226,7 +1225,7 @@ func TestSubstrateCreateJobSecret(t *testing.T) {
 					testProject.Kubernetes.Namespace,
 				).Get(
 					context.Background(),
-					fmt.Sprintf("job-%s-%s", testEvent.ID, testJobName),
+					myk8s.JobSecretName(testEvent.ID, testJobName),
 					v1.GetOptions{},
 				)
 				require.NoError(t, err)
@@ -1319,7 +1318,7 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 					context.Background(),
 					&corev1.Pod{
 						ObjectMeta: v1.ObjectMeta{
-							Name: fmt.Sprintf("job-%s-%s", testEvent.ID, testJobName),
+							Name: myk8s.JobPodName(testEvent.ID, testJobName),
 						},
 					},
 					v1.CreateOptions{},
@@ -1347,7 +1346,7 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 					testProject.Kubernetes.Namespace,
 				).Get(
 					context.Background(),
-					fmt.Sprintf("job-%s-%s", testEvent.ID, testJobName),
+					myk8s.JobPodName(testEvent.ID, testJobName),
 					v1.GetOptions{},
 				)
 				require.NoError(t, err)

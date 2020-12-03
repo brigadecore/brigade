@@ -167,7 +167,7 @@ hack: push-images build-cli
 		--set scheduler.image.pullPolicy=Always \
 		--set observer.image.repository=$(DOCKER_IMAGE_PREFIX)brigade-observer \
 		--set observer.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set observer.image.pullPolicy=Always
+		--set observer.image.pullPolicy=Always \
 		--set observer.image.pullPolicy=Always \
 		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)brigade-logger-linux \
 		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \

@@ -38,6 +38,7 @@ func main() {
 	}
 
 	// Data stores
+	var coolLogsStore core.LogsStore
 	var eventsStore core.EventsStore
 	var jobsStore core.JobsStore
 	var projectsStore core.ProjectsStore
@@ -45,12 +46,14 @@ func main() {
 	var serviceAccountsStore authx.ServiceAccountsStore
 	var sessionsStore authx.SessionsStore
 	var usersStore authx.UsersStore
+	var warmLogsStore core.LogsStore
 	var workersStore core.WorkersStore
 	{
 		database, err := database(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}
+		coolLogsStore = coreMongodb.NewLogsStore(database)
 		eventsStore, err = coreMongodb.NewEventsStore(database)
 		if err != nil {
 			log.Fatal(err)
@@ -76,6 +79,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		warmLogsStore = coreKubernetes.NewLogsStore(kubeClient)
 		workersStore, err = coreMongodb.NewWorkersStore(database)
 		if err != nil {
 			log.Fatal(err)
@@ -115,6 +119,14 @@ func main() {
 		eventsStore,
 		jobsStore,
 		substrate,
+	)
+
+	// Logs service
+	logsService := core.NewLogsService(
+		projectsStore,
+		eventsStore,
+		warmLogsStore,
+		coolLogsStore,
 	)
 
 	// Projects service
@@ -186,6 +198,10 @@ func main() {
 						"file:///brigade/schemas/job-status.json",
 					),
 					Service: jobsService,
+				},
+				&coreREST.LogsEndpoints{
+					AuthFilter: authFilter,
+					Service:    logsService,
 				},
 				&coreREST.ProjectsEndpoints{
 					AuthFilter: authFilter,
