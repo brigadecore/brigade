@@ -286,6 +286,7 @@ var eventCommand = &cli.Command{
 			},
 			Action: eventList,
 		},
+		logsCommand,
 	},
 }
 
