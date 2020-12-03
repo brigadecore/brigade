@@ -3,12 +3,12 @@ package kubernetes
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io"
 	"strings"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
+	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -120,7 +120,7 @@ func criteriaFromSelector(
 	var podName, containerName string
 	// If no job was specified, we want worker logs
 	if selector.Job == "" {
-		podName = fmt.Sprintf("worker-%s", eventID)
+		podName = myk8s.WorkerPodName(eventID)
 		// If no container was specified, we want the "worker" container
 		if selector.Container == "" {
 			containerName = "worker"
@@ -128,7 +128,7 @@ func criteriaFromSelector(
 			containerName = selector.Container
 		}
 	} else { // We want job logs
-		podName = fmt.Sprintf("job-%s-%s", eventID, selector.Job)
+		podName = myk8s.JobPodName(eventID, selector.Job)
 		// If no container was specified, we want the one with the same name as the
 		// job
 		if selector.Container == "" {

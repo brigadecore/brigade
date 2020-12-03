@@ -431,7 +431,7 @@ func (s *substrate) ScheduleWorker(
 		ctx,
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("event-%s", event.ID),
+				Name: myk8s.EventSecretName(event.ID),
 				Labels: map[string]string{
 					myk8s.LabelComponent: "event",
 					myk8s.LabelProject:   event.ProjectID,
@@ -716,7 +716,7 @@ func (s *substrate) createWorkspacePVC(
 
 	workspacePVC := corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("workspace-%s", event.ID),
+			Name:      myk8s.WorkspacePVCName(event.ID),
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
 				myk8s.LabelComponent: "workspace",
@@ -788,7 +788,7 @@ func (s *substrate) createWorkerPod(
 			Name: "event",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: fmt.Sprintf("event-%s", event.ID),
+					SecretName: myk8s.EventSecretName(event.ID),
 				},
 			},
 		},
@@ -800,7 +800,7 @@ func (s *substrate) createWorkerPod(
 				Name: "workspace",
 				VolumeSource: corev1.VolumeSource{
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: fmt.Sprintf("workspace-%s", event.ID),
+						ClaimName: myk8s.WorkspacePVCName(event.ID),
 					},
 				},
 			},
@@ -875,7 +875,7 @@ func (s *substrate) createWorkerPod(
 						ValueFrom: &corev1.EnvVarSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: fmt.Sprintf("event-%s", event.ID),
+									Name: myk8s.EventSecretName(event.ID),
 								},
 								Key: "gitSSHKey",
 							},
@@ -886,7 +886,7 @@ func (s *substrate) createWorkerPod(
 						ValueFrom: &corev1.EnvVarSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: fmt.Sprintf("event-%s", event.ID),
+									Name: myk8s.EventSecretName(event.ID),
 								},
 								Key: "gitSSHCert",
 							},
@@ -918,7 +918,7 @@ func (s *substrate) createWorkerPod(
 
 	workerPod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("worker-%s", event.ID),
+			Name:      myk8s.WorkerPodName(event.ID),
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
 				myk8s.LabelComponent: "worker",
@@ -972,7 +972,7 @@ func (s *substrate) createJobSecret(
 
 	jobSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("job-%s-%s", event.ID, jobName),
+			Name:      myk8s.JobSecretName(event.ID, jobName),
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
 				myk8s.LabelComponent: "job",
@@ -1058,7 +1058,7 @@ func (s *substrate) createJobPod(
 				Name: "workspace",
 				VolumeSource: corev1.VolumeSource{
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: fmt.Sprintf("workspace-%s", event.ID),
+						ClaimName: myk8s.WorkspacePVCName(event.ID),
 					},
 				},
 			},
@@ -1124,7 +1124,7 @@ func (s *substrate) createJobPod(
 						ValueFrom: &corev1.EnvVarSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: fmt.Sprintf("event-%s", event.ID),
+									Name: myk8s.EventSecretName(event.ID),
 								},
 								Key: "gitSSHKey",
 							},
@@ -1135,7 +1135,7 @@ func (s *substrate) createJobPod(
 						ValueFrom: &corev1.EnvVarSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: fmt.Sprintf("event-%s", event.ID),
+									Name: myk8s.EventSecretName(event.ID),
 								},
 								Key: "gitSSHCert",
 							},
@@ -1180,7 +1180,7 @@ func (s *substrate) createJobPod(
 
 	jobPod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("job-%s-%s", event.ID, jobName),
+			Name:      myk8s.JobPodName(event.ID, jobName),
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
 				myk8s.LabelComponent: "job",
@@ -1238,7 +1238,7 @@ func getContainerFromSpec(
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: fmt.Sprintf("job-%s-%s", eventID, jobName),
+						Name: myk8s.JobSecretName(eventID, jobName),
 					},
 					Key: fmt.Sprintf("%s.%s", containerName, key),
 				},

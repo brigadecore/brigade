@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
+	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -25,6 +26,7 @@ func TestLogStoreStreamLogs(t *testing.T) {
 
 func TestCriteriaFromSelector(t *testing.T) {
 	const testEventID = "123456789"
+	const testJobName = "italian"
 	testCases := []struct {
 		name                  string
 		selector              core.LogsSelector
@@ -34,7 +36,7 @@ func TestCriteriaFromSelector(t *testing.T) {
 		{
 			name:                  "job not specified, container not specified",
 			selector:              core.LogsSelector{},
-			expectedPodName:       "worker-123456789",
+			expectedPodName:       myk8s.WorkerPodName(testEventID),
 			expectedContainerName: "worker",
 		},
 		{
@@ -42,24 +44,24 @@ func TestCriteriaFromSelector(t *testing.T) {
 			selector: core.LogsSelector{
 				Container: "helper",
 			},
-			expectedPodName:       "worker-123456789",
+			expectedPodName:       myk8s.WorkerPodName(testEventID),
 			expectedContainerName: "helper",
 		},
 		{
 			name: "job specified, container not specified",
 			selector: core.LogsSelector{
-				Job: "italian",
+				Job: testJobName,
 			},
-			expectedPodName:       "job-123456789-italian",
-			expectedContainerName: "italian",
+			expectedPodName:       myk8s.JobPodName(testEventID, testJobName),
+			expectedContainerName: testJobName,
 		},
 		{
 			name: "job specified, container specified",
 			selector: core.LogsSelector{
-				Job:       "italian",
+				Job:       testJobName,
 				Container: "helper",
 			},
-			expectedPodName:       "job-123456789-italian",
+			expectedPodName:       myk8s.JobPodName(testEventID, testJobName),
 			expectedContainerName: "helper",
 		},
 	}
