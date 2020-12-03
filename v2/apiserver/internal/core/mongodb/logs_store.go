@@ -20,7 +20,7 @@ type logsStore struct {
 
 // NewLogsStore returns a MongoDB-based implementation of the core.LogsStore
 // interface. This implementation relies on a log aggregator having forwarded
-// and stored log entries-- a process which necessary introduces some latency.
+// and stored log entries-- a process which necessarily introduces some latency.
 // Callers should favor another implementation of the core.LogsStore interface
 // and fall back on this implementation when the other fails.
 func NewLogsStore(database *mongo.Database) core.LogsStore {
