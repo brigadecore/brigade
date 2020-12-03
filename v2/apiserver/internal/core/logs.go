@@ -105,10 +105,51 @@ func (l *logsService) Stream(
 	selector LogsSelector,
 	opts LogStreamOptions,
 ) (<-chan LogEntry, error) {
+	// Set defaults on the selector
+	if selector.Job == "" { // If a job isn't specified, then we want worker logs
+		if selector.Container == "" {
+			// If a container isn't specified, we want the one named "worker"
+			selector.Container = "worker"
+		}
+		// These are the only legitimate container names for ANY worker
+		if selector.Container != "worker" && selector.Container != "vcs" {
+			// Any other container name is an error
+			return nil, &meta.ErrNotFound{
+				Type: "WorkerContainer",
+				ID:   selector.Container,
+			}
+		}
+	} else { // A job was specified, so we want job logs
+		if selector.Container == "" {
+			// If a container isn't specified, we want the primary container's logs.
+			// The primary container has the same name as the job itself.
+			selector.Container = selector.Job
+		}
+	}
+
 	event, err := l.eventsStore.Get(ctx, eventID)
 	if err != nil {
 		return nil,
 			errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+
+	if selector.Job != "" {
+		// Make sure the job exists
+		job, ok := event.Worker.Jobs[selector.Job]
+		if !ok {
+			return nil, &meta.ErrNotFound{
+				Type: "Job",
+				ID:   selector.Job,
+			}
+		}
+		if selector.Container != selector.Job {
+			if _, ok = job.Spec.SidecarContainers[selector.Container]; !ok {
+				return nil, &meta.ErrNotFound{
+					Type: "JobContainer",
+					ID:   selector.Container,
+				}
+			}
+		}
 	}
 
 	project, err := l.projectsStore.Get(ctx, event.ProjectID)
@@ -121,10 +162,15 @@ func (l *logsService) Stream(
 			)
 	}
 
-	// Try warm logs first and fall back on cooler logs if necessary
 	logCh, err := l.warmLogsStore.StreamLogs(ctx, project, event, selector, opts)
 	if err != nil {
-		logCh, err = l.coolLogsStore.StreamLogs(ctx, project, event, selector, opts)
+		// If the issue is simply that the warmLogsStore couldn't find the logs
+		// (realistically, this is because the underlying pod no longer exists),
+		// then fall back to the coolLogsStore.
+		if _, ok := errors.Cause(err).(*meta.ErrNotFound); ok {
+			logCh, err =
+				l.coolLogsStore.StreamLogs(ctx, project, event, selector, opts)
+		}
 	}
 	return logCh, err
 }

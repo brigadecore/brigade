@@ -118,26 +118,12 @@ func criteriaFromSelector(
 	criteria := bson.M{
 		"event": eventID,
 	}
-
-	// If no job was specified, we want worker logs
-	if selector.Job == "" {
+	if selector.Job == "" { // We want worker logs
 		criteria["component"] = "worker"
-		// If no container was specified, we want the "worker" container
-		if selector.Container == "" {
-			criteria["container"] = "worker"
-		} else { // We want the one specified
-			criteria["container"] = selector.Container
-		}
 	} else { // We want job logs
 		criteria["component"] = "job"
-		// If no container was specified, we want the one with the same name as the
-		// job
-		if selector.Container == "" {
-			criteria["container"] = selector.Job
-		} else { // We want the one specified
-			criteria["container"] = selector.Container
-		}
+		criteria["job"] = selector.Job
 	}
-
+	criteria["container"] = selector.Container
 	return criteria
 }

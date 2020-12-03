@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,10 +35,70 @@ func TestLogsServiceStream(t *testing.T) {
 	testCases := []struct {
 		name       string
 		service    LogsService
+		selector   LogsSelector
 		assertions func(<-chan LogEntry, error)
 	}{
 		{
-			name: "error retrieving event from store",
+			name: "invalid worker container name",
+			selector: LogsSelector{
+				Container: "foo",
+			},
+			service: &logsService{},
+			assertions: func(_ <-chan LogEntry, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotFound{}, err)
+				require.Equal(t, "WorkerContainer", err.(*meta.ErrNotFound).Type)
+				require.Equal(t, "foo", err.(*meta.ErrNotFound).ID)
+			},
+		},
+		{
+			name: "invalid job name",
+			selector: LogsSelector{
+				Job: "foo",
+			},
+			service: &logsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+			},
+			assertions: func(_ <-chan LogEntry, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotFound{}, err)
+				require.Equal(t, "Job", err.(*meta.ErrNotFound).Type)
+				require.Equal(t, "foo", err.(*meta.ErrNotFound).ID)
+			},
+		},
+		{
+			name: "invalid job container name",
+			selector: LogsSelector{
+				Job:       "foo",
+				Container: "bar",
+			},
+			service: &logsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: map[string]Job{
+									"foo": {},
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(_ <-chan LogEntry, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotFound{}, err)
+				require.Equal(t, "JobContainer", err.(*meta.ErrNotFound).Type)
+				require.Equal(t, "bar", err.(*meta.ErrNotFound).ID)
+			},
+		},
+		{
+			name:     "error retrieving event from store",
+			selector: LogsSelector{},
 			service: &logsService{
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
@@ -52,7 +113,8 @@ func TestLogsServiceStream(t *testing.T) {
 			},
 		},
 		{
-			name: "error retrieving project from store",
+			name:     "error retrieving project from store",
+			selector: LogsSelector{},
 			service: &logsService{
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
@@ -72,7 +134,8 @@ func TestLogsServiceStream(t *testing.T) {
 			},
 		},
 		{
-			name: "warm logs succeed",
+			name:     "warm logs succeed",
+			selector: LogsSelector{},
 			service: &logsService{
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
@@ -114,7 +177,8 @@ func TestLogsServiceStream(t *testing.T) {
 			},
 		},
 		{
-			name: "cool logs succeed",
+			name:     "warm logs store has unexpected error",
+			selector: LogsSelector{},
 			service: &logsService{
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
@@ -137,6 +201,38 @@ func TestLogsServiceStream(t *testing.T) {
 						return nil, errors.New("something went wrong")
 					},
 				},
+			},
+			assertions: func(logCh <-chan LogEntry, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+			},
+		},
+		{
+			name:     "cool logs succeed",
+			selector: LogsSelector{},
+			service: &logsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				warmLogsStore: &mockLogsStore{
+					StreamLogsFn: func(
+						context.Context,
+						Project,
+						Event,
+						LogsSelector,
+						LogStreamOptions,
+					) (<-chan LogEntry, error) {
+						// This error will signal the service to fall back to cool logs
+						return nil, &meta.ErrNotFound{}
+					},
+				},
 				coolLogsStore: &mockLogsStore{
 					StreamLogsFn: func(
 						context.Context,
@@ -155,7 +251,8 @@ func TestLogsServiceStream(t *testing.T) {
 			},
 		},
 		{
-			name: "warm and cool logs both fail",
+			name:     "warm and cool logs both fail",
+			selector: LogsSelector{},
 			service: &logsService{
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
@@ -201,7 +298,7 @@ func TestLogsServiceStream(t *testing.T) {
 			logCh, err := testCase.service.Stream(
 				context.Background(),
 				testEventID,
-				LogsSelector{},
+				testCase.selector,
 				LogStreamOptions{},
 			)
 			testCase.assertions(logCh, err)

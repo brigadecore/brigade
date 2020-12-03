@@ -23,52 +23,39 @@ func TestLogStoreStreamLogs(t *testing.T) {
 
 func TestCriteriaFromSelector(t *testing.T) {
 	const testEventID = "123456789"
+	const testJobName = "italian"
+	const testContainerName = "foo"
 	testCases := []struct {
 		name             string
 		selector         core.LogsSelector
 		expectedCriteria bson.M
 	}{
 		{
-			name:     "job not specified, container not specified",
-			selector: core.LogsSelector{},
-			expectedCriteria: bson.M{
-				"event":     testEventID,
-				"component": "worker",
-				"container": "worker",
-			},
-		},
-		{
-			name: "job not specified, container specified",
+			name: "job not specified",
 			selector: core.LogsSelector{
-				Container: "helper",
+				// The service layer will ALWAYS have set this field if it wasn't set
+				// already.
+				Container: testContainerName,
 			},
 			expectedCriteria: bson.M{
 				"event":     testEventID,
 				"component": "worker",
-				"container": "helper",
+				"container": testContainerName,
 			},
 		},
 		{
-			name: "job specified, container not specified",
+			name: "job specified",
 			selector: core.LogsSelector{
-				Job: "italian",
+				Job: testJobName,
+				// The service layer will ALWAYS have set this field if it wasn't set
+				// already.
+				Container: testContainerName,
 			},
 			expectedCriteria: bson.M{
 				"event":     testEventID,
 				"component": "job",
-				"container": "italian",
-			},
-		},
-		{
-			name: "job specified, container specified",
-			selector: core.LogsSelector{
-				Job:       "italian",
-				Container: "helper",
-			},
-			expectedCriteria: bson.M{
-				"event":     testEventID,
-				"component": "job",
-				"container": "helper",
+				"job":       testJobName,
+				"container": testContainerName,
 			},
 		},
 	}

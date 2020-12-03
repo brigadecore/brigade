@@ -4,13 +4,16 @@ import (
 	"bufio"
 	"context"
 	"io"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -42,17 +45,25 @@ func (l *logsStore) StreamLogs(
 	selector core.LogsSelector,
 	opts core.LogStreamOptions,
 ) (<-chan core.LogEntry, error) {
-	podName, containerName := criteriaFromSelector(event.ID, selector)
+	podName := podNameFromSelector(event.ID, selector)
 
 	req := l.kubeClient.CoreV1().Pods(project.Kubernetes.Namespace).GetLogs(
 		podName,
 		&v1.PodLogOptions{
-			Container:  containerName,
+			Container:  selector.Container,
 			Timestamps: true,
 		},
 	)
 	podLogs, err := req.Stream(ctx)
 	if err != nil {
+		if statusErr, ok := err.(*k8sErrors.StatusError); ok {
+			if statusErr.Status().Code == http.StatusNotFound {
+				err = &meta.ErrNotFound{
+					Type: "Pod",
+					ID:   podName,
+				}
+			}
+		}
 		return nil, errors.Wrapf(
 			err,
 			"error opening log stream for pod %q in namespace %q",
@@ -113,29 +124,9 @@ func (l *logsStore) StreamLogs(
 	return logEntryCh, nil
 }
 
-func criteriaFromSelector(
-	eventID string,
-	selector core.LogsSelector,
-) (string, string) {
-	var podName, containerName string
-	// If no job was specified, we want worker logs
-	if selector.Job == "" {
-		podName = myk8s.WorkerPodName(eventID)
-		// If no container was specified, we want the "worker" container
-		if selector.Container == "" {
-			containerName = "worker"
-		} else { // We want the one specified
-			containerName = selector.Container
-		}
-	} else { // We want job logs
-		podName = myk8s.JobPodName(eventID, selector.Job)
-		// If no container was specified, we want the one with the same name as the
-		// job
-		if selector.Container == "" {
-			containerName = selector.Job
-		} else { // We want the one specified
-			containerName = selector.Container
-		}
+func podNameFromSelector(eventID string, selector core.LogsSelector) string {
+	if selector.Job == "" { // We want worker logs
+		return myk8s.WorkerPodName(eventID)
 	}
-	return podName, containerName
+	return myk8s.JobPodName(eventID, selector.Job) // We want job logs
 }

@@ -24,53 +24,31 @@ func TestLogStoreStreamLogs(t *testing.T) {
 	// require.Fail(t, "test me")
 }
 
-func TestCriteriaFromSelector(t *testing.T) {
+func TestPodNameFromSelector(t *testing.T) {
 	const testEventID = "123456789"
 	const testJobName = "italian"
 	testCases := []struct {
-		name                  string
-		selector              core.LogsSelector
-		expectedPodName       string
-		expectedContainerName string
+		name            string
+		selector        core.LogsSelector
+		expectedPodName string
 	}{
 		{
-			name:                  "job not specified, container not specified",
-			selector:              core.LogsSelector{},
-			expectedPodName:       myk8s.WorkerPodName(testEventID),
-			expectedContainerName: "worker",
+			name:            "job not specified",
+			selector:        core.LogsSelector{},
+			expectedPodName: myk8s.WorkerPodName(testEventID),
 		},
 		{
-			name: "job not specified, container specified",
-			selector: core.LogsSelector{
-				Container: "helper",
-			},
-			expectedPodName:       myk8s.WorkerPodName(testEventID),
-			expectedContainerName: "helper",
-		},
-		{
-			name: "job specified, container not specified",
+			name: "job specified",
 			selector: core.LogsSelector{
 				Job: testJobName,
 			},
-			expectedPodName:       myk8s.JobPodName(testEventID, testJobName),
-			expectedContainerName: testJobName,
-		},
-		{
-			name: "job specified, container specified",
-			selector: core.LogsSelector{
-				Job:       testJobName,
-				Container: "helper",
-			},
-			expectedPodName:       myk8s.JobPodName(testEventID, testJobName),
-			expectedContainerName: "helper",
+			expectedPodName: myk8s.JobPodName(testEventID, testJobName),
 		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			podName, containerName :=
-				criteriaFromSelector(testEventID, testCase.selector)
+			podName := podNameFromSelector(testEventID, testCase.selector)
 			require.Equal(t, testCase.expectedPodName, podName)
-			require.Equal(t, testCase.expectedContainerName, containerName)
 		})
 	}
 }
