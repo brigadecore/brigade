@@ -26,8 +26,8 @@ var secretsCommand = &cli.Command{
 			Flags: []cli.Flag{
 				cliFlagOutput,
 				&cli.StringFlag{
-					Name:     flagProject,
-					Aliases:  []string{"p"},
+					Name:     flagID,
+					Aliases:  []string{"i", flagProject, "p"},
 					Usage:    "Retrieve secrets for the specified project (required)",
 					Required: true,
 				},
@@ -39,8 +39,8 @@ var secretsCommand = &cli.Command{
 			Usage: "Define or redefine the value of one or more secrets",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
-					Name:     flagProject,
-					Aliases:  []string{"p"},
+					Name:     flagID,
+					Aliases:  []string{"i", flagProject, "p"},
 					Usage:    "Set secrets for the specified project (required)",
 					Required: true,
 				},
@@ -59,8 +59,8 @@ var secretsCommand = &cli.Command{
 			Usage: "Clear the value of one or more secrets",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
-					Name:     flagProject,
-					Aliases:  []string{"p"},
+					Name:     flagID,
+					Aliases:  []string{"i", flagProject, "p"},
 					Usage:    "Clear secrets for the specified project",
 					Required: true,
 				},
@@ -78,7 +78,7 @@ var secretsCommand = &cli.Command{
 
 func secretsList(c *cli.Context) error {
 	output := c.String(flagOutput)
-	projectID := c.String(flagProject)
+	projectID := c.String(flagID)
 
 	if err := validateOutputFormat(output); err != nil {
 		return err
@@ -151,7 +151,7 @@ func secretsList(c *cli.Context) error {
 }
 
 func secretsSet(c *cli.Context) error {
-	projectID := c.String(flagProject)
+	projectID := c.String(flagID)
 	kvPairsStr := c.StringSlice(flagSet)
 
 	// We'll make two passes-- we'll parse all the input into a map first,
@@ -196,7 +196,7 @@ func secretsSet(c *cli.Context) error {
 }
 
 func secretsUnset(c *cli.Context) error {
-	projectID := c.String(flagProject)
+	projectID := c.String(flagID)
 	keys := c.StringSlice(flagUnset)
 
 	client, err := getClient(c)
