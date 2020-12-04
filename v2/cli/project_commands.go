@@ -43,7 +43,7 @@ var projectCommand = &cli.Command{
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:     flagID,
-					Aliases:  []string{"i"},
+					Aliases:  []string{"i", flagProject, "p"},
 					Usage:    "Delete the specified project (required)",
 					Required: true,
 				},
@@ -61,7 +61,7 @@ var projectCommand = &cli.Command{
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:     flagID,
-					Aliases:  []string{"i"},
+					Aliases:  []string{"i", flagProject, "p"},
 					Usage:    "Retrieve the specified project (required)",
 					Required: true,
 				},

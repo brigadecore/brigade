@@ -31,7 +31,7 @@ var eventCommand = &cli.Command{
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:    flagID,
-					Aliases: []string{"i"},
+					Aliases: []string{"i", flagEvent, "e"},
 					Usage: "Cancel (and abort if applicable) the specified event " +
 						"(required)",
 					Required: true,
@@ -113,7 +113,7 @@ var eventCommand = &cli.Command{
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:    flagID,
-					Aliases: []string{"i"},
+					Aliases: []string{"i", flagEvent, "e"},
 					Usage: "Delete (and abort if applicable) the specified event " +
 						"(required)",
 					Required: true,
@@ -206,7 +206,7 @@ var eventCommand = &cli.Command{
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:     flagID,
-					Aliases:  []string{"i"},
+					Aliases:  []string{"i", flagEvent, "e"},
 					Usage:    "Retrieve the specified event (required)",
 					Required: true,
 				},
