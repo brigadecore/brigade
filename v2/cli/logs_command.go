@@ -18,8 +18,8 @@ var logsCommand = &cli.Command{
 				"logs from the worker or job's \"primary\" container",
 		},
 		&cli.StringFlag{
-			Name:     flagEvent,
-			Aliases:  []string{"e"},
+			Name:     flagID,
+			Aliases:  []string{"i", flagEvent, "e"},
 			Usage:    "View logs from the specified event",
 			Required: true,
 		},
@@ -39,7 +39,7 @@ var logsCommand = &cli.Command{
 }
 
 func logs(c *cli.Context) error {
-	eventID := c.String(flagEvent)
+	eventID := c.String(flagID)
 	follow := c.Bool(flagFollow)
 
 	selector := core.LogsSelector{
