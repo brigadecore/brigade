@@ -42,7 +42,7 @@
 		"phase": {
 			"type": "string",
 			"description": "The worker's phase",
-			"enum": [ "PENDING", "RUNNING", "CANCELED", "ABORTED", "SUCCEEDED", "FAILED", "UNKNOWN" ]
+			"enum": [ "ABORTED", "CANCELED", "FAILED", "PENDING", "RUNNING", "SCHEDULING_FAILED", "STARTING", "SUCCEEDED", "UNKNOWN" ]
 		}
 	}
 }

@@ -89,6 +89,37 @@ func TestWorkersServiceStart(t *testing.T) {
 			},
 		},
 		{
+			name: "error updating worker status",
+			service: &workersService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhasePending,
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error updating status of event")
+			},
+		},
+		{
 			name: "error starting worker on substrate",
 			service: &workersService{
 				eventsStore: &mockEventsStore{
@@ -105,6 +136,11 @@ func TestWorkersServiceStart(t *testing.T) {
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
+						return nil
 					},
 				},
 				substrate: &mockSubstrate{
@@ -136,6 +172,11 @@ func TestWorkersServiceStart(t *testing.T) {
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
+						return nil
 					},
 				},
 				substrate: &mockSubstrate{
