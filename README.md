@@ -17,6 +17,14 @@ for Kubernetes.
 
  <!-- [![asciicast](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG.png)](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG) -->
 
+---
+**NOTE**
+
+Brigade 2.0 is currently under active development in the
+[v2](https://github.com/brigadecore/brigade/tree/v2) branch of this repository.
+
+---
+
 ## The Brigade Technology Stack
 
 - Brigade :heart: JavaScript: Writing Brigade pipelines is as easy as writing a few lines of JavaScript.
