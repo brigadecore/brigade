@@ -1,0 +1,38 @@
+{
+  "name": "@brigadecore/brigadier",
+  "version": "placeholder",
+  "description": "Brigade library for pipelines and events",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": "Brigade Core Maintainers",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/brigadecore/brigade",
+  "bugs": {
+    "url": "https://github.com/brigadecore/brigade/issues"
+  },
+  "scripts": {
+    "test": "mocha --require ts-node/register --recursive ./test/**/*.ts",
+    "lint": "eslint src/ test/",
+    "build": "tsc"
+  },
+  "keywords": [
+    "kubernetes",
+    "brigade"
+  ],
+  "files": [
+    "dist/*.js",
+    "dist/*.ts"
+  ],
+  "devDependencies": {
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.2.0",
+    "@types/node": "^14.14.11",
+    "@typescript-eslint/eslint-plugin": "^4.9.1",
+    "@typescript-eslint/parser": "^4.9.1",
+    "chai": "^4.2.0",
+    "eslint": "^7.15.0",
+    "mocha": "^8.2.1",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.1.2"
+  }
+}

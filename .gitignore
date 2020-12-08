@@ -1,6 +1,8 @@
 .gocache/
 bin/
 coverage.txt
+node_modules/
+dist/
 .DS_Store
 
 # IDEs

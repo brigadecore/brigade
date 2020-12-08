@@ -5,6 +5,7 @@ const { events, Job } = require("brigadier");
 const { Check } = require("@brigadecore/brigade-utils");
 
 const goImg = "krancour/go-tools:v0.4.0";
+const jsImg = "node:12.3.1-stretch";
 const kanikoImg = "krancour/kaniko:v0.2.0";
 const localPath = "/workspaces/brigade";
 
@@ -29,10 +30,37 @@ function lintGo() {
   job.env = {
     "SKIP_DOCKER": "true"
   };
-  
   job.tasks = [
     `cd ${localPath}`,
     "make lint-go"
+  ];
+  return job;
+}
+
+// Run JS unit tests
+function testUnitJS() {
+  var job = new Job("test-unit-js", jsImg);
+  job.mountPath = localPath;
+  job.env = {
+    "SKIP_DOCKER": "true"
+  };
+  job.tasks = [
+    `cd ${localPath}`,
+    "make test-unit-js"
+  ];
+  return job;
+}
+
+// Run JS lint checks
+function lintJS() {
+  var job = new Job("lint-js", jsImg);
+  job.mountPath = localPath;
+  job.env = {
+    "SKIP_DOCKER": "true"
+  };
+  job.tasks = [
+    `cd ${localPath}`,
+    "make lint-js"
   ];
   return job;
 }
@@ -57,6 +85,7 @@ function buildLoggerLinux() {
   return buildImage("logger-linux");
 }
 
+// Build the API server
 function buildImage(imageName) {
   var job = new Job(`build-${imageName}`, kanikoImg);
   job.mountPath = localPath;
@@ -94,6 +123,8 @@ function runSuite(e, p) {
   return Promise.all([
     run(e, p, testUnitGo).catch((err) => { return err }),
     run(e, p, lintGo).catch((err) => { return err }),
+    run(e, p, testUnitJS).catch((err) => { return err }),
+    run(e, p, lintJS).catch((err) => { return err }),
     run(e, p, buildAPIServer).catch((err) => { return err }),
     run(e, p, buildScheduler).catch((err) => { return err }),
     run(e, p, buildObserver).catch((err) => { return err }),
@@ -115,14 +146,16 @@ function runCheck(e, p) {
       return run(e, p, testUnitGo);
     case "lint-go":
       return run(e, p, lintGo);
+    case "test-unit-js":
+      return run(e, p, testUnitJS);
+    case "lint-js":
+      return run(e, p, lintJS);
     case "build-apiserver":
       return run(e, p, buildAPIServer);
     case "build-scheduler":
       return run(e, p, buildScheduler);
     case "build-observer":
       return run(e, p, buildObserver);
-    case "build-logger-linux":
-      return run(e, p, buildLoggerLinux);
     case "build-cli":
       return run(e, p, buildCLI);
     default:
