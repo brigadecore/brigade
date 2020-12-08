@@ -5,7 +5,7 @@ const { events, Job } = require("brigadier");
 const { Check } = require("@brigadecore/brigade-utils");
 
 const goImg = "krancour/go-tools:v0.4.0";
-const dockerImg = "docker:stable-dind";
+const kanikoImg = "krancour/kaniko:v0.2.0";
 const localPath = "/workspaces/brigade";
 
 // Run Go unit tests
@@ -58,13 +58,12 @@ function buildLoggerLinux() {
 }
 
 function buildImage(imageName) {
-  var job = new Job(`build-${imageName}`, dockerImg);
+  var job = new Job(`build-${imageName}`, kanikoImg);
   job.mountPath = localPath;
-  job.privileged = true;
+  job.env = {
+    "SKIP_DOCKER": "true"
+  };
   job.tasks = [
-    "apk add --update --no-cache make git",
-    "dockerd-entrypoint.sh &",
-    "sleep 20",
     `cd ${localPath}`,
     `make build-${imageName}`
   ];
@@ -80,7 +79,7 @@ function buildCLI() {
   };
   job.tasks = [
     `cd ${localPath}`,
-    "make xbuild-cli"
+    "make build-cli"
   ];
   return job;
 }
