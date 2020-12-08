@@ -28,6 +28,7 @@ const (
 	flagServer      = "server"
 	flagSet         = "set"
 	flagSource      = "source"
+	flagStarting    = "starting"
 	flagSucceeded   = "succeeded"
 	flagTerminal    = "terminal"
 	flagTimedOut    = "timedout"

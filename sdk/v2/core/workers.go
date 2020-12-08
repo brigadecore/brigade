@@ -50,6 +50,9 @@ const (
 	// scheduled due to some unexpected and unrecoverable error encountered by the
 	// scheduler.
 	WorkerPhaseSchedulingFailed WorkerPhase = "SCHEDULING_FAILED"
+	// WorkerPhaseStarting represents the state wherein a Worker is starting on
+	// the substrate but isn't running yet.
+	WorkerPhaseStarting WorkerPhase = "STARTING"
 	// WorkerPhaseSucceeded represents the state where a worker has run to
 	// completion without error.
 	WorkerPhaseSucceeded WorkerPhase = "SUCCEEDED"

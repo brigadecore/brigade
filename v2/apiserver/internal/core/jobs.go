@@ -29,6 +29,9 @@ const (
 	// scheduled due to some unexpected and unrecoverable error encountered by the
 	// scheduler.
 	JobPhaseSchedulingFailed WorkerPhase = "SCHEDULING_FAILED"
+	// JobPhaseStarting represents the state wherein a Job is starting on the
+	// substrate but isn't running yet.
+	JobPhaseStarting JobPhase = "STARTING"
 	// JobPhaseSucceeded represents the state where a Job has run to
 	// completion without error.
 	JobPhaseSucceeded JobPhase = "SUCCEEDED"
@@ -225,11 +228,21 @@ func (j *jobsService) Start(
 		)
 	}
 
-	// TODO: We should consider changing the Jobs's phase here so that if the
-	// observer is down, the Job doesn't continue to appear in a pending state.
-	// The scheduler uses at least once delivery semantics. If a Job continued to
-	// appear in a pending state despite having been started, the possibility
-	// exists that the scheduler could try to start the same Job more than once.
+	if err = j.jobsStore.UpdateStatus(
+		ctx,
+		eventID,
+		jobName,
+		JobStatus{
+			Phase: JobPhaseStarting,
+		},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error updating status of event %q worker job %q in store",
+			eventID,
+			jobName,
+		)
+	}
 
 	if err = j.substrate.StartJob(ctx, project, event, jobName); err != nil {
 		return errors.Wrapf(

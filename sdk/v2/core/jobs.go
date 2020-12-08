@@ -33,6 +33,9 @@ const (
 	// scheduled due to some unexpected and unrecoverable error encountered by the
 	// scheduler.
 	JobPhaseSchedulingFailed JobPhase = "SCHEDULING_FAILED"
+	// JobPhaseStarting represents the state wherein a Job is starting on the
+	// substrate but isn't running yet.
+	JobPhaseStarting JobPhase = "STARTING"
 	// JobPhaseSucceeded represents the state where a Job has run to
 	// completion without error.
 	JobPhaseSucceeded JobPhase = "SUCCEEDED"
