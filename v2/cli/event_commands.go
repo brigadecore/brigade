@@ -64,6 +64,12 @@ var eventCommand = &cli.Command{
 						"their worker in a RUNNING phase",
 				},
 				&cli.BoolFlag{
+					Name:    flagStarting,
+					Aliases: []string{"s"},
+					Usage: "If set, will additionally abort and cancel events with " +
+						"their worker in a STARTING phase",
+				},
+				&cli.BoolFlag{
 					Name:    flagYes,
 					Aliases: []string{"y"},
 					Usage:   "Non-interactively confirm cancellation",
@@ -171,6 +177,12 @@ var eventCommand = &cli.Command{
 						"--terminal",
 				},
 				&cli.BoolFlag{
+					Name: flagStarting,
+					Usage: "If set, will delete events with their worker in a " +
+						"STARTING phase; mutually exclusive with --any-phase and " +
+						"--terminal",
+				},
+				&cli.BoolFlag{
 					Name: flagSucceeded,
 					Usage: "If set, will delete events with their worker in a " +
 						"SUCCEEDED phase; mutually exclusive with --any-phase and " +
@@ -259,6 +271,12 @@ var eventCommand = &cli.Command{
 					Name: flagRunning,
 					Usage: "If set, will retrieve events with their worker in RUNNING " +
 						"phase; mutually exclusive with --terminal and --non-terminal",
+				},
+				&cli.BoolFlag{
+					Name: flagStarting,
+					Usage: "If set, will retrieve events with their worker in a " +
+						"STARTING phase; mutually exclusive with --terminal and " +
+						"--non-terminal",
 				},
 				&cli.BoolFlag{
 					Name: flagSucceeded,
@@ -366,6 +384,9 @@ func eventList(c *cli.Context) error {
 	}
 	if c.Bool(flagRunning) {
 		workerPhases = append(workerPhases, core.WorkerPhaseRunning)
+	}
+	if c.Bool(flagStarting) {
+		workerPhases = append(workerPhases, core.WorkerPhaseStarting)
 	}
 	if c.Bool(flagSucceeded) {
 		workerPhases = append(workerPhases, core.WorkerPhaseSucceeded)
@@ -591,7 +612,17 @@ func eventCancel(c *cli.Context) error {
 
 func eventCancelMany(c *cli.Context) error {
 	projectID := c.String(flagProject)
-	cancelRunning := c.Bool(flagRunning)
+
+	workerPhases := []core.WorkerPhase{
+		core.WorkerPhasePending,
+	}
+
+	if c.Bool(flagRunning) {
+		workerPhases = append(workerPhases, core.WorkerPhaseRunning)
+	}
+	if c.Bool(flagStarting) {
+		workerPhases = append(workerPhases, core.WorkerPhaseStarting)
+	}
 
 	confirmed, err := confirmed(c)
 	if err != nil {
@@ -608,11 +639,7 @@ func eventCancelMany(c *cli.Context) error {
 
 	selector := core.EventsSelector{
 		ProjectID:    projectID,
-		WorkerPhases: []core.WorkerPhase{core.WorkerPhasePending},
-	}
-	if cancelRunning {
-		selector.WorkerPhases =
-			append(selector.WorkerPhases, core.WorkerPhaseRunning)
+		WorkerPhases: workerPhases,
 	}
 
 	events, err := client.Core().Events().CancelMany(c.Context, selector)
@@ -666,6 +693,9 @@ func eventDeleteMany(c *cli.Context) error {
 	}
 	if c.Bool(flagRunning) {
 		workerPhases = append(workerPhases, core.WorkerPhaseRunning)
+	}
+	if c.Bool(flagStarting) {
+		workerPhases = append(workerPhases, core.WorkerPhaseStarting)
 	}
 	if c.Bool(flagSucceeded) {
 		workerPhases = append(workerPhases, core.WorkerPhaseSucceeded)

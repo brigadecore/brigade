@@ -170,8 +170,13 @@ func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 	res, err = e.collection.UpdateOne(
 		ctx,
 		bson.M{
-			"id":                  id,
-			"worker.status.phase": core.WorkerPhaseRunning,
+			"id": id,
+			"worker.status.phase": bson.M{
+				"$in": []core.WorkerPhase{
+					core.WorkerPhaseStarting,
+					core.WorkerPhaseRunning,
+				},
+			},
 		},
 		bson.M{
 			"$set": bson.M{
@@ -183,6 +188,9 @@ func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 	if err != nil {
 		return errors.Wrapf(err, "error updating status of event %q worker", id)
 	}
+
+	// TODO: If the event was running when it was canceled, its jobs need to be
+	// canceled also.
 
 	if res.MatchedCount == 0 {
 		return &meta.ErrConflict{
@@ -203,21 +211,25 @@ func (e *eventsStore) CancelMany(
 	selector core.EventsSelector,
 ) (core.EventList, error) {
 	events := core.EventList{}
-	// It only makes sense to cancel events that are in a pending or running
-	// state. We can ignore anything else.
+	// It only makes sense to cancel events that are in a pending, starting, or
+	// running state. We can ignore anything else.
 	var cancelPending bool
+	var cancelStarting bool
 	var cancelRunning bool
 	for _, workerPhase := range selector.WorkerPhases {
 		if workerPhase == core.WorkerPhasePending {
 			cancelPending = true
+		}
+		if workerPhase == core.WorkerPhaseStarting {
+			cancelStarting = true
 		}
 		if workerPhase == core.WorkerPhaseRunning {
 			cancelRunning = true
 		}
 	}
 
-	// Bail if we're not canceling pending or running events
-	if !cancelPending && !cancelRunning {
+	// Bail if we're not canceling pending, starting, or running events
+	if !cancelPending && !cancelStarting && !cancelRunning {
 		return events, nil
 	}
 
@@ -247,6 +259,22 @@ func (e *eventsStore) CancelMany(
 		}
 	}
 
+	if cancelStarting {
+		criteria["worker.status.phase"] = core.WorkerPhaseStarting
+		if _, err := e.collection.UpdateMany(
+			ctx,
+			criteria,
+			bson.M{
+				"$set": bson.M{
+					"canceled":            cancellationTime,
+					"worker.status.phase": core.WorkerPhaseAborted,
+				},
+			},
+		); err != nil {
+			return events, errors.Wrap(err, "error updating events")
+		}
+	}
+
 	if cancelRunning {
 		criteria["worker.status.phase"] = core.WorkerPhaseRunning
 		if _, err := e.collection.UpdateMany(
@@ -262,6 +290,9 @@ func (e *eventsStore) CancelMany(
 			return events, errors.Wrap(err, "error updating events")
 		}
 	}
+
+	// TODO: If any event was running when it was canceled, its jobs need to be
+	// canceled also.
 
 	delete(criteria, "worker.status.phase")
 	criteria["canceled"] = cancellationTime

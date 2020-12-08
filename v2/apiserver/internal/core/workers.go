@@ -38,6 +38,9 @@ const (
 	// scheduled due to some unexpected and unrecoverable error encountered by the
 	// scheduler.
 	WorkerPhaseSchedulingFailed WorkerPhase = "SCHEDULING_FAILED"
+	// WorkerPhaseStarting represents the state wherein a Worker is starting on
+	// the substrate but isn't running yet.
+	WorkerPhaseStarting WorkerPhase = "STARTING"
 	// WorkerPhaseSucceeded represents the state where a worker has run to
 	// completion without error.
 	WorkerPhaseSucceeded WorkerPhase = "SUCCEEDED"
@@ -238,12 +241,19 @@ func (w *workersService) Start(ctx context.Context, eventID string) error {
 		)
 	}
 
-	// TODO: We should consider changing the Worker's phase here so that if the
-	// observer is down, the Worker doesn't continue to appear in a pending state.
-	// The scheduler uses at least once delivery semantics. If a Worker continued
-	// to appear in a pending state despite having been started, the possibility
-	// exists that the scheduler could try to start the same Worker more than
-	// once.
+	if err = w.workersStore.UpdateStatus(
+		ctx,
+		eventID,
+		WorkerStatus{
+			Phase: WorkerPhaseStarting,
+		},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error updating status of event %q worker in store",
+			eventID,
+		)
+	}
 
 	if err = w.substrate.StartWorker(ctx, project, event); err != nil {
 		return errors.Wrapf(err, "error starting worker for event %q", event.ID)
