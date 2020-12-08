@@ -28,6 +28,18 @@ ifneq ($(SKIP_DOCKER),true)
 		-v $(PROJECT_ROOT):/workspaces/brigade \
 		-w /workspaces/brigade \
 		$(GO_DEV_IMAGE)
+
+	KANIKO_IMAGE := krancour/kaniko:v0.2.0
+
+	KANIKO_DOCKER_CMD := docker run \
+		-it \
+		--rm \
+		-e SKIP_DOCKER=true \
+		-e DOCKER_USERNAME=$${DOCKER_USERNAME} \
+		-e DOCKER_PASSWORD=$${DOCKER_PASSWORD} \
+		-v $(PROJECT_ROOT):/workspaces/brigade \
+		-w /workspaces/brigade \
+		$(KANIKO_IMAGE)
 endif
 
 # Allow for users to supply a different helm cli name,
@@ -96,30 +108,83 @@ test-unit-go:
 ################################################################################
 
 .PHONY: build
-build: build-images xbuild-cli
+build: build-images build-cli
 
 .PHONY: build-images
-build-images: build-apiserver build-scheduler build-observer
+build-images: build-apiserver build-scheduler build-observer build-logger-linux
 
 .PHONY: build-logger-linux
 build-logger-linux:
-	docker build \
-		-t $(DOCKER_IMAGE_PREFIX)logger-linux:$(IMMUTABLE_DOCKER_TAG) \
-		- < v2/logger/Dockerfile.linux
-	docker tag $(DOCKER_IMAGE_PREFIX)logger-linux:$(IMMUTABLE_DOCKER_TAG) $(DOCKER_IMAGE_PREFIX)logger-linux:$(MUTABLE_DOCKER_TAG)
+	$(KANIKO_DOCKER_CMD) /kaniko/executor \
+		--dockerfile /workspaces/brigade/v2/logger/Dockerfile.linux \
+		--context dir:///workspaces/brigade/logger \
+		--no-push
 
 .PHONY: build-%
 build-%:
+	$(KANIKO_DOCKER_CMD) /kaniko/executor \
+		--dockerfile /workspaces/brigade/v2/$*/Dockerfile \
+		--context dir:///workspaces/brigade/ \
+		--no-push
+
+.PHONY: push-images
+push-images: push-apiserver push-scheduler push-observer push-logger-linux
+
+.PHONY: push-logger-linux
+push-logger-linux:
+	$(KANIKO_DOCKER_CMD) sh -c ' \
+		docker login $(DOCKER_REGISTRY) -u $${DOCKER_USERNAME} -p $${DOCKER_PASSWORD} && \
+		/kaniko/executor \
+			--dockerfile /workspaces/brigade/v2/logger/Dockerfile.linux \
+			--context dir:///workspaces/brigade/logger \
+			--destination $(DOCKER_IMAGE_PREFIX)logger-linux:$(IMMUTABLE_DOCKER_TAG) \
+			--destination $(DOCKER_IMAGE_PREFIX)logger-linux:$(MUTABLE_DOCKER_TAG) \
+	'
+
+.PHONY: push-%
+push-%:
+	$(KANIKO_DOCKER_CMD) sh -c ' \
+		docker login $(DOCKER_REGISTRY) -u $${DOCKER_USERNAME} -p $${DOCKER_PASSWORD} && \
+		/kaniko/executor \
+			--dockerfile /workspaces/brigade/v2/$*/Dockerfile \
+			--context dir:///workspaces/brigade/ \
+			--destination $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
+			--destination $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
+	'
+
+.PHONY: build-cli
+build-cli:
+	$(GO_DOCKER_CMD) sh -c ' \
+		cd v2 && \
+		VERSION="$(VERSION)" \
+		COMMIT="$(GIT_VERSION)" \
+		../scripts/build-cli.sh \
+	'
+
+################################################################################
+# Targets to facilitate hacking on Brigade.                                    #
+################################################################################
+
+.PHONY: hack-build-logger-linux
+hack-build-logger-linux:
+	docker build \
+		-f v2/logger/Dockerfile.linux \
+		-t $(DOCKER_IMAGE_PREFIX)logger-linux:$(IMMUTABLE_DOCKER_TAG) \
+		--build-arg VERSION='$(VERSION)' \
+		--build-arg COMMIT='$(GIT_VERSION)' \
+		v2/logger
+
+.PHONY: hack-build-%
+hack-build-%:
 	docker build \
 		-f v2/$*/Dockerfile \
 		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
 		--build-arg VERSION='$(VERSION)' \
 		--build-arg COMMIT='$(GIT_VERSION)' \
 		.
-	docker tag $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG)
 
-.PHONY: build-cli
-build-cli:
+.PHONY: hack-build-cli
+hack-build-cli:
 	$(GO_DOCKER_CMD) sh -c ' \
 		cd v2 && \
 		OSES=$(shell go env GOOS) \
@@ -129,30 +194,15 @@ build-cli:
 		../scripts/build-cli.sh \
 	'
 
-.PHONY: xbuild-cli
-xbuild-cli:
-	$(GO_DOCKER_CMD) sh -c ' \
-		cd v2 && \
-		VERSION="$(VERSION)" \
-		COMMIT="$(GIT_VERSION)" \
-		../scripts/build-cli.sh \
-	'
+.PHONY: hack-push-images
+hack-push-images: hack-push-apiserver hack-push-scheduler hack-push-observer hack-push-logger-linux
 
-.PHONY: push-images
-push-images: push-apiserver push-scheduler push-observer push-logger-linux
-
-.PHONY: push-%
-push-%: build-%
+.PHONY: hack-push-%
+hack-push-%: hack-build-%
 	docker push $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)
-	docker push $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG)
-
-################################################################################
-# Temporary hacks to facilitate early development.                             #
-# Longer term, we'll devise an improved workflow.                              #
-################################################################################
 
 .PHONY: hack
-hack: push-images build-cli
+hack: hack-push-images hack-build-cli
 	kubectl get namespace brigade || kubectl create namespace brigade
 	helm upgrade brigade charts/brigade \
 		--install \
