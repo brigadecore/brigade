@@ -85,6 +85,11 @@ function buildLoggerLinux() {
   return buildImage("logger-linux");
 }
 
+// Build the worker
+function buildWorker() {
+  return buildImage("worker");
+}
+
 // Build the API server
 function buildImage(imageName) {
   var job = new Job(`build-${imageName}`, kanikoImg);
@@ -129,6 +134,7 @@ function runSuite(e, p) {
     run(e, p, buildScheduler).catch((err) => { return err }),
     run(e, p, buildObserver).catch((err) => { return err }),
     run(e, p, buildLoggerLinux).catch((err) => { return err }),
+    run(e, p, buildWorker).catch((err) => { return err }),
     run(e, p, buildCLI).catch((err) => { return err })
   ]).then((values) => {
     values.forEach((value) => {
@@ -158,6 +164,8 @@ function runCheck(e, p) {
       return run(e, p, buildObserver);
     case "build-logger-linux":
       return run(e, p, buildLoggerLinux);
+    case "build-worker":
+      return run(e, p, buildWorker);
     case "build-cli":
       return run(e, p, buildCLI);
     default:
