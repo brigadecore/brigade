@@ -46,7 +46,7 @@ ifdef DOCKER_ORG
 	DOCKER_ORG := $(DOCKER_ORG)/
 endif
 
-DOCKER_IMAGE_PREFIX := $(DOCKER_REGISTRY)$(DOCKER_ORG)
+DOCKER_IMAGE_PREFIX := $(DOCKER_REGISTRY)$(DOCKER_ORG)brigade2-
 
 ifdef VERSION
 	MUTABLE_DOCKER_TAG := latest
@@ -104,19 +104,19 @@ build-images: build-apiserver build-scheduler build-observer
 .PHONY: build-logger-linux
 build-logger-linux:
 	docker build \
-		-t $(DOCKER_IMAGE_PREFIX)brigade-logger-linux:$(IMMUTABLE_DOCKER_TAG) \
+		-t $(DOCKER_IMAGE_PREFIX)logger-linux:$(IMMUTABLE_DOCKER_TAG) \
 		- < v2/logger/Dockerfile.linux
-	docker tag $(DOCKER_IMAGE_PREFIX)brigade-logger-linux:$(IMMUTABLE_DOCKER_TAG) $(DOCKER_IMAGE_PREFIX)brigade-logger-linux:$(MUTABLE_DOCKER_TAG)
+	docker tag $(DOCKER_IMAGE_PREFIX)logger-linux:$(IMMUTABLE_DOCKER_TAG) $(DOCKER_IMAGE_PREFIX)logger-linux:$(MUTABLE_DOCKER_TAG)
 
 .PHONY: build-%
 build-%:
 	docker build \
 		-f v2/$*/Dockerfile \
-		-t $(DOCKER_IMAGE_PREFIX)brigade-$*:$(IMMUTABLE_DOCKER_TAG) \
+		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
 		--build-arg VERSION='$(VERSION)' \
 		--build-arg COMMIT='$(GIT_VERSION)' \
 		.
-	docker tag $(DOCKER_IMAGE_PREFIX)brigade-$*:$(IMMUTABLE_DOCKER_TAG) $(DOCKER_IMAGE_PREFIX)brigade-$*:$(MUTABLE_DOCKER_TAG)
+	docker tag $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG)
 
 .PHONY: build-cli
 build-cli:
@@ -143,8 +143,8 @@ push-images: push-apiserver push-scheduler push-observer push-logger-linux
 
 .PHONY: push-%
 push-%: build-%
-	docker push $(DOCKER_IMAGE_PREFIX)brigade-$*:$(IMMUTABLE_DOCKER_TAG)
-	docker push $(DOCKER_IMAGE_PREFIX)brigade-$*:$(MUTABLE_DOCKER_TAG)
+	docker push $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)
+	docker push $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG)
 
 ################################################################################
 # Temporary hacks to facilitate early development.                             #
@@ -157,17 +157,17 @@ hack: push-images build-cli
 	helm upgrade brigade charts/brigade \
 		--install \
 		--namespace brigade \
-		--set apiserver.image.repository=$(DOCKER_IMAGE_PREFIX)brigade-apiserver \
+		--set apiserver.image.repository=$(DOCKER_IMAGE_PREFIX)apiserver \
 		--set apiserver.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set apiserver.image.pullPolicy=Always \
 		--set apiserver.service.type=NodePort \
 		--set apiserver.service.nodePort=31600 \
-		--set scheduler.image.repository=$(DOCKER_IMAGE_PREFIX)brigade-scheduler \
+		--set scheduler.image.repository=$(DOCKER_IMAGE_PREFIX)scheduler \
 		--set scheduler.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set scheduler.image.pullPolicy=Always \
-		--set observer.image.repository=$(DOCKER_IMAGE_PREFIX)brigade-observer \
+		--set observer.image.repository=$(DOCKER_IMAGE_PREFIX)observer \
 		--set observer.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set observer.image.pullPolicy=Always \
-		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)brigade-logger-linux \
+		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)logger-linux \
 		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set logger.linux.image.pullPolicy=Always
