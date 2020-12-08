@@ -29,6 +29,16 @@ ifneq ($(SKIP_DOCKER),true)
 		-w /workspaces/brigade \
 		$(GO_DEV_IMAGE)
 
+	JS_DEV_IMAGE := node:12.3.1-stretch
+
+	JS_DOCKER_CMD := docker run \
+		-it \
+		--rm \
+		-e SKIP_DOCKER=true \
+		-v $(PROJECT_ROOT):/workspaces/brigade \
+		-w /workspaces/brigade \
+		$(JS_DEV_IMAGE)
+
 	KANIKO_IMAGE := krancour/kaniko:v0.2.0
 
 	KANIKO_DOCKER_CMD := docker run \
@@ -101,6 +111,22 @@ test-unit-go:
 			-coverprofile=coverage.txt \
 			-covermode=atomic \
 			./... \
+	'
+
+.PHONY: lint-js
+lint-js:
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		yarn install && \
+		yarn lint \
+	'
+
+.PHONY: test-unit-js
+test-unit-js:
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		yarn install && \
+		yarn test \
 	'
 
 ################################################################################
