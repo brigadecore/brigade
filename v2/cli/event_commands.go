@@ -65,7 +65,7 @@ var eventCommand = &cli.Command{
 				},
 				&cli.BoolFlag{
 					Name:    flagStarting,
-					Aliases: []string{"r"},
+					Aliases: []string{"s"},
 					Usage: "If set, will additionally abort and cancel events with " +
 						"their worker in a STARTING phase",
 				},
