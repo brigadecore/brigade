@@ -12,7 +12,7 @@ export class Group {
     return group.runEach()
   }
 
-  private jobs: Job[] = []
+  private jobs: Job[]
 
   public constructor(jobs?: Job[]) {
     this.jobs = jobs || []
