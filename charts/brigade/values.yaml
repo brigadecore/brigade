@@ -16,7 +16,7 @@ apiserver:
   host: localhost:31600
 
   image:
-    repository: brigadecore/brigade-apiserver
+    repository: brigadecore/brigade2-apiserver
     ## tag should only be specified if you want to override Chart.appVersion
     ## The default tag is the value of .Chart.AppVersion
     # tag:
@@ -128,7 +128,7 @@ apiserver:
 scheduler:
 
   image:
-    repository: brigadecore/brigade-scheduler
+    repository: brigadecore/brigade2-scheduler
     ## tag should only be specified if you want to override Chart.appVersion
     ## The default tag is the value of .Chart.AppVersion
     # tag:
@@ -157,7 +157,7 @@ scheduler:
 observer:
 
   image:
-    repository: brigadecore/brigade-observer
+    repository: brigadecore/brigade2-observer
     ## tag should only be specified if you want to override Chart.appVersion
     ## The default tag is the value of .Chart.AppVersion
     # tag:
@@ -169,7 +169,7 @@ observer:
 worker:
 
   image:
-    repository: brigadecore/brigade-worker
+    repository: brigadecore/brigade2-worker
     ## tag should only be specified if you want to override Chart.appVersion
     ## The default tag is the value of .Chart.AppVersion
     # tag:
@@ -182,7 +182,7 @@ logger:
   linux:
 
     image:
-      repository: brigadecore/brigade-logger-linux
+      repository: brigadecore/brigade2-logger-linux
       ## tag should only be specified if you want to override Chart.appVersion
       ## The default tag is the value of .Chart.AppVersion
       # tag:
@@ -209,7 +209,7 @@ logger:
   windows:
 
     image:
-      repository: brigadecore/brigade-logger-windows
+      repository: brigadecore/brigade2-logger-windows
       ## tag should only be specified if you want to override Chart.appVersion
       ## The default tag is the value of .Chart.AppVersion
       # tag:
