@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
@@ -181,6 +182,20 @@ type WorkersService interface {
 	// execution substrate. If the specified Event does not exist, implementations
 	// MUST return a *meta.ErrNotFound.
 	Start(ctx context.Context, eventID string) error
+	// GetStatus returns an Event's Worker's status. If the specified Event does
+	// not exist, implementations MUST return a *meta.ErrNotFound.
+	GetStatus(
+		ctx context.Context,
+		eventID string,
+	) (WorkerStatus, error)
+	// WatchStatus returns a channel over which an Event's Worker's status is
+	// streamed. The channel receives a new WorkerStatus every time there is any
+	// change in that status. If the specified Event does not exist,
+	// implementations MUST return a *meta.ErrNotFound.
+	WatchStatus(
+		ctx context.Context,
+		eventID string,
+	) (<-chan WorkerStatus, error)
 	// UpdateStatus updates the status of an Event's Worker. If the specified
 	// Event does not exist, implementations MUST return a *meta.ErrNotFound.
 	UpdateStatus(
@@ -259,6 +274,53 @@ func (w *workersService) Start(ctx context.Context, eventID string) error {
 		return errors.Wrapf(err, "error starting worker for event %q", event.ID)
 	}
 	return nil
+}
+
+func (w *workersService) GetStatus(
+	ctx context.Context,
+	eventID string,
+) (WorkerStatus, error) {
+	event, err := w.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return WorkerStatus{},
+			errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+	return event.Worker.Status, nil
+}
+
+func (w *workersService) WatchStatus(
+	ctx context.Context,
+	eventID string,
+) (<-chan WorkerStatus, error) {
+	// Read the event up front to confirm it exists.
+	if _, err := w.eventsStore.Get(ctx, eventID); err != nil {
+		return nil,
+			errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+	statusCh := make(chan WorkerStatus)
+	go func() {
+		defer close(statusCh)
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+			case <-ctx.Done():
+				return
+			}
+			event, err := w.eventsStore.Get(ctx, eventID)
+			if err != nil {
+				log.Printf("error retrieving event %q from store: %s", eventID, err)
+				return
+			}
+			select {
+			case statusCh <- event.Worker.Status:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return statusCh, nil
 }
 
 func (w *workersService) UpdateStatus(

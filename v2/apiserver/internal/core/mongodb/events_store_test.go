@@ -299,6 +299,91 @@ func TestEventsStoreGet(t *testing.T) {
 	}
 }
 
+func TestEventsStoreGetByHashedToken(t *testing.T) {
+	const testEventID = "123456789"
+	testCases := []struct {
+		name       string
+		collection mongodb.Collection
+		assertions func(event core.Event, err error)
+	}{
+		{
+			name: "event not found",
+			collection: &mockCollection{
+				FindOneFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOneOptions,
+				) *mongo.SingleResult {
+					res, err := mockSingleResult(mongo.ErrNoDocuments)
+					require.NoError(t, err)
+					return res
+				},
+			},
+			assertions: func(_ core.Event, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotFound{}, err)
+				require.Equal(t, "Event", err.(*meta.ErrNotFound).Type)
+			},
+		},
+
+		{
+			name: "unanticipated error",
+			collection: &mockCollection{
+				FindOneFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOneOptions,
+				) *mongo.SingleResult {
+					res, err := mockSingleResult(errors.New("something went wrong"))
+					require.NoError(t, err)
+					return res
+				},
+			},
+			assertions: func(_ core.Event, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error finding/decoding event")
+			},
+		},
+
+		{
+			name: "event found",
+			collection: &mockCollection{
+				FindOneFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOneOptions,
+				) *mongo.SingleResult {
+					res, err := mockSingleResult(
+						core.Event{
+							ObjectMeta: meta.ObjectMeta{
+								ID: testEventID,
+							},
+						},
+					)
+					require.NoError(t, err)
+					return res
+				},
+			},
+			assertions: func(event core.Event, err error) {
+				require.NoError(t, err)
+				require.Equal(t, testEventID, event.ID)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &eventsStore{
+				collection: testCase.collection,
+			}
+			event, err :=
+				store.GetByHashedWorkerToken(context.Background(), "abcdefg")
+			testCase.assertions(event, err)
+		})
+	}
+}
+
 func TestEventsStoreCancel(t *testing.T) {
 	const testEventID = "abcedfg"
 	testCases := []struct {

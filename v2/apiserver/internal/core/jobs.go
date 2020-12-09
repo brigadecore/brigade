@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
@@ -145,6 +146,17 @@ type JobStatus struct {
 // etc.) to keep business logic reusable and consistent while the underlying
 // tech stack remains free to change.
 type JobsService interface {
+	// Create, given an Event identifier and Job, creates a new Job and schedules
+	// it on Brigade's workload execution substrate. If the specified Event does
+	// not exist, implementations MUST return a *meta.ErrNotFound error. If the
+	// specified Event already has a Job with the specified name, implementations
+	// MUST return a *meta.ErrConflict error.
+	Create(
+		ctx context.Context,
+		eventID string,
+		jobName string,
+		job Job,
+	) error
 	// Start, given an Event identifier and Job name, starts that Job on
 	// Brigade's workload execution substrate. If the specified Event or specified
 	// Job thereof does not exist, implementations MUST return a *meta.ErrNotFound
@@ -154,6 +166,24 @@ type JobsService interface {
 		eventID string,
 		jobName string,
 	) error
+	// GetStatus, given an Event identifier and Job name, returns the Job's
+	// status. If the specified Event or specified Job thereof does not exist,
+	// implementations MUST return a *meta.ErrNotFound error.
+	GetStatus(
+		ctx context.Context,
+		eventID string,
+		jobName string,
+	) (JobStatus, error)
+	// WatchStatus, given an Event identifier and Job name, returns a channel over
+	// which the Job's status is streamed. The channel receives a new JobStatus
+	// every time there is any change in that status. If the specified Event or
+	// specified Job thereof does not exist, implementations MUST return a
+	// *meta.ErrNotFound error.
+	WatchStatus(
+		ctx context.Context,
+		eventID string,
+		jobName string,
+	) (<-chan JobStatus, error)
 	// UpdateStatus, given an Event identifier and Job name, updates the status of
 	// that Job. If the specified Event or specified Job thereof does not exist,
 	// implementations MUST return a *meta.ErrNotFound error.
@@ -188,6 +218,111 @@ func NewJobsService(
 		jobsStore:     jobsStore,
 		substrate:     substrate,
 	}
+}
+
+func (j *jobsService) Create(
+	ctx context.Context,
+	eventID string,
+	jobName string,
+	job Job,
+) error {
+	event, err := j.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+	if _, ok := event.Worker.Jobs[jobName]; ok {
+		return &meta.ErrConflict{
+			Type: "Job",
+			ID:   jobName,
+			Reason: fmt.Sprintf(
+				"Event %q already has a job named %q.",
+				eventID,
+				jobName,
+			),
+		}
+	}
+
+	// Perform some validations...
+
+	// Determine if ANY of the job's containers:
+	//   1. Use shared workspace
+	//   2. Run in privileged mode
+	//   3. Mount the host's Docker socket
+	var useWorkspace = job.Spec.PrimaryContainer.UseWorkspace
+	var usePrivileged = job.Spec.PrimaryContainer.Privileged
+	var useDockerSocket = job.Spec.PrimaryContainer.UseHostDockerSocket
+	for _, sidecarContainer := range job.Spec.SidecarContainers {
+		if sidecarContainer.UseWorkspace {
+			useWorkspace = true
+		}
+		if sidecarContainer.Privileged {
+			usePrivileged = true
+		}
+		if sidecarContainer.UseHostDockerSocket {
+			useDockerSocket = true
+		}
+	}
+
+	// Fail quickly if any job is trying to run privileged or use the host's
+	// Docker socket, but isn't allowed to per worker configuration.
+	if usePrivileged &&
+		(event.Worker.Spec.JobPolicies == nil ||
+			!event.Worker.Spec.JobPolicies.AllowPrivileged) {
+		return &meta.ErrAuthorization{
+			Reason: "Worker configuration forbids jobs from utilizing privileged " +
+				"containers.",
+		}
+	}
+	if useDockerSocket &&
+		(event.Worker.Spec.JobPolicies == nil ||
+			!event.Worker.Spec.JobPolicies.AllowDockerSocketMount) {
+		return &meta.ErrAuthorization{
+			Reason: "Worker configuration forbids jobs from mounting the Docker " +
+				"socket.",
+		}
+	}
+
+	// Fail quickly if the job needs to use shared workspace, but the worker
+	// doesn't have any shared workspace.
+	if useWorkspace && !event.Worker.Spec.UseWorkspace {
+		return &meta.ErrConflict{
+			Reason: "The job requested access to the shared workspace, but Worker " +
+				"configuration has not enabled this feature.",
+		}
+	}
+
+	// Set the initial status
+	job.Status = &JobStatus{
+		Phase: JobPhasePending,
+	}
+
+	project, err := j.projectsStore.Get(ctx, event.ProjectID)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error retrieving project %q from store",
+			event.ProjectID,
+		)
+	}
+
+	if err = j.jobsStore.Create(ctx, eventID, jobName, job); err != nil {
+		return errors.Wrapf(
+			err, "error saving event %q job %q in store",
+			eventID,
+			eventID,
+		)
+	}
+
+	if err = j.substrate.ScheduleJob(ctx, project, event, jobName); err != nil {
+		return errors.Wrapf(
+			err,
+			"error scheduling event %q job %q on the substrate",
+			event.ID,
+			jobName,
+		)
+	}
+
+	return nil
 }
 
 func (j *jobsService) Start(
@@ -256,6 +391,69 @@ func (j *jobsService) Start(
 	return nil
 }
 
+func (j *jobsService) GetStatus(
+	ctx context.Context,
+	eventID string,
+	jobName string,
+) (JobStatus, error) {
+	event, err := j.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return JobStatus{},
+			errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+	job, ok := event.Worker.Jobs[jobName]
+	if !ok {
+		return JobStatus{}, &meta.ErrNotFound{
+			Type: "Job",
+			ID:   jobName,
+		}
+	}
+	return *job.Status, nil
+}
+
+func (j *jobsService) WatchStatus(
+	ctx context.Context,
+	eventID string,
+	jobName string,
+) (<-chan JobStatus, error) {
+	// Read the event and job up front to confirm they both exists.
+	event, err := j.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return nil,
+			errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+	if _, ok := event.Worker.Jobs[jobName]; !ok {
+		return nil, &meta.ErrNotFound{
+			Type: "Job",
+			ID:   jobName,
+		}
+	}
+	statusCh := make(chan JobStatus)
+	go func() {
+		defer close(statusCh)
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+			case <-ctx.Done():
+				return
+			}
+			event, err := j.eventsStore.Get(ctx, eventID)
+			if err != nil {
+				log.Printf("error retrieving event %q from store: %s", eventID, err)
+				return
+			}
+			select {
+			case statusCh <- *event.Worker.Jobs[jobName].Status:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return statusCh, nil
+}
+
 func (j *jobsService) UpdateStatus(
 	ctx context.Context,
 	eventID string,
@@ -316,6 +514,14 @@ func (j *jobsService) Cleanup(
 // JobsStore is an interface for components that implement Job persistence
 // concerns.
 type JobsStore interface {
+	// Create persists a new Job for the specified Event in the underlying data
+	// store.
+	Create(
+		ctx context.Context,
+		eventID string,
+		jobName string,
+		job Job,
+	) error
 	// UpdateStatus updates the status of the specified Job in the underlying data
 	// store. If the specified job is not found, implementations MUST return a
 	// *meta.ErrNotFound error.

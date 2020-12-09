@@ -125,6 +125,14 @@ type Substrate interface {
 	// StartWorker starts an Event's Worker on the substrate.
 	StartWorker(context.Context, Project, Event) error
 
+	// ScheduleJob prepares the substrate for a Job and schedules the Job for
+	// async / eventual execution.
+	ScheduleJob(
+		ctx context.Context,
+		project Project,
+		event Event,
+		jobName string,
+	) error
 	// StartJob starts a Job on the substrate.
 	StartJob(
 		ctx context.Context,

@@ -144,6 +144,29 @@ func (e *eventsStore) Get(
 	return event, nil
 }
 
+func (e *eventsStore) GetByHashedWorkerToken(
+	ctx context.Context,
+	hashedWorkerToken string,
+) (core.Event, error) {
+	event := core.Event{}
+	res := e.collection.FindOne(
+		ctx,
+		bson.M{
+			"worker.hashedToken": hashedWorkerToken,
+		},
+	)
+	err := res.Decode(&event)
+	if res.Err() == mongo.ErrNoDocuments {
+		return event, &meta.ErrNotFound{
+			Type: "Event",
+		}
+	}
+	if err != nil {
+		return event, errors.Wrap(err, "error finding/decoding event")
+	}
+	return event, nil
+}
+
 func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 	now := time.Now().UTC()
 

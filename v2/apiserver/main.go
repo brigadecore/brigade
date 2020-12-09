@@ -177,6 +177,7 @@ func main() {
 		authFilter := authn.NewTokenAuthFilter(
 			serviceAccountsService.GetByToken,
 			sessionsService.GetByToken,
+			eventsService.GetByWorkerToken,
 			&authFilterConfig,
 		)
 		apiServerConfig, err := serverConfig()
@@ -194,6 +195,9 @@ func main() {
 				},
 				&coreREST.JobsEndpoints{
 					AuthFilter: authFilter,
+					JobSchemaLoader: gojsonschema.NewReferenceLoader(
+						"file:///brigade/schemas/job.json",
+					),
 					JobStatusSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/job-status.json",
 					),

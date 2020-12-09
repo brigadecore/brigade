@@ -22,6 +22,16 @@ type scheduler struct{}
 
 type observer struct{}
 
+type worker struct {
+	eventID string
+}
+
+func Worker(eventID string) Principal {
+	return &worker{
+		eventID: eventID,
+	}
+}
+
 type principalContextKey struct{}
 
 // ContextWithPrincipal returns a context.Context that has been augmented with
