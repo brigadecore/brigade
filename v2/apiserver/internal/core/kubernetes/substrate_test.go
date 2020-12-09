@@ -788,6 +788,100 @@ func TestSubstrateStartWorker(t *testing.T) {
 	}
 }
 
+func TestSubstrateScheduleJob(t *testing.T) {
+	const testEventID = "123456789"
+	const testJobName = "italian"
+	testCases := []struct {
+		name       string
+		setup      func() core.Substrate
+		assertions func(error)
+	}{
+		{
+			name: "error creating queue writer",
+			setup: func() core.Substrate {
+				return &substrate{
+					queueWriterFactory: &mockQueueWriterFactory{
+						NewWriterFn: func(queueName string) (queue.Writer, error) {
+							return nil, errors.New("something went wrong")
+						},
+					},
+				}
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error creating queue writer")
+			},
+		},
+		{
+			name: "error writing to queue",
+			setup: func() core.Substrate {
+				return &substrate{
+					queueWriterFactory: &mockQueueWriterFactory{
+						NewWriterFn: func(queueName string) (queue.Writer, error) {
+							return &mockQueueWriter{
+								WriteFn: func(context.Context, string) error {
+									return errors.New("something went wrong")
+								},
+								CloseFn: func(context.Context) error {
+									return nil
+								},
+							}, nil
+						},
+					},
+				}
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(
+					t,
+					err.Error(),
+					"error submitting execution task for event",
+				)
+			},
+		},
+		{
+			name: "success",
+			setup: func() core.Substrate {
+				return &substrate{
+					queueWriterFactory: &mockQueueWriterFactory{
+						NewWriterFn: func(queueName string) (queue.Writer, error) {
+							return &mockQueueWriter{
+								WriteFn: func(context.Context, string) error {
+									return nil
+								},
+								CloseFn: func(context.Context) error {
+									return nil
+								},
+							}, nil
+						},
+					},
+				}
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			substrate := testCase.setup()
+			err := substrate.ScheduleJob(
+				context.Background(),
+				core.Project{},
+				core.Event{
+					ObjectMeta: meta.ObjectMeta{
+						ID: testEventID,
+					},
+				},
+				testJobName,
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
 func TestSubstrateStartJob(t *testing.T) {
 	const testJobName = "foo"
 	testCases := []struct {

@@ -25,6 +25,38 @@ func NewJobsStore(database *mongo.Database) (core.JobsStore, error) {
 	}, nil
 }
 
+func (j *jobsStore) Create(
+	ctx context.Context,
+	eventID string,
+	jobName string,
+	job core.Job,
+) error {
+	res, err := j.collection.UpdateOne(
+		ctx,
+		bson.M{"id": eventID},
+		bson.M{
+			"$set": bson.M{
+				fmt.Sprintf("worker.jobs.%s", jobName): job,
+			},
+		},
+	)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error updating spec of event %q job %q",
+			eventID,
+			jobName,
+		)
+	}
+	if res.MatchedCount == 0 {
+		return &meta.ErrNotFound{
+			Type: "Event",
+			ID:   eventID,
+		}
+	}
+	return nil
+}
+
 func (j *jobsStore) UpdateStatus(
 	ctx context.Context,
 	eventID string,

@@ -1,11 +1,17 @@
 package rest
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -13,6 +19,7 @@ import (
 // --> action mappings to a restmachinery.Server.
 type JobsEndpoints struct {
 	AuthFilter            restmachinery.Filter
+	JobSchemaLoader       gojsonschema.JSONLoader
 	JobStatusSchemaLoader gojsonschema.JSONLoader
 	Service               core.JobsService
 }
@@ -20,11 +27,23 @@ type JobsEndpoints struct {
 // Register is invoked by restmachinery.Server to register Job-related URL
 // --> action mappings to a restmachinery.Server.
 func (j *JobsEndpoints) Register(router *mux.Router) {
+	// Create job
+	router.HandleFunc(
+		"/v2/events/{eventID}/worker/jobs/{jobName}",
+		j.AuthFilter.Decorate(j.create),
+	).Methods(http.MethodPut)
+
 	// Start job
 	router.HandleFunc(
 		"/v2/events/{eventID}/worker/jobs/{jobName}/start",
 		j.AuthFilter.Decorate(j.start),
 	).Methods(http.MethodPut)
+
+	// Get/stream job status
+	router.HandleFunc(
+		"/v2/events/{eventID}/worker/jobs/{jobName}/status",
+		j.AuthFilter.Decorate(j.getOrStreamStatus),
+	).Methods(http.MethodGet)
 
 	// Update job status
 	router.HandleFunc(
@@ -37,6 +56,83 @@ func (j *JobsEndpoints) Register(router *mux.Router) {
 		"/v2/events/{eventID}/worker/jobs/{jobName}/cleanup",
 		j.AuthFilter.Decorate(j.cleanup),
 	).Methods(http.MethodPut)
+}
+
+func (j *JobsEndpoints) create(w http.ResponseWriter, r *http.Request) {
+	job := core.Job{}
+	restmachinery.ServeRequest(
+		restmachinery.InboundRequest{
+			W:                   w,
+			R:                   r,
+			ReqBodySchemaLoader: j.JobSchemaLoader,
+			ReqBodyObj:          &job,
+			EndpointLogic: func() (interface{}, error) {
+				return nil, j.Service.Create(
+					r.Context(),
+					mux.Vars(r)["eventID"],
+					mux.Vars(r)["jobName"],
+					job,
+				)
+			},
+			SuccessCode: http.StatusCreated,
+		},
+	)
+}
+
+func (j *JobsEndpoints) getOrStreamStatus(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	id := mux.Vars(r)["eventID"]
+	jobName := mux.Vars(r)["jobName"]
+	// nolint: errcheck
+	watch, _ := strconv.ParseBool(r.URL.Query().Get("watch"))
+
+	if !watch {
+		restmachinery.ServeRequest(
+			restmachinery.InboundRequest{
+				W: w,
+				R: r,
+				EndpointLogic: func() (interface{}, error) {
+					return j.Service.GetStatus(r.Context(), id, jobName)
+				},
+				SuccessCode: http.StatusOK,
+			},
+		)
+		return
+	}
+
+	statusCh, err := j.Service.WatchStatus(r.Context(), id, jobName)
+	if err != nil {
+		if _, ok := errors.Cause(err).(*meta.ErrNotFound); ok {
+			restmachinery.WriteAPIResponse(w, http.StatusNotFound, errors.Cause(err))
+			return
+		}
+		log.Printf(
+			"error retrieving job status stream for event %q job %q: %s",
+			id,
+			jobName,
+			err,
+		)
+		restmachinery.WriteAPIResponse(
+			w,
+			http.StatusInternalServerError,
+			&meta.ErrInternalServer{},
+		)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.(http.Flusher).Flush()
+	for status := range statusCh {
+		statusBytes, err := json.Marshal(status)
+		if err != nil {
+			log.Println(errors.Wrapf(err, "error marshaling job status"))
+			return
+		}
+		fmt.Fprint(w, string(statusBytes))
+		w.(http.Flusher).Flush()
+	}
 }
 
 func (j *JobsEndpoints) start(w http.ResponseWriter, r *http.Request) {

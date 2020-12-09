@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -194,6 +195,122 @@ func TestWorkersServiceStart(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			err := testCase.service.Start(context.Background(), testEventID)
 			testCase.assertions(err)
+		})
+	}
+}
+
+func TestWorkersServiceGetStatus(t *testing.T) {
+	const testEventID = "123456789"
+	testWorkerStatus := WorkerStatus{
+		Phase: WorkerPhaseRunning,
+	}
+	testCases := []struct {
+		name       string
+		service    WorkersService
+		assertions func(WorkerStatus, error)
+	}{
+		{
+			name: "error getting event from store",
+			service: &workersService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(_ WorkerStatus, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "success",
+			service: &workersService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: testWorkerStatus,
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(status WorkerStatus, err error) {
+				require.NoError(t, err)
+				require.Equal(t, testWorkerStatus, status)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.assertions(
+				testCase.service.GetStatus(context.Background(), testEventID),
+			)
+		})
+	}
+}
+
+func TestWorkersServiceWatchStatus(t *testing.T) {
+	const testEventID = "123456789"
+	testWorkerStatus := WorkerStatus{
+		Phase: WorkerPhaseRunning,
+	}
+	testCases := []struct {
+		name       string
+		service    WorkersService
+		assertions func(context.Context, <-chan WorkerStatus, error)
+	}{
+		{
+			name: "error getting event from store",
+			service: &workersService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(_ context.Context, _ <-chan WorkerStatus, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "success",
+			service: &workersService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: testWorkerStatus,
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(
+				ctx context.Context,
+				statusCh <-chan WorkerStatus,
+				err error,
+			) {
+				require.NoError(t, err)
+				select {
+				case status := <-statusCh:
+					require.Equal(t, testWorkerStatus, status)
+				case <-ctx.Done():
+					require.Fail(t, "didn't receive status update over channel")
+				}
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			statusCh, err := testCase.service.WatchStatus(ctx, testEventID)
+			testCase.assertions(ctx, statusCh, err)
+			cancel()
 		})
 	}
 }

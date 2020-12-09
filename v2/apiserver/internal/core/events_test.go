@@ -408,6 +408,58 @@ func TestEventsServiceGet(t *testing.T) {
 	}
 }
 
+func TestEventsServiceGetByWorkerToken(t *testing.T) {
+	testCases := []struct {
+		name       string
+		service    EventsService
+		assertions func(error)
+	}{
+		{
+			name: "error getting event from store",
+			service: &eventsService{
+				eventsStore: &mockEventsStore{
+					GetByHashedWorkerTokenFn: func(
+						context.Context,
+						string,
+					) (Event, error) {
+						return Event{}, errors.New("error getting event")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error getting event")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "success",
+			service: &eventsService{
+				eventsStore: &mockEventsStore{
+					GetByHashedWorkerTokenFn: func(
+						context.Context,
+						string,
+					) (Event, error) {
+						return Event{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			_, err := testCase.service.GetByWorkerToken(
+				context.Background(),
+				"foobar",
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
 func TestEventsServiceCancel(t *testing.T) {
 	const testEventID = "123456789"
 	testCases := []struct {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
@@ -19,6 +20,295 @@ func TestNewjobsService(t *testing.T) {
 	require.Same(t, eventsStore, svc.(*jobsService).eventsStore)
 	require.Same(t, jobsStore, svc.(*jobsService).jobsStore)
 	require.Same(t, substrate, svc.(*jobsService).substrate)
+}
+
+func TestJobsServiceCreate(t *testing.T) {
+	const testEventID = "123456789"
+	const testJobName = "italian"
+	testCases := []struct {
+		name       string
+		service    JobsService
+		assertions func(error)
+	}{
+		{
+			name: "error retrieving event from store",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "job with name already exists",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: map[string]Job{
+									testJobName: {},
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrConflict{}, err)
+			},
+		},
+		{
+			name: "privileged container requested but not allowed",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Spec: WorkerSpec{},
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+				require.Equal(
+					t,
+					"Worker configuration forbids jobs from utilizing privileged "+
+						"containers.",
+					err.(*meta.ErrAuthorization).Reason,
+				)
+			},
+		},
+		{
+			name: "host docker socket mount requested but not allowed",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Spec: WorkerSpec{
+									JobPolicies: &JobPolicies{
+										AllowPrivileged: true,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+				require.Equal(
+					t,
+					"Worker configuration forbids jobs from mounting the Docker socket.",
+					err.(*meta.ErrAuthorization).Reason,
+				)
+			},
+		},
+		{
+			name: "uses workspace but worker does not",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Spec: WorkerSpec{
+									JobPolicies: &JobPolicies{
+										AllowPrivileged:        true,
+										AllowDockerSocketMount: true,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrConflict{}, err)
+				require.Equal(
+					t,
+					"The job requested access to the shared workspace, but Worker "+
+						"configuration has not enabled this feature.",
+					err.(*meta.ErrConflict).Reason,
+				)
+			},
+		},
+		{
+			name: "error getting project from store",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Spec: WorkerSpec{
+									UseWorkspace: true,
+									JobPolicies: &JobPolicies{
+										AllowPrivileged:        true,
+										AllowDockerSocketMount: true,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving project")
+			},
+		},
+		{
+			name: "error creating job in store",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Spec: WorkerSpec{
+									UseWorkspace: true,
+									JobPolicies: &JobPolicies{
+										AllowPrivileged:        true,
+										AllowDockerSocketMount: true,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					CreateFn: func(context.Context, string, string, Job) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error saving event")
+			},
+		},
+		{
+			name: "error scheduling job on substrate",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Spec: WorkerSpec{
+									UseWorkspace: true,
+									JobPolicies: &JobPolicies{
+										AllowPrivileged:        true,
+										AllowDockerSocketMount: true,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					CreateFn: func(context.Context, string, string, Job) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					ScheduleJobFn: func(context.Context, Project, Event, string) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error scheduling event")
+			},
+		},
+		{
+			name: "success",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Spec: WorkerSpec{
+									UseWorkspace: true,
+									JobPolicies: &JobPolicies{
+										AllowPrivileged:        true,
+										AllowDockerSocketMount: true,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					CreateFn: func(context.Context, string, string, Job) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					ScheduleJobFn: func(context.Context, Project, Event, string) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.assertions(
+				testCase.service.Create(
+					context.Background(),
+					testEventID,
+					testJobName,
+					Job{
+						Spec: JobSpec{
+							PrimaryContainer: JobContainerSpec{
+								Privileged:          true,
+								UseHostDockerSocket: true,
+								UseWorkspace:        true,
+							},
+						},
+					},
+				),
+			)
+		})
+	}
 }
 
 func TestJobsServiceStart(t *testing.T) {
@@ -247,6 +537,165 @@ func TestJobsServiceStart(t *testing.T) {
 	}
 }
 
+func TestJobsServiceGetStatus(t *testing.T) {
+	const testEventID = "123456789"
+	const testJobName = "italian"
+	testJobStatus := JobStatus{
+		Phase: JobPhaseRunning,
+	}
+	testCases := []struct {
+		name       string
+		service    JobsService
+		assertions func(JobStatus, error)
+	}{
+		{
+			name: "error getting event from store",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(_ JobStatus, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "job not found",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+			},
+			assertions: func(_ JobStatus, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotFound{}, err)
+			},
+		},
+		{
+			name: "success",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: map[string]Job{
+									testJobName: {
+										Status: &testJobStatus,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(status JobStatus, err error) {
+				require.NoError(t, err)
+				require.Equal(t, testJobStatus, status)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.assertions(
+				testCase.service.GetStatus(
+					context.Background(),
+					testEventID,
+					testJobName,
+				),
+			)
+		})
+	}
+}
+
+func TestJobsServiceWatchStatus(t *testing.T) {
+	const testEventID = "123456789"
+	const testJobName = "italian"
+	testJobStatus := JobStatus{
+		Phase: JobPhaseRunning,
+	}
+	testCases := []struct {
+		name       string
+		service    JobsService
+		assertions func(context.Context, <-chan JobStatus, error)
+	}{
+		{
+			name: "error getting event from store",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(_ context.Context, _ <-chan JobStatus, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "job not found",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+			},
+			assertions: func(_ context.Context, _ <-chan JobStatus, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotFound{}, err)
+			},
+		},
+		{
+			name: "success",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: map[string]Job{
+									testJobName: {
+										Status: &testJobStatus,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(
+				ctx context.Context,
+				statusCh <-chan JobStatus,
+				err error,
+			) {
+				require.NoError(t, err)
+				select {
+				case status := <-statusCh:
+					require.Equal(t, testJobStatus, status)
+				case <-ctx.Done():
+					require.Fail(t, "didn't receive status update over channel")
+				}
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			statusCh, err :=
+				testCase.service.WatchStatus(ctx, testEventID, testJobName)
+			testCase.assertions(ctx, statusCh, err)
+			cancel()
+		})
+	}
+}
+
 func TestJobsServiceUpdateStatus(t *testing.T) {
 	const testEventID = "123456789"
 	const testJobName = "italian"
@@ -444,12 +893,27 @@ func TestJobsServiceCleanup(t *testing.T) {
 }
 
 type mockJobsStore struct {
+	CreateFn func(
+		ctx context.Context,
+		eventID string,
+		jobName string,
+		job Job,
+	) error
 	UpdateStatusFn func(
 		ctx context.Context,
 		eventID string,
 		jobName string,
 		status JobStatus,
 	) error
+}
+
+func (m *mockJobsStore) Create(
+	ctx context.Context,
+	eventID string,
+	jobName string,
+	job Job,
+) error {
+	return m.CreateFn(ctx, eventID, jobName, job)
 }
 
 func (m *mockJobsStore) UpdateStatus(

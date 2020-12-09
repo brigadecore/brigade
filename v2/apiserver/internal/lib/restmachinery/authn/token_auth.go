@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
@@ -48,6 +49,10 @@ type tokenAuthFilter struct {
 		ctx context.Context,
 		token string,
 	) (authx.Session, error)
+	findEventByTokenFn func(
+		ctx context.Context,
+		token string,
+	) (core.Event, error)
 	config TokenAuthFilterConfig
 }
 
@@ -61,6 +66,10 @@ func NewTokenAuthFilter(
 		token string,
 	) (authx.ServiceAccount, error),
 	findSessionFn func(ctx context.Context, token string) (authx.Session, error),
+	findEventByTokenFn func(
+		ctx context.Context,
+		token string,
+	) (core.Event, error),
 	config *TokenAuthFilterConfig,
 ) restmachinery.Filter {
 	if config == nil {
@@ -69,6 +78,7 @@ func NewTokenAuthFilter(
 	return &tokenAuthFilter{
 		findServiceAccountByTokenFn: findServiceAccountByTokenFn,
 		findSessionByTokenFn:        findSessionFn,
+		findEventByTokenFn:          findEventByTokenFn,
 		config:                      *config,
 	}
 }
@@ -115,6 +125,23 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 		// Is it the Observer's token?
 		if crypto.Hash("", token) == t.config.HashedObserverToken {
 			ctx := authx.ContextWithPrincipal(r.Context(), authx.Observer)
+			handle(w, r.WithContext(ctx))
+			return
+		}
+
+		// Is it a Worker's token?
+		if event, err := t.findEventByTokenFn(r.Context(), token); err != nil {
+			if _, ok := errors.Cause(err).(*meta.ErrNotFound); !ok {
+				log.Println(err)
+				t.writeResponse(
+					w,
+					http.StatusInternalServerError,
+					&meta.ErrInternalServer{},
+				)
+				return
+			}
+		} else {
+			ctx := authx.ContextWithPrincipal(r.Context(), authx.Worker(event.ID))
 			handle(w, r.WithContext(ctx))
 			return
 		}
