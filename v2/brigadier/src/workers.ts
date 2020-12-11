@@ -3,4 +3,5 @@ export interface Worker {
   apiToken: string
   configFilesDirectory: string
   defaultConfigFiles: Map<string, string>
+  logLevel?: string
 }
