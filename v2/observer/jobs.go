@@ -117,7 +117,7 @@ func (o *observer) syncJobPod(obj interface{}) {
 	// Use the API to update Job status
 	eventID := pod.Labels[myk8s.LabelEvent]
 	jobName := pod.Labels[myk8s.LabelJob]
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
 	defer cancel()
 	if err := o.updateJobStatusFn(
 		ctx,
@@ -163,7 +163,9 @@ func (o *observer) deleteJobResources(
 
 	<-time.After(o.config.delayBeforeCleanup)
 
-	if err := o.cleanupJobFn(context.Background(), eventID, jobName); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
+	defer cancel()
+	if err := o.cleanupJobFn(ctx, eventID, jobName); err != nil {
 		o.errFn(
 			fmt.Sprintf(
 				"error cleaning up after event %q job %q: %s",
