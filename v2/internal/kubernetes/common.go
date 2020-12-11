@@ -18,15 +18,15 @@ const (
 )
 
 func EventSecretName(eventID string) string {
-	return fmt.Sprintf("event-%s", eventID)
+	return eventID
 }
 
 func WorkspacePVCName(eventID string) string {
-	return fmt.Sprintf("workspace-%s", eventID)
+	return eventID
 }
 
 func WorkerPodName(eventID string) string {
-	return fmt.Sprintf("worker-%s", eventID)
+	return eventID
 }
 
 func WorkerPodsSelector() string {
@@ -38,11 +38,11 @@ func WorkerPodsSelector() string {
 }
 
 func JobSecretName(eventID, jobName string) string {
-	return fmt.Sprintf("job-%s-%s", eventID, jobName)
+	return fmt.Sprintf("%s-%s", eventID, jobName)
 }
 
 func JobPodName(eventID, jobName string) string {
-	return fmt.Sprintf("job-%s-%s", eventID, jobName)
+	return fmt.Sprintf("%s-%s", eventID, jobName)
 }
 
 func JobPodsSelector() string {
