@@ -22,3 +22,5 @@ export class EventRegistry {
     return this
   }
 }
+
+export const events = new EventRegistry()
