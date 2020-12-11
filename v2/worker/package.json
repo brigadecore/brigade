@@ -1,0 +1,46 @@
+{
+  "name": "brigade-worker",
+  "version": "2.0.0",
+  "description": "Brigade Worker",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": "Brigade Core Maintainers",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/brigadecore/brigade",
+  "bugs": {
+    "url": "https://github.com/brigadecore/brigade/issues"
+  },
+  "scripts": {
+    "test": "mocha --require ts-node/register --recursive ./test/**/*.ts",
+    "lint": "eslint src/ test/",
+    "build": "tsc",
+    "prestart": "node ./dist/worker/src/prestart.js",
+    "start": "node --no-deprecation ./dist/worker/src/index.js"
+  },
+  "keywords": [
+    "kubernetes",
+    "brigade"
+  ],
+  "files": [
+    "dist/*.js",
+    "dist/*.ts"
+  ],
+  "devDependencies": {
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.2.0",
+    "@types/node": "^14.14.11",
+    "@typescript-eslint/eslint-plugin": "^4.9.1",
+    "@typescript-eslint/parser": "^4.9.1",
+    "chai": "^4.2.0",
+    "eslint": "^7.15.0",
+    "mocha": "^8.2.1",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.1.2"
+  },
+  "dependencies": {
+    "axios": "^0.21.0",
+    "module-alias": "^2.2.2",
+    "require-from-string": "^2.0.2",
+    "winston": "^3.3.3"
+  }
+}
