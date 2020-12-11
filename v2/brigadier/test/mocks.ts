@@ -22,16 +22,13 @@ export class MockJob extends Job {
 
   public run(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.fail) {
-        setTimeout(() => {
-          reject("Failed")
-          this.handler()
-        }, this.delay)
-        return
-      }
       setTimeout(() => {
-        resolve()
         this.handler()
+        if (this.fail) {
+          reject("Failed")
+        } else {
+          resolve()
+        }
       }, this.delay)
     })
   }
