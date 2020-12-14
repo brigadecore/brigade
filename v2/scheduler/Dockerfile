@@ -1,4 +1,4 @@
-FROM krancour/go-tools:v0.4.0
+FROM brigadecore/go-tools:v0.1.0
 ARG VERSION
 ARG COMMIT
 ENV CGO_ENABLED=0
