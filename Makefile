@@ -16,9 +16,7 @@ GIT_VERSION = $(shell git describe --always --abbrev=7 --dirty --match=NeVeRmAtC
 
 ifneq ($(SKIP_DOCKER),true)
 	PROJECT_ROOT := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
-	# https://github.com/krancour/go-tools
-	# https://hub.docker.com/repository/docker/krancour/go-tools
-	GO_DEV_IMAGE := krancour/go-tools:v0.4.0
+	GO_DEV_IMAGE := brigadecore/go-tools:v0.1.0
 
 	GO_DOCKER_CMD := docker run \
 		-it \
@@ -39,7 +37,7 @@ ifneq ($(SKIP_DOCKER),true)
 		-w /workspaces/brigade \
 		$(JS_DEV_IMAGE)
 
-	KANIKO_IMAGE := krancour/kaniko:v0.2.0
+	KANIKO_IMAGE := brigadecore/kaniko:v0.1.0
 
 	KANIKO_DOCKER_CMD := docker run \
 		-it \
@@ -141,14 +139,14 @@ build-images: build-apiserver build-scheduler build-observer build-logger-linux
 
 .PHONY: build-logger-linux
 build-logger-linux:
-	$(KANIKO_DOCKER_CMD) /kaniko/executor \
+	$(KANIKO_DOCKER_CMD) kaniko \
 		--dockerfile /workspaces/brigade/v2/logger/Dockerfile.linux \
 		--context dir:///workspaces/brigade/logger \
 		--no-push
 
 .PHONY: build-%
 build-%:
-	$(KANIKO_DOCKER_CMD) /kaniko/executor \
+	$(KANIKO_DOCKER_CMD) kaniko \
 		--dockerfile /workspaces/brigade/v2/$*/Dockerfile \
 		--context dir:///workspaces/brigade/ \
 		--no-push
@@ -160,7 +158,7 @@ push-images: push-apiserver push-scheduler push-observer push-logger-linux
 push-logger-linux:
 	$(KANIKO_DOCKER_CMD) sh -c ' \
 		docker login $(DOCKER_REGISTRY) -u $${DOCKER_USERNAME} -p $${DOCKER_PASSWORD} && \
-		/kaniko/executor \
+		kaniko \
 			--dockerfile /workspaces/brigade/v2/logger/Dockerfile.linux \
 			--context dir:///workspaces/brigade/logger \
 			--destination $(DOCKER_IMAGE_PREFIX)logger-linux:$(IMMUTABLE_DOCKER_TAG) \
@@ -171,7 +169,7 @@ push-logger-linux:
 push-%:
 	$(KANIKO_DOCKER_CMD) sh -c ' \
 		docker login $(DOCKER_REGISTRY) -u $${DOCKER_USERNAME} -p $${DOCKER_PASSWORD} && \
-		/kaniko/executor \
+		kaniko \
 			--dockerfile /workspaces/brigade/v2/$*/Dockerfile \
 			--context dir:///workspaces/brigade/ \
 			--destination $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
