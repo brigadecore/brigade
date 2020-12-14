@@ -4,9 +4,9 @@
 const { events, Job } = require("brigadier");
 const { Check } = require("@brigadecore/brigade-utils");
 
-const goImg = "krancour/go-tools:v0.4.0";
+const goImg = "brigadecore/go-tools:v0.1.0";
 const jsImg = "node:12.3.1-stretch";
-const kanikoImg = "krancour/kaniko:v0.2.0";
+const kanikoImg = "brigadecore/kaniko:v0.1.0";
 const localPath = "/workspaces/brigade";
 
 // Run Go unit tests
