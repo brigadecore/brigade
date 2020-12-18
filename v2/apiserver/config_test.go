@@ -156,7 +156,9 @@ func TestWriterFactoryConfig(t *testing.T) {
 
 func TestSubstrateConfig(t *testing.T) {
 	const testAPIAddress = "http://localhost"
-	const testDefaultWorkerImage = "brigadecore/brigade-worker:2.0.0"
+	const testGitInitializerImage = "brigadecore/brigade2-git-initializer:2.0.0"
+	const testGitInitializerImagePullPolicy = core.ImagePullPolicy("IfNotPresent")
+	const testDefaultWorkerImage = "brigadecore/brigade2-worker:2.0.0"
 	const testDefaultWorkerImagePullPolicy = core.ImagePullPolicy("IfNotPresent")
 	const testWorkspaceStorageClass = "nfs"
 	testCases := []struct {
@@ -174,9 +176,34 @@ func TestSubstrateConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "DEFAULT_WORKER_IMAGE not set",
+			name: "GIT_INITIALIZER_IMAGE not set",
 			setup: func() {
 				os.Setenv("API_ADDRESS", testAPIAddress)
+			},
+			assertions: func(_ kubernetes.SubstrateConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "GIT_INITIALIZER_IMAGE")
+			},
+		},
+		{
+			name: "GIT_INITIALIZER_IMAGE_PULL_POLICY not set",
+			setup: func() {
+				os.Setenv("GIT_INITIALIZER_IMAGE", testGitInitializerImage)
+			},
+			assertions: func(_ kubernetes.SubstrateConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "GIT_INITIALIZER_IMAGE_PULL_POLICY")
+			},
+		},
+		{
+			name: "DEFAULT_WORKER_IMAGE not set",
+			setup: func() {
+				os.Setenv(
+					"GIT_INITIALIZER_IMAGE_PULL_POLICY",
+					string(testGitInitializerImagePullPolicy),
+				)
 			},
 			assertions: func(_ kubernetes.SubstrateConfig, err error) {
 				require.Error(t, err)
@@ -217,6 +244,12 @@ func TestSubstrateConfig(t *testing.T) {
 			assertions: func(config kubernetes.SubstrateConfig, err error) {
 				require.NoError(t, err)
 				require.Equal(t, testAPIAddress, config.APIAddress)
+				require.Equal(t, testGitInitializerImage, config.GitInitializerImage)
+				require.Equal(
+					t,
+					testGitInitializerImagePullPolicy,
+					config.GitInitializerImagePullPolicy,
+				)
 				require.Equal(t, testDefaultWorkerImage, config.DefaultWorkerImage)
 				require.Equal(
 					t,
