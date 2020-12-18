@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
@@ -46,6 +45,13 @@ type SubstrateConfig struct {
 	// this information whenever it needs to tell another component where to find
 	// the API server.
 	APIAddress string
+	// GitInitializerImage is the name of the OCI image that will be used (when
+	// applicable) for the git initializer. The expected format is
+	// [REGISTRY/][ORG/]IMAGE_NAME[:TAG].
+	GitInitializerImage string
+	// GitInitializerImagePullPolicy is the ImagePullPolicy that will be used
+	// (when applicable) for the git initializer.
+	GitInitializerImagePullPolicy core.ImagePullPolicy
 	// DefaultWorkerImage is the name of the OCI image that will be used for the
 	// Worker pod's container[0] if none is specified in a Project's
 	// configuration. The expected format is [REGISTRY/][ORG/]IMAGE_NAME[:TAG].
@@ -373,6 +379,7 @@ func (s *substrate) ScheduleWorker(
 		LogLevel             core.LogLevel     `json:"logLevel"`
 		ConfigFilesDirectory string            `json:"configFilesDirectory"`
 		DefaultConfigFiles   map[string]string `json:"defaultConfigFiles"`
+		Git                  *core.GitConfig   `json:"git"`
 	}
 
 	// Create a secret with event details
@@ -404,6 +411,7 @@ func (s *substrate) ScheduleWorker(
 				LogLevel:             event.Worker.Spec.LogLevel,
 				ConfigFilesDirectory: event.Worker.Spec.ConfigFilesDirectory,
 				DefaultConfigFiles:   event.Worker.Spec.DefaultConfigFiles,
+				Git:                  event.Worker.Spec.Git,
 			},
 		},
 		"",
@@ -415,15 +423,6 @@ func (s *substrate) ScheduleWorker(
 
 	data := map[string][]byte{}
 	data["event.json"] = eventJSON
-	// Special treatment for secrets named gitSSHKey and gitSSHCert. If they're
-	// defined, add them to this secret so the worker's VCS init container (if
-	// applicable) has easy access to them.
-	if gitSSHKey, ok := projectSecretsSecret.Data["gitSSHKey"]; ok {
-		data["gitSSHKey"] = gitSSHKey
-	}
-	if gitSSHCert, ok := projectSecretsSecret.Data["gitSSHCert"]; ok {
-		data["gitSSHCert"] = gitSSHCert
-	}
 
 	if _, err = s.kubeClient.CoreV1().Secrets(
 		project.Kubernetes.Namespace,
@@ -892,65 +891,16 @@ func (s *substrate) createWorkerPod(
 
 		volumeMounts = append(volumeMounts, vcsVolumeMount)
 
-		initContainers = append(
-			initContainers,
-			corev1.Container{
-				Name: "vcs",
-				// TODO: For now, we're using the Brigade 1.x git init image, but for
-				// the sake of consistency and to lower the bar for creating additional
-				// VCS integrations, we should develop a new/improved image that gets
-				// input from a chunk of JSON, just like the actual worker image does.
-				Image:           "brigadecore/git-sidecar:v1.4.0",
-				ImagePullPolicy: corev1.PullAlways,
-				VolumeMounts: []corev1.VolumeMount{
-					vcsVolumeMount,
-				},
-				Env: []corev1.EnvVar{
-					{
-						Name:  "BRIGADE_REMOTE_URL",
-						Value: event.Worker.Spec.Git.CloneURL,
-					},
-					{
-						Name:  "BRIGADE_COMMIT_ID",
-						Value: event.Worker.Spec.Git.Commit,
-					},
-					{
-						Name:  "BRIGADE_COMMIT_REF",
-						Value: event.Worker.Spec.Git.Ref,
-					},
-					{
-						Name: "BRIGADE_REPO_KEY",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: myk8s.EventSecretName(event.ID),
-								},
-								Key: "gitSSHKey",
-							},
-						},
-					},
-					{
-						Name: "BRIGADE_REPO_SSH_CERT",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: myk8s.EventSecretName(event.ID),
-								},
-								Key: "gitSSHCert",
-							},
-						},
-					},
-					{
-						Name:  "BRIGADE_SUBMODULES",
-						Value: strconv.FormatBool(event.Worker.Spec.Git.InitSubmodules),
-					},
-					{
-						Name:  "BRIGADE_WORKSPACE",
-						Value: "/var/vcs",
-					},
-				},
+		initContainers = []corev1.Container{
+			{
+				Name:  "vcs",
+				Image: s.config.GitInitializerImage,
+				ImagePullPolicy: corev1.PullPolicy(
+					s.config.GitInitializerImagePullPolicy,
+				),
+				VolumeMounts: volumeMounts,
 			},
-		)
+		}
 	}
 
 	env := []corev1.EnvVar{}
@@ -1118,6 +1068,14 @@ func (s *substrate) createJobPod(
 		volumes = append(
 			volumes,
 			corev1.Volume{
+				Name: "event",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: myk8s.EventSecretName(event.ID),
+					},
+				},
+			},
+			corev1.Volume{
 				Name: "vcs",
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
@@ -1145,57 +1103,20 @@ func (s *substrate) createJobPod(
 		event.Worker.Spec.Git.CloneURL != "" {
 		initContainers = []corev1.Container{
 			{
-				Name:            "vcs",
-				Image:           "brigadecore/git-sidecar:v1.4.0",
-				ImagePullPolicy: corev1.PullAlways,
+				Name:  "vcs",
+				Image: s.config.GitInitializerImage,
+				ImagePullPolicy: corev1.PullPolicy(
+					s.config.GitInitializerImagePullPolicy,
+				),
 				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "event",
+						MountPath: "/var/event",
+						ReadOnly:  true,
+					},
 					{
 						Name:      "vcs",
 						MountPath: "/var/vcs",
-					},
-				},
-				Env: []corev1.EnvVar{
-					{
-						Name:  "BRIGADE_REMOTE_URL",
-						Value: event.Worker.Spec.Git.CloneURL,
-					},
-					{
-						Name:  "BRIGADE_COMMIT_ID",
-						Value: event.Worker.Spec.Git.Commit,
-					},
-					{
-						Name:  "BRIGADE_COMMIT_REF",
-						Value: event.Worker.Spec.Git.Ref,
-					},
-					{
-						Name: "BRIGADE_REPO_KEY",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: myk8s.EventSecretName(event.ID),
-								},
-								Key: "gitSSHKey",
-							},
-						},
-					},
-					{
-						Name: "BRIGADE_REPO_SSH_CERT",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: myk8s.EventSecretName(event.ID),
-								},
-								Key: "gitSSHCert",
-							},
-						},
-					},
-					{
-						Name:  "BRIGADE_SUBMODULES",
-						Value: strconv.FormatBool(event.Worker.Spec.Git.InitSubmodules),
-					},
-					{
-						Name:  "BRIGADE_WORKSPACE",
-						Value: "/var/vcs",
 					},
 				},
 			},

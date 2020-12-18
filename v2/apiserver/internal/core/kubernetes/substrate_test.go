@@ -1464,15 +1464,21 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, pod)
 				// Volumes:
-				require.Len(t, pod.Spec.Volumes, 3)
+				require.Len(t, pod.Spec.Volumes, 4)
 				require.Equal(t, "workspace", pod.Spec.Volumes[0].Name)
-				require.Equal(t, "vcs", pod.Spec.Volumes[1].Name)
-				require.Equal(t, "docker-socket", pod.Spec.Volumes[2].Name)
+				require.Equal(t, "event", pod.Spec.Volumes[1].Name)
+				require.Equal(t, "vcs", pod.Spec.Volumes[2].Name)
+				require.Equal(t, "docker-socket", pod.Spec.Volumes[3].Name)
 				// Init container:
 				require.Len(t, pod.Spec.InitContainers, 1)
 				require.Equal(t, "vcs", pod.Spec.InitContainers[0].Name)
-				require.Len(t, pod.Spec.InitContainers[0].VolumeMounts, 1)
-				require.Equal(t, "vcs", pod.Spec.InitContainers[0].VolumeMounts[0].Name)
+				require.Len(t, pod.Spec.InitContainers[0].VolumeMounts, 2)
+				require.Equal(
+					t,
+					"event",
+					pod.Spec.InitContainers[0].VolumeMounts[0].Name,
+				)
+				require.Equal(t, "vcs", pod.Spec.InitContainers[0].VolumeMounts[1].Name)
 				// Containers:
 				require.Len(t, pod.Spec.Containers, 2)
 				// Primary container:

@@ -99,6 +99,18 @@ func substrateConfig() (kubernetes.SubstrateConfig, error) {
 	if err != nil {
 		return config, err
 	}
+	config.GitInitializerImage, err =
+		os.GetRequiredEnvVar("GIT_INITIALIZER_IMAGE")
+	if err != nil {
+		return config, err
+	}
+	gitInitializerImagePullPolicyStr, err :=
+		os.GetRequiredEnvVar("GIT_INITIALIZER_IMAGE_PULL_POLICY")
+	if err != nil {
+		return config, err
+	}
+	config.GitInitializerImagePullPolicy =
+		core.ImagePullPolicy(gitInitializerImagePullPolicyStr)
 	config.DefaultWorkerImage, err = os.GetRequiredEnvVar("DEFAULT_WORKER_IMAGE")
 	if err != nil {
 		return config, err
