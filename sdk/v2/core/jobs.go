@@ -106,20 +106,16 @@ type JobSpec struct {
 type JobContainerSpec struct {
 	// ContainerSpec encapsulates generic specifications for an OCI container.
 	ContainerSpec `json:",inline"`
-	// UseWorkspace indicates whether the Job requires the Worker's shared
-	// workspace (if one exists) to be mounted into the OCI container.
-	UseWorkspace bool `json:"useWorkspace"`
+	// WorkingDirectory specifies the OCI container's working directory.
+	WorkingDirectory string `json:"workingDirectory,omitempty"`
 	// WorkspaceMountPath specifies the path in the OCI container's file system
-	// where, if applicable, the Worker's shared workspace should be mounted.
+	// where, if applicable, the Worker's shared workspace should be mounted. If
+	// left blank, the Job implicitly does not use the Worker's shared workspace.
 	WorkspaceMountPath string `json:"workspaceMountPath,omitempty"`
-	// UseSource indicates whether the Job requires source code to be retrieved
-	// from a git repository and mounted into the OCI container. Note this
-	// requires git configuration to have been specified at the Project and/or
-	// Event levels.
-	UseSource bool `json:"useSource"`
 	// SourceMountPath specifies the path in the OCI container's file system
-	// where, if applicable, source code retrieved from a git repository should be
-	// mounted.
+	// where, if applicable, source code retrieved from a VCS repository should be
+	// mounted. If left blank, the Job implicitly does not use source code
+	// retrieved from a VCS repository.
 	SourceMountPath string `json:"sourceMountPath,omitempty"`
 	// Privileged indicates whether the OCI container should operate in a
 	// "privileged" (relaxed permissions) mode. This is commonly used to effect
