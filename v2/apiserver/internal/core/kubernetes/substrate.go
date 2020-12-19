@@ -372,7 +372,7 @@ func (s *substrate) ScheduleWorker(
 		APIToken             string            `json:"apiToken"`
 		LogLevel             core.LogLevel     `json:"logLevel"`
 		ConfigFilesDirectory string            `json:"configFilesDirectory"`
-		DefaultConfigFiles   map[string]string `json:"defaultConfigFiles" bson:"defaultConfigFiles"` // nolint: lll
+		DefaultConfigFiles   map[string]string `json:"defaultConfigFiles"`
 	}
 
 	// Create a secret with event details
@@ -1061,14 +1061,14 @@ func (s *substrate) createJobPod(
 	//   1. Use shared workspace
 	//   2. Use source code from git
 	//   3. Mount the host's Docker socket
-	var useWorkspace = jobSpec.PrimaryContainer.UseWorkspace
-	var useSource = jobSpec.PrimaryContainer.UseSource
+	var useWorkspace = jobSpec.PrimaryContainer.WorkspaceMountPath != ""
+	var useSource = jobSpec.PrimaryContainer.SourceMountPath != ""
 	var useDockerSocket = jobSpec.PrimaryContainer.UseHostDockerSocket
 	for _, sidecarContainer := range jobSpec.SidecarContainers {
-		if sidecarContainer.UseWorkspace {
+		if sidecarContainer.WorkspaceMountPath != "" {
 			useWorkspace = true
 		}
-		if sidecarContainer.UseSource {
+		if sidecarContainer.SourceMountPath != "" {
 			useSource = true
 		}
 		if sidecarContainer.UseHostDockerSocket {
@@ -1264,6 +1264,7 @@ func getContainerFromSpec(
 		Name:            containerName, // Primary container takes the job's name
 		Image:           spec.Image,
 		ImagePullPolicy: corev1.PullPolicy(spec.ImagePullPolicy),
+		WorkingDir:      spec.WorkingDirectory,
 		Command:         spec.Command,
 		Args:            spec.Arguments,
 		Env:             make([]corev1.EnvVar, len(spec.Environment)),
@@ -1284,7 +1285,7 @@ func getContainerFromSpec(
 		}
 		i++
 	}
-	if spec.UseWorkspace {
+	if spec.WorkspaceMountPath != "" {
 		container.VolumeMounts = []corev1.VolumeMount{
 			{
 				Name:      "workspace",
@@ -1292,7 +1293,7 @@ func getContainerFromSpec(
 			},
 		}
 	}
-	if spec.UseSource {
+	if spec.SourceMountPath != "" {
 		container.VolumeMounts = append(
 			container.VolumeMounts,
 			corev1.VolumeMount{
