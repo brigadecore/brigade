@@ -156,6 +156,8 @@ function runCheck(e, p) {
       return run(e, p, buildScheduler);
     case "build-observer":
       return run(e, p, buildObserver);
+    case "build-logger-linux":
+      return run(e, p, buildLoggerLinux);
     case "build-cli":
       return run(e, p, buildCLI);
     default:
