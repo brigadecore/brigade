@@ -32,13 +32,12 @@ export class Job {
 export class Container {
   public image: string
   public imagePullPolicy = "IfNotPresent"
+  public workingDirectory = ""
   public command: string[] = []
   public arguments: string[] = []
   public environment = new Map<string, string>()
-  public useWorkspace = false
-  public workspaceMountPath = "/var/workspace"
-  public useSource = false
-  public sourceMountPath = "/var/vcs"
+  public workspaceMountPath = ""
+  public sourceMountPath = ""
   public privileged = false
   public useHostDockerSocket = false
 

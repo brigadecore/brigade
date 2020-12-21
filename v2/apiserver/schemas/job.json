@@ -34,6 +34,10 @@
 						"Always"
 					]
 				},
+				"workingDirectory": {
+					"type": "string",
+					"description": "If applicable, specifies the working directory"
+				},
 				"command": {
 					"type": "array",
 					"description": "The command to execute within the container",
@@ -58,17 +62,9 @@
 						"type": "string"
 					}
 				},
-				"useWorkspace": {
-					"type": "boolean",
-					"description": "Whether the worker will require a shared workspace for itself and any jobs it spawns"	
-				},
 				"workspaceMountPath": {
 					"type": "string",
 					"description": "If applicable, location in the file system where the shared workspace volume should be mounted"
-				},
-				"useSource": {
-					"type": "boolean",
-					"description": "Whether source needs to be obtained from source control for this container to run"
 				},
 				"sourceMountPath": {
 					"type": "string",

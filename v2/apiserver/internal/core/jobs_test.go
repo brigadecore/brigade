@@ -301,7 +301,7 @@ func TestJobsServiceCreate(t *testing.T) {
 							PrimaryContainer: JobContainerSpec{
 								Privileged:          true,
 								UseHostDockerSocket: true,
-								UseWorkspace:        true,
+								WorkspaceMountPath:  "/var/workspace",
 							},
 						},
 					},
