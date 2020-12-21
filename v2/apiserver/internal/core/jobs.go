@@ -85,20 +85,16 @@ type JobSpec struct {
 type JobContainerSpec struct {
 	// ContainerSpec encapsulates generic specifications for an OCI container.
 	ContainerSpec `json:",inline" bson:",inline"`
-	// UseWorkspace indicates whether the Job requires the Worker's shared
-	// workspace (if one exists) to be mounted into the OCI container.
-	UseWorkspace bool `json:"useWorkspace" bson:"useWorkspace"`
+	// WorkingDirectory specifies the OCI container's working directory.
+	WorkingDirectory string `json:"workingDirectory,omitempty" bson:"workingDirectory,omitempty"` // nolint: lll
 	// WorkspaceMountPath specifies the path in the OCI container's file system
-	// where, if applicable, the Worker's shared workspace should be mounted.
+	// where, if applicable, the Worker's shared workspace should be mounted. If
+	// left blank, the Job implicitly does not use the Worker's shared workspace.
 	WorkspaceMountPath string `json:"workspaceMountPath,omitempty" bson:"workspaceMountPath,omitempty"` // nolint: lll
-	// UseSource indicates whether the Job requires source code to be retrieved
-	// from a git repository and mounted into the OCI container. Note this
-	// requires git configuration to have been specified at the Project and/or
-	// Event levels.
-	UseSource bool `json:"useSource" bson:"useSource"`
 	// SourceMountPath specifies the path in the OCI container's file system
-	// where, if applicable, source code retrieved from a git repository should be
-	// mounted.
+	// where, if applicable, source code retrieved from a VCS repository should be
+	// mounted. If left blank, the Job implicitly does not use source code
+	// retrieved from a VCS repository.
 	SourceMountPath string `json:"sourceMountPath,omitempty" bson:"sourceMountPath,omitempty"` // nolint: lll
 	// Privileged indicates whether the OCI container should operate in a
 	// "privileged" (relaxed permissions) mode. This is commonly used to effect
@@ -248,11 +244,11 @@ func (j *jobsService) Create(
 	//   1. Use shared workspace
 	//   2. Run in privileged mode
 	//   3. Mount the host's Docker socket
-	var useWorkspace = job.Spec.PrimaryContainer.UseWorkspace
+	var useWorkspace = job.Spec.PrimaryContainer.WorkspaceMountPath != ""
 	var usePrivileged = job.Spec.PrimaryContainer.Privileged
 	var useDockerSocket = job.Spec.PrimaryContainer.UseHostDockerSocket
 	for _, sidecarContainer := range job.Spec.SidecarContainers {
-		if sidecarContainer.UseWorkspace {
+		if sidecarContainer.WorkspaceMountPath != "" {
 			useWorkspace = true
 		}
 		if sidecarContainer.Privileged {
