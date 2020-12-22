@@ -135,6 +135,23 @@ test-unit-js:
 		yarn test \
 	'
 
+# temp target for quick building and testing
+# can remove once we have a test harness around the Docker image
+.PHONY: go-build-git-initializer
+go-build-git-initializer:
+	@cd v2/git-initializer && \
+		go build \
+			-o ../../bin/git-initializer \
+			-ldflags "-w \
+				-X github.com/brigadecore/brigade/v2/internal/version.version=${VERSION} \
+				-X github.com/brigadecore/brigade/v2/internal/version.commit=${GIT_VERSION}" \
+			.
+
+.PHONY: test-git-initializer
+test-git-initializer: go-build-git-initializer
+	@cd v2/git-initializer && \
+		./test.sh
+
 ################################################################################
 # Build / Publish                                                              #
 ################################################################################
