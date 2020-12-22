@@ -211,6 +211,52 @@ func TestJobsServiceCreate(t *testing.T) {
 			},
 		},
 		{
+			name: "error storing job environment in substrate",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Spec: WorkerSpec{
+									UseWorkspace: true,
+									JobPolicies: &JobPolicies{
+										AllowPrivileged:        true,
+										AllowDockerSocketMount: true,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					CreateFn: func(context.Context, string, string, Job) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					StoreJobEnvironmentFn: func(
+						context.Context,
+						Project,
+						string,
+						string,
+						JobSpec,
+					) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error storing event")
+			},
+		},
+		{
 			name: "error scheduling job on substrate",
 			service: &jobsService{
 				eventsStore: &mockEventsStore{
@@ -239,6 +285,15 @@ func TestJobsServiceCreate(t *testing.T) {
 					},
 				},
 				substrate: &mockSubstrate{
+					StoreJobEnvironmentFn: func(
+						context.Context,
+						Project,
+						string,
+						string,
+						JobSpec,
+					) error {
+						return nil
+					},
 					ScheduleJobFn: func(context.Context, Project, Event, string) error {
 						return errors.New("something went wrong")
 					},
@@ -279,6 +334,15 @@ func TestJobsServiceCreate(t *testing.T) {
 					},
 				},
 				substrate: &mockSubstrate{
+					StoreJobEnvironmentFn: func(
+						context.Context,
+						Project,
+						string,
+						string,
+						JobSpec,
+					) error {
+						return nil
+					},
 					ScheduleJobFn: func(context.Context, Project, Event, string) error {
 						return nil
 					},

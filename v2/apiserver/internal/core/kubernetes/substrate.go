@@ -72,7 +72,7 @@ type substrate struct {
 	createJobSecretFn    func(
 		ctx context.Context,
 		project core.Project,
-		event core.Event,
+		eventID string,
 		jobName string,
 		jobSpec core.JobSpec,
 	) error
@@ -503,6 +503,25 @@ func (s *substrate) StartWorker(
 	return nil
 }
 
+func (s *substrate) StoreJobEnvironment(
+	ctx context.Context,
+	project core.Project,
+	eventID string,
+	jobName string,
+	jobSpec core.JobSpec,
+) error {
+	if err :=
+		s.createJobSecretFn(ctx, project, eventID, jobName, jobSpec); err != nil {
+		return errors.Wrapf(
+			err,
+			"error creating secret for event %q job %q",
+			eventID,
+			jobName,
+		)
+	}
+	return nil
+}
+
 func (s *substrate) ScheduleJob(
 	ctx context.Context,
 	project core.Project,
@@ -548,15 +567,6 @@ func (s *substrate) StartJob(
 	jobName string,
 ) error {
 	jobSpec := event.Worker.Jobs[jobName].Spec
-	if err :=
-		s.createJobSecretFn(ctx, project, event, jobName, jobSpec); err != nil {
-		return errors.Wrapf(
-			err,
-			"error creating secret for event %q job %q",
-			event.ID,
-			jobName,
-		)
-	}
 	if err :=
 		s.createJobPodFn(ctx, project, event, jobName, jobSpec); err != nil {
 		return errors.Wrapf(
@@ -1003,19 +1013,19 @@ func (s *substrate) createWorkerPod(
 func (s *substrate) createJobSecret(
 	ctx context.Context,
 	project core.Project,
-	event core.Event,
+	eventID string,
 	jobName string,
 	jobSpec core.JobSpec,
 ) error {
 
 	jobSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      myk8s.JobSecretName(event.ID, jobName),
+			Name:      myk8s.JobSecretName(eventID, jobName),
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
 				myk8s.LabelComponent: "job",
-				myk8s.LabelProject:   event.ProjectID,
-				myk8s.LabelEvent:     event.ID,
+				myk8s.LabelProject:   project.ID,
+				myk8s.LabelEvent:     eventID,
 				myk8s.LabelJob:       jobName,
 			},
 		},
@@ -1041,7 +1051,7 @@ func (s *substrate) createJobSecret(
 		return errors.Wrapf(
 			err,
 			"error creating secret for event %q job %q",
-			event.ID,
+			eventID,
 			jobName,
 		)
 	}
