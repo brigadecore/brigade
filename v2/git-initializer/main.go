@@ -17,6 +17,7 @@ import (
 	gitssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/go-git/go-git/v5/storage/filesystem"
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
 
 	"github.com/urfave/cli/v2"
 
@@ -102,20 +103,25 @@ func gitCheckout(c *cli.Context) error {
 	// Check for SSH Key
 	privateKey, ok := event.Project.Secrets["gitSSHKey"]
 	if ok {
-		if auth, err = gitssh.NewPublicKeys(
+		publicKeys, err := gitssh.NewPublicKeys(
 			"git",
 			[]byte(privateKey),
 			event.Project.Secrets["gitSSHKeyPassword"],
-		); err != nil {
+		)
+		if err != nil {
 			return errors.Wrapf(
 				err,
 				"error configuring authentication for remote with URL %s: %s",
 				event.Worker.Git.CloneURL,
 			)
 		}
+		// The following avoids:
+		// "unable to find any valid known_hosts file, set SSH_KNOWN_HOSTS env variable"
+		publicKeys.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+		auth = publicKeys
 	}
 
-	// Prioritize using Commit; alternatively try Ref; else, set to master
+	// Prioritize using Commit; alternatively try Ref
 	commitRef := event.Worker.Git.Commit
 	if commitRef == "" {
 		commitRef = event.Worker.Git.Ref // This will never be non-empty
