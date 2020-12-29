@@ -9,18 +9,14 @@ spec:
       brigade.js: |-
         const { events, Job } = require("brigadier");
 
-        events.on("github.com/brigadecore/brigade/cli:exec", (e) => {
-          let fooJob = new Job("foo", "debian:latest");
+        events.on("github.com/brigadecore/brigade/cli", "exec", async event => {
+          let fooJob = new Job("foo", "debian:latest", event);
           fooJob.primaryContainer.command = ["echo"];
           fooJob.primaryContainer.arguments = ["foo"];
+          await fooJob.run();
 
-          let barJob = new Job("bar", "debian:latest");
+          let barJob = new Job("bar", "debian:latest", event);
           barJob.primaryContainer.command = ["echo"];
           barJob.primaryContainer.arguments = ["bar"];
-
-          fooJob.run().then(() => {
-            return barJob.run();
-          }).catch(e => {
-            console.error(e);
-          });
+          await barJob.run();
         });

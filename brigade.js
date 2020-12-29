@@ -80,6 +80,11 @@ function buildObserver() {
   return buildImage("observer");
 }
 
+// Build the worker
+function buildWorker() {
+  return buildImage("worker");
+}
+
 // Build the Linux logging agent
 function buildLoggerLinux() {
   return buildImage("logger-linux");
@@ -128,6 +133,7 @@ function runSuite(e, p) {
     run(e, p, buildAPIServer).catch((err) => { return err }),
     run(e, p, buildScheduler).catch((err) => { return err }),
     run(e, p, buildObserver).catch((err) => { return err }),
+    run(e, p, buildWorker).catch((err) => { return err }),
     run(e, p, buildLoggerLinux).catch((err) => { return err }),
     run(e, p, buildCLI).catch((err) => { return err })
   ]).then((values) => {
@@ -158,6 +164,8 @@ function runCheck(e, p) {
       return run(e, p, buildObserver);
     case "build-logger-linux":
       return run(e, p, buildLoggerLinux);
+    case "build-worker":
+      return run(e, p, buildWorker);
     case "build-cli":
       return run(e, p, buildCLI);
     default:
