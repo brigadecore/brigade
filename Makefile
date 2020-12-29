@@ -116,6 +116,9 @@ lint-js:
 	$(JS_DOCKER_CMD) sh -c ' \
 		cd v2/brigadier && \
 		yarn install && \
+		yarn lint && \
+		cd ../worker && \
+		yarn install && \
 		yarn lint \
 	'
 
@@ -123,6 +126,9 @@ lint-js:
 test-unit-js:
 	$(JS_DOCKER_CMD) sh -c ' \
 		cd v2/brigadier && \
+		yarn install && \
+		yarn test && \
+		cd ../worker && \
 		yarn install && \
 		yarn test \
 	'
@@ -135,7 +141,7 @@ test-unit-js:
 build: build-images build-cli
 
 .PHONY: build-images
-build-images: build-apiserver build-scheduler build-observer build-logger-linux
+build-images: build-apiserver build-scheduler build-observer build-worker build-logger-linux
 
 .PHONY: build-logger-linux
 build-logger-linux:
@@ -219,7 +225,7 @@ hack-build-cli:
 	'
 
 .PHONY: hack-push-images
-hack-push-images: hack-push-apiserver hack-push-scheduler hack-push-observer hack-push-logger-linux
+hack-push-images: hack-push-apiserver hack-push-scheduler hack-push-observer hack-push-worker hack-push-logger-linux
 
 .PHONY: hack-push-%
 hack-push-%: hack-build-%
@@ -242,6 +248,9 @@ hack: hack-push-images hack-build-cli
 		--set observer.image.repository=$(DOCKER_IMAGE_PREFIX)observer \
 		--set observer.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set observer.image.pullPolicy=Always \
+		--set worker.image.repository=$(DOCKER_IMAGE_PREFIX)worker \
+		--set worker.image.tag=$(IMMUTABLE_DOCKER_TAG) \
+		--set worker.image.pullPolicy=Always \
 		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)logger-linux \
 		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set logger.linux.image.pullPolicy=Always
