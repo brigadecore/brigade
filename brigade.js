@@ -95,11 +95,6 @@ function buildGitInitializer() {
   return buildImage("git-initializer");
 }
 
-// Build the worker
-function buildWorker() {
-  return buildImage("worker");
-
-
 // Build the API server
 function buildImage(imageName) {
   var job = new Job(`build-${imageName}`, kanikoImg);
@@ -146,7 +141,6 @@ function runSuite(e, p) {
     run(e, p, buildWorker).catch((err) => { return err }),
     run(e, p, buildLoggerLinux).catch((err) => { return err }),
     run(e, p, buildGitInitializer).catch((err) => { return err }),
-    run(e, p, buildWorker).catch((err) => { return err }),
     run(e, p, buildCLI).catch((err) => { return err })
   ]).then((values) => {
     values.forEach((value) => {
