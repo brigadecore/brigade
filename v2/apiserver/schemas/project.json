@@ -26,7 +26,7 @@
 
 		"url": {
 			"type": "string",
-			"pattern": "^[\\w:/\\-\\.\\?=]*$",
+			"pattern": "^[\\w:/\\-\\.\\?=@]*$",
 			"minLength": 5,
 			"maxLength": 250
 		},
