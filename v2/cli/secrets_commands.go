@@ -16,8 +16,9 @@ import (
 )
 
 var secretsCommand = &cli.Command{
-	Name:  "secrets",
-	Usage: "Manage project secrets",
+	Name:    "secrets",
+	Aliases: []string{"secret"},
+	Usage:   "Manage project secrets",
 	Subcommands: []*cli.Command{
 		{
 			Name:    "list",
