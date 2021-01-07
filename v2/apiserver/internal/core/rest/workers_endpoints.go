@@ -72,6 +72,11 @@ func (w *WorkersEndpoints) getOrStreamStatus(
 	// nolint: errcheck
 	watch, _ := strconv.ParseBool(r.URL.Query().Get("watch"))
 
+	// Clients can request use of the SSE protocol instead of HTTP/2 streaming.
+	// Not every potential client language has equally good support for both of
+	// those, so allowing clients to pick is useful.
+	sse, _ := strconv.ParseBool(r.URL.Query().Get("sse")) // nolint: errcheck
+
 	if !watch {
 		restmachinery.ServeRequest(
 			restmachinery.InboundRequest{
@@ -113,8 +118,21 @@ func (w *WorkersEndpoints) getOrStreamStatus(
 			log.Println(errors.Wrapf(err, "error marshaling worker status"))
 			return
 		}
-		fmt.Fprint(wr, string(statusBytes))
+		if sse {
+			fmt.Fprintf(wr, "event: message\ndata: %s\n\n", string(statusBytes))
+		} else {
+			fmt.Fprint(wr, string(statusBytes))
+		}
 		wr.(http.Flusher).Flush()
+		if status.Phase.IsTerminal() {
+			// If we're using SSE, we'll explicitly send an event that denotes the end
+			// of the stream.
+			if sse {
+				fmt.Fprintf(wr, "event: done\ndata: done\n\n")
+				wr.(http.Flusher).Flush()
+			}
+			return
+		}
 	}
 }
 
