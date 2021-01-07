@@ -20,35 +20,35 @@ const LogLevelInfo LogLevel = "INFO"
 type WorkerPhase string
 
 const (
-	// WorkerPhaseAborted represents the state wherein a worker was forcefully
+	// WorkerPhaseAborted represents the state wherein a Worker was forcefully
 	// stopped during execution.
 	WorkerPhaseAborted WorkerPhase = "ABORTED"
-	// WorkerPhaseCanceled represents the state wherein a pending worker was
+	// WorkerPhaseCanceled represents the state wherein a pending Worker was
 	// canceled prior to execution.
 	WorkerPhaseCanceled WorkerPhase = "CANCELED"
-	// WorkerPhaseFailed represents the state wherein a worker has run to
+	// WorkerPhaseFailed represents the state wherein a Worker has run to
 	// completion but experienced errors.
 	WorkerPhaseFailed WorkerPhase = "FAILED"
-	// WorkerPhasePending represents the state wherein a worker is awaiting
+	// WorkerPhasePending represents the state wherein a Worker is awaiting
 	// execution.
 	WorkerPhasePending WorkerPhase = "PENDING"
-	// WorkerPhaseRunning represents the state wherein a worker is currently
+	// WorkerPhaseRunning represents the state wherein a Worker is currently
 	// being executed.
 	WorkerPhaseRunning WorkerPhase = "RUNNING"
-	// WorkerPhaseSchedulingFailed represents the state wherein a worker was not
+	// WorkerPhaseSchedulingFailed represents the state wherein a Worker was not
 	// scheduled due to some unexpected and unrecoverable error encountered by the
 	// scheduler.
 	WorkerPhaseSchedulingFailed WorkerPhase = "SCHEDULING_FAILED"
 	// WorkerPhaseStarting represents the state wherein a Worker is starting on
 	// the substrate but isn't running yet.
 	WorkerPhaseStarting WorkerPhase = "STARTING"
-	// WorkerPhaseSucceeded represents the state where a worker has run to
+	// WorkerPhaseSucceeded represents the state where a Worker has run to
 	// completion without error.
 	WorkerPhaseSucceeded WorkerPhase = "SUCCEEDED"
-	// WorkerPhaseTimedOut represents the state wherein a worker has has not
+	// WorkerPhaseTimedOut represents the state wherein a Worker has has not
 	// completed within a designated timeframe.
 	WorkerPhaseTimedOut WorkerPhase = "TIMED_OUT"
-	// WorkerPhaseUnknown represents the state wherein a worker's state is
+	// WorkerPhaseUnknown represents the state wherein a Worker's state is
 	// unknown. Note that this is possible if and only if the underlying Worker
 	// execution substrate (Kubernetes), for some unanticipated, reason does not
 	// know the Worker's (Pod's) state.
