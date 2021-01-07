@@ -72,6 +72,25 @@ func WorkerPhasesAll() []WorkerPhase {
 	}
 }
 
+// IsTerminal returns a bool indicating whether the WorkerPhase is terminal.
+func (w WorkerPhase) IsTerminal() bool {
+	switch w {
+	case WorkerPhaseAborted:
+		fallthrough
+	case WorkerPhaseCanceled:
+		fallthrough
+	case WorkerPhaseFailed:
+		fallthrough
+	case WorkerPhaseSchedulingFailed:
+		fallthrough
+	case WorkerPhaseSucceeded:
+		fallthrough
+	case WorkerPhaseTimedOut:
+		return true
+	}
+	return false
+}
+
 // Worker represents a component that orchestrates handling of a single Event.
 type Worker struct {
 	// Spec is the technical blueprint for the Worker.
