@@ -49,6 +49,25 @@ const (
 	JobPhaseUnknown JobPhase = "UNKNOWN"
 )
 
+// IsTerminal returns a bool indicating whether the JobPhase is terminal.
+func (j JobPhase) IsTerminal() bool {
+	switch j {
+	case JobPhaseAborted:
+		fallthrough
+	case JobPhaseCanceled:
+		fallthrough
+	case JobPhaseFailed:
+		fallthrough
+	case JobPhaseSchedulingFailed:
+		fallthrough
+	case JobPhaseSucceeded:
+		fallthrough
+	case JobPhaseTimedOut:
+		return true
+	}
+	return false
+}
+
 // Job represents a component spawned by a Worker to complete a single task
 // in the course of handling an Event.
 type Job struct {
