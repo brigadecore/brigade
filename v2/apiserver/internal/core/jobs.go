@@ -216,6 +216,7 @@ func NewJobsService(
 	}
 }
 
+// nolint: gocyclo
 func (j *jobsService) Create(
 	ctx context.Context,
 	eventID string,
@@ -301,11 +302,49 @@ func (j *jobsService) Create(
 		)
 	}
 
-	if err = j.jobsStore.Create(ctx, eventID, jobName, job); err != nil {
+	// Redact the values of the Job's environment variables in the job we persist
+	// because they are likely to contain secrets.
+	jobCopy := job
+	// This needs to be a NEW map, otherwise as we mess with it, we're messing
+	// with the original since maps are references.
+	jobCopy.Spec.PrimaryContainer.Environment = map[string]string{}
+	for k := range job.Spec.PrimaryContainer.Environment {
+		jobCopy.Spec.PrimaryContainer.Environment[k] = "*** REDACTED ***"
+	}
+	// This needs to be a NEW map, otherwise as we mess with it, we're messing
+	// with the original since maps are references.
+	jobCopy.Spec.SidecarContainers = map[string]JobContainerSpec{}
+	for sidecarName, sidecar := range job.Spec.SidecarContainers {
+		// This needs to be a NEW map, otherwise as we mess with it, we're messing
+		// with the original since maps are references.
+		sidecar.Environment = map[string]string{}
+		for k := range job.Spec.SidecarContainers[sidecarName].Environment {
+			sidecar.Environment[k] = "*** REDACTED ***"
+		}
+		jobCopy.Spec.SidecarContainers[sidecarName] = sidecar
+	}
+
+	if err = j.jobsStore.Create(ctx, eventID, jobName, jobCopy); err != nil {
 		return errors.Wrapf(
 			err, "error saving event %q job %q in store",
 			eventID,
 			eventID,
+		)
+	}
+
+	// Securely store the Job's environment variables
+	if err = j.substrate.StoreJobEnvironment(
+		ctx,
+		project,
+		event.ID,
+		jobName,
+		job.Spec,
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error storing event %q job %q environment on the substrate",
+			event.ID,
+			jobName,
 		)
 	}
 

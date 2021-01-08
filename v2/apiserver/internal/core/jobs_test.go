@@ -25,6 +25,10 @@ func TestNewjobsService(t *testing.T) {
 func TestJobsServiceCreate(t *testing.T) {
 	const testEventID = "123456789"
 	const testJobName = "italian"
+	testEnvironment := map[string]string{
+		"FOO": "bar",
+		"BAT": "baz",
+	}
 	testCases := []struct {
 		name       string
 		service    JobsService
@@ -211,6 +215,52 @@ func TestJobsServiceCreate(t *testing.T) {
 			},
 		},
 		{
+			name: "error storing job environment in substrate",
+			service: &jobsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Spec: WorkerSpec{
+									UseWorkspace: true,
+									JobPolicies: &JobPolicies{
+										AllowPrivileged:        true,
+										AllowDockerSocketMount: true,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					CreateFn: func(context.Context, string, string, Job) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					StoreJobEnvironmentFn: func(
+						context.Context,
+						Project,
+						string,
+						string,
+						JobSpec,
+					) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error storing event")
+			},
+		},
+		{
 			name: "error scheduling job on substrate",
 			service: &jobsService{
 				eventsStore: &mockEventsStore{
@@ -239,6 +289,15 @@ func TestJobsServiceCreate(t *testing.T) {
 					},
 				},
 				substrate: &mockSubstrate{
+					StoreJobEnvironmentFn: func(
+						context.Context,
+						Project,
+						string,
+						string,
+						JobSpec,
+					) error {
+						return nil
+					},
 					ScheduleJobFn: func(context.Context, Project, Event, string) error {
 						return errors.New("something went wrong")
 					},
@@ -274,11 +333,42 @@ func TestJobsServiceCreate(t *testing.T) {
 					},
 				},
 				jobsStore: &mockJobsStore{
-					CreateFn: func(context.Context, string, string, Job) error {
+					CreateFn: func(_ context.Context, _ string, _ string, job Job) error {
+						// Assert that all expected environment redactions occurred
+						for k := range testEnvironment {
+							v, ok := job.Spec.PrimaryContainer.Environment[k]
+							require.True(t, ok)
+							require.Equal(t, "*** REDACTED ***", v)
+						}
+						for _, sidecar := range job.Spec.SidecarContainers {
+							for k := range testEnvironment {
+								v, ok := sidecar.Environment[k]
+								require.True(t, ok)
+								require.Equal(t, "*** REDACTED ***", v)
+							}
+						}
 						return nil
 					},
 				},
 				substrate: &mockSubstrate{
+					StoreJobEnvironmentFn: func(
+						_ context.Context,
+						_ Project,
+						_ string,
+						_ string,
+						jobSpec JobSpec,
+					) error {
+						// Assert that an object WITHOUT environment redactions was received
+						require.Equal(
+							t,
+							testEnvironment,
+							jobSpec.PrimaryContainer.Environment,
+						)
+						for _, sidecar := range jobSpec.SidecarContainers {
+							require.Equal(t, testEnvironment, sidecar.Environment)
+						}
+						return nil
+					},
 					ScheduleJobFn: func(context.Context, Project, Event, string) error {
 						return nil
 					},
@@ -299,9 +389,22 @@ func TestJobsServiceCreate(t *testing.T) {
 					Job{
 						Spec: JobSpec{
 							PrimaryContainer: JobContainerSpec{
+								ContainerSpec: ContainerSpec{
+									Environment: testEnvironment,
+								},
 								Privileged:          true,
 								UseHostDockerSocket: true,
 								WorkspaceMountPath:  "/var/workspace",
+							},
+							SidecarContainers: map[string]JobContainerSpec{
+								"foo": {
+									ContainerSpec: ContainerSpec{
+										Environment: testEnvironment,
+									},
+									Privileged:          true,
+									UseHostDockerSocket: true,
+									WorkspaceMountPath:  "/var/workspace",
+								},
 							},
 						},
 					},

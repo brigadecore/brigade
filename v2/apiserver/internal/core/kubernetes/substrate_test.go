@@ -788,6 +788,65 @@ func TestSubstrateStartWorker(t *testing.T) {
 	}
 }
 
+func TestSubstrateStoreJobEnvironment(t *testing.T) {
+	const testEventID = "123456789"
+	const testJobName = "italian"
+	testCases := []struct {
+		name       string
+		substrate  core.Substrate
+		assertions func(error)
+	}{
+		{
+			name: "error creating job secret",
+			substrate: &substrate{
+				createJobSecretFn: func(
+					context.Context,
+					core.Project,
+					string,
+					string,
+					core.JobSpec,
+				) error {
+					return errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error creating secret for event")
+			},
+		},
+		{
+			name: "success",
+			substrate: &substrate{
+				createJobSecretFn: func(
+					context.Context,
+					core.Project,
+					string,
+					string,
+					core.JobSpec,
+				) error {
+					return nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.substrate.StoreJobEnvironment(
+				context.Background(),
+				core.Project{},
+				testEventID,
+				testJobName,
+				core.JobSpec{},
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
 func TestSubstrateScheduleJob(t *testing.T) {
 	const testEventID = "123456789"
 	const testJobName = "italian"
@@ -890,36 +949,8 @@ func TestSubstrateStartJob(t *testing.T) {
 		assertions func(error)
 	}{
 		{
-			name: "error creating job secret",
-			substrate: &substrate{
-				createJobSecretFn: func(
-					context.Context,
-					core.Project,
-					core.Event,
-					string,
-					core.JobSpec,
-				) error {
-					return errors.New("something went wrong")
-				},
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error creating secret for event")
-			},
-		},
-		{
 			name: "error creating job pod",
 			substrate: &substrate{
-				createJobSecretFn: func(
-					context.Context,
-					core.Project,
-					core.Event,
-					string,
-					core.JobSpec,
-				) error {
-					return nil
-				},
 				createJobPodFn: func(
 					context.Context,
 					core.Project,
@@ -939,15 +970,6 @@ func TestSubstrateStartJob(t *testing.T) {
 		{
 			name: "success",
 			substrate: &substrate{
-				createJobSecretFn: func(
-					context.Context,
-					core.Project,
-					core.Event,
-					string,
-					core.JobSpec,
-				) error {
-					return nil
-				},
 				createJobPodFn: func(
 					context.Context,
 					core.Project,
@@ -1251,11 +1273,7 @@ func TestSubstrateCreateJobSecret(t *testing.T) {
 			Namespace: "foo",
 		},
 	}
-	testEvent := core.Event{
-		ObjectMeta: meta.ObjectMeta{
-			ID: "123456789",
-		},
-	}
+	const testEventID = "123456789"
 	const testJobName = "italian"
 	testJobSpec := core.JobSpec{
 		PrimaryContainer: core.JobContainerSpec{
@@ -1291,7 +1309,7 @@ func TestSubstrateCreateJobSecret(t *testing.T) {
 					context.Background(),
 					&corev1.Secret{
 						ObjectMeta: v1.ObjectMeta{
-							Name: myk8s.JobSecretName(testEvent.ID, testJobName),
+							Name: myk8s.JobSecretName(testEventID, testJobName),
 						},
 					},
 					v1.CreateOptions{},
@@ -1319,7 +1337,7 @@ func TestSubstrateCreateJobSecret(t *testing.T) {
 					testProject.Kubernetes.Namespace,
 				).Get(
 					context.Background(),
-					myk8s.JobSecretName(testEvent.ID, testJobName),
+					myk8s.JobSecretName(testEventID, testJobName),
 					v1.GetOptions{},
 				)
 				require.NoError(t, err)
@@ -1339,7 +1357,7 @@ func TestSubstrateCreateJobSecret(t *testing.T) {
 			err := substrate.createJobSecret(
 				context.Background(),
 				testProject,
-				testEvent,
+				testEventID,
 				testJobName,
 				testJobSpec,
 			)
