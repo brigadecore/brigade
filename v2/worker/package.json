@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "axios": "^0.21.0",
+    "eventsource": "^1.0.7",
     "module-alias": "^2.2.2",
     "require-from-string": "^2.0.2",
     "winston": "^3.3.3"
