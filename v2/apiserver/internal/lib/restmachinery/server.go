@@ -53,7 +53,10 @@ func NewServer(endpoints []Endpoints, config *ServerConfig) Server {
 		config: *config,
 		handler: cors.New(
 			cors.Options{
-				AllowedMethods: []string{"DELETE", "GET", "POST", "PUT"},
+				AllowCredentials: true,
+				AllowedOrigins:   []string{"*"},
+				AllowedMethods:   []string{"DELETE", "GET", "POST", "PUT"},
+				AllowedHeaders:   []string{"Authorization"},
 			},
 		).Handler(router),
 	}
