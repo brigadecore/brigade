@@ -16,34 +16,10 @@ const (
 	PrincipalTypeUser PrincipalType = "USER"
 )
 
-var (
-	// Root is a singleton that represents Brigade's "root" user.
-	Root = &root{}
-	// Scheduler is a singleton that represents Brigade's scheduler component.
-	Scheduler = &scheduler{}
-	// Observer is a singleton that represents Brigade's observer component.
-	Observer = &observer{}
-)
-
 // Principal is an interface for any sort of security principal (human user,
 // service account, etc.)
-type Principal interface{}
-
-// root is an implementation of the Principal interface for the "root" user.
-type root struct{}
-
-type scheduler struct{}
-
-type observer struct{}
-
-type worker struct {
-	eventID string
-}
-
-func Worker(eventID string) Principal {
-	return &worker{
-		eventID: eventID,
-	}
+type Principal interface {
+	Roles() []Role
 }
 
 type principalContextKey struct{}

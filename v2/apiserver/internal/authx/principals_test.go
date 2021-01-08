@@ -14,9 +14,9 @@ func TestContextWithPrincipal(t *testing.T) {
 			ID: "tony@starkindustries.com",
 		},
 	}
-	ctx := ContextWithPrincipal(context.Background(), testUser)
+	ctx := ContextWithPrincipal(context.Background(), &testUser)
 	val := ctx.Value(principalContextKey{})
-	require.Equal(t, testUser, val)
+	require.Equal(t, &testUser, val)
 }
 
 func TestPrincipalFromContext(t *testing.T) {
@@ -26,7 +26,7 @@ func TestPrincipalFromContext(t *testing.T) {
 		},
 	}
 	ctx :=
-		context.WithValue(context.Background(), principalContextKey{}, testUser)
+		context.WithValue(context.Background(), principalContextKey{}, &testUser)
 	principal := PrincipalFromContext(ctx)
-	require.Equal(t, testUser, principal)
+	require.Equal(t, &testUser, principal)
 }
