@@ -69,7 +69,7 @@ func (l *LogsEndpoints) stream(
 			if err != nil {
 				restmachinery.WriteAPIResponse(
 					w,
-					http.StatusNotFound,
+					http.StatusBadRequest,
 					&meta.ErrBadRequest{
 						Reason: "Value of \"Last-Event-ID\" header was not parseable as " +
 							"an int",
