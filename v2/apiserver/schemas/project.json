@@ -223,6 +223,17 @@
 						}
 					],
 					"description": "The URL for cloning a git project"
+        },
+				"commit": {
+					"type": "string",
+					"pattern": "^[a-fA-F0-9]*$",
+					"minLength": 8,
+					"maxLength": 40,
+					"description": "A git commit sha"
+				},
+				"ref": {
+					"type": "string",
+					"description": "A reference to a git branch or tag"
 				},
 				"initSubmodules": {
 					"type": "boolean",
