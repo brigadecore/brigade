@@ -226,7 +226,7 @@
         },
 				"commit": {
 					"type": "string",
-					"pattern": "^[a-f0-9]*$",
+					"pattern": "^[a-fA-F0-9]*$",
 					"minLength": 8,
 					"maxLength": 40,
 					"description": "A git commit sha"
