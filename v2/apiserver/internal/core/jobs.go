@@ -17,6 +17,9 @@ const (
 	// JobPhaseAborted represents the state wherein a Job was forcefully
 	// stopped during execution.
 	JobPhaseAborted JobPhase = "ABORTED"
+	// JobPhaseCanceled represents the state wherein a pending Job was
+	// canceled prior to execution.
+	JobPhaseCanceled JobPhase = "CANCELED"
 	// JobPhaseFailed represents the state wherein a Job has run to
 	// completion but experienced errors.
 	JobPhaseFailed JobPhase = "FAILED"
@@ -26,10 +29,10 @@ const (
 	// JobPhaseRunning represents the state wherein a Job is currently
 	// being executed.
 	JobPhaseRunning JobPhase = "RUNNING"
-	// JobPhaseSchedulingFailed represents the state wherein a job was not
+	// JobPhaseSchedulingFailed represents the state wherein a Job was not
 	// scheduled due to some unexpected and unrecoverable error encountered by the
 	// scheduler.
-	JobPhaseSchedulingFailed WorkerPhase = "SCHEDULING_FAILED"
+	JobPhaseSchedulingFailed JobPhase = "SCHEDULING_FAILED"
 	// JobPhaseStarting represents the state wherein a Job is starting on the
 	// substrate but isn't running yet.
 	JobPhaseStarting JobPhase = "STARTING"
@@ -45,6 +48,25 @@ const (
 	// (Pod's) state.
 	JobPhaseUnknown JobPhase = "UNKNOWN"
 )
+
+// IsTerminal returns a bool indicating whether the JobPhase is terminal.
+func (j JobPhase) IsTerminal() bool {
+	switch j {
+	case JobPhaseAborted:
+		fallthrough
+	case JobPhaseCanceled:
+		fallthrough
+	case JobPhaseFailed:
+		fallthrough
+	case JobPhaseSchedulingFailed:
+		fallthrough
+	case JobPhaseSucceeded:
+		fallthrough
+	case JobPhaseTimedOut:
+		return true
+	}
+	return false
+}
 
 // Job represents a component spawned by a Worker to complete a single task
 // in the course of handling an Event.
