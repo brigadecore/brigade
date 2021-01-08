@@ -71,8 +71,7 @@ func (l *LogsEndpoints) stream(
 					w,
 					http.StatusBadRequest,
 					&meta.ErrBadRequest{
-						Reason: "Value of \"Last-Event-ID\" header was not parseable as " +
-							"an int",
+						Reason: "Value of last id was not parseable as an int",
 					},
 				)
 				return
