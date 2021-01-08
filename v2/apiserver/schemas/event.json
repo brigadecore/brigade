@@ -62,6 +62,9 @@
 				},
 				"commit": {
 					"type": "string",
+					"pattern": "^[a-f0-9]*$",
+					"minLength": 8,
+					"maxLength": 40,
 					"description": "A git commit sha"
 				},
 				"ref": {
