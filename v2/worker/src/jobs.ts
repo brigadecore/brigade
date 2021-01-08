@@ -45,13 +45,11 @@ export class Job extends BrigadierJob {
         },
       })
       if (response.status != 201) {
-        console.log(response.data)
-        throw new Error(response.data)
+        throw new Error(`Received ${response.status} from the API server`)
       }
     }
-    catch(err) {
-      // Wrap the original error to give clear context.
-      throw new Error(`job ${this.name}: ${err}`)
+    catch(e) {
+      throw new Error(`Error creating job "${this.name}": ${e.message}`)
     }
     return this.wait()
   }
@@ -76,25 +74,25 @@ export class Job extends BrigadierJob {
           status = JSON.parse(event.data)
         } catch(e) {
           eventSource.close() 
-          reject(new Error("Error parsing job status"))
+          reject(new Error(`Error parsing job "${this.name}" status: ${e.message}`))
         }
         this.logger.debug(`Current job phase is ${status.phase}`)
         switch (status.phase) {
         case "ABORTED":
           eventSource.close()
-          reject(new Error("Job was aborted"))
+          reject(new Error(`Job "${this.name}" was aborted`))
           break
         case "CANCELED":
           eventSource.close()
-          reject(new Error("Job was canceled before starting"))
+          reject(new Error(`Job "${this.name}" was canceled before starting`))
           break
         case "FAILED":
           eventSource.close()
-          reject(new Error("Job failed"))
+          reject(new Error(`Job "${this.name}" failed`))
           break
         case "SCHEDULING_FAILED":
           eventSource.close()
-          reject(new Error("Job scheduling failed"))
+          reject(new Error(`Job "${this.name}" scheduling failed`))
           break
         case "SUCCEEDED":
           eventSource.close()
@@ -102,7 +100,7 @@ export class Job extends BrigadierJob {
           break
         case "TIMED_OUT":
           eventSource.close()
-          reject(new Error("Job timed out"))
+          reject(new Error(`Job "${this.name}" timed out`))
           break
         }
         // For all other phases there's nothing to do. Keep waiting.
@@ -110,14 +108,14 @@ export class Job extends BrigadierJob {
       eventSource.addEventListener("error", (e: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
         if (e.status) { // If the error has an HTTP status code associated with it...
           eventSource.close()
-          reject(new Error(`Received ${e.status} from the API server`))
+          reject(new Error(`Received ${e.status} from the API server when attempting to open job "${this.name}" status stream`))
         } else if (eventSource.readyState == EventSource.CONNECTING) {
           // We lost the connection and we're reconnecting... nbd
           this.logger.debug("Reconnecting to status stream")
         } else if (eventSource.readyState == EventSource.CLOSED) {
           // We disconnected for some unknown reason... and presumably exhausted
           // attempts to reconnect
-          reject(new Error("Encountered unknown error receiving status stream"))
+          reject(new Error(`Error receiving job "${this.name}" status stream: ${e.message}`))
         }
       })
     })
@@ -144,7 +142,7 @@ export class Job extends BrigadierJob {
           logEntry = JSON.parse(event.data)
         } catch(e) {
           eventSource.close() 
-          reject(new Error("Error parsing log entry"))
+          reject(new Error(`Error parsing log entry for job "${this.name}": ${e.message}`))
         }
         if (logs != "") {
           logs += "\n"
@@ -154,14 +152,14 @@ export class Job extends BrigadierJob {
       eventSource.addEventListener("error", (e: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
         if (e.status) { // If the error has an HTTP status code associated with it...
           eventSource.close()
-          reject(new Error(`Received ${e.status} from the API server`))
+          reject(new Error(`Received ${e.status} from the API server when attempting to open job "${this.name}" log stream`))
         } else if (eventSource.readyState == EventSource.CONNECTING) {
           // We lost the connection and we're reconnecting... nbd
           this.logger.debug("Reconnecting to log stream")
         } else if (eventSource.readyState == EventSource.CLOSED) {
           // We disconnected for some unknown reason... and presumably exhausted
           // attempts to reconnect
-          reject(new Error("Encountered unknown error receiving log stream"))
+          reject(new Error(`Encountered unknown error receiving job "${this.name}" log stream`))
         }
       })
       eventSource.addEventListener("done", () => {
