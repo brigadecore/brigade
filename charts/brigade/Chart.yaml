@@ -13,6 +13,6 @@ maintainers:
   email: kent.rancourt@gmail.com
 dependencies:
 - name: mongodb
-  version: ~7.6.5
-  repository: https://kubernetes-charts.storage.googleapis.com/
+  version: ~10.3.6
+  repository: https://charts.bitnami.com/bitnami
   condition: mongodb.enabled
