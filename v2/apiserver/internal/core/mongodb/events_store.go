@@ -93,7 +93,14 @@ func (e *eventsStore) List(
 	}
 
 	findOptions := options.Find()
-	findOptions.SetSort(bson.M{"created": -1, "id": 1})
+	findOptions.SetSort(
+		// bson.D preserves order, and we want to sort by created date/time FIRST
+		// and id SECOND
+		bson.D{
+			{Key: "created", Value: -1},
+			{Key: "id", Value: 1},
+		},
+	)
 	findOptions.SetLimit(opts.Limit)
 	cur, err := e.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
@@ -320,7 +327,14 @@ func (e *eventsStore) CancelMany(
 	delete(criteria, "worker.status.phase")
 	criteria["canceled"] = cancellationTime
 	findOptions := options.Find()
-	findOptions.SetSort(bson.M{"created": -1})
+	findOptions.SetSort(
+		// bson.D preserves order so we use this wherever we sort so that if
+		// additional sort criteria are added in the future, they will be applied
+		// in the specified order.
+		bson.D{
+			{Key: "created", Value: -1},
+		},
+	)
 	cur, err := e.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
 		return events, errors.Wrapf(err, "error finding canceled events")
@@ -389,7 +403,14 @@ func (e *eventsStore) DeleteMany(
 	// Select the logically deleted documents...
 	criteria["deleted"] = deletedTime
 	findOptions := options.Find()
-	findOptions.SetSort(bson.M{"created": -1})
+	findOptions.SetSort(
+		// bson.D preserves order so we use this wherever we sort so that if
+		// additional sort criteria are added in the future, they will be applied
+		// in the specified order.
+		bson.D{
+			{Key: "created", Value: -1},
+		},
+	)
 	cur, err := e.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
 		return events, errors.Wrapf(
