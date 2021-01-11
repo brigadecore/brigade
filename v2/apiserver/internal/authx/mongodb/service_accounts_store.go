@@ -97,7 +97,14 @@ func (s *serviceAccountsStore) List(
 	}
 
 	findOptions := options.Find()
-	findOptions.SetSort(bson.M{"id": 1})
+	findOptions.SetSort(
+		// bson.D preserves order so we use this wherever we sort so that if
+		// additional sort criteria are added in the future, they will be applied
+		// in the specified order.
+		bson.D{
+			{Key: "id", Value: 1},
+		},
+	)
 	findOptions.SetLimit(opts.Limit)
 	cur, err := s.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
