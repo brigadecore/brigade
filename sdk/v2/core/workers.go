@@ -98,6 +98,17 @@ func WorkerPhasesTerminal() []WorkerPhase {
 	}
 }
 
+// IsTerminal returns a bool indicated whether or not the provided WorkerPhase
+// is a terminal phase
+func IsTerminal(phase WorkerPhase) bool {
+	for _, terminalPhase := range WorkerPhasesTerminal() {
+		if phase == terminalPhase {
+			return true
+		}
+	}
+	return false
+}
+
 // WorkerPhasesNonTerminal returns a slice of WorkerPhases containing ALL phases
 // that are considered non-terminal. Note that instead of utilizing a
 // package-level slice, this a function returns ad-hoc copies of the slice in
