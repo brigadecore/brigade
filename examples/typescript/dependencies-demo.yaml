@@ -1,0 +1,23 @@
+apiVersion: brigade.sh/v2
+kind: Project
+metadata:
+  id: dependencies-demo
+description: A project that defines dependencies in package.json
+spec:
+  workerTemplate:
+    logLevel: DEBUG
+    defaultConfigFiles:
+      package.json: |-
+        {
+          "private": true,
+          "dependencies": {
+            "colors": "1.4.0"
+          }
+        }
+      brigade.ts: |-
+        import { events } from "@brigadecore/brigadier"
+        import * as colors from "colors/safe"
+
+        events.on("github.com/brigadecore/brigade/cli", "exec", () => {
+          console.log(colors.green("It's not easy being green."))
+        })

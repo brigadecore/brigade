@@ -1,0 +1,15 @@
+apiVersion: brigade.sh/v2
+kind: Project
+metadata:
+  id: hello-world
+description: The simplest possible demonstration
+spec:
+  workerTemplate:
+    logLevel: DEBUG
+    defaultConfigFiles:
+      brigade.js: |-
+        const { events } = require("@brigadecore/brigadier");
+
+        events.on("github.com/brigadecore/brigade/cli", "exec", () => {
+          console.log("Hello, World!");
+        });
