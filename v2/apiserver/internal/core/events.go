@@ -342,7 +342,7 @@ func (e *eventsService) createSingleEvent(
 	}
 
 	if workerSpec.ConfigFilesDirectory == "" {
-		workerSpec.ConfigFilesDirectory = "."
+		workerSpec.ConfigFilesDirectory = ".brigade"
 	}
 
 	// This is a token unique to the Event so that the Event's Worker can use when

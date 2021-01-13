@@ -1,0 +1,19 @@
+apiVersion: brigade.sh/v2
+kind: Project
+metadata:
+  id: github-demo
+description: A project that demonstrates integration with GitHub
+spec:
+  eventSubscriptions:
+  - source: github.com/brigadecore/brigade-github-gateway/v2
+    types:
+    - pull_request:opened
+    - pull_request:synchronize
+    - pull_request:reopened
+    - push
+    labels:
+      repo: krancour/brigade2-pipeline-demo
+  workerTemplate:
+    logLevel: DEBUG
+    git:
+      cloneURL: https://github.com/krancour/brigade2-pipeline-demo.git

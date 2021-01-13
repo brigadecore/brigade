@@ -1,2 +1,4 @@
 .git
 .gocache
+v2/brigadier/node_modules
+v2/worker/node_modules

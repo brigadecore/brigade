@@ -57,12 +57,11 @@
 			"additionalProperties": false,
 			"properties": {
 				"id": {
-					"allOf": [
-						{
-							"$ref": "#/definitions/identifier"
-						}
-					],
-					"description": "A meaningful identifier for the project"
+					"type": "string",
+					"description": "A meaningful identifier for the project",
+					"pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
+					"minLength": 3,
+					"maxLength": 18
 				}
 			}
 		},
