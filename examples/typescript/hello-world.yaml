@@ -5,10 +5,11 @@ metadata:
 description: The simplest possible demonstration
 spec:
   workerTemplate:
+    logLevel: DEBUG
     defaultConfigFiles:
-      brigade.js: |-
-        const { events } = require("brigadier");
+      brigade.ts: |-
+        import { events } from "@brigadecore/brigadier"
 
         events.on("github.com/brigadecore/brigade/cli", "exec", () => {
-          console.log("Hello, World!");
-        });
+          console.log("Hello, World!")
+        })
