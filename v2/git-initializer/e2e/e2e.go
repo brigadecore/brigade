@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"strings"
+	"time"
 
 	"github.com/ghodss/yaml"
 
@@ -17,42 +17,73 @@ import (
 	"github.com/pkg/errors"
 )
 
+type testcase struct {
+	name          string
+	projectFile   string
+	terminalPhase core.WorkerPhase
+}
+
+var testcases = []testcase{
+	{
+		name:          "GitHub - Public Repo - https",
+		projectFile:   "github-public-https.yaml",
+		terminalPhase: core.WorkerPhaseSucceeded,
+	},
+	// TODO: once we have mech for injecting private ssh key in secure manner
+	// {
+	// 	name:          "GitHub - Private Repo - ssh",
+	// 	projectFile:   "github-private-ssh.yaml",
+	// 	terminalPhase: core.WorkerPhaseSucceeded,
+	// },
+	{
+		name:          "GitHub - Public Repo - submodules",
+		projectFile:   "github-init-submodules.yaml",
+		terminalPhase: core.WorkerPhaseSucceeded,
+	},
+	{
+		name:          "GitHub - Malformed URL",
+		projectFile:   "github-malformed-url.yaml",
+		terminalPhase: core.WorkerPhaseFailed,
+	},
+}
+
 func main() {
-	// TODO: iterate over various project files and run tests
-	// - ssh
-	// - git submodules
-	// - other?
-	err := runTest()
-	if err != nil {
-		log.Fatalf("test failed: %s", err)
+	for _, tc := range testcases {
+		err := runTest(tc)
+		if err != nil {
+			log.Fatalf("Test %q failed: %s", tc.name, err)
+		}
 	}
 }
 
-func runTest() error {
-	filename := "../testdata/github-demo.yaml"
+func runTest(tc testcase) error {
+	ctx, cancel :=
+		context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+
+	// TODO: send in/parameterize this value
+	apiServerAddress := "https://localhost:7000"
+	// TODO: send in/parameterize this value
+	rootPassword := "F00Bar!!!"
+	apiClientOpts := &restmachinery.APIClientOptions{
+		AllowInsecureConnections: true,
+	}
+	filename := fmt.Sprintf("../testdata/%s", tc.projectFile)
+
+	log.Printf("Running test %q...\n", tc.name)
 
 	projectBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return errors.Wrapf(err, "error reading project file %s", filename)
 	}
 
-	if strings.HasSuffix(filename, ".yaml") ||
-		strings.HasSuffix(filename, ".yml") {
-		if projectBytes, err = yaml.YAMLToJSON(projectBytes); err != nil {
-			return errors.Wrapf(err, "error converting file %s to JSON", filename)
-		}
+	if projectBytes, err = yaml.YAMLToJSON(projectBytes); err != nil {
+		return errors.Wrapf(err, "error converting file %s to JSON", filename)
 	}
 
 	project := core.Project{}
 	if err = json.Unmarshal(projectBytes, &project); err != nil {
 		return errors.Wrapf(err, "error unmarshaling project file %s", filename)
-	}
-
-	ctx := context.Background()
-	apiServerAddress := "https://localhost:7000"
-	rootPassword := "F00Bar!!!"
-	apiClientOpts := &restmachinery.APIClientOptions{
-		AllowInsecureConnections: true,
 	}
 
 	authClient := authx.NewSessionsClient(
@@ -74,8 +105,8 @@ func runTest() error {
 	)
 
 	// Delete the project and ignore any errors
-	// TODO: create/use error types to ignore error if expected
-	// e.g. project doesn't yet exist, but still surface unexpected errors
+	// TODO: create/use error types in core, so we can ignore error if expected
+	// e.g. project doesn't yet exist, and surface unexpected errors
 	_ = client.Core().Projects().Delete(ctx, project.ID)
 
 	if _, err := client.Core().Projects().CreateFromBytes(
@@ -105,9 +136,7 @@ func runTest() error {
 		client.Core().Events().Logs().Stream(
 			ctx,
 			e.ID,
-			&core.LogsSelector{
-				Container: "vcs",
-			},
+			&core.LogsSelector{Container: "vcs"},
 			&core.LogStreamOptions{})
 	if err != nil {
 		return err
@@ -130,8 +159,8 @@ func runTest() error {
 			return nil
 		}
 
+		// log and err channels empty, let's check worker status
 		if logEntryCh == nil && errCh == nil {
-			// TODO: add timeout
 			for {
 				e, err := client.Core().Events().Get(ctx, e.ID)
 				if err != nil {
@@ -140,8 +169,8 @@ func runTest() error {
 
 				phase := e.Worker.Status.Phase
 				if core.IsTerminal(phase) {
-					if phase != core.WorkerPhaseSucceeded {
-						return fmt.Errorf("worker's terminal phase: %s", phase)
+					if phase != tc.terminalPhase {
+						return fmt.Errorf("worker's terminal phase %q does not match expected %q", phase, tc.terminalPhase)
 					}
 					return nil
 				}

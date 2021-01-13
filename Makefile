@@ -135,22 +135,29 @@ test-unit-js:
 		yarn test \
 	'
 
-# temp target for quick building and testing
-# can remove once we have a test harness around the Docker image
-.PHONY: go-build-git-initializer
-go-build-git-initializer:
+# Test the git initializer binary directly
+.PHONY: test-git-initializer
+test-git-initializer:
 	@cd v2/git-initializer && \
 		go build \
 			-o ../../bin/git-initializer \
 			-ldflags "-w \
 				-X github.com/brigadecore/brigade/v2/internal/version.version=${VERSION} \
 				-X github.com/brigadecore/brigade/v2/internal/version.commit=${GIT_VERSION}" \
-			.
-
-.PHONY: test-git-initializer
-test-git-initializer: go-build-git-initializer
-	@cd v2/git-initializer && \
+			. && \
 		./test.sh
+
+# Currently the e2e script is git initializer-centric
+#
+# Relies on `make hack` being run and/or the local kube context pointing
+# to a k8s cluster with Brigade running
+.PHONY: test-e2e
+test-e2e:
+	@kubectl --namespace brigade port-forward service/brigade-apiserver 7000:443 &>/dev/null & \
+		echo $$! > /tmp/brigade-apiserver.PID
+	@cd v2/git-initializer/e2e && \
+		go run e2e.go || (kill -TERM $$(cat /tmp/brigade-apiserver.PID) && exit 1)
+	@kill -TERM $$(cat /tmp/brigade-apiserver.PID)
 
 ################################################################################
 # Build / Publish                                                              #
