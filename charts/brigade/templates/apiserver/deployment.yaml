@@ -82,17 +82,25 @@ spec:
         - name: TLS_KEY_PATH
           value: /app/certs/tls.key
         {{- end }}
+        
         {{- if .Values.mongodb.enabled }}
+        {{- $replicaCount := int .Values.mongodb.replicaCount }}
+        {{- $fullname := include "call-nested" (list . "mongodb" "mongodb.fullname") }}
+        {{- $releaseNamespace := .Release.Namespace }}
+        {{- $mongoList := list }}
+        {{- range $e, $i := until $replicaCount }}
+        {{- $mongoList = append $mongoList (printf "%s-%d.%s-headless.%s.svc.cluster.local" $fullname $i $fullname $releaseNamespace) }}
+        {{- end }}
         - name: DATABASE_HOST
-          value: {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }}.{{ .Release.Namespace }}.svc.cluster.local
+          value: {{ join "," $mongoList }}
         - name: DATABASE_PORT
           value: {{ quote .Values.mongodb.service.port }}
         - name: DATABASE_NAME
-          value: {{ .Values.mongodb.mongodbDatabase }}
+          value: {{ .Values.mongodb.auth.database }}
         - name: DATABASE_REPLICA_SET
-          value: {{ .Values.mongodb.replicaSet.name }}
+          value: {{ .Values.mongodb.replicaSetName }}
         - name: DATABASE_USERNAME
-          value: {{ .Values.mongodb.mongodbUsername }}
+          value: {{ .Values.mongodb.auth.username }}
         - name: DATABASE_PASSWORD
           valueFrom:
             secretKeyRef:
