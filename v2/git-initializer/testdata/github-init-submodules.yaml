@@ -1,0 +1,17 @@
+apiVersion: brigade.sh/v2
+kind: Project
+metadata:
+  id: init-submodules
+description: A GitHub-based project with submodules
+spec:
+  workerTemplate:
+    git:
+      cloneURL: https://github.com/sgoings/makeup.git
+      initSubmodules: true
+    defaultConfigFiles:
+      brigade.js: |-
+        const { events } = require("brigadier");
+
+        events.on("github.com/brigadecore/brigade/cli", "exec", () => {
+          console.log("Hello, World!");
+        });

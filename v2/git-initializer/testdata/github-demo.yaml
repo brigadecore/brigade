@@ -1,9 +1,0 @@
-apiVersion: brigade.sh/v2
-kind: Project
-metadata:
-  id: github-demo
-description: A project that demonstrates integration with GitHub
-spec:
-  workerTemplate:
-    git:
-      cloneURL: https://github.com/krancour/brigade2-pipeline-demo.git
