@@ -45,8 +45,6 @@ ifneq ($(SKIP_DOCKER),true)
 		-e SKIP_DOCKER=true \
 		-e DOCKER_USERNAME=$${DOCKER_USERNAME} \
 		-e DOCKER_PASSWORD=$${DOCKER_PASSWORD} \
-		-e VERSION="$(VERSION)" \
-		-e COMMIT="$(GIT_VERSION)" \
 		-v $(PROJECT_ROOT):/workspaces/brigade \
 		-w /workspaces/brigade \
 		$(KANIKO_IMAGE)
@@ -134,18 +132,6 @@ test-unit-js:
 		yarn install && \
 		yarn test \
 	'
-
-# Test the git initializer binary directly
-.PHONY: test-git-initializer
-test-git-initializer:
-	@cd v2/git-initializer && \
-		go build \
-			-o ../../bin/git-initializer \
-			-ldflags "-w \
-				-X github.com/brigadecore/brigade/v2/internal/version.version=${VERSION} \
-				-X github.com/brigadecore/brigade/v2/internal/version.commit=${GIT_VERSION}" \
-			. && \
-		./test.sh
 
 # Currently the e2e script is git initializer-centric
 #
@@ -282,9 +268,9 @@ hack: hack-push-images hack-build-cli
 		--set worker.image.repository=$(DOCKER_IMAGE_PREFIX)worker \
 		--set worker.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set worker.image.pullPolicy=Always \
-		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)logger-linux \
-		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set logger.linux.image.pullPolicy=Always \
 		--set gitInitializer.image.repository=$(DOCKER_IMAGE_PREFIX)git-initializer \
 		--set gitInitializer.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set gitInitializer.image.pullPolicy=Always
+		--set gitInitializer.image.pullPolicy=Always \
+		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)logger-linux \
+		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
+		--set logger.linux.image.pullPolicy=Always

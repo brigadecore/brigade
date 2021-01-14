@@ -168,7 +168,7 @@ func runTest(tc testcase) error {
 				}
 
 				phase := e.Worker.Status.Phase
-				if core.IsTerminal(phase) {
+				if phase.IsTerminal() {
 					if phase != tc.terminalPhase {
 						return fmt.Errorf("worker's terminal phase %q does not match expected %q", phase, tc.terminalPhase)
 					}
