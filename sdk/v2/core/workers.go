@@ -98,7 +98,7 @@ func WorkerPhasesTerminal() []WorkerPhase {
 	}
 }
 
-// IsTerminal returns a bool indicated whether or not the provided WorkerPhase
+// IsTerminal returns a bool indicating whether or not the provided WorkerPhase
 // is a terminal phase
 func IsTerminal(phase WorkerPhase) bool {
 	for _, terminalPhase := range WorkerPhasesTerminal() {

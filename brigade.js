@@ -65,6 +65,20 @@ function lintJS() {
   return job;
 }
 
+// Run git initializer unit tests
+function testGitInitializer() {
+  var job = new Job("test-git-initializer", goImg);
+  job.mountPath = localPath;
+  job.env = {
+    "SKIP_DOCKER": "true"
+  };
+  job.tasks = [
+    `cd ${localPath}`,
+    "make test-git-initializer"
+  ];
+  return job;
+}
+
 // Build the API server
 function buildAPIServer() {
   return buildImage("apiserver");
@@ -135,6 +149,7 @@ function runSuite(e, p) {
     run(e, p, lintGo).catch((err) => { return err }),
     run(e, p, testUnitJS).catch((err) => { return err }),
     run(e, p, lintJS).catch((err) => { return err }),
+    run(e, p, testGitInitializer).catch((err) => { return err }),
     run(e, p, buildAPIServer).catch((err) => { return err }),
     run(e, p, buildScheduler).catch((err) => { return err }),
     run(e, p, buildObserver).catch((err) => { return err }),
@@ -162,6 +177,8 @@ function runCheck(e, p) {
       return run(e, p, testUnitJS);
     case "lint-js":
       return run(e, p, lintJS);
+    case "test-git-initializer":
+      return run(e, p, testGitInitializer)
     case "build-apiserver":
       return run(e, p, buildAPIServer);
     case "build-scheduler":

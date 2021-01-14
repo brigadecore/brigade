@@ -50,12 +50,6 @@ test_clone() {
   rm -rf "${BRIGADE_WORKSPACE}"
 }
 
-# TODO: add fail cases (at least no ref found)
-
-# TODO: update tests for more configurability, e.g.
-# # using private repo url (ssh key)
-# # using repo with git submodules to init
-
 echo ":: Checkout sha"
 test_clone "99f3efa2b70c370d4ee0833c213c085a6ec146ab" "99f3efa"
 echo
