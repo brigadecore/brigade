@@ -19,53 +19,20 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/urfave/cli/v2"
-
 	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/v2/internal/signals"
-	"github.com/brigadecore/brigade/v2/internal/version"
 )
 
-// Building w/ CLI frontend such that various opts can be easily overridden
-// for testing, e.g. payload file location, workspace location, etc. (see test.sh)
-//
-// We can/should remove this when/if we have a technique for testing with
-// different configurations w/o the need for cli flags
 func main() {
-	app := cli.NewApp()
-	app.Name = "Brigade Git Initializer"
-	app.Usage = "Git checkout utility for Brigade"
-	app.Version = fmt.Sprintf(
-		"%s -- commit %s",
-		version.Version(),
-		version.Commit(),
-	)
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{
-			Name:    "eventPath",
-			Aliases: []string{"p"},
-			Value:   "/var/event/event.json",
-			Usage:   "Path to the event.json to extract git details (default: `/var/event/event.json`)",
-		},
-		&cli.StringFlag{
-			Name:    "workspace",
-			Aliases: []string{"w"},
-			Value:   "/var/vcs",
-			Usage:   "Path representing where to set up the git workspace (default: `/src`)",
-		},
-	}
-	app.Action = gitCheckout
-	if err := app.RunContext(signals.Context(), os.Args); err != nil {
+	if err := gitCheckout(); err != nil {
 		fmt.Printf("\n%s\n\n", err)
 		os.Exit(1)
 	}
-	fmt.Println()
 }
 
 // TODO: needs retry - let's do a follow-up (krancour has a lib to use!)
 
-func gitCheckout(c *cli.Context) error {
-	eventPath := c.String("eventPath")
+func gitCheckout() error {
+	eventPath := "/var/event/event.json"
 	data, err := ioutil.ReadFile(eventPath)
 	if err != nil {
 		return errors.Wrapf(err, "unable read the event file %q", eventPath)
@@ -130,7 +97,7 @@ func gitCheckout(c *cli.Context) error {
 	refSpec := config.RefSpec(fmt.Sprintf("+%s:%s", fullRef.Name(), fullRef.Name()))
 
 	// Initialize an empty repository with an empty working tree
-	workspace := c.String("workspace")
+	workspace := "/var/vcs"
 	gitStorage := filesystem.NewStorage(
 		osfs.New(filepath.Join(workspace, ".git")),
 		cache.NewObjectLRUDefault(),

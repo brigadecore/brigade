@@ -98,17 +98,6 @@ func WorkerPhasesTerminal() []WorkerPhase {
 	}
 }
 
-// IsTerminal returns a bool indicating whether or not the provided WorkerPhase
-// is a terminal phase
-func IsTerminal(phase WorkerPhase) bool {
-	for _, terminalPhase := range WorkerPhasesTerminal() {
-		if phase == terminalPhase {
-			return true
-		}
-	}
-	return false
-}
-
 // WorkerPhasesNonTerminal returns a slice of WorkerPhases containing ALL phases
 // that are considered non-terminal. Note that instead of utilizing a
 // package-level slice, this a function returns ad-hoc copies of the slice in
@@ -120,6 +109,25 @@ func WorkerPhasesNonTerminal() []WorkerPhase {
 		WorkerPhaseRunning,
 		WorkerPhaseUnknown,
 	}
+}
+
+// IsTerminal returns a bool indicating whether the WorkerPhase is terminal.
+func (w WorkerPhase) IsTerminal() bool {
+	switch w {
+	case WorkerPhaseAborted:
+		fallthrough
+	case WorkerPhaseCanceled:
+		fallthrough
+	case WorkerPhaseFailed:
+		fallthrough
+	case WorkerPhaseSchedulingFailed:
+		fallthrough
+	case WorkerPhaseSucceeded:
+		fallthrough
+	case WorkerPhaseTimedOut:
+		return true
+	}
+	return false
 }
 
 // Worker represents a component that orchestrates handling of a single Event.
