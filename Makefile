@@ -173,7 +173,7 @@ build-%:
 		--no-push
 
 .PHONY: push-images
-push-images: push-apiserver push-scheduler push-observer push-logger-linux push-git-initializer
+push-images: push-apiserver push-scheduler push-observer push-logger-linux push-git-initializer push-worker
 
 .PHONY: push-logger-linux
 push-logger-linux:
