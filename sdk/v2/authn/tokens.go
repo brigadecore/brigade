@@ -1,4 +1,4 @@
-package authx
+package authn
 
 // Token represents an opaque bearer token used to authenticate to the Brigade
 // API.

@@ -1,4 +1,4 @@
-package authx
+package authn
 
 import (
 	"context"
@@ -24,8 +24,6 @@ type ServiceAccount struct {
 	// by an administrator. If this field's value is nil, the ServiceAccount is
 	// not locked.
 	Locked *time.Time `json:"locked,omitempty"`
-	// Roles is a slice of Roles assigned to this ServiceAccount.
-	Roles []Role `json:"roles,omitempty"`
 }
 
 // MarshalJSON amends ServiceAccount instances with type metadata so that

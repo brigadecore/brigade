@@ -1,10 +1,12 @@
-package system
+package authn
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 
 	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/stretchr/testify/require"
 )
@@ -20,6 +22,20 @@ const (
 	testAPIAddress = "localhost:8080"
 	testAPIToken   = "11235813213455"
 )
+
+func requireAPIVersionAndType(
+	t *testing.T,
+	obj interface{},
+	expectedType string,
+) {
+	objJSON, err := json.Marshal(obj)
+	require.NoError(t, err)
+	objMap := map[string]interface{}{}
+	err = json.Unmarshal(objJSON, &objMap)
+	require.NoError(t, err)
+	require.Equal(t, meta.APIVersion, objMap["apiVersion"])
+	require.Equal(t, expectedType, objMap["kind"])
+}
 
 func requireBaseClient(t *testing.T, baseClient *rm.BaseClient) {
 	require.NotNil(t, baseClient)

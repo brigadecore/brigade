@@ -1,9 +1,11 @@
-package authx
+package authn
 
-import "github.com/brigadecore/brigade/sdk/v2/restmachinery"
+import (
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+)
 
 // APIClient is the root of a tree of more specialized API clients within the
-// authx package.
+// authn package.
 type APIClient interface {
 	// ServiceAccounts returns a specialized client for ServiceAccount management.
 	ServiceAccounts() ServiceAccountsClient
@@ -24,7 +26,7 @@ type apiClient struct {
 }
 
 // NewAPIClient returns an APIClient, which is the root of a tree of more
-// specialized API clients within the authx package. It will initialize all
+// specialized API clients within the authn package. It will initialize all
 // clients in the tree so they are ready for immediate use.
 func NewAPIClient(
 	apiAddress string,

@@ -172,17 +172,12 @@ type ProjectsClient interface {
 	// Delete deletes a single Project specified by its identifier.
 	Delete(context.Context, string) error
 
-	// Roles returns a specialized client for Project Role management.
-	Roles() ProjectRolesClient
-
 	// Secrets returns a specialized client for Secret management.
 	Secrets() SecretsClient
 }
 
 type projectsClient struct {
 	*rm.BaseClient
-	// rolesClient is a specialized client for Project Role management.
-	rolesClient ProjectRolesClient
 	// secretsClient is a specialized client for Secret management.
 	secretsClient SecretsClient
 }
@@ -195,7 +190,6 @@ func NewProjectsClient(
 ) ProjectsClient {
 	return &projectsClient{
 		BaseClient:    rm.NewBaseClient(apiAddress, apiToken, opts),
-		rolesClient:   NewProjectRolesClient(apiAddress, apiToken, opts),
 		secretsClient: NewSecretsClient(apiAddress, apiToken, opts),
 	}
 }
@@ -319,10 +313,6 @@ func (p *projectsClient) Delete(ctx context.Context, id string) error {
 			SuccessCode: http.StatusOK,
 		},
 	)
-}
-
-func (p *projectsClient) Roles() ProjectRolesClient {
-	return p.rolesClient
 }
 
 func (p *projectsClient) Secrets() SecretsClient {
