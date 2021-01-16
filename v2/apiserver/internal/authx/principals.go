@@ -8,19 +8,20 @@ import "context"
 // value of the PrincipalID field reflects a User ID or a ServiceAccount ID.
 type PrincipalType string
 
-const (
-	// PrincipalTypeServiceAccount represents a principal that is a
-	// ServiceAccount.
-	PrincipalTypeServiceAccount PrincipalType = "SERVICE_ACCOUNT"
-	// PrincipalTypeUser represents a principal that is a User.
-	PrincipalTypeUser PrincipalType = "USER"
-)
+// PrincipalReference is a reference to any sort of security principal (human
+// user, service account, etc.)
+type PrincipalReference struct {
+	// Type qualifies what kind of principal is referenced by the ID field-- for
+	// instance, a User or a ServiceAccount.
+	Type PrincipalType `json:"type,omitempty" bson:"type,omitempty"`
+	// ID references a principal. The Type qualifies what type of principal that
+	// is-- for instance, a User or a ServiceAccount.
+	ID string `json:"id,omitempty" bson:"id,omitempty"`
+}
 
 // Principal is an interface for any sort of security principal (human user,
 // service account, etc.)
-type Principal interface {
-	Roles() []Role
-}
+type Principal interface{}
 
 type principalContextKey struct{}
 
