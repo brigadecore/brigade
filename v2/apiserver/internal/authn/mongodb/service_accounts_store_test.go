@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestServiceAccountsStoreCreate(t *testing.T) {
-	testServiceAccount := authx.ServiceAccount{
+	testServiceAccount := authn.ServiceAccount{
 		ObjectMeta: meta.ObjectMeta{
 			ID: "jarvis",
 		},
@@ -92,7 +92,7 @@ func TestServiceAccountsStoreCreate(t *testing.T) {
 }
 
 func TestServiceAccountsStoreList(t *testing.T) {
-	testServiceAccount := authx.ServiceAccount{
+	testServiceAccount := authn.ServiceAccount{
 		ObjectMeta: meta.ObjectMeta{
 			ID: "jarvis",
 		},
@@ -101,7 +101,7 @@ func TestServiceAccountsStoreList(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(serviceAccounts authx.ServiceAccountList, err error)
+		assertions func(serviceAccounts authn.ServiceAccountList, err error)
 	}{
 
 		{
@@ -115,7 +115,7 @@ func TestServiceAccountsStoreList(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(_ authx.ServiceAccountList, err error) {
+			assertions: func(_ authn.ServiceAccountList, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(t, err.Error(), "error finding service accounts")
@@ -142,7 +142,7 @@ func TestServiceAccountsStoreList(t *testing.T) {
 					return 0, nil
 				},
 			},
-			assertions: func(serviceAccounts authx.ServiceAccountList, err error) {
+			assertions: func(serviceAccounts authn.ServiceAccountList, err error) {
 				require.NoError(t, err)
 				require.Empty(t, serviceAccounts.Continue)
 				require.Zero(t, serviceAccounts.RemainingItemCount)
@@ -169,7 +169,7 @@ func TestServiceAccountsStoreList(t *testing.T) {
 					return 5, nil
 				},
 			},
-			assertions: func(serviceAccounts authx.ServiceAccountList, err error) {
+			assertions: func(serviceAccounts authn.ServiceAccountList, err error) {
 				require.NoError(t, err)
 				require.Equal(t, testServiceAccount.ID, serviceAccounts.Continue)
 				require.Equal(t, int64(5), serviceAccounts.RemainingItemCount)
@@ -199,7 +199,7 @@ func TestServiceAccountsStoreGet(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(authx.ServiceAccount, error)
+		assertions func(authn.ServiceAccount, error)
 	}{
 
 		{
@@ -215,7 +215,7 @@ func TestServiceAccountsStoreGet(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(_ authx.ServiceAccount, err error) {
+			assertions: func(_ authn.ServiceAccount, err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, err)
 				require.Equal(t, "ServiceAccount", err.(*meta.ErrNotFound).Type)
@@ -236,7 +236,7 @@ func TestServiceAccountsStoreGet(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(_ authx.ServiceAccount, err error) {
+			assertions: func(_ authn.ServiceAccount, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(
@@ -256,7 +256,7 @@ func TestServiceAccountsStoreGet(t *testing.T) {
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
 					res, err := mockSingleResult(
-						authx.ServiceAccount{
+						authn.ServiceAccount{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testServiceAccountID,
 							},
@@ -266,7 +266,7 @@ func TestServiceAccountsStoreGet(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(serviceAccount authx.ServiceAccount, err error) {
+			assertions: func(serviceAccount authn.ServiceAccount, err error) {
 				require.NoError(t, err)
 				require.Equal(t, testServiceAccountID, serviceAccount.ID)
 			},
@@ -291,7 +291,7 @@ func TestServiceAccountsStoreGetByHashedToken(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(authx.ServiceAccount, error)
+		assertions func(authn.ServiceAccount, error)
 	}{
 
 		{
@@ -307,7 +307,7 @@ func TestServiceAccountsStoreGetByHashedToken(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(_ authx.ServiceAccount, err error) {
+			assertions: func(_ authn.ServiceAccount, err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, err)
 				require.Equal(t, "ServiceAccount", err.(*meta.ErrNotFound).Type)
@@ -328,7 +328,7 @@ func TestServiceAccountsStoreGetByHashedToken(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(_ authx.ServiceAccount, err error) {
+			assertions: func(_ authn.ServiceAccount, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(
@@ -348,7 +348,7 @@ func TestServiceAccountsStoreGetByHashedToken(t *testing.T) {
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
 					res, err := mockSingleResult(
-						authx.ServiceAccount{
+						authn.ServiceAccount{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testServiceAccountID,
 							},
@@ -358,7 +358,7 @@ func TestServiceAccountsStoreGetByHashedToken(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(serviceAccount authx.ServiceAccount, err error) {
+			assertions: func(serviceAccount authn.ServiceAccount, err error) {
 				require.NoError(t, err)
 				require.Equal(t, testServiceAccountID, serviceAccount.ID)
 			},

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestUsersStoreCreate(t *testing.T) {
-	testUser := authx.User{
+	testUser := authn.User{
 		ObjectMeta: meta.ObjectMeta{
 			ID: "tony@starkindustries.com",
 		},
@@ -92,7 +92,7 @@ func TestUsersStoreCreate(t *testing.T) {
 }
 
 func TestUsersStoreList(t *testing.T) {
-	testUser := authx.User{
+	testUser := authn.User{
 		ObjectMeta: meta.ObjectMeta{
 			ID: "tony@starkindustries.com",
 		},
@@ -101,7 +101,7 @@ func TestUsersStoreList(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(authx.UserList, error)
+		assertions func(authn.UserList, error)
 	}{
 
 		{
@@ -115,7 +115,7 @@ func TestUsersStoreList(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(_ authx.UserList, err error) {
+			assertions: func(_ authn.UserList, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(t, err.Error(), "error finding users")
@@ -142,7 +142,7 @@ func TestUsersStoreList(t *testing.T) {
 					return 0, nil
 				},
 			},
-			assertions: func(users authx.UserList, err error) {
+			assertions: func(users authn.UserList, err error) {
 				require.NoError(t, err)
 				require.Empty(t, users.Continue)
 				require.Zero(t, users.RemainingItemCount)
@@ -169,7 +169,7 @@ func TestUsersStoreList(t *testing.T) {
 					return 5, nil
 				},
 			},
-			assertions: func(users authx.UserList, err error) {
+			assertions: func(users authn.UserList, err error) {
 				require.NoError(t, err)
 				require.Equal(t, testUser.ID, users.Continue)
 				require.Equal(t, int64(5), users.RemainingItemCount)
@@ -199,7 +199,7 @@ func TestUsersStoreGet(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(user authx.User, err error)
+		assertions func(user authn.User, err error)
 	}{
 
 		{
@@ -215,7 +215,7 @@ func TestUsersStoreGet(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(user authx.User, err error) {
+			assertions: func(user authn.User, err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, err)
 				require.Equal(t, "User", err.(*meta.ErrNotFound).Type)
@@ -236,7 +236,7 @@ func TestUsersStoreGet(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(user authx.User, err error) {
+			assertions: func(user authn.User, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(t, err.Error(), "error finding/decoding user")
@@ -252,7 +252,7 @@ func TestUsersStoreGet(t *testing.T) {
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
 					res, err := mockSingleResult(
-						authx.User{
+						authn.User{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testUserID,
 							},
@@ -262,7 +262,7 @@ func TestUsersStoreGet(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(user authx.User, err error) {
+			assertions: func(user authn.User, err error) {
 				require.NoError(t, err)
 				require.Equal(t, testUserID, user.ID)
 			},

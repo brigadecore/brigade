@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/gorilla/mux"
@@ -13,7 +13,7 @@ import (
 
 type UsersEndpoints struct {
 	AuthFilter restmachinery.Filter
-	Service    authx.UsersService
+	Service    authn.UsersService
 }
 
 func (u *UsersEndpoints) Register(router *mux.Router) {

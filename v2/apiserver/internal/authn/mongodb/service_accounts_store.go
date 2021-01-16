@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/pkg/errors"
@@ -15,16 +15,16 @@ import (
 )
 
 // serviceAccountsStore is a MongoDB-based implementation of the
-// authx.ServiceAccountsStore interface.
+// authn.ServiceAccountsStore interface.
 type serviceAccountsStore struct {
 	collection mongodb.Collection
 }
 
 // NewServiceAccountsStore returns a MongoDB-based implementation of the
-// authx.ServiceAccountsStore interface.
+// authn.ServiceAccountsStore interface.
 func NewServiceAccountsStore(
 	database *mongo.Database,
-) (authx.ServiceAccountsStore, error) {
+) (authn.ServiceAccountsStore, error) {
 	ctx, cancel :=
 		context.WithTimeout(context.Background(), createIndexTimeout)
 	defer cancel()
@@ -63,7 +63,7 @@ func NewServiceAccountsStore(
 
 func (s *serviceAccountsStore) Create(
 	ctx context.Context,
-	serviceAccount authx.ServiceAccount,
+	serviceAccount authn.ServiceAccount,
 ) error {
 	if _, err := s.collection.InsertOne(ctx, serviceAccount); err != nil {
 		if mongodb.IsDuplicateKeyError(err) {
@@ -88,8 +88,8 @@ func (s *serviceAccountsStore) Create(
 func (s *serviceAccountsStore) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (authx.ServiceAccountList, error) {
-	serviceAccounts := authx.ServiceAccountList{}
+) (authn.ServiceAccountList, error) {
+	serviceAccounts := authn.ServiceAccountList{}
 
 	criteria := bson.M{}
 	if opts.Continue != "" {
@@ -136,8 +136,8 @@ func (s *serviceAccountsStore) List(
 func (s *serviceAccountsStore) Get(
 	ctx context.Context,
 	id string,
-) (authx.ServiceAccount, error) {
-	serviceAccount := authx.ServiceAccount{}
+) (authn.ServiceAccount, error) {
+	serviceAccount := authn.ServiceAccount{}
 	res := s.collection.FindOne(ctx, bson.M{"id": id})
 	err := res.Decode(&serviceAccount)
 	if err == mongo.ErrNoDocuments {
@@ -156,8 +156,8 @@ func (s *serviceAccountsStore) Get(
 func (s *serviceAccountsStore) GetByHashedToken(
 	ctx context.Context,
 	hashedToken string,
-) (authx.ServiceAccount, error) {
-	serviceAccount := authx.ServiceAccount{}
+) (authn.ServiceAccount, error) {
+	serviceAccount := authn.ServiceAccount{}
 	res :=
 		s.collection.FindOne(ctx, bson.M{"hashedToken": hashedToken})
 	err := res.Decode(&serviceAccount)

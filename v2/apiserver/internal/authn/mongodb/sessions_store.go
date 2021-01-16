@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/pkg/errors"
@@ -13,15 +13,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// sessionsStore is a MongoDB-based implementation of the authx.SessionsStore
+// sessionsStore is a MongoDB-based implementation of the authn.SessionsStore
 // interface.
 type sessionsStore struct {
 	collection mongodb.Collection
 }
 
 // NewSessionsStore returns a MongoDB-based implementation of the
-// authx.SessionsStore interface.
-func NewSessionsStore(database *mongo.Database) (authx.SessionsStore, error) {
+// authn.SessionsStore interface.
+func NewSessionsStore(database *mongo.Database) (authn.SessionsStore, error) {
 	ctx, cancel :=
 		context.WithTimeout(context.Background(), createIndexTimeout)
 	defer cancel()
@@ -57,7 +57,7 @@ func NewSessionsStore(database *mongo.Database) (authx.SessionsStore, error) {
 
 func (s *sessionsStore) Create(
 	ctx context.Context,
-	session authx.Session,
+	session authn.Session,
 ) error {
 	if _, err := s.collection.InsertOne(ctx, session); err != nil {
 		return errors.Wrapf(err, "error inserting new session %q", session.ID)
@@ -68,8 +68,8 @@ func (s *sessionsStore) Create(
 func (s *sessionsStore) GetByHashedOAuth2State(
 	ctx context.Context,
 	hashedOAuth2State string,
-) (authx.Session, error) {
-	session := authx.Session{}
+) (authn.Session, error) {
+	session := authn.Session{}
 	res := s.collection.FindOne(
 		ctx,
 		bson.M{"hashedOAuth2State": hashedOAuth2State},
@@ -89,8 +89,8 @@ func (s *sessionsStore) GetByHashedOAuth2State(
 func (s *sessionsStore) GetByHashedToken(
 	ctx context.Context,
 	hashedToken string,
-) (authx.Session, error) {
-	session := authx.Session{}
+) (authn.Session, error) {
+	session := authn.Session{}
 	res := s.collection.FindOne(ctx, bson.M{"hashedToken": hashedToken})
 	err := res.Decode(&session)
 	if err == mongo.ErrNoDocuments {

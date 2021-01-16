@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/gorilla/mux"
@@ -15,7 +15,7 @@ import (
 type ServiceAccountEndpoints struct {
 	AuthFilter                 restmachinery.Filter
 	ServiceAccountSchemaLoader gojsonschema.JSONLoader
-	Service                    authx.ServiceAccountsService
+	Service                    authn.ServiceAccountsService
 }
 
 func (s *ServiceAccountEndpoints) Register(router *mux.Router) {
@@ -54,7 +54,7 @@ func (s *ServiceAccountEndpoints) create(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	serviceAccount := authx.ServiceAccount{}
+	serviceAccount := authn.ServiceAccount{}
 	restmachinery.ServeRequest(
 		restmachinery.InboundRequest{
 			W:                   w,

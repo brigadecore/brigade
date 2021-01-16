@@ -1,4 +1,4 @@
-package authx
+package authn
 
 import (
 	"context"
@@ -18,15 +18,6 @@ type User struct {
 	// Locked indicates when the User has been locked out of the system by an
 	// administrator. If this field's value is nil, the User is not locked.
 	Locked *time.Time `json:"locked" bson:"locked"`
-	// UserRoles is a slice of Roles (both system-level and project-level)
-	// assigned to this User.
-	UserRoles []Role `json:"roles,omitempty" bson:"roles,omitempty"`
-}
-
-// Roles returns a slice of Roles (both system-level and project-level) assigned
-// to this User.
-func (u *User) Roles() []Role {
-	return u.UserRoles
 }
 
 // MarshalJSON amends User instances with type metadata.

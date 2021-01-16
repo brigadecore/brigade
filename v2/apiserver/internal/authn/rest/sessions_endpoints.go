@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/gorilla/mux"
@@ -15,7 +15,7 @@ import (
 // Session-related URL --> action mappings to a restmachinery.Server.
 type SessionsEndpoints struct {
 	AuthFilter restmachinery.Filter
-	Service    authx.SessionsService
+	Service    authn.SessionsService
 }
 
 // Register is invoked by restmachinery.Server to register Session-related
@@ -83,7 +83,7 @@ func (s *SessionsEndpoints) delete(w http.ResponseWriter, r *http.Request) {
 			W: w,
 			R: r,
 			EndpointLogic: func() (interface{}, error) {
-				sessionID := authx.SessionIDFromContext(r.Context())
+				sessionID := authn.SessionIDFromContext(r.Context())
 				if sessionID == "" {
 					return nil, errors.New(
 						"error: delete session request authenticated, but no session ID " +

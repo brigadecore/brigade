@@ -1,15 +1,16 @@
-package authx
+package authn
 
 import (
 	"context"
 	"testing"
 
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
 )
 
 func TestContextWithPrincipal(t *testing.T) {
-	testUser := User{
+	testUser := authn.User{
 		ObjectMeta: meta.ObjectMeta{
 			ID: "tony@starkindustries.com",
 		},
@@ -20,7 +21,7 @@ func TestContextWithPrincipal(t *testing.T) {
 }
 
 func TestPrincipalFromContext(t *testing.T) {
-	testUser := User{
+	testUser := authn.User{
 		ObjectMeta: meta.ObjectMeta{
 			ID: "tony@starkindustries.com",
 		},

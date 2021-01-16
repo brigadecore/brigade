@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
+	libAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
@@ -27,7 +28,7 @@ type TokenAuthFilterConfig struct {
 	OpenIDConnectEnabled bool
 	// FindUserFn is a function for locating a User. This field is applicable only
 	// when value of the OpenIDConnectEnabled field is true.
-	FindUserFn func(ctx context.Context, id string) (authx.User, error)
+	FindUserFn func(ctx context.Context, id string) (authn.User, error)
 	// HashedSchedulerToken is a secure hash of the token used by the scheduler
 	// component.
 	HashedSchedulerToken string
@@ -44,11 +45,11 @@ type tokenAuthFilter struct {
 	findServiceAccountByTokenFn func(
 		ctx context.Context,
 		token string,
-	) (authx.ServiceAccount, error)
+	) (authn.ServiceAccount, error)
 	findSessionByTokenFn func(
 		ctx context.Context,
 		token string,
-	) (authx.Session, error)
+	) (authn.Session, error)
 	findEventByTokenFn func(
 		ctx context.Context,
 		token string,
@@ -64,8 +65,8 @@ func NewTokenAuthFilter(
 	findServiceAccountByTokenFn func(
 		ctx context.Context,
 		token string,
-	) (authx.ServiceAccount, error),
-	findSessionFn func(ctx context.Context, token string) (authx.Session, error),
+	) (authn.ServiceAccount, error),
+	findSessionFn func(ctx context.Context, token string) (authn.Session, error),
 	findEventByTokenFn func(
 		ctx context.Context,
 		token string,
@@ -117,14 +118,14 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 
 		// Is it the Scheduler's token?
 		if crypto.Hash("", token) == t.config.HashedSchedulerToken {
-			ctx := authx.ContextWithPrincipal(r.Context(), authx.Scheduler)
+			ctx := libAuthn.ContextWithPrincipal(r.Context(), scheduler)
 			handle(w, r.WithContext(ctx))
 			return
 		}
 
 		// Is it the Observer's token?
 		if crypto.Hash("", token) == t.config.HashedObserverToken {
-			ctx := authx.ContextWithPrincipal(r.Context(), authx.Observer)
+			ctx := libAuthn.ContextWithPrincipal(r.Context(), observer)
 			handle(w, r.WithContext(ctx))
 			return
 		}
@@ -141,7 +142,7 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 		} else {
-			ctx := authx.ContextWithPrincipal(r.Context(), authx.Worker(event.ID))
+			ctx := libAuthn.ContextWithPrincipal(r.Context(), worker(event.ID))
 			handle(w, r.WithContext(ctx))
 			return
 		}
@@ -163,7 +164,7 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 				http.Error(w, "{}", http.StatusForbidden)
 				return
 			}
-			ctx := authx.ContextWithPrincipal(r.Context(), &serviceAccount)
+			ctx := libAuthn.ContextWithPrincipal(r.Context(), &serviceAccount)
 			handle(w, r.WithContext(ctx))
 			return
 		}
@@ -233,9 +234,9 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 			)
 			return
 		}
-		var principal authx.Principal
+		var principal interface{}
 		if session.Root {
-			principal = authx.Root
+			principal = root
 		} else {
 			user, err := t.config.FindUserFn(r.Context(), session.UserID)
 			if err != nil {
@@ -257,8 +258,8 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 		}
 
 		// Success! Add the user and the session ID to the context.
-		ctx := authx.ContextWithPrincipal(r.Context(), principal)
-		ctx = authx.ContextWithSessionID(ctx, session.ID)
+		ctx := libAuthn.ContextWithPrincipal(r.Context(), principal)
+		ctx = authn.ContextWithSessionID(ctx, session.ID)
 		handle(w, r.WithContext(ctx))
 	}
 }

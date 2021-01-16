@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/pkg/errors"
@@ -19,15 +19,15 @@ var caseInsensitiveIDCollation = &options.Collation{
 	Strength: 1,
 }
 
-// usersStore is a MongoDB-based implementation of the authx.UsersStore
+// usersStore is a MongoDB-based implementation of the authn.UsersStore
 // interface.
 type usersStore struct {
 	collection mongodb.Collection
 }
 
-// NewUsersStore returns a MongoDB-based implementation of the authx.UsersStore
+// NewUsersStore returns a MongoDB-based implementation of the authn.UsersStore
 // interface.
-func NewUsersStore(database *mongo.Database) (authx.UsersStore, error) {
+func NewUsersStore(database *mongo.Database) (authn.UsersStore, error) {
 	ctx, cancel :=
 		context.WithTimeout(context.Background(), createIndexTimeout)
 	defer cancel()
@@ -52,7 +52,7 @@ func NewUsersStore(database *mongo.Database) (authx.UsersStore, error) {
 	}, nil
 }
 
-func (u *usersStore) Create(ctx context.Context, user authx.User) error {
+func (u *usersStore) Create(ctx context.Context, user authn.User) error {
 	if _, err := u.collection.InsertOne(ctx, user); err != nil {
 		if mongodb.IsDuplicateKeyError(err) {
 			return &meta.ErrConflict{
@@ -69,8 +69,8 @@ func (u *usersStore) Create(ctx context.Context, user authx.User) error {
 func (u *usersStore) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (authx.UserList, error) {
-	users := authx.UserList{}
+) (authn.UserList, error) {
+	users := authn.UserList{}
 
 	criteria := bson.M{}
 	if opts.Continue != "" {
@@ -114,8 +114,8 @@ func (u *usersStore) List(
 func (u *usersStore) Get(
 	ctx context.Context,
 	id string,
-) (authx.User, error) {
-	user := authx.User{}
+) (authn.User, error) {
+	user := authn.User{}
 	res := u.collection.FindOne(
 		ctx,
 		bson.M{"id": id},

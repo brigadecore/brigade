@@ -4,9 +4,9 @@ package main
 import (
 	"log"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
-	authxMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/authx/mongodb"
-	authxREST "github.com/brigadecore/brigade/v2/apiserver/internal/authx/rest"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
+	authnMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/authn/mongodb"
+	authnREST "github.com/brigadecore/brigade/v2/apiserver/internal/authn/rest"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	coreKubernetes "github.com/brigadecore/brigade/v2/apiserver/internal/core/kubernetes"
 	coreMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/core/mongodb"
@@ -14,7 +14,7 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery/authn"
+	sysAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/system/authn"
 	"github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/brigadecore/brigade/v2/internal/signals"
 	"github.com/brigadecore/brigade/v2/internal/version"
@@ -43,9 +43,9 @@ func main() {
 	var jobsStore core.JobsStore
 	var projectsStore core.ProjectsStore
 	var secretsStore core.SecretsStore
-	var serviceAccountsStore authx.ServiceAccountsStore
-	var sessionsStore authx.SessionsStore
-	var usersStore authx.UsersStore
+	var serviceAccountsStore authn.ServiceAccountsStore
+	var sessionsStore authn.SessionsStore
+	var usersStore authn.UsersStore
 	var warmLogsStore core.LogsStore
 	var workersStore core.WorkersStore
 	{
@@ -67,15 +67,15 @@ func main() {
 			log.Fatal(err)
 		}
 		secretsStore = coreKubernetes.NewSecretsStore(kubeClient)
-		serviceAccountsStore, err = authxMongodb.NewServiceAccountsStore(database)
+		serviceAccountsStore, err = authnMongodb.NewServiceAccountsStore(database)
 		if err != nil {
 			log.Fatal(err)
 		}
-		sessionsStore, err = authxMongodb.NewSessionsStore(database)
+		sessionsStore, err = authnMongodb.NewSessionsStore(database)
 		if err != nil {
 			log.Fatal(err)
 		}
-		usersStore, err = authxMongodb.NewUsersStore(database)
+		usersStore, err = authnMongodb.NewUsersStore(database)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -134,19 +134,19 @@ func main() {
 
 	// ServiceAccounts service
 	serviceAccountsService :=
-		authx.NewServiceAccountsService(serviceAccountsStore)
+		authn.NewServiceAccountsService(serviceAccountsStore)
 
 	// Secrets service
 	secretsService := core.NewSecretsService(projectsStore, secretsStore)
 
 	// Session service
-	var sessionsService authx.SessionsService
+	var sessionsService authn.SessionsService
 	{
 		config, err := sessionsServiceConfig(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}
-		sessionsService = authx.NewSessionsService(
+		sessionsService = authn.NewSessionsService(
 			sessionsStore,
 			usersStore,
 			&config,
@@ -157,7 +157,7 @@ func main() {
 	substrateService := core.NewSubstrateService(substrate)
 
 	// Users service
-	usersService := authx.NewUsersService(usersStore, sessionsStore)
+	usersService := authn.NewUsersService(usersStore, sessionsStore)
 
 	// Workers service
 	workersService := core.NewWorkersService(
@@ -174,7 +174,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		authFilter := authn.NewTokenAuthFilter(
+		authFilter := sysAuthn.NewTokenAuthFilter(
 			serviceAccountsService.GetByToken,
 			sessionsService.GetByToken,
 			eventsService.GetByWorkerToken,
@@ -221,14 +221,14 @@ func main() {
 					),
 					Service: secretsService,
 				},
-				&authxREST.ServiceAccountEndpoints{
+				&authnREST.ServiceAccountEndpoints{
 					AuthFilter: authFilter,
 					ServiceAccountSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/service-account.json",
 					),
 					Service: serviceAccountsService,
 				},
-				&authxREST.SessionsEndpoints{
+				&authnREST.SessionsEndpoints{
 					AuthFilter: authFilter,
 					Service:    sessionsService,
 				},
@@ -236,7 +236,7 @@ func main() {
 					AuthFilter: authFilter,
 					Service:    substrateService,
 				},
-				&authxREST.UsersEndpoints{
+				&authnREST.UsersEndpoints{
 					AuthFilter: authFilter,
 					Service:    usersService,
 				},

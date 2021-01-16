@@ -5,12 +5,12 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
+	libAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/assert"
@@ -70,9 +70,9 @@ func TestFilter(t *testing.T) {
 				return req
 			},
 			handler: func(w http.ResponseWriter, r *http.Request) {
-				principal := authx.PrincipalFromContext(r.Context())
+				principal := libAuthn.PrincipalFromContext(r.Context())
 				require.NotNil(t, principal)
-				require.Same(t, authx.Scheduler, principal)
+				require.Same(t, scheduler, principal)
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, rr.Code)
@@ -94,9 +94,9 @@ func TestFilter(t *testing.T) {
 				return req
 			},
 			handler: func(w http.ResponseWriter, r *http.Request) {
-				principal := authx.PrincipalFromContext(r.Context())
+				principal := libAuthn.PrincipalFromContext(r.Context())
 				require.NotNil(t, principal)
-				require.Same(t, authx.Observer, principal)
+				require.Same(t, observer, principal)
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, rr.Code)
@@ -138,9 +138,9 @@ func TestFilter(t *testing.T) {
 				return req
 			},
 			handler: func(w http.ResponseWriter, r *http.Request) {
-				principal := authx.PrincipalFromContext(r.Context())
+				principal := libAuthn.PrincipalFromContext(r.Context())
 				require.NotNil(t, principal)
-				require.Equal(t, "*authx.worker", reflect.TypeOf(principal).String())
+				require.IsType(t, &workerPrincipal{}, principal)
 			},
 			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, rr.Code)
@@ -157,8 +157,8 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
-					return authx.ServiceAccount{}, errors.New("something went wrong")
+				) (authn.ServiceAccount, error) {
+					return authn.ServiceAccount{}, errors.New("something went wrong")
 				},
 			},
 			setup: func() *http.Request {
@@ -182,9 +182,9 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
+				) (authn.ServiceAccount, error) {
 					now := time.Now().UTC()
-					return authx.ServiceAccount{
+					return authn.ServiceAccount{
 						Locked: &now,
 					}, nil
 				},
@@ -210,14 +210,14 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
-					return authx.ServiceAccount{}, nil
+				) (authn.ServiceAccount, error) {
+					return authn.ServiceAccount{}, nil
 				},
 			},
 			handler: func(w http.ResponseWriter, r *http.Request) {
-				principal := authx.PrincipalFromContext(r.Context())
+				principal := libAuthn.PrincipalFromContext(r.Context())
 				require.NotNil(t, principal)
-				require.IsType(t, &authx.ServiceAccount{}, principal)
+				require.IsType(t, &authn.ServiceAccount{}, principal)
 			},
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
@@ -240,14 +240,14 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
-					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				) (authn.ServiceAccount, error) {
+					return authn.ServiceAccount{}, &meta.ErrNotFound{}
 				},
 				findSessionByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.Session, error) {
-					return authx.Session{}, errors.New("something went wrong")
+				) (authn.Session, error) {
+					return authn.Session{}, errors.New("something went wrong")
 				},
 			},
 			setup: func() *http.Request {
@@ -271,14 +271,14 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
-					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				) (authn.ServiceAccount, error) {
+					return authn.ServiceAccount{}, &meta.ErrNotFound{}
 				},
 				findSessionByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.Session, error) {
-					return authx.Session{}, &meta.ErrNotFound{}
+				) (authn.Session, error) {
+					return authn.Session{}, &meta.ErrNotFound{}
 				},
 			},
 			setup: func() *http.Request {
@@ -302,14 +302,14 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
-					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				) (authn.ServiceAccount, error) {
+					return authn.ServiceAccount{}, &meta.ErrNotFound{}
 				},
 				findSessionByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.Session, error) {
-					return authx.Session{
+				) (authn.Session, error) {
+					return authn.Session{
 						Root: true,
 					}, nil
 				},
@@ -338,16 +338,16 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
-					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				) (authn.ServiceAccount, error) {
+					return authn.ServiceAccount{}, &meta.ErrNotFound{}
 				},
 				findSessionByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.Session, error) {
+				) (authn.Session, error) {
 					auth := time.Now().UTC()
 					exp := auth.Add(time.Hour)
-					return authx.Session{
+					return authn.Session{
 						Root:          true,
 						Authenticated: &auth,
 						Expires:       &exp,
@@ -355,9 +355,9 @@ func TestFilter(t *testing.T) {
 				},
 			},
 			handler: func(w http.ResponseWriter, r *http.Request) {
-				principal := authx.PrincipalFromContext(r.Context())
+				principal := libAuthn.PrincipalFromContext(r.Context())
 				require.NotNil(t, principal)
-				require.Same(t, authx.Root, principal)
+				require.Same(t, root, principal)
 			},
 			setup: func() *http.Request {
 				req, err := http.NewRequest(http.MethodGet, "/", nil)
@@ -380,14 +380,14 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
-					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				) (authn.ServiceAccount, error) {
+					return authn.ServiceAccount{}, &meta.ErrNotFound{}
 				},
 				findSessionByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.Session, error) {
-					return authx.Session{}, nil
+				) (authn.Session, error) {
+					return authn.Session{}, nil
 				},
 			},
 			setup: func() *http.Request {
@@ -414,14 +414,14 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
-					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				) (authn.ServiceAccount, error) {
+					return authn.ServiceAccount{}, &meta.ErrNotFound{}
 				},
 				findSessionByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.Session, error) {
-					return authx.Session{}, nil
+				) (authn.Session, error) {
+					return authn.Session{}, nil
 				},
 			},
 			setup: func() *http.Request {
@@ -448,16 +448,16 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
-					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				) (authn.ServiceAccount, error) {
+					return authn.ServiceAccount{}, &meta.ErrNotFound{}
 				},
 				findSessionByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.Session, error) {
+				) (authn.Session, error) {
 					auth := time.Now().UTC().Add(-2 * time.Hour)
 					exp := auth.Add(time.Hour)
-					return authx.Session{
+					return authn.Session{
 						Authenticated: &auth,
 						Expires:       &exp,
 					}, nil
@@ -480,8 +480,8 @@ func TestFilter(t *testing.T) {
 			filter: &tokenAuthFilter{
 				config: TokenAuthFilterConfig{
 					OpenIDConnectEnabled: true,
-					FindUserFn: func(ctx context.Context, id string) (authx.User, error) {
-						return authx.User{}, errors.New("something went wrong")
+					FindUserFn: func(ctx context.Context, id string) (authn.User, error) {
+						return authn.User{}, errors.New("something went wrong")
 					},
 				},
 				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
@@ -490,16 +490,16 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
-					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				) (authn.ServiceAccount, error) {
+					return authn.ServiceAccount{}, &meta.ErrNotFound{}
 				},
 				findSessionByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.Session, error) {
+				) (authn.Session, error) {
 					auth := time.Now().UTC()
 					exp := auth.Add(time.Hour)
-					return authx.Session{
+					return authn.Session{
 						Authenticated: &auth,
 						Expires:       &exp,
 					}, nil
@@ -522,9 +522,9 @@ func TestFilter(t *testing.T) {
 			filter: &tokenAuthFilter{
 				config: TokenAuthFilterConfig{
 					OpenIDConnectEnabled: true,
-					FindUserFn: func(ctx context.Context, id string) (authx.User, error) {
+					FindUserFn: func(ctx context.Context, id string) (authn.User, error) {
 						now := time.Now().UTC()
-						return authx.User{
+						return authn.User{
 							Locked: &now,
 						}, nil
 					},
@@ -535,16 +535,16 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
-					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				) (authn.ServiceAccount, error) {
+					return authn.ServiceAccount{}, &meta.ErrNotFound{}
 				},
 				findSessionByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.Session, error) {
+				) (authn.Session, error) {
 					auth := time.Now().UTC()
 					exp := auth.Add(time.Hour)
-					return authx.Session{
+					return authn.Session{
 						Authenticated: &auth,
 						Expires:       &exp,
 					}, nil
@@ -567,8 +567,8 @@ func TestFilter(t *testing.T) {
 			filter: &tokenAuthFilter{
 				config: TokenAuthFilterConfig{
 					OpenIDConnectEnabled: true,
-					FindUserFn: func(ctx context.Context, id string) (authx.User, error) {
-						return authx.User{}, nil
+					FindUserFn: func(ctx context.Context, id string) (authn.User, error) {
+						return authn.User{}, nil
 					},
 				},
 				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
@@ -577,16 +577,16 @@ func TestFilter(t *testing.T) {
 				findServiceAccountByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.ServiceAccount, error) {
-					return authx.ServiceAccount{}, &meta.ErrNotFound{}
+				) (authn.ServiceAccount, error) {
+					return authn.ServiceAccount{}, &meta.ErrNotFound{}
 				},
 				findSessionByTokenFn: func(
 					context.Context,
 					string,
-				) (authx.Session, error) {
+				) (authn.Session, error) {
 					auth := time.Now().UTC()
 					exp := auth.Add(time.Hour)
-					return authx.Session{
+					return authn.Session{
 						ObjectMeta: meta.ObjectMeta{
 							ID: testSessionID,
 						},
@@ -596,10 +596,10 @@ func TestFilter(t *testing.T) {
 				},
 			},
 			handler: func(w http.ResponseWriter, r *http.Request) {
-				principal := authx.PrincipalFromContext(r.Context())
+				principal := libAuthn.PrincipalFromContext(r.Context())
 				require.NotNil(t, principal)
-				require.IsType(t, &authx.User{}, principal)
-				sessionID := authx.SessionIDFromContext(r.Context())
+				require.IsType(t, &authn.User{}, principal)
+				sessionID := authn.SessionIDFromContext(r.Context())
 				require.Equal(t, testSessionID, sessionID)
 			},
 			setup: func() *http.Request {

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
@@ -61,7 +61,7 @@ func TestSessionsStoreCreate(t *testing.T) {
 			store := &sessionsStore{
 				collection: testCase.collection,
 			}
-			err := store.Create(context.Background(), authx.Session{})
+			err := store.Create(context.Background(), authn.Session{})
 			testCase.assertions(err)
 		})
 	}
@@ -72,7 +72,7 @@ func TestSessionsStoreGetByHashedOAut2State(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(session authx.Session, err error)
+		assertions func(session authn.Session, err error)
 	}{
 
 		{
@@ -88,7 +88,7 @@ func TestSessionsStoreGetByHashedOAut2State(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(session authx.Session, err error) {
+			assertions: func(session authn.Session, err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, err)
 				require.Equal(t, "Session", err.(*meta.ErrNotFound).Type)
@@ -108,7 +108,7 @@ func TestSessionsStoreGetByHashedOAut2State(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(session authx.Session, err error) {
+			assertions: func(session authn.Session, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(t, err.Error(), "error finding/decoding session")
@@ -124,7 +124,7 @@ func TestSessionsStoreGetByHashedOAut2State(t *testing.T) {
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
 					res, err := mockSingleResult(
-						authx.Session{
+						authn.Session{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testSessionID,
 							},
@@ -134,7 +134,7 @@ func TestSessionsStoreGetByHashedOAut2State(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(session authx.Session, err error) {
+			assertions: func(session authn.Session, err error) {
 				require.NoError(t, err)
 				require.Equal(t, testSessionID, session.ID)
 			},
@@ -160,7 +160,7 @@ func TestSessionsStoreGetByHashedToken(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(session authx.Session, err error)
+		assertions func(session authn.Session, err error)
 	}{
 
 		{
@@ -176,7 +176,7 @@ func TestSessionsStoreGetByHashedToken(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(session authx.Session, err error) {
+			assertions: func(session authn.Session, err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, err)
 				require.Equal(t, "Session", err.(*meta.ErrNotFound).Type)
@@ -196,7 +196,7 @@ func TestSessionsStoreGetByHashedToken(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(session authx.Session, err error) {
+			assertions: func(session authn.Session, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(t, err.Error(), "error finding/decoding session")
@@ -212,7 +212,7 @@ func TestSessionsStoreGetByHashedToken(t *testing.T) {
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
 					res, err := mockSingleResult(
-						authx.Session{
+						authn.Session{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testSessionID,
 							},
@@ -222,7 +222,7 @@ func TestSessionsStoreGetByHashedToken(t *testing.T) {
 					return res
 				},
 			},
-			assertions: func(session authx.Session, err error) {
+			assertions: func(session authn.Session, err error) {
 				require.NoError(t, err)
 				require.Equal(t, testSessionID, session.ID)
 			},

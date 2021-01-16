@@ -1,4 +1,4 @@
-package authx
+package authn
 
 import (
 	"context"
@@ -77,14 +77,16 @@ func TestUsersServiceGet(t *testing.T) {
 	}
 	testCases := []struct {
 		name       string
-		store      UsersStore
+		service    UsersService
 		assertions func(user User, err error)
 	}{
 		{
 			name: "with error from store",
-			store: &mockUsersStore{
-				GetFn: func(context.Context, string) (User, error) {
-					return User{}, &meta.ErrNotFound{}
+			service: &usersService{
+				usersStore: &mockUsersStore{
+					GetFn: func(context.Context, string) (User, error) {
+						return User{}, &meta.ErrNotFound{}
+					},
 				},
 			},
 			assertions: func(user User, err error) {
@@ -94,9 +96,11 @@ func TestUsersServiceGet(t *testing.T) {
 		},
 		{
 			name: "success",
-			store: &mockUsersStore{
-				GetFn: func(context.Context, string) (User, error) {
-					return testUser, nil
+			service: &usersService{
+				usersStore: &mockUsersStore{
+					GetFn: func(context.Context, string) (User, error) {
+						return testUser, nil
+					},
 				},
 			},
 			assertions: func(user User, err error) {
@@ -107,10 +111,7 @@ func TestUsersServiceGet(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			service := &usersService{
-				usersStore: testCase.store,
-			}
-			user, err := service.Get(context.Background(), testUser.ID)
+			user, err := testCase.service.Get(context.Background(), testUser.ID)
 			testCase.assertions(user, err)
 		})
 	}
