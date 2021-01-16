@@ -25,8 +25,12 @@ func TestNewProjectsClient(t *testing.T) {
 	client := NewProjectsClient(testAPIAddress, testAPIToken, nil)
 	require.IsType(t, &projectsClient{}, client)
 	requireBaseClient(t, client.(*projectsClient).BaseClient)
-	require.NotNil(t, client.(*projectsClient).rolesClient)
-	require.Equal(t, client.(*projectsClient).rolesClient, client.Roles())
+	require.NotNil(t, client.(*projectsClient).projectRoleAssignmentsClient)
+	require.Equal(
+		t,
+		client.(*projectsClient).projectRoleAssignmentsClient,
+		client.RoleAssignments(),
+	)
 	require.NotNil(t, client.(*projectsClient).secretsClient)
 	require.Equal(t, client.(*projectsClient).secretsClient, client.Secrets())
 }

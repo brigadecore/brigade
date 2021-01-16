@@ -5,6 +5,8 @@ import "github.com/brigadecore/brigade/sdk/v2/restmachinery"
 // APIClient is the root of a tree of more specialized API clients within the
 // authx package.
 type APIClient interface {
+	// RoleAssignments returns a specialized client for managing RoleAssignments.
+	RoleAssignments() RoleAssignmentsClient
 	// ServiceAccounts returns a specialized client for ServiceAccount management.
 	ServiceAccounts() ServiceAccountsClient
 	// Sessions returns a specialized client for Session management.
@@ -14,6 +16,8 @@ type APIClient interface {
 }
 
 type apiClient struct {
+	// roleAssignmentsClient is a specialized client for managing RoleAssignments.
+	roleAssignmentsClient RoleAssignmentsClient
 	// serviceAccountsClient is a specialized client for ServiceAccount
 	// management.
 	serviceAccountsClient ServiceAccountsClient
@@ -32,6 +36,7 @@ func NewAPIClient(
 	opts *restmachinery.APIClientOptions,
 ) APIClient {
 	return &apiClient{
+		roleAssignmentsClient: NewRoleAssignmentsClient(apiAddress, apiToken, opts),
 		serviceAccountsClient: NewServiceAccountsClient(
 			apiAddress,
 			apiToken,
@@ -40,6 +45,10 @@ func NewAPIClient(
 		sessionsClient: NewSessionsClient(apiAddress, apiToken, opts),
 		usersClient:    NewUsersClient(apiAddress, apiToken, opts),
 	}
+}
+
+func (a *apiClient) RoleAssignments() RoleAssignmentsClient {
+	return a.roleAssignmentsClient
 }
 
 func (a *apiClient) ServiceAccounts() ServiceAccountsClient {

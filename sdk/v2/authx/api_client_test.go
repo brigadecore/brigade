@@ -8,6 +8,12 @@ import (
 
 func TestNewAPIClient(t *testing.T) {
 	client := NewAPIClient(testAPIAddress, testAPIToken, nil)
+	require.NotNil(t, client.(*apiClient).roleAssignmentsClient)
+	require.Equal(
+		t,
+		client.(*apiClient).roleAssignmentsClient,
+		client.RoleAssignments(),
+	)
 	require.IsType(t, &apiClient{}, client)
 	require.NotNil(t, client.(*apiClient).serviceAccountsClient)
 	require.Equal(

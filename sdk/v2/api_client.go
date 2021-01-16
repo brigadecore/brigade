@@ -4,7 +4,6 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/authx"
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
-	"github.com/brigadecore/brigade/sdk/v2/system"
 )
 
 // APIClient is the general interface for the Brigade API. It does little more
@@ -13,13 +12,11 @@ import (
 type APIClient interface {
 	Authx() authx.APIClient
 	Core() core.APIClient
-	System() system.APIClient
 }
 
 type apiClient struct {
-	authxClient  authx.APIClient
-	coreClient   core.APIClient
-	systemClient system.APIClient
+	authxClient authx.APIClient
+	coreClient  core.APIClient
 }
 
 // NewAPIClient returns a Brigade client.
@@ -29,9 +26,8 @@ func NewAPIClient(
 	opts *restmachinery.APIClientOptions,
 ) APIClient {
 	return &apiClient{
-		authxClient:  authx.NewAPIClient(apiAddress, apiToken, opts),
-		coreClient:   core.NewAPIClient(apiAddress, apiToken, opts),
-		systemClient: system.NewAPIClient(apiAddress, apiToken, opts),
+		authxClient: authx.NewAPIClient(apiAddress, apiToken, opts),
+		coreClient:  core.NewAPIClient(apiAddress, apiToken, opts),
 	}
 }
 
@@ -41,8 +37,4 @@ func (a *apiClient) Authx() authx.APIClient {
 
 func (a *apiClient) Core() core.APIClient {
 	return a.coreClient
-}
-
-func (a *apiClient) System() system.APIClient {
-	return a.systemClient
 }

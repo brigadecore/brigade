@@ -13,3 +13,14 @@ const (
 	// PrincipalTypeUser represents a principal that is a User.
 	PrincipalTypeUser PrincipalType = "USER"
 )
+
+// PrincipalReference is a reference to any sort of security principal (human
+// user, service account, etc.)
+type PrincipalReference struct {
+	// Type qualifies what kind of principal is referenced by the ID field-- for
+	// instance, a User or a ServiceAccount.
+	Type PrincipalType `json:"type,omitempty"`
+	// ID references a principal. The Type qualifies what type of principal that
+	// is-- for instance, a User or a ServiceAccount.
+	ID string `json:"id,omitempty"`
+}

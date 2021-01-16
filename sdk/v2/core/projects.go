@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/brigadecore/brigade/sdk/v2/authx"
 	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
@@ -172,8 +173,9 @@ type ProjectsClient interface {
 	// Delete deletes a single Project specified by its identifier.
 	Delete(context.Context, string) error
 
-	// Roles returns a specialized client for Project Role management.
-	Roles() ProjectRolesClient
+	// RoleAssignments returns a specialized client for managing project-level
+	// RoleAssignments.
+	RoleAssignments() authx.RoleAssignmentsClient
 
 	// Secrets returns a specialized client for Secret management.
 	Secrets() SecretsClient
@@ -181,8 +183,9 @@ type ProjectsClient interface {
 
 type projectsClient struct {
 	*rm.BaseClient
-	// rolesClient is a specialized client for Project Role management.
-	rolesClient ProjectRolesClient
+	// projectRoleAssignmentsClient is a specialized client for managing
+	// project-level RoleAssignments.
+	projectRoleAssignmentsClient authx.RoleAssignmentsClient
 	// secretsClient is a specialized client for Secret management.
 	secretsClient SecretsClient
 }
@@ -194,8 +197,12 @@ func NewProjectsClient(
 	opts *restmachinery.APIClientOptions,
 ) ProjectsClient {
 	return &projectsClient{
-		BaseClient:    rm.NewBaseClient(apiAddress, apiToken, opts),
-		rolesClient:   NewProjectRolesClient(apiAddress, apiToken, opts),
+		BaseClient: rm.NewBaseClient(apiAddress, apiToken, opts),
+		projectRoleAssignmentsClient: NewProjectRoleAssignmentsClient(
+			apiAddress,
+			apiToken,
+			opts,
+		),
 		secretsClient: NewSecretsClient(apiAddress, apiToken, opts),
 	}
 }
@@ -321,8 +328,8 @@ func (p *projectsClient) Delete(ctx context.Context, id string) error {
 	)
 }
 
-func (p *projectsClient) Roles() ProjectRolesClient {
-	return p.rolesClient
+func (p *projectsClient) RoleAssignments() authx.RoleAssignmentsClient {
+	return p.projectRoleAssignmentsClient
 }
 
 func (p *projectsClient) Secrets() SecretsClient {
