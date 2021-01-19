@@ -133,17 +133,15 @@ test-unit-js:
 		yarn test \
 	'
 
-# Currently the e2e script is git initializer-centric
-#
-# Relies on `make hack` being run and/or the local kube context pointing
-# to a k8s cluster with Brigade running
-.PHONY: test-e2e
-test-e2e:
-	@kubectl --namespace brigade port-forward service/brigade-apiserver 7000:443 &>/dev/null & \
-		echo $$! > /tmp/brigade-apiserver.PID
-	@cd v2/git-initializer/e2e && \
-		go run e2e.go || (kill -TERM $$(cat /tmp/brigade-apiserver.PID) && exit 1)
-	@kill -TERM $$(cat /tmp/brigade-apiserver.PID)
+.PHONY: test-integration
+test-integration: hack-expose-apiserver
+	@cd v2/git-initializer && \
+		go test \
+			-v \
+			-timeout=10m \
+			-tags=integration \
+			./... || (cd - && $(MAKE) hack-unexpose-apiserver && exit 1)
+	$(MAKE) hack-unexpose-apiserver
 
 ################################################################################
 # Build / Publish                                                              #
@@ -274,3 +272,12 @@ hack: hack-push-images hack-build-cli
 		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)logger-linux \
 		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set logger.linux.image.pullPolicy=Always
+
+.PHONY: hack-expose-apiserver
+hack-expose-apiserver:
+	@kubectl --namespace brigade port-forward service/brigade-apiserver 7000:443 &>/dev/null & \
+		echo $$! > /tmp/brigade-apiserver.PID
+
+.PHONY: hack-unexpose-apiserver
+hack-unexpose-apiserver:
+	@kill -TERM $$(cat /tmp/brigade-apiserver.PID)

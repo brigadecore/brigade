@@ -78,7 +78,7 @@ func gitCheckout() error {
 		if err != nil {
 			return errors.Wrapf(
 				err,
-				"error configuring authentication for remote with URL %s: %s",
+				"error configuring authentication for remote with URL %s",
 				event.Worker.Git.CloneURL,
 			)
 		}
@@ -105,7 +105,7 @@ func gitCheckout() error {
 
 	repo, err := git.Init(gitStorage, osfs.New(workspace))
 	if err != nil {
-		return errors.Wrapf(err, "error initializing git repository at %s: %s", workspace)
+		return errors.Wrapf(err, "error initializing git repository at %s", workspace)
 	}
 
 	const remoteName = "origin"
@@ -227,7 +227,7 @@ func gitCheckout() error {
 			); err != nil {
 				return errors.Wrapf(
 					err,
-					"error updating submodule %q: %s",
+					"error updating submodule %q",
 					submodule.Config().Name,
 				)
 			}
