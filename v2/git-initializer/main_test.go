@@ -4,54 +4,118 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"testing"
 	"time"
 
-	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/require"
 
 	"github.com/brigadecore/brigade/sdk/v2"
 	"github.com/brigadecore/brigade/sdk/v2/authx"
 	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
 type testcase struct {
 	name          string
-	projectFile   string
+	project       core.Project
 	terminalPhase core.WorkerPhase
 }
 
-func TestMain(t *testing.T) {
-	// TODO: convert to in-line project definitions
-	var testcases = []testcase{
-		{
-			name:          "GitHub - Public Repo - https",
-			projectFile:   "github-public-https.yaml",
-			terminalPhase: core.WorkerPhaseSucceeded,
-		},
-		// TODO: once we have mech for injecting private ssh key in secure manner
-		// {
-		// 	name:          "GitHub - Private Repo - ssh",
-		// 	projectFile:   "github-private-ssh.yaml",
-		// 	terminalPhase: core.WorkerPhaseSucceeded,
-		// },
-		{
-			name:          "GitHub - Public Repo - submodules",
-			projectFile:   "github-init-submodules.yaml",
-			terminalPhase: core.WorkerPhaseSucceeded,
-		},
-		{
-			name:          "GitHub - Malformed URL",
-			projectFile:   "github-malformed-url.yaml",
-			terminalPhase: core.WorkerPhaseFailed,
-		},
-	}
+var defaultBrigadeJS = `
+	const { events } = require("brigadier");
 
+	events.on("github.com/brigadecore/brigade/cli", "exec", () => {
+		console.log("Hello, World!");
+	});
+`
+
+var testcases = []testcase{
+	{
+		name: "GitHub - Public Repo - https",
+		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "public-https",
+			},
+			Spec: core.ProjectSpec{
+				WorkerTemplate: core.WorkerSpec{
+					Git: &core.GitConfig{
+						CloneURL: "https://github.com/krancour/brigade2-pipeline-demo.git",
+					},
+					DefaultConfigFiles: map[string]string{
+						"brigade.js": defaultBrigadeJS,
+					},
+				},
+			},
+		},
+		terminalPhase: core.WorkerPhaseSucceeded,
+	},
+	// TODO: once we have mech for injecting private ssh key in secure manner
+	// {
+	// 	name:          "GitHub - Private Repo - ssh",
+	// 	project: core.Project{
+	// 		ObjectMeta: meta.ObjectMeta{
+	// 			ID: "private-ssh",
+	// 		},
+	// 		Spec: core.ProjectSpec{
+	// 			WorkerTemplate: core.WorkerSpec{
+	// 				Git: &core.GitConfig{
+	//					// TODO: host similar repo in brigadecore
+	// 					CloneURL: "git@github.com:vdice/testrepo.git",
+	// 					Commit: "a292c2ffe0226f702519ec2833054953e82a816e",
+	// 				},
+	// 				DefaultConfigFiles: map[string]string{
+	// 					"brigade.js": defaultBrigadeJS,
+	// 				},
+	// 			},
+	// 		},
+	// 	},
+	// 	terminalPhase: core.WorkerPhaseSucceeded,
+	// },
+	{
+		name: "GitHub - Public Repo - submodules",
+		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "init-submodules",
+			},
+			Spec: core.ProjectSpec{
+				WorkerTemplate: core.WorkerSpec{
+					Git: &core.GitConfig{
+						// TODO: host similar repo in brigadecore
+						CloneURL:       "https://github.com/sgoings/makeup.git",
+						InitSubmodules: true,
+					},
+					DefaultConfigFiles: map[string]string{
+						"brigade.js": defaultBrigadeJS,
+					},
+				},
+			},
+		},
+		terminalPhase: core.WorkerPhaseSucceeded,
+	},
+	{
+		name: "GitHub - Malformed URL",
+		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "malformed-url",
+			},
+			Spec: core.ProjectSpec{
+				WorkerTemplate: core.WorkerSpec{
+					Git: &core.GitConfig{
+						CloneURL: "https://github.com/brigadecore/brigadee.git",
+					},
+					DefaultConfigFiles: map[string]string{
+						"brigade.js": defaultBrigadeJS,
+					},
+				},
+			},
+		},
+		terminalPhase: core.WorkerPhaseFailed,
+	},
+}
+
+func TestMain(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, cancel :=
@@ -65,17 +129,6 @@ func TestMain(t *testing.T) {
 			apiClientOpts := &restmachinery.APIClientOptions{
 				AllowInsecureConnections: true,
 			}
-			filename := fmt.Sprintf("./testdata/%s", tc.projectFile)
-
-			projectBytes, err := ioutil.ReadFile(filename)
-			require.NoError(t, err, "error reading project file")
-
-			projectBytes, err = yaml.YAMLToJSON(projectBytes)
-			require.NoError(t, err, "error converting file to JSON")
-
-			project := core.Project{}
-			err = json.Unmarshal(projectBytes, &project)
-			require.NoError(t, err, "error unmarshaling project file")
 
 			authClient := authx.NewSessionsClient(
 				apiServerAddress,
@@ -96,13 +149,13 @@ func TestMain(t *testing.T) {
 			// Delete the project and ignore any errors
 			// TODO: create/use error types in core, so we can ignore error if expected
 			// e.g. project doesn't yet exist, and surface unexpected errors
-			_ = client.Core().Projects().Delete(ctx, project.ID)
+			_ = client.Core().Projects().Delete(ctx, tc.project.ID)
 
-			_, err = client.Core().Projects().CreateFromBytes(ctx, projectBytes)
+			_, err = client.Core().Projects().Create(ctx, tc.project)
 			require.NoError(t, err, "error creating project")
 
 			event := core.Event{
-				ProjectID: project.ID,
+				ProjectID: tc.project.ID,
 				Source:    "github.com/brigadecore/brigade/cli",
 				Type:      "exec",
 			}

@@ -1,9 +1,0 @@
-apiVersion: brigade.sh/v2
-kind: Project
-metadata:
-  id: malformed-url
-description: A GitHub-based project with a purposely malformed url
-spec:
-  workerTemplate:
-    git:
-      cloneURL: https://github.com/brigadecore/brigadee.git
