@@ -141,7 +141,7 @@ test-integration: hack-expose-apiserver
 			-timeout=10m \
 			-tags=integration \
 			./... || (cd - && $(MAKE) hack-unexpose-apiserver && exit 1)
-	$(MAKE) hack-unexpose-apiserver
+	@$(MAKE) hack-unexpose-apiserver
 
 ################################################################################
 # Build / Publish                                                              #
