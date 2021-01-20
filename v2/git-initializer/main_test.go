@@ -200,8 +200,10 @@ func TestMain(t *testing.T) {
 						phase := event.Worker.Status.Phase
 						if phase.IsTerminal() {
 							require.Equal(t, tc.terminalPhase, phase, "worker's terminal phase does not match expected")
+							break
 						}
 					}
+					break
 				}
 			}
 		})
