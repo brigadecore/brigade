@@ -17,12 +17,6 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
-type testcase struct {
-	name          string
-	project       core.Project
-	terminalPhase core.WorkerPhase
-}
-
 var defaultBrigadeJS = `
 	const { events } = require("brigadier");
 
@@ -31,7 +25,11 @@ var defaultBrigadeJS = `
 	});
 `
 
-var testcases = []testcase{
+var testcases = []struct {
+	name          string
+	project       core.Project
+	terminalPhase core.WorkerPhase
+}{
 	{
 		name: "GitHub - Public Repo - https",
 		project: core.Project{
