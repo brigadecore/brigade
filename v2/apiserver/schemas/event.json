@@ -4,38 +4,6 @@
 
 	"definitions": {
 
-		"empty": {
-			"type": "string",
-			"enum": [ "" ]
-		},
-
-		"identifier": {
-			"type": "string",
-			"pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
-			"minLength": 3,
-			"maxLength": 50
-		},
-
-		"url": {
-			"type": "string",
-			"pattern": "^[\\w:/\\-\\.\\?=]*$",
-			"minLength": 5,
-			"maxLength": 250
-		},
-
-		"label": {
-			"type": "string",
-			"pattern": "^[\\w:/\\-\\.\\?=\\*]*$",
-			"minLength": 1,
-			"maxLength": 250
-		},
-
-		"apiVersion": {
-			"type": "string",
-			"description": "The major version of the Brigade API with which this object conforms",
-			"enum": ["brigade.sh/v2"]
-		},
-
 		"kind": {
 			"type": "string",
 			"description": "The type of object represented by the document",
@@ -46,36 +14,6 @@
 			"type": "object",
 			"description": "Event metadata",
 			"additionalProperties": false
-		},
-
-		"gitConfig": {
-			"type": "object",
-			"description": "Worker configuration pertaining specifically to git",
-			"additionalProperties": false,
-			"properties": {
-				"cloneURL": {
-					"oneOf": [
-						{ "$ref": "#/definitions/empty" },
-						{ "$ref": "#/definitions/url" }
-					],
-					"description": "The URL for cloning a git project"
-				},
-				"commit": {
-					"type": "string",
-					"pattern": "^[a-fA-F0-9]*$",
-					"minLength": 8,
-					"maxLength": 40,
-					"description": "A git commit sha"
-				},
-				"ref": {
-					"type": "string",
-					"description": "A reference to a git branch or tag"
-				},
-				"initSubmodules": {
-					"type": "boolean",
-					"description": "Whether to initialize git submodules"
-				}
-			}
 		}
 
 	},
@@ -86,7 +24,7 @@
 	"additionalProperties": false,
 	"properties": {
 		"apiVersion": {
-			"$ref": "#/definitions/apiVersion"
+			"$ref": "file:///brigade/schemas/common.json#/definitions/apiVersion"
 		},
 		"kind": {
 			"$ref": "#/definitions/kind"
@@ -96,17 +34,17 @@
 		},
 		"projectID": {
 			"oneOf": [
-				{ "$ref": "#/definitions/empty" },
-				{ "$ref": "#/definitions/identifier" }
+				{ "$ref": "file:///brigade/schemas/common.json#/definitions/empty" },
+				{ "$ref": "file:///brigade/schemas/common.json#/definitions/identifier" }
 			],
 			"description": "The ID of the project the event is for"
 		},
 		"source": {
-			"allOf": [{ "$ref": "#/definitions/url" }],
+			"allOf": [{ "$ref": "file:///brigade/schemas/common.json#/definitions/url" }],
 			"description": "The name of the source that is sending the event"
 		},
 		"type": {
-			"allOf": [{ "$ref": "#/definitions/label" }],
+			"allOf": [{ "$ref": "file:///brigade/schemas/common.json#/definitions/label" }],
 			"description": "The type of the event"
 		},
 		"labels": {
@@ -117,7 +55,7 @@
 			"additionalProperties": true,
 			"patternProperties": {
 				"^[\\w:/\\-\\.\\?=\\*]*$": {
-					"$ref": "#/definitions/label"
+					"$ref": "file:///brigade/schemas/common.json#/definitions/label"
 				}
 			},
 			"description": "Labels to help Brigade route the event to subscribed projects"
@@ -132,7 +70,9 @@
 			"description": "A detailed description of the event",
 			"maxLength": 100
 		},
-		"git": { "$ref": "#/definitions/gitConfig" },
+		"git": {
+			"$ref": "file:///brigade/schemas/common.json#/definitions/gitConfig"
+		},
 		"payload": {
 			"type": "string",
 			"description": "Event payload"
