@@ -35,7 +35,7 @@ var testcases = []struct {
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
-						CloneURL: "https://github.com/krancour/brigade2-pipeline-demo.git",
+						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
 					},
 				},
 			},
@@ -48,7 +48,7 @@ var testcases = []struct {
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
-						CloneURL: "https://github.com/brigadecore/brigade.git",
+						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
 						Ref:      "refs/heads/master",
 					},
 				},
@@ -62,7 +62,7 @@ var testcases = []struct {
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
-						CloneURL: "https://github.com/brigadecore/brigade.git",
+						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
 						Ref:      "master",
 					},
 				},
@@ -91,7 +91,7 @@ var testcases = []struct {
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
-						CloneURL: "https://github.com/brigadecore/brigade.git",
+						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
 						Ref:      "non-existent",
 					},
 				},
