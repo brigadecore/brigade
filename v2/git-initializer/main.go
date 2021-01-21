@@ -28,7 +28,7 @@ func main() {
 	}
 }
 
-// TODO: needs retry - let's do a follow-up (krancour has a lib to use!)
+// TODO: add retry: https://github.com/brigadecore/brigade/issues/1235
 
 func gitCheckout() error {
 	eventPath := "/var/event/event.json"
@@ -108,13 +108,13 @@ func gitCheckout() error {
 	}
 
 	const remoteName = "origin"
-	// If we're not dealing with an exact commit, list the remote refs
-	// to build out a full, updated refspec
+	// If we're not dealing with an exact commit, and we don't already have a
+	// full reference, list the remote refs to build out a full, updated refspec
 	//
 	// For example, we might be supplied with the tag "v0.1.0", but if we use
 	// this directly, we'll get: couldn't find remote ref "v0.1.0"
 	// So we need to find the full remote ref; in this case, "refs/tags/v0.1.0"
-	if gitConfig.Commit == "" {
+	if gitConfig.Commit == "" && !isFullReference(fullRef.Name()) {
 		// Create a new remote for the purposes of listing remote refs and finding
 		// the full ref we want
 		remoteConfig := &config.RemoteConfig{
@@ -131,7 +131,7 @@ func gitCheckout() error {
 		}
 
 		// Filter the list of refs and only keep the full ref matching our commitRef
-		var found bool
+		matches := make([]*plumbing.Reference, 0)
 		for _, ref := range refs {
 			// Ignore the HEAD symbolic reference
 			// e.g. [HEAD ref: refs/heads/master]
@@ -144,14 +144,17 @@ func gitCheckout() error {
 			// Alternatively, match on ref hash
 			if ref.Name().Short() == fullRef.Name().Short() ||
 				ref.Hash() == fullRef.Hash() {
-				fullRef = ref
-				found = true
+				matches = append(matches, ref)
 			}
 		}
 
-		if !found {
+		if len(matches) == 0 {
 			return fmt.Errorf("reference %q not found in repo %q", fullRef.Name(), gitConfig.CloneURL)
 		}
+		if len(matches) > 1 {
+			return fmt.Errorf("found more than one match for reference %q: %+v", fullRef.Name(), matches)
+		}
+		fullRef = matches[0]
 
 		// Create refspec with the updated ref
 		refSpec = config.RefSpec(fmt.Sprintf("+%s:%s",
@@ -235,4 +238,8 @@ func gitCheckout() error {
 	}
 
 	return nil
+}
+
+func isFullReference(name plumbing.ReferenceName) bool {
+	return name.IsBranch() || name.IsNote() || name.IsRemote() || name.IsTag()
 }
