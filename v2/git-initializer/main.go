@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
@@ -140,10 +139,11 @@ func gitCheckout() error {
 				continue
 			}
 
-			// TODO: update this, as it is faulty... there may be multiple matches
-			// e.g. "main" might match /refs/heads/main and /refs/heads/main2
-			if strings.Contains(ref.Name().String(), fullRef.Name().String()) ||
-				strings.Contains(ref.Hash().String(), fullRef.Hash().String()) {
+			// Compare the short names of both refs,
+			// where the short name of e.g. '/refs/heads/main' is 'main'
+			// Alternatively, match on ref hash
+			if ref.Name().Short() == fullRef.Name().Short() ||
+				ref.Hash() == fullRef.Hash() {
 				fullRef = ref
 				found = true
 			}
