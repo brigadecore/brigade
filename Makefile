@@ -135,12 +135,12 @@ test-unit-js:
 
 .PHONY: test-integration
 test-integration: hack-expose-apiserver
-	@cd v2/git-initializer && \
+	@cd v2 && \
 		go test \
 			-v \
 			-timeout=10m \
 			-tags=integration \
-			./... || (cd - && $(MAKE) hack-unexpose-apiserver && exit 1)
+			./tests/... || (cd - && $(MAKE) hack-unexpose-apiserver && exit 1)
 	@$(MAKE) hack-unexpose-apiserver
 
 ################################################################################
