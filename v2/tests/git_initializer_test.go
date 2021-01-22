@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/sdk/v2"
-	"github.com/brigadecore/brigade/sdk/v2/authx"
+	"github.com/brigadecore/brigade/sdk/v2/authn"
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 	"github.com/stretchr/testify/require"
@@ -129,7 +129,7 @@ func TestMain(t *testing.T) {
 				AllowInsecureConnections: true,
 			}
 
-			authClient := authx.NewSessionsClient(
+			authClient := authn.NewSessionsClient(
 				apiServerAddress,
 				"",
 				apiClientOpts,
