@@ -86,7 +86,7 @@ func userList(c *cli.Context) error {
 
 	for {
 		users, err :=
-			client.Authx().Users().List(c.Context, nil, &opts)
+			client.Authn().Users().List(c.Context, nil, &opts)
 		if err != nil {
 			return err
 		}
@@ -166,7 +166,7 @@ func userGet(c *cli.Context) error {
 		return err
 	}
 
-	user, err := client.Authx().Users().Get(c.Context, id)
+	user, err := client.Authn().Users().Get(c.Context, id)
 	if err != nil {
 		return err
 	}
@@ -215,7 +215,7 @@ func userLock(c *cli.Context) error {
 		return err
 	}
 
-	if err := client.Authx().Users().Lock(c.Context, id); err != nil {
+	if err := client.Authn().Users().Lock(c.Context, id); err != nil {
 		return err
 	}
 
@@ -232,7 +232,7 @@ func userUnlock(c *cli.Context) error {
 		return err
 	}
 
-	if err := client.Authx().Users().Unlock(c.Context, id); err != nil {
+	if err := client.Authn().Users().Unlock(c.Context, id); err != nil {
 		return err
 	}
 

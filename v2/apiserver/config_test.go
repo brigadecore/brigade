@@ -5,12 +5,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core/kubernetes"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery/authn"
+	sysAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/system/authn"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -356,14 +356,14 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 	testCases := []struct {
 		name       string
 		setup      func()
-		assertions func(authn.TokenAuthFilterConfig, error)
+		assertions func(sysAuthn.TokenAuthFilterConfig, error)
 	}{
 		{
 			name: "ROOT_USER_ENABLED not parsable as bool",
 			setup: func() {
 				os.Setenv("ROOT_USER_ENABLED", "yuppers")
 			},
-			assertions: func(_ authn.TokenAuthFilterConfig, err error) {
+			assertions: func(_ sysAuthn.TokenAuthFilterConfig, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "was not parsable as a bool")
 				require.Contains(t, err.Error(), "ROOT_USER_ENABLED")
@@ -375,7 +375,7 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 				os.Setenv("ROOT_USER_ENABLED", "true")
 				os.Setenv("OIDC_ENABLED", "yuppers")
 			},
-			assertions: func(_ authn.TokenAuthFilterConfig, err error) {
+			assertions: func(_ sysAuthn.TokenAuthFilterConfig, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "was not parsable as a bool")
 				require.Contains(t, err.Error(), "OIDC_ENABLED")
@@ -386,7 +386,7 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 			setup: func() {
 				os.Setenv("OIDC_ENABLED", "true")
 			},
-			assertions: func(_ authn.TokenAuthFilterConfig, err error) {
+			assertions: func(_ sysAuthn.TokenAuthFilterConfig, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "SCHEDULER_TOKEN")
@@ -397,7 +397,7 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 			setup: func() {
 				os.Setenv("SCHEDULER_TOKEN", "foo")
 			},
-			assertions: func(_ authn.TokenAuthFilterConfig, err error) {
+			assertions: func(_ sysAuthn.TokenAuthFilterConfig, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "OBSERVER_TOKEN")
@@ -408,7 +408,7 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 			setup: func() {
 				os.Setenv("OBSERVER_TOKEN", "bar")
 			},
-			assertions: func(config authn.TokenAuthFilterConfig, err error) {
+			assertions: func(config sysAuthn.TokenAuthFilterConfig, err error) {
 				require.NoError(t, err)
 				require.NotNil(t, config.FindUserFn)
 				require.True(t, config.RootUserEnabled)
@@ -420,8 +420,8 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			testCase.setup()
 			config, err := tokenAuthFilterConfig(
-				func(context.Context, string) (authx.User, error) {
-					return authx.User{}, nil
+				func(context.Context, string) (authn.User, error) {
+					return authn.User{}, nil
 				},
 			)
 			testCase.assertions(config, err)
