@@ -6,6 +6,7 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
+	mongoTesting "github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb/testing" // nolint: lll
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,7 @@ func TestWorkersStoreUpdateStatus(t *testing.T) {
 	}{
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
@@ -41,7 +42,7 @@ func TestWorkersStoreUpdateStatus(t *testing.T) {
 
 		{
 			name: "event not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
@@ -61,7 +62,7 @@ func TestWorkersStoreUpdateStatus(t *testing.T) {
 
 		{
 			name: "success",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},

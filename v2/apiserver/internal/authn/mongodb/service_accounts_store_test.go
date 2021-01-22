@@ -7,6 +7,7 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
+	mongoTesting "github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb/testing" // nolint: lll
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,13 +28,13 @@ func TestServiceAccountsStoreCreate(t *testing.T) {
 
 		{
 			name: "id already exists",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
 					opts ...*options.InsertOneOptions,
 				) (*mongo.InsertOneResult, error) {
-					return nil, mockWriteException
+					return nil, mongoTesting.MockWriteException
 				},
 			},
 			assertions: func(err error) {
@@ -47,7 +48,7 @@ func TestServiceAccountsStoreCreate(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
@@ -65,7 +66,7 @@ func TestServiceAccountsStoreCreate(t *testing.T) {
 
 		{
 			name: "successful creation",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
@@ -106,7 +107,7 @@ func TestServiceAccountsStoreList(t *testing.T) {
 
 		{
 			name: "error finding service accounts",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -124,13 +125,13 @@ func TestServiceAccountsStoreList(t *testing.T) {
 
 		{
 			name: "service accounts found; no more pages of results exist",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cursor, err := mockCursor(testServiceAccount)
+					cursor, err := mongoTesting.MockCursor(testServiceAccount)
 					require.NoError(t, err)
 					return cursor, nil
 				},
@@ -151,13 +152,13 @@ func TestServiceAccountsStoreList(t *testing.T) {
 
 		{
 			name: "service accounts found; more pages of results exist",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cursor, err := mockCursor(testServiceAccount)
+					cursor, err := mongoTesting.MockCursor(testServiceAccount)
 					require.NoError(t, err)
 					return cursor, nil
 				},
@@ -204,13 +205,13 @@ func TestServiceAccountsStoreGet(t *testing.T) {
 
 		{
 			name: "service account not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(mongo.ErrNoDocuments)
+					res, err := mongoTesting.MockSingleResult(mongo.ErrNoDocuments)
 					require.NoError(t, err)
 					return res
 				},
@@ -225,13 +226,15 @@ func TestServiceAccountsStoreGet(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(errors.New("something went wrong"))
+					res, err := mongoTesting.MockSingleResult(
+						errors.New("something went wrong"),
+					)
 					require.NoError(t, err)
 					return res
 				},
@@ -249,13 +252,13 @@ func TestServiceAccountsStoreGet(t *testing.T) {
 
 		{
 			name: "service account found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(
+					res, err := mongoTesting.MockSingleResult(
 						authn.ServiceAccount{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testServiceAccountID,
@@ -296,13 +299,13 @@ func TestServiceAccountsStoreGetByHashedToken(t *testing.T) {
 
 		{
 			name: "service account not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(mongo.ErrNoDocuments)
+					res, err := mongoTesting.MockSingleResult(mongo.ErrNoDocuments)
 					require.NoError(t, err)
 					return res
 				},
@@ -317,13 +320,15 @@ func TestServiceAccountsStoreGetByHashedToken(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(errors.New("something went wrong"))
+					res, err := mongoTesting.MockSingleResult(
+						errors.New("something went wrong"),
+					)
 					require.NoError(t, err)
 					return res
 				},
@@ -341,13 +346,13 @@ func TestServiceAccountsStoreGetByHashedToken(t *testing.T) {
 
 		{
 			name: "service account found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(
+					res, err := mongoTesting.MockSingleResult(
 						authn.ServiceAccount{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testServiceAccountID,
@@ -387,7 +392,7 @@ func TestServiceAccountsLock(t *testing.T) {
 	}{
 		{
 			name: "service account not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
@@ -407,7 +412,7 @@ func TestServiceAccountsLock(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
@@ -426,7 +431,7 @@ func TestServiceAccountsLock(t *testing.T) {
 
 		{
 			name: "success",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
@@ -463,7 +468,7 @@ func TestServiceAccountsUnLock(t *testing.T) {
 	}{
 		{
 			name: "service account not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
@@ -483,7 +488,7 @@ func TestServiceAccountsUnLock(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
@@ -502,7 +507,7 @@ func TestServiceAccountsUnLock(t *testing.T) {
 
 		{
 			name: "success",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
