@@ -20,7 +20,7 @@ func TestOIDCAuthDetailsMarshalJSON(t *testing.T) {
 func TestNewSessionsService(t *testing.T) {
 	const testRootPassword = "12345"
 	sessionsStore := &mockSessionsStore{}
-	usersStore := &mockUsersStore{}
+	usersStore := &MockUsersStore{}
 	config := &SessionsServiceConfig{
 		RootUserEnabled:  true,
 		RootUserPassword: testRootPassword,
@@ -373,7 +373,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 						return Session{}, nil
 					},
 				},
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					GetFn: func(_ context.Context, id string) (User, error) {
 						return User{}, errors.New("error searching for user")
 					},
@@ -429,7 +429,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 						return Session{}, nil
 					},
 				},
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					GetFn: func(_ context.Context, id string) (User, error) {
 						return User{}, &meta.ErrNotFound{
 							Type: "User",
@@ -500,7 +500,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 						return errors.New("error authenticating")
 					},
 				},
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					GetFn: func(_ context.Context, id string) (User, error) {
 						return User{}, &meta.ErrNotFound{
 							Type: "User",
@@ -575,7 +575,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 						return nil
 					},
 				},
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					GetFn: func(_ context.Context, id string) (User, error) {
 						return User{}, nil
 					},

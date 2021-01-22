@@ -18,7 +18,7 @@ func TestServiceAccountListMarshalJSON(t *testing.T) {
 }
 
 func TestNewServiceAccountService(t *testing.T) {
-	store := &mockServiceAccountStore{}
+	store := &MockServiceAccountStore{}
 	svc := NewServiceAccountsService(store)
 	require.Same(t, store, svc.(*serviceAccountsService).store)
 }
@@ -32,7 +32,7 @@ func TestServiceAccountsServiceCreate(t *testing.T) {
 		{
 			name: "error creating service account in store",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				store: &MockServiceAccountStore{
 					CreateFn: func(context.Context, ServiceAccount) error {
 						return errors.New("store error")
 					},
@@ -47,7 +47,7 @@ func TestServiceAccountsServiceCreate(t *testing.T) {
 		{
 			name: "success",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				store: &MockServiceAccountStore{
 					CreateFn: func(context.Context, ServiceAccount) error {
 						return nil
 					},
@@ -75,7 +75,7 @@ func TestServiceAccountsServiceList(t *testing.T) {
 		{
 			name: "error getting service accounts from store",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				store: &MockServiceAccountStore{
 					ListFn: func(
 						context.Context,
 						meta.ListOptions,
@@ -98,7 +98,7 @@ func TestServiceAccountsServiceList(t *testing.T) {
 		{
 			name: "success",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				store: &MockServiceAccountStore{
 					ListFn: func(
 						context.Context,
 						meta.ListOptions,
@@ -130,7 +130,7 @@ func TestServiceAccountsServiceGet(t *testing.T) {
 		{
 			name: "error getting service account from store",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				store: &MockServiceAccountStore{
 					GetFn: func(context.Context, string) (ServiceAccount, error) {
 						return ServiceAccount{}, errors.New("error getting service account")
 					},
@@ -145,7 +145,7 @@ func TestServiceAccountsServiceGet(t *testing.T) {
 		{
 			name: "success",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				store: &MockServiceAccountStore{
 					GetFn: func(context.Context, string) (ServiceAccount, error) {
 						return ServiceAccount{}, nil
 					},
@@ -175,7 +175,7 @@ func TestServiceAccountsServiceGetByToken(t *testing.T) {
 		{
 			name: "error getting service account from store",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				store: &MockServiceAccountStore{
 					GetByHashedTokenFn: func(
 						context.Context,
 						string,
@@ -196,7 +196,7 @@ func TestServiceAccountsServiceGetByToken(t *testing.T) {
 		{
 			name: "success",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				store: &MockServiceAccountStore{
 					GetByHashedTokenFn: func(
 						context.Context,
 						string,
@@ -228,7 +228,7 @@ func TestServiceAccountsLock(t *testing.T) {
 		{
 			name: "error updating service account in store",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				store: &MockServiceAccountStore{
 					LockFn: func(context.Context, string) error {
 						return errors.New("store error")
 					},
@@ -243,7 +243,7 @@ func TestServiceAccountsLock(t *testing.T) {
 		{
 			name: "success",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				store: &MockServiceAccountStore{
 					LockFn: func(context.Context, string) error {
 						return nil
 					},
@@ -271,7 +271,7 @@ func TestServiceAccountsUnlock(t *testing.T) {
 		{
 			name: "error updating service account in store",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				store: &MockServiceAccountStore{
 					UnlockFn: func(context.Context, string, string) error {
 						return errors.New("store error")
 					},
@@ -286,7 +286,7 @@ func TestServiceAccountsUnlock(t *testing.T) {
 		{
 			name: "success",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				store: &MockServiceAccountStore{
 					UnlockFn: func(context.Context, string, string) error {
 						return nil
 					},
@@ -304,60 +304,4 @@ func TestServiceAccountsUnlock(t *testing.T) {
 			testCase.assertions(token, err)
 		})
 	}
-}
-
-type mockServiceAccountStore struct {
-	CreateFn func(context.Context, ServiceAccount) error
-	ListFn   func(
-		context.Context,
-		meta.ListOptions,
-	) (ServiceAccountList, error)
-	GetFn              func(context.Context, string) (ServiceAccount, error)
-	GetByHashedTokenFn func(context.Context, string) (ServiceAccount, error)
-	LockFn             func(context.Context, string) error
-	UnlockFn           func(
-		ctx context.Context,
-		id string,
-		newHashedToken string,
-	) error
-}
-
-func (m *mockServiceAccountStore) Create(
-	ctx context.Context,
-	serviceAccount ServiceAccount,
-) error {
-	return m.CreateFn(ctx, serviceAccount)
-}
-
-func (m *mockServiceAccountStore) List(
-	ctx context.Context,
-	opts meta.ListOptions,
-) (ServiceAccountList, error) {
-	return m.ListFn(ctx, opts)
-}
-
-func (m *mockServiceAccountStore) Get(
-	ctx context.Context,
-	id string,
-) (ServiceAccount, error) {
-	return m.GetFn(ctx, id)
-}
-
-func (m *mockServiceAccountStore) GetByHashedToken(
-	ctx context.Context,
-	token string,
-) (ServiceAccount, error) {
-	return m.GetByHashedTokenFn(ctx, token)
-}
-
-func (m *mockServiceAccountStore) Lock(ctx context.Context, id string) error {
-	return m.LockFn(ctx, id)
-}
-
-func (m *mockServiceAccountStore) Unlock(
-	ctx context.Context,
-	id string,
-	newHashedToken string,
-) error {
-	return m.UnlockFn(ctx, id, newHashedToken)
 }
