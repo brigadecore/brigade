@@ -84,21 +84,25 @@ spec:
         {{- end }}
         
         {{- if .Values.mongodb.enabled }}
+        {{- if eq .Values.mongodb.architecture "replicaset" }}
         {{- $replicaCount := int .Values.mongodb.replicaCount }}
         {{- $fullname := include "call-nested" (list . "mongodb" "mongodb.fullname") }}
         {{- $releaseNamespace := .Release.Namespace }}
-        {{- $mongoList := list }}
+        {{- $port := .Values.mongodb.service.port }}
+        {{- $hostList := list }}
         {{- range $e, $i := until $replicaCount }}
-        {{- $mongoList = append $mongoList (printf "%s-%d.%s-headless.%s.svc.cluster.local" $fullname $i $fullname $releaseNamespace) }}
+        {{- $hostList = append $hostList (printf "%s-%d.%s-headless.%s.svc.cluster.local:%g" $fullname $i $fullname $releaseNamespace $port) }}
         {{- end }}
-        - name: DATABASE_HOST
-          value: {{ join "," $mongoList }}
-        - name: DATABASE_PORT
-          value: {{ quote .Values.mongodb.service.port }}
-        - name: DATABASE_NAME
-          value: {{ .Values.mongodb.auth.database }}
+        - name: DATABASE_HOSTS
+          value: {{ join "," $hostList }}
         - name: DATABASE_REPLICA_SET
           value: {{ .Values.mongodb.replicaSetName }}
+        {{- else }}
+        - name: DATABASE_HOSTS
+          value: {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.mongodb.service.port }}
+        {{- end }}
+        - name: DATABASE_NAME
+          value: {{ .Values.mongodb.auth.database }}
         - name: DATABASE_USERNAME
           value: {{ .Values.mongodb.auth.username }}
         - name: DATABASE_PASSWORD
