@@ -43,7 +43,7 @@ var testcases = []struct {
 		terminalPhase: core.WorkerPhaseSucceeded,
 	},
 	{
-		name: "GitHub - full ref set",
+		name: "GitHub - full ref",
 		project: core.Project{
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
@@ -57,7 +57,7 @@ var testcases = []struct {
 		terminalPhase: core.WorkerPhaseSucceeded,
 	},
 	{
-		name: "GitHub - short ref set",
+		name: "GitHub - casual ref",
 		project: core.Project{
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
@@ -71,14 +71,13 @@ var testcases = []struct {
 		terminalPhase: core.WorkerPhaseSucceeded,
 	},
 	{
-		name: "GitHub - submodules",
+		name: "GitHub - commit sha",
 		project: core.Project{
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
-						// TODO: host similar repo in brigadecore
-						CloneURL:       "https://github.com/sgoings/makeup.git",
-						InitSubmodules: true,
+						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
+						Commit:   "589e15029e1e44dee48de4800daf1f78e64287c0",
 					},
 				},
 			},
@@ -98,6 +97,21 @@ var testcases = []struct {
 			},
 		},
 		terminalPhase: core.WorkerPhaseFailed,
+	},
+	{
+		name: "GitHub - submodules",
+		project: core.Project{
+			Spec: core.ProjectSpec{
+				WorkerTemplate: core.WorkerSpec{
+					Git: &core.GitConfig{
+						// TODO: host similar repo in brigadecore
+						CloneURL:       "https://github.com/sgoings/makeup.git",
+						InitSubmodules: true,
+					},
+				},
+			},
+		},
+		terminalPhase: core.WorkerPhaseSucceeded,
 	},
 }
 
