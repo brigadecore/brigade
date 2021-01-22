@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/authx"
+	"github.com/brigadecore/brigade/sdk/v2/authn"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
@@ -105,9 +105,9 @@ func serviceAccountCreate(c *cli.Context) error {
 		return err
 	}
 
-	token, err := client.Authx().ServiceAccounts().Create(
+	token, err := client.Authn().ServiceAccounts().Create(
 		c.Context,
-		authx.ServiceAccount{
+		authn.ServiceAccount{
 			ObjectMeta: meta.ObjectMeta{
 				ID: id,
 			},
@@ -143,7 +143,7 @@ func serviceAccountList(c *cli.Context) error {
 	opts := meta.ListOptions{}
 
 	for {
-		serviceAccounts, err := client.Authx().ServiceAccounts().List(
+		serviceAccounts, err := client.Authn().ServiceAccounts().List(
 			c.Context,
 			nil,
 			&opts,
@@ -228,7 +228,7 @@ func serviceAccountGet(c *cli.Context) error {
 		return err
 	}
 
-	serviceAccount, err := client.Authx().ServiceAccounts().Get(c.Context, id)
+	serviceAccount, err := client.Authn().ServiceAccounts().Get(c.Context, id)
 	if err != nil {
 		return err
 	}
@@ -281,7 +281,7 @@ func serviceAccountLock(c *cli.Context) error {
 		return err
 	}
 
-	if err := client.Authx().ServiceAccounts().Lock(c.Context, id); err != nil {
+	if err := client.Authn().ServiceAccounts().Lock(c.Context, id); err != nil {
 		return err
 	}
 
@@ -298,7 +298,7 @@ func serviceAccountUnlock(c *cli.Context) error {
 		return err
 	}
 
-	token, err := client.Authx().ServiceAccounts().Unlock(c.Context, id)
+	token, err := client.Authn().ServiceAccounts().Unlock(c.Context, id)
 	if err != nil {
 		return err
 	}
