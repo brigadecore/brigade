@@ -111,6 +111,25 @@ func WorkerPhasesNonTerminal() []WorkerPhase {
 	}
 }
 
+// IsTerminal returns a bool indicating whether the WorkerPhase is terminal.
+func (w WorkerPhase) IsTerminal() bool {
+	switch w {
+	case WorkerPhaseAborted:
+		fallthrough
+	case WorkerPhaseCanceled:
+		fallthrough
+	case WorkerPhaseFailed:
+		fallthrough
+	case WorkerPhaseSchedulingFailed:
+		fallthrough
+	case WorkerPhaseSucceeded:
+		fallthrough
+	case WorkerPhaseTimedOut:
+		return true
+	}
+	return false
+}
+
 // Worker represents a component that orchestrates handling of a single Event.
 type Worker struct {
 	// Spec is the technical blueprint for the Worker.
@@ -161,10 +180,14 @@ type GitConfig struct {
 	// CloneURL specifies the location from where a source code repository may
 	// be cloned.
 	CloneURL string `json:"cloneURL,omitempty"`
-	// Commit specifies a commit (by SHA) to be checked out.
+	// Commit specifies a revision (by SHA) to be checked out. If non-empty, this
+	// field takes precedence over any value in the Ref field.
 	Commit string `json:"commit,omitempty"`
-	// Ref specifies a tag or branch to be checked out. If left blank, this will
-	// default to "master" at runtime.
+	// Ref is a symbolic reference to a revision to be checked out. If non-empty,
+	// the value of the Commit field supercedes any value in this field. Example
+	// uses of this field include referencing a branch (refs/heads/<branch name>)
+	// or a tag (refs/tags/<tag name>). If left blank, the default value
+	// refs/heads/master will be assumed at runtime.
 	Ref string `json:"ref,omitempty"`
 	// InitSubmodules indicates whether to clone the repository's submodules.
 	InitSubmodules bool `json:"initSubmodules"`

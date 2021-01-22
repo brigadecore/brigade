@@ -128,6 +128,10 @@ spec:
             secretKeyRef:
               name: {{ include "brigade.artemis.fullname" . }}
               key: password
+        - name: GIT_INITIALIZER_IMAGE
+          value: {{ .Values.gitInitializer.image.repository }}:{{ default .Chart.AppVersion .Values.gitInitializer.image.tag }}
+        - name: GIT_INITIALIZER_IMAGE_PULL_POLICY
+          value: {{ .Values.gitInitializer.image.pullPolicy }}
         - name: DEFAULT_WORKER_IMAGE
           value: {{ .Values.worker.image.repository }}:{{ default .Chart.AppVersion .Values.worker.image.tag }}
         - name: DEFAULT_WORKER_IMAGE_PULL_POLICY

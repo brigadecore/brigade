@@ -332,7 +332,7 @@ func (e *eventsService) createSingleEvent(
 	// master branch
 	if workerSpec.Git != nil {
 		if workerSpec.Git.Commit == "" && workerSpec.Git.Ref == "" {
-			workerSpec.Git.Ref = "master"
+			workerSpec.Git.Ref = "refs/heads/master"
 		}
 	}
 
