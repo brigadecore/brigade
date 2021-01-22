@@ -7,6 +7,7 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
+	mongoTesting "github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb/testing" // nolint: lll
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,13 +28,13 @@ func TestProjectsStoreCreate(t *testing.T) {
 
 		{
 			name: "id already exists",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
 					opts ...*options.InsertOneOptions,
 				) (*mongo.InsertOneResult, error) {
-					return nil, mockWriteException
+					return nil, mongoTesting.MockWriteException
 				},
 			},
 			assertions: func(err error) {
@@ -47,7 +48,7 @@ func TestProjectsStoreCreate(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
@@ -65,7 +66,7 @@ func TestProjectsStoreCreate(t *testing.T) {
 
 		{
 			name: "successful creation",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
@@ -106,7 +107,7 @@ func TestProjectsStoreList(t *testing.T) {
 
 		{
 			name: "error finding projects",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -124,13 +125,13 @@ func TestProjectsStoreList(t *testing.T) {
 
 		{
 			name: "projects found; no more pages of results exist",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cursor, err := mockCursor(testProject)
+					cursor, err := mongoTesting.MockCursor(testProject)
 					require.NoError(t, err)
 					return cursor, nil
 				},
@@ -151,13 +152,13 @@ func TestProjectsStoreList(t *testing.T) {
 
 		{
 			name: "projects found; more pages of results exist",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cursor, err := mockCursor(testProject)
+					cursor, err := mongoTesting.MockCursor(testProject)
 					require.NoError(t, err)
 					return cursor, nil
 				},
@@ -220,7 +221,7 @@ func TestProjectsStoreListSubscribers(t *testing.T) {
 	}{
 		{
 			name: "error finding subscribers",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -238,13 +239,13 @@ func TestProjectsStoreListSubscribers(t *testing.T) {
 
 		{
 			name: "found no subscribers",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cursor, err := mockCursor()
+					cursor, err := mongoTesting.MockCursor()
 					require.NoError(t, err)
 					return cursor, nil
 				},
@@ -257,13 +258,13 @@ func TestProjectsStoreListSubscribers(t *testing.T) {
 
 		{
 			name: "found subscribers",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cursor, err := mockCursor(testProject1, testProject2)
+					cursor, err := mongoTesting.MockCursor(testProject1, testProject2)
 					require.NoError(t, err)
 					return cursor, nil
 				},
@@ -297,13 +298,13 @@ func TestProjectsStoreGet(t *testing.T) {
 
 		{
 			name: "project not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(mongo.ErrNoDocuments)
+					res, err := mongoTesting.MockSingleResult(mongo.ErrNoDocuments)
 					require.NoError(t, err)
 					return res
 				},
@@ -318,13 +319,15 @@ func TestProjectsStoreGet(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(errors.New("something went wrong"))
+					res, err := mongoTesting.MockSingleResult(
+						errors.New("something went wrong"),
+					)
 					require.NoError(t, err)
 					return res
 				},
@@ -338,13 +341,13 @@ func TestProjectsStoreGet(t *testing.T) {
 
 		{
 			name: "user found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(
+					res, err := mongoTesting.MockSingleResult(
 						core.Project{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testProjectID,
@@ -388,7 +391,7 @@ func TestProjectsStoreUpdate(t *testing.T) {
 
 		{
 			name: "project not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -410,7 +413,7 @@ func TestProjectsStoreUpdate(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -429,7 +432,7 @@ func TestProjectsStoreUpdate(t *testing.T) {
 
 		{
 			name: "project found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -469,7 +472,7 @@ func TestProjectsStoreDelete(t *testing.T) {
 
 		{
 			name: "project not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				DeleteOneFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -490,7 +493,7 @@ func TestProjectsStoreDelete(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				DeleteOneFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -508,7 +511,7 @@ func TestProjectsStoreDelete(t *testing.T) {
 
 		{
 			name: "project found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				DeleteOneFn: func(
 					ctx context.Context,
 					filter interface{},

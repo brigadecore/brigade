@@ -1,4 +1,4 @@
-package mongodb
+package testing
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/x/mongo/driver/description"
 )
 
-type mockCollection struct {
+type MockCollection struct {
 	CountDocumentsFn func(
 		ctx context.Context,
 		filter interface{},
@@ -65,7 +65,7 @@ type mockCollection struct {
 	) (*mongo.UpdateResult, error)
 }
 
-func (m *mockCollection) CountDocuments(
+func (m *MockCollection) CountDocuments(
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.CountOptions,
@@ -73,7 +73,7 @@ func (m *mockCollection) CountDocuments(
 	return m.CountDocumentsFn(ctx, filter, opts...)
 }
 
-func (m *mockCollection) DeleteMany(
+func (m *MockCollection) DeleteMany(
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.DeleteOptions,
@@ -81,7 +81,7 @@ func (m *mockCollection) DeleteMany(
 	return m.DeleteManyFn(ctx, filter, opts...)
 }
 
-func (m *mockCollection) DeleteOne(
+func (m *MockCollection) DeleteOne(
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.DeleteOptions,
@@ -89,7 +89,7 @@ func (m *mockCollection) DeleteOne(
 	return m.DeleteOneFn(ctx, filter, opts...)
 }
 
-func (m *mockCollection) Find(
+func (m *MockCollection) Find(
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOptions,
@@ -97,7 +97,7 @@ func (m *mockCollection) Find(
 	return m.FindFn(ctx, filter, opts...)
 }
 
-func (m *mockCollection) FindOne(
+func (m *MockCollection) FindOne(
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOneOptions,
@@ -105,7 +105,7 @@ func (m *mockCollection) FindOne(
 	return m.FindOneFn(ctx, filter, opts...)
 }
 
-func (m *mockCollection) InsertOne(
+func (m *MockCollection) InsertOne(
 	ctx context.Context,
 	document interface{},
 	opts ...*options.InsertOneOptions,
@@ -113,7 +113,7 @@ func (m *mockCollection) InsertOne(
 	return m.InsertOneFn(ctx, document, opts...)
 }
 
-func (m *mockCollection) UpdateMany(
+func (m *MockCollection) UpdateMany(
 	ctx context.Context,
 	filter interface{},
 	update interface{},
@@ -122,7 +122,7 @@ func (m *mockCollection) UpdateMany(
 	return m.UpdateManyFn(ctx, filter, update, opts...)
 }
 
-func (m *mockCollection) UpdateOne(
+func (m *MockCollection) UpdateOne(
 	ctx context.Context,
 	filter interface{},
 	update interface{},
@@ -131,7 +131,7 @@ func (m *mockCollection) UpdateOne(
 	return m.UpdateOneFn(ctx, filter, update, opts...)
 }
 
-var mockWriteException = mongo.WriteException{
+var MockWriteException = mongo.WriteException{
 	WriteErrors: mongo.WriteErrors{
 		mongo.WriteError{
 			Code: 11000,
@@ -139,7 +139,7 @@ var mockWriteException = mongo.WriteException{
 	},
 }
 
-func mockSingleResult(obj interface{}) (*mongo.SingleResult, error) {
+func MockSingleResult(obj interface{}) (*mongo.SingleResult, error) {
 	if err, ok := obj.(error); ok {
 		res := &mongo.SingleResult{}
 		setUnexportedField(res, "err", err)
@@ -190,7 +190,7 @@ func mockSingleResult(obj interface{}) (*mongo.SingleResult, error) {
 	return res, nil
 }
 
-func mockCursor(objs ...interface{}) (*mongo.Cursor, error) {
+func MockCursor(objs ...interface{}) (*mongo.Cursor, error) {
 	if objs == nil {
 		objs = []interface{}{}
 	}

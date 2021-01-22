@@ -10,6 +10,7 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
+	mongoTesting "github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb/testing" // nolint: lll
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -30,7 +31,7 @@ func TestEventsStoreCreate(t *testing.T) {
 
 		{
 			name: "error inserting event",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
@@ -48,7 +49,7 @@ func TestEventsStoreCreate(t *testing.T) {
 
 		{
 			name: "successful creation",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
@@ -108,7 +109,7 @@ func TestEventsStoreList(t *testing.T) {
 				// results we want to be returned regardless of what this value is.
 				Continue: fmt.Sprintf("%d:foo", time.Now().UTC().UnixNano()),
 			},
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					context.Context,
 					interface{},
@@ -129,13 +130,13 @@ func TestEventsStoreList(t *testing.T) {
 			listOptions: meta.ListOptions{
 				Limit: 1,
 			},
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cursor, err := mockCursor(testEvent)
+					cursor, err := mongoTesting.MockCursor(testEvent)
 					require.NoError(t, err)
 					return cursor, nil
 				},
@@ -161,13 +162,13 @@ func TestEventsStoreList(t *testing.T) {
 			listOptions: meta.ListOptions{
 				Limit: 1,
 			},
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cursor, err := mockCursor(testEvent)
+					cursor, err := mongoTesting.MockCursor(testEvent)
 					require.NoError(t, err)
 					return cursor, nil
 				},
@@ -223,13 +224,13 @@ func TestEventsStoreGet(t *testing.T) {
 	}{
 		{
 			name: "event not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(mongo.ErrNoDocuments)
+					res, err := mongoTesting.MockSingleResult(mongo.ErrNoDocuments)
 					require.NoError(t, err)
 					return res
 				},
@@ -244,13 +245,15 @@ func TestEventsStoreGet(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(errors.New("something went wrong"))
+					res, err := mongoTesting.MockSingleResult(
+						errors.New("something went wrong"),
+					)
 					require.NoError(t, err)
 					return res
 				},
@@ -264,13 +267,13 @@ func TestEventsStoreGet(t *testing.T) {
 
 		{
 			name: "event found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(
+					res, err := mongoTesting.MockSingleResult(
 						core.Event{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testEventID,
@@ -308,13 +311,13 @@ func TestEventsStoreGetByHashedToken(t *testing.T) {
 	}{
 		{
 			name: "event not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(mongo.ErrNoDocuments)
+					res, err := mongoTesting.MockSingleResult(mongo.ErrNoDocuments)
 					require.NoError(t, err)
 					return res
 				},
@@ -328,13 +331,15 @@ func TestEventsStoreGetByHashedToken(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(errors.New("something went wrong"))
+					res, err := mongoTesting.MockSingleResult(
+						errors.New("something went wrong"),
+					)
 					require.NoError(t, err)
 					return res
 				},
@@ -348,13 +353,13 @@ func TestEventsStoreGetByHashedToken(t *testing.T) {
 
 		{
 			name: "event found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(
+					res, err := mongoTesting.MockSingleResult(
 						core.Event{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testEventID,
@@ -394,7 +399,7 @@ func TestEventsStoreCancel(t *testing.T) {
 		{
 			name: "error updating event with pending worker",
 			setup: func() mongodb.Collection {
-				return &mockCollection{
+				return &mongoTesting.MockCollection{
 					UpdateOneFn: func(
 						context.Context,
 						interface{},
@@ -415,7 +420,7 @@ func TestEventsStoreCancel(t *testing.T) {
 		{
 			name: "one event with pending worker updated",
 			setup: func() mongodb.Collection {
-				return &mockCollection{
+				return &mongoTesting.MockCollection{
 					UpdateOneFn: func(
 						context.Context,
 						interface{},
@@ -437,7 +442,7 @@ func TestEventsStoreCancel(t *testing.T) {
 			name: "error updating event with running worker",
 			setup: func() mongodb.Collection {
 				once := &sync.Once{}
-				return &mockCollection{
+				return &mongoTesting.MockCollection{
 					UpdateOneFn: func(
 						context.Context,
 						interface{},
@@ -471,7 +476,7 @@ func TestEventsStoreCancel(t *testing.T) {
 		{
 			name: "no event updated",
 			setup: func() mongodb.Collection {
-				return &mockCollection{
+				return &mongoTesting.MockCollection{
 					UpdateOneFn: func(
 						context.Context,
 						interface{},
@@ -498,7 +503,7 @@ func TestEventsStoreCancel(t *testing.T) {
 			name: "one event with running worker updated",
 			setup: func() mongodb.Collection {
 				once := &sync.Once{}
-				return &mockCollection{
+				return &mongoTesting.MockCollection{
 					UpdateOneFn: func(
 						context.Context,
 						interface{},
@@ -552,7 +557,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 		{
 			name:           "requested neither pending nor running events canceled",
 			eventsSelector: core.EventsSelector{},
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateManyFn: func(
 					context.Context,
 					interface{},
@@ -576,7 +581,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					core.WorkerPhasePending,
 				},
 			},
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateManyFn: func(
 					context.Context,
 					interface{},
@@ -600,7 +605,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					core.WorkerPhaseRunning,
 				},
 			},
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateManyFn: func(
 					context.Context,
 					interface{},
@@ -625,7 +630,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					core.WorkerPhaseRunning,
 				},
 			},
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateManyFn: func(
 					context.Context,
 					interface{},
@@ -657,7 +662,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					core.WorkerPhaseRunning,
 				},
 			},
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateManyFn: func(
 					context.Context,
 					interface{},
@@ -671,7 +676,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					interface{},
 					...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cursor, err := mockCursor(core.Event{})
+					cursor, err := mongoTesting.MockCursor(core.Event{})
 					require.NoError(t, err)
 					return cursor, nil
 				},
@@ -703,7 +708,7 @@ func TestEventsStoreDelete(t *testing.T) {
 
 		{
 			name: "error deleting event",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				DeleteOneFn: func(
 					context.Context,
 					interface{},
@@ -721,7 +726,7 @@ func TestEventsStoreDelete(t *testing.T) {
 
 		{
 			name: "event not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				DeleteOneFn: func(
 					context.Context,
 					interface{},
@@ -742,7 +747,7 @@ func TestEventsStoreDelete(t *testing.T) {
 
 		{
 			name: "success",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				DeleteOneFn: func(
 					context.Context,
 					interface{},
@@ -784,7 +789,7 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 					core.WorkerPhasePending,
 				},
 			},
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateManyFn: func(
 					context.Context,
 					interface{},
@@ -809,7 +814,7 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 					core.WorkerPhaseRunning,
 				},
 			},
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateManyFn: func(
 					context.Context,
 					interface{},
@@ -845,7 +850,7 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 					core.WorkerPhaseRunning,
 				},
 			},
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateManyFn: func(
 					context.Context,
 					interface{},
@@ -859,7 +864,7 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 					interface{},
 					...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cur, err := mockCursor(core.Event{})
+					cur, err := mongoTesting.MockCursor(core.Event{})
 					require.NoError(t, err)
 					return cur, nil
 				},
@@ -886,7 +891,7 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 					core.WorkerPhaseRunning,
 				},
 			},
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateManyFn: func(
 					context.Context,
 					interface{},
@@ -900,7 +905,7 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 					interface{},
 					...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cur, err := mockCursor(core.Event{})
+					cur, err := mongoTesting.MockCursor(core.Event{})
 					require.NoError(t, err)
 					return cur, nil
 				},
