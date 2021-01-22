@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core/kubernetes"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery/authn"
+	sysAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/system/authn"
 	"github.com/brigadecore/brigade/v2/internal/os"
 	"github.com/coreos/go-oidc"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -123,12 +123,12 @@ func substrateConfig() (kubernetes.SubstrateConfig, error) {
 	return config, err
 }
 
-// sessionsServiceConfig returns an authx.SessionsServiceConfig based on
+// sessionsServiceConfig returns an authn.SessionsServiceConfig based on
 // configuration obtained from environment variables.
 func sessionsServiceConfig(
 	ctx context.Context,
-) (authx.SessionsServiceConfig, error) {
-	config := authx.SessionsServiceConfig{}
+) (authn.SessionsServiceConfig, error) {
+	config := authn.SessionsServiceConfig{}
 	var err error
 	config.RootUserEnabled, err = os.GetBoolFromEnvVar("ROOT_USER_ENABLED", false)
 	if err != nil {
@@ -182,12 +182,12 @@ func sessionsServiceConfig(
 	return config, nil
 }
 
-// tokenAuthFilterConfig returns an authn.TokenAuthFilterConfig based on
+// tokenAuthFilterConfig returns an sysAuthn.TokenAuthFilterConfig based on
 // configuration obtained from environment variables.
 func tokenAuthFilterConfig(
-	findUserFn func(ctx context.Context, id string) (authx.User, error),
-) (authn.TokenAuthFilterConfig, error) {
-	config := authn.TokenAuthFilterConfig{
+	findUserFn func(ctx context.Context, id string) (authn.User, error),
+) (sysAuthn.TokenAuthFilterConfig, error) {
+	config := sysAuthn.TokenAuthFilterConfig{
 		FindUserFn: findUserFn,
 	}
 	var err error
