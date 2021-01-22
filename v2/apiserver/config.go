@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authx"
@@ -24,6 +25,10 @@ import (
 // database returns a *mongo.Database connection based on configuration obtained
 // from environment variables.
 func database(ctx context.Context) (*mongo.Database, error) {
+	hosts, err := os.GetRequiredEnvVar("DATABASE_HOSTS")
+	if err != nil {
+		return nil, err
+	}
 	username, err := os.GetRequiredEnvVar("DATABASE_USERNAME")
 	if err != nil {
 		return nil, err
@@ -32,41 +37,32 @@ func database(ctx context.Context) (*mongo.Database, error) {
 	if err != nil {
 		return nil, err
 	}
-	host, err := os.GetRequiredEnvVar("DATABASE_HOST")
-	if err != nil {
-		return nil, err
-	}
-	port, err := os.GetIntFromEnvVar("DATABASE_PORT", 27017)
-	if err != nil {
-		return nil, err
-	}
+	replicaSetName := os.GetEnvVar("DATABASE_REPLICA_SET", "")
 	name, err := os.GetRequiredEnvVar("DATABASE_NAME")
 	if err != nil {
 		return nil, err
 	}
-	replicaSetName, err := os.GetRequiredEnvVar("DATABASE_REPLICA_SET")
-	if err != nil {
-		return nil, err
+
+	opts := &options.ClientOptions{
+		Hosts: strings.Split(hosts, ","),
+		Auth: &options.Credential{
+			AuthSource:  name,
+			Username:    username,
+			Password:    password,
+			PasswordSet: true,
+		},
 	}
-	connectionString := fmt.Sprintf(
-		"mongodb://%s:%s@%s:%d/%s?replicaSet=%s",
-		username,
-		password,
-		host,
-		port,
-		name,
-		replicaSetName,
-	)
+	if replicaSetName != "" {
+		opts.ReplicaSet = &replicaSetName
+		opts.WriteConcern = writeconcern.New(writeconcern.WMajority())
+		opts.ReadConcern = readconcern.Linearizable()
+	}
+
 	connectCtx, connectCancel := context.WithTimeout(ctx, 10*time.Second)
 	defer connectCancel()
 	// This client's settings favor consistency over speed
 	var mongoClient *mongo.Client
-	mongoClient, err = mongo.Connect(
-		connectCtx,
-		options.Client().ApplyURI(connectionString).SetWriteConcern(
-			writeconcern.New(writeconcern.WMajority()),
-		).SetReadConcern(readconcern.Linearizable()),
-	)
+	mongoClient, err = mongo.Connect(connectCtx, opts)
 	if err != nil {
 		return nil, err
 	}
