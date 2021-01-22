@@ -30,6 +30,7 @@ func main() {
 
 // TODO: add retry: https://github.com/brigadecore/brigade/issues/1235
 
+// nolint: gocyclo
 func gitCheckout() error {
 	eventPath := "/var/event/event.json"
 	data, err := ioutil.ReadFile(eventPath)
@@ -58,18 +59,17 @@ func gitCheckout() error {
 
 	// Setup Auth
 	var auth transport.AuthMethod
-	// TODO: What about token-based auth?  (see v1 askpass.sh/BRIGADE_REPO_AUTH_TOKEN)
+	// TODO: What about token-based auth?
+	// (see v1 askpass.sh/BRIGADE_REPO_AUTH_TOKEN)
 
 	// TODO: Check for SSH Cert
-	// https://github.blog/2019-08-14-ssh-certificate-authentication-for-github-enterprise-cloud/
-	//
-	// (BRIGADE_REPO_SSH_CERT in v1)
-	// I think all we need to do is to make sure the cert file exists at /id_dsa-cert.pub
+	// (see https://github.com/brigadecore/brigade/pull/1008)
 
 	// Check for SSH Key
 	privateKey, ok := event.Project.Secrets["gitSSHKey"]
 	if ok {
-		publicKeys, err := gitssh.NewPublicKeys(
+		var publicKeys *gitssh.PublicKeys
+		publicKeys, err = gitssh.NewPublicKeys(
 			"git",
 			[]byte(privateKey),
 			event.Project.Secrets["gitSSHKeyPassword"],
@@ -82,7 +82,8 @@ func gitCheckout() error {
 			)
 		}
 		// The following avoids:
-		// "unable to find any valid known_hosts file, set SSH_KNOWN_HOSTS env variable"
+		// "unable to find any valid known_hosts file,
+		// set SSH_KNOWN_HOSTS env variable"
 		publicKeys.HostKeyCallback = ssh.InsecureIgnoreHostKey()
 		auth = publicKeys
 	}
@@ -93,7 +94,8 @@ func gitCheckout() error {
 		commitRef = event.Worker.Git.Ref // This will never be non-empty
 	}
 	fullRef := plumbing.NewReferenceFromStrings(commitRef, commitRef)
-	refSpec := config.RefSpec(fmt.Sprintf("+%s:%s", fullRef.Name(), fullRef.Name()))
+	refSpec := config.RefSpec(
+		fmt.Sprintf("+%s:%s", fullRef.Name(), fullRef.Name()))
 
 	// Initialize an empty repository with an empty working tree
 	workspace := "/var/vcs"
@@ -104,7 +106,11 @@ func gitCheckout() error {
 
 	repo, err := git.Init(gitStorage, osfs.New(workspace))
 	if err != nil {
-		return errors.Wrapf(err, "error initializing git repository at %s", workspace)
+		return errors.Wrapf(
+			err,
+			"error initializing git repository at %s",
+			workspace,
+		)
 	}
 
 	const remoteName = "origin"
@@ -125,7 +131,8 @@ func gitCheckout() error {
 		rem := git.NewRemote(gitStorage, remoteConfig)
 
 		// List remote refs
-		refs, err := rem.List(&git.ListOptions{Auth: auth})
+		var refs []*plumbing.Reference
+		refs, err = rem.List(&git.ListOptions{Auth: auth})
 		if err != nil {
 			return errors.Wrap(err, "error listing remotes")
 		}
@@ -149,10 +156,18 @@ func gitCheckout() error {
 		}
 
 		if len(matches) == 0 {
-			return fmt.Errorf("reference %q not found in repo %q", fullRef.Name(), gitConfig.CloneURL)
+			return fmt.Errorf(
+				"reference %q not found in repo %q",
+				fullRef.Name(),
+				gitConfig.CloneURL,
+			)
 		}
 		if len(matches) > 1 {
-			return fmt.Errorf("found more than one match for reference %q: %+v", fullRef.Name(), matches)
+			return fmt.Errorf(
+				"found more than one match for reference %q: %+v",
+				fullRef.Name(),
+				matches,
+			)
 		}
 		fullRef = matches[0]
 
