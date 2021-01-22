@@ -47,6 +47,15 @@ type Collection interface {
 		filter interface{},
 		opts ...*options.FindOneOptions,
 	) *mongo.SingleResult
+	// FindOneAndReplace executes a findAndModify command to replace at most one
+	// document in the collection and returns the document as it appeared before
+	// replacement.
+	FindOneAndReplace(
+		ctx context.Context,
+		filter interface{},
+		replacement interface{},
+		opts ...*options.FindOneAndReplaceOptions,
+	) *mongo.SingleResult
 	// InsertOne executes an insert command to insert a single document into the
 	// collection.
 	InsertOne(

@@ -1,0 +1,108 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "github.com/brigadecore/brigade/v2/role-assignment.schema.json",
+
+	"definitions": {
+
+    "apiVersion": {
+			"type": "string",
+			"description": "The major version of the Brigade API with which this object conforms",
+			"enum": ["brigade.sh/v2"]
+		},
+
+		"kind": {
+			"type": "string",
+			"description": "The type of object represented by the document",
+			"enum": ["RoleAssignment"]
+    },
+    
+    "role": {
+      "type": "object",
+      "required": ["type", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "The type of role being assigned-- must be SYSTEM",
+          "enum": ["SYSTEM"]
+        },
+        "name": {
+          "type": "string",
+          "description": "A role name",
+          "enum": [
+            "ADMIN",
+            "PROJECT_CREATOR",
+            "READER"
+          ]
+        }
+      }
+    },
+
+    "eventCreatorRole": {
+      "type": "object",
+      "required": ["type", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "The type of role being assigned-- must be SYSTEM",
+          "enum": ["SYSTEM"]
+        },
+        "name": {
+          "type": "string",
+          "description": "A role name",
+          "enum": ["EVENT_CREATOR"]
+        },
+        "scope": {
+          "type": "string",
+          "description": "The event source this role should be scoped to",
+          "pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
+          "minLength": 3,
+          "maxLength": 50
+        }
+      }
+    }
+
+  },
+
+  "title": "RoleAssignment",
+	"type": "object",
+	"required": ["apiVersion", "kind", "principal", "role"],
+	"additionalProperties": false,
+	"properties": {
+    "apiVersion": {
+      "$ref": "#/definitions/apiVersion"
+    },
+    "kind": {
+      "$ref": "#/definitions/kind"
+    },
+    "principal": {
+      "type": "object",
+      "required": ["type", "id"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "The type of principal-- USER or SERVICE_ACCOUNT",
+          "enum": [
+            "USER",
+            "SERVICE_ACCOUNT"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the user or service account",
+          "pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
+          "minLength": 3,
+          "maxLength": 50
+        }
+      }
+    },
+    "role": {
+      "anyOf": [
+        { "$ref": "#/definitions/role" },
+        { "$ref": "#/definitions/eventCreatorRole" }
+      ]
+    }
+  }
+}

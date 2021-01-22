@@ -44,6 +44,13 @@ type MockCollection struct {
 		opts ...*options.FindOneOptions,
 	) *mongo.SingleResult
 
+	FindOneAndReplaceFn func(
+		ctx context.Context,
+		filter interface{},
+		replacement interface{},
+		opts ...*options.FindOneAndReplaceOptions,
+	) *mongo.SingleResult
+
 	InsertOneFn func(
 		ctx context.Context,
 		document interface{},
@@ -103,6 +110,15 @@ func (m *MockCollection) FindOne(
 	opts ...*options.FindOneOptions,
 ) *mongo.SingleResult {
 	return m.FindOneFn(ctx, filter, opts...)
+}
+
+func (m *MockCollection) FindOneAndReplace(
+	ctx context.Context,
+	filter interface{},
+	replacement interface{},
+	opts ...*options.FindOneAndReplaceOptions,
+) *mongo.SingleResult {
+	return m.FindOneAndReplaceFn(ctx, filter, replacement, opts...)
 }
 
 func (m *MockCollection) InsertOne(
