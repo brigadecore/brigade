@@ -8,6 +8,7 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
+	mongoTesting "github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb/testing" // nolint: lll
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,7 +24,7 @@ func TestSessionsStoreCreate(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
@@ -41,7 +42,7 @@ func TestSessionsStoreCreate(t *testing.T) {
 
 		{
 			name: "successful creation",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
@@ -77,13 +78,13 @@ func TestSessionsStoreGetByHashedOAut2State(t *testing.T) {
 
 		{
 			name: "session not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(mongo.ErrNoDocuments)
+					res, err := mongoTesting.MockSingleResult(mongo.ErrNoDocuments)
 					require.NoError(t, err)
 					return res
 				},
@@ -97,13 +98,15 @@ func TestSessionsStoreGetByHashedOAut2State(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(errors.New("something went wrong"))
+					res, err := mongoTesting.MockSingleResult(
+						errors.New("something went wrong"),
+					)
 					require.NoError(t, err)
 					return res
 				},
@@ -117,13 +120,13 @@ func TestSessionsStoreGetByHashedOAut2State(t *testing.T) {
 
 		{
 			name: "session found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(
+					res, err := mongoTesting.MockSingleResult(
 						authn.Session{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testSessionID,
@@ -165,13 +168,13 @@ func TestSessionsStoreGetByHashedToken(t *testing.T) {
 
 		{
 			name: "session not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(mongo.ErrNoDocuments)
+					res, err := mongoTesting.MockSingleResult(mongo.ErrNoDocuments)
 					require.NoError(t, err)
 					return res
 				},
@@ -185,13 +188,15 @@ func TestSessionsStoreGetByHashedToken(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(errors.New("something went wrong"))
+					res, err := mongoTesting.MockSingleResult(
+						errors.New("something went wrong"),
+					)
 					require.NoError(t, err)
 					return res
 				},
@@ -205,13 +210,13 @@ func TestSessionsStoreGetByHashedToken(t *testing.T) {
 
 		{
 			name: "session found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(
+					res, err := mongoTesting.MockSingleResult(
 						authn.Session{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testSessionID,
@@ -258,7 +263,7 @@ func TestSessionsStoreAuthenticate(t *testing.T) {
 
 		{
 			name: "session not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -280,7 +285,7 @@ func TestSessionsStoreAuthenticate(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -299,7 +304,7 @@ func TestSessionsStoreAuthenticate(t *testing.T) {
 
 		{
 			name: "session found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -344,7 +349,7 @@ func TestSessionsStoreDelete(t *testing.T) {
 
 		{
 			name: "session not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				DeleteOneFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -365,7 +370,7 @@ func TestSessionsStoreDelete(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				DeleteOneFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -383,7 +388,7 @@ func TestSessionsStoreDelete(t *testing.T) {
 
 		{
 			name: "session found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				DeleteOneFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -420,7 +425,7 @@ func TestSessionsStoreDeleteByUser(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				DeleteManyFn: func(
 					context.Context,
 					interface{},
@@ -438,7 +443,7 @@ func TestSessionsStoreDeleteByUser(t *testing.T) {
 
 		{
 			name: "success",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				DeleteManyFn: func(
 					context.Context,
 					interface{},

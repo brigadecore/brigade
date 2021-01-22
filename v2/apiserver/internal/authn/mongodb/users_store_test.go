@@ -7,6 +7,7 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
+	mongoTesting "github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb/testing" // nolint: lll
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,13 +28,13 @@ func TestUsersStoreCreate(t *testing.T) {
 
 		{
 			name: "id already exists",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
 					opts ...*options.InsertOneOptions,
 				) (*mongo.InsertOneResult, error) {
-					return nil, mockWriteException
+					return nil, mongoTesting.MockWriteException
 				},
 			},
 			assertions: func(err error) {
@@ -47,7 +48,7 @@ func TestUsersStoreCreate(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
@@ -65,7 +66,7 @@ func TestUsersStoreCreate(t *testing.T) {
 
 		{
 			name: "successful creation",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				InsertOneFn: func(
 					ctx context.Context,
 					document interface{},
@@ -106,7 +107,7 @@ func TestUsersStoreList(t *testing.T) {
 
 		{
 			name: "error finding users",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
@@ -124,13 +125,13 @@ func TestUsersStoreList(t *testing.T) {
 
 		{
 			name: "users found; no more pages of results exist",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cursor, err := mockCursor(testUser)
+					cursor, err := mongoTesting.MockCursor(testUser)
 					require.NoError(t, err)
 					return cursor, nil
 				},
@@ -151,13 +152,13 @@ func TestUsersStoreList(t *testing.T) {
 
 		{
 			name: "users found; more pages of results exist",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOptions,
 				) (*mongo.Cursor, error) {
-					cursor, err := mockCursor(testUser)
+					cursor, err := mongoTesting.MockCursor(testUser)
 					require.NoError(t, err)
 					return cursor, nil
 				},
@@ -204,13 +205,13 @@ func TestUsersStoreGet(t *testing.T) {
 
 		{
 			name: "user not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(mongo.ErrNoDocuments)
+					res, err := mongoTesting.MockSingleResult(mongo.ErrNoDocuments)
 					require.NoError(t, err)
 					return res
 				},
@@ -225,13 +226,15 @@ func TestUsersStoreGet(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(errors.New("something went wrong"))
+					res, err := mongoTesting.MockSingleResult(
+						errors.New("something went wrong"),
+					)
 					require.NoError(t, err)
 					return res
 				},
@@ -245,13 +248,13 @@ func TestUsersStoreGet(t *testing.T) {
 
 		{
 			name: "user found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				FindOneFn: func(
 					ctx context.Context,
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mockSingleResult(
+					res, err := mongoTesting.MockSingleResult(
 						authn.User{
 							ObjectMeta: meta.ObjectMeta{
 								ID: testUserID,
@@ -290,7 +293,7 @@ func TestUsersStoreLock(t *testing.T) {
 	}{
 		{
 			name: "user not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
@@ -310,7 +313,7 @@ func TestUsersStoreLock(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
@@ -329,7 +332,7 @@ func TestUsersStoreLock(t *testing.T) {
 
 		{
 			name: "success",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
@@ -366,7 +369,7 @@ func TestUsersStoreUnLock(t *testing.T) {
 	}{
 		{
 			name: "user not found",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
@@ -386,7 +389,7 @@ func TestUsersStoreUnLock(t *testing.T) {
 
 		{
 			name: "unanticipated error",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
@@ -405,7 +408,7 @@ func TestUsersStoreUnLock(t *testing.T) {
 
 		{
 			name: "success",
-			collection: &mockCollection{
+			collection: &mongoTesting.MockCollection{
 				UpdateOneFn: func(
 					context.Context,
 					interface{},
