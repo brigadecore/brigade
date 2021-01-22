@@ -172,12 +172,19 @@ type ProjectsClient interface {
 	// Delete deletes a single Project specified by its identifier.
 	Delete(context.Context, string) error
 
+	// Authz returns a specialized client for managing project-level authorization
+	// concerns.
+	Authz() AuthzClient
+
 	// Secrets returns a specialized client for Secret management.
 	Secrets() SecretsClient
 }
 
 type projectsClient struct {
 	*rm.BaseClient
+	// authzClient is a specialized client for managing project-level
+	// authorization concerns.
+	authzClient AuthzClient
 	// secretsClient is a specialized client for Secret management.
 	secretsClient SecretsClient
 }
@@ -190,6 +197,7 @@ func NewProjectsClient(
 ) ProjectsClient {
 	return &projectsClient{
 		BaseClient:    rm.NewBaseClient(apiAddress, apiToken, opts),
+		authzClient:   NewAuthzClient(apiAddress, apiToken, opts),
 		secretsClient: NewSecretsClient(apiAddress, apiToken, opts),
 	}
 }
@@ -306,6 +314,10 @@ func (p *projectsClient) Delete(ctx context.Context, id string) error {
 			SuccessCode: http.StatusOK,
 		},
 	)
+}
+
+func (p *projectsClient) Authz() AuthzClient {
+	return p.authzClient
 }
 
 func (p *projectsClient) Secrets() SecretsClient {

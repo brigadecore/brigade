@@ -31,6 +31,12 @@ func TestNewProjectsClient(t *testing.T) {
 	)
 	require.IsType(t, &projectsClient{}, client)
 	rmTesting.RequireBaseClient(t, client.(*projectsClient).BaseClient)
+	require.NotNil(t, client.(*projectsClient).authzClient)
+	require.Equal(
+		t,
+		client.(*projectsClient).authzClient,
+		client.Authz(),
+	)
 	require.NotNil(t, client.(*projectsClient).secretsClient)
 	require.Equal(t, client.(*projectsClient).secretsClient, client.Secrets())
 }
