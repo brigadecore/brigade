@@ -104,8 +104,7 @@ var testcases = []struct {
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
-						// TODO: host similar repo in brigadecore
-						CloneURL:       "https://github.com/sgoings/makeup.git",
+						CloneURL:       "https://github.com/brigadecore/empty-testbed.git",
 						InitSubmodules: true,
 					},
 				},
