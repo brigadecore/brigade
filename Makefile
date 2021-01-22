@@ -133,6 +133,16 @@ test-unit-js:
 		yarn test \
 	'
 
+.PHONY: test-integration
+test-integration: hack-expose-apiserver
+	@cd v2 && \
+		go test \
+			-v \
+			-timeout=10m \
+			-tags=integration \
+			./tests/... || (cd - && $(MAKE) hack-unexpose-apiserver && exit 1)
+	@$(MAKE) hack-unexpose-apiserver
+
 ################################################################################
 # Build / Publish                                                              #
 ################################################################################
@@ -141,7 +151,8 @@ test-unit-js:
 build: build-images build-cli
 
 .PHONY: build-images
-build-images: build-apiserver build-scheduler build-observer build-worker build-logger-linux
+build-images: build-apiserver build-scheduler build-observer build-logger-linux build-git-initializer build-worker
+
 
 .PHONY: build-logger-linux
 build-logger-linux:
@@ -153,12 +164,14 @@ build-logger-linux:
 .PHONY: build-%
 build-%:
 	$(KANIKO_DOCKER_CMD) kaniko \
+		--build-arg VERSION="$(VERSION)" \
+		--build-arg COMMIT="$(GIT_VERSION)" \
 		--dockerfile /workspaces/brigade/v2/$*/Dockerfile \
 		--context dir:///workspaces/brigade/ \
 		--no-push
 
 .PHONY: push-images
-push-images: push-apiserver push-scheduler push-observer push-logger-linux
+push-images: push-apiserver push-scheduler push-observer push-logger-linux push-git-initializer push-worker
 
 .PHONY: push-logger-linux
 push-logger-linux:
@@ -176,6 +189,8 @@ push-%:
 	$(KANIKO_DOCKER_CMD) sh -c ' \
 		docker login $(DOCKER_REGISTRY) -u $${DOCKER_USERNAME} -p $${DOCKER_PASSWORD} && \
 		kaniko \
+			--build-arg VERSION="$(VERSION)" \
+			--build-arg COMMIT="$(GIT_VERSION)" \
 			--dockerfile /workspaces/brigade/v2/$*/Dockerfile \
 			--context dir:///workspaces/brigade/ \
 			--destination $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
@@ -225,7 +240,7 @@ hack-build-cli:
 	'
 
 .PHONY: hack-push-images
-hack-push-images: hack-push-apiserver hack-push-scheduler hack-push-observer hack-push-worker hack-push-logger-linux
+hack-push-images: hack-push-apiserver hack-push-scheduler hack-push-observer hack-push-logger-linux hack-push-git-initializer hack-push-worker
 
 .PHONY: hack-push-%
 hack-push-%: hack-build-%
@@ -251,6 +266,18 @@ hack: hack-push-images hack-build-cli
 		--set worker.image.repository=$(DOCKER_IMAGE_PREFIX)worker \
 		--set worker.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set worker.image.pullPolicy=Always \
+		--set gitInitializer.image.repository=$(DOCKER_IMAGE_PREFIX)git-initializer \
+		--set gitInitializer.image.tag=$(IMMUTABLE_DOCKER_TAG) \
+		--set gitInitializer.image.pullPolicy=Always \
 		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)logger-linux \
 		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set logger.linux.image.pullPolicy=Always
+
+.PHONY: hack-expose-apiserver
+hack-expose-apiserver:
+	@kubectl --namespace brigade port-forward service/brigade-apiserver 7000:443 &>/dev/null & \
+		echo $$! > /tmp/brigade-apiserver.PID
+
+.PHONY: hack-unexpose-apiserver
+hack-unexpose-apiserver:
+	@kill -TERM $$(cat /tmp/brigade-apiserver.PID)

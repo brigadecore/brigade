@@ -12,9 +12,11 @@ require (
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-git/go-billy/v5 v5.0.0
+	github.com/go-git/go-git/v5 v5.2.0
 	github.com/gorilla/mux v1.7.4
 	github.com/gosuri/uitable v0.0.4
-	github.com/kr/pretty v0.2.1 // indirect
+	github.com/kr/pty v1.1.8 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
