@@ -27,8 +27,19 @@ func TestDatabase(t *testing.T) {
 		assertions func(*mongo.Database, error)
 	}{
 		{
-			name:  "DATABASE_USERNAME not set",
+			name:  "DATABASE_HOSTS not set",
 			setup: func() {},
+			assertions: func(_ *mongo.Database, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "DATABASE_HOSTS")
+			},
+		},
+		{
+			name: "DATABASE_USERNAME not set",
+			setup: func() {
+				os.Setenv("DATABASE_HOSTS", "localhost")
+			},
 			assertions: func(_ *mongo.Database, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
@@ -47,32 +58,9 @@ func TestDatabase(t *testing.T) {
 			},
 		},
 		{
-			name: "DATABASE_HOST not set",
-			setup: func() {
-				os.Setenv("DATABASE_PASSWORD", "yourenotironmaniam")
-			},
-			assertions: func(_ *mongo.Database, err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "value not found for")
-				require.Contains(t, err.Error(), "DATABASE_HOST")
-			},
-		},
-		{
-			name: "DATABASE_PORT not an int",
-			setup: func() {
-				os.Setenv("DATABASE_HOST", "http://localhost")
-				os.Setenv("DATABASE_PORT", "foo")
-			},
-			assertions: func(_ *mongo.Database, err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "was not parsable as an int")
-				require.Contains(t, err.Error(), "DATABASE_PORT")
-			},
-		},
-		{
 			name: "DATABASE_NAME not set",
 			setup: func() {
-				os.Setenv("DATABASE_PORT", "27017")
+				os.Setenv("DATABASE_PASSWORD", "yourenotironmaniam")
 			},
 			assertions: func(_ *mongo.Database, err error) {
 				require.Error(t, err)
@@ -81,19 +69,9 @@ func TestDatabase(t *testing.T) {
 			},
 		},
 		{
-			name: "DATABASE_REPLICA_SET not set",
-			setup: func() {
-				os.Setenv("DATABASE_NAME", "brigade")
-			},
-			assertions: func(_ *mongo.Database, err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "value not found for")
-				require.Contains(t, err.Error(), "DATABASE_REPLICA_SET")
-			},
-		},
-		{
 			name: "success",
 			setup: func() {
+				os.Setenv("DATABASE_NAME", "brigade")
 				os.Setenv("DATABASE_REPLICA_SET", "rs0")
 			},
 			assertions: func(database *mongo.Database, err error) {
