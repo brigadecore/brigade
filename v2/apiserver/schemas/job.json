@@ -4,12 +4,6 @@
 
 	"definitions": {
 
-		"apiVersion": {
-			"type": "string",
-			"description": "The major version of the Brigade API with which this object conforms",
-			"enum": ["brigade.sh/v2"]
-		},
-
 		"kind": {
 			"type": "string",
 			"description": "The type of object represented by the document",
@@ -144,7 +138,7 @@
 	"additionalProperties": false,
 	"properties": {
 		"apiVersion": {
-			"$ref": "#/definitions/apiVersion"
+			"$ref": "file:///brigade/schemas/common.json#/definitions/apiVersion"
 		},
 		"kind": {
 			"$ref": "#/definitions/kind"
