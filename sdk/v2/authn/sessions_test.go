@@ -8,11 +8,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	rmTesting "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery/testing" // nolint: lll
+	metaTesting "github.com/brigadecore/brigade/sdk/v2/meta/testing"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOIDCAuthDetailsMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(
+	metaTesting.RequireAPIVersionAndType(
 		t,
 		OIDCAuthDetails{},
 		"OIDCAuthDetails",
@@ -20,9 +22,13 @@ func TestOIDCAuthDetailsMarshalJSON(t *testing.T) {
 }
 
 func TestNewSessionsClient(t *testing.T) {
-	client := NewSessionsClient(testAPIAddress, testAPIToken, nil)
+	client := NewSessionsClient(
+		rmTesting.TestAPIAddress,
+		rmTesting.TestAPIToken,
+		nil,
+	)
 	require.IsType(t, &sessionsClient{}, client)
-	requireBaseClient(t, client.(*sessionsClient).BaseClient)
+	rmTesting.RequireBaseClient(t, client.(*sessionsClient).BaseClient)
 }
 
 func TestSessionsClientCreateRootSession(t *testing.T) {
@@ -44,7 +50,7 @@ func TestSessionsClientCreateRootSession(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSessionsClient(server.URL, testAPIToken, nil)
+	client := NewSessionsClient(server.URL, rmTesting.TestAPIToken, nil)
 	token, err := client.CreateRootSession(context.Background(), testRootPassword)
 	require.NoError(t, err)
 	require.Equal(t, testSessionToken, token)
@@ -68,7 +74,7 @@ func TestSessionsClientCreateUserSession(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSessionsClient(server.URL, testAPIToken, nil)
+	client := NewSessionsClient(server.URL, rmTesting.TestAPIToken, nil)
 	OIDCAuthDetails, err := client.CreateUserSession(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, testOIDCAuthDetails, OIDCAuthDetails)
@@ -86,7 +92,7 @@ func TestSessionsClientDelete(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSessionsClient(server.URL, testAPIToken, nil)
+	client := NewSessionsClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.Delete(context.Background())
 	require.NoError(t, err)
 }

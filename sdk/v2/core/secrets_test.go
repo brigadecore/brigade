@@ -9,21 +9,27 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	rmTesting "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery/testing" // nolint: lll
+	metaTesting "github.com/brigadecore/brigade/sdk/v2/meta/testing"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSecretMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, Secret{}, "Secret")
+	metaTesting.RequireAPIVersionAndType(t, Secret{}, "Secret")
 }
 
 func TestSecretListMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, SecretList{}, "SecretList")
+	metaTesting.RequireAPIVersionAndType(t, SecretList{}, "SecretList")
 }
 
 func TestNewSecretsClient(t *testing.T) {
-	client := NewSecretsClient(testAPIAddress, testAPIToken, nil)
+	client := NewSecretsClient(
+		rmTesting.TestAPIAddress,
+		rmTesting.TestAPIToken,
+		nil,
+	)
 	require.IsType(t, &secretsClient{}, client)
-	requireBaseClient(t, client.(*secretsClient).BaseClient)
+	rmTesting.RequireBaseClient(t, client.(*secretsClient).BaseClient)
 }
 
 func TestSecretsClientList(t *testing.T) {
@@ -57,7 +63,7 @@ func TestSecretsClientList(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSecretsClient(server.URL, testAPIToken, nil)
+	client := NewSecretsClient(server.URL, rmTesting.TestAPIToken, nil)
 	secrets, err := client.List(context.Background(), testProjectID, nil)
 	require.NoError(t, err)
 	require.Equal(t, testSecrets, secrets)
@@ -94,7 +100,7 @@ func TestSecretsClientSet(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSecretsClient(server.URL, testAPIToken, nil)
+	client := NewSecretsClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.Set(context.Background(), testProjectID, testSecret)
 	require.NoError(t, err)
 }
@@ -120,7 +126,7 @@ func TestSecretsClientUnset(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSecretsClient(server.URL, testAPIToken, nil)
+	client := NewSecretsClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.Unset(context.Background(), testProjectID, testSecretKey)
 	require.NoError(t, err)
 }

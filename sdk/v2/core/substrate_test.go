@@ -8,13 +8,18 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	rmTesting "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewSubstrateClient(t *testing.T) {
-	client := NewSubstrateClient(testAPIAddress, testAPIToken, nil)
+	client := NewSubstrateClient(
+		rmTesting.TestAPIAddress,
+		rmTesting.TestAPIToken,
+		nil,
+	)
 	require.IsType(t, &substrateClient{}, client)
-	requireBaseClient(t, client.(*substrateClient).BaseClient)
+	rmTesting.RequireBaseClient(t, client.(*substrateClient).BaseClient)
 }
 
 func TestSubstrateClientCountRunningWorkers(t *testing.T) {
@@ -34,7 +39,7 @@ func TestSubstrateClientCountRunningWorkers(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSubstrateClient(server.URL, testAPIToken, nil)
+	client := NewSubstrateClient(server.URL, rmTesting.TestAPIToken, nil)
 	count, err := client.CountRunningWorkers(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, testCount, count)
@@ -57,7 +62,7 @@ func TestSubstrateClientCountRunningJobs(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewSubstrateClient(server.URL, testAPIToken, nil)
+	client := NewSubstrateClient(server.URL, rmTesting.TestAPIToken, nil)
 	count, err := client.CountRunningJobs(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, testCount, count)

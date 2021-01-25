@@ -9,22 +9,28 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	rmTesting "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery/testing" // nolint: lll
 	"github.com/brigadecore/brigade/sdk/v2/meta"
+	metaTesting "github.com/brigadecore/brigade/sdk/v2/meta/testing"
 	"github.com/stretchr/testify/require"
 )
 
 func TestProjectMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, Project{}, "Project")
+	metaTesting.RequireAPIVersionAndType(t, Project{}, "Project")
 }
 
 func TestProjectListMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, ProjectList{}, "ProjectList")
+	metaTesting.RequireAPIVersionAndType(t, ProjectList{}, "ProjectList")
 }
 
 func TestNewProjectsClient(t *testing.T) {
-	client := NewProjectsClient(testAPIAddress, testAPIToken, nil)
+	client := NewProjectsClient(
+		rmTesting.TestAPIAddress,
+		rmTesting.TestAPIToken,
+		nil,
+	)
 	require.IsType(t, &projectsClient{}, client)
-	requireBaseClient(t, client.(*projectsClient).BaseClient)
+	rmTesting.RequireBaseClient(t, client.(*projectsClient).BaseClient)
 	require.NotNil(t, client.(*projectsClient).secretsClient)
 	require.Equal(t, client.(*projectsClient).secretsClient, client.Secrets())
 }
@@ -53,7 +59,7 @@ func TestProjectsClientCreate(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewProjectsClient(server.URL, testAPIToken, nil)
+	client := NewProjectsClient(server.URL, rmTesting.TestAPIToken, nil)
 	project, err := client.Create(
 		context.Background(),
 		testProject,
@@ -86,7 +92,7 @@ func TestProjectsClientCreateFromBytes(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewProjectsClient(server.URL, testAPIToken, nil)
+	client := NewProjectsClient(server.URL, rmTesting.TestAPIToken, nil)
 	project, err := client.CreateFromBytes(context.Background(), testProjectBytes)
 	require.NoError(t, err)
 	require.Equal(t, testProject, project)
@@ -115,7 +121,7 @@ func TestProjectsClientList(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewProjectsClient(server.URL, testAPIToken, nil)
+	client := NewProjectsClient(server.URL, rmTesting.TestAPIToken, nil)
 	projects, err := client.List(context.Background(), nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, testProjects, projects)
@@ -144,7 +150,7 @@ func TestProjectsClientGet(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewProjectsClient(server.URL, testAPIToken, nil)
+	client := NewProjectsClient(server.URL, rmTesting.TestAPIToken, nil)
 	project, err := client.Get(context.Background(), testProject.ID)
 	require.NoError(t, err)
 	require.Equal(t, testProject, project)
@@ -178,7 +184,7 @@ func TestProjectsClientUpdate(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewProjectsClient(server.URL, testAPIToken, nil)
+	client := NewProjectsClient(server.URL, rmTesting.TestAPIToken, nil)
 	project, err := client.Update(context.Background(), testProject)
 	require.NoError(t, err)
 	require.Equal(t, testProject, project)
@@ -212,7 +218,7 @@ func TestProjectsClientUpdateFromBytes(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewProjectsClient(server.URL, testAPIToken, nil)
+	client := NewProjectsClient(server.URL, rmTesting.TestAPIToken, nil)
 	project, err := client.UpdateFromBytes(
 		context.Background(),
 		testProject.ID,
@@ -238,7 +244,7 @@ func TestProjectsClientDelete(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewProjectsClient(server.URL, testAPIToken, nil)
+	client := NewProjectsClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.Delete(context.Background(), testProjectID)
 	require.NoError(t, err)
 }
