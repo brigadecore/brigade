@@ -19,7 +19,7 @@ func TestUserListMarshalJSON(t *testing.T) {
 }
 
 func TestNewUsersService(t *testing.T) {
-	usersStore := &mockUsersStore{}
+	usersStore := &MockUsersStore{}
 	sessionsStore := &mockSessionsStore{}
 	svc := NewUsersService(usersStore, sessionsStore)
 	require.Same(t, usersStore, svc.(*usersService).usersStore)
@@ -35,7 +35,7 @@ func TestUserServiceList(t *testing.T) {
 		{
 			name: "error getting users from store",
 			service: &usersService{
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					ListFn: func(context.Context, meta.ListOptions) (UserList, error) {
 						return UserList{}, errors.New("error listing users")
 					},
@@ -50,7 +50,7 @@ func TestUserServiceList(t *testing.T) {
 		{
 			name: "success",
 			service: &usersService{
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					ListFn: func(context.Context, meta.ListOptions) (UserList, error) {
 						return UserList{}, nil
 					},
@@ -84,7 +84,7 @@ func TestUsersServiceGet(t *testing.T) {
 		{
 			name: "with error from store",
 			service: &usersService{
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					GetFn: func(context.Context, string) (User, error) {
 						return User{}, &meta.ErrNotFound{}
 					},
@@ -98,7 +98,7 @@ func TestUsersServiceGet(t *testing.T) {
 		{
 			name: "success",
 			service: &usersService{
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					GetFn: func(context.Context, string) (User, error) {
 						return testUser, nil
 					},
@@ -127,7 +127,7 @@ func TestUsersServiceLock(t *testing.T) {
 		{
 			name: "error updating user in store",
 			service: &usersService{
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					LockFn: func(context.Context, string) error {
 						return errors.New("store error")
 					},
@@ -142,7 +142,7 @@ func TestUsersServiceLock(t *testing.T) {
 		{
 			name: "error deleting user sessions from store",
 			service: &usersService{
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					LockFn: func(context.Context, string) error {
 						return nil
 					},
@@ -163,7 +163,7 @@ func TestUsersServiceLock(t *testing.T) {
 		{
 			name: "success",
 			service: &usersService{
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					LockFn: func(context.Context, string) error {
 						return nil
 					},
@@ -197,7 +197,7 @@ func TestUsersServiceUnlock(t *testing.T) {
 		{
 			name: "error updating user in store",
 			service: &usersService{
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					UnlockFn: func(context.Context, string) error {
 						return errors.New("store error")
 					},
@@ -212,7 +212,7 @@ func TestUsersServiceUnlock(t *testing.T) {
 		{
 			name: "success",
 			service: &usersService{
-				usersStore: &mockUsersStore{
+				usersStore: &MockUsersStore{
 					UnlockFn: func(context.Context, string) error {
 						return nil
 					},
@@ -232,35 +232,4 @@ func TestUsersServiceUnlock(t *testing.T) {
 			testCase.assertions(err)
 		})
 	}
-}
-
-type mockUsersStore struct {
-	CreateFn func(context.Context, User) error
-	ListFn   func(context.Context, meta.ListOptions) (UserList, error)
-	GetFn    func(context.Context, string) (User, error)
-	LockFn   func(context.Context, string) error
-	UnlockFn func(context.Context, string) error
-}
-
-func (m *mockUsersStore) Create(ctx context.Context, user User) error {
-	return m.CreateFn(ctx, user)
-}
-
-func (m *mockUsersStore) List(
-	ctx context.Context,
-	opts meta.ListOptions,
-) (UserList, error) {
-	return m.ListFn(ctx, opts)
-}
-
-func (m *mockUsersStore) Get(ctx context.Context, id string) (User, error) {
-	return m.GetFn(ctx, id)
-}
-
-func (m *mockUsersStore) Lock(ctx context.Context, id string) error {
-	return m.LockFn(ctx, id)
-}
-
-func (m *mockUsersStore) Unlock(ctx context.Context, id string) error {
-	return m.UnlockFn(ctx, id)
 }
