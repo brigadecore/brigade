@@ -25,7 +25,6 @@
 		"gitConfig": {
 			"type": "object",
 			"description": "Worker configuration pertaining specifically to git",
-			"additionalProperties": false,
 			"properties": {
 				"cloneURL": {
 					"oneOf": [

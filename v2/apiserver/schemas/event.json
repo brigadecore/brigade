@@ -71,7 +71,8 @@
 			"maxLength": 100
 		},
 		"git": {
-			"$ref": "file:///brigade/schemas/common.json#/definitions/gitConfig"
+			"$ref": "file:///brigade/schemas/common.json#/definitions/gitConfig",
+			"additionalProperties": false
 		},
 		"payload": {
 			"type": "string",
