@@ -1,0 +1,71 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "github.com/brigadecore/brigade/common.schema.json",
+	"description": "A common set of schema definitions shared by other Brigade schemas",
+
+	"definitions": {
+
+		"apiVersion": {
+			"type": "string",
+			"description": "The major version of the Brigade API with which this object conforms",
+			"enum": ["brigade.sh/v2"]
+		},
+
+		"description": {
+			"type": "string",
+			"minLength": 3,
+			"maxLength": 80
+		},
+
+		"empty": {
+			"type": "string",
+			"enum": [ "" ]
+		},
+
+		"gitConfig": {
+			"type": "object",
+			"description": "Worker configuration pertaining specifically to git",
+			"properties": {
+				"cloneURL": {
+					"oneOf": [
+						{ "$ref": "#/definitions/empty" },
+						{ "$ref": "#/definitions/url" }
+					],
+					"description": "The URL for cloning a git project"
+				},
+				"commit": {
+					"type": "string",
+					"pattern": "^[a-fA-F0-9]*$",
+					"minLength": 8,
+					"maxLength": 40,
+					"description": "A git commit sha"
+				},
+				"ref": {
+					"type": "string",
+					"description": "A reference to a git branch or tag"
+				}
+			}
+		},
+
+		"identifier": {
+			"type": "string",
+			"pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
+			"minLength": 3,
+			"maxLength": 50
+		},
+
+		"label": {
+			"type": "string",
+			"pattern": "^[\\w:/\\-\\.\\?=\\*]*$",
+			"minLength": 1,
+			"maxLength": 250
+		},
+
+		"url": {
+			"type": "string",
+			"pattern": "^[\\w:/\\-\\.\\?=@]*$",
+			"minLength": 5,
+			"maxLength": 250
+		}
+	}
+}
