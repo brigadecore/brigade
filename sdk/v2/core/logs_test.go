@@ -10,13 +10,14 @@ import (
 	"testing"
 	"time"
 
+	rmTesting "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewLogsClient(t *testing.T) {
-	client := NewLogsClient(testAPIAddress, testAPIToken, nil)
+	client := NewLogsClient(rmTesting.TestAPIAddress, rmTesting.TestAPIToken, nil)
 	require.IsType(t, &logsClient{}, client)
-	requireBaseClient(t, client.(*logsClient).BaseClient)
+	rmTesting.RequireBaseClient(t, client.(*logsClient).BaseClient)
 }
 
 func TestLogsClientStream(t *testing.T) {
@@ -66,7 +67,7 @@ func TestLogsClientStream(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewLogsClient(server.URL, testAPIToken, nil)
+	client := NewLogsClient(server.URL, rmTesting.TestAPIToken, nil)
 	logsCh, _, err := client.Stream(
 		context.Background(),
 		testEventID,

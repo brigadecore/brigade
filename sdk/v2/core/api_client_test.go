@@ -3,11 +3,12 @@ package core
 import (
 	"testing"
 
+	rmTesting "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewAPIClient(t *testing.T) {
-	client := NewAPIClient(testAPIAddress, testAPIToken, nil)
+	client := NewAPIClient(rmTesting.TestAPIAddress, rmTesting.TestAPIToken, nil)
 	require.IsType(t, &apiClient{}, client)
 	require.NotNil(t, client.(*apiClient).projectsClient)
 	require.Equal(t, client.(*apiClient).projectsClient, client.Projects())

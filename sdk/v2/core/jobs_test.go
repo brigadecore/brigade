@@ -10,15 +10,17 @@ import (
 	"testing"
 	"time"
 
+	rmTesting "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery/testing" // nolint: lll
+	metaTesting "github.com/brigadecore/brigade/sdk/v2/meta/testing"
 	"github.com/stretchr/testify/require"
 )
 
 func TestJobMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, Job{}, "Job")
+	metaTesting.RequireAPIVersionAndType(t, Job{}, "Job")
 }
 
 func TestJobStatusMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, JobStatus{}, "JobStatus")
+	metaTesting.RequireAPIVersionAndType(t, JobStatus{}, "JobStatus")
 }
 
 func TestJobsClientCreate(t *testing.T) {
@@ -58,7 +60,7 @@ func TestJobsClientCreate(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewJobsClient(server.URL, testAPIToken, nil)
+	client := NewJobsClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.Create(
 		context.Background(),
 		testEventID,
@@ -89,7 +91,7 @@ func TestJobsClientStart(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewJobsClient(server.URL, testAPIToken, nil)
+	client := NewJobsClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.Start(context.Background(), testEventID, testJobName)
 	require.NoError(t, err)
 }
@@ -121,7 +123,7 @@ func TestJobsClientGetStatus(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewJobsClient(server.URL, testAPIToken, nil)
+	client := NewJobsClient(server.URL, rmTesting.TestAPIToken, nil)
 	jobStatus, err :=
 		client.GetStatus(context.Background(), testEventID, testJobName)
 	require.NoError(t, err)
@@ -162,7 +164,7 @@ func TestJobsClientWatchStatus(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewJobsClient(server.URL, testAPIToken, nil)
+	client := NewJobsClient(server.URL, rmTesting.TestAPIToken, nil)
 	statusCh, _, err := client.WatchStatus(
 		context.Background(),
 		testEventID,
@@ -209,7 +211,7 @@ func TestJobClientUpdateStatus(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewJobsClient(server.URL, testAPIToken, nil)
+	client := NewJobsClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.UpdateStatus(
 		context.Background(),
 		testEventID,
@@ -242,7 +244,7 @@ func TestJobClientCleanup(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewJobsClient(server.URL, testAPIToken, nil)
+	client := NewJobsClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.Cleanup(
 		context.Background(),
 		testEventID,
