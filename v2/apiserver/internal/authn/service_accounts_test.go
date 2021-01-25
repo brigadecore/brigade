@@ -5,16 +5,21 @@ import (
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
 func TestServiceAccountMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, ServiceAccount{}, "ServiceAccount")
+	metaTesting.RequireAPIVersionAndType(t, ServiceAccount{}, "ServiceAccount")
 }
 
 func TestServiceAccountListMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, ServiceAccountList{}, "ServiceAccountList")
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		ServiceAccountList{},
+		"ServiceAccountList",
+	)
 }
 
 func TestNewServiceAccountService(t *testing.T) {

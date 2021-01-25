@@ -6,15 +6,16 @@ import (
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
 
 func TestProjectMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &Project{}, "Project")
+	metaTesting.RequireAPIVersionAndType(t, &Project{}, "Project")
 }
 
 func TestProjectListMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &ProjectList{}, "ProjectList")
+	metaTesting.RequireAPIVersionAndType(t, &ProjectList{}, "ProjectList")
 }
 
 func TestNewProjectsService(t *testing.T) {

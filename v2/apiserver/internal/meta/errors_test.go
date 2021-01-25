@@ -3,6 +3,7 @@ package meta
 import (
 	"testing"
 
+	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,7 +40,11 @@ func TestErrAuthentication(t *testing.T) {
 }
 
 func TestErrAuthenticationMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &ErrAuthentication{}, "AuthenticationError")
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		&ErrAuthentication{},
+		"AuthenticationError",
+	)
 }
 
 func TestErrAuthorization(t *testing.T) {
@@ -75,7 +80,11 @@ func TestErrAuthorization(t *testing.T) {
 }
 
 func TestErrAuthorizationMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &ErrAuthorization{}, "AuthorizationError")
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		&ErrAuthorization{},
+		"AuthorizationError",
+	)
 }
 
 func TestErrBadRequest(t *testing.T) {
@@ -118,7 +127,7 @@ func TestErrBadRequest(t *testing.T) {
 }
 
 func TestErrBadRequestMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &ErrBadRequest{}, "BadRequestError")
+	metaTesting.RequireAPIVersionAndType(t, &ErrBadRequest{}, "BadRequestError")
 }
 
 func TestErrNotFound(t *testing.T) {
@@ -132,7 +141,7 @@ func TestErrNotFound(t *testing.T) {
 }
 
 func TestErrNotFoundMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &ErrNotFound{}, "NotFoundError")
+	metaTesting.RequireAPIVersionAndType(t, &ErrNotFound{}, "NotFoundError")
 }
 
 func TestErrConflict(t *testing.T) {
@@ -145,7 +154,7 @@ func TestErrConflict(t *testing.T) {
 }
 
 func TestErrConflictMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &ErrConflict{}, "ConflictError")
+	metaTesting.RequireAPIVersionAndType(t, &ErrConflict{}, "ConflictError")
 }
 
 func TestErrInternalServer(t *testing.T) {
@@ -154,7 +163,11 @@ func TestErrInternalServer(t *testing.T) {
 }
 
 func TestErrInternalServerMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &ErrInternalServer{}, "InternalServerError")
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		&ErrInternalServer{},
+		"InternalServerError",
+	)
 }
 
 func TestErrNotSupported(t *testing.T) {
@@ -165,5 +178,9 @@ func TestErrNotSupported(t *testing.T) {
 }
 
 func TestErrNotSupportedMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &ErrNotSupported{}, "NotSupportedError")
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		&ErrNotSupported{},
+		"NotSupportedError",
+	)
 }

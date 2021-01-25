@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
 
 func TestLogEntryMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &LogEntry{}, "LogEntry")
+	metaTesting.RequireAPIVersionAndType(t, &LogEntry{}, "LogEntry")
 }
 
 func TestLogsService(t *testing.T) {

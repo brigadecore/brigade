@@ -1,7 +1,11 @@
 package authn
 
-import "testing"
+import (
+	"testing"
+
+	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
+)
 
 func TestTokenMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, Token{}, "Token")
+	metaTesting.RequireAPIVersionAndType(t, Token{}, "Token")
 }
