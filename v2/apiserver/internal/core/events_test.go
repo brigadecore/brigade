@@ -6,19 +6,20 @@ import (
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
 
 func TestEventMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &Event{}, "Event")
+	metaTesting.RequireAPIVersionAndType(t, &Event{}, "Event")
 }
 
 func TestEventListMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &EventList{}, "EventList")
+	metaTesting.RequireAPIVersionAndType(t, &EventList{}, "EventList")
 }
 
 func TestCancelManyEventsResultMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(
+	metaTesting.RequireAPIVersionAndType(
 		t,
 		&CancelManyEventsResult{},
 		"CancelManyEventsResult",
@@ -26,7 +27,7 @@ func TestCancelManyEventsResultMarshalJSON(t *testing.T) {
 }
 
 func TestDeleteManyEventsResultMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(
+	metaTesting.RequireAPIVersionAndType(
 		t,
 		&DeleteManyEventsResult{},
 		"DeleteManyEventsResult",

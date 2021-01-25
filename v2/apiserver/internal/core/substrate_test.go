@@ -5,15 +5,24 @@ import (
 	"errors"
 	"testing"
 
+	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
 
 func TestSubstrateWorkerCountMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &SubstrateWorkerCount{}, "SubstrateWorkerCount")
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		&SubstrateWorkerCount{},
+		"SubstrateWorkerCount",
+	)
 }
 
 func TestSubstrateJobCountMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, &SubstrateJobCount{}, "SubstrateJobCount")
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		&SubstrateJobCount{},
+		"SubstrateJobCount",
+	)
 }
 
 func TestNewSubstrateService(t *testing.T) {

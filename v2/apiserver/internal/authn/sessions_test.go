@@ -7,6 +7,7 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestOIDCAuthDetailsMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, OIDCAuthDetails{}, "OIDCAuthDetails")
+	metaTesting.RequireAPIVersionAndType(t, OIDCAuthDetails{}, "OIDCAuthDetails")
 }
 
 func TestNewSessionsService(t *testing.T) {
