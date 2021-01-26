@@ -14,29 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBaseClientBasicAuthHeaders(t *testing.T) {
-	const testUsername = "bruce@wayneenterprises.com"
-	const testPassword = "ironmansucks"
-	client := BaseClient{}
-	headers := client.BasicAuthHeaders(testUsername, testPassword)
-	header, ok := headers["Authorization"]
-	require.True(t, ok)
-	require.Contains(t, header, "Basic")
-	require.NotContains(t, header, testUsername)
-	require.NotContains(t, header, testPassword)
-}
-
-func TestBaseClientBearerTokenAuthHeaders(t *testing.T) {
-	client := BaseClient{
-		APIToken: "11235813213455",
-	}
-	headers := client.BearerTokenAuthHeaders()
-	header, ok := headers["Authorization"]
-	require.True(t, ok)
-	require.Contains(t, header, "Bearer")
-	require.Contains(t, header, client.APIToken)
-}
-
 func TestBaseClientAppendListQueryParams(t *testing.T) {
 	queryParams := map[string]string{}
 	listOpts := meta.ListOptions{
@@ -129,7 +106,7 @@ func TestBaseClientSubmitRequest(t *testing.T) {
 		{
 			name: "with auth header",
 			req: OutboundRequest{
-				AuthHeaders: map[string]string{
+				Headers: map[string]string{
 					"Authorization": "Basic dG9ueUBzdGFya2luZHVzdHJpZXMuY29tOmlhbWlyb25tYW4=", // nolint: lll
 				},
 			},

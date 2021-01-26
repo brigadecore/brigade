@@ -204,7 +204,6 @@ func (p *projectsClient) Create(
 		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/projects",
-			AuthHeaders: p.BearerTokenAuthHeaders(),
 			ReqBodyObj:  project,
 			SuccessCode: http.StatusCreated,
 			RespObj:     &createdProject,
@@ -222,7 +221,6 @@ func (p *projectsClient) CreateFromBytes(
 		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/projects",
-			AuthHeaders: p.BearerTokenAuthHeaders(),
 			ReqBodyObj:  projectBytes,
 			SuccessCode: http.StatusCreated,
 			RespObj:     &createdProject,
@@ -241,7 +239,6 @@ func (p *projectsClient) List(
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        "v2/projects",
-			AuthHeaders: p.BearerTokenAuthHeaders(),
 			QueryParams: p.AppendListQueryParams(nil, opts),
 			SuccessCode: http.StatusOK,
 			RespObj:     &projects,
@@ -259,7 +256,6 @@ func (p *projectsClient) Get(
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/projects/%s", id),
-			AuthHeaders: p.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 			RespObj:     &project,
 		},
@@ -276,7 +272,6 @@ func (p *projectsClient) Update(
 		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/projects/%s", project.ID),
-			AuthHeaders: p.BearerTokenAuthHeaders(),
 			ReqBodyObj:  project,
 			SuccessCode: http.StatusOK,
 			RespObj:     &updatedProject,
@@ -295,7 +290,6 @@ func (p *projectsClient) UpdateFromBytes(
 		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/projects/%s", projectID),
-			AuthHeaders: p.BearerTokenAuthHeaders(),
 			ReqBodyObj:  projectBytes,
 			SuccessCode: http.StatusOK,
 			RespObj:     &updatedProject,
@@ -309,7 +303,6 @@ func (p *projectsClient) Delete(ctx context.Context, id string) error {
 		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        fmt.Sprintf("v2/projects/%s", id),
-			AuthHeaders: p.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)

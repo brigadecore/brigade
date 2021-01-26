@@ -96,7 +96,6 @@ func (l *logsClient) Stream(
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/events/%s/logs", eventID),
-			AuthHeaders: l.BearerTokenAuthHeaders(),
 			QueryParams: queryParams,
 			SuccessCode: http.StatusOK,
 		},
