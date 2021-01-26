@@ -8,22 +8,28 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	rmTesting "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery/testing" // nolint: lll
 	"github.com/brigadecore/brigade/sdk/v2/meta"
+	metaTesting "github.com/brigadecore/brigade/sdk/v2/meta/testing"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUserMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, User{}, "User")
+	metaTesting.RequireAPIVersionAndType(t, User{}, "User")
 }
 
 func TestUserListMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, UserList{}, "UserList")
+	metaTesting.RequireAPIVersionAndType(t, UserList{}, "UserList")
 }
 
 func TestNewUsersClient(t *testing.T) {
-	client := NewUsersClient(testAPIAddress, testAPIToken, nil)
+	client := NewUsersClient(
+		rmTesting.TestAPIAddress,
+		rmTesting.TestAPIToken,
+		nil,
+	)
 	require.IsType(t, &usersClient{}, client)
-	requireBaseClient(t, client.(*usersClient).BaseClient)
+	rmTesting.RequireBaseClient(t, client.(*usersClient).BaseClient)
 }
 
 func TestUsersClientList(t *testing.T) {
@@ -54,7 +60,7 @@ func TestUsersClientList(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewUsersClient(server.URL, testAPIToken, nil)
+	client := NewUsersClient(server.URL, rmTesting.TestAPIToken, nil)
 	users, err := client.List(context.Background(), nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, testUsers, users)
@@ -83,7 +89,7 @@ func TestUsersClientGet(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewUsersClient(server.URL, testAPIToken, nil)
+	client := NewUsersClient(server.URL, rmTesting.TestAPIToken, nil)
 	user, err := client.Get(context.Background(), testUser.ID)
 	require.NoError(t, err)
 	require.Equal(t, testUser, user)
@@ -105,7 +111,7 @@ func TestUsersClientLock(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewUsersClient(server.URL, testAPIToken, nil)
+	client := NewUsersClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.Lock(context.Background(), testUserID)
 	require.NoError(t, err)
 }
@@ -126,7 +132,7 @@ func TestUsersClientUnlock(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewUsersClient(server.URL, testAPIToken, nil)
+	client := NewUsersClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.Unlock(context.Background(), testUserID)
 	require.NoError(t, err)
 }

@@ -1,5 +1,6 @@
 package authn
 
+// nolint: lll
 import (
 	"context"
 	"encoding/json"
@@ -9,22 +10,32 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	rmTesting "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery/testing"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
+	metaTesting "github.com/brigadecore/brigade/sdk/v2/meta/testing"
 	"github.com/stretchr/testify/require"
 )
 
 func TestServiceAccountMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, ServiceAccount{}, "ServiceAccount")
+	metaTesting.RequireAPIVersionAndType(t, ServiceAccount{}, "ServiceAccount")
 }
 
 func TestServiceAccountListMarshalJSON(t *testing.T) {
-	requireAPIVersionAndType(t, ServiceAccountList{}, "ServiceAccountList")
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		ServiceAccountList{},
+		"ServiceAccountList",
+	)
 }
 
 func TestNewServiceAccountsClient(t *testing.T) {
-	client := NewServiceAccountsClient(testAPIAddress, testAPIToken, nil)
+	client := NewServiceAccountsClient(
+		rmTesting.TestAPIAddress,
+		rmTesting.TestAPIToken,
+		nil,
+	)
 	require.IsType(t, &serviceAccountsClient{}, client)
-	requireBaseClient(t, client.(*serviceAccountsClient).BaseClient)
+	rmTesting.RequireBaseClient(t, client.(*serviceAccountsClient).BaseClient)
 }
 
 func TestServiceAccountsClientCreate(t *testing.T) {
@@ -56,7 +67,7 @@ func TestServiceAccountsClientCreate(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewServiceAccountsClient(server.URL, testAPIToken, nil)
+	client := NewServiceAccountsClient(server.URL, rmTesting.TestAPIToken, nil)
 	token, err := client.Create(
 		context.Background(),
 		testServiceAccount,
@@ -93,7 +104,7 @@ func TestServiceAccountsClientList(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewServiceAccountsClient(server.URL, testAPIToken, nil)
+	client := NewServiceAccountsClient(server.URL, rmTesting.TestAPIToken, nil)
 	serviceAccounts, err := client.List(context.Background(), nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, testServiceAccounts, serviceAccounts)
@@ -122,7 +133,7 @@ func TestServiceAccountsClientGet(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewServiceAccountsClient(server.URL, testAPIToken, nil)
+	client := NewServiceAccountsClient(server.URL, rmTesting.TestAPIToken, nil)
 	serviceAccount, err := client.Get(context.Background(), testServiceAccount.ID)
 	require.NoError(t, err)
 	require.Equal(t, testServiceAccount, serviceAccount)
@@ -144,7 +155,7 @@ func TestServiceAccountsClientLock(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewServiceAccountsClient(server.URL, testAPIToken, nil)
+	client := NewServiceAccountsClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.Lock(context.Background(), testServiceAccountID)
 	require.NoError(t, err)
 }
@@ -171,7 +182,7 @@ func TestServiceAccountsClientUnlock(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewServiceAccountsClient(server.URL, testAPIToken, nil)
+	client := NewServiceAccountsClient(server.URL, rmTesting.TestAPIToken, nil)
 	token, err := client.Unlock(context.Background(), testServiceAccountID)
 	require.NoError(t, err)
 	require.Equal(t, testServiceAccountToken, token)
