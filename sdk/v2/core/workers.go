@@ -293,7 +293,6 @@ func (w *workersClient) Start(ctx context.Context, eventID string) error {
 		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/events/%s/worker/start", eventID),
-			AuthHeaders: w.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)
@@ -309,7 +308,6 @@ func (w *workersClient) GetStatus(
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/events/%s/worker/status", eventID),
-			AuthHeaders: w.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 			RespObj:     &status,
 		},
@@ -323,9 +321,8 @@ func (w *workersClient) WatchStatus(
 	resp, err := w.SubmitRequest(
 		ctx,
 		rm.OutboundRequest{
-			Method:      http.MethodGet,
-			Path:        fmt.Sprintf("v2/events/%s/worker/status", eventID),
-			AuthHeaders: w.BearerTokenAuthHeaders(),
+			Method: http.MethodGet,
+			Path:   fmt.Sprintf("v2/events/%s/worker/status", eventID),
 			QueryParams: map[string]string{
 				"watch": "true",
 			},
@@ -354,7 +351,6 @@ func (w *workersClient) UpdateStatus(
 		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/events/%s/worker/status", eventID),
-			AuthHeaders: w.BearerTokenAuthHeaders(),
 			ReqBodyObj:  status,
 			SuccessCode: http.StatusOK,
 		},
@@ -367,7 +363,6 @@ func (w *workersClient) Cleanup(ctx context.Context, eventID string) error {
 		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/events/%s/worker/cleanup", eventID),
-			AuthHeaders: w.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)

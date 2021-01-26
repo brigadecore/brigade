@@ -110,7 +110,6 @@ func (s *secretsClient) List(
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/projects/%s/secrets", projectID),
-			AuthHeaders: s.BearerTokenAuthHeaders(),
 			QueryParams: s.AppendListQueryParams(nil, opts),
 			SuccessCode: http.StatusOK,
 			RespObj:     &secrets,
@@ -132,7 +131,6 @@ func (s *secretsClient) Set(
 				projectID,
 				secret.Key,
 			),
-			AuthHeaders: s.BearerTokenAuthHeaders(),
 			ReqBodyObj:  secret,
 			SuccessCode: http.StatusOK,
 		},
@@ -153,7 +151,6 @@ func (s *secretsClient) Unset(
 				projectID,
 				key,
 			),
-			AuthHeaders: s.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)

@@ -124,7 +124,6 @@ func (s *serviceAccountsClient) Create(
 		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/service-accounts",
-			AuthHeaders: s.BearerTokenAuthHeaders(),
 			ReqBodyObj:  serviceAccount,
 			SuccessCode: http.StatusCreated,
 			RespObj:     &token,
@@ -143,7 +142,6 @@ func (s *serviceAccountsClient) List(
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        "v2/service-accounts",
-			AuthHeaders: s.BearerTokenAuthHeaders(),
 			QueryParams: s.AppendListQueryParams(nil, opts),
 			SuccessCode: http.StatusOK,
 			RespObj:     &serviceAccounts,
@@ -161,7 +159,6 @@ func (s *serviceAccountsClient) Get(
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/service-accounts/%s", id),
-			AuthHeaders: s.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 			RespObj:     &serviceAccount,
 		},
@@ -174,7 +171,6 @@ func (s *serviceAccountsClient) Lock(ctx context.Context, id string) error {
 		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/service-accounts/%s/lock", id),
-			AuthHeaders: s.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)
@@ -190,7 +186,6 @@ func (s *serviceAccountsClient) Unlock(
 		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        fmt.Sprintf("v2/service-accounts/%s/lock", id),
-			AuthHeaders: s.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 			RespObj:     &token,
 		},

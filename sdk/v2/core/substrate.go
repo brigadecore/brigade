@@ -56,7 +56,6 @@ func (s *substrateClient) CountRunningWorkers(
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        "v2/substrate/running-workers",
-			AuthHeaders: s.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 			RespObj:     &count,
 		},
@@ -72,7 +71,6 @@ func (s *substrateClient) CountRunningJobs(
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        "v2/substrate/running-jobs",
-			AuthHeaders: s.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 			RespObj:     &count,
 		},

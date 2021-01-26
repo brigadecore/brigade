@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -49,30 +48,6 @@ func NewBaseClient(
 		APIAddress: apiAddress,
 		APIToken:   apiToken,
 		HTTPClient: retryClient.StandardClient(),
-	}
-}
-
-// BasicAuthHeaders returns a map[string]string populated with a Basic Auth
-// header based on the provided username and password.
-func (b *BaseClient) BasicAuthHeaders(
-	username string,
-	password string,
-) map[string]string {
-	return map[string]string{
-		"Authorization": fmt.Sprintf(
-			"Basic %s",
-			base64.StdEncoding.EncodeToString(
-				[]byte(fmt.Sprintf("%s:%s", username, password)),
-			),
-		),
-	}
-}
-
-// BearerTokenAuthHeaders returns a map[string]string populated with an
-// authentication header that makes use of the client's bearer token.
-func (b *BaseClient) BearerTokenAuthHeaders() map[string]string {
-	return map[string]string{
-		"Authorization": fmt.Sprintf("Bearer %s", b.APIToken),
 	}
 }
 
@@ -171,8 +146,8 @@ func (b *BaseClient) SubmitRequest(
 		r.URL.RawQuery = q.Encode()
 	}
 	r.Header.Add("Accept", "application/json")
-	for k, v := range req.AuthHeaders {
-		r.Header.Add(k, v)
+	if req.IncludeAuthHeader == nil || *req.IncludeAuthHeader {
+		r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", b.APIToken))
 	}
 	for k, v := range req.Headers {
 		r.Header.Add(k, v)

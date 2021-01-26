@@ -245,7 +245,6 @@ func (j *jobsClient) Create(
 		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/events/%s/worker/jobs/%s", eventID, jobName),
-			AuthHeaders: j.BearerTokenAuthHeaders(),
 			ReqBodyObj:  job,
 			SuccessCode: http.StatusCreated,
 		},
@@ -266,7 +265,6 @@ func (j *jobsClient) Start(
 				eventID,
 				jobName,
 			),
-			AuthHeaders: j.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)
@@ -287,7 +285,6 @@ func (j *jobsClient) GetStatus(
 				eventID,
 				jobName,
 			),
-			AuthHeaders: j.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 			RespObj:     &status,
 		},
@@ -308,7 +305,6 @@ func (j *jobsClient) WatchStatus(
 				eventID,
 				jobName,
 			),
-			AuthHeaders: j.BearerTokenAuthHeaders(),
 			QueryParams: map[string]string{
 				"watch": "true",
 			},
@@ -342,7 +338,6 @@ func (j *jobsClient) UpdateStatus(
 				eventID,
 				jobName,
 			),
-			AuthHeaders: j.BearerTokenAuthHeaders(),
 			ReqBodyObj:  status,
 			SuccessCode: http.StatusOK,
 		},
@@ -363,7 +358,6 @@ func (j *jobsClient) Cleanup(
 				eventID,
 				jobName,
 			),
-			AuthHeaders: j.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)

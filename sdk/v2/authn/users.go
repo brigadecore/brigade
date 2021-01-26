@@ -116,7 +116,6 @@ func (u *usersClient) List(
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        "v2/users",
-			AuthHeaders: u.BearerTokenAuthHeaders(),
 			QueryParams: u.AppendListQueryParams(nil, opts),
 			SuccessCode: http.StatusOK,
 			RespObj:     &users,
@@ -131,7 +130,6 @@ func (u *usersClient) Get(ctx context.Context, id string) (User, error) {
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/users/%s", id),
-			AuthHeaders: u.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 			RespObj:     &user,
 		},
@@ -144,7 +142,6 @@ func (u *usersClient) Lock(ctx context.Context, id string) error {
 		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/users/%s/lock", id),
-			AuthHeaders: u.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)
@@ -156,7 +153,6 @@ func (u *usersClient) Unlock(ctx context.Context, id string) error {
 		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        fmt.Sprintf("v2/users/%s/lock", id),
-			AuthHeaders: u.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)
