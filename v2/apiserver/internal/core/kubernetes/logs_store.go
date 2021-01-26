@@ -52,6 +52,7 @@ func (l *logsStore) StreamLogs(
 		&v1.PodLogOptions{
 			Container:  selector.Container,
 			Timestamps: true,
+			Follow:     opts.Follow,
 		},
 	)
 	podLogs, err := req.Stream(ctx)
