@@ -208,7 +208,6 @@ func (e *eventsClient) Create(
 		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/events",
-			AuthHeaders: e.BearerTokenAuthHeaders(),
 			ReqBodyObj:  event,
 			SuccessCode: http.StatusCreated,
 			RespObj:     &events,
@@ -238,7 +237,6 @@ func (e *eventsClient) List(
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        "v2/events",
-			AuthHeaders: e.BearerTokenAuthHeaders(),
 			QueryParams: e.AppendListQueryParams(queryParams, opts),
 			SuccessCode: http.StatusOK,
 			RespObj:     &events,
@@ -256,7 +254,6 @@ func (e *eventsClient) Get(
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        fmt.Sprintf("v2/events/%s", id),
-			AuthHeaders: e.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 			RespObj:     &event,
 		},
@@ -269,7 +266,6 @@ func (e *eventsClient) Cancel(ctx context.Context, id string) error {
 		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/events/%s/cancellation", id),
-			AuthHeaders: e.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)
@@ -296,7 +292,6 @@ func (e *eventsClient) CancelMany(
 		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/events/cancellations",
-			AuthHeaders: e.BearerTokenAuthHeaders(),
 			QueryParams: queryParams,
 			SuccessCode: http.StatusOK,
 			RespObj:     &result,
@@ -310,7 +305,6 @@ func (e *eventsClient) Delete(ctx context.Context, id string) error {
 		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        fmt.Sprintf("v2/events/%s", id),
-			AuthHeaders: e.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)
@@ -337,7 +331,6 @@ func (e *eventsClient) DeleteMany(
 		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        "v2/events",
-			AuthHeaders: e.BearerTokenAuthHeaders(),
 			QueryParams: queryParams,
 			SuccessCode: http.StatusOK,
 			RespObj:     &result,

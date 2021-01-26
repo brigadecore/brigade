@@ -2,7 +2,9 @@ package authn
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
@@ -81,13 +83,22 @@ func (s *sessionsClient) CreateRootSession(
 	ctx context.Context,
 	password string,
 ) (Token, error) {
+	includeAuthHeader := false
 	token := Token{}
 	return token, s.ExecuteRequest(
 		ctx,
 		rm.OutboundRequest{
-			Method:      http.MethodPost,
-			Path:        "v2/sessions",
-			AuthHeaders: s.BasicAuthHeaders("root", password),
+			Method:            http.MethodPost,
+			Path:              "v2/sessions",
+			IncludeAuthHeader: &includeAuthHeader,
+			Headers: map[string]string{
+				"Authorization": fmt.Sprintf(
+					"Basic %s",
+					base64.StdEncoding.EncodeToString(
+						[]byte(fmt.Sprintf("root:%s", password)),
+					),
+				),
+			},
 			QueryParams: map[string]string{
 				"root": "true",
 			},
@@ -100,14 +111,16 @@ func (s *sessionsClient) CreateRootSession(
 func (s *sessionsClient) CreateUserSession(
 	ctx context.Context,
 ) (OIDCAuthDetails, error) {
+	includeAuthHeader := false
 	oidcAuthDetails := OIDCAuthDetails{}
 	return oidcAuthDetails, s.ExecuteRequest(
 		ctx,
 		rm.OutboundRequest{
-			Method:      http.MethodPost,
-			Path:        "v2/sessions",
-			SuccessCode: http.StatusCreated,
-			RespObj:     &oidcAuthDetails,
+			Method:            http.MethodPost,
+			Path:              "v2/sessions",
+			IncludeAuthHeader: &includeAuthHeader,
+			SuccessCode:       http.StatusCreated,
+			RespObj:           &oidcAuthDetails,
 		},
 	)
 }
@@ -118,7 +131,6 @@ func (s *sessionsClient) Delete(ctx context.Context) error {
 		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        "v2/session",
-			AuthHeaders: s.BearerTokenAuthHeaders(),
 			SuccessCode: http.StatusOK,
 		},
 	)
