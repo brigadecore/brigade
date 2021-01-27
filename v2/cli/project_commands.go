@@ -78,6 +78,7 @@ var projectCommand = &cli.Command{
 			},
 			Action: projectList,
 		},
+		projectRolesCommands,
 		secretsCommand,
 		{
 			Name:  "update",

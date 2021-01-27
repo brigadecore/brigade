@@ -30,6 +30,7 @@ func main() {
 		loginCommand,
 		logoutCommand,
 		projectCommand,
+		rolesCommands,
 		serviceAccountCommand,
 		userCommand,
 	}

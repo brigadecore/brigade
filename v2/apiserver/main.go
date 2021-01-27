@@ -7,6 +7,9 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	authnMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/authn/mongodb"
 	authnREST "github.com/brigadecore/brigade/v2/apiserver/internal/authn/rest"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
+	authzMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/authz/mongodb"
+	authzREST "github.com/brigadecore/brigade/v2/apiserver/internal/authz/rest"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	coreKubernetes "github.com/brigadecore/brigade/v2/apiserver/internal/core/kubernetes"
 	coreMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/core/mongodb"
@@ -42,6 +45,7 @@ func main() {
 	var eventsStore core.EventsStore
 	var jobsStore core.JobsStore
 	var projectsStore core.ProjectsStore
+	var roleAssignmentsStore authz.RoleAssignmentsStore
 	var secretsStore core.SecretsStore
 	var serviceAccountsStore authn.ServiceAccountsStore
 	var sessionsStore authn.SessionsStore
@@ -66,6 +70,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		roleAssignmentsStore = authzMongodb.NewRoleAssignmentsStore(database)
 		secretsStore = coreKubernetes.NewSecretsStore(kubeClient)
 		serviceAccountsStore, err = authnMongodb.NewServiceAccountsStore(database)
 		if err != nil {
@@ -131,6 +136,21 @@ func main() {
 
 	// Projects service
 	projectsService := core.NewProjectsService(projectsStore, substrate)
+
+	// ProjectRoleAssignments service
+	projectRoleAssignmentsService := core.NewProjectRoleAssignmentsService(
+		projectsStore,
+		usersStore,
+		serviceAccountsStore,
+		roleAssignmentsStore,
+	)
+
+	// Roles service
+	roleAssignmentsService := authz.NewRoleAssignmentsService(
+		usersStore,
+		serviceAccountsStore,
+		roleAssignmentsStore,
+	)
 
 	// ServiceAccounts service
 	serviceAccountsService :=
@@ -213,6 +233,20 @@ func main() {
 						"file:///brigade/schemas/project.json",
 					),
 					Service: projectsService,
+				},
+				&coreREST.ProjectRoleAssignmentsEndpoints{
+					AuthFilter: authFilter,
+					ProjectRoleAssignmentSchemaLoader: gojsonschema.NewReferenceLoader(
+						"file:///brigade/schemas/project-role-assignment.json",
+					),
+					Service: projectRoleAssignmentsService,
+				},
+				&authzREST.RoleAssignmentsEndpoints{
+					AuthFilter: authFilter,
+					RoleAssignmentSchemaLoader: gojsonschema.NewReferenceLoader(
+						"file:///brigade/schemas/role-assignment.json",
+					),
+					Service: roleAssignmentsService,
 				},
 				&coreREST.SecretsEndpoints{
 					AuthFilter: authFilter,

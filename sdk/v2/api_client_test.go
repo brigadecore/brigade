@@ -16,6 +16,8 @@ func TestNewAPIClient(t *testing.T) {
 	require.IsType(t, &apiClient{}, client)
 	require.NotNil(t, client.(*apiClient).authnClient)
 	require.Equal(t, client.(*apiClient).authnClient, client.Authn())
+	require.NotNil(t, client.(*apiClient).authzClient)
+	require.Equal(t, client.(*apiClient).authzClient, client.Authz())
 	require.NotNil(t, client.(*apiClient).coreClient)
 	require.Equal(t, client.(*apiClient).coreClient, client.Core())
 }
