@@ -61,6 +61,29 @@
 			"maxLength": 250
 		},
 
+		"principalReference": {
+			"type": "object",
+			"required": ["type", "id"],
+			"additionalProperties": false,
+			"properties": {
+				"type": {
+					"type": "string",
+					"description": "The type of principal-- USER or SERVICE_ACCOUNT",
+					"enum": [
+						"USER",
+						"SERVICE_ACCOUNT"
+					]
+				},
+				"id": {
+					"type": "string",
+					"description": "The ID of the user or service account",
+					"pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
+					"minLength": 3,
+					"maxLength": 50
+				}
+			}
+		},
+
 		"url": {
 			"type": "string",
 			"pattern": "^[\\w:/\\-\\.\\?=@]*$",

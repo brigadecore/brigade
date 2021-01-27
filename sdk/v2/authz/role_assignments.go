@@ -70,7 +70,7 @@ type RoleAssignmentsClient interface {
 	// principal also specified by the RoleAssignment.
 	Grant(context.Context, RoleAssignment) error
 	// Revoke revokes the system-level Role specified by the RoleAssignment for
-	// principal also specified by the RoleAssignment.
+	// the principal also specified by the RoleAssignment.
 	Revoke(context.Context, RoleAssignment) error
 }
 
