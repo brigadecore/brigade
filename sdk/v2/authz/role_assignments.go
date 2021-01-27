@@ -99,7 +99,6 @@ func (r *roleAssignmentsClient) Grant(
 		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/role-assignments",
-			AuthHeaders: r.BearerTokenAuthHeaders(),
 			ReqBodyObj:  roleAssignment,
 			SuccessCode: http.StatusOK,
 		},
@@ -124,7 +123,6 @@ func (r *roleAssignmentsClient) Revoke(
 		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        "v2/role-assignments",
-			AuthHeaders: r.BearerTokenAuthHeaders(),
 			QueryParams: queryParams,
 			SuccessCode: http.StatusOK,
 		},

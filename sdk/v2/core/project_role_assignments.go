@@ -34,7 +34,6 @@ func (p *projectRoleAssignmentsClient) Grant(
 		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        "v2/project-role-assignments",
-			AuthHeaders: p.BearerTokenAuthHeaders(),
 			ReqBodyObj:  roleAssignment,
 			SuccessCode: http.StatusOK,
 		},
@@ -56,7 +55,6 @@ func (p *projectRoleAssignmentsClient) Revoke(
 		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        "v2/project-role-assignments",
-			AuthHeaders: p.BearerTokenAuthHeaders(),
 			QueryParams: queryParams,
 			SuccessCode: http.StatusOK,
 		},
