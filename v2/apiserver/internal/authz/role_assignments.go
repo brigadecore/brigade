@@ -85,14 +85,20 @@ func (r *roleAssignmentsService) Grant(
 	switch roleAssignment.Principal.Type {
 	case PrincipalTypeUser:
 		// Make sure the User exists
-		if _, err :=
-			r.usersStore.Get(ctx, roleAssignment.Principal.ID); err != nil {
+		user, err := r.usersStore.Get(ctx, roleAssignment.Principal.ID)
+		if err != nil {
 			return errors.Wrapf(
 				err,
 				"error retrieving user %q from store",
 				roleAssignment.Principal.ID,
 			)
 		}
+		// From an end-user's perspective, User IDs are case insensitive, but when
+		// creating a role assignment, we'd like to respect case. So we DON'T use
+		// the ID from the inbound RoleAssignment-- which may have incorrect case.
+		// Instead we replace it with the ID (with correct case) from the User we
+		// found.
+		roleAssignment.Principal.ID = user.ID
 	case PrincipalTypeServiceAccount:
 		// Make sure the ServiceAccount exists
 		if _, err :=
@@ -129,14 +135,20 @@ func (r *roleAssignmentsService) Revoke(
 	switch roleAssignment.Principal.Type {
 	case PrincipalTypeUser:
 		// Make sure the User exists
-		if _, err :=
-			r.usersStore.Get(ctx, roleAssignment.Principal.ID); err != nil {
+		user, err := r.usersStore.Get(ctx, roleAssignment.Principal.ID)
+		if err != nil {
 			return errors.Wrapf(
 				err,
 				"error retrieving user %q from store",
 				roleAssignment.Principal.ID,
 			)
 		}
+		// From an end-user's perspective, User IDs are case insensitive, but when
+		// creating a role assignment, we'd like to respect case. So we DON'T use
+		// the ID from the inbound RoleAssignment-- which may have incorrect case.
+		// Instead we replace it with the ID (with correct case) from the User we
+		// found.
+		roleAssignment.Principal.ID = user.ID
 	case PrincipalTypeServiceAccount:
 		// Make sure the ServiceAccount exists
 		if _, err :=
