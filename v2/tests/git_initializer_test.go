@@ -3,8 +3,8 @@
 package tests
 
 import (
+	"bytes"
 	"context"
-	"log"
 	"testing"
 	"time"
 
@@ -16,20 +16,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var defaultConfigFiles = map[string]string{
-	"brigade.js": `
-		const { events } = require("brigadier");
+type testcase struct {
+	name                       string
+	project                    core.Project
+	configFiles                map[string]string
+	expectedJobLogsContains    string
+	expectedJobPhase           core.JobPhase
+	expectedWorkerLogsContains string
+	expectedWorkerPhase        core.WorkerPhase
+	expectedVCSLogsContains    string
+}
 
-		events.on("github.com/brigadecore/brigade/cli", "exec", () => {
-			console.log("Hello, World!");
-		});
-	`}
-
-var testcases = []struct {
-	name          string
-	project       core.Project
-	terminalPhase core.WorkerPhase
-}{
+var testcases = []testcase{
 	{
 		name: "GitHub - no ref",
 		project: core.Project{
@@ -41,7 +39,9 @@ var testcases = []struct {
 				},
 			},
 		},
-		terminalPhase: core.WorkerPhaseSucceeded,
+		expectedJobLogsContains: "README.md",
+		expectedJobPhase:        core.JobPhaseSucceeded,
+		expectedWorkerPhase:     core.WorkerPhaseSucceeded,
 	},
 	{
 		name: "GitHub - full ref",
@@ -55,7 +55,9 @@ var testcases = []struct {
 				},
 			},
 		},
-		terminalPhase: core.WorkerPhaseSucceeded,
+		expectedJobLogsContains: "README.md",
+		expectedJobPhase:        core.JobPhaseSucceeded,
+		expectedWorkerPhase:     core.WorkerPhaseSucceeded,
 	},
 	{
 		name: "GitHub - casual ref",
@@ -69,7 +71,9 @@ var testcases = []struct {
 				},
 			},
 		},
-		terminalPhase: core.WorkerPhaseSucceeded,
+		expectedJobLogsContains: "README.md",
+		expectedJobPhase:        core.JobPhaseSucceeded,
+		expectedWorkerPhase:     core.WorkerPhaseSucceeded,
 	},
 	{
 		name: "GitHub - commit sha",
@@ -83,21 +87,9 @@ var testcases = []struct {
 				},
 			},
 		},
-		terminalPhase: core.WorkerPhaseSucceeded,
-	},
-	{
-		name: "GitHub - non-existent ref",
-		project: core.Project{
-			Spec: core.ProjectSpec{
-				WorkerTemplate: core.WorkerSpec{
-					Git: &core.GitConfig{
-						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
-						Ref:      "non-existent",
-					},
-				},
-			},
-		},
-		terminalPhase: core.WorkerPhaseFailed,
+		expectedJobLogsContains: "README.md",
+		expectedJobPhase:        core.JobPhaseSucceeded,
+		expectedWorkerPhase:     core.WorkerPhaseSucceeded,
 	},
 	{
 		name: "GitHub - submodules",
@@ -111,9 +103,65 @@ var testcases = []struct {
 				},
 			},
 		},
-		terminalPhase: core.WorkerPhaseSucceeded,
+		expectedJobLogsContains: ".submodules",
+		expectedJobPhase:        core.JobPhaseSucceeded,
+		expectedWorkerPhase:     core.WorkerPhaseSucceeded,
+	},
+	{
+		name: "GitHub - vcs failure",
+		project: core.Project{
+			Spec: core.ProjectSpec{
+				WorkerTemplate: core.WorkerSpec{
+					Git: &core.GitConfig{
+						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
+						Ref:      "non-existent",
+					},
+				},
+			},
+		},
+		expectedWorkerPhase:     core.WorkerPhaseFailed,
+		expectedVCSLogsContains: `reference "non-existent" not found in repo "https://github.com/brigadecore/empty-testbed.git"`,
+	},
+	{
+		name: "GitHub - job fails",
+		project: core.Project{
+			Spec: core.ProjectSpec{
+				WorkerTemplate: core.WorkerSpec{
+					Git: &core.GitConfig{
+						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
+					},
+				},
+			},
+		},
+		configFiles: map[string]string{
+			"brigade.ts": `
+			import { events, Job } from "@brigadecore/brigadier"
+
+			events.on("github.com/brigadecore/brigade/cli", "exec", async event => {
+				let job = new Job("ls", "alpine", event)
+				job.primaryContainer.command = ["sh"]
+				job.primaryContainer.arguments = ["-c", "'echo Goodbye World && exit 1'"]
+				await job.run()
+			});
+		`},
+		expectedJobLogsContains: "Goodbye World",
+		expectedJobPhase:        core.JobPhaseFailed,
+		expectedWorkerPhase:     core.WorkerPhaseFailed,
 	},
 }
+
+var defaultConfigFiles = map[string]string{
+	"brigade.ts": `
+		import { events, Job } from "@brigadecore/brigadier"
+
+		events.on("github.com/brigadecore/brigade/cli", "exec", async event => {
+			let job = new Job("ls", "alpine", event)
+			job.primaryContainer.sourceMountPath = "/var/vcs"
+			job.primaryContainer.command = ["ls"]
+			job.primaryContainer.arguments = ["-haltr", "/var/vcs"]
+			await job.run()
+		});
+	`}
 
 func TestMain(t *testing.T) {
 	for _, tc := range testcases {
@@ -148,7 +196,11 @@ func TestMain(t *testing.T) {
 
 			// Update the project with defaults
 			tc.project.ID = "test-project"
-			tc.project.Spec.WorkerTemplate.DefaultConfigFiles = defaultConfigFiles
+			if len(tc.configFiles) > 0 {
+				tc.project.Spec.WorkerTemplate.DefaultConfigFiles = tc.configFiles
+			} else {
+				tc.project.Spec.WorkerTemplate.DefaultConfigFiles = defaultConfigFiles
+			}
 
 			// Delete the test project (we're sharing the name between tests)
 			err = client.Core().Projects().Delete(ctx, tc.project.ID)
@@ -179,46 +231,150 @@ func TestMain(t *testing.T) {
 
 			e := eList.Items[0]
 
-			logEntryCh, errCh, err :=
-				client.Core().Events().Logs().Stream(
-					ctx,
-					e.ID,
-					&core.LogsSelector{Container: "vcs"},
-					&core.LogStreamOptions{})
-			require.NoError(t, err, "error acquiring log stream")
+			assertWorkerTerminalPhase(t, ctx, client, e, tc)
+			assertWorkerLogs(t, ctx, client, e, tc)
 
-			for {
-				select {
-				case logEntry, ok := <-logEntryCh:
-					if ok {
-						log.Println(logEntry.Message)
-					} else {
-						logEntryCh = nil
-					}
-				case err, ok := <-errCh:
-					if ok {
-						t.Fatalf("error from log stream: %s", err)
-					}
-					errCh = nil
-				case <-ctx.Done():
-					break
-				}
-
-				// log and err channels empty, let's check worker status
-				if logEntryCh == nil && errCh == nil {
-					for {
-						event, err := client.Core().Events().Get(ctx, e.ID)
-						require.NoError(t, err, "error getting event")
-
-						phase := event.Worker.Status.Phase
-						if phase.IsTerminal() {
-							require.Equal(t, tc.terminalPhase, phase, "worker's terminal phase does not match expected")
-							break
-						}
-					}
-					break
-				}
+			// We expect the vcs init container to fail for this test,
+			// therefore, assertions on jobs are not applicable
+			if tc.name == "GitHub - vcs failure" {
+				return
 			}
+
+			assertJobTerminalPhase(t, ctx, client, e, tc)
+			assertJobLogs(t, ctx, client, e, tc)
 		})
+	}
+}
+
+func assertWorkerTerminalPhase(
+	t *testing.T,
+	ctx context.Context,
+	client sdk.APIClient,
+	e core.Event,
+	tc testcase) {
+
+	for {
+		event, err := client.Core().Events().Get(ctx, e.ID)
+		require.NoError(t, err, "error getting event")
+
+		phase := event.Worker.Status.Phase
+		if phase.IsTerminal() {
+			require.Equal(t, tc.expectedWorkerPhase, phase, "worker's terminal phase does not match expected")
+			break
+		}
+	}
+}
+
+func assertWorkerLogs(
+	t *testing.T,
+	ctx context.Context,
+	client sdk.APIClient,
+	e core.Event,
+	tc testcase) {
+
+	// Check vcs container logs
+	selector := &core.LogsSelector{Container: "vcs"}
+	logs := captureLogs(t, ctx, client, e, selector)
+
+	if tc.expectedVCSLogsContains != "" {
+		require.Contains(t, logs, tc.expectedVCSLogsContains, "vcs init container logs do not match expected")
+	}
+
+	// We expect the vcs init container to fail for this test,
+	// therefore, assertions on worker logs are not applicable
+	if tc.name == "GitHub - vcs failure" {
+		return
+	}
+
+	// Check worker container logs
+	selector = &core.LogsSelector{}
+	logs = captureLogs(t, ctx, client, e, selector)
+
+	if tc.expectedWorkerLogsContains != "" {
+		require.Contains(t, logs, tc.expectedWorkerLogsContains, "worker's logs do not match expected")
+	} else {
+		// Look for default logs that we expect must exist
+		require.Contains(t, logs, "brigade-worker version", "worker's logs do not match expected")
+	}
+}
+
+func assertJobTerminalPhase(
+	t *testing.T,
+	ctx context.Context,
+	client sdk.APIClient,
+	e core.Event,
+	tc testcase) {
+
+	for {
+		event, err := client.Core().Events().Get(ctx, e.ID)
+		require.NoError(t, err, "error getting event")
+
+		jobs := event.Worker.Jobs
+		require.Equal(t, 1, len(jobs), "expected job count is not 1")
+
+		job := jobs["ls"]
+		require.NotNil(t, job, "expected job does not exist")
+
+		phase := job.Status.Phase
+		if phase.IsTerminal() {
+			require.Equal(t, tc.expectedJobPhase, phase, "job's terminal phase does not match expected")
+			break
+		}
+	}
+}
+
+func assertJobLogs(
+	t *testing.T,
+	ctx context.Context,
+	client sdk.APIClient,
+	e core.Event,
+	tc testcase) {
+
+	selector := &core.LogsSelector{Job: "ls"}
+	logs := captureLogs(t, ctx, client, e, selector)
+
+	if tc.expectedJobLogsContains != "" {
+		require.Contains(t, logs, tc.expectedJobLogsContains, "job's logs do not match expected")
+	}
+}
+
+func captureLogs(
+	t *testing.T,
+	ctx context.Context,
+	client sdk.APIClient,
+	e core.Event,
+	selector *core.LogsSelector) string {
+
+	logEntryCh, errCh, err :=
+		client.Core().Events().Logs().Stream(
+			ctx,
+			e.ID,
+			selector,
+			&core.LogStreamOptions{},
+		)
+	require.NoError(t, err, "error acquiring log stream")
+
+	var b bytes.Buffer
+	for {
+		select {
+		case logEntry, ok := <-logEntryCh:
+			if ok {
+				b.Write([]byte(logEntry.Message))
+			} else {
+				logEntryCh = nil
+			}
+		case err, ok := <-errCh:
+			if ok {
+				t.Fatalf("error from log stream: %s", err)
+			}
+			errCh = nil
+		case <-ctx.Done():
+			break
+		}
+
+		// log and err channels empty, let's return logs
+		if logEntryCh == nil && errCh == nil {
+			return b.String()
+		}
 	}
 }
