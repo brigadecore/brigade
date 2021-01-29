@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
@@ -41,8 +42,19 @@ func TestSubstrateServiceCountRunningWorkers(t *testing.T) {
 		assertions func(SubstrateWorkerCount, error)
 	}{
 		{
+			name: "unauthorized",
+			service: &substrateService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(_ SubstrateWorkerCount, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error counting workers in substrate",
 			service: &substrateService{
+				authorize: libAuthz.AlwaysAuthorize,
 				substrate: &mockSubstrate{
 					CountRunningWorkersFn: func(
 						context.Context,
@@ -64,6 +76,7 @@ func TestSubstrateServiceCountRunningWorkers(t *testing.T) {
 		{
 			name: "success",
 			service: &substrateService{
+				authorize: libAuthz.AlwaysAuthorize,
 				substrate: &mockSubstrate{
 					CountRunningWorkersFn: func(
 						context.Context,
@@ -96,8 +109,19 @@ func TestSubstrateServiceCountRunningJobs(t *testing.T) {
 		assertions func(SubstrateJobCount, error)
 	}{
 		{
+			name: "unauthorized",
+			service: &substrateService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(_ SubstrateJobCount, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error counting jobs in substrate",
 			service: &substrateService{
+				authorize: libAuthz.AlwaysAuthorize,
 				substrate: &mockSubstrate{
 					CountRunningJobsFn: func(
 						context.Context,
@@ -119,6 +143,7 @@ func TestSubstrateServiceCountRunningJobs(t *testing.T) {
 		{
 			name: "success",
 			service: &substrateService{
+				authorize: libAuthz.AlwaysAuthorize,
 				substrate: &mockSubstrate{
 					CountRunningJobsFn: func(
 						context.Context,
