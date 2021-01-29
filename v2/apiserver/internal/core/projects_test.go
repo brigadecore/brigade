@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
@@ -22,8 +23,10 @@ func TestNewProjectsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}
 	substrate := &mockSubstrate{}
-	svc := NewProjectsService(projectsStore, eventsStore, substrate)
+	svc := NewProjectsService(libAuthz.AlwaysAuthorize, projectsStore, eventsStore, substrate)
+	require.NotNil(t, svc.(*projectsService).authorize)
 	require.Same(t, projectsStore, svc.(*projectsService).projectsStore)
+	require.Same(t, eventsStore, svc.(*projectsService).eventsStore)
 	require.Same(t, substrate, svc.(*projectsService).substrate)
 }
 
@@ -34,8 +37,19 @@ func TestProjectServiceCreate(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &projectsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error creating project in substrate",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				substrate: &mockSubstrate{
 					CreateProjectFn: func(
 						_ context.Context,
@@ -54,6 +68,7 @@ func TestProjectServiceCreate(t *testing.T) {
 		{
 			name: "error creating project in store",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				substrate: &mockSubstrate{
 					CreateProjectFn: func(
 						_ context.Context,
@@ -77,6 +92,7 @@ func TestProjectServiceCreate(t *testing.T) {
 		{
 			name: "success",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				substrate: &mockSubstrate{
 					CreateProjectFn: func(
 						ctx context.Context,
@@ -111,8 +127,19 @@ func TestProjectServiceList(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &projectsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error getting projects from store",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					ListFn: func(context.Context, meta.ListOptions) (ProjectList, error) {
 						return ProjectList{}, errors.New("error listing projects")
@@ -128,6 +155,7 @@ func TestProjectServiceList(t *testing.T) {
 		{
 			name: "success",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					ListFn: func(context.Context, meta.ListOptions) (ProjectList, error) {
 						return ProjectList{}, nil
@@ -155,8 +183,19 @@ func TestProjectServiceGet(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &projectsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error getting projects from store",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, errors.New("error getting project")
@@ -172,6 +211,7 @@ func TestProjectServiceGet(t *testing.T) {
 		{
 			name: "success",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -199,8 +239,19 @@ func TestProjectServiceUpdate(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &projectsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error updating project in store",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					UpdateFn: func(context.Context, Project) error {
 						return errors.New("store error")
@@ -216,6 +267,7 @@ func TestProjectServiceUpdate(t *testing.T) {
 		{
 			name: "success",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					UpdateFn: func(context.Context, Project) error {
 						return nil
@@ -242,8 +294,19 @@ func TestProjectServiceDelete(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &projectsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error retrieving project from store",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, errors.New("store error")
@@ -289,6 +352,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error deleting project from store",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -315,6 +379,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error deleting project from substrate",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -346,6 +411,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "success",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil

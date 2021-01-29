@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/pkg/errors"
 )
@@ -78,6 +79,7 @@ type LogsService interface {
 }
 
 type logsService struct {
+	authorize     libAuthz.AuthorizeFn
 	projectsStore ProjectsStore
 	eventsStore   EventsStore
 	warmLogsStore LogsStore
@@ -86,12 +88,14 @@ type logsService struct {
 
 // NewLogsService returns a specialized interface for accessing logs.
 func NewLogsService(
+	authorizeFn libAuthz.AuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
 	warmLogsStore LogsStore,
 	coolLogsStore LogsStore,
 ) LogsService {
 	return &logsService{
+		authorize:     authorizeFn,
 		projectsStore: projectsStore,
 		eventsStore:   eventsStore,
 		warmLogsStore: warmLogsStore,
@@ -133,6 +137,17 @@ func (l *logsService) Stream(
 			errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
 
+	// Throughout the service layer, we typically only require system.RoleReader()
+	// to authorize read-only operations of any kind. In the case of logs,
+	// however, there's just too much possibility of secrets bleeding into the
+	// logs, not due to any fault of Brigade's but because of some end-user
+	// misstep. So, out of an abundance of caution, we raise the bar a little on
+	// this one read-only operation and require the principal to be a project user
+	// in order to stream logs.
+	if err = l.authorize(ctx, RoleProjectUser(event.ProjectID)); err != nil {
+		return nil, err
+	}
+
 	if selector.Job != "" {
 		// Make sure the job exists
 		job, ok := event.Worker.Jobs[selector.Job]
@@ -152,6 +167,7 @@ func (l *logsService) Stream(
 		}
 	}
 
+	// Make sure the project exists
 	project, err := l.projectsStore.Get(ctx, event.ProjectID)
 	if err != nil {
 		return nil,

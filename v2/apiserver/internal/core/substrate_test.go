@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +28,8 @@ func TestSubstrateJobCountMarshalJSON(t *testing.T) {
 
 func TestNewSubstrateService(t *testing.T) {
 	substrate := &mockSubstrate{}
-	svc := NewSubstrateService(substrate)
+	svc := NewSubstrateService(libAuthz.AlwaysAuthorize, substrate)
+	require.NotNil(t, svc.(*substrateService).authorize)
 	require.Same(t, substrate, svc.(*substrateService).substrate)
 }
 

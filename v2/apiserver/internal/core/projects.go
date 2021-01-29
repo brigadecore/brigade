@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
 )
 
@@ -154,6 +156,7 @@ type ProjectsService interface {
 }
 
 type projectsService struct {
+	authorize     libAuthz.AuthorizeFn
 	projectsStore ProjectsStore
 	eventsStore   EventsStore
 	substrate     Substrate
@@ -161,11 +164,13 @@ type projectsService struct {
 
 // NewProjectsService returns a specialized interface for managing Projects.
 func NewProjectsService(
+	authorizeFn libAuthz.AuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
 	substrate Substrate,
 ) ProjectsService {
 	return &projectsService{
+		authorize:     authorizeFn,
 		projectsStore: projectsStore,
 		eventsStore:   eventsStore,
 		substrate:     substrate,
@@ -176,6 +181,10 @@ func (p *projectsService) Create(
 	ctx context.Context,
 	project Project,
 ) (Project, error) {
+	if err := p.authorize(ctx, RoleProjectCreator()); err != nil {
+		return project, err
+	}
+
 	now := time.Now().UTC()
 	project.Created = &now
 
@@ -201,6 +210,10 @@ func (p *projectsService) List(
 	ctx context.Context,
 	opts meta.ListOptions,
 ) (ProjectList, error) {
+	if err := p.authorize(ctx, system.RoleReader()); err != nil {
+		return ProjectList{}, err
+	}
+
 	if opts.Limit == 0 {
 		opts.Limit = 20
 	}
@@ -215,6 +228,10 @@ func (p *projectsService) Get(
 	ctx context.Context,
 	id string,
 ) (Project, error) {
+	if err := p.authorize(ctx, system.RoleReader()); err != nil {
+		return Project{}, err
+	}
+
 	project, err := p.projectsStore.Get(ctx, id)
 	if err != nil {
 		return project, errors.Wrapf(
@@ -227,6 +244,11 @@ func (p *projectsService) Get(
 }
 
 func (p *projectsService) Update(ctx context.Context, project Project) error {
+	if err :=
+		p.authorize(ctx, RoleProjectDeveloper(project.ID)); err != nil {
+		return err
+	}
+
 	if err := p.projectsStore.Update(ctx, project); err != nil {
 		return errors.Wrapf(
 			err,
@@ -238,6 +260,10 @@ func (p *projectsService) Update(ctx context.Context, project Project) error {
 }
 
 func (p *projectsService) Delete(ctx context.Context, id string) error {
+	if err := p.authorize(ctx, RoleProjectAdmin(id)); err != nil {
+		return err
+	}
+
 	project, err := p.projectsStore.Get(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving project %q from store", id)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
@@ -38,7 +39,13 @@ func TestNewEventsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}
 	substrate := &mockSubstrate{}
-	svc := NewEventsService(projectsStore, eventsStore, substrate)
+	svc := NewEventsService(
+		libAuthz.AlwaysAuthorize,
+		projectsStore,
+		eventsStore,
+		substrate,
+	)
+	require.NotNil(t, svc.(*eventsService).authorize)
 	require.Same(t, projectsStore, svc.(*eventsService).projectsStore)
 	require.Same(t, eventsStore, svc.(*eventsService).eventsStore)
 	require.Same(t, substrate, svc.(*eventsService).substrate)
@@ -52,12 +59,23 @@ func TestEventsServiceCreate(t *testing.T) {
 		assertions func(EventList, error)
 	}{
 		{
+			name: "unauthorized",
+			service: &eventsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(_ EventList, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "create single event for specified project; error getting " +
 				"project from store",
 			event: Event{
 				ProjectID: "blue-book",
 			},
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, errors.New("projects store error")
@@ -77,6 +95,7 @@ func TestEventsServiceCreate(t *testing.T) {
 				ProjectID: "blue-book",
 			},
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -101,6 +120,7 @@ func TestEventsServiceCreate(t *testing.T) {
 				ProjectID: "blue-book",
 			},
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -130,6 +150,7 @@ func TestEventsServiceCreate(t *testing.T) {
 				},
 			},
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
 						return ProjectList{}, errors.New(
@@ -159,6 +180,7 @@ func TestEventsServiceCreate(t *testing.T) {
 				},
 			},
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
 						return ProjectList{
@@ -189,6 +211,7 @@ func TestEventsServiceCreate(t *testing.T) {
 				},
 			},
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
 						return ProjectList{
@@ -318,8 +341,19 @@ func TestEventsServiceList(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &eventsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error getting events from store",
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					ListFn: func(
 						context.Context,
@@ -339,6 +373,7 @@ func TestEventsServiceList(t *testing.T) {
 		{
 			name: "success",
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					ListFn: func(
 						context.Context,
@@ -373,8 +408,19 @@ func TestEventsServiceGet(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &eventsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error getting event from store",
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, errors.New("error getting event")
@@ -390,6 +436,7 @@ func TestEventsServiceGet(t *testing.T) {
 		{
 			name: "success",
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -484,8 +531,24 @@ func TestEventsServiceCancel(t *testing.T) {
 			},
 		},
 		{
+			name: "unauthorized",
+			service: &eventsService{
+				authorize: libAuthz.NeverAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error retrieving project from store",
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -506,6 +569,7 @@ func TestEventsServiceCancel(t *testing.T) {
 		{
 			name: "error canceling event in store",
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -529,6 +593,7 @@ func TestEventsServiceCancel(t *testing.T) {
 		{
 			name: "error deleting event from substrate",
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -559,6 +624,7 @@ func TestEventsServiceCancel(t *testing.T) {
 		{
 			name: "success",
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -613,11 +679,26 @@ func TestEventsServiceCancelMany(t *testing.T) {
 			},
 		},
 		{
+			name: "unauthorized",
+			selector: EventsSelector{
+				ProjectID: "blue-book",
+			},
+			service: &eventsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "request not qualified by worker phase",
 			selector: EventsSelector{
 				ProjectID: "blue-book",
 			},
-			service: &eventsService{},
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+			},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrBadRequest{}, err)
@@ -636,6 +717,7 @@ func TestEventsServiceCancelMany(t *testing.T) {
 				WorkerPhases: []WorkerPhase{WorkerPhaseFailed},
 			},
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, errors.New("error getting project")
@@ -655,6 +737,7 @@ func TestEventsServiceCancelMany(t *testing.T) {
 				WorkerPhases: []WorkerPhase{WorkerPhaseFailed},
 			},
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -682,6 +765,7 @@ func TestEventsServiceCancelMany(t *testing.T) {
 				WorkerPhases: []WorkerPhase{WorkerPhaseFailed},
 			},
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -733,8 +817,24 @@ func TestEventsServiceDelete(t *testing.T) {
 			},
 		},
 		{
+			name: "unauthorized",
+			service: &eventsService{
+				authorize: libAuthz.NeverAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error retrieving project from store",
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -755,6 +855,7 @@ func TestEventsServiceDelete(t *testing.T) {
 		{
 			name: "error deleting event from store",
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -778,6 +879,7 @@ func TestEventsServiceDelete(t *testing.T) {
 		{
 			name: "error deleting event from substrate",
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -808,6 +910,7 @@ func TestEventsServiceDelete(t *testing.T) {
 		{
 			name: "success",
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -862,11 +965,26 @@ func TestEventsServiceDeleteMany(t *testing.T) {
 			},
 		},
 		{
+			name: "unauthorized",
+			selector: EventsSelector{
+				ProjectID: "blue-book",
+			},
+			service: &eventsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "request not qualified by worker phase",
 			selector: EventsSelector{
 				ProjectID: "blue-book",
 			},
-			service: &eventsService{},
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+			},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrBadRequest{}, err)
@@ -885,6 +1003,7 @@ func TestEventsServiceDeleteMany(t *testing.T) {
 				WorkerPhases: []WorkerPhase{WorkerPhaseFailed},
 			},
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, errors.New("error getting project")
@@ -904,6 +1023,7 @@ func TestEventsServiceDeleteMany(t *testing.T) {
 				WorkerPhases: []WorkerPhase{WorkerPhaseFailed},
 			},
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -931,6 +1051,7 @@ func TestEventsServiceDeleteMany(t *testing.T) {
 				WorkerPhases: []WorkerPhase{WorkerPhaseFailed},
 			},
 			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil

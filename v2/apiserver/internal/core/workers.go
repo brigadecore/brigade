@@ -6,7 +6,9 @@ import (
 	"log"
 	"time"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
 )
 
@@ -232,6 +234,7 @@ type WorkersService interface {
 }
 
 type workersService struct {
+	authorize     libAuthz.AuthorizeFn
 	projectsStore ProjectsStore
 	eventsStore   EventsStore
 	workersStore  WorkersStore
@@ -240,12 +243,14 @@ type workersService struct {
 
 // NewWorkersService returns a specialized interface for managing Workers.
 func NewWorkersService(
+	authorizeFn libAuthz.AuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
 	workersStore WorkersStore,
 	substrate Substrate,
 ) WorkersService {
 	return &workersService{
+		authorize:     authorizeFn,
 		projectsStore: projectsStore,
 		eventsStore:   eventsStore,
 		workersStore:  workersStore,
@@ -254,6 +259,10 @@ func NewWorkersService(
 }
 
 func (w *workersService) Start(ctx context.Context, eventID string) error {
+	if err := w.authorize(ctx, RoleScheduler()); err != nil {
+		return err
+	}
+
 	event, err := w.eventsStore.Get(ctx, eventID)
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
@@ -303,6 +312,10 @@ func (w *workersService) GetStatus(
 	ctx context.Context,
 	eventID string,
 ) (WorkerStatus, error) {
+	if err := w.authorize(ctx, system.RoleReader()); err != nil {
+		return WorkerStatus{}, err
+	}
+
 	event, err := w.eventsStore.Get(ctx, eventID)
 	if err != nil {
 		return WorkerStatus{},
@@ -315,6 +328,10 @@ func (w *workersService) WatchStatus(
 	ctx context.Context,
 	eventID string,
 ) (<-chan WorkerStatus, error) {
+	if err := w.authorize(ctx, system.RoleReader()); err != nil {
+		return nil, err
+	}
+
 	// Read the event up front to confirm it exists.
 	if _, err := w.eventsStore.Get(ctx, eventID); err != nil {
 		return nil,
@@ -351,6 +368,10 @@ func (w *workersService) UpdateStatus(
 	eventID string,
 	status WorkerStatus,
 ) error {
+	if err := w.authorize(ctx, RoleObserver()); err != nil {
+		return err
+	}
+
 	if err := w.workersStore.UpdateStatus(
 		ctx,
 		eventID,
@@ -369,6 +390,10 @@ func (w *workersService) Cleanup(
 	ctx context.Context,
 	eventID string,
 ) error {
+	if err := w.authorize(ctx, RoleObserver()); err != nil {
+		return err
+	}
+
 	event, err := w.eventsStore.Get(ctx, eventID)
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)

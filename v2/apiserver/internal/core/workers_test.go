@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,7 +16,14 @@ func TestNewWorkersService(t *testing.T) {
 	eventsStore := &mockEventsStore{}
 	workersStore := &mockWorkersStore{}
 	substrate := &mockSubstrate{}
-	svc := NewWorkersService(projectsStore, eventsStore, workersStore, substrate)
+	svc := NewWorkersService(
+		libAuthz.AlwaysAuthorize,
+		projectsStore,
+		eventsStore,
+		workersStore,
+		substrate,
+	)
+	require.NotNil(t, svc.(*workersService).authorize)
 	require.Same(t, projectsStore, svc.(*workersService).projectsStore)
 	require.Same(t, eventsStore, svc.(*workersService).eventsStore)
 	require.Same(t, workersStore, svc.(*workersService).workersStore)
@@ -29,8 +38,19 @@ func TestWorkersServiceStart(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &workersService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error getting event from store",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, errors.New("something went wrong")
@@ -46,6 +66,7 @@ func TestWorkersServiceStart(t *testing.T) {
 		{
 			name: "worker is not currently pending",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
@@ -66,6 +87,7 @@ func TestWorkersServiceStart(t *testing.T) {
 		{
 			name: "error getting project from store",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
@@ -92,6 +114,7 @@ func TestWorkersServiceStart(t *testing.T) {
 		{
 			name: "error updating worker status",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
@@ -123,6 +146,7 @@ func TestWorkersServiceStart(t *testing.T) {
 		{
 			name: "error starting worker on substrate",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
@@ -159,6 +183,7 @@ func TestWorkersServiceStart(t *testing.T) {
 		{
 			name: "success",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
@@ -210,8 +235,19 @@ func TestWorkersServiceGetStatus(t *testing.T) {
 		assertions func(WorkerStatus, error)
 	}{
 		{
+			name: "unauthorized",
+			service: &workersService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(_ WorkerStatus, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error getting event from store",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, errors.New("something went wrong")
@@ -227,6 +263,7 @@ func TestWorkersServiceGetStatus(t *testing.T) {
 		{
 			name: "success",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
@@ -263,8 +300,19 @@ func TestWorkersServiceWatchStatus(t *testing.T) {
 		assertions func(context.Context, <-chan WorkerStatus, error)
 	}{
 		{
+			name: "unauthorized",
+			service: &workersService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(_ context.Context, _ <-chan WorkerStatus, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error getting event from store",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, errors.New("something went wrong")
@@ -280,6 +328,7 @@ func TestWorkersServiceWatchStatus(t *testing.T) {
 		{
 			name: "success",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
@@ -323,8 +372,19 @@ func TestWorkersServiceUpdateStatus(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &workersService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error updating worker in store",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				workersStore: &mockWorkersStore{
 					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
 						return errors.New("something went wrong")
@@ -340,6 +400,7 @@ func TestWorkersServiceUpdateStatus(t *testing.T) {
 		{
 			name: "success",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				workersStore: &mockWorkersStore{
 					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
 						return nil
@@ -371,8 +432,19 @@ func TestWorkersServiceCleanup(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &workersService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error getting event from store",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, errors.New("something went wrong")
@@ -388,6 +460,7 @@ func TestWorkersServiceCleanup(t *testing.T) {
 		{
 			name: "error getting project from store",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -408,6 +481,7 @@ func TestWorkersServiceCleanup(t *testing.T) {
 		{
 			name: "error deleting worker and jobs from substrate",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -433,6 +507,7 @@ func TestWorkersServiceCleanup(t *testing.T) {
 		{
 			name: "success",
 			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil

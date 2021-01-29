@@ -18,6 +18,7 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	sysAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/system/authn"
+	sysAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/system/authz"
 	"github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/brigadecore/brigade/v2/internal/signals"
 	"github.com/brigadecore/brigade/v2/internal/version"
@@ -115,11 +116,20 @@ func main() {
 		)
 	}
 
+	// Authorizer
+	authorizer := sysAuthz.NewAuthorizer(roleAssignmentsStore)
+
 	// Events service
-	eventsService := core.NewEventsService(projectsStore, eventsStore, substrate)
+	eventsService := core.NewEventsService(
+		authorizer.Authorize,
+		projectsStore,
+		eventsStore,
+		substrate,
+	)
 
 	// Jobs service
 	jobsService := core.NewJobsService(
+		authorizer.Authorize,
 		projectsStore,
 		eventsStore,
 		jobsStore,
@@ -128,6 +138,7 @@ func main() {
 
 	// Logs service
 	logsService := core.NewLogsService(
+		authorizer.Authorize,
 		projectsStore,
 		eventsStore,
 		warmLogsStore,
@@ -136,6 +147,7 @@ func main() {
 
 	// Projects service
 	projectsService := core.NewProjectsService(
+		authorizer.Authorize,
 		projectsStore,
 		eventsStore,
 		substrate,
@@ -143,6 +155,7 @@ func main() {
 
 	// ProjectRoleAssignments service
 	projectRoleAssignmentsService := core.NewProjectRoleAssignmentsService(
+		authorizer.Authorize,
 		projectsStore,
 		usersStore,
 		serviceAccountsStore,
@@ -151,6 +164,7 @@ func main() {
 
 	// Roles service
 	roleAssignmentsService := authz.NewRoleAssignmentsService(
+		authorizer.Authorize,
 		usersStore,
 		serviceAccountsStore,
 		roleAssignmentsStore,
@@ -158,10 +172,14 @@ func main() {
 
 	// ServiceAccounts service
 	serviceAccountsService :=
-		authn.NewServiceAccountsService(serviceAccountsStore)
+		authn.NewServiceAccountsService(authorizer.Authorize, serviceAccountsStore)
 
 	// Secrets service
-	secretsService := core.NewSecretsService(projectsStore, secretsStore)
+	secretsService := core.NewSecretsService(
+		authorizer.Authorize,
+		projectsStore,
+		secretsStore,
+	)
 
 	// Session service
 	var sessionsService authn.SessionsService
@@ -178,13 +196,18 @@ func main() {
 	}
 
 	// Substrate service
-	substrateService := core.NewSubstrateService(substrate)
+	substrateService := core.NewSubstrateService(authorizer.Authorize, substrate)
 
 	// Users service
-	usersService := authn.NewUsersService(usersStore, sessionsStore)
+	usersService := authn.NewUsersService(
+		authorizer.Authorize,
+		usersStore,
+		sessionsStore,
+	)
 
 	// Workers service
 	workersService := core.NewWorkersService(
+		authorizer.Authorize,
 		projectsStore,
 		eventsStore,
 		workersStore,
@@ -194,7 +217,7 @@ func main() {
 	// Server
 	var apiServer restmachinery.Server
 	{
-		authFilterConfig, err := tokenAuthFilterConfig(usersService.Get)
+		authFilterConfig, err := tokenAuthFilterConfig(usersStore.Get)
 		if err != nil {
 			log.Fatal(err)
 		}

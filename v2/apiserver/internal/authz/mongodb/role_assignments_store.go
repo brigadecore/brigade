@@ -6,6 +6,7 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -61,4 +62,33 @@ func (r *roleAssignmentsStore) Revoke(
 		)
 	}
 	return nil
+}
+
+func (r *roleAssignmentsStore) Exists(
+	ctx context.Context,
+	roleAssignment authz.RoleAssignment,
+) (bool, error) {
+	criteria := bson.M{
+		"role.type":      roleAssignment.Role.Type,
+		"role.name":      roleAssignment.Role.Name,
+		"principal.type": roleAssignment.Principal.Type,
+		"principal.id":   roleAssignment.Principal.ID,
+	}
+	if roleAssignment.Role.Scope == "" {
+		criteria["role.scope"] = bson.M{
+			"$exists": false,
+		}
+	} else {
+		criteria["role.scope"] = bson.M{
+			"$in": []string{roleAssignment.Role.Scope, "*"},
+		}
+	}
+	err := r.collection.FindOne(ctx, criteria).Err()
+	if err == mongo.ErrNoDocuments {
+		return false, nil
+	}
+	if err != nil {
+		return false, errors.Wrap(err, "error finding role assignment")
+	}
+	return true, nil
 }

@@ -5,6 +5,7 @@ import "context"
 type MockRoleAssignmentsStore struct {
 	GrantFn  func(context.Context, RoleAssignment) error
 	RevokeFn func(context.Context, RoleAssignment) error
+	ExistsFn func(context.Context, RoleAssignment) (bool, error)
 }
 
 func (m *MockRoleAssignmentsStore) Grant(
@@ -19,4 +20,11 @@ func (m *MockRoleAssignmentsStore) Revoke(
 	roleAssignment RoleAssignment,
 ) error {
 	return m.RevokeFn(ctx, roleAssignment)
+}
+
+func (m *MockRoleAssignmentsStore) Exists(
+	ctx context.Context,
+	roleAssignment RoleAssignment,
+) (bool, error) {
+	return m.ExistsFn(ctx, roleAssignment)
 }

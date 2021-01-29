@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,10 +16,12 @@ func TestNewRoleAssignmentsService(t *testing.T) {
 	serviceAccountsStore := &authn.MockServiceAccountStore{}
 	roleAssignmentsStore := &MockRoleAssignmentsStore{}
 	svc := NewRoleAssignmentsService(
+		libAuthz.AlwaysAuthorize,
 		usersStore,
 		serviceAccountsStore,
 		roleAssignmentsStore,
 	)
+	require.NotNil(t, svc.(*roleAssignmentsService).authorize)
 	require.Same(t, usersStore, svc.(*roleAssignmentsService).usersStore)
 	require.Same(
 		t,
@@ -39,6 +43,16 @@ func TestRoleAssignmentsServiceGrant(t *testing.T) {
 		assertions     func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &roleAssignmentsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error retrieving user from store",
 			roleAssignment: RoleAssignment{
 				Principal: PrincipalReference{
@@ -47,6 +61,7 @@ func TestRoleAssignmentsServiceGrant(t *testing.T) {
 				},
 			},
 			service: &roleAssignmentsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				usersStore: &authn.MockUsersStore{
 					GetFn: func(context.Context, string) (authn.User, error) {
 						return authn.User{}, errors.New("something went wrong")
@@ -68,6 +83,7 @@ func TestRoleAssignmentsServiceGrant(t *testing.T) {
 				},
 			},
 			service: &roleAssignmentsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				serviceAccountsStore: &authn.MockServiceAccountStore{
 					GetFn: func(context.Context, string) (authn.ServiceAccount, error) {
 						return authn.ServiceAccount{}, errors.New("something went wrong")
@@ -89,6 +105,7 @@ func TestRoleAssignmentsServiceGrant(t *testing.T) {
 				},
 			},
 			service: &roleAssignmentsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				serviceAccountsStore: &authn.MockServiceAccountStore{
 					GetFn: func(context.Context, string) (authn.ServiceAccount, error) {
 						return authn.ServiceAccount{}, nil
@@ -115,6 +132,7 @@ func TestRoleAssignmentsServiceGrant(t *testing.T) {
 				},
 			},
 			service: &roleAssignmentsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				serviceAccountsStore: &authn.MockServiceAccountStore{
 					GetFn: func(context.Context, string) (authn.ServiceAccount, error) {
 						return authn.ServiceAccount{}, nil
@@ -150,6 +168,16 @@ func TestRoleAssignmentsServiceRevoke(t *testing.T) {
 		assertions     func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &roleAssignmentsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error retrieving user from store",
 			roleAssignment: RoleAssignment{
 				Principal: PrincipalReference{
@@ -158,6 +186,7 @@ func TestRoleAssignmentsServiceRevoke(t *testing.T) {
 				},
 			},
 			service: &roleAssignmentsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				usersStore: &authn.MockUsersStore{
 					GetFn: func(context.Context, string) (authn.User, error) {
 						return authn.User{}, errors.New("something went wrong")
@@ -179,6 +208,7 @@ func TestRoleAssignmentsServiceRevoke(t *testing.T) {
 				},
 			},
 			service: &roleAssignmentsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				serviceAccountsStore: &authn.MockServiceAccountStore{
 					GetFn: func(context.Context, string) (authn.ServiceAccount, error) {
 						return authn.ServiceAccount{}, errors.New("something went wrong")
@@ -200,6 +230,7 @@ func TestRoleAssignmentsServiceRevoke(t *testing.T) {
 				},
 			},
 			service: &roleAssignmentsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				serviceAccountsStore: &authn.MockServiceAccountStore{
 					GetFn: func(context.Context, string) (authn.ServiceAccount, error) {
 						return authn.ServiceAccount{}, nil
@@ -226,6 +257,7 @@ func TestRoleAssignmentsServiceRevoke(t *testing.T) {
 				},
 			},
 			service: &roleAssignmentsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				serviceAccountsStore: &authn.MockServiceAccountStore{
 					GetFn: func(context.Context, string) (authn.ServiceAccount, error) {
 						return authn.ServiceAccount{}, nil

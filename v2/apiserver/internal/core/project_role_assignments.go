@@ -5,10 +5,12 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/pkg/errors"
 )
 
 type projectRoleAssignmentsService struct {
+	authorize            libAuthz.AuthorizeFn
 	projectsStore        ProjectsStore
 	usersStore           authn.UsersStore
 	serviceAccountsStore authn.ServiceAccountsStore
@@ -18,12 +20,14 @@ type projectRoleAssignmentsService struct {
 // NewProjectRoleAssignmentsService returns a specialized interface for managing
 // project-level RoleAssignments.
 func NewProjectRoleAssignmentsService(
+	authorizeFn libAuthz.AuthorizeFn,
 	projectsStore ProjectsStore,
 	usersStore authn.UsersStore,
 	serviceAccountsStore authn.ServiceAccountsStore,
 	roleAssignmentsStore authz.RoleAssignmentsStore,
 ) authz.RoleAssignmentsService {
 	return &projectRoleAssignmentsService{
+		authorize:            authorizeFn,
 		projectsStore:        projectsStore,
 		usersStore:           usersStore,
 		serviceAccountsStore: serviceAccountsStore,
@@ -36,6 +40,9 @@ func (p *projectRoleAssignmentsService) Grant(
 	roleAssignment authz.RoleAssignment,
 ) error {
 	projectID := roleAssignment.Role.Scope
+	if err := p.authorize(ctx, RoleProjectAdmin(projectID)); err != nil {
+		return err
+	}
 
 	// Make sure the project exists
 	_, err := p.projectsStore.Get(ctx, projectID)
@@ -97,6 +104,9 @@ func (p *projectRoleAssignmentsService) Revoke(
 	roleAssignment authz.RoleAssignment,
 ) error {
 	projectID := roleAssignment.Role.Scope
+	if err := p.authorize(ctx, RoleProjectAdmin(projectID)); err != nil {
+		return err
+	}
 
 	// Make sure the project exists
 	_, err := p.projectsStore.Get(ctx, projectID)

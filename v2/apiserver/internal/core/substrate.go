@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
 )
 
@@ -68,12 +70,17 @@ type SubstrateService interface {
 }
 
 type substrateService struct {
+	authorize libAuthz.AuthorizeFn
 	substrate Substrate
 }
 
 // NewSubstrateService returns a specialized interface for managing Projects.
-func NewSubstrateService(substrate Substrate) SubstrateService {
+func NewSubstrateService(
+	authorizeFn libAuthz.AuthorizeFn,
+	substrate Substrate,
+) SubstrateService {
 	return &substrateService{
+		authorize: authorizeFn,
 		substrate: substrate,
 	}
 }
@@ -81,6 +88,15 @@ func NewSubstrateService(substrate Substrate) SubstrateService {
 func (s *substrateService) CountRunningWorkers(
 	ctx context.Context,
 ) (SubstrateWorkerCount, error) {
+	// At present, only the scheduler ever needs to know how many Workers
+	// are currently executing, but it's very easy to imagine new tooling, like
+	// a hypothetical new dashboard, wanting to grant users some summary-level
+	// insight into what's going on with the substrate, so we'll only require
+	// system.RoleReader() to authorize this operation.
+	if err := s.authorize(ctx, system.RoleReader()); err != nil {
+		return SubstrateWorkerCount{}, err
+	}
+
 	count, err := s.substrate.CountRunningWorkers(ctx)
 	if err != nil {
 		return count, errors.Wrapf(
@@ -94,6 +110,15 @@ func (s *substrateService) CountRunningWorkers(
 func (s *substrateService) CountRunningJobs(
 	ctx context.Context,
 ) (SubstrateJobCount, error) {
+	// At present, only the scheduler ever needs to know how many Workers
+	// are currently executing, but it's very easy to imagine new tooling, like
+	// a hypothetical new dashboard, wanting to grant users some summary-level
+	// insight into what's going on with the substrate, so we'll only require
+	// system.RoleReader() to authorize this operation.
+	if err := s.authorize(ctx, system.RoleReader()); err != nil {
+		return SubstrateJobCount{}, err
+	}
+
 	count, err := s.substrate.CountRunningJobs(ctx)
 	if err != nil {
 		return count, errors.Wrapf(err, "error counting running jobs on substrate")
