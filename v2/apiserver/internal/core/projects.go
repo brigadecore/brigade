@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
+	libAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authn"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
@@ -156,10 +159,11 @@ type ProjectsService interface {
 }
 
 type projectsService struct {
-	authorize     libAuthz.AuthorizeFn
-	projectsStore ProjectsStore
-	eventsStore   EventsStore
-	substrate     Substrate
+	authorize            libAuthz.AuthorizeFn
+	projectsStore        ProjectsStore
+	eventsStore          EventsStore
+	roleAssignmentsStore authz.RoleAssignmentsStore
+	substrate            Substrate
 }
 
 // NewProjectsService returns a specialized interface for managing Projects.
@@ -167,13 +171,15 @@ func NewProjectsService(
 	authorizeFn libAuthz.AuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
+	roleAssignmentsStore authz.RoleAssignmentsStore,
 	substrate Substrate,
 ) ProjectsService {
 	return &projectsService{
-		authorize:     authorizeFn,
-		projectsStore: projectsStore,
-		eventsStore:   eventsStore,
-		substrate:     substrate,
+		authorize:            authorizeFn,
+		projectsStore:        projectsStore,
+		eventsStore:          eventsStore,
+		roleAssignmentsStore: roleAssignmentsStore,
+		substrate:            substrate,
 	}
 }
 
@@ -201,6 +207,71 @@ func (p *projectsService) Create(
 	if err = p.projectsStore.Create(ctx, project); err != nil {
 		return project,
 			errors.Wrapf(err, "error storing new project %q", project.ID)
+	}
+
+	// Make the current user an admin, developer, and user of the project
+	principal := libAuthn.PrincipalFromContext(ctx)
+
+	var principalRef authz.PrincipalReference
+	switch prin := principal.(type) {
+	case *authn.User:
+		principalRef = authz.PrincipalReference{
+			Type: authz.PrincipalTypeUser,
+			ID:   prin.ID,
+		}
+	case *authn.ServiceAccount:
+		principalRef = authz.PrincipalReference{
+			Type: authz.PrincipalTypeServiceAccount,
+			ID:   prin.ID,
+		}
+	default:
+		return project, nil
+	}
+
+	if err = p.roleAssignmentsStore.Grant(
+		ctx,
+		authz.RoleAssignment{
+			Principal: principalRef,
+			Role:      RoleProjectAdmin(project.ID),
+		},
+	); err != nil {
+		return project, errors.Wrapf(
+			err,
+			"error making %s %q ADMIN of new project %q",
+			principalRef.Type,
+			principalRef.ID,
+			project.ID,
+		)
+	}
+	if err = p.roleAssignmentsStore.Grant(
+		ctx,
+		authz.RoleAssignment{
+			Principal: principalRef,
+			Role:      RoleProjectDeveloper(project.ID),
+		},
+	); err != nil {
+		return project, errors.Wrapf(
+			err,
+			"error making %s %q DEVELOPER of new project %q",
+			principalRef.Type,
+			principalRef.ID,
+			project.ID,
+		)
+	}
+	if err = p.roleAssignmentsStore.Grant(
+		ctx,
+		authz.RoleAssignment{
+			Principal: principalRef,
+			Role:      RoleProjectUser(project.ID),
+		},
+	); err != nil {
+		return project, errors.Wrapf(
+			err,
+			"error making %s %q USER of new project %q",
+			principalRef.Type,
+			principalRef.ID,
+			project.ID,
+		)
 	}
 
 	return project, nil

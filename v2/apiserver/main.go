@@ -150,6 +150,7 @@ func main() {
 		authorizer.Authorize,
 		projectsStore,
 		eventsStore,
+		roleAssignmentsStore,
 		substrate,
 	)
 

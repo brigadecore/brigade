@@ -40,7 +40,7 @@ func (r *roleAssignmentsStore) Grant(
 		&options.FindOneAndReplaceOptions{
 			Upsert: &tru,
 		},
-	); res.Err() != nil {
+	); res.Err() != nil && res.Err() != mongo.ErrNoDocuments {
 		return errors.Wrapf(
 			res.Err(),
 			"error upserting role assignment %v",

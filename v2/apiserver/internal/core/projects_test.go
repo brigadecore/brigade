@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
@@ -22,11 +23,23 @@ func TestProjectListMarshalJSON(t *testing.T) {
 func TestNewProjectsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}
+	roleAssignmentsStore := &authz.MockRoleAssignmentsStore{}
 	substrate := &mockSubstrate{}
-	svc := NewProjectsService(libAuthz.AlwaysAuthorize, projectsStore, eventsStore, substrate)
+	svc := NewProjectsService(
+		libAuthz.AlwaysAuthorize,
+		projectsStore,
+		eventsStore,
+		roleAssignmentsStore,
+		substrate,
+	)
 	require.NotNil(t, svc.(*projectsService).authorize)
 	require.Same(t, projectsStore, svc.(*projectsService).projectsStore)
 	require.Same(t, eventsStore, svc.(*projectsService).eventsStore)
+	require.Same(
+		t,
+		roleAssignmentsStore,
+		svc.(*projectsService).roleAssignmentsStore,
+	)
 	require.Same(t, substrate, svc.(*projectsService).substrate)
 }
 
