@@ -243,33 +243,16 @@ func (p *projectsService) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "error retrieving project %q from store", id)
 	}
 
-	// Locate all events associated with this project
-	eventList, err := p.eventsStore.List(
+	// Delete all events associated with this project
+	if _, err := p.eventsStore.DeleteMany(
 		ctx,
 		EventsSelector{ProjectID: id, WorkerPhases: WorkerPhasesAll()},
-		meta.ListOptions{},
-	)
-	if err != nil {
+	); err != nil {
 		return errors.Wrapf(
 			err,
-			"error listing events associated with project %q from store",
+			"error deleting all events associated with project %q",
 			id,
 		)
-	}
-
-	// Delete all events associated with this project
-	for _, event := range eventList.Items {
-		if err = p.eventsStore.Delete(ctx, event.ID); err != nil {
-			return errors.Wrapf(err, "error deleting event %q from store", id)
-		}
-
-		if err = p.substrate.DeleteWorkerAndJobs(ctx, project, event); err != nil {
-			return errors.Wrapf(
-				err,
-				"error deleting event %q worker and jobs from the substrate",
-				id,
-			)
-		}
 	}
 
 	// Delete the project itself
