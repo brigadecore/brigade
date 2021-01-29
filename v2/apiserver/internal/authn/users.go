@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
 )
 
@@ -82,16 +84,19 @@ type UsersService interface {
 
 // usersService is an implementation of the UsersService interface.
 type usersService struct {
+	authorize     libAuthz.AuthorizeFn
 	usersStore    UsersStore
 	sessionsStore SessionsStore
 }
 
 // NewUsersService returns a specialized interface for managing Users.
 func NewUsersService(
+	authorizeFn libAuthz.AuthorizeFn,
 	usersStore UsersStore,
 	sessionsStore SessionsStore,
 ) UsersService {
 	return &usersService{
+		authorize:     authorizeFn,
 		usersStore:    usersStore,
 		sessionsStore: sessionsStore,
 	}
@@ -101,6 +106,10 @@ func (u *usersService) List(
 	ctx context.Context,
 	opts meta.ListOptions,
 ) (UserList, error) {
+	if err := u.authorize(ctx, system.RoleReader()); err != nil {
+		return UserList{}, err
+	}
+
 	if opts.Limit == 0 {
 		opts.Limit = 20
 	}
@@ -112,6 +121,10 @@ func (u *usersService) List(
 }
 
 func (u *usersService) Get(ctx context.Context, id string) (User, error) {
+	if err := u.authorize(ctx, system.RoleReader()); err != nil {
+		return User{}, err
+	}
+
 	user, err := u.usersStore.Get(ctx, id)
 	if err != nil {
 		return user, errors.Wrapf(
@@ -124,6 +137,10 @@ func (u *usersService) Get(ctx context.Context, id string) (User, error) {
 }
 
 func (u *usersService) Lock(ctx context.Context, id string) error {
+	if err := u.authorize(ctx, system.RoleAdmin()); err != nil {
+		return err
+	}
+
 	if err := u.usersStore.Lock(ctx, id); err != nil {
 		return errors.Wrapf(err, "error locking user %q in store", id)
 	}
@@ -134,6 +151,10 @@ func (u *usersService) Lock(ctx context.Context, id string) error {
 }
 
 func (u *usersService) Unlock(ctx context.Context, id string) error {
+	if err := u.authorize(ctx, system.RoleAdmin()); err != nil {
+		return err
+	}
+
 	if err := u.usersStore.Unlock(ctx, id); err != nil {
 		return errors.Wrapf(err, "error unlocking user %q in store", id)
 	}

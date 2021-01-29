@@ -62,7 +62,7 @@ var projectRolesCommands = &cli.Command{
 					Name: string(core.RoleNameProjectAdmin),
 					Usage: fmt.Sprintf(
 						"Grant the %s project role, which enables management of all "+
-							"apects of the project, including its secrets, as well as "+
+							"aspects of the project, including its secrets, as well as "+
 							"project-level permissions for other users and service "+
 							"accounts.",
 						core.RoleNameProjectAdmin,

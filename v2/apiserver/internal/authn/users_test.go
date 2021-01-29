@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/pkg/errors"
@@ -21,7 +22,8 @@ func TestUserListMarshalJSON(t *testing.T) {
 func TestNewUsersService(t *testing.T) {
 	usersStore := &MockUsersStore{}
 	sessionsStore := &mockSessionsStore{}
-	svc := NewUsersService(usersStore, sessionsStore)
+	svc := NewUsersService(libAuthz.AlwaysAuthorize, usersStore, sessionsStore)
+	require.NotNil(t, svc.(*usersService).authorize)
 	require.Same(t, usersStore, svc.(*usersService).usersStore)
 	require.Same(t, sessionsStore, svc.(*usersService).sessionsStore)
 }
@@ -33,8 +35,19 @@ func TestUserServiceList(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &usersService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error getting users from store",
 			service: &usersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				usersStore: &MockUsersStore{
 					ListFn: func(context.Context, meta.ListOptions) (UserList, error) {
 						return UserList{}, errors.New("error listing users")
@@ -50,6 +63,7 @@ func TestUserServiceList(t *testing.T) {
 		{
 			name: "success",
 			service: &usersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				usersStore: &MockUsersStore{
 					ListFn: func(context.Context, meta.ListOptions) (UserList, error) {
 						return UserList{}, nil
@@ -82,8 +96,19 @@ func TestUsersServiceGet(t *testing.T) {
 		assertions func(user User, err error)
 	}{
 		{
+			name: "unauthorized",
+			service: &usersService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(_ User, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "with error from store",
 			service: &usersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				usersStore: &MockUsersStore{
 					GetFn: func(context.Context, string) (User, error) {
 						return User{}, &meta.ErrNotFound{}
@@ -98,6 +123,7 @@ func TestUsersServiceGet(t *testing.T) {
 		{
 			name: "success",
 			service: &usersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				usersStore: &MockUsersStore{
 					GetFn: func(context.Context, string) (User, error) {
 						return testUser, nil
@@ -125,8 +151,19 @@ func TestUsersServiceLock(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &usersService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error updating user in store",
 			service: &usersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				usersStore: &MockUsersStore{
 					LockFn: func(context.Context, string) error {
 						return errors.New("store error")
@@ -142,6 +179,7 @@ func TestUsersServiceLock(t *testing.T) {
 		{
 			name: "error deleting user sessions from store",
 			service: &usersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				usersStore: &MockUsersStore{
 					LockFn: func(context.Context, string) error {
 						return nil
@@ -163,6 +201,7 @@ func TestUsersServiceLock(t *testing.T) {
 		{
 			name: "success",
 			service: &usersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				usersStore: &MockUsersStore{
 					LockFn: func(context.Context, string) error {
 						return nil
@@ -195,8 +234,19 @@ func TestUsersServiceUnlock(t *testing.T) {
 		assertions func(error)
 	}{
 		{
+			name: "unauthorized",
+			service: &usersService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error updating user in store",
 			service: &usersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				usersStore: &MockUsersStore{
 					UnlockFn: func(context.Context, string) error {
 						return errors.New("store error")
@@ -212,6 +262,7 @@ func TestUsersServiceUnlock(t *testing.T) {
 		{
 			name: "success",
 			service: &usersService{
+				authorize: libAuthz.AlwaysAuthorize,
 				usersStore: &MockUsersStore{
 					UnlockFn: func(context.Context, string) error {
 						return nil

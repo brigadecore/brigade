@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
 )
 
@@ -99,16 +101,19 @@ type ServiceAccountsService interface {
 }
 
 type serviceAccountsService struct {
-	store ServiceAccountsStore
+	authorize libAuthz.AuthorizeFn
+	store     ServiceAccountsStore
 }
 
 // NewServiceAccountsService returns a specialized interface for managing
 // ServiceAccounts.
 func NewServiceAccountsService(
+	authorizeFn libAuthz.AuthorizeFn,
 	store ServiceAccountsStore,
 ) ServiceAccountsService {
 	return &serviceAccountsService{
-		store: store,
+		authorize: authorizeFn,
+		store:     store,
 	}
 }
 
@@ -116,9 +121,13 @@ func (s *serviceAccountsService) Create(
 	ctx context.Context,
 	serviceAccount ServiceAccount,
 ) (Token, error) {
-	token := Token{
-		Value: crypto.NewToken(256),
+	token := Token{}
+
+	if err := s.authorize(ctx, system.RoleAdmin()); err != nil {
+		return token, err
 	}
+
+	token.Value = crypto.NewToken(256)
 	now := time.Now().UTC()
 	serviceAccount.Created = &now
 	serviceAccount.HashedToken = crypto.Hash("", token.Value)
@@ -136,6 +145,10 @@ func (s *serviceAccountsService) List(
 	ctx context.Context,
 	opts meta.ListOptions,
 ) (ServiceAccountList, error) {
+	if err := s.authorize(ctx, system.RoleReader()); err != nil {
+		return ServiceAccountList{}, err
+	}
+
 	if opts.Limit == 0 {
 		opts.Limit = 20
 	}
@@ -151,6 +164,10 @@ func (s *serviceAccountsService) Get(
 	ctx context.Context,
 	id string,
 ) (ServiceAccount, error) {
+	if err := s.authorize(ctx, system.RoleReader()); err != nil {
+		return ServiceAccount{}, err
+	}
+
 	serviceAccount, err := s.store.Get(ctx, id)
 	if err != nil {
 		return serviceAccount, errors.Wrapf(
@@ -166,6 +183,9 @@ func (s *serviceAccountsService) GetByToken(
 	ctx context.Context,
 	token string,
 ) (ServiceAccount, error) {
+	// No authz requirements here because this is is never invoked at the explicit
+	// request of an end user; rather it is invoked only by the system itself.
+
 	serviceAccount, err := s.store.GetByHashedToken(
 		ctx,
 		crypto.Hash("", token),
@@ -180,6 +200,10 @@ func (s *serviceAccountsService) GetByToken(
 }
 
 func (s *serviceAccountsService) Lock(ctx context.Context, id string) error {
+	if err := s.authorize(ctx, system.RoleAdmin()); err != nil {
+		return err
+	}
+
 	if err := s.store.Lock(ctx, id); err != nil {
 		return errors.Wrapf(
 			err,
@@ -194,6 +218,10 @@ func (s *serviceAccountsService) Unlock(
 	ctx context.Context,
 	id string,
 ) (Token, error) {
+	if err := s.authorize(ctx, system.RoleAdmin()); err != nil {
+		return Token{}, err
+	}
+
 	newToken := Token{
 		Value: crypto.NewToken(256),
 	}

@@ -6,7 +6,9 @@ import (
 	"log"
 	"time"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
 )
 
@@ -217,6 +219,7 @@ type JobsService interface {
 }
 
 type jobsService struct {
+	authorize     libAuthz.AuthorizeFn
 	projectsStore ProjectsStore
 	eventsStore   EventsStore
 	jobsStore     JobsStore
@@ -225,12 +228,14 @@ type jobsService struct {
 
 // NewJobsService returns a specialized interface for managing Jobs.
 func NewJobsService(
+	authorizeFn libAuthz.AuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
 	jobsStore JobsStore,
 	substrate Substrate,
 ) JobsService {
 	return &jobsService{
+		authorize:     authorizeFn,
 		projectsStore: projectsStore,
 		eventsStore:   eventsStore,
 		jobsStore:     jobsStore,
@@ -245,6 +250,10 @@ func (j *jobsService) Create(
 	jobName string,
 	job Job,
 ) error {
+	if err := j.authorize(ctx, RoleWorker(eventID)); err != nil {
+		return err
+	}
+
 	event, err := j.eventsStore.Get(ctx, eventID)
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
@@ -387,6 +396,10 @@ func (j *jobsService) Start(
 	eventID string,
 	jobName string,
 ) error {
+	if err := j.authorize(ctx, RoleScheduler()); err != nil {
+		return err
+	}
+
 	event, err := j.eventsStore.Get(ctx, eventID)
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
@@ -453,6 +466,10 @@ func (j *jobsService) GetStatus(
 	eventID string,
 	jobName string,
 ) (JobStatus, error) {
+	if err := j.authorize(ctx, system.RoleReader()); err != nil {
+		return JobStatus{}, err
+	}
+
 	event, err := j.eventsStore.Get(ctx, eventID)
 	if err != nil {
 		return JobStatus{},
@@ -473,6 +490,10 @@ func (j *jobsService) WatchStatus(
 	eventID string,
 	jobName string,
 ) (<-chan JobStatus, error) {
+	if err := j.authorize(ctx, system.RoleReader()); err != nil {
+		return nil, err
+	}
+
 	// Read the event and job up front to confirm they both exists.
 	event, err := j.eventsStore.Get(ctx, eventID)
 	if err != nil {
@@ -517,6 +538,10 @@ func (j *jobsService) UpdateStatus(
 	jobName string,
 	status JobStatus,
 ) error {
+	if err := j.authorize(ctx, RoleObserver()); err != nil {
+		return err
+	}
+
 	if err := j.jobsStore.UpdateStatus(
 		ctx,
 		eventID,
@@ -538,10 +563,15 @@ func (j *jobsService) Cleanup(
 	eventID string,
 	jobName string,
 ) error {
+	if err := j.authorize(ctx, RoleObserver()); err != nil {
+		return err
+	}
+
 	event, err := j.eventsStore.Get(ctx, eventID)
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
+
 	_, ok := event.Worker.Jobs[jobName]
 	if !ok {
 		return &meta.ErrNotFound{

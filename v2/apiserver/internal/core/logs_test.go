@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
@@ -20,11 +21,13 @@ func TestLogsService(t *testing.T) {
 	warmLogsStore := &mockLogsStore{}
 	coolLogsStore := &mockLogsStore{}
 	svc := NewLogsService(
+		libAuthz.AlwaysAuthorize,
 		projectsStore,
 		eventsStore,
 		warmLogsStore,
 		coolLogsStore,
 	)
+	require.NotNil(t, svc.(*logsService).authorize)
 	require.Same(t, projectsStore, svc.(*logsService).projectsStore)
 	require.Same(t, eventsStore, svc.(*logsService).eventsStore)
 	require.Same(t, warmLogsStore, svc.(*logsService).warmLogsStore)
@@ -53,11 +56,43 @@ func TestLogsServiceStream(t *testing.T) {
 			},
 		},
 		{
+			name:     "error retrieving event from store",
+			selector: LogsSelector{},
+			service: &logsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(_ <-chan LogEntry, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "unauthorized",
+			service: &logsService{
+				authorize: libAuthz.NeverAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+			},
+			assertions: func(_ <-chan LogEntry, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "invalid job name",
 			selector: LogsSelector{
 				Job: "foo",
 			},
 			service: &logsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -78,6 +113,7 @@ func TestLogsServiceStream(t *testing.T) {
 				Container: "bar",
 			},
 			service: &logsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
@@ -98,25 +134,10 @@ func TestLogsServiceStream(t *testing.T) {
 			},
 		},
 		{
-			name:     "error retrieving event from store",
-			selector: LogsSelector{},
-			service: &logsService{
-				eventsStore: &mockEventsStore{
-					GetFn: func(context.Context, string) (Event, error) {
-						return Event{}, errors.New("something went wrong")
-					},
-				},
-			},
-			assertions: func(_ <-chan LogEntry, err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error retrieving event")
-			},
-		},
-		{
 			name:     "error retrieving project from store",
 			selector: LogsSelector{},
 			service: &logsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -138,6 +159,7 @@ func TestLogsServiceStream(t *testing.T) {
 			name:     "warm logs succeed",
 			selector: LogsSelector{},
 			service: &logsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -181,6 +203,7 @@ func TestLogsServiceStream(t *testing.T) {
 			name:     "warm logs store has unexpected error",
 			selector: LogsSelector{},
 			service: &logsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -212,6 +235,7 @@ func TestLogsServiceStream(t *testing.T) {
 			name:     "cool logs succeed",
 			selector: LogsSelector{},
 			service: &logsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -255,6 +279,7 @@ func TestLogsServiceStream(t *testing.T) {
 			name:     "warm and cool logs both fail",
 			selector: LogsSelector{},
 			service: &logsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil

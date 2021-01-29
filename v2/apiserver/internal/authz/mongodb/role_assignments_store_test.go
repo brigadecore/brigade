@@ -124,3 +124,79 @@ func TestRevoke(t *testing.T) {
 		})
 	}
 }
+
+func TestExists(t *testing.T) {
+	testRoleAssignment := authz.RoleAssignment{}
+	testCases := []struct {
+		name       string
+		collection mongodb.Collection
+		assertions func(exists bool, err error)
+	}{
+		{
+			name: "not found",
+			collection: &mongoTesting.MockCollection{
+				FindOneFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOneOptions,
+				) *mongo.SingleResult {
+					res, err := mongoTesting.MockSingleResult(mongo.ErrNoDocuments)
+					require.NoError(t, err)
+					return res
+				},
+			},
+			assertions: func(exists bool, err error) {
+				require.False(t, exists)
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "error",
+			collection: &mongoTesting.MockCollection{
+				FindOneFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOneOptions,
+				) *mongo.SingleResult {
+					res, err :=
+						mongoTesting.MockSingleResult(errors.New("something went wrong"))
+					require.NoError(t, err)
+					return res
+				},
+			},
+			assertions: func(exists bool, err error) {
+				require.False(t, exists)
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error finding role assignment")
+			},
+		},
+		{
+			name: "success",
+			collection: &mongoTesting.MockCollection{
+				FindOneFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOneOptions,
+				) *mongo.SingleResult {
+					res, err := mongoTesting.MockSingleResult(testRoleAssignment)
+					require.NoError(t, err)
+					return res
+				},
+			},
+			assertions: func(exists bool, err error) {
+				require.True(t, exists)
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &roleAssignmentsStore{
+				collection: testCase.collection,
+			}
+			exists, err := store.Exists(context.Background(), testRoleAssignment)
+			testCase.assertions(exists, err)
+		})
+	}
+}

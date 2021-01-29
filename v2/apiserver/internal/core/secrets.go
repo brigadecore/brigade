@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
 )
 
@@ -107,16 +109,19 @@ type SecretsService interface {
 }
 
 type secretsService struct {
+	authorize     libAuthz.AuthorizeFn
 	projectsStore ProjectsStore
 	secretsStore  SecretsStore
 }
 
 // NewSecretsService returns a specialized interface for managing Secrets.
 func NewSecretsService(
+	authorizeFn libAuthz.AuthorizeFn,
 	projectsStore ProjectsStore,
 	secretsStore SecretsStore,
 ) SecretsService {
 	return &secretsService{
+		authorize:     authorizeFn,
 		projectsStore: projectsStore,
 		secretsStore:  secretsStore,
 	}
@@ -127,6 +132,10 @@ func (s *secretsService) List(
 	projectID string,
 	opts meta.ListOptions,
 ) (SecretList, error) {
+	if err := s.authorize(ctx, system.RoleReader()); err != nil {
+		return SecretList{}, err
+	}
+
 	secrets := SecretList{}
 	project, err := s.projectsStore.Get(ctx, projectID)
 	if err != nil {
@@ -155,6 +164,10 @@ func (s *secretsService) Set(
 	projectID string,
 	secret Secret,
 ) error {
+	if err := s.authorize(ctx, RoleProjectAdmin(projectID)); err != nil {
+		return err
+	}
+
 	project, err := s.projectsStore.Get(ctx, projectID)
 	if err != nil {
 		return errors.Wrapf(
@@ -178,6 +191,10 @@ func (s *secretsService) Unset(
 	projectID string,
 	key string,
 ) error {
+	if err := s.authorize(ctx, RoleProjectAdmin(projectID)); err != nil {
+		return err
+	}
+
 	project, err := s.projectsStore.Get(ctx, projectID)
 	if err != nil {
 		return errors.Wrapf(
