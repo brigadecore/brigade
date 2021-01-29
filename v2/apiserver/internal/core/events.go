@@ -6,8 +6,10 @@ import (
 	"log"
 	"time"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 )
@@ -232,6 +234,7 @@ type EventsService interface {
 }
 
 type eventsService struct {
+	authorize           libAuthz.AuthorizeFn
 	projectsStore       ProjectsStore
 	eventsStore         EventsStore
 	substrate           Substrate
@@ -240,11 +243,13 @@ type eventsService struct {
 
 // NewEventsService returns a specialized interface for managing Events.
 func NewEventsService(
+	authorizeFn libAuthz.AuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
 	substrate Substrate,
 ) EventsService {
 	e := &eventsService{
+		authorize:     authorizeFn,
 		projectsStore: projectsStore,
 		eventsStore:   eventsStore,
 		substrate:     substrate,
@@ -258,6 +263,31 @@ func (e *eventsService) Create(
 	event Event,
 ) (EventList, error) {
 	events := EventList{}
+
+	if event.ProjectID == "" {
+		// This event doesn't reference a discrete project and is instead going to
+		// be matched to all subscribing projects, so the only access requirement is
+		// that the principal is permitted to create events from the specified
+		// source. i.e. In practice, this would be how we make access decisions on
+		// events coming from gateways.
+		if err := e.authorize(
+			ctx,
+			RoleEventCreator(event.Source),
+		); err != nil {
+			return events, err
+		}
+	} else {
+		// This event references a discrete project, so the access requirement is
+		// that the principal is permitted to create events for the specified
+		// project. i.e. In practice, this would be how we make access decisions on
+		// events coming from a Brigade user.
+		if err := e.authorize(
+			ctx,
+			RoleProjectUser(event.ProjectID),
+		); err != nil {
+			return events, err
+		}
+	}
 
 	now := time.Now().UTC()
 	event.Created = &now
@@ -387,6 +417,10 @@ func (e *eventsService) List(
 	selector EventsSelector,
 	opts meta.ListOptions,
 ) (EventList, error) {
+	if err := e.authorize(ctx, system.RoleReader()); err != nil {
+		return EventList{}, err
+	}
+
 	// If no worker phase filters were applied, retrieve all phases
 	if len(selector.WorkerPhases) == 0 {
 		selector.WorkerPhases = WorkerPhasesAll()
@@ -406,6 +440,10 @@ func (e *eventsService) Get(
 	ctx context.Context,
 	id string,
 ) (Event, error) {
+	if err := e.authorize(ctx, system.RoleReader()); err != nil {
+		return Event{}, err
+	}
+
 	event, err := e.eventsStore.Get(ctx, id)
 	if err != nil {
 		return event, errors.Wrapf(err, "error retrieving event %q from store", id)
@@ -434,6 +472,10 @@ func (e *eventsService) Cancel(ctx context.Context, id string) error {
 	event, err := e.eventsStore.Get(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", id)
+	}
+
+	if err = e.authorize(ctx, RoleProjectUser(event.ProjectID)); err != nil {
+		return err
 	}
 
 	project, err := e.projectsStore.Get(ctx, event.ProjectID)
@@ -472,6 +514,10 @@ func (e *eventsService) CancelMany(
 			Reason: "Requests to cancel multiple events must be qualified by " +
 				"project.",
 		}
+	}
+
+	if err := e.authorize(ctx, RoleProjectUser(selector.ProjectID)); err != nil {
+		return CancelManyEventsResult{}, err
 	}
 
 	// Refuse requests not qualified by worker phases
@@ -528,6 +574,10 @@ func (e *eventsService) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "error retrieving event %q from store", id)
 	}
 
+	if err = e.authorize(ctx, RoleProjectUser(event.ProjectID)); err != nil {
+		return err
+	}
+
 	project, err := e.projectsStore.Get(ctx, event.ProjectID)
 	if err != nil {
 		return errors.Wrapf(
@@ -564,6 +614,10 @@ func (e *eventsService) DeleteMany(
 			Reason: "Requests to delete multiple events must be qualified by " +
 				"project.",
 		}
+	}
+
+	if err := e.authorize(ctx, RoleProjectUser(selector.ProjectID)); err != nil {
+		return DeleteManyEventsResult{}, err
 	}
 
 	// Refuse requests not qualified by worker phases

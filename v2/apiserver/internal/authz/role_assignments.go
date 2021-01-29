@@ -5,6 +5,7 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
 )
 
@@ -59,6 +60,7 @@ type RoleAssignmentsService interface {
 }
 
 type roleAssignmentsService struct {
+	authorize            libAuthz.AuthorizeFn
 	usersStore           authn.UsersStore
 	serviceAccountsStore authn.ServiceAccountsStore
 	roleAssignmentsStore RoleAssignmentsStore
@@ -67,11 +69,13 @@ type roleAssignmentsService struct {
 // NewRoleAssignmentsService returns a specialized interface for managing
 // RoleAssignments.
 func NewRoleAssignmentsService(
+	authorizeFn libAuthz.AuthorizeFn,
 	usersStore authn.UsersStore,
 	serviceAccountsStore authn.ServiceAccountsStore,
 	roleAssignmentsStore RoleAssignmentsStore,
 ) RoleAssignmentsService {
 	return &roleAssignmentsService{
+		authorize:            authorizeFn,
 		usersStore:           usersStore,
 		serviceAccountsStore: serviceAccountsStore,
 		roleAssignmentsStore: roleAssignmentsStore,
@@ -82,6 +86,10 @@ func (r *roleAssignmentsService) Grant(
 	ctx context.Context,
 	roleAssignment RoleAssignment,
 ) error {
+	if err := r.authorize(ctx, system.RoleAdmin()); err != nil {
+		return err
+	}
+
 	switch roleAssignment.Principal.Type {
 	case PrincipalTypeUser:
 		// Make sure the User exists
@@ -132,6 +140,10 @@ func (r *roleAssignmentsService) Revoke(
 	ctx context.Context,
 	roleAssignment RoleAssignment,
 ) error {
+	if err := r.authorize(ctx, system.RoleAdmin()); err != nil {
+		return err
+	}
+
 	switch roleAssignment.Principal.Type {
 	case PrincipalTypeUser:
 		// Make sure the User exists
@@ -186,4 +198,17 @@ type RoleAssignmentsStore interface {
 	// Revoke the role specified by the RoleAssignment for the principal specified
 	// by the RoleAssignment.
 	Revoke(context.Context, RoleAssignment) error
+
+	// Exists returns a bool indicating whether the specified RoleAssignment
+	// exists within the store. Implementations MUST also return true if a
+	// RoleAssignment exists in the store that logically "overlaps" the specified
+	// RoleAssignment. For instance, when seeking to determine whether a
+	// RoleAssignment exists that endows some principal P with Role X having scope
+	// Y, and such a RoleAssignment does not exist, but one does that endows that
+	// principal P with Role X having GLOBAL SCOPE (*), then true MUST be
+	// returned. Implementations MUST also return an error if and only if anything
+	// goes wrong. i.e. Errors are never used to communicate that the specified
+	// RoleAssignment does not exist in the store. They are only used to convey an
+	// actual failure.
+	Exists(context.Context, RoleAssignment) (bool, error)
 }

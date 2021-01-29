@@ -21,3 +21,15 @@ type Role struct {
 	// only in relation to a specific RoleName.
 	Scope string `json:"scope,omitempty" bson:"scope,omitempty"`
 }
+
+// Matches determines if this Role matches the requiredRole argument. This Role
+// is a match for the required one if the Type and Name fields have the same
+// values in both AND if the value of this Role's Scope field is either the same
+// as that of the required Role's Scope field OR is unbounded ("*").
+//
+// Note that order is important. A.Matches(B) does not guarantee B.Matches(A).
+func (r Role) Matches(requiredRole Role) bool {
+	return r.Type == requiredRole.Type &&
+		r.Name == requiredRole.Name &&
+		(r.Scope == requiredRole.Scope || r.Scope == RoleScopeGlobal)
+}
