@@ -155,16 +155,19 @@ type ProjectsService interface {
 
 type projectsService struct {
 	projectsStore ProjectsStore
+	eventsStore   EventsStore
 	substrate     Substrate
 }
 
 // NewProjectsService returns a specialized interface for managing Projects.
 func NewProjectsService(
 	projectsStore ProjectsStore,
+	eventsStore EventsStore,
 	substrate Substrate,
 ) ProjectsService {
 	return &projectsService{
 		projectsStore: projectsStore,
+		eventsStore:   eventsStore,
 		substrate:     substrate,
 	}
 }
@@ -240,6 +243,19 @@ func (p *projectsService) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "error retrieving project %q from store", id)
 	}
 
+	// Delete all events associated with this project
+	if _, err := p.eventsStore.DeleteMany(
+		ctx,
+		EventsSelector{ProjectID: id, WorkerPhases: WorkerPhasesAll()},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting all events associated with project %q",
+			id,
+		)
+	}
+
+	// Delete the project itself
 	if err := p.projectsStore.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "error removing project %q from store", id)
 	}

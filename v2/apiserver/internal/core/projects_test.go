@@ -20,8 +20,9 @@ func TestProjectListMarshalJSON(t *testing.T) {
 
 func TestNewProjectsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
+	eventsStore := &mockEventsStore{}
 	substrate := &mockSubstrate{}
-	svc := NewProjectsService(projectsStore, substrate)
+	svc := NewProjectsService(projectsStore, eventsStore, substrate)
 	require.Same(t, projectsStore, svc.(*projectsService).projectsStore)
 	require.Same(t, substrate, svc.(*projectsService).substrate)
 }
@@ -256,6 +257,36 @@ func TestProjectServiceDelete(t *testing.T) {
 			},
 		},
 		{
+			name: "error deleting events associated with project",
+			service: &projectsService{
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+					DeleteFn: func(context.Context, string) error {
+						return nil
+					},
+				},
+				eventsStore: &mockEventsStore{
+					DeleteManyFn: func(
+						context.Context,
+						EventsSelector,
+					) (EventList, error) {
+						return EventList{},
+							errors.New("error deleting events associated with project")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(
+					t,
+					err.Error(),
+					"error deleting events associated with project",
+				)
+			},
+		},
+		{
 			name: "error deleting project from store",
 			service: &projectsService{
 				projectsStore: &mockProjectsStore{
@@ -264,6 +295,14 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 					DeleteFn: func(context.Context, string) error {
 						return errors.New("store error")
+					},
+				},
+				eventsStore: &mockEventsStore{
+					DeleteManyFn: func(
+						context.Context,
+						EventsSelector,
+					) (EventList, error) {
+						return EventList{}, nil
 					},
 				},
 			},
@@ -282,6 +321,14 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 					DeleteFn: func(context.Context, string) error {
 						return nil
+					},
+				},
+				eventsStore: &mockEventsStore{
+					DeleteManyFn: func(
+						context.Context,
+						EventsSelector,
+					) (EventList, error) {
+						return EventList{}, nil
 					},
 				},
 				substrate: &mockSubstrate{
@@ -305,6 +352,14 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 					DeleteFn: func(context.Context, string) error {
 						return nil
+					},
+				},
+				eventsStore: &mockEventsStore{
+					DeleteManyFn: func(
+						context.Context,
+						EventsSelector,
+					) (EventList, error) {
+						return EventList{}, nil
 					},
 				},
 				substrate: &mockSubstrate{
