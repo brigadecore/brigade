@@ -8,7 +8,7 @@ import (
 
 // AuthorizeFn is the signature for any function that can, presumably, retrieve
 // a principal from the provided Context and make an access control decision
-// based on the principal having (or not having) at least on of the provided
+// based on the principal having (or not having) at least one of the provided
 // Roles. Implementations MUST return a *meta.ErrAuthorization error if the
 // principal is not authorized.
 type AuthorizeFn func(context.Context, ...Role) error
