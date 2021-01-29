@@ -335,6 +335,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error deleting events associated with project",
 			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
