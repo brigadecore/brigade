@@ -135,7 +135,11 @@ func main() {
 	)
 
 	// Projects service
-	projectsService := core.NewProjectsService(projectsStore, substrate)
+	projectsService := core.NewProjectsService(
+		projectsStore,
+		eventsStore,
+		substrate,
+	)
 
 	// ProjectRoleAssignments service
 	projectRoleAssignmentsService := core.NewProjectRoleAssignmentsService(

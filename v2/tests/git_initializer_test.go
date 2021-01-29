@@ -11,6 +11,7 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2"
 	"github.com/brigadecore/brigade/sdk/v2/authn"
 	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 	"github.com/stretchr/testify/require"
 )
@@ -149,23 +150,32 @@ func TestMain(t *testing.T) {
 			tc.project.ID = "test-project"
 			tc.project.Spec.WorkerTemplate.DefaultConfigFiles = defaultConfigFiles
 
-			// Delete the project and ignore any errors
-			// TODO: create/use error types in core, so we can ignore error if expected
-			// e.g. project doesn't yet exist, and surface unexpected errors
-			_ = client.Core().Projects().Delete(ctx, tc.project.ID)
+			// Delete the test project (we're sharing the name between tests)
+			err = client.Core().Projects().Delete(ctx, tc.project.ID)
+			require.NoError(t, err, "error deleting project")
 
+			// Create the test project
 			_, err = client.Core().Projects().Create(ctx, tc.project)
 			require.NoError(t, err, "error creating project")
 
+			// Verify there are no events for this project
+			eList, err := client.Core().Events().List(
+				ctx,
+				&core.EventsSelector{ProjectID: tc.project.ID},
+				&meta.ListOptions{Limit: 1},
+			)
+			require.Equal(t, 0, len(eList.Items), "event list items should be exactly zero")
+
+			// Create a new event
 			event := core.Event{
 				ProjectID: tc.project.ID,
 				Source:    "github.com/brigadecore/brigade/cli",
 				Type:      "exec",
 			}
 
-			eList, err := client.Core().Events().Create(ctx, event)
+			eList, err = client.Core().Events().Create(ctx, event)
 			require.NoError(t, err, "error creating event")
-			require.NotEqual(t, 0, len(eList.Items), "event list is empty")
+			require.Equal(t, 1, len(eList.Items), "event list items should be exactly one")
 
 			e := eList.Items[0]
 
