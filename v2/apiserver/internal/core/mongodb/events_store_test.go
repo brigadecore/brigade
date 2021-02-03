@@ -551,7 +551,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 		name           string
 		eventsSelector core.EventsSelector
 		collection     mongodb.Collection
-		assertions     func(core.EventList, error)
+		assertions     func(err error)
 	}{
 
 		{
@@ -568,9 +568,8 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					return nil, nil
 				},
 			},
-			assertions: func(events core.EventList, err error) {
+			assertions: func(err error) {
 				require.NoError(t, err)
-				require.Empty(t, events.Items)
 			},
 		},
 
@@ -591,7 +590,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(events core.EventList, err error) {
+			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error updating events")
 				require.Contains(t, err.Error(), "something went wrong")
@@ -615,7 +614,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(events core.EventList, err error) {
+			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error updating events")
 				require.Contains(t, err.Error(), "something went wrong")
@@ -647,7 +646,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(events core.EventList, err error) {
+			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error finding canceled events")
 				require.Contains(t, err.Error(), "something went wrong")
@@ -681,7 +680,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					return cursor, nil
 				},
 			},
-			assertions: func(events core.EventList, err error) {
+			assertions: func(err error) {
 				require.NoError(t, err)
 			},
 		},
@@ -691,9 +690,9 @@ func TestEventsStoreCancelMany(t *testing.T) {
 			store := &eventsStore{
 				collection: testCase.collection,
 			}
-			events, err :=
+			_, _, error :=
 				store.CancelMany(context.Background(), testCase.eventsSelector)
-			testCase.assertions(events, err)
+			testCase.assertions(error)
 		})
 	}
 }

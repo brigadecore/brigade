@@ -747,8 +747,8 @@ func TestEventsServiceCancelMany(t *testing.T) {
 					CancelManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (EventList, error) {
-						return EventList{}, errors.New("events store error")
+					) (<-chan Event, <-chan error, error) {
+						return nil, nil, errors.New("events store error")
 					},
 				},
 			},
@@ -775,8 +775,8 @@ func TestEventsServiceCancelMany(t *testing.T) {
 					CancelManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (EventList, error) {
-						return EventList{}, nil
+					) (<-chan Event, <-chan error, error) {
+						return nil, nil, nil
 					},
 				},
 			},

@@ -259,8 +259,9 @@ func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 func (e *eventsStore) CancelMany(
 	ctx context.Context,
 	selector core.EventsSelector,
-) (core.EventList, error) {
-	events := core.EventList{}
+) (<-chan core.Event, <-chan error, error) {
+	eventCh := make(chan core.Event)
+	errCh := make(chan error)
 	// It only makes sense to cancel events that are in a pending, starting, or
 	// running state. We can ignore anything else.
 	var cancelPending bool
@@ -280,7 +281,7 @@ func (e *eventsStore) CancelMany(
 
 	// Bail if we're not canceling pending, starting, or running events
 	if !cancelPending && !cancelStarting && !cancelRunning {
-		return events, nil
+		return eventCh, errCh, nil
 	}
 
 	// The MongoDB driver for Go doesn't expose findAndModify(), which could be
@@ -305,7 +306,7 @@ func (e *eventsStore) CancelMany(
 				},
 			},
 		); err != nil {
-			return events, errors.Wrap(err, "error updating events")
+			return eventCh, errCh, errors.Wrap(err, "error updating events")
 		}
 	}
 
@@ -353,7 +354,7 @@ func (e *eventsStore) CancelMany(
 				},
 			},
 		); err != nil {
-			return events, errors.Wrap(err, "error updating events")
+			return eventCh, errCh, errors.Wrap(err, "error updating events")
 		}
 	}
 
@@ -370,13 +371,25 @@ func (e *eventsStore) CancelMany(
 	)
 	cur, err := e.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
-		return events, errors.Wrapf(err, "error finding canceled events")
-	}
-	if err := cur.All(ctx, &events.Items); err != nil {
-		return events, errors.Wrap(err, "error decoding canceled events")
+		return eventCh, errCh, errors.Wrapf(err, "error finding canceled events")
 	}
 
-	return events, nil
+	go func() {
+		defer close(eventCh)
+		defer close(errCh)
+		for cur.Next(ctx) {
+			event := core.Event{}
+			if err := cur.Decode(&event); err != nil {
+				errCh <- err
+			}
+			select {
+			case eventCh <- event:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return eventCh, errCh, nil
 }
 
 func (e *eventsStore) Delete(ctx context.Context, id string) error {

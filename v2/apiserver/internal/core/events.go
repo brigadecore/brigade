@@ -537,35 +537,59 @@ func (e *eventsService) CancelMany(
 		)
 	}
 
-	events, err := e.eventsStore.CancelMany(ctx, selector)
+	eventCh, errCh, err := e.eventsStore.CancelMany(ctx, selector)
 	if err != nil {
 		return result, errors.Wrap(err, "error canceling events in store")
 	}
 
-	result.Count = int64(len(events.Items))
-
-	// TODO: This could take a while, so we don't do it synchronously. But what if
-	// the process dies while this is in-progress? Can we find a quicker, more
-	// efficient way to do this?
-	go func() {
-		for _, event := range events.Items {
-			if err := e.substrate.DeleteWorkerAndJobs(
-				context.Background(), // Deliberately not using request context
-				project,
-				event,
-			); err != nil {
-				log.Println(
-					errors.Wrapf(
-						err,
-						"error deleting event %q worker and jobs from the substrate",
-						event.ID,
-					),
-				)
+	// When an event comes in via the corresponding channel,
+	// kick off a go routine to execute cleanup.
+	// Otherwise, handle errors and/or finish and return once all
+	// events have come through.
+	for {
+		select {
+		case event, ok := <-eventCh:
+			if ok {
+				result.Count++
+				// TODO: This could take a while, so we don't do it synchronously. But
+				// what if the process dies while this is in-progress? Can we find a
+				// quicker, more efficient way to do this?
+				go func() {
+					if err := e.substrate.DeleteWorkerAndJobs(
+						context.Background(), // deliberately not using ctx
+						project,
+						event,
+					); err != nil {
+						log.Println(errors.Wrapf(
+							err,
+							"error deleting event %q worker and jobs from the substrate",
+							event.ID,
+						))
+					}
+				}()
+			} else {
+				// eventCh was closed, but want to keep looping through this select
+				// in case there are pending errors on the errCh still. nil channels are
+				// never readable, so we'll just nil out eventCh and move on.
+				eventCh = nil
+			}
+		case err, ok := <-errCh:
+			if ok {
+				return result, err
+			}
+			// errCh was closed, but want to keep looping through this select in case
+			// there are pending messages on the eventCh still. nil channels are
+			// never readable, so we'll just nil out errCh and move on.
+			errCh = nil
+		case <-ctx.Done():
+			return result, nil
+		default:
+			// If BOTH eventCh and errCh were closed, we're done.
+			if eventCh == nil && errCh == nil {
+				return result, nil
 			}
 		}
-	}()
-
-	return result, nil
+	}
 }
 
 func (e *eventsService) Delete(ctx context.Context, id string) error {
@@ -705,7 +729,7 @@ type EventsStore interface {
 	CancelMany(
 		context.Context,
 		EventsSelector,
-	) (EventList, error)
+	) (<-chan Event, <-chan error, error)
 	// Delete unconditionally deletes the specified Event from the underlying data
 	// store. If the specified Event does not exist, implementations MUST
 	// return a *meta.ErrNotFound error.
