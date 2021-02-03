@@ -23,14 +23,15 @@ const (
 )
 
 type testcase struct {
-	name                       string
-	project                    core.Project
-	configFiles                map[string]string
-	expectedJobLogsContains    string
-	expectedJobPhase           core.JobPhase
-	expectedWorkerLogsContains string
-	expectedWorkerPhase        core.WorkerPhase
-	expectedVCSLogsContains    string
+	name        string
+	project     core.Project
+	configFiles map[string]string
+	assertions  func(
+		t *testing.T,
+		ctx context.Context,
+		client sdk.APIClient,
+		event core.Event,
+	)
 }
 
 var testcases = []testcase{
@@ -45,9 +46,17 @@ var testcases = []testcase{
 				},
 			},
 		},
-		expectedJobLogsContains: "README.md",
-		expectedJobPhase:        core.JobPhaseSucceeded,
-		expectedWorkerPhase:     core.WorkerPhaseSucceeded,
+		assertions: func(
+			t *testing.T,
+			ctx context.Context,
+			client sdk.APIClient,
+			e core.Event,
+		) {
+			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
+			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
+			assertJobPhase(t, ctx, client, e, core.JobPhaseSucceeded)
+			assertJobLogs(t, ctx, client, e, "README.md")
+		},
 	},
 	{
 		name: "GitHub - full ref",
@@ -61,9 +70,17 @@ var testcases = []testcase{
 				},
 			},
 		},
-		expectedJobLogsContains: "README.md",
-		expectedJobPhase:        core.JobPhaseSucceeded,
-		expectedWorkerPhase:     core.WorkerPhaseSucceeded,
+		assertions: func(
+			t *testing.T,
+			ctx context.Context,
+			client sdk.APIClient,
+			e core.Event,
+		) {
+			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
+			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
+			assertJobPhase(t, ctx, client, e, core.JobPhaseSucceeded)
+			assertJobLogs(t, ctx, client, e, "README.md")
+		},
 	},
 	{
 		name: "GitHub - casual ref",
@@ -77,9 +94,17 @@ var testcases = []testcase{
 				},
 			},
 		},
-		expectedJobLogsContains: "README.md",
-		expectedJobPhase:        core.JobPhaseSucceeded,
-		expectedWorkerPhase:     core.WorkerPhaseSucceeded,
+		assertions: func(
+			t *testing.T,
+			ctx context.Context,
+			client sdk.APIClient,
+			e core.Event,
+		) {
+			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
+			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
+			assertJobPhase(t, ctx, client, e, core.JobPhaseSucceeded)
+			assertJobLogs(t, ctx, client, e, "README.md")
+		},
 	},
 	{
 		name: "GitHub - commit sha",
@@ -93,9 +118,17 @@ var testcases = []testcase{
 				},
 			},
 		},
-		expectedJobLogsContains: "README.md",
-		expectedJobPhase:        core.JobPhaseSucceeded,
-		expectedWorkerPhase:     core.WorkerPhaseSucceeded,
+		assertions: func(
+			t *testing.T,
+			ctx context.Context,
+			client sdk.APIClient,
+			e core.Event,
+		) {
+			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
+			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
+			assertJobPhase(t, ctx, client, e, core.JobPhaseSucceeded)
+			assertJobLogs(t, ctx, client, e, "README.md")
+		},
 	},
 	{
 		name: "GitHub - submodules",
@@ -109,9 +142,17 @@ var testcases = []testcase{
 				},
 			},
 		},
-		expectedJobLogsContains: ".submodules",
-		expectedJobPhase:        core.JobPhaseSucceeded,
-		expectedWorkerPhase:     core.WorkerPhaseSucceeded,
+		assertions: func(
+			t *testing.T,
+			ctx context.Context,
+			client sdk.APIClient,
+			e core.Event,
+		) {
+			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
+			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
+			assertJobPhase(t, ctx, client, e, core.JobPhaseSucceeded)
+			assertJobLogs(t, ctx, client, e, ".submodules")
+		},
 	},
 	{
 		name: "GitHub - vcs failure",
@@ -125,8 +166,22 @@ var testcases = []testcase{
 				},
 			},
 		},
-		expectedWorkerPhase:     core.WorkerPhaseFailed,
-		expectedVCSLogsContains: `reference "non-existent" not found in repo "https://github.com/brigadecore/empty-testbed.git"`,
+		assertions: func(
+			t *testing.T,
+			ctx context.Context,
+			client sdk.APIClient,
+			e core.Event,
+		) {
+			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseFailed)
+			assertVCSLogs(
+				t,
+				ctx,
+				client,
+				e,
+				`reference "non-existent" not found in repo `+
+					`"https://github.com/brigadecore/empty-testbed.git"`,
+			)
+		},
 	},
 	{
 		name: "GitHub - job fails",
@@ -150,9 +205,17 @@ var testcases = []testcase{
 				await job.run()
 			});
 		`, testJobName)},
-		expectedJobLogsContains: "Goodbye World",
-		expectedJobPhase:        core.JobPhaseFailed,
-		expectedWorkerPhase:     core.WorkerPhaseFailed,
+		assertions: func(
+			t *testing.T,
+			ctx context.Context,
+			client sdk.APIClient,
+			e core.Event,
+		) {
+			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseFailed)
+			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
+			assertJobPhase(t, ctx, client, e, core.JobPhaseFailed)
+			assertJobLogs(t, ctx, client, e, "Goodbye World")
+		},
 	},
 }
 
@@ -233,29 +296,17 @@ func TestMain(t *testing.T) {
 			require.NoError(t, err, "error creating event")
 			require.Equal(t, 1, len(eList.Items), "event list items should be exactly one")
 
-			e := eList.Items[0]
-
-			assertWorkerTerminalPhase(t, ctx, client, e, tc)
-			assertWorkerLogs(t, ctx, client, e, tc)
-
-			// We expect the vcs init container to fail for this test,
-			// therefore, assertions on jobs are not applicable
-			if tc.name == "GitHub - vcs failure" {
-				return
-			}
-
-			assertJobTerminalPhase(t, ctx, client, e, tc)
-			assertJobLogs(t, ctx, client, e, tc)
+			tc.assertions(t, ctx, client, eList.Items[0])
 		})
 	}
 }
 
-func assertWorkerTerminalPhase(
+func assertWorkerPhase(
 	t *testing.T,
 	ctx context.Context,
 	client sdk.APIClient,
 	e core.Event,
-	tc testcase,
+	wantPhase core.WorkerPhase,
 ) {
 	statusCh, errCh, err := client.Core().Events().Workers().WatchStatus(
 		ctx,
@@ -277,7 +328,7 @@ func assertWorkerTerminalPhase(
 			if phase.IsTerminal() {
 				require.Equal(
 					t,
-					tc.expectedWorkerPhase,
+					wantPhase,
 					phase,
 					"worker's terminal phase does not match expected",
 				)
@@ -291,53 +342,12 @@ func assertWorkerTerminalPhase(
 	}
 }
 
-func assertWorkerLogs(
+func assertJobPhase(
 	t *testing.T,
 	ctx context.Context,
 	client sdk.APIClient,
 	e core.Event,
-	tc testcase,
-) {
-	// Check vcs container logs
-	assertLogs(
-		t,
-		ctx,
-		client,
-		e,
-		&core.LogsSelector{Container: "vcs"},
-		tc.expectedVCSLogsContains,
-	)
-
-	// We expect the vcs init container to fail for this test,
-	// therefore, assertions on worker logs are not applicable
-	if tc.name == "GitHub - vcs failure" {
-		return
-	}
-
-	// Check worker container logs
-	var contains string
-	if tc.expectedWorkerLogsContains != "" {
-		contains = tc.expectedWorkerLogsContains
-	} else {
-		// Look for default logs that we expect must exist
-		contains = "brigade-worker version"
-	}
-	assertLogs(
-		t,
-		ctx,
-		client,
-		e,
-		&core.LogsSelector{},
-		contains,
-	)
-}
-
-func assertJobTerminalPhase(
-	t *testing.T,
-	ctx context.Context,
-	client sdk.APIClient,
-	e core.Event,
-	tc testcase,
+	wantPhase core.JobPhase,
 ) {
 	statusCh, errCh, err := client.Core().Events().Workers().Jobs().WatchStatus(
 		ctx,
@@ -356,7 +366,7 @@ func assertJobTerminalPhase(
 			if phase.IsTerminal() {
 				require.Equal(
 					t,
-					tc.expectedJobPhase,
+					wantPhase,
 					phase,
 					"job's terminal phase does not match expected",
 				)
@@ -370,12 +380,46 @@ func assertJobTerminalPhase(
 	}
 }
 
+func assertVCSLogs(
+	t *testing.T,
+	ctx context.Context,
+	client sdk.APIClient,
+	e core.Event,
+	wantLogs string,
+) {
+	assertLogs(
+		t,
+		ctx,
+		client,
+		e,
+		&core.LogsSelector{Container: "vcs"},
+		wantLogs,
+	)
+}
+
+func assertWorkerLogs(
+	t *testing.T,
+	ctx context.Context,
+	client sdk.APIClient,
+	e core.Event,
+	wantLogs string,
+) {
+	assertLogs(
+		t,
+		ctx,
+		client,
+		e,
+		&core.LogsSelector{},
+		wantLogs,
+	)
+}
+
 func assertJobLogs(
 	t *testing.T,
 	ctx context.Context,
 	client sdk.APIClient,
 	e core.Event,
-	tc testcase,
+	wantLogs string,
 ) {
 	assertLogs(
 		t,
@@ -383,7 +427,7 @@ func assertJobLogs(
 		client,
 		e,
 		&core.LogsSelector{Job: testJobName},
-		tc.expectedJobLogsContains,
+		wantLogs,
 	)
 }
 
@@ -393,9 +437,9 @@ func assertLogs(
 	client sdk.APIClient,
 	e core.Event,
 	selector *core.LogsSelector,
-	contains string,
+	wantLogs string,
 ) {
-	if contains == "" {
+	if wantLogs == "" {
 		return
 	}
 
@@ -412,7 +456,7 @@ func assertLogs(
 		select {
 		case logEntry, ok := <-logEntryCh:
 			if ok {
-				if strings.Contains(logEntry.Message, contains) {
+				if strings.Contains(logEntry.Message, wantLogs) {
 					return
 				}
 			} else {
@@ -429,7 +473,7 @@ func assertLogs(
 
 		// log and err channels empty; we haven't found what we're looking for
 		if logEntryCh == nil && errCh == nil {
-			t.Fatalf("logs do not contain expected string %q", contains)
+			t.Fatalf("logs do not contain expected string %q", wantLogs)
 		}
 	}
 }
