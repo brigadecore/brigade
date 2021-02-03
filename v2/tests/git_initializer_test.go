@@ -54,8 +54,8 @@ var testcases = []testcase{
 		) {
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
-			assertJobPhase(t, ctx, client, e, core.JobPhaseSucceeded)
-			assertJobLogs(t, ctx, client, e, "README.md")
+			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseSucceeded)
+			assertJobLogs(t, ctx, client, e, testJobName, "README.md")
 		},
 	},
 	{
@@ -78,8 +78,8 @@ var testcases = []testcase{
 		) {
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
-			assertJobPhase(t, ctx, client, e, core.JobPhaseSucceeded)
-			assertJobLogs(t, ctx, client, e, "README.md")
+			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseSucceeded)
+			assertJobLogs(t, ctx, client, e, testJobName, "README.md")
 		},
 	},
 	{
@@ -102,8 +102,8 @@ var testcases = []testcase{
 		) {
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
-			assertJobPhase(t, ctx, client, e, core.JobPhaseSucceeded)
-			assertJobLogs(t, ctx, client, e, "README.md")
+			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseSucceeded)
+			assertJobLogs(t, ctx, client, e, testJobName, "README.md")
 		},
 	},
 	{
@@ -126,8 +126,8 @@ var testcases = []testcase{
 		) {
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
-			assertJobPhase(t, ctx, client, e, core.JobPhaseSucceeded)
-			assertJobLogs(t, ctx, client, e, "README.md")
+			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseSucceeded)
+			assertJobLogs(t, ctx, client, e, testJobName, "README.md")
 		},
 	},
 	{
@@ -150,8 +150,8 @@ var testcases = []testcase{
 		) {
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
-			assertJobPhase(t, ctx, client, e, core.JobPhaseSucceeded)
-			assertJobLogs(t, ctx, client, e, ".submodules")
+			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseSucceeded)
+			assertJobLogs(t, ctx, client, e, testJobName, ".submodules")
 		},
 	},
 	{
@@ -213,8 +213,8 @@ var testcases = []testcase{
 		) {
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseFailed)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
-			assertJobPhase(t, ctx, client, e, core.JobPhaseFailed)
-			assertJobLogs(t, ctx, client, e, "Goodbye World")
+			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseFailed)
+			assertJobLogs(t, ctx, client, e, testJobName, "Goodbye World")
 		},
 	},
 }
@@ -347,12 +347,13 @@ func assertJobPhase(
 	ctx context.Context,
 	client sdk.APIClient,
 	e core.Event,
+	job string,
 	wantPhase core.JobPhase,
 ) {
 	statusCh, errCh, err := client.Core().Events().Workers().Jobs().WatchStatus(
 		ctx,
 		e.ID,
-		testJobName,
+		job,
 	)
 	require.NoError(t, err, "error encountered attempting to watch job status")
 
@@ -419,6 +420,7 @@ func assertJobLogs(
 	ctx context.Context,
 	client sdk.APIClient,
 	e core.Event,
+	job string,
 	wantLogs string,
 ) {
 	assertLogs(
@@ -426,7 +428,7 @@ func assertJobLogs(
 		ctx,
 		client,
 		e,
-		&core.LogsSelector{Job: testJobName},
+		&core.LogsSelector{Job: job},
 		wantLogs,
 	)
 }
