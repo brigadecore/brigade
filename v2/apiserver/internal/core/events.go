@@ -237,6 +237,7 @@ type eventsService struct {
 	authorize           libAuthz.AuthorizeFn
 	projectsStore       ProjectsStore
 	eventsStore         EventsStore
+	jobsStore           JobsStore
 	substrate           Substrate
 	createSingleEventFn func(context.Context, Project, Event) (Event, error)
 }
@@ -246,12 +247,14 @@ func NewEventsService(
 	authorizeFn libAuthz.AuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
+	jobsStore JobsStore,
 	substrate Substrate,
 ) EventsService {
 	e := &eventsService{
 		authorize:     authorizeFn,
 		projectsStore: projectsStore,
 		eventsStore:   eventsStore,
+		jobsStore:     jobsStore,
 		substrate:     substrate,
 	}
 	e.createSingleEventFn = e.createSingleEvent
@@ -491,6 +494,17 @@ func (e *eventsService) Cancel(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "error canceling event %q in store", id)
 	}
 
+	for job := range event.Worker.Jobs {
+		if err = e.jobsStore.Cancel(ctx, id, job); err != nil {
+			return errors.Wrapf(
+				err,
+				"error canceling event %q worker job %q",
+				id,
+				job,
+			)
+		}
+	}
+
 	if err = e.substrate.DeleteWorkerAndJobs(ctx, project, event); err != nil {
 		return errors.Wrapf(
 			err,
@@ -549,6 +563,27 @@ func (e *eventsService) CancelMany(
 	// efficient way to do this?
 	go func() {
 		for _, event := range events.Items {
+			// Only iterate through a worker's jobs if the worker status is not
+			// Pending; otherwise no jobs would have been created.
+			if event.Worker.Status.Phase != WorkerPhasePending {
+				for job := range event.Worker.Jobs {
+					if err = e.jobsStore.Cancel(
+						context.Background(),
+						event.ID,
+						job,
+					); err != nil {
+						log.Println(
+							errors.Wrapf(
+								err,
+								"error canceling event %q worker job %q",
+								event.ID,
+								job,
+							),
+						)
+					}
+				}
+			}
+
 			if err := e.substrate.DeleteWorkerAndJobs(
 				context.Background(), // Deliberately not using request context
 				project,

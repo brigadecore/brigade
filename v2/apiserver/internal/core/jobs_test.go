@@ -707,51 +707,35 @@ func TestJobsServiceGetStatus(t *testing.T) {
 			},
 		},
 		{
-			name: "error getting event from store",
+			name: "unanticipated error",
 			service: &jobsService{
 				authorize: libAuthz.AlwaysAuthorize,
-				eventsStore: &mockEventsStore{
-					GetFn: func(context.Context, string) (Event, error) {
-						return Event{}, errors.New("something went wrong")
+				jobsStore: &mockJobsStore{
+					GetStatusFn: func(
+						context.Context,
+						string,
+						string,
+					) (JobStatus, error) {
+						return JobStatus{}, errors.New("something went wrong")
 					},
 				},
 			},
 			assertions: func(_ JobStatus, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error retrieving event")
-			},
-		},
-		{
-			name: "job not found",
-			service: &jobsService{
-				authorize: libAuthz.AlwaysAuthorize,
-				eventsStore: &mockEventsStore{
-					GetFn: func(context.Context, string) (Event, error) {
-						return Event{}, nil
-					},
-				},
-			},
-			assertions: func(_ JobStatus, err error) {
-				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
 			},
 		},
 		{
 			name: "success",
 			service: &jobsService{
 				authorize: libAuthz.AlwaysAuthorize,
-				eventsStore: &mockEventsStore{
-					GetFn: func(context.Context, string) (Event, error) {
-						return Event{
-							Worker: Worker{
-								Jobs: map[string]Job{
-									testJobName: {
-										Status: &testJobStatus,
-									},
-								},
-							},
-						}, nil
+				jobsStore: &mockJobsStore{
+					GetStatusFn: func(
+						context.Context,
+						string,
+						string,
+					) (JobStatus, error) {
+						return testJobStatus, nil
 					},
 				},
 			},
@@ -1099,18 +1083,36 @@ func TestJobsServiceCleanup(t *testing.T) {
 }
 
 type mockJobsStore struct {
+	CancelFn func(
+		ctx context.Context,
+		eventID string,
+		jobName string,
+	) error
 	CreateFn func(
 		ctx context.Context,
 		eventID string,
 		jobName string,
 		job Job,
 	) error
+	GetStatusFn func(
+		ctx context.Context,
+		eventID string,
+		jobName string,
+	) (JobStatus, error)
 	UpdateStatusFn func(
 		ctx context.Context,
 		eventID string,
 		jobName string,
 		status JobStatus,
 	) error
+}
+
+func (m *mockJobsStore) Cancel(
+	ctx context.Context,
+	eventID string,
+	jobName string,
+) error {
+	return m.CancelFn(ctx, eventID, jobName)
 }
 
 func (m *mockJobsStore) Create(
@@ -1120,6 +1122,14 @@ func (m *mockJobsStore) Create(
 	job Job,
 ) error {
 	return m.CreateFn(ctx, eventID, jobName, job)
+}
+
+func (m *mockJobsStore) GetStatus(
+	ctx context.Context,
+	eventID string,
+	jobName string,
+) (JobStatus, error) {
+	return m.GetStatusFn(ctx, eventID, jobName)
 }
 
 func (m *mockJobsStore) UpdateStatus(

@@ -124,6 +124,7 @@ func main() {
 		authorizer.Authorize,
 		projectsStore,
 		eventsStore,
+		jobsStore,
 		substrate,
 	)
 

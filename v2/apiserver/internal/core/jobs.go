@@ -470,19 +470,7 @@ func (j *jobsService) GetStatus(
 		return JobStatus{}, err
 	}
 
-	event, err := j.eventsStore.Get(ctx, eventID)
-	if err != nil {
-		return JobStatus{},
-			errors.Wrapf(err, "error retrieving event %q from store", eventID)
-	}
-	job, ok := event.Worker.Jobs[jobName]
-	if !ok {
-		return JobStatus{}, &meta.ErrNotFound{
-			Type: "Job",
-			ID:   jobName,
-		}
-	}
-	return *job.Status, nil
+	return j.jobsStore.GetStatus(ctx, eventID, jobName)
 }
 
 func (j *jobsService) WatchStatus(
@@ -601,6 +589,12 @@ func (j *jobsService) Cleanup(
 // JobsStore is an interface for components that implement Job persistence
 // concerns.
 type JobsStore interface {
+	// Cancel cancels the specified Job in the underlying data store.
+	Cancel(
+		ctx context.Context,
+		eventID string,
+		jobName string,
+	) error
 	// Create persists a new Job for the specified Event in the underlying data
 	// store.
 	Create(
@@ -609,6 +603,14 @@ type JobsStore interface {
 		jobName string,
 		job Job,
 	) error
+	// GetStatus gets the status of the specified Job in the underlying data
+	// store. If the specified job is not found, implementations MUST return a
+	// *meta.ErrNotFound error.
+	GetStatus(
+		ctx context.Context,
+		eventID string,
+		jobName string,
+	) (JobStatus, error)
 	// UpdateStatus updates the status of the specified Job in the underlying data
 	// store. If the specified job is not found, implementations MUST return a
 	// *meta.ErrNotFound error.

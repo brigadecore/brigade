@@ -38,11 +38,13 @@ func TestDeleteManyEventsResultMarshalJSON(t *testing.T) {
 func TestNewEventsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}
+	jobsStore := &mockJobsStore{}
 	substrate := &mockSubstrate{}
 	svc := NewEventsService(
 		libAuthz.AlwaysAuthorize,
 		projectsStore,
 		eventsStore,
+		jobsStore,
 		substrate,
 	)
 	require.NotNil(t, svc.(*eventsService).authorize)
@@ -591,6 +593,44 @@ func TestEventsServiceCancel(t *testing.T) {
 			},
 		},
 		{
+			name: "error canceling worker jobs in store",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: map[string]Job{
+									"italian": {},
+								},
+							},
+						}, nil
+					},
+					CancelFn: func(context.Context, string) error {
+						return nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					CancelFn: func(ctx context.Context,
+						eventID string,
+						jobName string,
+					) error {
+						return errors.New("jobs store error")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error canceling event")
+				require.Contains(t, err.Error(), "jobs store error")
+			},
+		},
+		{
 			name: "error deleting event from substrate",
 			service: &eventsService{
 				authorize: libAuthz.AlwaysAuthorize,
@@ -756,6 +796,42 @@ func TestEventsServiceCancelMany(t *testing.T) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error canceling events in store")
 				require.Contains(t, err.Error(), "events store error")
+			},
+		},
+		{
+			name: "error canceling worker jobs in store",
+			selector: EventsSelector{
+				ProjectID:    "blue-book",
+				WorkerPhases: []WorkerPhase{WorkerPhaseFailed},
+			},
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				eventsStore: &mockEventsStore{
+					CancelManyFn: func(
+						context.Context,
+						EventsSelector,
+					) (EventList, error) {
+						return EventList{}, errors.New("jobs store error")
+					},
+				},
+				jobsStore: &mockJobsStore{
+					CancelFn: func(ctx context.Context,
+						eventID string,
+						jobName string,
+					) error {
+						return errors.New("jobs store error")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error canceling event")
+				require.Contains(t, err.Error(), "jobs store error")
 			},
 		},
 		{
