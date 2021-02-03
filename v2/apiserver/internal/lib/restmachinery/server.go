@@ -56,7 +56,7 @@ func NewServer(endpoints []Endpoints, config *ServerConfig) Server {
 				AllowCredentials: true,
 				AllowedOrigins:   []string{"*"},
 				AllowedMethods:   []string{"DELETE", "GET", "POST", "PUT"},
-				AllowedHeaders:   []string{"Authorization"},
+				AllowedHeaders:   []string{"Authorization", "Content-Type"},
 			},
 		).Handler(router),
 	}
