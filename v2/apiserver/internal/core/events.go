@@ -563,24 +563,20 @@ func (e *eventsService) CancelMany(
 	// efficient way to do this?
 	go func() {
 		for _, event := range events.Items {
-			// Only iterate through a worker's jobs if the worker status is not
-			// Pending; otherwise no jobs would have been created.
-			if event.Worker.Status.Phase != WorkerPhasePending {
-				for job := range event.Worker.Jobs {
-					if err = e.jobsStore.Cancel(
-						context.Background(),
-						event.ID,
-						job,
-					); err != nil {
-						log.Println(
-							errors.Wrapf(
-								err,
-								"error canceling event %q worker job %q",
-								event.ID,
-								job,
-							),
-						)
-					}
+			for job := range event.Worker.Jobs {
+				if err = e.jobsStore.Cancel(
+					context.Background(),
+					event.ID,
+					job,
+				); err != nil {
+					log.Println(
+						errors.Wrapf(
+							err,
+							"error canceling event %q worker job %q",
+							event.ID,
+							job,
+						),
+					)
 				}
 			}
 

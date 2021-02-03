@@ -219,9 +219,6 @@ func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "error updating status of event %q worker", id)
 	}
 
-	// TODO: If the event was running when it was canceled, its jobs need to be
-	// canceled also.
-
 	if res.MatchedCount == 0 {
 		return &meta.ErrConflict{
 			Type: "Event",
@@ -320,9 +317,6 @@ func (e *eventsStore) CancelMany(
 			return events, errors.Wrap(err, "error updating events")
 		}
 	}
-
-	// TODO: If any event was running when it was canceled, its jobs need to be
-	// canceled also.
 
 	delete(criteria, "worker.status.phase")
 	criteria["canceled"] = cancellationTime
