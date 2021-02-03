@@ -799,42 +799,6 @@ func TestEventsServiceCancelMany(t *testing.T) {
 			},
 		},
 		{
-			name: "error canceling worker jobs in store",
-			selector: EventsSelector{
-				ProjectID:    "blue-book",
-				WorkerPhases: []WorkerPhase{WorkerPhaseFailed},
-			},
-			service: &eventsService{
-				authorize: libAuthz.AlwaysAuthorize,
-				projectsStore: &mockProjectsStore{
-					GetFn: func(context.Context, string) (Project, error) {
-						return Project{}, nil
-					},
-				},
-				eventsStore: &mockEventsStore{
-					CancelManyFn: func(
-						context.Context,
-						EventsSelector,
-					) (EventList, error) {
-						return EventList{}, errors.New("jobs store error")
-					},
-				},
-				jobsStore: &mockJobsStore{
-					CancelFn: func(ctx context.Context,
-						eventID string,
-						jobName string,
-					) error {
-						return errors.New("jobs store error")
-					},
-				},
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "error canceling event")
-				require.Contains(t, err.Error(), "jobs store error")
-			},
-		},
-		{
 			name: "success",
 			selector: EventsSelector{
 				ProjectID:    "blue-book",

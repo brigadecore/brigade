@@ -564,11 +564,15 @@ func (e *eventsService) CancelMany(
 	go func() {
 		for _, event := range events.Items {
 			for job := range event.Worker.Jobs {
-				if err = e.jobsStore.Cancel(
+				err = e.jobsStore.Cancel(
 					context.Background(),
 					event.ID,
 					job,
-				); err != nil {
+				)
+				if _, ok := errors.Cause(err).(*meta.ErrNotFound); ok {
+					continue
+				}
+				if err != nil {
 					log.Println(
 						errors.Wrapf(
 							err,
