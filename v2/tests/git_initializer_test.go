@@ -3,8 +3,9 @@
 package tests
 
 import (
-	"bytes"
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,6 +15,11 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	testJobName = "test-job"
+	testTimeout = time.Duration(120 * time.Second)
 )
 
 type testcase struct {
@@ -134,16 +140,16 @@ var testcases = []testcase{
 			},
 		},
 		configFiles: map[string]string{
-			"brigade.ts": `
+			"brigade.ts": fmt.Sprintf(`
 			import { events, Job } from "@brigadecore/brigadier"
 
 			events.on("github.com/brigadecore/brigade/cli", "exec", async event => {
-				let job = new Job("ls", "alpine", event)
+				let job = new Job("%s", "alpine", event)
 				job.primaryContainer.command = ["sh"]
 				job.primaryContainer.arguments = ["-c", "'echo Goodbye World && exit 1'"]
 				await job.run()
 			});
-		`},
+		`, testJobName)},
 		expectedJobLogsContains: "Goodbye World",
 		expectedJobPhase:        core.JobPhaseFailed,
 		expectedWorkerPhase:     core.WorkerPhaseFailed,
@@ -151,24 +157,22 @@ var testcases = []testcase{
 }
 
 var defaultConfigFiles = map[string]string{
-	"brigade.ts": `
+	"brigade.ts": fmt.Sprintf(`
 		import { events, Job } from "@brigadecore/brigadier"
 
 		events.on("github.com/brigadecore/brigade/cli", "exec", async event => {
-			let job = new Job("ls", "alpine", event)
+			let job = new Job("%s", "alpine", event)
 			job.primaryContainer.sourceMountPath = "/var/vcs"
 			job.primaryContainer.command = ["ls"]
 			job.primaryContainer.arguments = ["-haltr", "/var/vcs"]
 			await job.run()
 		});
-	`}
+	`, testJobName)}
 
 func TestMain(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx, cancel :=
-				context.WithTimeout(context.Background(), 120*time.Second)
-			defer cancel()
+			ctx := context.Background()
 
 			// TODO: send in/parameterize this value
 			apiServerAddress := "https://localhost:7000"
@@ -251,16 +255,38 @@ func assertWorkerTerminalPhase(
 	ctx context.Context,
 	client sdk.APIClient,
 	e core.Event,
-	tc testcase) {
+	tc testcase,
+) {
+	statusCh, errCh, err := client.Core().Events().Workers().WatchStatus(
+		ctx,
+		e.ID,
+	)
+	require.NoError(
+		t,
+		err,
+		"error encountered attempting to watch worker status",
+	)
+
+	timer := time.NewTimer(testTimeout)
+	defer timer.Stop()
 
 	for {
-		event, err := client.Core().Events().Get(ctx, e.ID)
-		require.NoError(t, err, "error getting event")
-
-		phase := event.Worker.Status.Phase
-		if phase.IsTerminal() {
-			require.Equal(t, tc.expectedWorkerPhase, phase, "worker's terminal phase does not match expected")
-			break
+		select {
+		case status := <-statusCh:
+			phase := status.Phase
+			if phase.IsTerminal() {
+				require.Equal(
+					t,
+					tc.expectedWorkerPhase,
+					phase,
+					"worker's terminal phase does not match expected",
+				)
+				return
+			}
+		case err := <-errCh:
+			t.Fatalf("error encountered watching worker status: %s", err)
+		case <-timer.C:
+			t.Fatal("timeout waiting for worker to reach a terminal phase")
 		}
 	}
 }
@@ -270,15 +296,17 @@ func assertWorkerLogs(
 	ctx context.Context,
 	client sdk.APIClient,
 	e core.Event,
-	tc testcase) {
-
+	tc testcase,
+) {
 	// Check vcs container logs
-	selector := &core.LogsSelector{Container: "vcs"}
-	logs := captureLogs(t, ctx, client, e, selector)
-
-	if tc.expectedVCSLogsContains != "" {
-		require.Contains(t, logs, tc.expectedVCSLogsContains, "vcs init container logs do not match expected")
-	}
+	assertLogs(
+		t,
+		ctx,
+		client,
+		e,
+		&core.LogsSelector{Container: "vcs"},
+		tc.expectedVCSLogsContains,
+	)
 
 	// We expect the vcs init container to fail for this test,
 	// therefore, assertions on worker logs are not applicable
@@ -287,15 +315,21 @@ func assertWorkerLogs(
 	}
 
 	// Check worker container logs
-	selector = &core.LogsSelector{}
-	logs = captureLogs(t, ctx, client, e, selector)
-
+	var contains string
 	if tc.expectedWorkerLogsContains != "" {
-		require.Contains(t, logs, tc.expectedWorkerLogsContains, "worker's logs do not match expected")
+		contains = tc.expectedWorkerLogsContains
 	} else {
 		// Look for default logs that we expect must exist
-		require.Contains(t, logs, "brigade-worker version", "worker's logs do not match expected")
+		contains = "brigade-worker version"
 	}
+	assertLogs(
+		t,
+		ctx,
+		client,
+		e,
+		&core.LogsSelector{},
+		contains,
+	)
 }
 
 func assertJobTerminalPhase(
@@ -303,22 +337,35 @@ func assertJobTerminalPhase(
 	ctx context.Context,
 	client sdk.APIClient,
 	e core.Event,
-	tc testcase) {
+	tc testcase,
+) {
+	statusCh, errCh, err := client.Core().Events().Workers().Jobs().WatchStatus(
+		ctx,
+		e.ID,
+		testJobName,
+	)
+	require.NoError(t, err, "error encountered attempting to watch job status")
+
+	timer := time.NewTimer(testTimeout)
+	defer timer.Stop()
 
 	for {
-		event, err := client.Core().Events().Get(ctx, e.ID)
-		require.NoError(t, err, "error getting event")
-
-		jobs := event.Worker.Jobs
-		require.Equal(t, 1, len(jobs), "expected job count is not 1")
-
-		job := jobs["ls"]
-		require.NotNil(t, job, "expected job does not exist")
-
-		phase := job.Status.Phase
-		if phase.IsTerminal() {
-			require.Equal(t, tc.expectedJobPhase, phase, "job's terminal phase does not match expected")
-			break
+		select {
+		case status := <-statusCh:
+			phase := status.Phase
+			if phase.IsTerminal() {
+				require.Equal(
+					t,
+					tc.expectedJobPhase,
+					phase,
+					"job's terminal phase does not match expected",
+				)
+				return
+			}
+		case err := <-errCh:
+			t.Fatalf("error encountered watching job status: %s", err)
+		case <-timer.C:
+			t.Fatal("timeout waiting for job to reach a terminal phase")
 		}
 	}
 }
@@ -328,22 +375,29 @@ func assertJobLogs(
 	ctx context.Context,
 	client sdk.APIClient,
 	e core.Event,
-	tc testcase) {
-
-	selector := &core.LogsSelector{Job: "ls"}
-	logs := captureLogs(t, ctx, client, e, selector)
-
-	if tc.expectedJobLogsContains != "" {
-		require.Contains(t, logs, tc.expectedJobLogsContains, "job's logs do not match expected")
-	}
+	tc testcase,
+) {
+	assertLogs(
+		t,
+		ctx,
+		client,
+		e,
+		&core.LogsSelector{Job: testJobName},
+		tc.expectedJobLogsContains,
+	)
 }
 
-func captureLogs(
+func assertLogs(
 	t *testing.T,
 	ctx context.Context,
 	client sdk.APIClient,
 	e core.Event,
-	selector *core.LogsSelector) string {
+	selector *core.LogsSelector,
+	contains string,
+) {
+	if contains == "" {
+		return
+	}
 
 	logEntryCh, errCh, err :=
 		client.Core().Events().Logs().Stream(
@@ -354,12 +408,13 @@ func captureLogs(
 		)
 	require.NoError(t, err, "error acquiring log stream")
 
-	var b bytes.Buffer
 	for {
 		select {
 		case logEntry, ok := <-logEntryCh:
 			if ok {
-				b.Write([]byte(logEntry.Message))
+				if strings.Contains(logEntry.Message, contains) {
+					return
+				}
 			} else {
 				logEntryCh = nil
 			}
@@ -372,9 +427,9 @@ func captureLogs(
 			break
 		}
 
-		// log and err channels empty, let's return logs
+		// log and err channels empty; we haven't found what we're looking for
 		if logEntryCh == nil && errCh == nil {
-			return b.String()
+			t.Fatalf("logs do not contain expected string %q", contains)
 		}
 	}
 }
