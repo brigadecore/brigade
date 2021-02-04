@@ -125,6 +125,59 @@ func TestRevoke(t *testing.T) {
 	}
 }
 
+func TestRevokeMany(t *testing.T) {
+	testRoleAssignment := authz.RoleAssignment{}
+	testCases := []struct {
+		name       string
+		collection mongodb.Collection
+		assertions func(error)
+	}{
+		{
+			name: "error",
+			collection: &mongoTesting.MockCollection{
+				DeleteManyFn: func(
+					context.Context,
+					interface{},
+					...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return nil, errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error deleting role assignments")
+			},
+		},
+		{
+			name: "success",
+			collection: &mongoTesting.MockCollection{
+				DeleteManyFn: func(
+					context.Context,
+					interface{},
+					...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return &mongo.DeleteResult{
+						DeletedCount: 1,
+					}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &roleAssignmentsStore{
+				collection: testCase.collection,
+			}
+			err := store.RevokeMany(context.Background(), testRoleAssignment)
+			testCase.assertions(err)
+		})
+	}
+}
+
 func TestExists(t *testing.T) {
 	testRoleAssignment := authz.RoleAssignment{}
 	testCases := []struct {

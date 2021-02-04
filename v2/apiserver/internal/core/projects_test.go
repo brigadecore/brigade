@@ -364,6 +364,42 @@ func TestProjectServiceDelete(t *testing.T) {
 			},
 		},
 		{
+			name: "error deleting role assignments associated with project",
+			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+					DeleteFn: func(context.Context, string) error {
+						return nil
+					},
+				},
+				eventsStore: &mockEventsStore{
+					DeleteManyFn: func(
+						context.Context,
+						EventsSelector,
+					) (EventList, error) {
+						return EventList{}, nil
+					},
+				},
+				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
+					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(
+					t,
+					err.Error(),
+					"error revoking all role assignments associated with project",
+				)
+			},
+		},
+		{
 			name: "error deleting project from store",
 			service: &projectsService{
 				authorize: libAuthz.AlwaysAuthorize,
@@ -381,6 +417,11 @@ func TestProjectServiceDelete(t *testing.T) {
 						EventsSelector,
 					) (EventList, error) {
 						return EventList{}, nil
+					},
+				},
+				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
+					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+						return nil
 					},
 				},
 			},
@@ -408,6 +449,11 @@ func TestProjectServiceDelete(t *testing.T) {
 						EventsSelector,
 					) (EventList, error) {
 						return EventList{}, nil
+					},
+				},
+				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
+					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+						return nil
 					},
 				},
 				substrate: &mockSubstrate{
@@ -440,6 +486,11 @@ func TestProjectServiceDelete(t *testing.T) {
 						EventsSelector,
 					) (EventList, error) {
 						return EventList{}, nil
+					},
+				},
+				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
+					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+						return nil
 					},
 				},
 				substrate: &mockSubstrate{
