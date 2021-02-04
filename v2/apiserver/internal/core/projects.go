@@ -352,6 +352,26 @@ func (p *projectsService) Delete(ctx context.Context, id string) error {
 		)
 	}
 
+	// Delete all role assignments associated with this project. If we didn't do
+	// this and someone, in the future, created a new project with the same name,
+	// that new project would begin life with some existing principals having
+	// permissions they ought not have.
+	if err := p.roleAssignmentsStore.RevokeMany(
+		ctx,
+		authz.RoleAssignment{
+			Role: libAuthz.Role{
+				Type:  RoleTypeProject,
+				Scope: id,
+			},
+		},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error revoking all role assignments associated with project %q",
+			id,
+		)
+	}
+
 	// Delete the project itself
 	if err := p.projectsStore.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "error removing project %q from store", id)
