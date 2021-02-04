@@ -14,6 +14,7 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -271,7 +272,9 @@ func TestMain(t *testing.T) {
 
 			// Delete the test project (we're sharing the name between tests)
 			err = client.Core().Projects().Delete(ctx, tc.project.ID)
-			require.NoError(t, err, "error deleting project")
+			if err, ok := errors.Cause(err).(*meta.ErrNotFound); !ok {
+				require.NoError(t, err, "error deleting project")
+			}
 
 			// Create the test project
 			_, err = client.Core().Projects().Create(ctx, tc.project)
