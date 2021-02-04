@@ -37,7 +37,7 @@ ifneq ($(SKIP_DOCKER),true)
 		-w /workspaces/brigade \
 		$(JS_DEV_IMAGE)
 
-	KANIKO_IMAGE := brigadecore/kaniko:v0.1.0
+	KANIKO_IMAGE := brigadecore/kaniko:v0.2.0
 
 	KANIKO_DOCKER_CMD := docker run \
 		-it \
