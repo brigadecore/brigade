@@ -39,8 +39,8 @@ var (
 )
 
 var rolesCommands = &cli.Command{
-	Name:    "roles",
-	Aliases: []string{"role"},
+	Name:    "role",
+	Aliases: []string{"roles"},
 	Usage:   "Manage system roles for users or service accounts",
 	Subcommands: []*cli.Command{
 		{
