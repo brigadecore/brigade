@@ -20,7 +20,7 @@ import (
 
 var serviceAccountCommand = &cli.Command{
 	Name:    "service-account",
-	Aliases: []string{"sa"},
+	Aliases: []string{"sa", "service-accounts"},
 	Usage:   "Manage service accounts",
 	Subcommands: []*cli.Command{
 		{

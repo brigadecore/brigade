@@ -15,8 +15,9 @@ import (
 )
 
 var userCommand = &cli.Command{
-	Name:  "user",
-	Usage: "Manage users",
+	Name:    "user",
+	Usage:   "Manage users",
+	Aliases: []string{"users"},
 	Subcommands: []*cli.Command{
 		{
 			Name:  "get",

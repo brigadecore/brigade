@@ -19,8 +19,9 @@ import (
 )
 
 var projectCommand = &cli.Command{
-	Name:  "project",
-	Usage: "Manage projects",
+	Name:    "project",
+	Usage:   "Manage projects",
+	Aliases: []string{"projects"},
 	Subcommands: []*cli.Command{
 		{
 			Name:  "create",

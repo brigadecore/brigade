@@ -20,8 +20,9 @@ import (
 )
 
 var eventCommand = &cli.Command{
-	Name:  "event",
-	Usage: "Manage events",
+	Name:    "event",
+	Aliases: []string{"events"},
+	Usage:   "Manage events",
 	Subcommands: []*cli.Command{
 		{
 			Name:  "cancel",
