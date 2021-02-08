@@ -8,8 +8,9 @@ import (
 )
 
 var logsCommand = &cli.Command{
-	Name:  "logs",
-	Usage: "View worker or job logs",
+	Name:    "log",
+	Aliases: []string{"logs"},
+	Usage:   "View worker or job logs",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    flagContainer,
