@@ -50,8 +50,8 @@ var (
 )
 
 var projectRolesCommands = &cli.Command{
-	Name:    "roles",
-	Aliases: []string{"role"},
+	Name:    "role",
+	Aliases: []string{"roles"},
 	Usage:   "Manage project roles",
 	Subcommands: []*cli.Command{
 		{
