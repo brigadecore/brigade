@@ -158,7 +158,7 @@ test-integration: hack-expose-apiserver
 	@$(MAKE) hack-unexpose-apiserver
 
 ################################################################################
-# Build / Publish                                                              #
+# Build                                                                        #
 ################################################################################
 
 .PHONY: build
@@ -191,6 +191,19 @@ build-%:
 		--context dir:///workspaces/brigade/ \
 		--no-push
 
+.PHONY: build-cli
+build-cli:
+	$(GO_DOCKER_CMD) sh -c ' \
+		cd v2 && \
+		VERSION=$(VERSION) \
+		COMMIT=$(GIT_VERSION) \
+		../scripts/build-cli.sh \
+	'
+
+################################################################################
+# Publish                                                                      #
+################################################################################
+
 .PHONY: push-images
 push-images: push-apiserver push-scheduler push-observer push-logger-linux push-git-initializer push-worker
 
@@ -216,15 +229,6 @@ push-%:
 			--context dir:///workspaces/brigade/ \
 			--destination $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
 			--destination $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
-	'
-
-.PHONY: build-cli
-build-cli:
-	$(GO_DOCKER_CMD) sh -c ' \
-		cd v2 && \
-		VERSION="$(VERSION)" \
-		COMMIT="$(GIT_VERSION)" \
-		../scripts/build-cli.sh \
 	'
 
 ################################################################################
