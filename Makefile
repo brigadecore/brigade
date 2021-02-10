@@ -48,11 +48,17 @@ ifneq ($(SKIP_DOCKER),true)
 		-v $(PROJECT_ROOT):/workspaces/brigade \
 		-w /workspaces/brigade \
 		$(KANIKO_IMAGE)
-endif
 
-# Allow for users to supply a different helm cli name,
-# for instance, if one has helm v3 as `helm3` and helm v2 as `helm`
-HELM ?= helm
+	HELM_IMAGE := brigadecore/helm-tools:v0.1.0
+
+	HELM_DOCKER_CMD := docker run \
+	  -it \
+		--rm \
+		-e SKIP_DOCKER=true \
+		-v $(PROJECT_ROOT):/workspaces/brigade \
+		-w /workspaces/brigade \
+		$(HELM_IMAGE)
+endif
 
 ################################################################################
 # Binaries and Docker images we build and publish                              #
@@ -131,6 +137,14 @@ test-unit-js:
 		cd ../worker && \
 		yarn install && \
 		yarn test \
+	'
+
+.PHONY: lint-chart
+lint-chart:
+	$(HELM_DOCKER_CMD) sh -c ' \
+		cd charts/brigade && \
+		helm dep up && \
+		helm lint . \
 	'
 
 .PHONY: test-integration
