@@ -43,7 +43,6 @@ ifneq ($(SKIP_DOCKER),true)
 		-it \
 		--rm \
 		-e SKIP_DOCKER=true \
-		-e DOCKER_USERNAME=$${DOCKER_USERNAME} \
 		-e DOCKER_PASSWORD=$${DOCKER_PASSWORD} \
 		-v $(PROJECT_ROOT):/workspaces/brigade \
 		-w /workspaces/brigade \
@@ -210,7 +209,7 @@ push-images: push-apiserver push-scheduler push-observer push-logger-linux push-
 .PHONY: push-logger-linux
 push-logger-linux:
 	$(KANIKO_DOCKER_CMD) sh -c ' \
-		docker login $(DOCKER_REGISTRY) -u $${DOCKER_USERNAME} -p $${DOCKER_PASSWORD} && \
+		docker login $(DOCKER_REGISTRY) -u $(DOCKER_USERNAME) -p $${DOCKER_PASSWORD} && \
 		kaniko \
 			--dockerfile /workspaces/brigade/v2/logger/Dockerfile.linux \
 			--context dir:///workspaces/brigade/logger \
@@ -221,7 +220,7 @@ push-logger-linux:
 .PHONY: push-%
 push-%:
 	$(KANIKO_DOCKER_CMD) sh -c ' \
-		docker login $(DOCKER_REGISTRY) -u $${DOCKER_USERNAME} -p $${DOCKER_PASSWORD} && \
+		docker login $(DOCKER_REGISTRY) -u $(DOCKER_USERNAME) -p $${DOCKER_PASSWORD} && \
 		kaniko \
 			--build-arg VERSION="$(VERSION)" \
 			--build-arg COMMIT="$(GIT_VERSION)" \
