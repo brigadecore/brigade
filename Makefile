@@ -33,6 +33,7 @@ ifneq ($(SKIP_DOCKER),true)
 	JS_DOCKER_CMD := docker run \
 		-it \
 		--rm \
+		-e NPM_PASSWORD=$${NPM_PASSWORD} \
 		-e SKIP_DOCKER=true \
 		-v $(PROJECT_ROOT):/workspaces/brigade \
 		-w /workspaces/brigade \
@@ -214,6 +215,21 @@ build-cli:
 ################################################################################
 # Publish                                                                      #
 ################################################################################
+
+.PHONY: publish-brigadier
+publish-brigadier: build-brigadier
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		npm install -g npm-cli-login && \
+		npm-cli-login \
+			-u $(NPM_USERNAME) \
+			-e $(NPM_EMAIL) \
+			-p $${NPM_PASSWORD} && \
+		yarn publish \
+			--new-version $$(printf $(VERSION) | cut -c 2- ) \
+			--access public \
+			--no-git-tag-version \
+	'
 
 .PHONY: push-images
 push-images: push-apiserver push-scheduler push-observer push-logger-linux push-git-initializer push-worker
