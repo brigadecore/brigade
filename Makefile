@@ -162,11 +162,18 @@ test-integration: hack-expose-apiserver
 ################################################################################
 
 .PHONY: build
-build: build-images build-cli
+build: build-brigadier build-images build-cli
+
+.PHONY: build-brigadier
+build-brigadier:
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		yarn install && \
+		yarn build \
+	'
 
 .PHONY: build-images
 build-images: build-apiserver build-scheduler build-observer build-logger-linux build-git-initializer build-worker
-
 
 .PHONY: build-logger-linux
 build-logger-linux:
