@@ -3,6 +3,7 @@ bin/
 coverage.txt
 node_modules/
 dist/
+charts/brigade/charts
 .DS_Store
 
 # IDEs
