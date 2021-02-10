@@ -272,7 +272,7 @@ func TestMain(t *testing.T) {
 
 			// Delete the test project (we're sharing the name between tests)
 			err = client.Core().Projects().Delete(ctx, tc.project.ID)
-			if err, ok := errors.Cause(err).(*meta.ErrNotFound); !ok {
+			if _, ok := errors.Cause(err).(*meta.ErrNotFound); !ok {
 				require.NoError(t, err, "error deleting project")
 			}
 
