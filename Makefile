@@ -54,6 +54,7 @@ ifneq ($(SKIP_DOCKER),true)
 	  -it \
 		--rm \
 		-e SKIP_DOCKER=true \
+		-e HELM_PASSWORD=$${HELM_PASSWORD} \
 		-v $(PROJECT_ROOT):/workspaces/brigade \
 		-w /workspaces/brigade \
 		$(HELM_IMAGE)
@@ -72,6 +73,16 @@ ifdef DOCKER_ORG
 endif
 
 DOCKER_IMAGE_PREFIX := $(DOCKER_REGISTRY)$(DOCKER_ORG)brigade2-
+
+ifdef HELM_REGISTRY
+	HELM_REGISTRY := $(HELM_REGISTRY)/
+endif
+
+ifdef HELM_ORG
+	HELM_ORG := $(HELM_ORG)/
+endif
+
+HELM_CHART_PREFIX := $(HELM_REGISTRY)$(HELM_ORG)
 
 ifdef VERSION
 	MUTABLE_DOCKER_TAG := latest
@@ -228,6 +239,18 @@ push-%:
 			--context dir:///workspaces/brigade/ \
 			--destination $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
 			--destination $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
+	'
+
+.PHONY: publish-chart
+publish-chart:
+	$(HELM_DOCKER_CMD) sh	-c ' \
+		helm registry login $(HELM_REGISTRY) -u $(HELM_USERNAME) -p $${HELM_PASSWORD} && \
+		cd charts/brigade && \
+		helm dep up && \
+		sed -i "s/^version:.*/version: $(VERSION)/" Chart.yaml && \
+		sed -i "s/^appVersion:.*/version: $(VERSION)/" Chart.yaml && \
+		helm chart save . $(HELM_CHART_PREFIX)brigade:$(VERSION) && \
+		helm chart push $(HELM_CHART_PREFIX)brigade:$(VERSION) \
 	'
 
 ################################################################################
