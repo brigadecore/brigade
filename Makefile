@@ -22,6 +22,7 @@ ifneq ($(SKIP_DOCKER),true)
 		-it \
 		--rm \
 		-e SKIP_DOCKER=true \
+		-e GITHUB_TOKEN=$${GITHUB_TOKEN} \
 		-e GOCACHE=/workspaces/brigade/.gocache \
 		-v $(PROJECT_ROOT):/workspaces/brigade \
 		-w /workspaces/brigade \
@@ -251,6 +252,18 @@ publish-chart:
 		sed -i "s/^appVersion:.*/version: $(VERSION)/" Chart.yaml && \
 		helm chart save . $(HELM_CHART_PREFIX)brigade:$(VERSION) && \
 		helm chart push $(HELM_CHART_PREFIX)brigade:$(VERSION) \
+	'
+
+.PHONY: publish-cli
+publish-cli: build-cli
+	$(GO_DOCKER_CMD) sh -c ' \
+		go get github.com/tcnksm/ghr && \
+		ghr \
+			-u $(GITHUB_ORG) \
+			-r $(GITHUB_REPO) \
+			-t $${GITHUB_TOKEN} \
+			-delete \
+			${VERSION} ./bin \
 	'
 
 ################################################################################
