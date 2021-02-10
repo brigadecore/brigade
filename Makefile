@@ -216,6 +216,9 @@ build-cli:
 # Publish                                                                      #
 ################################################################################
 
+.PHONY: publish
+publish: publish-brigadier push-images publish-chart publish-cli
+
 .PHONY: publish-brigadier
 publish-brigadier: build-brigadier
 	$(JS_DOCKER_CMD) sh -c ' \
