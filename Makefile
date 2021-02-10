@@ -185,8 +185,8 @@ build-logger-linux:
 .PHONY: build-%
 build-%:
 	$(KANIKO_DOCKER_CMD) kaniko \
-		--build-arg VERSION="$(VERSION)" \
-		--build-arg COMMIT="$(GIT_VERSION)" \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg COMMIT=$(GIT_VERSION) \
 		--dockerfile /workspaces/brigade/v2/$*/Dockerfile \
 		--context dir:///workspaces/brigade/ \
 		--no-push
