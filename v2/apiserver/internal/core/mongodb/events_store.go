@@ -51,6 +51,11 @@ func NewEventsStore(database *mongo.Database) (core.EventsStore, error) {
 }
 
 func (e *eventsStore) Create(ctx context.Context, event core.Event) error {
+	// We need this to be non-nil before we store or various queries and
+	// statements won't work correctly.
+	if event.Worker.Jobs == nil {
+		event.Worker.Jobs = []core.Job{}
+	}
 	if _, err := e.collection.InsertOne(ctx, event); err != nil {
 		return errors.Wrapf(err, "error inserting new event %q", event.ID)
 	}
@@ -175,7 +180,7 @@ func (e *eventsStore) GetByHashedWorkerToken(
 }
 
 func (e *eventsStore) Cancel(ctx context.Context, id string) error {
-	now := time.Now().UTC()
+	cancellationTime := time.Now().UTC()
 
 	res, err := e.collection.UpdateOne(
 		ctx,
@@ -185,7 +190,7 @@ func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 		},
 		bson.M{
 			"$set": bson.M{
-				"canceled":            now,
+				"canceled":            cancellationTime,
 				"worker.status.phase": core.WorkerPhaseCanceled,
 			},
 		},
@@ -210,17 +215,32 @@ func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 		},
 		bson.M{
 			"$set": bson.M{
-				"canceled":            now,
-				"worker.status.phase": core.WorkerPhaseAborted,
+				"worker.status.phase":                           core.WorkerPhaseAborted, // nolint: lll
+				"worker.jobs.$[pending].status.phase":           core.JobPhaseCanceled,
+				"worker.jobs.$[startingOrRunning].status.phase": core.JobPhaseAborted,
+			},
+		},
+		&options.UpdateOptions{
+			ArrayFilters: &options.ArrayFilters{
+				Filters: []interface{}{
+					bson.M{
+						"pending.status.phase": core.JobPhasePending,
+					},
+					bson.M{
+						"startingOrRunning.status.phase": bson.M{
+							"$in": []core.JobPhase{
+								core.JobPhaseStarting,
+								core.JobPhaseRunning,
+							},
+						},
+					},
+				},
 			},
 		},
 	)
 	if err != nil {
 		return errors.Wrapf(err, "error updating status of event %q worker", id)
 	}
-
-	// TODO: If the event was running when it was canceled, its jobs need to be
-	// canceled also.
 
 	if res.MatchedCount == 0 {
 		return &meta.ErrConflict{
@@ -289,40 +309,53 @@ func (e *eventsStore) CancelMany(
 		}
 	}
 
-	if cancelStarting {
+	if cancelStarting && cancelRunning {
+		criteria["worker.status.phase"] = bson.M{
+			"$in": []core.WorkerPhase{
+				core.WorkerPhaseStarting,
+				core.WorkerPhaseRunning,
+			},
+		}
+	} else if cancelStarting {
 		criteria["worker.status.phase"] = core.WorkerPhaseStarting
-		if _, err := e.collection.UpdateMany(
-			ctx,
-			criteria,
-			bson.M{
-				"$set": bson.M{
-					"canceled":            cancellationTime,
-					"worker.status.phase": core.WorkerPhaseAborted,
-				},
-			},
-		); err != nil {
-			return events, errors.Wrap(err, "error updating events")
-		}
-	}
-
-	if cancelRunning {
+	} else if cancelRunning {
 		criteria["worker.status.phase"] = core.WorkerPhaseRunning
+	}
+
+	if cancelStarting || cancelRunning {
 		if _, err := e.collection.UpdateMany(
 			ctx,
 			criteria,
 			bson.M{
+				// nolint: lll
 				"$set": bson.M{
-					"canceled":            cancellationTime,
-					"worker.status.phase": core.WorkerPhaseAborted,
+					"canceled":                                      cancellationTime,
+					"worker.status.phase":                           core.WorkerPhaseAborted,
+					"worker.jobs.$[pending].status.phase":           core.JobPhaseCanceled,
+					"worker.jobs.$[startingOrRunning].status.phase": core.JobPhaseAborted,
+				},
+			},
+			&options.UpdateOptions{
+				ArrayFilters: &options.ArrayFilters{
+					Filters: []interface{}{
+						bson.M{
+							"pending.status.phase": core.JobPhasePending,
+						},
+						bson.M{
+							"startingOrRunning.status.phase": bson.M{
+								"$in": []core.JobPhase{
+									core.JobPhaseStarting,
+									core.JobPhaseRunning,
+								},
+							},
+						},
+					},
 				},
 			},
 		); err != nil {
 			return events, errors.Wrap(err, "error updating events")
 		}
 	}
-
-	// TODO: If any event was running when it was canceled, its jobs need to be
-	// canceled also.
 
 	delete(criteria, "worker.status.phase")
 	criteria["canceled"] = cancellationTime

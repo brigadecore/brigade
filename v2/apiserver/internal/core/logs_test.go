@@ -118,8 +118,10 @@ func TestLogsServiceStream(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Worker: Worker{
-								Jobs: map[string]Job{
-									"foo": {},
+								Jobs: []Job{
+									{
+										Name: "foo",
+									},
 								},
 							},
 						}, nil

@@ -28,14 +28,15 @@ export class Job extends BrigadierJob {
             rejectUnauthorized: false
           }
         ),
-        method: "put",
-        url: `${this.event.worker.apiAddress}/v2/events/${this.event.id}/worker/jobs/${this.name}`,
+        method: "post",
+        url: `${this.event.worker.apiAddress}/v2/events/${this.event.id}/worker/jobs`,
         headers: {
           Authorization: `Bearer ${this.event.worker.apiToken}`
         },
         data: {
           apiVersion: "brigade.sh/v2",
           kind: "Job",
+          name: this.name,
           spec: {
             primaryContainer: this.primaryContainer,
             sidecarContainers: this.sidecarContainers,

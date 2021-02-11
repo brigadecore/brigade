@@ -143,6 +143,14 @@
 		"kind": {
 			"$ref": "#/definitions/kind"
 		},
+		"name": {
+			"allOf": [
+				{
+					"$ref": "file:///brigade/schemas/common.json#/definitions/identifier"
+				}
+			],
+			"description": "The job's name; must be unique per worker"
+		},
 		"spec": {
 			"$ref": "#/definitions/jobSpec"
 		}

@@ -73,6 +73,8 @@ func (j JobPhase) IsTerminal() bool {
 // Job represents a component spawned by a Worker to complete a single task
 // in the course of handling an Event.
 type Job struct {
+	// Name is the Job's name. It should be unique among a given Worker's Jobs.
+	Name string `json:"name" bson:"name"`
 	// Spec is the technical blueprint for the Job.
 	Spec JobSpec `json:"spec" bson:"spec"`
 	// Status contains details of the Job's current state.
@@ -171,21 +173,12 @@ type JobsService interface {
 	// not exist, implementations MUST return a *meta.ErrNotFound error. If the
 	// specified Event already has a Job with the specified name, implementations
 	// MUST return a *meta.ErrConflict error.
-	Create(
-		ctx context.Context,
-		eventID string,
-		jobName string,
-		job Job,
-	) error
+	Create(ctx context.Context, eventID string, job Job) error
 	// Start, given an Event identifier and Job name, starts that Job on
 	// Brigade's workload execution substrate. If the specified Event or specified
 	// Job thereof does not exist, implementations MUST return a *meta.ErrNotFound
 	// error.
-	Start(
-		ctx context.Context,
-		eventID string,
-		jobName string,
-	) error
+	Start(ctx context.Context, eventID string, jobName string) error
 	// GetStatus, given an Event identifier and Job name, returns the Job's
 	// status. If the specified Event or specified Job thereof does not exist,
 	// implementations MUST return a *meta.ErrNotFound error.
@@ -247,7 +240,6 @@ func NewJobsService(
 func (j *jobsService) Create(
 	ctx context.Context,
 	eventID string,
-	jobName string,
 	job Job,
 ) error {
 	if err := j.authorize(ctx, RoleWorker(eventID)); err != nil {
@@ -258,14 +250,14 @@ func (j *jobsService) Create(
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
-	if _, ok := event.Worker.Jobs[jobName]; ok {
+	if _, ok := event.Worker.Job(job.Name); ok {
 		return &meta.ErrConflict{
 			Type: "Job",
-			ID:   jobName,
+			ID:   job.Name,
 			Reason: fmt.Sprintf(
 				"Event %q already has a job named %q.",
 				eventID,
-				jobName,
+				job.Name,
 			),
 		}
 	}
@@ -355,7 +347,7 @@ func (j *jobsService) Create(
 		jobCopy.Spec.SidecarContainers[sidecarName] = sidecar
 	}
 
-	if err = j.jobsStore.Create(ctx, eventID, jobName, jobCopy); err != nil {
+	if err = j.jobsStore.Create(ctx, eventID, jobCopy); err != nil {
 		return errors.Wrapf(
 			err, "error saving event %q job %q in store",
 			eventID,
@@ -368,23 +360,23 @@ func (j *jobsService) Create(
 		ctx,
 		project,
 		event.ID,
-		jobName,
+		job.Name,
 		job.Spec,
 	); err != nil {
 		return errors.Wrapf(
 			err,
 			"error storing event %q job %q environment on the substrate",
 			event.ID,
-			jobName,
+			job.Name,
 		)
 	}
 
-	if err = j.substrate.ScheduleJob(ctx, project, event, jobName); err != nil {
+	if err = j.substrate.ScheduleJob(ctx, project, event, job.Name); err != nil {
 		return errors.Wrapf(
 			err,
 			"error scheduling event %q job %q on the substrate",
 			event.ID,
-			jobName,
+			job.Name,
 		)
 	}
 
@@ -404,7 +396,7 @@ func (j *jobsService) Start(
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
-	job, ok := event.Worker.Jobs[jobName]
+	job, ok := event.Worker.Job(jobName)
 	if !ok {
 		return &meta.ErrNotFound{
 			Type: "Job",
@@ -475,7 +467,7 @@ func (j *jobsService) GetStatus(
 		return JobStatus{},
 			errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
-	job, ok := event.Worker.Jobs[jobName]
+	job, ok := event.Worker.Job(jobName)
 	if !ok {
 		return JobStatus{}, &meta.ErrNotFound{
 			Type: "Job",
@@ -500,12 +492,13 @@ func (j *jobsService) WatchStatus(
 		return nil,
 			errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
-	if _, ok := event.Worker.Jobs[jobName]; !ok {
+	if _, ok := event.Worker.Job(jobName); !ok {
 		return nil, &meta.ErrNotFound{
 			Type: "Job",
 			ID:   jobName,
 		}
 	}
+
 	statusCh := make(chan JobStatus)
 	go func() {
 		defer close(statusCh)
@@ -522,8 +515,9 @@ func (j *jobsService) WatchStatus(
 				log.Printf("error retrieving event %q from store: %s", eventID, err)
 				return
 			}
+			job, _ := event.Worker.Job(jobName)
 			select {
-			case statusCh <- *event.Worker.Jobs[jobName].Status:
+			case statusCh <- *job.Status:
 			case <-ctx.Done():
 				return
 			}
@@ -572,7 +566,7 @@ func (j *jobsService) Cleanup(
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
 
-	_, ok := event.Worker.Jobs[jobName]
+	_, ok := event.Worker.Job(jobName)
 	if !ok {
 		return &meta.ErrNotFound{
 			Type: "Job",
@@ -603,12 +597,7 @@ func (j *jobsService) Cleanup(
 type JobsStore interface {
 	// Create persists a new Job for the specified Event in the underlying data
 	// store.
-	Create(
-		ctx context.Context,
-		eventID string,
-		jobName string,
-		job Job,
-	) error
+	Create(ctx context.Context, eventID string, job Job) error
 	// UpdateStatus updates the status of the specified Job in the underlying data
 	// store. If the specified job is not found, implementations MUST return a
 	// *meta.ErrNotFound error.

@@ -331,8 +331,9 @@ func TestRunJobLoop(t *testing.T) {
 						cancelFn()
 						return core.Event{
 							Worker: &core.Worker{
-								Jobs: map[string]core.Job{
-									"bar": {
+								Jobs: []core.Job{
+									{
+										Name: "bar",
 										Status: &core.JobStatus{
 											Phase: core.JobPhaseRunning,
 										},
@@ -390,8 +391,9 @@ func TestRunJobLoop(t *testing.T) {
 					getEventFn: func(context.Context, string) (core.Event, error) {
 						return core.Event{
 							Worker: &core.Worker{
-								Jobs: map[string]core.Job{
-									"bar": {
+								Jobs: []core.Job{
+									{
+										Name: "bar",
 										Status: &core.JobStatus{
 											Phase: core.JobPhasePending,
 										},
@@ -451,8 +453,9 @@ func TestRunJobLoop(t *testing.T) {
 					getEventFn: func(context.Context, string) (core.Event, error) {
 						return core.Event{
 							Worker: &core.Worker{
-								Jobs: map[string]core.Job{
-									"bar": {
+								Jobs: []core.Job{
+									{
+										Name: "bar",
 										Status: &core.JobStatus{
 											Phase: core.JobPhasePending,
 										},

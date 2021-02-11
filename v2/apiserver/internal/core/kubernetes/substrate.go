@@ -565,9 +565,9 @@ func (s *substrate) StartJob(
 	event core.Event,
 	jobName string,
 ) error {
-	jobSpec := event.Worker.Jobs[jobName].Spec
+	job, _ := event.Worker.Job(jobName)
 	if err :=
-		s.createJobPodFn(ctx, project, event, jobName, jobSpec); err != nil {
+		s.createJobPodFn(ctx, project, event, jobName, job.Spec); err != nil {
 		return errors.Wrapf(
 			err,
 			"error creating pod for event %q job %q",

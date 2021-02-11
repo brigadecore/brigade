@@ -156,7 +156,7 @@ outerLoop:
 				continue // Next message
 			}
 
-			job, exists := event.Worker.Jobs[jobName]
+			job, exists := event.Worker.Job(jobName)
 			if !exists {
 				s.jobLoopErrFn(
 					errors.Errorf(
