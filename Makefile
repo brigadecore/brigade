@@ -22,6 +22,7 @@ ifneq ($(SKIP_DOCKER),true)
 		-it \
 		--rm \
 		-e SKIP_DOCKER=true \
+		-e GITHUB_TOKEN=$${GITHUB_TOKEN} \
 		-e GOCACHE=/workspaces/brigade/.gocache \
 		-v $(PROJECT_ROOT):/workspaces/brigade \
 		-w /workspaces/brigade \
@@ -32,6 +33,7 @@ ifneq ($(SKIP_DOCKER),true)
 	JS_DOCKER_CMD := docker run \
 		-it \
 		--rm \
+		-e NPM_PASSWORD=$${NPM_PASSWORD} \
 		-e SKIP_DOCKER=true \
 		-v $(PROJECT_ROOT):/workspaces/brigade \
 		-w /workspaces/brigade \
@@ -43,16 +45,22 @@ ifneq ($(SKIP_DOCKER),true)
 		-it \
 		--rm \
 		-e SKIP_DOCKER=true \
-		-e DOCKER_USERNAME=$${DOCKER_USERNAME} \
 		-e DOCKER_PASSWORD=$${DOCKER_PASSWORD} \
 		-v $(PROJECT_ROOT):/workspaces/brigade \
 		-w /workspaces/brigade \
 		$(KANIKO_IMAGE)
-endif
 
-# Allow for users to supply a different helm cli name,
-# for instance, if one has helm v3 as `helm3` and helm v2 as `helm`
-HELM ?= helm
+	HELM_IMAGE := brigadecore/helm-tools:v0.1.0
+
+	HELM_DOCKER_CMD := docker run \
+	  -it \
+		--rm \
+		-e SKIP_DOCKER=true \
+		-e HELM_PASSWORD=$${HELM_PASSWORD} \
+		-v $(PROJECT_ROOT):/workspaces/brigade \
+		-w /workspaces/brigade \
+		$(HELM_IMAGE)
+endif
 
 ################################################################################
 # Binaries and Docker images we build and publish                              #
@@ -67,6 +75,16 @@ ifdef DOCKER_ORG
 endif
 
 DOCKER_IMAGE_PREFIX := $(DOCKER_REGISTRY)$(DOCKER_ORG)brigade2-
+
+ifdef HELM_REGISTRY
+	HELM_REGISTRY := $(HELM_REGISTRY)/
+endif
+
+ifdef HELM_ORG
+	HELM_ORG := $(HELM_ORG)/
+endif
+
+HELM_CHART_PREFIX := $(HELM_REGISTRY)$(HELM_ORG)
 
 ifdef VERSION
 	MUTABLE_DOCKER_TAG := latest
@@ -133,6 +151,14 @@ test-unit-js:
 		yarn test \
 	'
 
+.PHONY: lint-chart
+lint-chart:
+	$(HELM_DOCKER_CMD) sh -c ' \
+		cd charts/brigade && \
+		helm dep up && \
+		helm lint . \
+	'
+
 .PHONY: test-integration
 test-integration: hack-expose-apiserver
 	@cd v2 && \
@@ -144,15 +170,22 @@ test-integration: hack-expose-apiserver
 	@$(MAKE) hack-unexpose-apiserver
 
 ################################################################################
-# Build / Publish                                                              #
+# Build                                                                        #
 ################################################################################
 
 .PHONY: build
-build: build-images build-cli
+build: build-brigadier build-images build-cli
+
+.PHONY: build-brigadier
+build-brigadier:
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		yarn install && \
+		yarn build \
+	'
 
 .PHONY: build-images
 build-images: build-apiserver build-scheduler build-observer build-logger-linux build-git-initializer build-worker
-
 
 .PHONY: build-logger-linux
 build-logger-linux:
@@ -164,11 +197,42 @@ build-logger-linux:
 .PHONY: build-%
 build-%:
 	$(KANIKO_DOCKER_CMD) kaniko \
-		--build-arg VERSION="$(VERSION)" \
-		--build-arg COMMIT="$(GIT_VERSION)" \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg COMMIT=$(GIT_VERSION) \
 		--dockerfile /workspaces/brigade/v2/$*/Dockerfile \
 		--context dir:///workspaces/brigade/ \
 		--no-push
+
+.PHONY: build-cli
+build-cli:
+	$(GO_DOCKER_CMD) sh -c ' \
+		cd v2 && \
+		VERSION=$(VERSION) \
+		COMMIT=$(GIT_VERSION) \
+		../scripts/build-cli.sh \
+	'
+
+################################################################################
+# Publish                                                                      #
+################################################################################
+
+.PHONY: publish
+publish: publish-brigadier push-images publish-chart publish-cli
+
+.PHONY: publish-brigadier
+publish-brigadier: build-brigadier
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		npm install -g npm-cli-login && \
+		npm-cli-login \
+			-u $(NPM_USERNAME) \
+			-e $(NPM_EMAIL) \
+			-p $${NPM_PASSWORD} && \
+		yarn publish \
+			--new-version $$(printf $(VERSION) | cut -c 2- ) \
+			--access public \
+			--no-git-tag-version \
+	'
 
 .PHONY: push-images
 push-images: push-apiserver push-scheduler push-observer push-logger-linux push-git-initializer push-worker
@@ -176,7 +240,7 @@ push-images: push-apiserver push-scheduler push-observer push-logger-linux push-
 .PHONY: push-logger-linux
 push-logger-linux:
 	$(KANIKO_DOCKER_CMD) sh -c ' \
-		docker login $(DOCKER_REGISTRY) -u $${DOCKER_USERNAME} -p $${DOCKER_PASSWORD} && \
+		docker login $(DOCKER_REGISTRY) -u $(DOCKER_USERNAME) -p $${DOCKER_PASSWORD} && \
 		kaniko \
 			--dockerfile /workspaces/brigade/v2/logger/Dockerfile.linux \
 			--context dir:///workspaces/brigade/logger \
@@ -187,7 +251,7 @@ push-logger-linux:
 .PHONY: push-%
 push-%:
 	$(KANIKO_DOCKER_CMD) sh -c ' \
-		docker login $(DOCKER_REGISTRY) -u $${DOCKER_USERNAME} -p $${DOCKER_PASSWORD} && \
+		docker login $(DOCKER_REGISTRY) -u $(DOCKER_USERNAME) -p $${DOCKER_PASSWORD} && \
 		kaniko \
 			--build-arg VERSION="$(VERSION)" \
 			--build-arg COMMIT="$(GIT_VERSION)" \
@@ -197,13 +261,28 @@ push-%:
 			--destination $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
 	'
 
-.PHONY: build-cli
-build-cli:
+.PHONY: publish-chart
+publish-chart:
+	$(HELM_DOCKER_CMD) sh	-c ' \
+		helm registry login $(HELM_REGISTRY) -u $(HELM_USERNAME) -p $${HELM_PASSWORD} && \
+		cd charts/brigade && \
+		helm dep up && \
+		sed -i "s/^version:.*/version: $(VERSION)/" Chart.yaml && \
+		sed -i "s/^appVersion:.*/version: $(VERSION)/" Chart.yaml && \
+		helm chart save . $(HELM_CHART_PREFIX)brigade:$(VERSION) && \
+		helm chart push $(HELM_CHART_PREFIX)brigade:$(VERSION) \
+	'
+
+.PHONY: publish-cli
+publish-cli: build-cli
 	$(GO_DOCKER_CMD) sh -c ' \
-		cd v2 && \
-		VERSION="$(VERSION)" \
-		COMMIT="$(GIT_VERSION)" \
-		../scripts/build-cli.sh \
+		go get github.com/tcnksm/ghr && \
+		ghr \
+			-u $(GITHUB_ORG) \
+			-r $(GITHUB_REPO) \
+			-t $${GITHUB_TOKEN} \
+			-delete \
+			${VERSION} ./bin \
 	'
 
 ################################################################################
