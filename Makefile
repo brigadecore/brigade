@@ -328,6 +328,7 @@ hack-push-%: hack-build-%
 .PHONY: hack
 hack: hack-push-images hack-build-cli
 	kubectl get namespace brigade || kubectl create namespace brigade
+	helm dep up charts/brigade && \
 	helm upgrade brigade charts/brigade \
 		--install \
 		--namespace brigade \
