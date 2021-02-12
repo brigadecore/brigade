@@ -348,8 +348,8 @@ func TestProjectServiceDelete(t *testing.T) {
 					DeleteManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (EventList, error) {
-						return EventList{},
+					) (<-chan Event, error) {
+						return nil,
 							errors.New("error deleting events associated with project")
 					},
 				},
@@ -379,8 +379,8 @@ func TestProjectServiceDelete(t *testing.T) {
 					DeleteManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (EventList, error) {
-						return EventList{}, nil
+					) (<-chan Event, error) {
+						return nil, nil
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
@@ -415,8 +415,8 @@ func TestProjectServiceDelete(t *testing.T) {
 					DeleteManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (EventList, error) {
-						return EventList{}, nil
+					) (<-chan Event, error) {
+						return nil, nil
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
@@ -447,8 +447,8 @@ func TestProjectServiceDelete(t *testing.T) {
 					DeleteManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (EventList, error) {
-						return EventList{}, nil
+					) (<-chan Event, error) {
+						return nil, nil
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
@@ -484,8 +484,8 @@ func TestProjectServiceDelete(t *testing.T) {
 					DeleteManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (EventList, error) {
-						return EventList{}, nil
+					) (<-chan Event, error) {
+						return nil, nil
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{

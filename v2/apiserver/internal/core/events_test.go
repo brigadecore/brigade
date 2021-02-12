@@ -1035,8 +1035,8 @@ func TestEventsServiceDeleteMany(t *testing.T) {
 					DeleteManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (EventList, error) {
-						return EventList{}, errors.New("events store error")
+					) (<-chan Event, error) {
+						return nil, errors.New("events store error")
 					},
 				},
 			},
@@ -1063,8 +1063,10 @@ func TestEventsServiceDeleteMany(t *testing.T) {
 					DeleteManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (EventList, error) {
-						return EventList{}, nil
+					) (<-chan Event, error) {
+						eventCh := make(chan Event)
+						defer close(eventCh)
+						return eventCh, nil
 					},
 				},
 			},

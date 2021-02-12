@@ -544,8 +544,6 @@ func (e *eventsService) CancelMany(
 
 	// When an event comes in via the corresponding channel,
 	// kick off a go routine to execute cleanup.
-	// Otherwise, handle errors and/or finish and return once all
-	// events have come through.
 	for {
 		select {
 		case event, ok := <-eventCh:
@@ -567,7 +565,7 @@ func (e *eventsService) CancelMany(
 						))
 					}
 				}()
-			} else {
+			} else { // event channel closed; we're done
 				return result, nil
 			}
 		case <-ctx.Done():
@@ -645,35 +643,41 @@ func (e *eventsService) DeleteMany(
 		)
 	}
 
-	events, err := e.eventsStore.DeleteMany(ctx, selector)
+	eventCh, err := e.eventsStore.DeleteMany(ctx, selector)
 	if err != nil {
 		return result, errors.Wrap(err, "error deleting events from store")
 	}
 
-	result.Count = int64(len(events.Items))
-
-	// TODO: This could take a while, so we don't do it synchronously. But what if
-	// the process dies while this is in-progress? Can we find a quicker way? Or
-	// if not quicker, more reliable?
-	go func() {
-		for _, event := range events.Items {
-			if err := e.substrate.DeleteWorkerAndJobs(
-				context.Background(), // Deliberately not using request context
-				project,
-				event,
-			); err != nil {
-				log.Println(
-					errors.Wrapf(
-						err,
-						"error deleting event %q worker and jobs from the substrate",
-						event.ID,
-					),
-				)
+	// When an event comes in via the corresponding channel,
+	// kick off a go routine to execute cleanup.
+	for {
+		select {
+		case event, ok := <-eventCh:
+			if ok {
+				result.Count++
+				// TODO: This could take a while, so we don't do it synchronously. But
+				// what if the process dies while this is in-progress? Can we find a
+				// quicker, more efficient way to do this?
+				go func() {
+					if err := e.substrate.DeleteWorkerAndJobs(
+						context.Background(), // deliberately not using ctx
+						project,
+						event,
+					); err != nil {
+						log.Println(errors.Wrapf(
+							err,
+							"error deleting event %q worker and jobs from the substrate",
+							event.ID,
+						))
+					}
+				}()
+			} else { // event channel closed; we're done
+				return result, nil
 			}
+		case <-ctx.Done():
+			return result, nil
 		}
-	}()
-
-	return result, nil
+	}
 }
 
 // EventsStore is an interface for components that implement Event persistence
@@ -717,5 +721,5 @@ type EventsStore interface {
 	Delete(context.Context, string) error
 	// DeleteMany unconditionally deletes multiple Events specified by the
 	// EventsSelector parameter from the underlying data store.
-	DeleteMany(context.Context, EventsSelector) (EventList, error)
+	DeleteMany(context.Context, EventsSelector) (<-chan Event, error)
 }

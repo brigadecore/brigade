@@ -414,9 +414,7 @@ func (e *eventsStore) Delete(ctx context.Context, id string) error {
 func (e *eventsStore) DeleteMany(
 	ctx context.Context,
 	selector core.EventsSelector,
-) (core.EventList, error) {
-	events := core.EventList{}
-
+) (<-chan core.Event, error) {
 	// The MongoDB driver for Go doesn't expose findAndModify(), which could be
 	// used to select events and delete them at the same time. As a workaround,
 	// we'll perform a logical delete first, select the logically deleted events,
@@ -443,7 +441,7 @@ func (e *eventsStore) DeleteMany(
 			},
 		},
 	); err != nil {
-		return events, errors.Wrap(err, "error logically deleting events")
+		return nil, errors.Wrap(err, "error logically deleting events")
 	}
 
 	// Select the logically deleted documents...
@@ -459,22 +457,32 @@ func (e *eventsStore) DeleteMany(
 	)
 	cur, err := e.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
-		return events, errors.Wrapf(
+		return nil, errors.Wrapf(
 			err,
 			"error finding logically deleted events",
 		)
 	}
-	if err := cur.All(ctx, &events.Items); err != nil {
-		return events, errors.Wrap(
-			err,
-			"error decoding logically deleted events",
-		)
-	}
+
+	eventCh := make(chan core.Event)
+	go func() {
+		defer close(eventCh)
+		for cur.Next(ctx) {
+			event := core.Event{}
+			if err := cur.Decode(&event); err != nil {
+				log.Println(errors.Wrap(err, "unable to decode event"))
+			}
+			select {
+			case eventCh <- event:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 
 	// Final deletion
 	if _, err := e.collection.DeleteMany(ctx, criteria); err != nil {
-		return events, errors.Wrap(err, "error deleting events")
+		return eventCh, errors.Wrap(err, "error deleting events")
 	}
 
-	return events, nil
+	return eventCh, nil
 }
