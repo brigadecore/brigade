@@ -29,9 +29,9 @@ type JobsEndpoints struct {
 func (j *JobsEndpoints) Register(router *mux.Router) {
 	// Create job
 	router.HandleFunc(
-		"/v2/events/{eventID}/worker/jobs/{jobName}",
+		"/v2/events/{eventID}/worker/jobs",
 		j.AuthFilter.Decorate(j.create),
-	).Methods(http.MethodPut)
+	).Methods(http.MethodPost)
 
 	// Start job
 	router.HandleFunc(
@@ -70,7 +70,6 @@ func (j *JobsEndpoints) create(w http.ResponseWriter, r *http.Request) {
 				return nil, j.Service.Create(
 					r.Context(),
 					mux.Vars(r)["eventID"],
-					mux.Vars(r)["jobName"],
 					job,
 				)
 			},

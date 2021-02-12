@@ -106,7 +106,19 @@ type Worker struct {
 	HashedToken string `json:"-" bson:"hashedToken"`
 	// Jobs contains details of all Jobs spawned by the Worker during handling of
 	// the Event.
-	Jobs map[string]Job `json:"jobs,omitempty" bson:"jobs,omitempty"`
+	Jobs []Job `json:"jobs,omitempty" bson:"jobs"`
+}
+
+// Job retrieves a Job by name. It returns a boolean indicating whether the
+// returned Job is the one requested (true) or a zero value (false) because no
+// Job with the specified name belongs to this Worker.
+func (w *Worker) Job(jobName string) (Job, bool) {
+	for _, j := range w.Jobs {
+		if j.Name == jobName {
+			return j, true
+		}
+	}
+	return Job{}, false
 }
 
 // WorkerSpec is the technical blueprint for a Worker.

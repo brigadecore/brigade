@@ -37,7 +37,7 @@ func TestJobsStoreCreate(t *testing.T) {
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error updating spec of event")
+				require.Contains(t, err.Error(), "error creating event")
 			},
 		},
 		{
@@ -87,8 +87,9 @@ func TestJobsStoreCreate(t *testing.T) {
 				store.Create(
 					context.Background(),
 					testEvent,
-					testJobName,
-					core.Job{},
+					core.Job{
+						Name: testJobName,
+					},
 				),
 			)
 		})

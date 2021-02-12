@@ -76,8 +76,10 @@ func TestJobsServiceCreate(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Worker: Worker{
-								Jobs: map[string]Job{
-									testJobName: {},
+								Jobs: []Job{
+									{
+										Name: testJobName,
+									},
 								},
 							},
 						}, nil
@@ -228,7 +230,7 @@ func TestJobsServiceCreate(t *testing.T) {
 					},
 				},
 				jobsStore: &mockJobsStore{
-					CreateFn: func(context.Context, string, string, Job) error {
+					CreateFn: func(context.Context, string, Job) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -264,7 +266,7 @@ func TestJobsServiceCreate(t *testing.T) {
 					},
 				},
 				jobsStore: &mockJobsStore{
-					CreateFn: func(context.Context, string, string, Job) error {
+					CreateFn: func(context.Context, string, Job) error {
 						return nil
 					},
 				},
@@ -311,7 +313,7 @@ func TestJobsServiceCreate(t *testing.T) {
 					},
 				},
 				jobsStore: &mockJobsStore{
-					CreateFn: func(context.Context, string, string, Job) error {
+					CreateFn: func(context.Context, string, Job) error {
 						return nil
 					},
 				},
@@ -361,7 +363,7 @@ func TestJobsServiceCreate(t *testing.T) {
 					},
 				},
 				jobsStore: &mockJobsStore{
-					CreateFn: func(_ context.Context, _ string, _ string, job Job) error {
+					CreateFn: func(_ context.Context, _ string, job Job) error {
 						// Assert that all expected environment redactions occurred
 						for k := range testEnvironment {
 							v, ok := job.Spec.PrimaryContainer.Environment[k]
@@ -413,8 +415,8 @@ func TestJobsServiceCreate(t *testing.T) {
 				testCase.service.Create(
 					context.Background(),
 					testEventID,
-					testJobName,
 					Job{
+						Name: testJobName,
 						Spec: JobSpec{
 							PrimaryContainer: JobContainerSpec{
 								ContainerSpec: ContainerSpec{
@@ -499,8 +501,9 @@ func TestJobsServiceStart(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Worker: Worker{
-								Jobs: map[string]Job{
-									testJobName: {
+								Jobs: []Job{
+									{
+										Name: testJobName,
 										Status: &JobStatus{
 											Phase: JobPhaseRunning,
 										},
@@ -524,8 +527,9 @@ func TestJobsServiceStart(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Worker: Worker{
-								Jobs: map[string]Job{
-									testJobName: {
+								Jobs: []Job{
+									{
+										Name: testJobName,
 										Status: &JobStatus{
 											Phase: JobPhasePending,
 										},
@@ -555,8 +559,9 @@ func TestJobsServiceStart(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Worker: Worker{
-								Jobs: map[string]Job{
-									testJobName: {
+								Jobs: []Job{
+									{
+										Name: testJobName,
 										Status: &JobStatus{
 											Phase: JobPhasePending,
 										},
@@ -595,8 +600,9 @@ func TestJobsServiceStart(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Worker: Worker{
-								Jobs: map[string]Job{
-									testJobName: {
+								Jobs: []Job{
+									{
+										Name: testJobName,
 										Status: &JobStatus{
 											Phase: JobPhasePending,
 										},
@@ -640,8 +646,9 @@ func TestJobsServiceStart(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Worker: Worker{
-								Jobs: map[string]Job{
-									testJobName: {
+								Jobs: []Job{
+									{
+										Name: testJobName,
 										Status: &JobStatus{
 											Phase: JobPhasePending,
 										},
@@ -745,8 +752,9 @@ func TestJobsServiceGetStatus(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Worker: Worker{
-								Jobs: map[string]Job{
-									testJobName: {
+								Jobs: []Job{
+									{
+										Name:   testJobName,
 										Status: &testJobStatus,
 									},
 								},
@@ -834,8 +842,9 @@ func TestJobsServiceWatchStatus(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Worker: Worker{
-								Jobs: map[string]Job{
-									testJobName: {
+								Jobs: []Job{
+									{
+										Name:   testJobName,
 										Status: &testJobStatus,
 									},
 								},
@@ -1004,8 +1013,10 @@ func TestJobsServiceCleanup(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Worker: Worker{
-								Jobs: map[string]Job{
-									testJobName: {},
+								Jobs: []Job{
+									{
+										Name: testJobName,
+									},
 								},
 							},
 						}, nil
@@ -1031,8 +1042,10 @@ func TestJobsServiceCleanup(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Worker: Worker{
-								Jobs: map[string]Job{
-									testJobName: {},
+								Jobs: []Job{
+									{
+										Name: testJobName,
+									},
 								},
 							},
 						}, nil
@@ -1063,8 +1076,10 @@ func TestJobsServiceCleanup(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Worker: Worker{
-								Jobs: map[string]Job{
-									testJobName: {},
+								Jobs: []Job{
+									{
+										Name: testJobName,
+									},
 								},
 							},
 						}, nil
@@ -1099,12 +1114,7 @@ func TestJobsServiceCleanup(t *testing.T) {
 }
 
 type mockJobsStore struct {
-	CreateFn func(
-		ctx context.Context,
-		eventID string,
-		jobName string,
-		job Job,
-	) error
+	CreateFn       func(ctx context.Context, eventID string, job Job) error
 	UpdateStatusFn func(
 		ctx context.Context,
 		eventID string,
@@ -1116,10 +1126,9 @@ type mockJobsStore struct {
 func (m *mockJobsStore) Create(
 	ctx context.Context,
 	eventID string,
-	jobName string,
 	job Job,
 ) error {
-	return m.CreateFn(ctx, eventID, jobName, job)
+	return m.CreateFn(ctx, eventID, job)
 }
 
 func (m *mockJobsStore) UpdateStatus(
