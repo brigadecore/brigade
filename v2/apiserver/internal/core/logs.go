@@ -150,7 +150,7 @@ func (l *logsService) Stream(
 
 	if selector.Job != "" {
 		// Make sure the job exists
-		job, ok := event.Worker.Jobs[selector.Job]
+		job, ok := event.Worker.Job(selector.Job)
 		if !ok {
 			return nil, &meta.ErrNotFound{
 				Type: "Job",
@@ -158,7 +158,7 @@ func (l *logsService) Stream(
 			}
 		}
 		if selector.Container != selector.Job {
-			if _, ok = job.Spec.SidecarContainers[selector.Container]; !ok {
+			if _, ok := job.Spec.SidecarContainers[selector.Container]; !ok {
 				return nil, &meta.ErrNotFound{
 					Type: "JobContainer",
 					ID:   selector.Container,

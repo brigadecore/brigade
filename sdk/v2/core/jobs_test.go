@@ -27,6 +27,7 @@ func TestJobsClientCreate(t *testing.T) {
 	const testEventID = "12345"
 	const testJobName = "Italian"
 	testJob := Job{
+		Name: testJobName,
 		Spec: JobSpec{
 			PrimaryContainer: JobContainerSpec{
 				ContainerSpec: ContainerSpec{
@@ -39,13 +40,12 @@ func TestJobsClientCreate(t *testing.T) {
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				defer r.Body.Close()
-				require.Equal(t, http.MethodPut, r.Method)
+				require.Equal(t, http.MethodPost, r.Method)
 				require.Equal(
 					t,
 					fmt.Sprintf(
-						"/v2/events/%s/worker/jobs/%s",
+						"/v2/events/%s/worker/jobs",
 						testEventID,
-						testJobName,
 					),
 					r.URL.Path,
 				)
@@ -64,7 +64,6 @@ func TestJobsClientCreate(t *testing.T) {
 	err := client.Create(
 		context.Background(),
 		testEventID,
-		testJobName,
 		testJob,
 	)
 	require.NoError(t, err)

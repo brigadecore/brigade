@@ -28,24 +28,23 @@ func NewJobsStore(database *mongo.Database) (core.JobsStore, error) {
 func (j *jobsStore) Create(
 	ctx context.Context,
 	eventID string,
-	jobName string,
 	job core.Job,
 ) error {
 	res, err := j.collection.UpdateOne(
 		ctx,
 		bson.M{"id": eventID},
 		bson.M{
-			"$set": bson.M{
-				fmt.Sprintf("worker.jobs.%s", jobName): job,
+			"$push": bson.M{
+				"worker.jobs": job,
 			},
 		},
 	)
 	if err != nil {
 		return errors.Wrapf(
 			err,
-			"error updating spec of event %q job %q",
+			"error creating event %q job %q",
 			eventID,
-			jobName,
+			job.Name,
 		)
 	}
 	if res.MatchedCount == 0 {
@@ -66,18 +65,19 @@ func (j *jobsStore) UpdateStatus(
 	res, err := j.collection.UpdateOne(
 		ctx,
 		bson.M{
-			"id": eventID,
+			"id":               eventID,
+			"worker.jobs.name": jobName,
 		},
 		bson.M{
 			"$set": bson.M{
-				fmt.Sprintf("worker.jobs.%s.status", jobName): status,
+				"worker.jobs.$.status": status,
 			},
 		},
 	)
 	if err != nil {
 		return errors.Wrapf(
 			err,
-			"error updating status of event %q worker job %q",
+			"error updating status of event %q job %q",
 			eventID,
 			jobName,
 		)
@@ -85,7 +85,7 @@ func (j *jobsStore) UpdateStatus(
 	if res.MatchedCount == 0 {
 		return &meta.ErrNotFound{
 			Type: "Job",
-			ID:   eventID,
+			ID:   fmt.Sprintf("%s:%s", eventID, jobName),
 		}
 	}
 	return nil

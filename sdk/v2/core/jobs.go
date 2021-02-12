@@ -74,6 +74,8 @@ func (j JobPhase) IsTerminal() bool {
 // Job represents a component spawned by a Worker to complete a single task
 // in the course of handling an Event.
 type Job struct {
+	// Name is the Job's name. It should be unique among a given Worker's Jobs.
+	Name string `json:"name"`
 	// Spec is the technical blueprint for the Job.
 	Spec JobSpec `json:"spec"`
 	// Status contains details of the Job's current state.
@@ -203,12 +205,7 @@ func (j JobStatus) MarshalJSON() ([]byte, error) {
 type JobsClient interface {
 	// Create, given an Event identifier and Job, creates a new pending Job
 	// and schedules it for execution.
-	Create(
-		ctx context.Context,
-		eventID string,
-		jobName string,
-		job Job,
-	) error
+	Create(ctx context.Context, eventID string, job Job) error
 	// Start initiates execution of a pending Job.
 	Start(
 		ctx context.Context,
@@ -259,14 +256,13 @@ func NewJobsClient(
 func (j *jobsClient) Create(
 	ctx context.Context,
 	eventID string,
-	jobName string,
 	job Job,
 ) error {
 	return j.ExecuteRequest(
 		ctx,
 		rm.OutboundRequest{
-			Method:      http.MethodPut,
-			Path:        fmt.Sprintf("v2/events/%s/worker/jobs/%s", eventID, jobName),
+			Method:      http.MethodPost,
+			Path:        fmt.Sprintf("v2/events/%s/worker/jobs", eventID),
 			ReqBodyObj:  job,
 			SuccessCode: http.StatusCreated,
 		},
