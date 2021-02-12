@@ -4,9 +4,9 @@ import * as https from "https"
 const EventSource = require("eventsource") // eslint-disable-line @typescript-eslint/no-var-requires
 
 import axios from "axios"
+import { Logger } from "winston" 
 
 import { Event } from "../../brigadier/src/events"
-import { Logger } from "../../brigadier/src/logger"
 import { Job as BrigadierJob } from "../../brigadier/src"
 
 import { logger } from "./brigadier"
