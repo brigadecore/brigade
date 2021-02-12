@@ -257,6 +257,7 @@ func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 	return nil
 }
 
+// nolint: gocyclo
 func (e *eventsStore) CancelMany(
 	ctx context.Context,
 	selector core.EventsSelector,
