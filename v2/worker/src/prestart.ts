@@ -2,7 +2,7 @@ import * as fs from "fs"
 import { execFileSync } from "child_process"
 import * as path from "path"
 
-import { logger } from "../../brigadier/src"
+import { logger } from "./logger"
 
 const event = require("/var/event/event.json") // eslint-disable-line @typescript-eslint/no-var-requires
 
