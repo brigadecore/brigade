@@ -537,7 +537,7 @@ func (e *eventsService) CancelMany(
 		)
 	}
 
-	eventCh, errCh, err := e.eventsStore.CancelMany(ctx, selector)
+	eventCh, err := e.eventsStore.CancelMany(ctx, selector)
 	if err != nil {
 		return result, errors.Wrap(err, "error canceling events in store")
 	}
@@ -568,26 +568,10 @@ func (e *eventsService) CancelMany(
 					}
 				}()
 			} else {
-				// eventCh was closed, but want to keep looping through this select
-				// in case there are pending errors on the errCh still. nil channels are
-				// never readable, so we'll just nil out eventCh and move on.
-				eventCh = nil
-			}
-		case err, ok := <-errCh:
-			if ok {
-				return result, err
-			}
-			// errCh was closed, but want to keep looping through this select in case
-			// there are pending messages on the eventCh still. nil channels are
-			// never readable, so we'll just nil out errCh and move on.
-			errCh = nil
-		case <-ctx.Done():
-			return result, nil
-		default:
-			// If BOTH eventCh and errCh were closed, we're done.
-			if eventCh == nil && errCh == nil {
 				return result, nil
 			}
+		case <-ctx.Done():
+			return result, nil
 		}
 	}
 }
@@ -726,18 +710,12 @@ type EventsStore interface {
 	// parameter in the underlying data store to reflect that they have been
 	// canceled. Implementations MUST only cancel events whose Workers have not
 	// already reached a terminal state.
-	CancelMany(
-		context.Context,
-		EventsSelector,
-	) (<-chan Event, <-chan error, error)
+	CancelMany(context.Context, EventsSelector) (<-chan Event, error)
 	// Delete unconditionally deletes the specified Event from the underlying data
 	// store. If the specified Event does not exist, implementations MUST
 	// return a *meta.ErrNotFound error.
 	Delete(context.Context, string) error
 	// DeleteMany unconditionally deletes multiple Events specified by the
 	// EventsSelector parameter from the underlying data store.
-	DeleteMany(
-		context.Context,
-		EventsSelector,
-	) (EventList, error)
+	DeleteMany(context.Context, EventsSelector) (EventList, error)
 }

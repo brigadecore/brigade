@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -259,9 +260,7 @@ func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 func (e *eventsStore) CancelMany(
 	ctx context.Context,
 	selector core.EventsSelector,
-) (<-chan core.Event, <-chan error, error) {
-	eventCh := make(chan core.Event)
-	errCh := make(chan error)
+) (<-chan core.Event, error) {
 	// It only makes sense to cancel events that are in a pending, starting, or
 	// running state. We can ignore anything else.
 	var cancelPending bool
@@ -281,7 +280,7 @@ func (e *eventsStore) CancelMany(
 
 	// Bail if we're not canceling pending, starting, or running events
 	if !cancelPending && !cancelStarting && !cancelRunning {
-		return eventCh, errCh, nil
+		return nil, nil
 	}
 
 	// The MongoDB driver for Go doesn't expose findAndModify(), which could be
@@ -306,7 +305,7 @@ func (e *eventsStore) CancelMany(
 				},
 			},
 		); err != nil {
-			return eventCh, errCh, errors.Wrap(err, "error updating events")
+			return nil, errors.Wrap(err, "error updating events")
 		}
 	}
 
@@ -354,7 +353,7 @@ func (e *eventsStore) CancelMany(
 				},
 			},
 		); err != nil {
-			return eventCh, errCh, errors.Wrap(err, "error updating events")
+			return nil, errors.Wrap(err, "error updating events")
 		}
 	}
 
@@ -371,16 +370,16 @@ func (e *eventsStore) CancelMany(
 	)
 	cur, err := e.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
-		return eventCh, errCh, errors.Wrapf(err, "error finding canceled events")
+		return nil, errors.Wrapf(err, "error finding canceled events")
 	}
 
+	eventCh := make(chan core.Event)
 	go func() {
 		defer close(eventCh)
-		defer close(errCh)
 		for cur.Next(ctx) {
 			event := core.Event{}
 			if err := cur.Decode(&event); err != nil {
-				errCh <- err
+				log.Println(errors.Wrap(err, "unable to decode event"))
 			}
 			select {
 			case eventCh <- event:
@@ -389,7 +388,7 @@ func (e *eventsStore) CancelMany(
 			}
 		}
 	}()
-	return eventCh, errCh, nil
+	return eventCh, nil
 }
 
 func (e *eventsStore) Delete(ctx context.Context, id string) error {

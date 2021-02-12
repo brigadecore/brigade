@@ -690,7 +690,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 			store := &eventsStore{
 				collection: testCase.collection,
 			}
-			_, _, error :=
+			_, error :=
 				store.CancelMany(context.Background(), testCase.eventsSelector)
 			testCase.assertions(error)
 		})
