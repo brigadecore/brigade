@@ -747,8 +747,8 @@ func TestEventsServiceCancelMany(t *testing.T) {
 					CancelManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (<-chan Event, error) {
-						return nil, errors.New("events store error")
+					) (<-chan Event, int64, error) {
+						return nil, 0, errors.New("events store error")
 					},
 				},
 			},
@@ -775,10 +775,10 @@ func TestEventsServiceCancelMany(t *testing.T) {
 					CancelManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (<-chan Event, error) {
+					) (<-chan Event, int64, error) {
 						eventCh := make(chan Event)
 						defer close(eventCh)
-						return eventCh, nil
+						return eventCh, 0, nil
 					},
 				},
 			},
@@ -1035,8 +1035,8 @@ func TestEventsServiceDeleteMany(t *testing.T) {
 					DeleteManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (<-chan Event, error) {
-						return nil, errors.New("events store error")
+					) (<-chan Event, int64, error) {
+						return nil, 0, errors.New("events store error")
 					},
 				},
 			},
@@ -1063,10 +1063,10 @@ func TestEventsServiceDeleteMany(t *testing.T) {
 					DeleteManyFn: func(
 						context.Context,
 						EventsSelector,
-					) (<-chan Event, error) {
+					) (<-chan Event, int64, error) {
 						eventCh := make(chan Event)
 						defer close(eventCh)
-						return eventCh, nil
+						return eventCh, 0, nil
 					},
 				},
 			},

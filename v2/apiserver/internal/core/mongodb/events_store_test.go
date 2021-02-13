@@ -622,6 +622,38 @@ func TestEventsStoreCancelMany(t *testing.T) {
 		},
 
 		{
+			name: "error counting canceled events",
+			eventsSelector: core.EventsSelector{
+				WorkerPhases: []core.WorkerPhase{
+					core.WorkerPhasePending,
+					core.WorkerPhaseRunning,
+				},
+			},
+			collection: &mongoTesting.MockCollection{
+				UpdateManyFn: func(
+					context.Context,
+					interface{},
+					interface{},
+					...*options.UpdateOptions,
+				) (*mongo.UpdateResult, error) {
+					return &mongo.UpdateResult{}, nil
+				},
+				CountDocumentsFn: func(
+					context.Context,
+					interface{},
+					...*options.CountOptions,
+				) (int64, error) {
+					return 0, errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error counting canceled events")
+				require.Contains(t, err.Error(), "something went wrong")
+			},
+		},
+
+		{
 			name: "error finding canceled events",
 			eventsSelector: core.EventsSelector{
 				WorkerPhases: []core.WorkerPhase{
@@ -637,6 +669,13 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					...*options.UpdateOptions,
 				) (*mongo.UpdateResult, error) {
 					return &mongo.UpdateResult{}, nil
+				},
+				CountDocumentsFn: func(
+					context.Context,
+					interface{},
+					...*options.CountOptions,
+				) (int64, error) {
+					return 0, nil
 				},
 				FindFn: func(
 					context.Context,
@@ -670,6 +709,13 @@ func TestEventsStoreCancelMany(t *testing.T) {
 				) (*mongo.UpdateResult, error) {
 					return &mongo.UpdateResult{}, nil
 				},
+				CountDocumentsFn: func(
+					context.Context,
+					interface{},
+					...*options.CountOptions,
+				) (int64, error) {
+					return 0, nil
+				},
 				FindFn: func(
 					context.Context,
 					interface{},
@@ -690,7 +736,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 			store := &eventsStore{
 				collection: testCase.collection,
 			}
-			_, error :=
+			_, _, error :=
 				store.CancelMany(context.Background(), testCase.eventsSelector)
 			testCase.assertions(error)
 		})
@@ -806,6 +852,42 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 		},
 
 		{
+			name: "error counting deleted events",
+			eventsSelector: core.EventsSelector{
+				WorkerPhases: []core.WorkerPhase{
+					core.WorkerPhasePending,
+					core.WorkerPhaseRunning,
+				},
+			},
+			collection: &mongoTesting.MockCollection{
+				UpdateManyFn: func(
+					context.Context,
+					interface{},
+					interface{},
+					...*options.UpdateOptions,
+				) (*mongo.UpdateResult, error) {
+					return &mongo.UpdateResult{}, nil
+				},
+				CountDocumentsFn: func(
+					context.Context,
+					interface{},
+					...*options.CountOptions,
+				) (int64, error) {
+					return 0, errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(
+					t,
+					err.Error(),
+					"error counting deleted events",
+				)
+				require.Contains(t, err.Error(), "something went wrong")
+			},
+		},
+
+		{
 			name: "error finding deleted events",
 			eventsSelector: core.EventsSelector{
 				WorkerPhases: []core.WorkerPhase{
@@ -821,6 +903,13 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 					...*options.UpdateOptions,
 				) (*mongo.UpdateResult, error) {
 					return &mongo.UpdateResult{}, nil
+				},
+				CountDocumentsFn: func(
+					context.Context,
+					interface{},
+					...*options.CountOptions,
+				) (int64, error) {
+					return 0, nil
 				},
 				FindFn: func(
 					context.Context,
@@ -842,47 +931,6 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 		},
 
 		{
-			name: "error performing final deletion",
-			eventsSelector: core.EventsSelector{
-				WorkerPhases: []core.WorkerPhase{
-					core.WorkerPhasePending,
-					core.WorkerPhaseRunning,
-				},
-			},
-			collection: &mongoTesting.MockCollection{
-				UpdateManyFn: func(
-					context.Context,
-					interface{},
-					interface{},
-					...*options.UpdateOptions,
-				) (*mongo.UpdateResult, error) {
-					return &mongo.UpdateResult{}, nil
-				},
-				FindFn: func(
-					context.Context,
-					interface{},
-					...*options.FindOptions,
-				) (*mongo.Cursor, error) {
-					cur, err := mongoTesting.MockCursor(core.Event{})
-					require.NoError(t, err)
-					return cur, nil
-				},
-				DeleteManyFn: func(
-					context.Context,
-					interface{},
-					...*options.DeleteOptions,
-				) (*mongo.DeleteResult, error) {
-					return nil, errors.New("something went wrong")
-				},
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "error deleting events")
-				require.Contains(t, err.Error(), "something went wrong")
-			},
-		},
-
-		{
 			name: "success",
 			eventsSelector: core.EventsSelector{
 				WorkerPhases: []core.WorkerPhase{
@@ -898,6 +946,13 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 					...*options.UpdateOptions,
 				) (*mongo.UpdateResult, error) {
 					return &mongo.UpdateResult{}, nil
+				},
+				CountDocumentsFn: func(
+					context.Context,
+					interface{},
+					...*options.CountOptions,
+				) (int64, error) {
+					return 0, nil
 				},
 				FindFn: func(
 					context.Context,
@@ -926,7 +981,7 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 			store := &eventsStore{
 				collection: testCase.collection,
 			}
-			_, err :=
+			_, _, err :=
 				store.DeleteMany(context.Background(), testCase.eventsSelector)
 			testCase.assertions(err)
 		})

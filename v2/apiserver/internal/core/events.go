@@ -537,41 +537,43 @@ func (e *eventsService) CancelMany(
 		)
 	}
 
-	eventCh, err := e.eventsStore.CancelMany(ctx, selector)
+	eventCh, count, err := e.eventsStore.CancelMany(ctx, selector)
 	if err != nil {
 		return result, errors.Wrap(err, "error canceling events in store")
 	}
+	result.Count = count
 
-	// When an event comes in via the corresponding channel,
-	// kick off a go routine to execute cleanup.
-	for {
-		select {
-		case event, ok := <-eventCh:
-			if ok {
-				result.Count++
-				// TODO: This could take a while, so we don't do it synchronously. But
-				// what if the process dies while this is in-progress? Can we find a
-				// quicker, more efficient way to do this?
-				go func() {
-					if err := e.substrate.DeleteWorkerAndJobs(
-						context.Background(), // deliberately not using ctx
-						project,
-						event,
-					); err != nil {
-						log.Println(errors.Wrapf(
-							err,
-							"error deleting event %q worker and jobs from the substrate",
-							event.ID,
-						))
-					}
-				}()
-			} else { // event channel closed; we're done
-				return result, nil
-			}
-		case <-ctx.Done():
-			return result, nil
-		}
+	// Fan out to a finite number of goroutines to handle cleanup duties
+	concurrency := 10
+	if result.Count < int64(concurrency) {
+		concurrency = int(result.Count)
 	}
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			for {
+				select {
+				case event, ok := <-eventCh:
+					if ok {
+						if err := e.substrate.DeleteWorkerAndJobs(
+							context.Background(), // deliberately not using ctx
+							project,
+							event,
+						); err != nil {
+							log.Println(errors.Wrapf(
+								err,
+								"error deleting event %q worker and jobs from the substrate",
+								event.ID,
+							))
+						}
+					} else { // event channel closed; we're done
+						return
+					}
+				}
+			}
+		}()
+	}
+
+	return result, nil
 }
 
 func (e *eventsService) Delete(ctx context.Context, id string) error {
@@ -643,41 +645,43 @@ func (e *eventsService) DeleteMany(
 		)
 	}
 
-	eventCh, err := e.eventsStore.DeleteMany(ctx, selector)
+	eventCh, count, err := e.eventsStore.DeleteMany(ctx, selector)
 	if err != nil {
 		return result, errors.Wrap(err, "error deleting events from store")
 	}
+	result.Count = count
 
-	// When an event comes in via the corresponding channel,
-	// kick off a go routine to execute cleanup.
-	for {
-		select {
-		case event, ok := <-eventCh:
-			if ok {
-				result.Count++
-				// TODO: This could take a while, so we don't do it synchronously. But
-				// what if the process dies while this is in-progress? Can we find a
-				// quicker, more efficient way to do this?
-				go func() {
-					if err := e.substrate.DeleteWorkerAndJobs(
-						context.Background(), // deliberately not using ctx
-						project,
-						event,
-					); err != nil {
-						log.Println(errors.Wrapf(
-							err,
-							"error deleting event %q worker and jobs from the substrate",
-							event.ID,
-						))
-					}
-				}()
-			} else { // event channel closed; we're done
-				return result, nil
-			}
-		case <-ctx.Done():
-			return result, nil
-		}
+	// Fan out to a finite number of goroutines to handle cleanup duties
+	concurrency := 10
+	if result.Count < int64(concurrency) {
+		concurrency = int(result.Count)
 	}
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			for {
+				select {
+				case event, ok := <-eventCh:
+					if ok {
+						if err := e.substrate.DeleteWorkerAndJobs(
+							context.Background(), // deliberately not using ctx
+							project,
+							event,
+						); err != nil {
+							log.Println(errors.Wrapf(
+								err,
+								"error deleting event %q worker and jobs from the substrate",
+								event.ID,
+							))
+						}
+					} else { // event channel closed; we're done
+						return
+					}
+				}
+			}
+		}()
+	}
+
+	return result, nil
 }
 
 // EventsStore is an interface for components that implement Event persistence
@@ -714,12 +718,12 @@ type EventsStore interface {
 	// parameter in the underlying data store to reflect that they have been
 	// canceled. Implementations MUST only cancel events whose Workers have not
 	// already reached a terminal state.
-	CancelMany(context.Context, EventsSelector) (<-chan Event, error)
+	CancelMany(context.Context, EventsSelector) (<-chan Event, int64, error)
 	// Delete unconditionally deletes the specified Event from the underlying data
 	// store. If the specified Event does not exist, implementations MUST
 	// return a *meta.ErrNotFound error.
 	Delete(context.Context, string) error
 	// DeleteMany unconditionally deletes multiple Events specified by the
 	// EventsSelector parameter from the underlying data store.
-	DeleteMany(context.Context, EventsSelector) (<-chan Event, error)
+	DeleteMany(context.Context, EventsSelector) (<-chan Event, int64, error)
 }

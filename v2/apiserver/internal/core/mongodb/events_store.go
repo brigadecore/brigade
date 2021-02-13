@@ -261,7 +261,7 @@ func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 func (e *eventsStore) CancelMany(
 	ctx context.Context,
 	selector core.EventsSelector,
-) (<-chan core.Event, error) {
+) (<-chan core.Event, int64, error) {
 	// It only makes sense to cancel events that are in a pending, starting, or
 	// running state. We can ignore anything else.
 	var cancelPending bool
@@ -281,7 +281,7 @@ func (e *eventsStore) CancelMany(
 
 	// Bail if we're not canceling pending, starting, or running events
 	if !cancelPending && !cancelStarting && !cancelRunning {
-		return nil, nil
+		return nil, 0, nil
 	}
 
 	// The MongoDB driver for Go doesn't expose findAndModify(), which could be
@@ -306,7 +306,7 @@ func (e *eventsStore) CancelMany(
 				},
 			},
 		); err != nil {
-			return nil, errors.Wrap(err, "error updating events")
+			return nil, 0, errors.Wrap(err, "error updating events")
 		}
 	}
 
@@ -354,7 +354,7 @@ func (e *eventsStore) CancelMany(
 				},
 			},
 		); err != nil {
-			return nil, errors.Wrap(err, "error updating events")
+			return nil, 0, errors.Wrap(err, "error updating events")
 		}
 	}
 
@@ -369,9 +369,14 @@ func (e *eventsStore) CancelMany(
 			{Key: "created", Value: -1},
 		},
 	)
+	count, err := e.collection.CountDocuments(ctx, criteria)
+	if err != nil {
+		return nil, 0, errors.Wrapf(err, "error counting canceled events")
+	}
+
 	cur, err := e.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error finding canceled events")
+		return nil, 0, errors.Wrapf(err, "error finding canceled events")
 	}
 
 	eventCh := make(chan core.Event)
@@ -380,16 +385,14 @@ func (e *eventsStore) CancelMany(
 		for cur.Next(ctx) {
 			event := core.Event{}
 			if err := cur.Decode(&event); err != nil {
-				log.Println(errors.Wrap(err, "unable to decode event"))
+				log.Println(errors.Wrap(err, "error decoding event"))
 			}
 			select {
 			case eventCh <- event:
-			case <-ctx.Done():
-				return
 			}
 		}
 	}()
-	return eventCh, nil
+	return eventCh, count, nil
 }
 
 func (e *eventsStore) Delete(ctx context.Context, id string) error {
@@ -414,7 +417,7 @@ func (e *eventsStore) Delete(ctx context.Context, id string) error {
 func (e *eventsStore) DeleteMany(
 	ctx context.Context,
 	selector core.EventsSelector,
-) (<-chan core.Event, error) {
+) (<-chan core.Event, int64, error) {
 	// The MongoDB driver for Go doesn't expose findAndModify(), which could be
 	// used to select events and delete them at the same time. As a workaround,
 	// we'll perform a logical delete first, select the logically deleted events,
@@ -441,7 +444,7 @@ func (e *eventsStore) DeleteMany(
 			},
 		},
 	); err != nil {
-		return nil, errors.Wrap(err, "error logically deleting events")
+		return nil, 0, errors.Wrap(err, "error logically deleting events")
 	}
 
 	// Select the logically deleted documents...
@@ -455,9 +458,14 @@ func (e *eventsStore) DeleteMany(
 			{Key: "created", Value: -1},
 		},
 	)
+	count, err := e.collection.CountDocuments(ctx, criteria)
+	if err != nil {
+		return nil, 0, errors.Wrapf(err, "error counting deleted events")
+	}
+
 	cur, err := e.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
-		return nil, errors.Wrapf(
+		return nil, 0, errors.Wrapf(
 			err,
 			"error finding logically deleted events",
 		)
@@ -469,20 +477,20 @@ func (e *eventsStore) DeleteMany(
 		for cur.Next(ctx) {
 			event := core.Event{}
 			if err := cur.Decode(&event); err != nil {
-				log.Println(errors.Wrap(err, "unable to decode event"))
+				log.Println(errors.Wrap(err, "error decoding event"))
 			}
 			select {
 			case eventCh <- event:
-			case <-ctx.Done():
-				return
 			}
+		}
+		// Final deletion
+		if _, err := e.collection.DeleteMany(
+			context.Background(), // deliberately not using ctx
+			criteria,
+		); err != nil {
+			log.Println(errors.Wrap(err, "error deleting events"))
 		}
 	}()
 
-	// Final deletion
-	if _, err := e.collection.DeleteMany(ctx, criteria); err != nil {
-		return eventCh, errors.Wrap(err, "error deleting events")
-	}
-
-	return eventCh, nil
+	return eventCh, count, nil
 }
