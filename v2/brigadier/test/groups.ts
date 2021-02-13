@@ -12,7 +12,7 @@ describe("groups", () => {
       id: "123456789",
       project: {
         id: "manhattan",
-        secrets: new Map<string, string>()
+        secrets: {}
       },
       source: "foo",
       type: "bar",
@@ -20,7 +20,7 @@ describe("groups", () => {
         apiAddress: "",
         apiToken: "",
         configFilesDirectory: "",
-        defaultConfigFiles: new Map<string, string>()
+        defaultConfigFiles: {}
       }
     }
     describe("#add", () => {

@@ -15,10 +15,10 @@ export interface Event {
 export type EventHandler = (event: Event) => void
 
 export class EventRegistry {
-  protected handlers = new Map<string, EventHandler>()
+  protected handlers: { [key: string]: EventHandler } = {}
   
   public on(eventSource: string, eventType: string, eventHandler: EventHandler): this {
-    this.handlers.set(`${eventSource}:${eventType}`, eventHandler)
+    this.handlers[`${eventSource}:${eventType}`] = eventHandler
     return this
   }
 }

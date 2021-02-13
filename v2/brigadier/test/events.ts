@@ -12,7 +12,7 @@ describe("events", () => {
       // EventRegistry and add an accessor so that we can get at handlers.
       class ER extends EventRegistry {
         public getHandler(source: string, type: string): EventHandler | undefined {
-          return this.handlers.get(`${source}:${type}`)
+          return this.handlers[`${source}:${type}`]
         }
       }
       it("adds the handler to the map", () => {
