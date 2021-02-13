@@ -12,7 +12,7 @@ describe("jobs", () => {
         id: "123456789",
         project: {
           id: "manhattan",
-          secrets: new Map<string, string>()
+          secrets: {}
         },
         source: "foo",
         type: "bar",
@@ -20,14 +20,14 @@ describe("jobs", () => {
           apiAddress: "",
           apiToken: "",
           configFilesDirectory: "",
-          defaultConfigFiles: new Map<string, string>()
+          defaultConfigFiles: {}
         }
       }
       const job = new Job("my-name", "debian:latest", event)
       it("initializes fields properly", () => {
         assert.equal(job.name, "my-name")
         assert.deepEqual(new Container("debian:latest"), job.primaryContainer)
-        assert.deepEqual(new Map<string, Container>(), job.sidecarContainers)
+        assert.deepEqual({}, job.sidecarContainers)
         assert.equal(1000 * 60 * 15, job.timeout)
         assert.deepEqual(new JobHost(), job.host)
       })
@@ -42,7 +42,7 @@ describe("jobs", () => {
         assert.equal("IfNotPresent", container.imagePullPolicy)
         assert.deepEqual([], container.command)
         assert.deepEqual([], container.arguments)
-        assert.deepEqual(new Map<string, string>(), container.environment)
+        assert.deepEqual({}, container.environment)
         assert.isEmpty(container.workspaceMountPath)
         assert.isEmpty(container.sourceMountPath)
         assert.isFalse(container.privileged)
@@ -57,7 +57,7 @@ describe("jobs", () => {
       it("initializes fields properly", () => {
         assert.isUndefined(jobHost.os)
         assert.isDefined(jobHost.nodeSelector)
-        assert.equal(0, jobHost.nodeSelector.size)
+        assert.equal(0, Object.keys(jobHost.nodeSelector).length)
       })
     })
   })

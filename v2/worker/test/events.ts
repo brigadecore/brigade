@@ -20,7 +20,7 @@ describe("events", () => {
             id: "123456789",
             project: {
               id: "manhattan",
-              secrets: new Map<string, string>()
+              secrets: {}
             },
             source: "foo",
             type: "bar",
@@ -28,7 +28,7 @@ describe("events", () => {
               apiAddress: "",
               apiToken: "",
               configFilesDirectory: "",
-              defaultConfigFiles: new Map<string, string>()
+              defaultConfigFiles: {}
             }
           })
           assert.isTrue(handlerCalled)
@@ -40,7 +40,7 @@ describe("events", () => {
             id: "123456789",
             project: {
               id: "manhattan",
-              secrets: new Map<string, string>()
+              secrets: {}
             },
             source: "bat",
             type: "baz",
@@ -48,7 +48,7 @@ describe("events", () => {
               apiAddress: "",
               apiToken: "",
               configFilesDirectory: "",
-              defaultConfigFiles: new Map<string, string>()
+              defaultConfigFiles: {}
             }
           })
           assert.isFalse(handlerCalled)

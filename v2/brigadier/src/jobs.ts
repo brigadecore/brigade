@@ -5,7 +5,7 @@ const defaultTimeout: number = 1000 * 60 * 15
 export class Job {
   public name: string
   public primaryContainer: Container
-  public sidecarContainers = new Map<string, Container>()
+  public sidecarContainers: { [key: string]: Container } = {}
   public timeout: number = defaultTimeout
   public host: JobHost = new JobHost()
   protected event: Event
@@ -35,7 +35,7 @@ export class Container {
   public workingDirectory = ""
   public command: string[] = []
   public arguments: string[] = []
-  public environment = new Map<string, string>()
+  public environment: { [key: string]: string } = {}
   public workspaceMountPath = ""
   public sourceMountPath = ""
   public privileged = false
@@ -48,5 +48,5 @@ export class Container {
 
 export class JobHost {
   public os?: string
-  public nodeSelector: Map<string, string> = new Map<string, string>()
+  public nodeSelector: { [key: string]: string } = {}
 }
