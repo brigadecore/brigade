@@ -477,9 +477,7 @@ func (e *eventsStore) DeleteMany(
 			if err := cur.Decode(&event); err != nil {
 				log.Println(errors.Wrap(err, "error decoding event"))
 			}
-			select {
-			case eventCh <- event:
-			}
+			eventCh <- event
 		}
 		// Final deletion
 		if _, err := e.collection.DeleteMany(
