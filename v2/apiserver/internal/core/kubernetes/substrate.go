@@ -643,10 +643,10 @@ func (s *substrate) DeleteWorkerAndJobs(
 		},
 	).AsSelector().String()
 
-	// If a worker's phase is CANCELED, it could have only reached this terminal
-	// phase if it was previously in PENDING and hence, no pods would have been
+	// If a worker's phase is CANCELED or PENDING, no pods would have been
 	// created. Therefore, we just skip to cleaning up the event secret(s) below.
-	if event.Worker.Status.Phase != core.WorkerPhaseCanceled {
+	if event.Worker.Status.Phase != core.WorkerPhaseCanceled &&
+		event.Worker.Status.Phase != core.WorkerPhasePending {
 		// Delete all pods related to this Event
 		if err := s.kubeClient.CoreV1().Pods(
 			project.Kubernetes.Namespace,

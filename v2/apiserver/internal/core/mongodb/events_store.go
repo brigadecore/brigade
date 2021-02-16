@@ -388,9 +388,7 @@ func (e *eventsStore) CancelMany(
 			if err := cur.Decode(&event); err != nil {
 				log.Println(errors.Wrap(err, "error decoding event"))
 			}
-			select {
-			case eventCh <- event:
-			}
+			eventCh <- event
 		}
 	}()
 	return eventCh, affectedCount, nil

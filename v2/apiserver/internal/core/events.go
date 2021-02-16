@@ -553,20 +553,19 @@ func (e *eventsService) CancelMany(
 			for {
 				select {
 				case event, ok := <-eventCh:
-					if ok {
-						if err := e.substrate.DeleteWorkerAndJobs(
-							context.Background(), // deliberately not using ctx
-							project,
-							event,
-						); err != nil {
-							log.Println(errors.Wrapf(
-								err,
-								"error deleting event %q worker and jobs from the substrate",
-								event.ID,
-							))
-						}
-					} else { // event channel closed; we're done
+					if !ok { // event channel closed; we're done
 						return
+					}
+					if err := e.substrate.DeleteWorkerAndJobs(
+						context.Background(), // deliberately not using ctx
+						project,
+						event,
+					); err != nil {
+						log.Println(errors.Wrapf(
+							err,
+							"error deleting event %q worker and jobs from the substrate",
+							event.ID,
+						))
 					}
 				}
 			}
