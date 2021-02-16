@@ -551,22 +551,20 @@ func (e *eventsService) CancelMany(
 	for i := 0; i < concurrency; i++ {
 		go func() {
 			for {
-				select {
-				case event, ok := <-eventCh:
-					if !ok { // event channel closed; we're done
-						return
-					}
-					if err := e.substrate.DeleteWorkerAndJobs(
-						context.Background(), // deliberately not using ctx
-						project,
-						event,
-					); err != nil {
-						log.Println(errors.Wrapf(
-							err,
-							"error deleting event %q worker and jobs from the substrate",
-							event.ID,
-						))
-					}
+				event, ok := <-eventCh
+				if !ok { // event channel closed; we're done
+					return
+				}
+				if err := e.substrate.DeleteWorkerAndJobs(
+					context.Background(), // deliberately not using ctx
+					project,
+					event,
+				); err != nil {
+					log.Println(errors.Wrapf(
+						err,
+						"error deleting event %q worker and jobs from the substrate",
+						event.ID,
+					))
 				}
 			}
 		}()
@@ -658,23 +656,20 @@ func (e *eventsService) DeleteMany(
 	for i := 0; i < concurrency; i++ {
 		go func() {
 			for {
-				select {
-				case event, ok := <-eventCh:
-					if ok {
-						if err := e.substrate.DeleteWorkerAndJobs(
-							context.Background(), // deliberately not using ctx
-							project,
-							event,
-						); err != nil {
-							log.Println(errors.Wrapf(
-								err,
-								"error deleting event %q worker and jobs from the substrate",
-								event.ID,
-							))
-						}
-					} else { // event channel closed; we're done
-						return
-					}
+				event, ok := <-eventCh
+				if !ok { // event channel closed; we're done
+					return
+				}
+				if err := e.substrate.DeleteWorkerAndJobs(
+					context.Background(), // deliberately not using ctx
+					project,
+					event,
+				); err != nil {
+					log.Println(errors.Wrapf(
+						err,
+						"error deleting event %q worker and jobs from the substrate",
+						event.ID,
+					))
 				}
 			}
 		}()
