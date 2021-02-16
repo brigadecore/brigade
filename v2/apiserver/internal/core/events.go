@@ -537,33 +537,34 @@ func (e *eventsService) CancelMany(
 		)
 	}
 
-	events, err := e.eventsStore.CancelMany(ctx, selector)
+	eventCh, affectedCount, err := e.eventsStore.CancelMany(ctx, selector)
 	if err != nil {
 		return result, errors.Wrap(err, "error canceling events in store")
 	}
+	result.Count = affectedCount
 
-	result.Count = int64(len(events.Items))
-
-	// TODO: This could take a while, so we don't do it synchronously. But what if
-	// the process dies while this is in-progress? Can we find a quicker, more
-	// efficient way to do this?
-	go func() {
-		for _, event := range events.Items {
-			if err := e.substrate.DeleteWorkerAndJobs(
-				context.Background(), // Deliberately not using request context
-				project,
-				event,
-			); err != nil {
-				log.Println(
-					errors.Wrapf(
+	// Fan out to a finite number of goroutines to handle cleanup duties
+	concurrency := 10
+	if result.Count < int64(concurrency) {
+		concurrency = int(result.Count)
+	}
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			for event := range eventCh {
+				if err := e.substrate.DeleteWorkerAndJobs(
+					context.Background(), // deliberately not using ctx
+					project,
+					event,
+				); err != nil {
+					log.Println(errors.Wrapf(
 						err,
 						"error deleting event %q worker and jobs from the substrate",
 						event.ID,
-					),
-				)
+					))
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	return result, nil
 }
@@ -637,33 +638,34 @@ func (e *eventsService) DeleteMany(
 		)
 	}
 
-	events, err := e.eventsStore.DeleteMany(ctx, selector)
+	eventCh, affectedCount, err := e.eventsStore.DeleteMany(ctx, selector)
 	if err != nil {
 		return result, errors.Wrap(err, "error deleting events from store")
 	}
+	result.Count = affectedCount
 
-	result.Count = int64(len(events.Items))
-
-	// TODO: This could take a while, so we don't do it synchronously. But what if
-	// the process dies while this is in-progress? Can we find a quicker way? Or
-	// if not quicker, more reliable?
-	go func() {
-		for _, event := range events.Items {
-			if err := e.substrate.DeleteWorkerAndJobs(
-				context.Background(), // Deliberately not using request context
-				project,
-				event,
-			); err != nil {
-				log.Println(
-					errors.Wrapf(
+	// Fan out to a finite number of goroutines to handle cleanup duties
+	concurrency := 10
+	if result.Count < int64(concurrency) {
+		concurrency = int(result.Count)
+	}
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			for event := range eventCh {
+				if err := e.substrate.DeleteWorkerAndJobs(
+					context.Background(), // deliberately not using ctx
+					project,
+					event,
+				); err != nil {
+					log.Println(errors.Wrapf(
 						err,
 						"error deleting event %q worker and jobs from the substrate",
 						event.ID,
-					),
-				)
+					))
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	return result, nil
 }
@@ -701,19 +703,15 @@ type EventsStore interface {
 	// CancelMany updates multiple Events specified by the EventsSelector
 	// parameter in the underlying data store to reflect that they have been
 	// canceled. Implementations MUST only cancel events whose Workers have not
-	// already reached a terminal state.
-	CancelMany(
-		context.Context,
-		EventsSelector,
-	) (EventList, error)
+	// already reached a terminal state and MUST return the total number of
+	// canceled events.
+	CancelMany(context.Context, EventsSelector) (<-chan Event, int64, error)
 	// Delete unconditionally deletes the specified Event from the underlying data
 	// store. If the specified Event does not exist, implementations MUST
 	// return a *meta.ErrNotFound error.
 	Delete(context.Context, string) error
 	// DeleteMany unconditionally deletes multiple Events specified by the
-	// EventsSelector parameter from the underlying data store.
-	DeleteMany(
-		context.Context,
-		EventsSelector,
-	) (EventList, error)
+	// EventsSelector parameter from the underlying data store.  Implementations
+	// MUST return the total number of deleted events.
+	DeleteMany(context.Context, EventsSelector) (<-chan Event, int64, error)
 }
