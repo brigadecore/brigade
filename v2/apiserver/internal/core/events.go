@@ -550,11 +550,7 @@ func (e *eventsService) CancelMany(
 	}
 	for i := 0; i < concurrency; i++ {
 		go func() {
-			for {
-				event, ok := <-eventCh
-				if !ok { // event channel closed; we're done
-					return
-				}
+			for event := range eventCh {
 				if err := e.substrate.DeleteWorkerAndJobs(
 					context.Background(), // deliberately not using ctx
 					project,
@@ -655,11 +651,7 @@ func (e *eventsService) DeleteMany(
 	}
 	for i := 0; i < concurrency; i++ {
 		go func() {
-			for {
-				event, ok := <-eventCh
-				if !ok { // event channel closed; we're done
-					return
-				}
+			for event := range eventCh {
 				if err := e.substrate.DeleteWorkerAndJobs(
 					context.Background(), // deliberately not using ctx
 					project,
