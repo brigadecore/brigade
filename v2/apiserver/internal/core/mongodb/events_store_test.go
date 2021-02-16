@@ -551,7 +551,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 		name           string
 		eventsSelector core.EventsSelector
 		collection     mongodb.Collection
-		assertions     func(core.EventList, error)
+		assertions     func(err error)
 	}{
 
 		{
@@ -568,9 +568,8 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					return nil, nil
 				},
 			},
-			assertions: func(events core.EventList, err error) {
+			assertions: func(err error) {
 				require.NoError(t, err)
-				require.Empty(t, events.Items)
 			},
 		},
 
@@ -591,7 +590,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(events core.EventList, err error) {
+			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error updating events")
 				require.Contains(t, err.Error(), "something went wrong")
@@ -615,7 +614,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(events core.EventList, err error) {
+			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error updating events")
 				require.Contains(t, err.Error(), "something went wrong")
@@ -647,7 +646,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(events core.EventList, err error) {
+			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error finding canceled events")
 				require.Contains(t, err.Error(), "something went wrong")
@@ -681,7 +680,7 @@ func TestEventsStoreCancelMany(t *testing.T) {
 					return cursor, nil
 				},
 			},
-			assertions: func(events core.EventList, err error) {
+			assertions: func(err error) {
 				require.NoError(t, err)
 			},
 		},
@@ -691,9 +690,9 @@ func TestEventsStoreCancelMany(t *testing.T) {
 			store := &eventsStore{
 				collection: testCase.collection,
 			}
-			events, err :=
+			_, _, error :=
 				store.CancelMany(context.Background(), testCase.eventsSelector)
-			testCase.assertions(events, err)
+			testCase.assertions(error)
 		})
 	}
 }
@@ -779,7 +778,7 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 		name           string
 		eventsSelector core.EventsSelector
 		collection     mongodb.Collection
-		assertions     func(core.EventList, error)
+		assertions     func(error)
 	}{
 
 		{
@@ -799,7 +798,7 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(events core.EventList, err error) {
+			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error logically deleting events")
 				require.Contains(t, err.Error(), "something went wrong")
@@ -831,54 +830,13 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(events core.EventList, err error) {
+			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(
 					t,
 					err.Error(),
 					"error finding logically deleted events",
 				)
-				require.Contains(t, err.Error(), "something went wrong")
-			},
-		},
-
-		{
-			name: "error performing final deletion",
-			eventsSelector: core.EventsSelector{
-				WorkerPhases: []core.WorkerPhase{
-					core.WorkerPhasePending,
-					core.WorkerPhaseRunning,
-				},
-			},
-			collection: &mongoTesting.MockCollection{
-				UpdateManyFn: func(
-					context.Context,
-					interface{},
-					interface{},
-					...*options.UpdateOptions,
-				) (*mongo.UpdateResult, error) {
-					return &mongo.UpdateResult{}, nil
-				},
-				FindFn: func(
-					context.Context,
-					interface{},
-					...*options.FindOptions,
-				) (*mongo.Cursor, error) {
-					cur, err := mongoTesting.MockCursor(core.Event{})
-					require.NoError(t, err)
-					return cur, nil
-				},
-				DeleteManyFn: func(
-					context.Context,
-					interface{},
-					...*options.DeleteOptions,
-				) (*mongo.DeleteResult, error) {
-					return nil, errors.New("something went wrong")
-				},
-			},
-			assertions: func(events core.EventList, err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "error deleting events")
 				require.Contains(t, err.Error(), "something went wrong")
 			},
 		},
@@ -917,7 +875,7 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 					return &mongo.DeleteResult{}, nil
 				},
 			},
-			assertions: func(_ core.EventList, err error) {
+			assertions: func(err error) {
 				require.NoError(t, err)
 			},
 		},
@@ -927,9 +885,9 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 			store := &eventsStore{
 				collection: testCase.collection,
 			}
-			events, err :=
+			_, _, err :=
 				store.DeleteMany(context.Background(), testCase.eventsSelector)
-			testCase.assertions(events, err)
+			testCase.assertions(err)
 		})
 	}
 }
