@@ -262,6 +262,7 @@ func (e *eventsStore) CancelMany(
 	ctx context.Context,
 	selector core.EventsSelector,
 ) (<-chan core.Event, int64, error) {
+	var affectedCount int64
 	// It only makes sense to cancel events that are in a pending, starting, or
 	// running state. We can ignore anything else.
 	var cancelPending bool
@@ -296,7 +297,7 @@ func (e *eventsStore) CancelMany(
 
 	if cancelPending {
 		criteria["worker.status.phase"] = core.WorkerPhasePending
-		if _, err := e.collection.UpdateMany(
+		result, err := e.collection.UpdateMany(
 			ctx,
 			criteria,
 			bson.M{
@@ -305,9 +306,11 @@ func (e *eventsStore) CancelMany(
 					"worker.status.phase": core.WorkerPhaseCanceled,
 				},
 			},
-		); err != nil {
+		)
+		if err != nil {
 			return nil, 0, errors.Wrap(err, "error updating events")
 		}
+		affectedCount = affectedCount + result.ModifiedCount
 	}
 
 	if cancelStarting && cancelRunning {
@@ -324,7 +327,7 @@ func (e *eventsStore) CancelMany(
 	}
 
 	if cancelStarting || cancelRunning {
-		if _, err := e.collection.UpdateMany(
+		result, err := e.collection.UpdateMany(
 			ctx,
 			criteria,
 			bson.M{
@@ -353,9 +356,11 @@ func (e *eventsStore) CancelMany(
 					},
 				},
 			},
-		); err != nil {
+		)
+		if err != nil {
 			return nil, 0, errors.Wrap(err, "error updating events")
 		}
+		affectedCount = affectedCount + result.ModifiedCount
 	}
 
 	delete(criteria, "worker.status.phase")
@@ -369,10 +374,6 @@ func (e *eventsStore) CancelMany(
 			{Key: "created", Value: -1},
 		},
 	)
-	count, err := e.collection.CountDocuments(ctx, criteria)
-	if err != nil {
-		return nil, 0, errors.Wrapf(err, "error counting canceled events")
-	}
 
 	cur, err := e.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
@@ -392,7 +393,7 @@ func (e *eventsStore) CancelMany(
 			}
 		}
 	}()
-	return eventCh, count, nil
+	return eventCh, affectedCount, nil
 }
 
 func (e *eventsStore) Delete(ctx context.Context, id string) error {
@@ -435,7 +436,7 @@ func (e *eventsStore) DeleteMany(
 			"$exists": false,
 		},
 	}
-	if _, err := e.collection.UpdateMany(
+	result, err := e.collection.UpdateMany(
 		ctx,
 		criteria,
 		bson.M{
@@ -443,7 +444,8 @@ func (e *eventsStore) DeleteMany(
 				"deleted": deletedTime,
 			},
 		},
-	); err != nil {
+	)
+	if err != nil {
 		return nil, 0, errors.Wrap(err, "error logically deleting events")
 	}
 
@@ -458,10 +460,6 @@ func (e *eventsStore) DeleteMany(
 			{Key: "created", Value: -1},
 		},
 	)
-	count, err := e.collection.CountDocuments(ctx, criteria)
-	if err != nil {
-		return nil, 0, errors.Wrapf(err, "error counting deleted events")
-	}
 
 	cur, err := e.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
@@ -492,5 +490,5 @@ func (e *eventsStore) DeleteMany(
 		}
 	}()
 
-	return eventCh, count, nil
+	return eventCh, result.ModifiedCount, nil
 }

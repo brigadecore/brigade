@@ -537,11 +537,11 @@ func (e *eventsService) CancelMany(
 		)
 	}
 
-	eventCh, count, err := e.eventsStore.CancelMany(ctx, selector)
+	eventCh, affectedCount, err := e.eventsStore.CancelMany(ctx, selector)
 	if err != nil {
 		return result, errors.Wrap(err, "error canceling events in store")
 	}
-	result.Count = count
+	result.Count = affectedCount
 
 	// Fan out to a finite number of goroutines to handle cleanup duties
 	concurrency := 10
@@ -645,11 +645,11 @@ func (e *eventsService) DeleteMany(
 		)
 	}
 
-	eventCh, count, err := e.eventsStore.DeleteMany(ctx, selector)
+	eventCh, affectedCount, err := e.eventsStore.DeleteMany(ctx, selector)
 	if err != nil {
 		return result, errors.Wrap(err, "error deleting events from store")
 	}
-	result.Count = count
+	result.Count = affectedCount
 
 	// Fan out to a finite number of goroutines to handle cleanup duties
 	concurrency := 10
@@ -717,13 +717,15 @@ type EventsStore interface {
 	// CancelMany updates multiple Events specified by the EventsSelector
 	// parameter in the underlying data store to reflect that they have been
 	// canceled. Implementations MUST only cancel events whose Workers have not
-	// already reached a terminal state.
+	// already reached a terminal state and MUST return the total number of
+	// canceled events.
 	CancelMany(context.Context, EventsSelector) (<-chan Event, int64, error)
 	// Delete unconditionally deletes the specified Event from the underlying data
 	// store. If the specified Event does not exist, implementations MUST
 	// return a *meta.ErrNotFound error.
 	Delete(context.Context, string) error
 	// DeleteMany unconditionally deletes multiple Events specified by the
-	// EventsSelector parameter from the underlying data store.
+	// EventsSelector parameter from the underlying data store.  Implementations
+	// MUST return the total number of deleted events.
 	DeleteMany(context.Context, EventsSelector) (<-chan Event, int64, error)
 }
