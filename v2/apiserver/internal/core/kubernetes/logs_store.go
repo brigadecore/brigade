@@ -106,20 +106,6 @@ func (l *logsStore) StreamLogs(
 			}
 		}
 		podLogs.Close()
-		if opts.Follow {
-			// If following, we let this goroutine hang until the context times out or
-			// is canceled. Why? When logs are followed from COLD storage (e.g.
-			// MongoDB) we never know whether the log aggregator has stored all the
-			// logs we're trying to stream, so we don't disconnect since there's a
-			// possibility there is more coming. We leave it up to the client to
-			// decide to disconnect. For consistency, we're leaving it up to the
-			// client to disconnect here as well. We can revisit this if we can make
-			// the COLD log storage smarter about knowing when it has reached the end
-			// of a stream, in which case both warm and cold storage could both
-			// disconnect when the end of a stream is reached and they would still be
-			// consistent with one another.
-			<-ctx.Done()
-		}
 	}()
 
 	return logEntryCh, nil
