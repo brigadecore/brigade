@@ -58,10 +58,15 @@ type mockEventsStore struct {
 	GetFn                    func(context.Context, string) (Event, error)
 	GetByHashedWorkerTokenFn func(context.Context, string) (Event, error)
 	CancelFn                 func(context.Context, string) error
-	CancelManyFn             func(context.Context, EventsSelector,
-	) (EventList, error)
+	CancelManyFn             func(
+		context.Context,
+		EventsSelector,
+	) (<-chan Event, int64, error)
 	DeleteFn     func(context.Context, string) error
-	DeleteManyFn func(context.Context, EventsSelector) (EventList, error)
+	DeleteManyFn func(
+		context.Context,
+		EventsSelector,
+	) (<-chan Event, int64, error)
 }
 
 func (m *mockEventsStore) Create(ctx context.Context, event Event) error {
@@ -94,7 +99,7 @@ func (m *mockEventsStore) Cancel(ctx context.Context, id string) error {
 func (m *mockEventsStore) CancelMany(
 	ctx context.Context,
 	selector EventsSelector,
-) (EventList, error) {
+) (<-chan Event, int64, error) {
 	return m.CancelManyFn(ctx, selector)
 }
 
@@ -105,7 +110,7 @@ func (m *mockEventsStore) Delete(ctx context.Context, id string) error {
 func (m *mockEventsStore) DeleteMany(
 	ctx context.Context,
 	selector EventsSelector,
-) (EventList, error) {
+) (<-chan Event, int64, error) {
 	return m.DeleteManyFn(ctx, selector)
 }
 

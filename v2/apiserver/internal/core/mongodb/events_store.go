@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -256,11 +257,12 @@ func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 	return nil
 }
 
+// nolint: gocyclo
 func (e *eventsStore) CancelMany(
 	ctx context.Context,
 	selector core.EventsSelector,
-) (core.EventList, error) {
-	events := core.EventList{}
+) (<-chan core.Event, int64, error) {
+	var affectedCount int64
 	// It only makes sense to cancel events that are in a pending, starting, or
 	// running state. We can ignore anything else.
 	var cancelPending bool
@@ -280,7 +282,7 @@ func (e *eventsStore) CancelMany(
 
 	// Bail if we're not canceling pending, starting, or running events
 	if !cancelPending && !cancelStarting && !cancelRunning {
-		return events, nil
+		return nil, 0, nil
 	}
 
 	// The MongoDB driver for Go doesn't expose findAndModify(), which could be
@@ -295,7 +297,7 @@ func (e *eventsStore) CancelMany(
 
 	if cancelPending {
 		criteria["worker.status.phase"] = core.WorkerPhasePending
-		if _, err := e.collection.UpdateMany(
+		result, err := e.collection.UpdateMany(
 			ctx,
 			criteria,
 			bson.M{
@@ -304,9 +306,11 @@ func (e *eventsStore) CancelMany(
 					"worker.status.phase": core.WorkerPhaseCanceled,
 				},
 			},
-		); err != nil {
-			return events, errors.Wrap(err, "error updating events")
+		)
+		if err != nil {
+			return nil, 0, errors.Wrap(err, "error updating events")
 		}
+		affectedCount = affectedCount + result.ModifiedCount
 	}
 
 	if cancelStarting && cancelRunning {
@@ -323,7 +327,7 @@ func (e *eventsStore) CancelMany(
 	}
 
 	if cancelStarting || cancelRunning {
-		if _, err := e.collection.UpdateMany(
+		result, err := e.collection.UpdateMany(
 			ctx,
 			criteria,
 			bson.M{
@@ -352,9 +356,11 @@ func (e *eventsStore) CancelMany(
 					},
 				},
 			},
-		); err != nil {
-			return events, errors.Wrap(err, "error updating events")
+		)
+		if err != nil {
+			return nil, 0, errors.Wrap(err, "error updating events")
 		}
+		affectedCount = affectedCount + result.ModifiedCount
 	}
 
 	delete(criteria, "worker.status.phase")
@@ -368,15 +374,24 @@ func (e *eventsStore) CancelMany(
 			{Key: "created", Value: -1},
 		},
 	)
+
 	cur, err := e.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
-		return events, errors.Wrapf(err, "error finding canceled events")
-	}
-	if err := cur.All(ctx, &events.Items); err != nil {
-		return events, errors.Wrap(err, "error decoding canceled events")
+		return nil, 0, errors.Wrapf(err, "error finding canceled events")
 	}
 
-	return events, nil
+	eventCh := make(chan core.Event)
+	go func() {
+		defer close(eventCh)
+		for cur.Next(ctx) {
+			event := core.Event{}
+			if err := cur.Decode(&event); err != nil {
+				log.Println(errors.Wrap(err, "error decoding event"))
+			}
+			eventCh <- event
+		}
+	}()
+	return eventCh, affectedCount, nil
 }
 
 func (e *eventsStore) Delete(ctx context.Context, id string) error {
@@ -401,9 +416,7 @@ func (e *eventsStore) Delete(ctx context.Context, id string) error {
 func (e *eventsStore) DeleteMany(
 	ctx context.Context,
 	selector core.EventsSelector,
-) (core.EventList, error) {
-	events := core.EventList{}
-
+) (<-chan core.Event, int64, error) {
 	// The MongoDB driver for Go doesn't expose findAndModify(), which could be
 	// used to select events and delete them at the same time. As a workaround,
 	// we'll perform a logical delete first, select the logically deleted events,
@@ -421,7 +434,7 @@ func (e *eventsStore) DeleteMany(
 			"$exists": false,
 		},
 	}
-	if _, err := e.collection.UpdateMany(
+	result, err := e.collection.UpdateMany(
 		ctx,
 		criteria,
 		bson.M{
@@ -429,8 +442,9 @@ func (e *eventsStore) DeleteMany(
 				"deleted": deletedTime,
 			},
 		},
-	); err != nil {
-		return events, errors.Wrap(err, "error logically deleting events")
+	)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "error logically deleting events")
 	}
 
 	// Select the logically deleted documents...
@@ -444,24 +458,33 @@ func (e *eventsStore) DeleteMany(
 			{Key: "created", Value: -1},
 		},
 	)
+
 	cur, err := e.collection.Find(ctx, criteria, findOptions)
 	if err != nil {
-		return events, errors.Wrapf(
+		return nil, 0, errors.Wrapf(
 			err,
 			"error finding logically deleted events",
 		)
 	}
-	if err := cur.All(ctx, &events.Items); err != nil {
-		return events, errors.Wrap(
-			err,
-			"error decoding logically deleted events",
-		)
-	}
 
-	// Final deletion
-	if _, err := e.collection.DeleteMany(ctx, criteria); err != nil {
-		return events, errors.Wrap(err, "error deleting events")
-	}
+	eventCh := make(chan core.Event)
+	go func() {
+		defer close(eventCh)
+		for cur.Next(ctx) {
+			event := core.Event{}
+			if err := cur.Decode(&event); err != nil {
+				log.Println(errors.Wrap(err, "error decoding event"))
+			}
+			eventCh <- event
+		}
+		// Final deletion
+		if _, err := e.collection.DeleteMany(
+			context.Background(), // deliberately not using ctx
+			criteria,
+		); err != nil {
+			log.Println(errors.Wrap(err, "error deleting events"))
+		}
+	}()
 
-	return events, nil
+	return eventCh, result.ModifiedCount, nil
 }
