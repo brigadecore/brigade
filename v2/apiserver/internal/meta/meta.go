@@ -4,7 +4,7 @@ import "time"
 
 // APIVersion represents the API and major version thereof with which this
 // version of the Brigade API server is compatible.
-const APIVersion = "brigade.sh/v2"
+const APIVersion = "brigade.sh/v2-alpha.1"
 
 // TypeMeta represents metadata about a resource type to help clients and
 // servers mutually head off potential confusion over types (and versions of
