@@ -83,10 +83,7 @@ jobs[buildBrigadierJobName] = buildBrigadierJob;
 const publishBrigadierJobName = "publish-brigadier";
 const publishBrigadierJob = (e, p) => {
   return new MakeTargetJob(publishBrigadierJobName, jsImg, e, {
-    "NPM_ORG": p.secrets.npmOrg,
-    "NPM_USERNAME": p.secrets.npmUsername,
-    "NPM_EMAIL": p.secrets.npmEmail,
-    "NPM_PASSWORD": p.secrets.npmPassword
+    "NPM_TOKEN": p.secrets.npmToken
   });
 }
 jobs[publishBrigadierJobName] = publishBrigadierJob;

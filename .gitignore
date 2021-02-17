@@ -4,6 +4,7 @@ coverage.txt
 node_modules/
 dist/
 charts/brigade/charts
+.npmrc
 .DS_Store
 
 # IDEs

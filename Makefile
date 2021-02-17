@@ -33,7 +33,7 @@ ifneq ($(SKIP_DOCKER),true)
 	JS_DOCKER_CMD := docker run \
 		-it \
 		--rm \
-		-e NPM_PASSWORD=$${NPM_PASSWORD} \
+		-e NPM_TOKEN=$${NPM_TOKEN} \
 		-e SKIP_DOCKER=true \
 		-v $(PROJECT_ROOT):/workspaces/brigade \
 		-w /workspaces/brigade \
@@ -223,11 +223,7 @@ publish: publish-brigadier push-images publish-chart publish-cli
 publish-brigadier: build-brigadier
 	$(JS_DOCKER_CMD) sh -c ' \
 		cd v2/brigadier && \
-		npm install -g npm-cli-login && \
-		npm-cli-login \
-			-u $(NPM_USERNAME) \
-			-e $(NPM_EMAIL) \
-			-p $${NPM_PASSWORD} && \
+		echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc && \
 		yarn publish \
 			--new-version $$(printf $(VERSION) | cut -c 2- ) \
 			--access public \
