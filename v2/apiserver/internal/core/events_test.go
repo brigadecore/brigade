@@ -38,11 +38,13 @@ func TestDeleteManyEventsResultMarshalJSON(t *testing.T) {
 func TestNewEventsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}
+	logsStore := &mockLogsStore{}
 	substrate := &mockSubstrate{}
 	svc := NewEventsService(
 		libAuthz.AlwaysAuthorize,
 		projectsStore,
 		eventsStore,
+		logsStore,
 		substrate,
 	)
 	require.NotNil(t, svc.(*eventsService).authorize)
@@ -910,6 +912,39 @@ func TestEventsServiceDelete(t *testing.T) {
 			},
 		},
 		{
+			name: "error deleting event logs",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+					DeleteFn: func(context.Context, string) error {
+						return nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				logsStore: &mockLogsStore{
+					DeleteFn: func(context.Context, Event) error {
+						return errors.New("error deleting logs")
+					},
+				},
+				substrate: &mockSubstrate{
+					DeleteWorkerAndJobsFn: func(context.Context, Project, Event) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error deleting logs")
+			},
+		},
+		{
 			name: "success",
 			service: &eventsService{
 				authorize: libAuthz.AlwaysAuthorize,
@@ -924,6 +959,11 @@ func TestEventsServiceDelete(t *testing.T) {
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
+					},
+				},
+				logsStore: &mockLogsStore{
+					DeleteFn: func(context.Context, Event) error {
+						return nil
 					},
 				},
 				substrate: &mockSubstrate{

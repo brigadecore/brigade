@@ -206,4 +206,7 @@ type LogsStore interface {
 		selector LogsSelector,
 		opts LogStreamOptions,
 	) (<-chan LogEntry, error)
+
+	// Delete deletes all logs associated with the provided event.
+	Delete(ctx context.Context, event Event) error
 }

@@ -237,6 +237,7 @@ type eventsService struct {
 	authorize           libAuthz.AuthorizeFn
 	projectsStore       ProjectsStore
 	eventsStore         EventsStore
+	logsStore           LogsStore
 	substrate           Substrate
 	createSingleEventFn func(context.Context, Project, Event) (Event, error)
 }
@@ -246,12 +247,14 @@ func NewEventsService(
 	authorizeFn libAuthz.AuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
+	logsStore LogsStore,
 	substrate Substrate,
 ) EventsService {
 	e := &eventsService{
 		authorize:     authorizeFn,
 		projectsStore: projectsStore,
 		eventsStore:   eventsStore,
+		logsStore:     logsStore,
 		substrate:     substrate,
 	}
 	e.createSingleEventFn = e.createSingleEvent
@@ -600,7 +603,7 @@ func (e *eventsService) Delete(ctx context.Context, id string) error {
 		)
 	}
 
-	return nil
+	return e.logsStore.Delete(ctx, event)
 }
 
 func (e *eventsService) DeleteMany(
@@ -660,6 +663,17 @@ func (e *eventsService) DeleteMany(
 					log.Println(errors.Wrapf(
 						err,
 						"error deleting event %q worker and jobs from the substrate",
+						event.ID,
+					))
+				}
+
+				if err := e.logsStore.Delete(
+					context.Background(), // deliberately not using ctx
+					event,
+				); err != nil {
+					log.Println(errors.Wrapf(
+						err,
+						"error deleting logs for event %q",
 						event.ID,
 					))
 				}

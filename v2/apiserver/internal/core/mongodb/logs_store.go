@@ -84,3 +84,17 @@ func criteriaFromSelector(
 	criteria["container"] = selector.Container
 	return criteria
 }
+
+// Delete deletes all logs associated with the provided event from the
+// underlying mongo store.
+func (l *logsStore) Delete(ctx context.Context, event core.Event) error {
+	if _, err := l.collection.DeleteMany(
+		ctx,
+		bson.M{
+			"event": event.ID,
+		},
+	); err != nil {
+		return errors.Wrapf(err, "error deleting logs for event %q", event.ID)
+	}
+	return nil
+}
