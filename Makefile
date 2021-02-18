@@ -264,7 +264,7 @@ publish-chart:
 		cd charts/brigade && \
 		helm dep up && \
 		sed -i "s/^version:.*/version: $(VERSION)/" Chart.yaml && \
-		sed -i "s/^appVersion:.*/version: $(VERSION)/" Chart.yaml && \
+		sed -i "s/^appVersion:.*/appVersion: $(VERSION)/" Chart.yaml && \
 		helm chart save . $(HELM_CHART_PREFIX)brigade:$(VERSION) && \
 		helm chart push $(HELM_CHART_PREFIX)brigade:$(VERSION) \
 	'
