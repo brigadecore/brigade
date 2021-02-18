@@ -36,9 +36,9 @@ To install Brigade 2 with _default_ configuration:
 ```console
 $ export HELM_EXPERIMENTAL_OCI=1
 $ helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-alpha.1
-$ helm chart save ~/brigade2 ghcr.io/brigadecore/brigade:v2.0.0-alpha.1
+$ helm chart export ghcr.io/brigadecore/brigade:v2.0.0-alpha.1 -d ~/charts
 $ kubectl create namespace brigade2
-$ helm install brigade2 ~/brigade2 --namespace brigade2
+$ helm install brigade2 ~/charts/brigade --namespace brigade2
 ```
 
 __Please take note that the default configuration is not secure and is not
@@ -53,14 +53,14 @@ oneself).__
 To view configuration options:
 
 ```console
-$ helm inspect values ~/brigade2 > ~/brigade2-values.yaml
+$ helm inspect values ~/charts/brigade > ~/brigade2-values.yaml
 ```
 
 To apply alternative configuration, edit `~/brigade2-values.yaml` as you see
 fit, then:
 
 ```console
-$ helm install brigade2 ~/brigade2 --namespace brigade2
+$ helm install brigade2 ~/charts/brigade --namespace brigade2
 ```
 
 ### Exposing the Brigade 2 API Server
