@@ -237,7 +237,7 @@ type eventsService struct {
 	authorize           libAuthz.AuthorizeFn
 	projectsStore       ProjectsStore
 	eventsStore         EventsStore
-	logsStore           LogsStore
+	logsStore           CoolLogsStore
 	substrate           Substrate
 	createSingleEventFn func(context.Context, Project, Event) (Event, error)
 }
@@ -247,7 +247,7 @@ func NewEventsService(
 	authorizeFn libAuthz.AuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
-	logsStore LogsStore,
+	logsStore CoolLogsStore,
 	substrate Substrate,
 ) EventsService {
 	e := &eventsService{
@@ -603,7 +603,7 @@ func (e *eventsService) Delete(ctx context.Context, id string) error {
 		)
 	}
 
-	return e.logsStore.Delete(ctx, event)
+	return e.logsStore.DeleteEventLogs(ctx, id)
 }
 
 func (e *eventsService) DeleteMany(
@@ -667,9 +667,9 @@ func (e *eventsService) DeleteMany(
 					))
 				}
 
-				if err := e.logsStore.Delete(
+				if err := e.logsStore.DeleteEventLogs(
 					context.Background(), // deliberately not using ctx
-					event,
+					event.ID,
 				); err != nil {
 					log.Println(errors.Wrapf(
 						err,

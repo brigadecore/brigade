@@ -117,12 +117,3 @@ func podNameFromSelector(eventID string, selector core.LogsSelector) string {
 	}
 	return myk8s.JobPodName(eventID, selector.Job) // We want job logs
 }
-
-// TODO: Delete for the k8s/warm logs store isn't really applicable... should
-// we no-op and return nil *or* explicitly return an error?
-//
-// Or, do we only expose the method on the mongodb implementation and then
-// invoke after type assertion?
-func (l *logsStore) Delete(ctx context.Context, event core.Event) error {
-	return nil
-}

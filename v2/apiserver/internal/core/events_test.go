@@ -929,7 +929,7 @@ func TestEventsServiceDelete(t *testing.T) {
 					},
 				},
 				logsStore: &mockLogsStore{
-					DeleteFn: func(context.Context, Event) error {
+					DeleteEventLogsFn: func(context.Context, string) error {
 						return errors.New("error deleting logs")
 					},
 				},
@@ -962,7 +962,7 @@ func TestEventsServiceDelete(t *testing.T) {
 					},
 				},
 				logsStore: &mockLogsStore{
-					DeleteFn: func(context.Context, Event) error {
+					DeleteEventLogsFn: func(context.Context, string) error {
 						return nil
 					},
 				},

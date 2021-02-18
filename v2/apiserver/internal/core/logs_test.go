@@ -333,35 +333,3 @@ func TestLogsServiceStream(t *testing.T) {
 		})
 	}
 }
-
-type mockLogsStore struct {
-	StreamLogsFn func(
-		ctx context.Context,
-		project Project,
-		event Event,
-		selector LogsSelector,
-		opts LogStreamOptions,
-	) (<-chan LogEntry, error)
-
-	DeleteFn func(
-		ctx context.Context,
-		event Event,
-	) error
-}
-
-func (m *mockLogsStore) StreamLogs(
-	ctx context.Context,
-	project Project,
-	event Event,
-	selector LogsSelector,
-	opts LogStreamOptions,
-) (<-chan LogEntry, error) {
-	return m.StreamLogsFn(ctx, project, event, selector, opts)
-}
-
-func (m *mockLogsStore) Delete(
-	ctx context.Context,
-	event Event,
-) error {
-	return m.DeleteFn(ctx, event)
-}

@@ -206,7 +206,19 @@ type LogsStore interface {
 		selector LogsSelector,
 		opts LogStreamOptions,
 	) (<-chan LogEntry, error)
+}
 
-	// Delete deletes all logs associated with the provided event.
-	Delete(ctx context.Context, event Event) error
+// CoolLogsStore is an interface for components that implement "cool" Log
+// persistence concerns.  These log store types are intended to act as
+// longterm storehouses for worker and job logs after they have reached a
+// terminal state. Thus, log deletion methods are prudent for managing
+// the size of the underlying store.
+type CoolLogsStore interface {
+	LogsStore
+
+	// DeleteEventLogs deletes all logs associated with the provided event.
+	DeleteEventLogs(ctx context.Context, id string) error
+
+	// DeleteProjectLogs deletes all logs associated with the provided project.
+	DeleteProjectLogs(ctx context.Context, id string) error
 }
