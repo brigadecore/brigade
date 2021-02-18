@@ -3,7 +3,6 @@ package mongodb
 import (
 	"context"
 	"log"
-	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
@@ -42,55 +41,13 @@ func (l *logsStore) StreamLogs(
 	go func() {
 		defer close(logEntryCh)
 
-		cursorType := options.Tailable
-		var cur *mongo.Cursor
-		var err error
-		// Any attempt to open a cursor that initially retrieves nothing will yield
-		// a "dead" cursor which is no good for tailing the capped collection. We
-		// need to retry this until we get a "live" cursor or the context is
-		// canceled.
-		for {
-			cur, err = l.collection.Find(
-				ctx,
-				criteria,
-				&options.FindOptions{CursorType: &cursorType},
-			)
-			if err != nil {
-				log.Println(
-					errors.Wrap(err, "error getting cursor for logs collection"),
-				)
-				return
-			}
-			if cur.ID() != 0 {
-				// We got a live cursor.
-				break
-			}
-			if !opts.Follow {
-				// If we're not following, just return. We're done.
-				return
-			}
-			select {
-			case <-time.After(time.Second): // Wait before retry
-			case <-ctx.Done():
-				return
-			}
-		}
+		cur, err := l.collection.Find(
+			ctx,
+			criteria,
+			&options.FindOptions{},
+		)
 
-		var available bool
-		for {
-			available = cur.TryNext(ctx)
-			if !available {
-				if !opts.Follow {
-					// If we're not following, just return. We're done.
-					return
-				}
-				select {
-				case <-time.After(time.Second): // Wait before retry
-					continue
-				case <-ctx.Done():
-					return
-				}
-			}
+		for cur.Next(ctx) {
 			logEntry := core.LogEntry{}
 			err = cur.Decode(&logEntry)
 			if err != nil {
