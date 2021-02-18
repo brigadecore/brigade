@@ -23,6 +23,8 @@ for Kubernetes.
 Brigade 2.0 is currently under active development in the
 [v2](https://github.com/brigadecore/brigade/tree/v2) branch of this repository.
 
+We're excited to announce the first alpha release, [v2.0.0-alpha.1](https://github.com/brigadecore/brigade/tree/v2.0.0-alpha.1). See the [README](https://github.com/brigadecore/brigade/blob/v2/README.md) on the v2 branch to learn how to get started with Brigade 2.0.
+
 ---
 
 ## The Brigade Technology Stack
