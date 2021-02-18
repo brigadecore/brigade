@@ -9,7 +9,7 @@ const projectName = "brigade";
 const projectOrg = "brigadecore";
 
 // Go build defaults
-const goImg = "krancour/go-tools:v0.1.0";
+const goImg = "brigadecore/go-tools:v0.1.0";
 const gopath = "/go";
 const localPath = gopath + `/src/github.com/${projectOrg}/${projectName}`;
 

@@ -1,4 +1,4 @@
-FROM krancour/go-tools:v0.1.0
+FROM brigadecore/go-tools:v0.1.0
 ARG LDFLAGS
 ENV CGO_ENABLED=0
 WORKDIR /go/src/github.com/brigadecore/brigade
