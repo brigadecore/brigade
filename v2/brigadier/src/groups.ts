@@ -1,45 +1,46 @@
-import { Job } from "./jobs"
+import { Runnable } from "./runnables"
 
-export class Group {
+class Group {
+  protected runnables: Runnable[]
 
-  public static async runAll(jobs: Job[]): Promise<void[]> {
-    const group = new Group(jobs)
-    return group.runAll()
+  public constructor(...runnables: Runnable[]) {
+    this.runnables = runnables || []
   }
 
-  public static async runEach(jobs: Job[]): Promise<void> {
-    const group = new Group(jobs)
-    return group.runEach()
-  }
-
-  private jobs: Job[]
-
-  public constructor(jobs?: Job[]) {
-    this.jobs = jobs || []
-  }
-
-  public add(...jobs: Job[]): void {
-    for (const job of jobs) {
-      this.jobs.push(job)
+  public add(...runnables: Runnable[]): void {
+    for (const runnable of runnables) {
+      this.runnables.push(runnable)
     }
   }
 
   public length(): number {
-    return this.jobs.length
+    return this.runnables.length
   }
+}
 
-  public async runEach(): Promise<void> {
-    for (const job of this.jobs) {
-      await job.run()
+export class SerialGroup extends Group implements Runnable {
+
+  public async run(): Promise<void> {
+    for (const runnable of this.runnables) {
+      await runnable.run()
     }
   }
 
-  public async runAll(): Promise<void[]> {
+}
+
+export class ConcurrentGroup extends Group implements Runnable {
+
+  public async run(): Promise<void> {
     const promises: Promise<void>[] = []
-    for (const job of this.jobs) {
-      promises.push(job.run())
+    for (const runnable of this.runnables) {
+      promises.push(runnable.run())
     }
-    return Promise.all(promises)
+    try {
+      await Promise.all(promises)
+      return Promise.resolve()
+    } catch(e) {
+      return Promise.reject(e)
+    }
   }
 
 }

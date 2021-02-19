@@ -5,7 +5,7 @@
 // Brigade API server.
 
 // Export these things directly from Brigadier
-export { Container, Group, JobHost }  from "../../brigadier/src"
+export { Container, SerialGroup, ConcurrentGroup, JobHost }  from "../../brigadier/src"
 
 // These are custom implementations of resources ordinarily found in Brigadier
 export { events } from "./events"

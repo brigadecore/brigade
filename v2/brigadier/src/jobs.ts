@@ -1,8 +1,9 @@
 import { Event } from "./events"
+import { Runnable } from "./runnables"
 
 const defaultTimeout: number = 1000 * 60 * 15
 
-export class Job {
+export class Job implements Runnable {
   public name: string
   public primaryContainer: Container
   public sidecarContainers: { [key: string]: Container } = {}
