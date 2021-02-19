@@ -162,6 +162,7 @@ type projectsService struct {
 	authorize            libAuthz.AuthorizeFn
 	projectsStore        ProjectsStore
 	eventsStore          EventsStore
+	logsStore            CoolLogsStore
 	roleAssignmentsStore authz.RoleAssignmentsStore
 	substrate            Substrate
 }
@@ -171,6 +172,7 @@ func NewProjectsService(
 	authorizeFn libAuthz.AuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
+	logsStore CoolLogsStore,
 	roleAssignmentsStore authz.RoleAssignmentsStore,
 	substrate Substrate,
 ) ProjectsService {
@@ -178,6 +180,7 @@ func NewProjectsService(
 		authorize:            authorizeFn,
 		projectsStore:        projectsStore,
 		eventsStore:          eventsStore,
+		logsStore:            logsStore,
 		roleAssignmentsStore: roleAssignmentsStore,
 		substrate:            substrate,
 	}
@@ -348,6 +351,15 @@ func (p *projectsService) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(
 			err,
 			"error deleting all events associated with project %q",
+			id,
+		)
+	}
+
+	// Delete all logs associated with this project
+	if err := p.logsStore.DeleteProjectLogs(ctx, id); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting all logs associated with project %q",
 			id,
 		)
 	}

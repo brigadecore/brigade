@@ -22,7 +22,7 @@ type logsStore struct {
 // and stored log entries-- a process which necessarily introduces some latency.
 // Callers should favor another implementation of the core.LogsStore interface
 // and fall back on this implementation when the other fails.
-func NewLogsStore(database *mongo.Database) core.LogsStore {
+func NewLogsStore(database *mongo.Database) core.CoolLogsStore {
 	return &logsStore{
 		collection: database.Collection("logs"),
 	}
@@ -83,4 +83,38 @@ func criteriaFromSelector(
 	}
 	criteria["container"] = selector.Container
 	return criteria
+}
+
+// DeleteEventLogs deletes all logs associated with the provided event from the
+// underlying mongo store.
+func (l *logsStore) DeleteEventLogs(
+	ctx context.Context,
+	id string,
+) error {
+	if _, err := l.collection.DeleteMany(
+		ctx,
+		bson.M{
+			"event": id,
+		},
+	); err != nil {
+		return errors.Wrapf(err, "error deleting logs for event %q", id)
+	}
+	return nil
+}
+
+// DeleteProjectLogs deletes all logs associated with the provided project from
+// the underlying mongo store.
+func (l *logsStore) DeleteProjectLogs(
+	ctx context.Context,
+	id string,
+) error {
+	if _, err := l.collection.DeleteMany(
+		ctx,
+		bson.M{
+			"project": id,
+		},
+	); err != nil {
+		return errors.Wrapf(err, "error deleting logs for project %q", id)
+	}
+	return nil
 }

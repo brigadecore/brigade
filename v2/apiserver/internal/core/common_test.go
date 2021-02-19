@@ -238,3 +238,47 @@ func (m *mockSubstrate) DeleteWorkerAndJobs(
 ) error {
 	return m.DeleteWorkerAndJobsFn(ctx, project, event)
 }
+
+type mockLogsStore struct {
+	StreamLogsFn func(
+		ctx context.Context,
+		project Project,
+		event Event,
+		selector LogsSelector,
+		opts LogStreamOptions,
+	) (<-chan LogEntry, error)
+
+	DeleteEventLogsFn func(
+		ctx context.Context,
+		id string,
+	) error
+
+	DeleteProjectLogsFn func(
+		ctx context.Context,
+		id string,
+	) error
+}
+
+func (m *mockLogsStore) StreamLogs(
+	ctx context.Context,
+	project Project,
+	event Event,
+	selector LogsSelector,
+	opts LogStreamOptions,
+) (<-chan LogEntry, error) {
+	return m.StreamLogsFn(ctx, project, event, selector, opts)
+}
+
+func (m *mockLogsStore) DeleteEventLogs(
+	ctx context.Context,
+	id string,
+) error {
+	return m.DeleteEventLogsFn(ctx, id)
+}
+
+func (m *mockLogsStore) DeleteProjectLogs(
+	ctx context.Context,
+	id string,
+) error {
+	return m.DeleteProjectLogsFn(ctx, id)
+}
