@@ -23,12 +23,14 @@ func TestProjectListMarshalJSON(t *testing.T) {
 func TestNewProjectsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}
+	logsStore := &mockLogsStore{}
 	roleAssignmentsStore := &authz.MockRoleAssignmentsStore{}
 	substrate := &mockSubstrate{}
 	svc := NewProjectsService(
 		libAuthz.AlwaysAuthorize,
 		projectsStore,
 		eventsStore,
+		logsStore,
 		roleAssignmentsStore,
 		substrate,
 	)
@@ -365,6 +367,50 @@ func TestProjectServiceDelete(t *testing.T) {
 			},
 		},
 		{
+			name: "error deleting project logs",
+			service: &projectsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+					DeleteFn: func(context.Context, string) error {
+						return nil
+					},
+				},
+				eventsStore: &mockEventsStore{
+					DeleteManyFn: func(
+						context.Context,
+						EventsSelector,
+					) (<-chan Event, int64, error) {
+						return nil, 0, nil
+					},
+				},
+				logsStore: &mockLogsStore{
+					DeleteProjectLogsFn: func(
+						context.Context,
+						string,
+					) error {
+						return errors.New("error deleting project logs")
+					},
+				},
+				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
+					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					DeleteProjectFn: func(context.Context, Project) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error deleting project logs")
+			},
+		},
+		{
 			name: "error deleting role assignments associated with project",
 			service: &projectsService{
 				authorize: libAuthz.AlwaysAuthorize,
@@ -382,6 +428,14 @@ func TestProjectServiceDelete(t *testing.T) {
 						EventsSelector,
 					) (<-chan Event, int64, error) {
 						return nil, 0, nil
+					},
+				},
+				logsStore: &mockLogsStore{
+					DeleteProjectLogsFn: func(
+						context.Context,
+						string,
+					) error {
+						return nil
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
@@ -420,6 +474,14 @@ func TestProjectServiceDelete(t *testing.T) {
 						return nil, 0, nil
 					},
 				},
+				logsStore: &mockLogsStore{
+					DeleteProjectLogsFn: func(
+						context.Context,
+						string,
+					) error {
+						return nil
+					},
+				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
 					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
 						return nil
@@ -450,6 +512,14 @@ func TestProjectServiceDelete(t *testing.T) {
 						EventsSelector,
 					) (<-chan Event, int64, error) {
 						return nil, 0, nil
+					},
+				},
+				logsStore: &mockLogsStore{
+					DeleteProjectLogsFn: func(
+						context.Context,
+						string,
+					) error {
+						return nil
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
@@ -487,6 +557,14 @@ func TestProjectServiceDelete(t *testing.T) {
 						EventsSelector,
 					) (<-chan Event, int64, error) {
 						return nil, 0, nil
+					},
+				},
+				logsStore: &mockLogsStore{
+					DeleteProjectLogsFn: func(
+						context.Context,
+						string,
+					) error {
+						return nil
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{

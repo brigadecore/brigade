@@ -42,7 +42,7 @@ func main() {
 	}
 
 	// Data stores
-	var coolLogsStore core.LogsStore
+	var coolLogsStore core.CoolLogsStore
 	var eventsStore core.EventsStore
 	var jobsStore core.JobsStore
 	var projectsStore core.ProjectsStore
@@ -124,6 +124,7 @@ func main() {
 		authorizer.Authorize,
 		projectsStore,
 		eventsStore,
+		coolLogsStore,
 		substrate,
 	)
 
@@ -150,6 +151,7 @@ func main() {
 		authorizer.Authorize,
 		projectsStore,
 		eventsStore,
+		coolLogsStore,
 		roleAssignmentsStore,
 		substrate,
 	)
