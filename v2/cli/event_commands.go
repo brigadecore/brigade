@@ -542,7 +542,7 @@ func eventGet(c *cli.Context) error {
 			fmt.Printf("\nEvent %q jobs:\n\n", event.ID)
 			table = uitable.New()
 			table.AddRow("NAME", "STARTED", "ENDED", "PHASE")
-			for jobName, job := range event.Worker.Jobs {
+			for _, job := range event.Worker.Jobs {
 				jobStatus := job.Status
 				var started, ended string
 				if jobStatus.Started != nil {
@@ -554,7 +554,7 @@ func eventGet(c *cli.Context) error {
 						duration.ShortHumanDuration(time.Since(*jobStatus.Ended))
 				}
 				table.AddRow(
-					jobName,
+					job.Name,
 					started,
 					ended,
 					jobStatus.Phase,
