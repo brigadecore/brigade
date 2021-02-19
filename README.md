@@ -145,7 +145,7 @@ $ brig -k event get --id <event id from previous step>
 Eventually, the worker spawned to process the event, and any jobs spawned by
 the worker, should all display a `SUCCEEDED` status.
 
-Congratulation! You're using Brigade 2!
+Congratulations! You're using Brigade 2!
 
 ## The Brigade 2 Ecosystem
 
