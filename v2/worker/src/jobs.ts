@@ -7,11 +7,11 @@ import axios from "axios"
 import { Logger } from "winston" 
 
 import { Event } from "../../brigadier/src/events"
-import { Job as BrigadierJob } from "../../brigadier/src"
+import { ContainerJob as BrigadierContainerJob } from "../../brigadier/src"
 
 import { logger } from "./brigadier"
 
-export class Job extends BrigadierJob {
+export class ContainerJob extends BrigadierContainerJob {
   logger: Logger
 
   constructor(name: string, image: string, event: Event) {

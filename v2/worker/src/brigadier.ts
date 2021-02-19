@@ -9,5 +9,5 @@ export { Container, Group, JobHost }  from "../../brigadier/src"
 
 // These are custom implementations of resources ordinarily found in Brigadier
 export { events } from "./events"
-export { Job } from "./jobs"
+export { ContainerJob } from "./jobs"
 export { logger } from "./logger"

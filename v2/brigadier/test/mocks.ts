@@ -1,11 +1,11 @@
 import { setTimeout } from "timers"
 
 import { Event } from "../src/events"
-import { Job } from "../src/jobs"
+import { ContainerJob } from "../src/jobs"
 
 // MockJob extends Job to make success or failure configurable. This allows us
 // to force Job failures when a test case requires it.
-export class MockJob extends Job {
+export class MockJob extends ContainerJob {
   public fail = false
   public delay = 1 // Just enough to cause the event loop to sleep.
   public handler: () => void

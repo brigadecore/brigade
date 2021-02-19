@@ -1,12 +1,21 @@
 import { Job } from "./jobs"
 
+/**
+ * @deprecated Use Job.sequence or Job.parallel instead
+ */
 export class Group {
 
+  /**
+   * @deprecated Use Job.parallel followed by Job#run instead
+   */
   public static async runAll(jobs: Job[]): Promise<void[]> {
     const group = new Group(jobs)
     return group.runAll()
   }
 
+  /**
+   * @deprecated Use Job.sequence followed by Job#run instead
+   */
   public static async runEach(jobs: Job[]): Promise<void> {
     const group = new Group(jobs)
     return group.runEach()
