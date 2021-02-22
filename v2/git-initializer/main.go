@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
@@ -19,6 +21,12 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/v2/internal/retries"
+)
+
+const (
+	maxRetryCount = 5
+	maxBackoff    = 5 * time.Second
 )
 
 func main() {
@@ -27,8 +35,6 @@ func main() {
 		os.Exit(1)
 	}
 }
-
-// TODO: add retry: https://github.com/brigadecore/brigade/issues/1235
 
 // nolint: gocyclo
 func gitCheckout() error {
@@ -209,9 +215,20 @@ func gitCheckout() error {
 		Auth:       auth,
 		Progress:   os.Stdout,
 	}
-	err = remote.Fetch(fetchOpts)
-	if err != nil {
-		return errors.Wrap(err, "error fetching refs from the remote")
+	if retryErr := retries.ManageRetries(
+		context.Background(),
+		"git fetch",
+		maxRetryCount,
+		maxBackoff,
+		func() (bool, error) {
+			err = remote.Fetch(fetchOpts)
+			if err != nil {
+				return true, errors.Wrap(err, "error fetching refs from the remote")
+			}
+			return false, nil
+		},
+	); retryErr != nil {
+		return retryErr
 	}
 
 	// Get the repository's working tree
@@ -221,13 +238,29 @@ func gitCheckout() error {
 	}
 
 	// Check out whatever we're interested in into the working tree
-	if err = worktree.Checkout(
-		&git.CheckoutOptions{
-			Branch: fullRef.Name(),
-			Force:  true,
+	if retryErr := retries.ManageRetries(
+		context.Background(),
+		"git checkout",
+		maxRetryCount,
+		maxBackoff,
+		func() (bool, error) {
+			err := worktree.Checkout(
+				&git.CheckoutOptions{
+					Branch: fullRef.Name(),
+					Force:  true,
+				},
+			)
+			if err != nil {
+				return true, errors.Wrapf(
+					err,
+					"unable to checkout using %q",
+					commitRef,
+				)
+			}
+			return false, nil
 		},
-	); err != nil {
-		return errors.Wrapf(err, "unable to checkout using %q", commitRef)
+	); retryErr != nil {
+		return retryErr
 	}
 
 	// Initialize submodules if configured to do so
@@ -236,22 +269,33 @@ func gitCheckout() error {
 		if err != nil {
 			return errors.Wrap(err, "error retrieving submodules: %s")
 		}
-		for _, submodule := range submodules {
-			if err = submodule.Update(
-				&git.SubmoduleUpdateOptions{
-					Init:              true,
-					RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
-				},
-			); err != nil {
-				return errors.Wrapf(
-					err,
-					"error updating submodule %q",
-					submodule.Config().Name,
-				)
-			}
+
+		if retryErr := retries.ManageRetries(
+			context.Background(),
+			"update submodules",
+			maxRetryCount,
+			maxBackoff,
+			func() (bool, error) {
+				for _, submodule := range submodules {
+					if err = submodule.Update(
+						&git.SubmoduleUpdateOptions{
+							Init:              true,
+							RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+						},
+					); err != nil {
+						return true, errors.Wrapf(
+							err,
+							"error updating submodule %q",
+							submodule.Config().Name,
+						)
+					}
+				}
+				return false, nil
+			},
+		); retryErr != nil {
+			return retryErr
 		}
 	}
-
 	return nil
 }
 
