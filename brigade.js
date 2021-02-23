@@ -74,8 +74,7 @@ jobs[lintJSJobName] = lintJSJob;
 
 const testIntegrationJobName = "test-integration";
 const testIntegrationJob = (e, p) => {
-  // TODO: remove image override after new image has been bumped/released by brigade-utils
-  let kind = new KindJob(testIntegrationJobName, "vdice/golang-kind:1.15.8-v0.7.0");
+  let kind = new KindJob(testIntegrationJobName);
   kind.mountPath = localPath;
   kind.tasks.push(
     // Install git and golang deps
