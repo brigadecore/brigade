@@ -285,6 +285,9 @@ publish-cli: build-cli
 # Targets to facilitate hacking on Brigade.                                    #
 ################################################################################
 
+.PHONY: hack-build-images
+hack-build-images: hack-build-apiserver hack-build-scheduler hack-build-observer hack-build-logger-linux hack-build-git-initializer hack-build-worker
+
 .PHONY: hack-build-logger-linux
 hack-build-logger-linux:
 	docker build \
@@ -321,8 +324,8 @@ hack-push-images: hack-push-apiserver hack-push-scheduler hack-push-observer hac
 hack-push-%: hack-build-%
 	docker push $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)
 
-.PHONY: hack
-hack: hack-push-images hack-build-cli
+.PHONY: hack-deploy
+hack-deploy:
 	kubectl get namespace brigade || kubectl create namespace brigade
 	helm dep up charts/brigade && \
 	helm upgrade brigade charts/brigade \
@@ -349,6 +352,9 @@ hack: hack-push-images hack-build-cli
 		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set logger.linux.image.pullPolicy=Always
 
+.PHONY: hack
+hack: hack-push-images hack-build-cli hack-deploy
+
 .PHONY: hack-expose-apiserver
 hack-expose-apiserver:
 	@kubectl --namespace brigade port-forward service/brigade-apiserver 7000:443 &>/dev/null & \
@@ -357,3 +363,12 @@ hack-expose-apiserver:
 .PHONY: hack-unexpose-apiserver
 hack-unexpose-apiserver:
 	@kill -TERM $$(cat /tmp/brigade-apiserver.PID)
+
+# Convenience target for loading images into a KinD cluster
+.PHONY: hack-load-images
+hack-load-images: load-apiserver load-scheduler load-observer load-logger-linux load-git-initializer load-worker
+
+load-%:
+	@echo "Loading $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
+	@kind load docker-image $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
+			|| echo >&2 "kind not installed or error loading image: $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
