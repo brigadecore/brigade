@@ -331,6 +331,7 @@ hack-deploy:
 	helm upgrade brigade charts/brigade \
 		--install \
 		--namespace brigade \
+		--wait \
 		--set apiserver.image.repository=$(DOCKER_IMAGE_PREFIX)apiserver \
 		--set apiserver.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set apiserver.image.pullPolicy=Always \
