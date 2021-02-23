@@ -3,7 +3,7 @@
 // ============================================================================
 
 const { events, Job, Group } = require("brigadier");
-const { Check } = require("@brigadecore/brigade-utils");
+const { Check, KindJob } = require("@brigadecore/brigade-utils");
 
 const releaseTagRegex = /^refs\/tags\/(v[0-9]+(?:\.[0-9]+)*(?:\-.+)?)$/;
 
