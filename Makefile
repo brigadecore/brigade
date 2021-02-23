@@ -324,6 +324,8 @@ hack-push-images: hack-push-apiserver hack-push-scheduler hack-push-observer hac
 hack-push-%: hack-build-%
 	docker push $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)
 
+IMAGE_PULL_POLICY ?= Always
+
 .PHONY: hack-deploy
 hack-deploy:
 	kubectl get namespace brigade || kubectl create namespace brigade
@@ -334,24 +336,24 @@ hack-deploy:
 		--wait \
 		--set apiserver.image.repository=$(DOCKER_IMAGE_PREFIX)apiserver \
 		--set apiserver.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set apiserver.image.pullPolicy=Always \
+		--set apiserver.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set apiserver.service.type=NodePort \
 		--set apiserver.service.nodePort=31600 \
 		--set scheduler.image.repository=$(DOCKER_IMAGE_PREFIX)scheduler \
 		--set scheduler.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set scheduler.image.pullPolicy=Always \
+		--set scheduler.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set observer.image.repository=$(DOCKER_IMAGE_PREFIX)observer \
 		--set observer.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set observer.image.pullPolicy=Always \
+		--set observer.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set worker.image.repository=$(DOCKER_IMAGE_PREFIX)worker \
 		--set worker.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set worker.image.pullPolicy=Always \
+		--set worker.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set gitInitializer.image.repository=$(DOCKER_IMAGE_PREFIX)git-initializer \
 		--set gitInitializer.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set gitInitializer.image.pullPolicy=Always \
+		--set gitInitializer.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)logger-linux \
 		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set logger.linux.image.pullPolicy=Always
+		--set logger.linux.image.pullPolicy=$(IMAGE_PULL_POLICY)
 
 .PHONY: hack
 hack: hack-push-images hack-build-cli hack-deploy
@@ -365,7 +367,7 @@ hack-expose-apiserver:
 hack-unexpose-apiserver:
 	@kill -TERM $$(cat /tmp/brigade-apiserver.PID)
 
-# Convenience target for loading images into a KinD cluster
+# Convenience targets for loading images into a KinD cluster
 .PHONY: hack-load-images
 hack-load-images: load-apiserver load-scheduler load-observer load-logger-linux load-git-initializer load-worker
 
