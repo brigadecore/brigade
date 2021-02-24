@@ -85,23 +85,24 @@ func TestEventsClientCreate(t *testing.T) {
 }
 
 func TestEventsClientList(t *testing.T) {
-	t.Run("nil event selector", func(t *testing.T) {
-		const testProjectID = "bluebook"
-		const testWorkerPhase = WorkerPhaseRunning
-		testEvents := EventList{
-			Items: []Event{
-				{
-					ObjectMeta: meta.ObjectMeta{
-						ID: "12345",
-					},
-				},
-				{
-					ObjectMeta: meta.ObjectMeta{
-						ID: "abcde",
-					},
+	const testProjectID = "bluebook"
+	const testWorkerPhase = WorkerPhaseRunning
+	testEvents := EventList{
+		Items: []Event{
+			{
+				ObjectMeta: meta.ObjectMeta{
+					ID: "12345",
 				},
 			},
-		}
+			{
+				ObjectMeta: meta.ObjectMeta{
+					ID: "abcde",
+				},
+			},
+		},
+	}
+
+	t.Run("nil event selector", func(t *testing.T) {
 		server := httptest.NewServer(
 			http.HandlerFunc(
 				func(w http.ResponseWriter, r *http.Request) {
@@ -127,22 +128,6 @@ func TestEventsClientList(t *testing.T) {
 	})
 
 	t.Run("non-nil event selector", func(t *testing.T) {
-		const testProjectID = "bluebook"
-		const testWorkerPhase = WorkerPhaseRunning
-		testEvents := EventList{
-			Items: []Event{
-				{
-					ObjectMeta: meta.ObjectMeta{
-						ID: "12345",
-					},
-				},
-				{
-					ObjectMeta: meta.ObjectMeta{
-						ID: "abcde",
-					},
-				},
-			},
-		}
 		server := httptest.NewServer(
 			http.HandlerFunc(
 				func(w http.ResponseWriter, r *http.Request) {

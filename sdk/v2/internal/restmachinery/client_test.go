@@ -11,8 +11,30 @@ import (
 	"testing"
 
 	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 	"github.com/stretchr/testify/require"
 )
+
+func TestNewBaseClient(t *testing.T) {
+	const apiAddress = "https://brigade.v2"
+	const apiToken = "apiToken"
+
+	t.Run("nil opts", func(t *testing.T) {
+		client := NewBaseClient(apiAddress, apiToken, nil)
+		require.Equal(t, apiAddress, client.APIAddress)
+		require.Equal(t, apiToken, client.APIToken)
+	})
+
+	t.Run("non-nil opts", func(t *testing.T) {
+		client := NewBaseClient(
+			apiAddress,
+			apiToken,
+			&restmachinery.APIClientOptions{},
+		)
+		require.Equal(t, apiAddress, client.APIAddress)
+		require.Equal(t, apiToken, client.APIToken)
+	})
+}
 
 func TestBaseClientAppendListQueryParams(t *testing.T) {
 	queryParams := map[string]string{}
@@ -20,16 +42,32 @@ func TestBaseClientAppendListQueryParams(t *testing.T) {
 		Continue: "where i left off",
 		Limit:    10,
 	}
-	client := BaseClient{}
-	queryParams = client.AppendListQueryParams(queryParams, &listOpts)
-	cntinue, ok := queryParams["continue"]
-	require.True(t, ok)
-	require.Equal(t, listOpts.Continue, cntinue)
-	limitStr, ok := queryParams["limit"]
-	require.True(t, ok)
-	limit, err := strconv.Atoi(limitStr)
-	require.NoError(t, err)
-	require.Equal(t, listOpts.Limit, int64(limit))
+
+	t.Run("nil opts", func(t *testing.T) {
+		client := BaseClient{}
+		queryParams = client.AppendListQueryParams(queryParams, nil)
+		cntinue, ok := queryParams["continue"]
+		require.False(t, ok)
+		require.Equal(t, "", cntinue)
+		limitStr, ok := queryParams["limit"]
+		require.False(t, ok)
+		limit, err := strconv.Atoi(limitStr)
+		require.Error(t, err)
+		require.Equal(t, int64(0), int64(limit))
+	})
+
+	t.Run("non-nil opts", func(t *testing.T) {
+		client := BaseClient{}
+		queryParams = client.AppendListQueryParams(queryParams, &listOpts)
+		cntinue, ok := queryParams["continue"]
+		require.True(t, ok)
+		require.Equal(t, listOpts.Continue, cntinue)
+		limitStr, ok := queryParams["limit"]
+		require.True(t, ok)
+		limit, err := strconv.Atoi(limitStr)
+		require.NoError(t, err)
+		require.Equal(t, listOpts.Limit, int64(limit))
+	})
 }
 
 func TestBaseClientExecuteRequest(t *testing.T) {
