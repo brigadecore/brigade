@@ -8,9 +8,8 @@ rather than later in order to unblock Brigade contributors who wish to work on
 Brigade 2 compatible gateways (or other tools). It should be _relatively_
 stable, but please do expect occasional, minor breakages at this juncture.
 
-As Brigade 2 development continues, its own non-API components, including its
-scheduler and CLI, will eventually become consumers of this SDK. In the meantime
-the Brigade 2 prototype's non-API components are already utilizing this SDK.
+Brigade's own non-API components, including its scheduler and CLI, are
+consumers of this SDK.
 
 ## Quickstart
 
@@ -29,8 +28,8 @@ import (
 // ...
 
 client, err := sdk.NewAPIClient(
-	apiAddress, // The address of the Brigade 2 Prototype API server, beginning with http:// or https//
-	apiToken, // An API token obtained using the Brigade 2 Prototype CLI
+	apiAddress, // The address of the Brigade 2 API server, beginning with http:// or https//
+	apiToken, // An API token obtained using the Brigade 2 CLI
 	&restmachinery.APIClientOptions {
 		AllowInsecureConnections: false, // Do not ignore SSL errors
 	},
@@ -66,8 +65,8 @@ import (
 // ...
 
 client, err := core.NewEventsClient(
-	apiAddress, // The address of the Brigade 2 Prototype API server, beginning with http:// or https://
-	apiToken, // An API token obtained using the Brigade 2 Prototype CLI
+	apiAddress, // The address of the Brigade 2 API server, beginning with http:// or https://
+	apiToken, // An API token obtained using the Brigade 2 CLI
 	&restmachinery.APIClientOptions {
 		AllowInsecureConnections: false, // Do not ignore SSL errors
 	},
@@ -79,21 +78,17 @@ if err != nil {
 
 The SDK's godocs are quite thorough. Please explore those for further details.
 
-## Using with the Brigade 2 Prototype
+## Using with Brigade 2
 
-No official Brigade 2 API server, CLI, etc. exist yet, but in the meantime, the
-SDK is compatible with the Brigade 2 prototype API server.
-
-Visit [krancour/brignext](https://github.com/krancour/brignext) for instructions
-on standing up your own instance of the Brigade 2 prototype, installing the
-Brigade 2 prototype's CLI (`brig`), and authenticating.
+Visit the main [README](../README.md#getting-started) for instructions
+on standing up your own instance of the Brigade 2 server, installing the
+Brigade 2 CLI (`brig`), and authenticating.
 
 Once you are set up and have authenticated, you may create a service account
 whose token can be used in testing your new gateway (or other tool).
 
 ```console
-$ <prototype directory>/bin/brig-<os>-<arch> service-account create \
-    --id <name> --description <description>
+$ brig service-account create --id <name> --description <description>
 ```
 
 The command will return the token.
@@ -101,7 +96,7 @@ The command will return the token.
 ## Contributing
 
 The Brigade 2 SDK for Go accepts contributions via GitHub pull requests. The
-[Contributing](../../CONTRIBUTING.md) document outlines the process to help get
+[Contributing](../CONTRIBUTING.md) document outlines the process to help get
 your contribution accepted.
 
 ## Support & Feedback
