@@ -101,36 +101,64 @@ func TestEventsClientList(t *testing.T) {
 			},
 		},
 	}
-	server := httptest.NewServer(
-		http.HandlerFunc(
-			func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodGet, r.Method)
-				require.Equal(t, "/v2/events", r.URL.Path)
-				require.Equal(t, testProjectID, r.URL.Query().Get("projectID"))
-				require.Equal(
-					t,
-					testWorkerPhase,
-					WorkerPhase(r.URL.Query().Get("workerPhases")),
-				)
-				bodyBytes, err := json.Marshal(testEvents)
-				require.NoError(t, err)
-				w.WriteHeader(http.StatusOK)
-				fmt.Fprintln(w, string(bodyBytes))
+
+	t.Run("nil event selector", func(t *testing.T) {
+		server := httptest.NewServer(
+			http.HandlerFunc(
+				func(w http.ResponseWriter, r *http.Request) {
+					require.Equal(t, http.MethodGet, r.Method)
+					require.Equal(t, "/v2/events", r.URL.Path)
+					require.Equal(t, 0, len(r.URL.Query()))
+					bodyBytes, err := json.Marshal(testEvents)
+					require.NoError(t, err)
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintln(w, string(bodyBytes))
+				},
+			),
+		)
+		defer server.Close()
+		client := NewEventsClient(server.URL, rmTesting.TestAPIToken, nil)
+		events, err := client.List(
+			context.Background(),
+			nil,
+			nil,
+		)
+		require.NoError(t, err)
+		require.Equal(t, testEvents, events)
+	})
+
+	t.Run("non-nil event selector", func(t *testing.T) {
+		server := httptest.NewServer(
+			http.HandlerFunc(
+				func(w http.ResponseWriter, r *http.Request) {
+					require.Equal(t, http.MethodGet, r.Method)
+					require.Equal(t, "/v2/events", r.URL.Path)
+					require.Equal(t, testProjectID, r.URL.Query().Get("projectID"))
+					require.Equal(
+						t,
+						testWorkerPhase,
+						WorkerPhase(r.URL.Query().Get("workerPhases")),
+					)
+					bodyBytes, err := json.Marshal(testEvents)
+					require.NoError(t, err)
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintln(w, string(bodyBytes))
+				},
+			),
+		)
+		defer server.Close()
+		client := NewEventsClient(server.URL, rmTesting.TestAPIToken, nil)
+		events, err := client.List(
+			context.Background(),
+			&EventsSelector{
+				ProjectID:    testProjectID,
+				WorkerPhases: []WorkerPhase{WorkerPhaseRunning},
 			},
-		),
-	)
-	defer server.Close()
-	client := NewEventsClient(server.URL, rmTesting.TestAPIToken, nil)
-	events, err := client.List(
-		context.Background(),
-		&EventsSelector{
-			ProjectID:    testProjectID,
-			WorkerPhases: []WorkerPhase{WorkerPhaseRunning},
-		},
-		nil,
-	)
-	require.NoError(t, err)
-	require.Equal(t, testEvents, events)
+			nil,
+		)
+		require.NoError(t, err)
+		require.Equal(t, testEvents, events)
+	})
 }
 
 func TestEventsClientGet(t *testing.T) {

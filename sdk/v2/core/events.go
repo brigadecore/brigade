@@ -221,15 +221,17 @@ func (e *eventsClient) List(
 	opts *meta.ListOptions,
 ) (EventList, error) {
 	queryParams := map[string]string{}
-	if selector.ProjectID != "" {
-		queryParams["projectID"] = selector.ProjectID
-	}
-	if len(selector.WorkerPhases) > 0 {
-		workerPhaseStrs := make([]string, len(selector.WorkerPhases))
-		for i, workerPhase := range selector.WorkerPhases {
-			workerPhaseStrs[i] = string(workerPhase)
+	if selector != nil {
+		if selector.ProjectID != "" {
+			queryParams["projectID"] = selector.ProjectID
 		}
-		queryParams["workerPhases"] = strings.Join(workerPhaseStrs, ",")
+		if len(selector.WorkerPhases) > 0 {
+			workerPhaseStrs := make([]string, len(selector.WorkerPhases))
+			for i, workerPhase := range selector.WorkerPhases {
+				workerPhaseStrs[i] = string(workerPhase)
+			}
+			queryParams["workerPhases"] = strings.Join(workerPhaseStrs, ",")
+		}
 	}
 	events := EventList{}
 	return events, e.ExecuteRequest(
