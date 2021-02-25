@@ -127,9 +127,7 @@ func (p *projectsStore) ListSubscribers(
 		},
 	}
 	if len(event.Labels) > 0 {
-		subscriptionMatchCriteria["labels"] = bson.M{
-			"labels": event.Labels,
-		}
+		subscriptionMatchCriteria["labels"] = event.Labels
 	}
 	findOptions := options.Find()
 	findOptions.SetSort(
