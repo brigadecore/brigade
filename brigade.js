@@ -92,6 +92,10 @@ const testIntegrationJob = (e, p) => {
     // 'Always', the images loaded manually into kind will be ignored and the
     // pods will attempt to pull from remote registries.
     "IMAGE_PULL_POLICY=IfNotPresent make hack-deploy",
+    // TODO: Remove sleep when deploys produce dependably ready Brigade 2
+    // instances. Currently, there seems to be some delays for the messaging
+    // bus to be fully ready.
+    "sleep 60",
     "make test-integration",
   );
   return kind;
