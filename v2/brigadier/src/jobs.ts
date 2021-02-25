@@ -1,4 +1,5 @@
 import { Event } from "./events"
+import { ConcurrentGroup, SerialGroup } from "./groups"
 import { Runnable } from "./runnables"
 
 const defaultTimeout: number = 1000 * 60 * 15
@@ -27,6 +28,22 @@ export class Job implements Runnable {
 
   public logs(): Promise<string> {
     return Promise.resolve("skipped logs")
+  }
+
+  public static pod(
+    name: string,
+    image: string,
+    event: Event
+  ): Job {
+    return new Job(name, image, event)
+  }
+
+  public static sequence(...jobs: Job[]): SerialGroup {
+    return new SerialGroup(...jobs)
+  }
+
+  public static concurrent(...jobs: Job[]): ConcurrentGroup {
+    return new ConcurrentGroup(...jobs)
   }
 }
 
