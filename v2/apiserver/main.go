@@ -42,6 +42,11 @@ func main() {
 	}
 
 	// Data stores
+	database, err := databaseConfig(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	var coolLogsStore core.CoolLogsStore
 	var eventsStore core.EventsStore
 	var jobsStore core.JobsStore
@@ -54,10 +59,6 @@ func main() {
 	var warmLogsStore core.LogsStore
 	var workersStore core.WorkersStore
 	{
-		database, err := database(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
 		coolLogsStore = coreMongodb.NewLogsStore(database)
 		eventsStore, err = coreMongodb.NewEventsStore(database)
 		if err != nil {
@@ -242,6 +243,11 @@ func main() {
 						"file:///brigade/schemas/event.json",
 					),
 					Service: eventsService,
+				},
+				&coreREST.HealthcheckEndpoints{
+					APIServerVersion: version.Version(),
+					DatabaseClient:   database.Client(),
+					WriterFactory:    queueWriterFactory,
 				},
 				&coreREST.JobsEndpoints{
 					AuthFilter: authFilter,

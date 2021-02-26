@@ -144,10 +144,17 @@ type writer struct {
 	amqpSender  myamqp.Sender
 }
 
-func (w *writer) Write(ctx context.Context, message string) error {
+func (w *writer) Write(
+	ctx context.Context,
+	message string,
+	opts *queue.MessageOptions,
+) error {
+	if opts == nil {
+		opts = &queue.MessageOptions{Ephemeral: false}
+	}
 	msg := &amqp.Message{
 		Header: &amqp.MessageHeader{
-			Durable: true,
+			Durable: !opts.Ephemeral,
 		},
 		Data: [][]byte{
 			[]byte(message),

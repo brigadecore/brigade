@@ -22,9 +22,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// database returns a *mongo.Database connection based on configuration obtained
-// from environment variables.
-func database(ctx context.Context) (*mongo.Database, error) {
+// databaseConfig returns a *mongo.Database connection based on configuration
+// obtained from environment variables.
+func databaseConfig(ctx context.Context) (*mongo.Database, error) {
 	hosts, err := os.GetRequiredEnvVar("DATABASE_HOSTS")
 	if err != nil {
 		return nil, err
