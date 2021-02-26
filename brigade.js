@@ -3,7 +3,7 @@
 // ============================================================================
 
 const { events, Job, Group } = require("brigadier");
-const { Check } = require("@brigadecore/brigade-utils");
+const { Check, KindJob } = require("@brigadecore/brigade-utils");
 
 const releaseTagRegex = /^refs\/tags\/(v[0-9]+(?:\.[0-9]+)*(?:\-.+)?)$/;
 
@@ -71,6 +71,36 @@ const lintJSJob = (e, p) => {
   return new MakeTargetJob(lintJSJobName, jsImg, e);
 }
 jobs[lintJSJobName] = lintJSJob;
+
+const testIntegrationJobName = "test-integration";
+const testIntegrationJob = (e, p) => {
+  let kind = new KindJob(testIntegrationJobName);
+  kind.mountPath = localPath;
+  kind.tasks.push(
+    // Install git and golang deps
+    "apk add --update --no-cache git gcc musl-dev",
+    // Install helm
+    `curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 \
+      && chmod 700 get_helm.sh \
+      && ./get_helm.sh`,
+    `cd ${localPath}`,
+    // It would be more efficient to mount built images from associated
+    // build jobs; however, they currently use kaniko, which doesn't preserve
+    // images in the local Docker cache.
+    "make hack-build-images hack-load-images",
+    // IMAGE_PULL_POLICY is set to 'IfNotPresent' for deploy; if set to
+    // 'Always', the images loaded manually into kind will be ignored and the
+    // pods will attempt to pull from remote registries.
+    "IMAGE_PULL_POLICY=IfNotPresent make hack-deploy",
+    // TODO: Remove sleep when deploys produce dependably ready Brigade 2
+    // instances. Currently, there seems to be some delays for the messaging
+    // bus to be fully ready.
+    "sleep 60",
+    "make test-integration",
+  );
+  return kind;
+}
+jobs[testIntegrationJobName] = testIntegrationJob;
 
 // Brigadier:
 
@@ -215,6 +245,7 @@ function runSuite(e, p) {
     run(e, p, lintGoJob(e, p)).catch((err) => { return err }),
     run(e, p, testUnitJSJob(e, p)).catch((err) => { return err }),
     run(e, p, lintJSJob(e, p)).catch((err) => { return err }),
+    run(e, p, testIntegrationJob(e, p)).catch((err) => { return err }),
     // Brigadier:
     run(e, p, buildBrigadierJob(e, p)).catch((err) => { return err }),
     // Docker images:
