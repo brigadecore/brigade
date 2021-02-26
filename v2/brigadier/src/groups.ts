@@ -39,6 +39,14 @@ export class SerialGroup extends Group implements Runnable {
     super(...runnables)
   }
 
+  /**
+   * Runs the serial group.
+   * 
+   * @returns A Promise which completes when the last item in the group completes (or
+   * any item fails). If all items ran successfully, the Promise resolves; if any
+   * item failed (that is, its Runnable#run Promise rejected), the Promise
+   * rejects.
+   */
   public async run(): Promise<void> {
     for (const runnable of this.runnables) {
       await runnable.run()
@@ -61,6 +69,14 @@ export class ConcurrentGroup extends Group implements Runnable {
     super(...runnables)
   }
 
+  /**
+   * Runs the concurrent group.
+   * 
+   * @returns A Promise which completes when all items in the group complete.
+   * If all items ran successfully, the Promise resolves; if any
+   * item failed (that is, its Runnable#run Promise rejected), the Promise
+   * rejects.
+   */
   public async run(): Promise<void> {
     const promises: Promise<void>[] = []
     for (const runnable of this.runnables) {
