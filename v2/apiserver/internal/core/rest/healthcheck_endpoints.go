@@ -30,7 +30,7 @@ func (h *HealthcheckEndpoints) Register(router *mux.Router) {
 		h.healthz,
 	).Methods(http.MethodGet)
 
-	// Get ping
+	// Get /ping
 	router.HandleFunc(
 		"/ping",
 		h.ping,

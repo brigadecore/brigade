@@ -128,7 +128,7 @@ func (o *observer) run(ctx context.Context) error {
 	// Whenever we receive an error on this channel, we cancel the context and
 	// shut down.  E.g., if one loop fails, everything fails.
 	// This includes:
-	// 	 1. an error pinging the API server endpoint
+	//   1. an error pinging the API server endpoint
 	//      (Observer <-> API comms)
 	//   2. TODO
 	//      (Observer <-> K8s comms)

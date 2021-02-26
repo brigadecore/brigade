@@ -155,7 +155,7 @@ func (s *scheduler) run(ctx context.Context) error {
 	// Whenever we receive an error on this channel, we cancel the context and
 	// shut down.  E.g., if one loop fails, everything fails.
 	// This includes:
-	// 	 1. an error listing projects at the start of the project loop
+	//   1. an error listing projects at the start of the project loop
 	//      (Scheduler <-> API comms)
 	//   2. an error instantiating a reader in any of the worker/job loops
 	//   3. an error instantiating a reader, reading a message or acking a
