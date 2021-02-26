@@ -13,6 +13,7 @@ import (
 )
 
 type schedulerConfig struct {
+	healthcheckInterval          time.Duration
 	addAndRemoveProjectsInterval time.Duration
 	maxConcurrentWorkers         int
 	maxConcurrentJobs            int
@@ -21,6 +22,7 @@ type schedulerConfig struct {
 func getSchedulerConfig() (schedulerConfig, error) {
 	config := schedulerConfig{}
 	var err error
+	config.healthcheckInterval = 30 * time.Second
 	config.addAndRemoveProjectsInterval, err =
 		os.GetDurationFromEnvVar("ADD_REMOVE_PROJECT_INTERVAL", 30*time.Second)
 	if err != nil {
@@ -48,6 +50,7 @@ type scheduler struct {
 	manageJobCapacityFn    func(context.Context)
 	jobLoopErrFn           func(...interface{})
 	manageProjectsFn       func(context.Context)
+	runHealthcheckLoopFn   func(ctx context.Context)
 	runWorkerLoopFn        func(ctx context.Context, projectID string)
 	runJobLoopFn           func(ctx context.Context, projectID string)
 	// These normally point to API client functions, but can also be overridden
@@ -101,6 +104,7 @@ func newScheduler(
 	s.manageJobCapacityFn = s.manageJobCapacity
 	s.jobLoopErrFn = log.Println
 	s.manageProjectsFn = s.manageProjects
+	s.runHealthcheckLoopFn = s.runHealthcheckLoop
 	s.runWorkerLoopFn = s.runWorkerLoop
 	s.runJobLoopFn = s.runJobLoop
 	return s
@@ -114,6 +118,13 @@ func (s *scheduler) run(ctx context.Context) error {
 	defer cancel()
 
 	wg := sync.WaitGroup{}
+
+	// Run healthcheck loop
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		s.runHealthcheckLoopFn(ctx)
+	}()
 
 	// Manage available Worker capacity
 	wg.Add(1)
@@ -140,6 +151,16 @@ func (s *scheduler) run(ctx context.Context) error {
 	// Wait for an error or a completed context
 	var err error
 	select {
+	// In essence, this comprises the Scheduler's "healthcheck" logic.
+	// Whenever we receive an error on this channel, we cancel the context and
+	// shut down.  E.g., if one loop fails, everything fails.
+	// This includes:
+	// 	 1. an error listing projects at the start of the project loop
+	//      (Scheduler <-> API comms)
+	//   2. an error instantiating a reader in any of the worker/job loops
+	//   3. an error instantiating a reader, reading a message or acking a
+	//      message in the healhcheck loop
+	//      (Scheduler <-> Messaging queue comms)
 	case err = <-s.errCh:
 		cancel() // Shut it all down
 	case <-ctx.Done():
