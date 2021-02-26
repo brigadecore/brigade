@@ -13,12 +13,14 @@ import (
 )
 
 type observerConfig struct {
-	delayBeforeCleanup time.Duration
+	delayBeforeCleanup  time.Duration
+	healthcheckInterval time.Duration
 }
 
 func getObserverConfig() (observerConfig, error) {
 	config := observerConfig{}
 	var err error
+	config.healthcheckInterval = 30 * time.Second
 	config.delayBeforeCleanup, err =
 		os.GetDurationFromEnvVar("DELAY_BEFORE_CLEANUP", time.Minute)
 	return config, err
@@ -32,6 +34,7 @@ type observer struct {
 	// All of the scheduler's goroutines will send fatal errors here
 	errCh chan error
 	// All of these internal functions are overridable for testing purposes
+	runHealthcheckLoopFn    func(ctx context.Context)
 	syncWorkerPodsFn        func(ctx context.Context)
 	syncWorkerPodFn         func(obj interface{})
 	deleteWorkerResourcesFn func(namespace, podName, eventID string)
@@ -42,6 +45,7 @@ type observer struct {
 	errFn                   func(...interface{})
 	// These normally point to API client functions, but can also be overridden
 	// for test purposes
+	pingAPIServerFn      func(ctx context.Context) error
 	updateWorkerStatusFn func(
 		ctx context.Context,
 		eventID string,
@@ -58,6 +62,7 @@ type observer struct {
 }
 
 func newObserver(
+	healthcheckClient core.HealthcheckClient,
 	workersClient core.WorkersClient,
 	kubeClient kubernetes.Interface,
 	config observerConfig,
@@ -69,6 +74,7 @@ func newObserver(
 		syncMu:          &sync.Mutex{},
 		errCh:           make(chan error),
 	}
+	o.runHealthcheckLoopFn = o.runHealthcheckLoop
 	o.syncWorkerPodsFn = o.syncWorkerPods
 	o.syncWorkerPodFn = o.syncWorkerPod
 	o.deleteWorkerResourcesFn = o.deleteWorkerResources
@@ -77,6 +83,7 @@ func newObserver(
 	o.deleteJobResourcesFn = o.deleteJobResources
 	o.syncDeletedPodFn = o.syncDeletedPod
 	o.errFn = log.Println
+	o.pingAPIServerFn = healthcheckClient.Ping
 	o.updateWorkerStatusFn = workersClient.UpdateStatus
 	o.cleanupWorkerFn = workersClient.Cleanup
 	o.updateJobStatusFn = workersClient.Jobs().UpdateStatus
@@ -92,6 +99,13 @@ func (o *observer) run(ctx context.Context) error {
 	defer cancel()
 
 	wg := sync.WaitGroup{}
+
+	// Run healthcheck loop
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		o.runHealthcheckLoopFn(ctx)
+	}()
 
 	// Continuously sync worker pods
 	wg.Add(1)
@@ -110,6 +124,17 @@ func (o *observer) run(ctx context.Context) error {
 	// Wait for an error or a completed context
 	var err error
 	select {
+	// In essence, this comprises the Observer's "healthcheck" logic.
+	// Whenever we receive an error on this channel, we cancel the context and
+	// shut down.  E.g., if one loop fails, everything fails.
+	// This includes:
+	// 	 1. an error pinging the API server endpoint
+	//      (Observer <-> API comms)
+	//   2. TODO
+	//      (Observer <-> K8s comms)
+	//
+	// Note: Currently, errors updating or cleaning up worker or job statuses
+	//       are handled by o.errFn, which currently simply logs the error
 	case err = <-o.errCh:
 		cancel() // Shut it all down
 	case <-ctx.Done():
