@@ -19,6 +19,7 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	sysAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/system/authn"
 	sysAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/system/authz"
+	systemREST "github.com/brigadecore/brigade/v2/apiserver/internal/system/rest"
 	"github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/brigadecore/brigade/v2/internal/signals"
 	"github.com/brigadecore/brigade/v2/internal/version"
@@ -244,7 +245,7 @@ func main() {
 					),
 					Service: eventsService,
 				},
-				&coreREST.HealthcheckEndpoints{
+				&systemREST.HealthcheckEndpoints{
 					APIServerVersion: version.Version(),
 					DatabaseClient:   database.Client(),
 					WriterFactory:    queueWriterFactory,

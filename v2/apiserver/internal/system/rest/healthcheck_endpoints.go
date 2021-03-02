@@ -3,7 +3,6 @@ package rest
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -69,7 +68,7 @@ func (h *HealthcheckEndpoints) healthz(w http.ResponseWriter, r *http.Request) {
 					return false, errors.New("error writing to messaging queue")
 				}
 
-				return true, nil
+				return []byte("ok"), nil
 			},
 			SuccessCode: http.StatusOK,
 		},
@@ -84,7 +83,11 @@ func (h *HealthcheckEndpoints) ping(w http.ResponseWriter, r *http.Request) {
 			W: w,
 			R: r,
 			EndpointLogic: func() (interface{}, error) {
-				return fmt.Sprintf(`{"version": "%s"}`, h.APIServerVersion), nil
+				return struct {
+					Version string
+				}{
+					Version: h.APIServerVersion,
+				}, nil
 			},
 			SuccessCode: http.StatusOK,
 		},
