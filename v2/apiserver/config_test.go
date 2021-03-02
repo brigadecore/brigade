@@ -83,7 +83,7 @@ func TestDatabase(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			testCase.setup()
-			database, err := databaseConfig(context.Background())
+			database, err := databaseConnection(context.Background())
 			testCase.assertions(database, err)
 		})
 	}

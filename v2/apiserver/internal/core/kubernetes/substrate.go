@@ -470,7 +470,9 @@ func (s *substrate) ScheduleWorker(
 	if err := queueWriter.Write(
 		ctx,
 		event.ID,
-		&queue.MessageOptions{},
+		&queue.MessageOptions{
+			Durable: true,
+		},
 	); err != nil {
 		return errors.Wrapf(
 			err,
@@ -552,7 +554,9 @@ func (s *substrate) ScheduleJob(
 	if err := queueWriter.Write(
 		ctx,
 		fmt.Sprintf("%s:%s", event.ID, jobName),
-		&queue.MessageOptions{},
+		&queue.MessageOptions{
+			Durable: true,
+		},
 	); err != nil {
 		return errors.Wrapf(
 			err,

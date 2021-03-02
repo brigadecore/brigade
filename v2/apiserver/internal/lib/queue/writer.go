@@ -32,7 +32,7 @@ type Writer interface {
 // MessageOptions represent options for the message being written via
 // the Writer.
 type MessageOptions struct {
-	// Ephemeral indicates whether or not the message should be durable/persisted
-	// (false) or not durable/persisted (true)
-	Ephemeral bool
+	// Durable indicates whether or not the message should be durable/persisted
+	// (true) or not durable/persisted (false, default)
+	Durable bool
 }

@@ -64,9 +64,7 @@ func (h *HealthcheckEndpoints) healthz(w http.ResponseWriter, r *http.Request) {
 				if err := writer.Write(
 					ctx,
 					"ping",
-					&queue.MessageOptions{
-						Ephemeral: true,
-					},
+					&queue.MessageOptions{},
 				); err != nil {
 					return false, errors.New("error writing to messaging queue")
 				}

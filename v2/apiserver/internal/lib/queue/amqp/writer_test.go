@@ -119,7 +119,7 @@ func TestWriterWrite(t *testing.T) {
 			writer: &writer{
 				amqpSender: &mockAMQPSender{
 					SendFn: func(ctx context.Context, msg *amqp.Message) error {
-						if msg.Header.Durable != true {
+						if msg.Header.Durable != false {
 							return errors.New("message persistence not as expected")
 						}
 						return nil
@@ -149,7 +149,7 @@ func TestWriterWrite_MessageOpts(t *testing.T) {
 		writer := &writer{
 			amqpSender: &mockAMQPSender{
 				SendFn: func(ctx context.Context, msg *amqp.Message) error {
-					if msg.Header.Durable != true {
+					if msg.Header.Durable != false {
 						return errors.New("message persistence not as expected")
 					}
 					return nil
@@ -168,7 +168,7 @@ func TestWriterWrite_MessageOpts(t *testing.T) {
 		writer := &writer{
 			amqpSender: &mockAMQPSender{
 				SendFn: func(ctx context.Context, msg *amqp.Message) error {
-					if msg.Header.Durable != false {
+					if msg.Header.Durable != true {
 						return errors.New("message persistence not as expected")
 					}
 					return nil
@@ -178,7 +178,7 @@ func TestWriterWrite_MessageOpts(t *testing.T) {
 		err := writer.Write(
 			context.Background(),
 			"message in a bottle",
-			&queue.MessageOptions{Ephemeral: true},
+			&queue.MessageOptions{Durable: true},
 		)
 		require.NoError(t, err)
 	})

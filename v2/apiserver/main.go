@@ -42,7 +42,7 @@ func main() {
 	}
 
 	// Data stores
-	database, err := databaseConfig(ctx)
+	database, err := databaseConnection(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

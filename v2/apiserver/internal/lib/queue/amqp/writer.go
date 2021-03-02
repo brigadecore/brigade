@@ -150,11 +150,11 @@ func (w *writer) Write(
 	opts *queue.MessageOptions,
 ) error {
 	if opts == nil {
-		opts = &queue.MessageOptions{Ephemeral: false}
+		opts = &queue.MessageOptions{}
 	}
 	msg := &amqp.Message{
 		Header: &amqp.MessageHeader{
-			Durable: !opts.Ephemeral,
+			Durable: opts.Durable,
 		},
 		Data: [][]byte{
 			[]byte(message),
