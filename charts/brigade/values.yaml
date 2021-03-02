@@ -26,6 +26,10 @@ apiserver:
     enabled: true
     # TODO: This should probably be generated
     password: F00Bar!!!
+    ## Session TTL dictates the default time-to-live for the root user session.
+    ## Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+    ## For example, "60s", "2h45m", "168h" (1 week)
+    sessionTTL: 1h
 
   oidc:
     ## Whether to enable OpenID Connect. OpenID Connect (an authentication
@@ -35,6 +39,11 @@ apiserver:
     ##
     ## OpenID Connect support REQUIRES TLS to be enabled.
     enabled: false
+    ##
+    ## User Session TTL dictates the default time-to-live for user sessions.
+    ## Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+    ## For example, "60s", "2h45m", "168h" (1 week)
+    userSessionTTL: 168h
     ## ProviderURL examples:
     ##
     ##   Google Identity Platform:

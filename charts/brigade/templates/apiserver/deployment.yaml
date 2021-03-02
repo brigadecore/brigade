@@ -39,6 +39,8 @@ spec:
         - name: ROOT_USER_ENABLED
           value: {{ quote .Values.apiserver.rootUser.enabled }}
         {{- if .Values.apiserver.rootUser.enabled }}
+        - name: ROOT_USER_SESSION_TTL
+          value: {{ .Values.apiserver.rootUser.sessionTTL }}
         - name: ROOT_USER_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -48,6 +50,8 @@ spec:
         - name: OIDC_ENABLED
           value: {{ quote .Values.apiserver.oidc.enabled }}
         {{- if .Values.apiserver.oidc.enabled }}
+        - name: OIDC_USER_SESSION_TTL
+          value: {{ .Values.apiserver.oidc.userSessionTTL }}
         - name: OIDC_PROVIDER_URL
           value: {{ .Values.apiserver.oidc.providerURL }}
         - name: OIDC_CLIENT_ID

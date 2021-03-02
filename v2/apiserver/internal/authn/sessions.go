@@ -130,6 +130,10 @@ type SessionsServiceConfig struct {
 	// RootUserEnabled indicates whether the Session service should permit the
 	// "root" user to authenticate using a password.
 	RootUserEnabled bool
+	// RootUserSessionTTL specifies the TTL for the root user session. This value
+	// will be used to set the Expires field on the Session record for the root
+	// user.
+	RootUserSessionTTL time.Duration
 	// RootUserPassword specifies the password that must be supplied by users
 	// attempting to authenticate as the "root" user. This field is applicable
 	// only when value of the RootUserEnabled field is true.
@@ -137,6 +141,9 @@ type SessionsServiceConfig struct {
 	// OpenIDConnectEnabled indicates whether the Session service should permit
 	// User authentication via OpenID Connect.
 	OpenIDConnectEnabled bool
+	// UserSessionTTL specifies the TTL for user sessions. This value will be
+	// used to set the Expires field on the Session record for each user.
+	UserSessionTTL time.Duration
 	// OAuth2Helper provides authentication-related functions configured for a
 	// specific OpenID Connect identity provider. This field is applicable only
 	// when value of the OpenIDConnectEnabled field is true.
@@ -249,7 +256,7 @@ func (s *sessionsService) CreateRootSession(
 	}
 
 	now := time.Now().UTC()
-	expiryTime := now.Add(time.Hour)
+	expiryTime := now.Add(s.config.RootUserSessionTTL)
 	session := Session{
 		ObjectMeta: meta.ObjectMeta{
 			ID:      uuid.NewV4().String(),
@@ -282,14 +289,16 @@ func (s *sessionsService) CreateUserSession(
 	}
 	oauth2State := crypto.NewToken(30)
 	token := crypto.NewToken(256)
+	now := time.Now().UTC()
+	expiryTime := now.Add(s.config.UserSessionTTL)
 	session := Session{
 		ObjectMeta: meta.ObjectMeta{
 			ID: uuid.NewV4().String(),
 		},
 		HashedOAuth2State: crypto.Hash("", oauth2State),
 		HashedToken:       crypto.Hash("", token),
+		Expires:           &expiryTime,
 	}
-	now := time.Now().UTC()
 	session.Created = &now
 	if err := s.sessionsStore.Create(ctx, session); err != nil {
 		return OIDCAuthDetails{}, errors.Wrapf(
