@@ -140,11 +140,10 @@ func sessionsServiceConfig(
 		return config, err
 	}
 	if config.RootUserEnabled {
-		rootUserSessionTTL, err := os.GetRequiredEnvVar("ROOT_USER_SESSION_TTL")
-		if err != nil {
-			return config, err
-		}
-		config.RootUserSessionTTL, err = time.ParseDuration(rootUserSessionTTL)
+		config.RootUserSessionTTL, err = os.GetDurationFromEnvVar(
+			"ROOT_USER_SESSION_TTL",
+			time.Hour,
+		)
 		if err != nil {
 			return config, err
 		}
@@ -154,11 +153,10 @@ func sessionsServiceConfig(
 		}
 	}
 	if config.OpenIDConnectEnabled {
-		userSessionTTL, err := os.GetRequiredEnvVar("OIDC_USER_SESSION_TTL")
-		if err != nil {
-			return config, err
-		}
-		config.UserSessionTTL, err = time.ParseDuration(userSessionTTL)
+		config.UserSessionTTL, err = os.GetDurationFromEnvVar(
+			"OIDC_USER_SESSION_TTL",
+			time.Hour,
+		)
 		if err != nil {
 			return config, err
 		}

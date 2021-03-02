@@ -303,25 +303,15 @@ func TestSessionsServiceConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "ROOT_USER_SESSION_TTL required but not set",
-			setup: func() {
-				os.Setenv("OIDC_ENABLED", "true")
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "value not found for")
-				require.Contains(t, err.Error(), "ROOT_USER_SESSION_TTL")
-			},
-		},
-		{
 			name: "ROOT_USER_SESSION_TTL not parsable as duration",
 			setup: func() {
+				os.Setenv("OIDC_ENABLED", "true")
 				os.Setenv("ROOT_USER_SESSION_TTL", "in like an hour")
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), "invalid duration")
-				require.Contains(t, err.Error(), "in like an hour")
+				require.Contains(t, err.Error(), "was not parsable as a duration")
+				require.Contains(t, err.Error(), "ROOT_USER_SESSION_TTL")
 			},
 		},
 		{
@@ -336,25 +326,15 @@ func TestSessionsServiceConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "OIDC_USER_SESSION_TTL required but not set",
-			setup: func() {
-				os.Setenv("ROOT_USER_PASSWORD", "12345")
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "value not found for")
-				require.Contains(t, err.Error(), "OIDC_USER_SESSION_TTL")
-			},
-		},
-		{
 			name: "OIDC_USER_SESSION_TTL not parsable as duration",
 			setup: func() {
+				os.Setenv("ROOT_USER_PASSWORD", "12345")
 				os.Setenv("OIDC_USER_SESSION_TTL", "in like a day")
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), "invalid duration")
-				require.Contains(t, err.Error(), "in like a day")
+				require.Contains(t, err.Error(), "was not parsable as a duration")
+				require.Contains(t, err.Error(), "OIDC_USER_SESSION_TTL")
 			},
 		},
 		{
