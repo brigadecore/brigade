@@ -1,4 +1,4 @@
-package core
+package system
 
 import (
 	"context"
@@ -10,17 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewHealthcheckClient(t *testing.T) {
-	client := NewHealthcheckClient(
+func TestNewAPIClient(t *testing.T) {
+	client := NewAPIClient(
 		rmTesting.TestAPIAddress,
 		rmTesting.TestAPIToken,
 		nil,
 	)
-	require.IsType(t, &healthcheckClient{}, client)
-	rmTesting.RequireBaseClient(t, client.(*healthcheckClient).BaseClient)
+	require.IsType(t, &apiClient{}, client)
+	rmTesting.RequireBaseClient(t, client.(*apiClient).BaseClient)
 }
 
-func TestHealthcheckClientPing(t *testing.T) {
+func TestAPIClientPing(t *testing.T) {
 	server := httptest.NewServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +35,7 @@ func TestHealthcheckClientPing(t *testing.T) {
 		),
 	)
 	defer server.Close()
-	client := NewHealthcheckClient(server.URL, rmTesting.TestAPIToken, nil)
+	client := NewAPIClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.Ping(context.Background())
 	require.NoError(t, err)
 }

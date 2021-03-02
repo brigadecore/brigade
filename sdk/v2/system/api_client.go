@@ -1,4 +1,4 @@
-package core
+package system
 
 import (
 	"context"
@@ -8,31 +8,30 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
-// HealthcheckClient is the specialized client for accessing healthchecks on
-// the Brigade API.
-type HealthcheckClient interface {
+// APIClient is the client for system checks involving the Brigade API.
+type APIClient interface {
 	// Ping pings the API Server
 	Ping(ctx context.Context) error
 }
 
-type healthcheckClient struct {
+type apiClient struct {
 	*rm.BaseClient
 }
 
-// NewHealthcheckClient returns a specialized client for accessing the
-// healthcheck API.
-func NewHealthcheckClient(
+// NewAPIClient returns a client to access system-related Brigade API
+// endpoints.
+func NewAPIClient(
 	apiAddress string,
 	apiToken string,
 	opts *restmachinery.APIClientOptions,
-) HealthcheckClient {
-	return &healthcheckClient{
+) APIClient {
+	return &apiClient{
 		BaseClient: rm.NewBaseClient(apiAddress, apiToken, opts),
 	}
 }
 
-func (h *healthcheckClient) Ping(ctx context.Context) error {
-	return h.ExecuteRequest(
+func (a *apiClient) Ping(ctx context.Context) error {
+	return a.ExecuteRequest(
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodGet,

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v2/system"
 	"github.com/brigadecore/brigade/v2/internal/os"
 	"k8s.io/client-go/kubernetes"
 )
@@ -62,7 +63,7 @@ type observer struct {
 }
 
 func newObserver(
-	healthcheckClient core.HealthcheckClient,
+	systemClient system.APIClient,
 	workersClient core.WorkersClient,
 	kubeClient kubernetes.Interface,
 	config observerConfig,
@@ -83,7 +84,7 @@ func newObserver(
 	o.deleteJobResourcesFn = o.deleteJobResources
 	o.syncDeletedPodFn = o.syncDeletedPod
 	o.errFn = log.Println
-	o.pingAPIServerFn = healthcheckClient.Ping
+	o.pingAPIServerFn = systemClient.Ping
 	o.updateWorkerStatusFn = workersClient.UpdateStatus
 	o.cleanupWorkerFn = workersClient.Cleanup
 	o.updateJobStatusFn = workersClient.Jobs().UpdateStatus

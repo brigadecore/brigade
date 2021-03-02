@@ -9,6 +9,7 @@ import (
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v2/system"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -65,7 +66,7 @@ func TestNewObserver(t *testing.T) {
 	apiToken := ""
 	apiClientOpts := &restmachinery.APIClientOptions{}
 
-	healthcheckClient := core.NewHealthcheckClient(
+	systemClient := system.NewAPIClient(
 		apiAddress,
 		apiToken,
 		apiClientOpts,
@@ -79,7 +80,7 @@ func TestNewObserver(t *testing.T) {
 	config := observerConfig{
 		delayBeforeCleanup: time.Minute,
 	}
-	observer := newObserver(healthcheckClient, workerClient, kubeClient, config)
+	observer := newObserver(systemClient, workerClient, kubeClient, config)
 	require.Same(t, kubeClient, observer.kubeClient)
 	require.NotNil(t, observer.deletingPodsSet)
 	require.NotNil(t, observer.syncMu)
