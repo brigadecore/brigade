@@ -245,7 +245,7 @@ func main() {
 					),
 					Service: eventsService,
 				},
-				&systemREST.HealthcheckEndpoints{
+				&systemREST.SystemEndpoints{
 					APIServerVersion: version.Version(),
 					DatabaseClient:   database.Client(),
 					WriterFactory:    queueWriterFactory,

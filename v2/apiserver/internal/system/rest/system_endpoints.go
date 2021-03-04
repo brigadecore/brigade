@@ -12,17 +12,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// HealthcheckEndpoints implements restmachinery.Endpoints to provide
-// Healthcheck-related URL --> action mappings to a restmachinery.Server.
-type HealthcheckEndpoints struct {
+// SystemEndpoints implements restmachinery.Endpoints to provide
+// System-related URL --> action mappings to a restmachinery.Server.
+type SystemEndpoints struct {
 	APIServerVersion string
 	DatabaseClient   *mongo.Client
 	WriterFactory    queue.WriterFactory
 }
 
-// Register is invoked by restmachinery.Server to register Healthcheck-related
+// Register is invoked by restmachinery.Server to register System-related
 // URL --> action mappings to a restmachinery.Server.
-func (h *HealthcheckEndpoints) Register(router *mux.Router) {
+func (h *SystemEndpoints) Register(router *mux.Router) {
 	// Get /healthz
 	router.HandleFunc(
 		"/healthz",
@@ -39,7 +39,7 @@ func (h *HealthcheckEndpoints) Register(router *mux.Router) {
 // healthz is the main healthcheck endpoint for the api server.  The endpoint
 // logic verifies connectivity to crucial dependencies, e.g. the database
 // and messaging queues.
-func (h *HealthcheckEndpoints) healthz(w http.ResponseWriter, r *http.Request) {
+func (h *SystemEndpoints) healthz(w http.ResponseWriter, r *http.Request) {
 	restmachinery.ServeRequest(
 		restmachinery.InboundRequest{
 			W: w,
@@ -77,7 +77,7 @@ func (h *HealthcheckEndpoints) healthz(w http.ResponseWriter, r *http.Request) {
 
 // ping returns the api server version and http.StatusOK.  This is handy for
 // auxiliary components to verify their connectivity.
-func (h *HealthcheckEndpoints) ping(w http.ResponseWriter, r *http.Request) {
+func (h *SystemEndpoints) ping(w http.ResponseWriter, r *http.Request) {
 	restmachinery.ServeRequest(
 		restmachinery.InboundRequest{
 			W: w,
