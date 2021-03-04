@@ -159,7 +159,8 @@ func (s *scheduler) run(ctx context.Context) error {
 	//      (Scheduler <-> API comms)
 	//   2. an error instantiating a reader in any of the worker/job loops
 	//   3. an error instantiating a reader, reading a message or acking a
-	//      message in the healhcheck loop
+	//      message in the healhcheck loop, which runs regularly and may spot
+	//      connectivity issues when the Brigade server is otherwise dormant
 	//      (Scheduler <-> Messaging queue comms)
 	case err = <-s.errCh:
 		cancel() // Shut it all down
