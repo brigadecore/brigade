@@ -59,7 +59,8 @@ type observer struct {
 		jobName string,
 		status core.JobStatus,
 	) error
-	cleanupJobFn func(ctx context.Context, eventID, jobName string) error
+	cleanupJobFn      func(ctx context.Context, eventID, jobName string) error
+	checkK8sAPIServer func(ctx context.Context) ([]byte, error)
 }
 
 func newObserver(
@@ -89,6 +90,8 @@ func newObserver(
 	o.cleanupWorkerFn = workersClient.Cleanup
 	o.updateJobStatusFn = workersClient.Jobs().UpdateStatus
 	o.cleanupJobFn = workersClient.Jobs().Cleanup
+	o.checkK8sAPIServer = o.kubeClient.
+		Discovery().RESTClient().Get().AbsPath("/healthz").DoRaw
 	return o
 }
 
@@ -129,9 +132,9 @@ func (o *observer) run(ctx context.Context) error {
 	// Whenever we receive an error on this channel, we cancel the context and
 	// shut down.  E.g., if one loop fails, everything fails.
 	// This includes:
-	//   1. an error pinging the API server endpoint
+	//   1. an error pinging the Brigade API server endpoint
 	//      (Observer <-> API comms)
-	//   2. TODO
+	//   2. an error pinging the K8s API server endpoint
 	//      (Observer <-> K8s comms)
 	//
 	// Note: Currently, errors updating or cleaning up worker or job statuses

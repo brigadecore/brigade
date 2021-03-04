@@ -21,9 +21,37 @@ func TestRunHealthcheckLoop(t *testing.T) {
 				pingAPIServerFn: func(context.Context) error {
 					return errors.New("something went wrong")
 				},
+				checkK8sAPIServer: func(context.Context) ([]byte, error) {
+					return []byte{}, nil
+				},
 			},
 			assertions: func(err error) {
-				require.Equal(t, "something went wrong", err.Error())
+				require.Contains(
+					t,
+					err.Error(),
+					"error checking Brigade API server connectivity",
+				)
+				require.Contains(t, err.Error(), "something went wrong")
+			},
+		},
+
+		{
+			name: "error pinging K8s API Server",
+			observer: &observer{
+				pingAPIServerFn: func(context.Context) error {
+					return nil
+				},
+				checkK8sAPIServer: func(context.Context) ([]byte, error) {
+					return []byte{}, errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Contains(
+					t,
+					err.Error(),
+					"error checking K8s API server connectivity",
+				)
+				require.Contains(t, err.Error(), "something went wrong")
 			},
 		},
 
@@ -32,6 +60,9 @@ func TestRunHealthcheckLoop(t *testing.T) {
 			observer: &observer{
 				pingAPIServerFn: func(context.Context) error {
 					return nil
+				},
+				checkK8sAPIServer: func(context.Context) ([]byte, error) {
+					return []byte{}, nil
 				},
 			},
 			assertions: func(err error) {
