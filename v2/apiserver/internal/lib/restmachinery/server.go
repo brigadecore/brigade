@@ -51,14 +51,18 @@ func NewServer(endpoints []Endpoints, config *ServerConfig) Server {
 
 	return &server{
 		config: *config,
-		handler: cors.New(
-			cors.Options{
-				AllowCredentials: true,
-				AllowedOrigins:   []string{"*"},
-				AllowedMethods:   []string{"DELETE", "GET", "POST", "PUT"},
-				AllowedHeaders:   []string{"Authorization", "Content-Type"},
-			},
-		).Handler(router),
+		handler: http.HandlerFunc( // Make a handler from a function
+			(&requestContextFilter{}).Decorate( // Our request context filter
+				cors.New( // CORS filter
+					cors.Options{
+						AllowCredentials: true,
+						AllowedOrigins:   []string{"*"},
+						AllowedMethods:   []string{"DELETE", "GET", "POST", "PUT"},
+						AllowedHeaders:   []string{"Authorization", "Content-Type"},
+					},
+				).Handler(router).ServeHTTP,
+			),
+		),
 	}
 }
 
