@@ -176,7 +176,8 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 					w,
 					http.StatusUnauthorized,
 					&meta.ErrAuthentication{
-						Reason: "Session not found. Please log in again.",
+						Reason: "Session not found or may have expired. " +
+							"Please log in again.",
 					},
 				)
 				return
@@ -224,6 +225,10 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 			)
 			return
 		}
+		// Note: although we have records in the sessions collection configured
+		// for TTL cleanup by mongo (per Expires), we wish to keep this check
+		// in case this setting is configurable in the future or mongo otherwise
+		// fails to clean them up.
 		if session.Expires != nil && time.Now().UTC().After(*session.Expires) {
 			t.writeResponse(
 				w,

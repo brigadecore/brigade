@@ -26,6 +26,9 @@ func NewSessionsStore(database *mongo.Database) (authn.SessionsStore, error) {
 		context.WithTimeout(context.Background(), createIndexTimeout)
 	defer cancel()
 	unique := true
+	// Set the default expiration value to 0 so that each record's 'expires'
+	// field is used to determine actual expiration
+	defaultExpiry := int32(0)
 	collection := database.Collection("sessions")
 	if _, err := collection.Indexes().CreateMany(
 		ctx,
@@ -44,6 +47,14 @@ func NewSessionsStore(database *mongo.Database) (authn.SessionsStore, error) {
 				},
 				Options: &options.IndexOptions{
 					Unique: &unique,
+				},
+			},
+			{
+				Keys: bson.M{
+					"expires": 1,
+				},
+				Options: &options.IndexOptions{
+					ExpireAfterSeconds: &defaultExpiry,
 				},
 			},
 		},
