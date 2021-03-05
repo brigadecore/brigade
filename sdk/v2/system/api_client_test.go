@@ -2,6 +2,8 @@ package system
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,21 +23,26 @@ func TestNewAPIClient(t *testing.T) {
 }
 
 func TestAPIClientPing(t *testing.T) {
+	testResponse := PingResponse{Version: "v2.0.0"}
 	server := httptest.NewServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				require.Equal(t, http.MethodGet, r.Method)
 				require.Equal(
 					t,
-					"/ping",
+					"/v2/ping",
 					r.URL.Path,
 				)
+				bodyBytes, err := json.Marshal(testResponse)
+				require.NoError(t, err)
 				w.WriteHeader(http.StatusOK)
+				fmt.Fprintln(w, string(bodyBytes))
 			},
 		),
 	)
 	defer server.Close()
 	client := NewAPIClient(server.URL, rmTesting.TestAPIToken, nil)
-	err := client.Ping(context.Background())
+	resp, err := client.Ping(context.Background())
 	require.NoError(t, err)
+	require.Equal(t, testResponse, resp)
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brigadecore/brigade/sdk/v2/system"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,8 +19,8 @@ func TestRunHealthcheckLoop(t *testing.T) {
 		{
 			name: "error pinging API Server",
 			observer: &observer{
-				pingAPIServerFn: func(context.Context) error {
-					return errors.New("something went wrong")
+				pingAPIServerFn: func(context.Context) (system.PingResponse, error) {
+					return system.PingResponse{}, errors.New("something went wrong")
 				},
 				checkK8sAPIServer: func(context.Context) ([]byte, error) {
 					return []byte{}, nil
@@ -38,8 +39,8 @@ func TestRunHealthcheckLoop(t *testing.T) {
 		{
 			name: "error pinging K8s API Server",
 			observer: &observer{
-				pingAPIServerFn: func(context.Context) error {
-					return nil
+				pingAPIServerFn: func(context.Context) (system.PingResponse, error) {
+					return system.PingResponse{}, nil
 				},
 				checkK8sAPIServer: func(context.Context) ([]byte, error) {
 					return []byte{}, errors.New("something went wrong")
@@ -58,8 +59,8 @@ func TestRunHealthcheckLoop(t *testing.T) {
 		{
 			name: "success",
 			observer: &observer{
-				pingAPIServerFn: func(context.Context) error {
-					return nil
+				pingAPIServerFn: func(context.Context) (system.PingResponse, error) {
+					return system.PingResponse{}, nil
 				},
 				checkK8sAPIServer: func(context.Context) ([]byte, error) {
 					return []byte{}, nil

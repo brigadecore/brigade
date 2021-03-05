@@ -8,10 +8,16 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
+// PingResponse represents the expected response object returned by the
+// API Server's v2/ping endpoint
+type PingResponse struct {
+	Version string
+}
+
 // APIClient is the client for system checks involving the Brigade API.
 type APIClient interface {
 	// Ping pings the API Server
-	Ping(ctx context.Context) error
+	Ping(ctx context.Context) (PingResponse, error)
 }
 
 type apiClient struct {
@@ -30,13 +36,15 @@ func NewAPIClient(
 	}
 }
 
-func (a *apiClient) Ping(ctx context.Context) error {
-	return a.ExecuteRequest(
+func (a *apiClient) Ping(ctx context.Context) (PingResponse, error) {
+	pingResponse := PingResponse{}
+	return pingResponse, a.ExecuteRequest(
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
-			Path:        "ping",
+			Path:        "v2/ping",
 			SuccessCode: http.StatusOK,
+			RespObj:     &pingResponse,
 		},
 	)
 }

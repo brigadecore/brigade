@@ -46,7 +46,7 @@ type observer struct {
 	errFn                   func(...interface{})
 	// These normally point to API client functions, but can also be overridden
 	// for test purposes
-	pingAPIServerFn      func(ctx context.Context) error
+	pingAPIServerFn      func(ctx context.Context) (system.PingResponse, error)
 	updateWorkerStatusFn func(
 		ctx context.Context,
 		eventID string,
@@ -90,8 +90,13 @@ func newObserver(
 	o.cleanupWorkerFn = workersClient.Cleanup
 	o.updateJobStatusFn = workersClient.Jobs().UpdateStatus
 	o.cleanupJobFn = workersClient.Jobs().Cleanup
-	o.checkK8sAPIServer = o.kubeClient.
-		Discovery().RESTClient().Get().AbsPath("/healthz").DoRaw
+
+	// TODO: remove this type assertion once we figure out how to fake/mock
+	// this k8s API Call
+	if realK8sClient, ok := o.kubeClient.(*kubernetes.Clientset); ok {
+		o.checkK8sAPIServer =
+			realK8sClient.Discovery().RESTClient().Get().AbsPath("/healthz").DoRaw
+	}
 	return o
 }
 

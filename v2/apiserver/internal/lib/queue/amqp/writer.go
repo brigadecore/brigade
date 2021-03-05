@@ -117,10 +117,10 @@ func (w *writerFactory) NewWriter(queueName string) (queue.Writer, error) {
 				if err = w.connectFn(); err != nil {
 					// The connection function handles its own retries. If we got an error
 					// here, it's pretty serious. Bail.
-					return true, err
+					return false, err
 				}
 				// We're reconnected now, so retry getting a session again.
-				return true, err
+				return true, nil
 			}
 			if amqpSender, err = amqpSession.NewSender(linkOpts...); err != nil {
 				// Assume this happened because the existing connection is no good.
@@ -131,11 +131,7 @@ func (w *writerFactory) NewWriter(queueName string) (queue.Writer, error) {
 			return false, nil
 		},
 	); err != nil {
-		return nil, errors.Wrapf(
-			err,
-			"error attempting to create writer after %d retries",
-			maxRetryCount,
-		)
+		return nil, err
 	}
 
 	return &writer{

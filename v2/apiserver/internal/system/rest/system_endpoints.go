@@ -2,12 +2,14 @@ package rest
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -29,9 +31,9 @@ func (h *SystemEndpoints) Register(router *mux.Router) {
 		h.healthz,
 	).Methods(http.MethodGet)
 
-	// Get /ping
+	// Get /v2/ping
 	router.HandleFunc(
-		"/ping",
+		"/v2/ping",
 		h.ping,
 	).Methods(http.MethodGet)
 }
@@ -83,13 +85,32 @@ func (h *SystemEndpoints) ping(w http.ResponseWriter, r *http.Request) {
 			W: w,
 			R: r,
 			EndpointLogic: func() (interface{}, error) {
-				return struct {
-					Version string
-				}{
-					Version: h.APIServerVersion,
-				}, nil
+				return PingResponse{Version: h.APIServerVersion}, nil
 			},
+
 			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+// PingResponse represents the esponse object returned by the ping endpoint
+type PingResponse struct {
+	Version string
+}
+
+// MarshalJSON amends PingResponse instances with type metadata.
+func (p PingResponse) MarshalJSON() ([]byte, error) {
+	type Alias PingResponse
+	return json.Marshal(
+		struct {
+			meta.TypeMeta `json:",inline"`
+			Alias         `json:",inline"`
+		}{
+			TypeMeta: meta.TypeMeta{
+				APIVersion: meta.APIVersion,
+				Kind:       "PingResponse",
+			},
+			Alias: (Alias)(p),
 		},
 	)
 }

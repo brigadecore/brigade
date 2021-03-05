@@ -19,7 +19,9 @@ func (o *observer) runHealthcheckLoop(ctx context.Context) {
 			return
 		case <-ticker.C:
 			// Check Observer -> API Server
-			if err := o.pingAPIServerFn(ctx); err != nil {
+			// Not actually capturing response; just want to verify our API call
+			// is successful
+			if _, err := o.pingAPIServerFn(ctx); err != nil {
 				o.errCh <- errors.Wrap(
 					err,
 					"error checking Brigade API server connectivity",
@@ -29,8 +31,7 @@ func (o *observer) runHealthcheckLoop(ctx context.Context) {
 			// Check Observer -> K8s
 			// Not actually capturing response; just want to verify our API call
 			// is successful
-			_, err := o.checkK8sAPIServer(ctx)
-			if err != nil {
+			if _, err := o.checkK8sAPIServer(ctx); err != nil {
 				o.errCh <- errors.Wrap(
 					err,
 					"error checking K8s API server connectivity",
