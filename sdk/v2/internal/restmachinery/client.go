@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
+	"regexp"
 	"strconv"
 
 	"github.com/brigadecore/brigade/sdk/v2/meta"
@@ -38,6 +41,7 @@ func NewBaseClient(
 		opts = &restmachinery.APIClientOptions{}
 	}
 	retryClient := retryablehttp.NewClient()
+	retryClient.CheckRetry = defaultRetryPolicy
 	retryClient.HTTPClient.Transport = &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: opts.AllowInsecureConnections,
@@ -191,4 +195,71 @@ func (b *BaseClient) SubmitRequest(
 		return nil, apiErr
 	}
 	return resp, nil
+}
+
+// defaultRetryPolicy was pulled from github.com/hashicorp/go-retryablehttp
+// in order to support modifying baseRetryPolicy (defined below) to our needs.
+// It represents the default callback for our baseClient's retryable http
+// client, which will retry on connection errors and server errors.
+func defaultRetryPolicy(
+	ctx context.Context,
+	resp *http.Response,
+	err error,
+) (bool, error) {
+	// do not retry on context.Canceled or context.DeadlineExceeded
+	if ctx.Err() != nil {
+		return false, ctx.Err()
+	}
+
+	// don't propagate other errors
+	shouldRetry, _ := baseRetryPolicy(resp, err)
+	return shouldRetry, nil
+}
+
+// baseRetryPolicy is a slightly modified version of the same function in
+// github.com/hashicorp/go-retryablehttp.  We wish to exclude retries on 500
+// errors (and the original library already excludes 501), so we've updated
+// the pertinent logic here.
+func baseRetryPolicy(resp *http.Response, err error) (bool, error) {
+	var redirectsErrorRe = regexp.MustCompile(`stopped after \d+ redirects\z`)
+	var schemeErrorRe = regexp.MustCompile(`unsupported protocol scheme`)
+
+	if err != nil {
+		if v, ok := err.(*url.Error); ok {
+			// Don't retry if the error was due to too many redirects.
+			if redirectsErrorRe.MatchString(v.Error()) {
+				return false, v
+			}
+
+			// Don't retry if the error was due to an invalid protocol scheme.
+			if schemeErrorRe.MatchString(v.Error()) {
+				return false, v
+			}
+
+			// Don't retry if the error was due to TLS cert verification failure.
+			if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
+				return false, v
+			}
+		}
+
+		// The error is likely recoverable so retry.
+		return true, nil
+	}
+
+	// 429 Too Many Requests is recoverable. Sometimes the server puts
+	// a Retry-After response header to indicate when the server is
+	// available to start processing request from client.
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return true, nil
+	}
+
+	// Check the response code. We retry on 5xx-range responses greater than
+	// 501 to allow the server time to recover, as 5xx's are typically not
+	// permanent errors and may relate to outages on the server side. This will
+	// catch invalid response codes as well, like 0 and 999.
+	if resp.StatusCode == 0 || resp.StatusCode > 501 {
+		return true, fmt.Errorf("unexpected HTTP status %s", resp.Status)
+	}
+
+	return false, nil
 }
