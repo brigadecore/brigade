@@ -49,7 +49,7 @@ func (j *jobsStore) Create(
 	}
 	if res.MatchedCount == 0 {
 		return &meta.ErrNotFound{
-			Type: "Event",
+			Type: core.EventLabel,
 			ID:   eventID,
 		}
 	}
@@ -84,7 +84,7 @@ func (j *jobsStore) UpdateStatus(
 	}
 	if res.MatchedCount == 0 {
 		return &meta.ErrNotFound{
-			Type: "Job",
+			Type: core.JobLabel,
 			ID:   fmt.Sprintf("%s:%s", eventID, jobName),
 		}
 	}

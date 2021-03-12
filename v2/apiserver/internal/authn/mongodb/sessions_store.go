@@ -88,7 +88,7 @@ func (s *sessionsStore) GetByHashedOAuth2State(
 	err := res.Decode(&session)
 	if err == mongo.ErrNoDocuments {
 		return session, &meta.ErrNotFound{
-			Type: "Session",
+			Type: authn.SessionLabel,
 		}
 	}
 	if err != nil {
@@ -106,7 +106,7 @@ func (s *sessionsStore) GetByHashedToken(
 	err := res.Decode(&session)
 	if err == mongo.ErrNoDocuments {
 		return session, &meta.ErrNotFound{
-			Type: "Session",
+			Type: authn.SessionLabel,
 		}
 	}
 	if err != nil {
@@ -139,7 +139,7 @@ func (s *sessionsStore) Authenticate(
 	}
 	if res.MatchedCount == 0 {
 		return &meta.ErrNotFound{
-			Type: "Session",
+			Type: authn.SessionLabel,
 			ID:   sessionID,
 		}
 	}
@@ -153,7 +153,7 @@ func (s *sessionsStore) Delete(ctx context.Context, id string) error {
 	}
 	if res.DeletedCount == 0 {
 		return &meta.ErrNotFound{
-			Type: "Session",
+			Type: authn.SessionLabel,
 			ID:   id,
 		}
 	}

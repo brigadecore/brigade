@@ -12,6 +12,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// JobLabel represents the canonical Job label string
+const JobLabel = "Job"
+
 // JobPhase represents where a Job is within its lifecycle.
 type JobPhase string
 
@@ -252,7 +255,7 @@ func (j *jobsService) Create(
 	}
 	if _, ok := event.Worker.Job(job.Name); ok {
 		return &meta.ErrConflict{
-			Type: "Job",
+			Type: JobLabel,
 			ID:   job.Name,
 			Reason: fmt.Sprintf(
 				"Event %q already has a job named %q.",
@@ -399,14 +402,14 @@ func (j *jobsService) Start(
 	job, ok := event.Worker.Job(jobName)
 	if !ok {
 		return &meta.ErrNotFound{
-			Type: "Job",
+			Type: JobLabel,
 			ID:   jobName,
 		}
 	}
 
 	if job.Status.Phase != JobPhasePending {
 		return &meta.ErrConflict{
-			Type: "Job",
+			Type: JobLabel,
 			ID:   jobName,
 			Reason: fmt.Sprintf(
 				"Event %q job %q has already been started.",
@@ -470,7 +473,7 @@ func (j *jobsService) GetStatus(
 	job, ok := event.Worker.Job(jobName)
 	if !ok {
 		return JobStatus{}, &meta.ErrNotFound{
-			Type: "Job",
+			Type: JobLabel,
 			ID:   jobName,
 		}
 	}
@@ -494,7 +497,7 @@ func (j *jobsService) WatchStatus(
 	}
 	if _, ok := event.Worker.Job(jobName); !ok {
 		return nil, &meta.ErrNotFound{
-			Type: "Job",
+			Type: JobLabel,
 			ID:   jobName,
 		}
 	}
@@ -569,7 +572,7 @@ func (j *jobsService) Cleanup(
 	_, ok := event.Worker.Job(jobName)
 	if !ok {
 		return &meta.ErrNotFound{
-			Type: "Job",
+			Type: JobLabel,
 			ID:   jobName,
 		}
 	}

@@ -13,7 +13,7 @@ import (
 )
 
 func TestProjectMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(t, &Project{}, "Project")
+	metaTesting.RequireAPIVersionAndType(t, &Project{}, ProjectLabel)
 }
 
 func TestProjectListMarshalJSON(t *testing.T) {

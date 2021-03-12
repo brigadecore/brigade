@@ -11,6 +11,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// UserLabel represents the canonical User label string
+const UserLabel = "User"
+
 // User represents a (human) Brigade user.
 type User struct {
 	// ObjectMeta encapsulates User metadata.
@@ -32,7 +35,7 @@ func (u User) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       "User",
+				Kind:       UserLabel,
 			},
 			Alias: (Alias)(u),
 		},

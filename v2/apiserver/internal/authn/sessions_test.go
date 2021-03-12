@@ -224,7 +224,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 						oauth2State string,
 					) (Session, error) {
 						return Session{}, &meta.ErrNotFound{
-							Type: "Session",
+							Type: SessionLabel,
 						}
 					},
 				},
@@ -235,7 +235,11 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, errors.Cause(err))
-				require.Equal(t, "Session", errors.Cause(err).(*meta.ErrNotFound).Type)
+				require.Equal(
+					t,
+					SessionLabel,
+					errors.Cause(err).(*meta.ErrNotFound).Type,
+				)
 			},
 		},
 
@@ -433,7 +437,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 				usersStore: &MockUsersStore{
 					GetFn: func(_ context.Context, id string) (User, error) {
 						return User{}, &meta.ErrNotFound{
-							Type: "User",
+							Type: UserLabel,
 							ID:   id,
 						}
 					},
@@ -504,7 +508,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 				usersStore: &MockUsersStore{
 					GetFn: func(_ context.Context, id string) (User, error) {
 						return User{}, &meta.ErrNotFound{
-							Type: "User",
+							Type: UserLabel,
 							ID:   id,
 						}
 					},
@@ -648,7 +652,7 @@ func TestSessionsServiceGetByToken(t *testing.T) {
 				sessionsStore: &mockSessionsStore{
 					GetByHashedTokenFn: func(context.Context, string) (Session, error) {
 						return Session{}, &meta.ErrNotFound{
-							Type: "Session",
+							Type: SessionLabel,
 						}
 					},
 				},
@@ -656,7 +660,11 @@ func TestSessionsServiceGetByToken(t *testing.T) {
 			assertions: func(session Session, err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, errors.Cause(err))
-				require.Equal(t, "Session", errors.Cause(err).(*meta.ErrNotFound).Type)
+				require.Equal(
+					t,
+					SessionLabel,
+					errors.Cause(err).(*meta.ErrNotFound).Type,
+				)
 			},
 		},
 		{
@@ -700,7 +708,7 @@ func TestSessionsServiceDelete(t *testing.T) {
 				sessionsStore: &mockSessionsStore{
 					DeleteFn: func(context.Context, string) error {
 						return &meta.ErrNotFound{
-							Type: "Session",
+							Type: SessionLabel,
 						}
 					},
 				},
@@ -708,7 +716,11 @@ func TestSessionsServiceDelete(t *testing.T) {
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, errors.Cause(err))
-				require.Equal(t, "Session", errors.Cause(err).(*meta.ErrNotFound).Type)
+				require.Equal(
+					t,
+					SessionLabel,
+					errors.Cause(err).(*meta.ErrNotFound).Type,
+				)
 			},
 		},
 		{

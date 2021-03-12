@@ -13,6 +13,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// SessionLabel represents the canonical Session label string
+const SessionLabel = "Session"
+
 // OIDCAuthDetails encapsulates all information required for a client
 // authenticating by means of OpenID Connect to complete the authentication
 // process using a third-party identity provider.

@@ -12,6 +12,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ServiceAccountLabel represents the canonical Service Account label string
+const ServiceAccountLabel = "ServiceAccount"
+
 // ServiceAccount represents a non-human Brigade user, such as an Event
 // gateway.
 type ServiceAccount struct {

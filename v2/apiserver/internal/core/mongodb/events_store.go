@@ -146,7 +146,7 @@ func (e *eventsStore) Get(
 	err := res.Decode(&event)
 	if err == mongo.ErrNoDocuments {
 		return event, &meta.ErrNotFound{
-			Type: "Event",
+			Type: core.EventLabel,
 			ID:   id,
 		}
 	}
@@ -171,7 +171,7 @@ func (e *eventsStore) GetByHashedWorkerToken(
 	err := res.Decode(&event)
 	if res.Err() == mongo.ErrNoDocuments {
 		return event, &meta.ErrNotFound{
-			Type: "Event",
+			Type: core.EventLabel,
 		}
 	}
 	if err != nil {
@@ -245,7 +245,7 @@ func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 
 	if res.MatchedCount == 0 {
 		return &meta.ErrConflict{
-			Type: "Event",
+			Type: core.EventLabel,
 			ID:   id,
 			Reason: fmt.Sprintf(
 				"Event %q was not canceled because it was already in a terminal state.",
@@ -406,7 +406,7 @@ func (e *eventsStore) Delete(ctx context.Context, id string) error {
 	}
 	if res.DeletedCount != 1 {
 		return &meta.ErrNotFound{
-			Type: "Event",
+			Type: core.EventLabel,
 			ID:   id,
 		}
 	}
