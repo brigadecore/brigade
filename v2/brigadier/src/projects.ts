@@ -1,5 +1,5 @@
 /**
- * A Brigade project.
+ * Provides details of a Brigade project that triggered an event.
  */
 export interface Project {
   /** The unique identifier of the project. */

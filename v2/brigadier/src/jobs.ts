@@ -10,12 +10,12 @@ const defaultTimeout: number = 1000 * 60 * 15
  * Instances of Job represent containers that your Brigade script can
  * run using the Job#run method.
  * 
- * The Job#primaryContainer, initialised from the constructor image argument, determines
- * how long the job runs and whether it is considered successful.By default, the container is simply
+ * The Job#primaryContainer, initialized from the constructor image argument, determines
+ * how long the job runs and whether it is considered successful. By default, the container is simply
  * executed (via its default entry point). Set the Job#primaryContainer#command
  * property to run a specific command in the container instead.
  * Other containers, specified via Job#sidecarContainers, are automatically
- * terminated after the primary container completes.
+ * terminated a short time after the primary container completes.
  * 
  * Job also provides static methods for building up runnable
  * elements out of more basic ones. For example, to compose
@@ -23,7 +23,7 @@ const defaultTimeout: number = 1000 * 60 * 15
  * Job.sequence method.
  */
 export class Job implements Runnable {
-  /** The name of the jon. */
+  /** The name of the job. */
   public name: string
 
   /** Provides configuration options for the job's primary container. */
@@ -39,7 +39,7 @@ export class Job implements Runnable {
    */
   public timeout: number = defaultTimeout
 
-  /** Provides configuration options for the job execution environment. */
+  /** Specifies requirements for the job execution environment. */
   public host: JobHost = new JobHost()
 
   /** The event that triggered the job. */
@@ -68,6 +68,10 @@ export class Job implements Runnable {
    * When the primary container exits, the job ends. If sidecars are still running
    * at this point, Brigade terminates them after a short delay.
    * 
+   * NOTE: In a local test environment, this function does not run the containers,
+   * but instead automatically succeeds. In the real Brigade runtime environment,
+   * the containers run as described.
+   * 
    * @returns A Promise which completes when the primary container completes. If the
    * primary container succeeded (exited with code 0), the Promise resolves; if the
    * primary container failed (exited with nonzero code) or timed out, the Promise
@@ -81,13 +85,16 @@ export class Job implements Runnable {
    * Gets the job logs.
    * 
    * If the job has multiple containers, this aggregates the logs from them all.
+   * 
+   * NOTE: In a local test environment, this function returns a dummy log. In the
+   * real Brigade runtime environment, it returns the actual container logs.
    */
   public logs(): Promise<string> {
     return Promise.resolve("skipped logs")
   }
 
   /**
-   * Specifies a Runnable that consists of one or more containers. The
+   * Specifies a Runnable that executes one or more containers. The
    * image argument specifies the primary container, which determines
    * how long the job runs and whether it is considered successful.
    * By default, the primary container is simply
@@ -113,7 +120,7 @@ export class Job implements Runnable {
   }
 
   /**
-   * Specifies a Runnable that consists of sub-Runnables (such as jobs
+   * Specifies a Runnable composed of sub-Runnables (such as jobs
    * or concurrent groups) running one after another.
    * A new Runnable is started only when the previous one completes.
    * The sequence completes when the last Runnable has completed (or when any
@@ -126,7 +133,7 @@ export class Job implements Runnable {
   }
 
   /**
-   * Specifies a Runnable that consists of sub-Runnables (such as jobs
+   * Specifies a Runnable composed of sub-Runnables (such as jobs
    * or sequential groups) running concurrently.
    * When run, all Runnables are started simultaneously (subject to
    * scheduling constraints).
@@ -139,6 +146,9 @@ export class Job implements Runnable {
   }
 }
 
+/**
+ * A single OCI container in a Job.
+ */
 export class Container {
   /** The OCI image that the container should run. */
   public image: string
@@ -160,8 +170,8 @@ export class Container {
    * array for subcommands and the arguments array for argument values.
    * 
    * @example
-   * job.command = ["helm", "install"]
-   * job.arguments = ["stable/nginx", "-g"]
+   * job.primaryContainer.command = ["helm", "install"]
+   * job.primaryContainer.arguments = ["stable/nginx", "-g"]
    */
   public command: string[] = []
   /**
@@ -170,24 +180,41 @@ export class Container {
    * array for subcommands and the arguments array for argument values.
    * 
    * @example
-   * job.command = ["helm", "install"]
-   * job.arguments = ["stable/nginx", "-g"]
+   * job.primaryContainer.command = ["helm", "install"]
+   * job.primaryContainer.arguments = ["stable/nginx", "-g"]
    * 
    */
   public arguments: string[] = []
-  /** Environment variables to set in the container. */
+  /**
+   * Environment variables to set in the container. These are often derived from
+   * project settings such as secrets.
+   * 
+   * You can safely pass secrets via environment variables, because Brigade treats
+   * all enviroment variables as secrets.
+   * 
+   * @example
+   * job.primaryContainer.env.AUTH_TOKEN = e.project.secrets.authToken  // e is event that triggered the handler
+   */
   public environment: { [key: string]: string } = {}
   /**
    * The path in the container's file system where, if applicable, the
    * Brigade worker's shared workspace should be mounted. If empty (the default),
    * the Job does not have access to the shared workspace.
+   * 
+   * The shared workspace must be enabled at the project configuration level
+   * for containers to access it. If it is not enabled, you should leave this
+   * property empty.
    */
   public workspaceMountPath = ""
   /**
    * The path in the container's file system where, if applicable,
    * source code retrieved from a version control system repository should be
-	 * mounted. If empty (the default), Brigade will not mount any source
+   * mounted. If empty (the default), Brigade will not mount any source
    * code automatically.
+   * 
+   * Source code mounting must be enabled at the project configuration level
+   * for containers to access it. If it is not enabled, you should leave this
+   * property empty.
    */
   public sourceMountPath = ""
   /**
@@ -225,13 +252,13 @@ export class Container {
 export class JobHost {
   /**
    * The OS required by the Job. Valid values are "linux" and "windows". When empty,
-	 * Brigade assumes "linux".
+   * Brigade assumes "linux".
    */
   public os?: string
   /**
    * Specifies labels that must be present on the substrate node to
-	 * host a Job. This provides an opaque mechanism for communicating Job needs
-	 * such as specific hardware like an SSD or GPU.
+   * host a Job. This provides an opaque mechanism for communicating Job needs
+   * such as specific hardware like an SSD or GPU.
    */
   public nodeSelector: { [key: string]: string } = {}
 }

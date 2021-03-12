@@ -1,7 +1,7 @@
 import { Runnable } from "./runnables"
 
 /**
- * The base type for Runnables that contain multiple other Runnables.
+ * The base type for Runnables composed of other Runnables.
  * Do not construct the base Group type; use Job.sequential (or SerialGroup)
  * or Job.concurrent (or ConcurrentGroup) instead.
  * 
@@ -26,7 +26,7 @@ class Group {
 }
 
 /**
- * A Runnable that consists of sub-Runnables (such as jobs
+ * A Runnable composed of sub-Runnables (such as jobs
  * or concurrent groups) running one after another.
  * A new Runnable is started only when the previous one completes.
  * The sequence completes when the last Runnable has completed (or when any
@@ -56,7 +56,7 @@ export class SerialGroup extends Group implements Runnable {
 }
 
 /**
- * A Runnable that consists of sub-Runnables (such as jobs
+ * A Runnable composed of sub-Runnables (such as jobs
  * or sequential groups) running concurrently.
  * When run, all Runnables are started simultaneously (subject to
  * scheduling constraints).

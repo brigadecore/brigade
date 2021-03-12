@@ -9,7 +9,7 @@ export interface Event {
   id: string
   /** The project that registered the handler being called for the event. */
   project: Project
-  /** The gateway which created the event. */
+  /** The unique identifier of the gateway which created the event. */
   source: string
   /** The type of event. Values and meanings are source-specific. */
   type: string
