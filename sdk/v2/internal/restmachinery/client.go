@@ -201,7 +201,11 @@ func (b *BaseClient) SubmitRequest(
 // in order to support modifying baseRetryPolicy (defined below) to our needs.
 // It represents the default callback for our baseClient's retryable http
 // client, which will retry on connection errors and server errors.
-func defaultRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
+func defaultRetryPolicy(
+	ctx context.Context,
+	resp *http.Response,
+	err error,
+) (bool, error) {
 	// do not retry on context.Canceled or context.DeadlineExceeded
 	if ctx.Err() != nil {
 		return false, ctx.Err()
