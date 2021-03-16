@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/brigadecore/brigade/v2/v2/apiserver/schemas/project.json
+apiVersion: brigade.sh/v2-alpha.5
+kind: Project
+metadata:
+  id: brigade-v2-demo
+description: A project that demonstrates Brigade 2 CI running in Brigade 2
+spec:
+  eventSubscriptions:
+  - source: github.com/krancour/brigade-github-gateway
+    types:
+    - check_run:rerequested
+    - check_suite:requested
+    - check_suite:rerequested
+    qualifiers:
+      repo: brigadecore/brigade
+  workerTemplate:
+    logLevel: DEBUG
+    git:
+      cloneURL: https://github.com/brigadecore/brigade.git
