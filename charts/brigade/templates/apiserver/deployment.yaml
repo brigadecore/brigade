@@ -142,6 +142,36 @@ spec:
           value: {{ .Values.worker.image.pullPolicy }}
         - name: WORKSPACE_STORAGE_CLASS
           value: {{ .Values.worker.workspaceStorageClass }}
+        ports:
+        - name: healthz
+          containerPort: 8080
+        livenessProbe:
+          httpGet:
+            port: healthz
+            path: /healthz
+            {{- if .Values.apiserver.tls.enabled }}
+            scheme: HTTPS
+            {{- end }}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            port: healthz
+            path: /healthz
+            {{- if .Values.apiserver.tls.enabled }}
+            scheme: HTTPS
+            {{- end }}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        startupProbe:
+          httpGet:
+            port: healthz
+            path: /healthz
+            {{- if .Values.apiserver.tls.enabled }}
+            scheme: HTTPS
+            {{- end }}
+          failureThreshold: 30
+          periodSeconds: 10
         {{- if .Values.apiserver.tls.enabled }}
         volumeMounts:
         - name: cert

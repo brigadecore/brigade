@@ -334,6 +334,7 @@ hack-deploy:
 		--install \
 		--namespace brigade \
 		--wait \
+		--timeout 600s \
 		--set apiserver.image.repository=$(DOCKER_IMAGE_PREFIX)apiserver \
 		--set apiserver.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set apiserver.image.pullPolicy=$(IMAGE_PULL_POLICY) \

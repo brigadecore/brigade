@@ -621,7 +621,11 @@ func TestSubstrateScheduleWorker(t *testing.T) {
 					queueWriterFactory: &mockQueueWriterFactory{
 						NewWriterFn: func(queueName string) (queue.Writer, error) {
 							return &mockQueueWriter{
-								WriteFn: func(context.Context, string) error {
+								WriteFn: func(
+									context.Context,
+									string,
+									*queue.MessageOptions,
+								) error {
 									return errors.New("something went wrong")
 								},
 								CloseFn: func(context.Context) error {
@@ -662,7 +666,11 @@ func TestSubstrateScheduleWorker(t *testing.T) {
 					queueWriterFactory: &mockQueueWriterFactory{
 						NewWriterFn: func(queueName string) (queue.Writer, error) {
 							return &mockQueueWriter{
-								WriteFn: func(context.Context, string) error {
+								WriteFn: func(
+									context.Context,
+									string,
+									*queue.MessageOptions,
+								) error {
 									return nil
 								},
 								CloseFn: func(context.Context) error {
@@ -879,7 +887,11 @@ func TestSubstrateScheduleJob(t *testing.T) {
 					queueWriterFactory: &mockQueueWriterFactory{
 						NewWriterFn: func(queueName string) (queue.Writer, error) {
 							return &mockQueueWriter{
-								WriteFn: func(context.Context, string) error {
+								WriteFn: func(
+									context.Context,
+									string,
+									*queue.MessageOptions,
+								) error {
 									return errors.New("something went wrong")
 								},
 								CloseFn: func(context.Context) error {
@@ -907,7 +919,11 @@ func TestSubstrateScheduleJob(t *testing.T) {
 					queueWriterFactory: &mockQueueWriterFactory{
 						NewWriterFn: func(queueName string) (queue.Writer, error) {
 							return &mockQueueWriter{
-								WriteFn: func(context.Context, string) error {
+								WriteFn: func(
+									context.Context,
+									string,
+									*queue.MessageOptions,
+								) error {
 									return nil
 								},
 								CloseFn: func(context.Context) error {
@@ -1558,12 +1574,16 @@ func (m *mockQueueWriterFactory) Close(ctx context.Context) error {
 }
 
 type mockQueueWriter struct {
-	WriteFn func(context.Context, string) error
+	WriteFn func(context.Context, string, *queue.MessageOptions) error
 	CloseFn func(context.Context) error
 }
 
-func (m *mockQueueWriter) Write(ctx context.Context, msg string) error {
-	return m.WriteFn(ctx, msg)
+func (m *mockQueueWriter) Write(
+	ctx context.Context,
+	msg string,
+	opts *queue.MessageOptions,
+) error {
+	return m.WriteFn(ctx, msg, opts)
 }
 
 func (m *mockQueueWriter) Close(ctx context.Context) error {
