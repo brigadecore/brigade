@@ -256,7 +256,7 @@ func (w WorkerStatus) MarshalJSON() ([]byte, error) {
 	)
 }
 
-// WorkersClient is the specialized client for managing Event Worker with the
+// WorkersClient is the specialized client for managing Event Workers with the
 // Brigade API.
 type WorkersClient interface {
 	// Start starts the indicated Event's Worker on Brigade's workload execution

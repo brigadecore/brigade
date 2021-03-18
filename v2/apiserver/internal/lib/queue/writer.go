@@ -23,8 +23,16 @@ type WriterFactory interface {
 type Writer interface {
 	// Write writes the provided message to a specific queue (or similar channel)
 	// known to the implementation.
-	Write(ctx context.Context, message string) error
+	Write(ctx context.Context, message string, opts *MessageOptions) error
 	// Close executes implementation-specific cleanup. Clients MUST invoke this
 	// function when they are done with the Writer.
 	Close(context.Context) error
+}
+
+// MessageOptions represent options for the message being written via
+// the Writer.
+type MessageOptions struct {
+	// Durable indicates whether or not the message should be durable/persisted
+	// (true) or not durable/persisted (false, default)
+	Durable bool
 }

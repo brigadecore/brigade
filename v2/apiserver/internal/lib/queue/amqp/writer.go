@@ -93,34 +93,45 @@ func (w *writerFactory) NewWriter(queueName string) (queue.Writer, error) {
 	var amqpSession myamqp.Session
 	var amqpSender myamqp.Sender
 	var err error
-	for {
-		// If we've been through the loop before, try cleaning up the session and/or
-		// sender that we never ended up using.
-		if amqpSender != nil {
-			amqpSender.Close(context.TODO()) // nolint: errcheck
-		}
-		if amqpSession != nil {
-			amqpSession.Close(context.TODO()) // nolint: errcheck
-		}
 
-		if amqpSession, err = w.amqpClient.NewSession(); err != nil {
-			// Assume this happened because the existing connection is no good. Try
-			// to reconnect.
-			if err = w.connectFn(); err != nil {
-				// The connection function handles its own retries. If we got an error
-				// here, it's pretty serious. Bail.
-				return nil, err
+	maxRetryCount := 10
+	maxBackoff := 5 * time.Second
+	if err = retries.ManageRetries(
+		context.Background(),
+		"create writer",
+		maxRetryCount,
+		maxBackoff,
+		func() (bool, error) {
+			// We may be retrying, so try cleaning up the session and/or
+			// sender that we never ended up using.
+			if amqpSender != nil {
+				amqpSender.Close(context.TODO()) // nolint: errcheck
 			}
-			// We're reconnected now, so loop around to try getting a session again.
-			continue
-		}
-		if amqpSender, err = amqpSession.NewSender(linkOpts...); err != nil {
-			// Assume this happened because the existing connection is no good.
-			// Just loop around now because we not only need a new connection, but
-			// also a new session.
-			continue
-		}
-		break
+			if amqpSession != nil {
+				amqpSession.Close(context.TODO()) // nolint: errcheck
+			}
+
+			if amqpSession, err = w.amqpClient.NewSession(); err != nil {
+				// Assume this happened because the existing connection is no good. Try
+				// to reconnect.
+				if err = w.connectFn(); err != nil {
+					// The connection function handles its own retries. If we got an error
+					// here, it's pretty serious. Bail.
+					return false, err
+				}
+				// We're reconnected now, so retry getting a session again.
+				return true, nil
+			}
+			if amqpSender, err = amqpSession.NewSender(linkOpts...); err != nil {
+				// Assume this happened because the existing connection is no good.
+				// Just retry again because we not only need a new connection, but
+				// also a new session.
+				return true, err
+			}
+			return false, nil
+		},
+	); err != nil {
+		return nil, err
 	}
 
 	return &writer{
@@ -144,10 +155,17 @@ type writer struct {
 	amqpSender  myamqp.Sender
 }
 
-func (w *writer) Write(ctx context.Context, message string) error {
+func (w *writer) Write(
+	ctx context.Context,
+	message string,
+	opts *queue.MessageOptions,
+) error {
+	if opts == nil {
+		opts = &queue.MessageOptions{}
+	}
 	msg := &amqp.Message{
 		Header: &amqp.MessageHeader{
-			Durable: true,
+			Durable: opts.Durable,
 		},
 		Data: [][]byte{
 			[]byte(message),

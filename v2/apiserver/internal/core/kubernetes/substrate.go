@@ -467,7 +467,13 @@ func (s *substrate) ScheduleWorker(
 		queueWriter.Close(closeCtx)
 	}()
 
-	if err := queueWriter.Write(ctx, event.ID); err != nil {
+	if err := queueWriter.Write(
+		ctx,
+		event.ID,
+		&queue.MessageOptions{
+			Durable: true,
+		},
+	); err != nil {
 		return errors.Wrapf(
 			err,
 			"error submitting execution task for event %q worker",
@@ -548,6 +554,9 @@ func (s *substrate) ScheduleJob(
 	if err := queueWriter.Write(
 		ctx,
 		fmt.Sprintf("%s:%s", event.ID, jobName),
+		&queue.MessageOptions{
+			Durable: true,
+		},
 	); err != nil {
 		return errors.Wrapf(
 			err,
