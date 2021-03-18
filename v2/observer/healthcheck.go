@@ -37,7 +37,6 @@ func (o *observer) runHealthcheckLoop(ctx context.Context) {
 					"error checking K8s API server connectivity",
 				)
 			}
-		default:
 		}
 	}
 }

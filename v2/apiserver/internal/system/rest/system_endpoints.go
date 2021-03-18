@@ -93,7 +93,7 @@ func (h *SystemEndpoints) ping(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-// PingResponse represents the esponse object returned by the ping endpoint
+// PingResponse represents the response object returned by the ping endpoint
 type PingResponse struct {
 	Version string
 }

@@ -245,11 +245,6 @@ func main() {
 					),
 					Service: eventsService,
 				},
-				&systemREST.SystemEndpoints{
-					APIServerVersion: version.Version(),
-					DatabaseClient:   database.Client(),
-					WriterFactory:    queueWriterFactory,
-				},
 				&coreREST.JobsEndpoints{
 					AuthFilter: authFilter,
 					JobSchemaLoader: gojsonschema.NewReferenceLoader(
@@ -317,6 +312,11 @@ func main() {
 						"file:///brigade/schemas/worker-status.json",
 					),
 					Service: workersService,
+				},
+				&systemREST.SystemEndpoints{
+					APIServerVersion: version.Version(),
+					DatabaseClient:   database.Client(),
+					WriterFactory:    queueWriterFactory,
 				},
 			},
 			&apiServerConfig,

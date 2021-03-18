@@ -40,7 +40,6 @@ func (s *scheduler) runHealthcheckLoop(ctx context.Context) {
 				s.errCh <- err
 			}
 		}
-		continue // Next message
 	}
 
 }
