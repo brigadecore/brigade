@@ -224,7 +224,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 						oauth2State string,
 					) (Session, error) {
 						return Session{}, &meta.ErrNotFound{
-							Type: SessionLabel,
+							Type: SessionKind,
 						}
 					},
 				},
@@ -237,7 +237,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 				require.IsType(t, &meta.ErrNotFound{}, errors.Cause(err))
 				require.Equal(
 					t,
-					SessionLabel,
+					SessionKind,
 					errors.Cause(err).(*meta.ErrNotFound).Type,
 				)
 			},
@@ -437,7 +437,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 				usersStore: &MockUsersStore{
 					GetFn: func(_ context.Context, id string) (User, error) {
 						return User{}, &meta.ErrNotFound{
-							Type: UserLabel,
+							Type: UserKind,
 							ID:   id,
 						}
 					},
@@ -508,7 +508,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 				usersStore: &MockUsersStore{
 					GetFn: func(_ context.Context, id string) (User, error) {
 						return User{}, &meta.ErrNotFound{
-							Type: UserLabel,
+							Type: UserKind,
 							ID:   id,
 						}
 					},
@@ -652,7 +652,7 @@ func TestSessionsServiceGetByToken(t *testing.T) {
 				sessionsStore: &mockSessionsStore{
 					GetByHashedTokenFn: func(context.Context, string) (Session, error) {
 						return Session{}, &meta.ErrNotFound{
-							Type: SessionLabel,
+							Type: SessionKind,
 						}
 					},
 				},
@@ -662,7 +662,7 @@ func TestSessionsServiceGetByToken(t *testing.T) {
 				require.IsType(t, &meta.ErrNotFound{}, errors.Cause(err))
 				require.Equal(
 					t,
-					SessionLabel,
+					SessionKind,
 					errors.Cause(err).(*meta.ErrNotFound).Type,
 				)
 			},
@@ -708,7 +708,7 @@ func TestSessionsServiceDelete(t *testing.T) {
 				sessionsStore: &mockSessionsStore{
 					DeleteFn: func(context.Context, string) error {
 						return &meta.ErrNotFound{
-							Type: SessionLabel,
+							Type: SessionKind,
 						}
 					},
 				},
@@ -718,7 +718,7 @@ func TestSessionsServiceDelete(t *testing.T) {
 				require.IsType(t, &meta.ErrNotFound{}, errors.Cause(err))
 				require.Equal(
 					t,
-					SessionLabel,
+					SessionKind,
 					errors.Cause(err).(*meta.ErrNotFound).Type,
 				)
 			},

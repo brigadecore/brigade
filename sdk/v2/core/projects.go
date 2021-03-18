@@ -11,8 +11,8 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
-// ProjectLabel represents the canonical Project label string
-const ProjectLabel = "Project"
+// ProjectKind represents the canonical Project kind string
+const ProjectKind = "Project"
 
 // Project is Brigade's fundamental configuration, management, and isolation
 // construct.
@@ -52,7 +52,7 @@ func (p Project) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       ProjectLabel,
+				Kind:       ProjectKind,
 			},
 			Alias: (Alias)(p),
 		},

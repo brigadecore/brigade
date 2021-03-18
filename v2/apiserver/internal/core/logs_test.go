@@ -102,7 +102,7 @@ func TestLogsServiceStream(t *testing.T) {
 			assertions: func(_ <-chan LogEntry, err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, JobLabel, err.(*meta.ErrNotFound).Type)
+				require.Equal(t, JobKind, err.(*meta.ErrNotFound).Type)
 				require.Equal(t, "foo", err.(*meta.ErrNotFound).ID)
 			},
 		},

@@ -14,8 +14,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-// EventLabel represents the canonical Event label string
-const EventLabel = "Event"
+// EventKind represents the canonical Event kind string
+const EventKind = "Event"
 
 const defaultWorkspaceSize = "10Gi"
 
@@ -82,7 +82,7 @@ func (e Event) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       EventLabel,
+				Kind:       EventKind,
 			},
 			Alias: (Alias)(e),
 		},

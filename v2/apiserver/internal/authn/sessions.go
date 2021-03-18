@@ -13,8 +13,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// SessionLabel represents the canonical Session label string
-const SessionLabel = "Session"
+// SessionKind represents the canonical Session kind string
+const SessionKind = "Session"
 
 // OIDCAuthDetails encapsulates all information required for a client
 // authenticating by means of OpenID Connect to complete the authentication

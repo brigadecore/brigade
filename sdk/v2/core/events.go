@@ -12,8 +12,8 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
-// EventLabel represents the canonical Event label string
-const EventLabel = "Event"
+// EventKind represents the canonical Event kind string
+const EventKind = "Event"
 
 // Event represents an occurrence in some upstream system. Once accepted into
 // the system, Brigade amends each Event with a plan for handling it in the form
@@ -79,7 +79,7 @@ func (e Event) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       EventLabel,
+				Kind:       EventKind,
 			},
 			Alias: (Alias)(e),
 		},

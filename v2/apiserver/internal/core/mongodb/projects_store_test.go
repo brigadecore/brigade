@@ -40,7 +40,7 @@ func TestProjectsStoreCreate(t *testing.T) {
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrConflict{}, err)
-				require.Equal(t, core.ProjectLabel, err.(*meta.ErrConflict).Type)
+				require.Equal(t, core.ProjectKind, err.(*meta.ErrConflict).Type)
 				require.Equal(t, testProject.ID, err.(*meta.ErrConflict).ID)
 				require.Contains(t, err.(*meta.ErrConflict).Reason, "already exists")
 			},
@@ -312,7 +312,7 @@ func TestProjectsStoreGet(t *testing.T) {
 			assertions: func(project core.Project, err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, core.ProjectLabel, err.(*meta.ErrNotFound).Type)
+				require.Equal(t, core.ProjectKind, err.(*meta.ErrNotFound).Type)
 				require.Equal(t, testProjectID, err.(*meta.ErrNotFound).ID)
 			},
 		},
@@ -406,7 +406,7 @@ func TestProjectsStoreUpdate(t *testing.T) {
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, core.ProjectLabel, err.(*meta.ErrNotFound).Type)
+				require.Equal(t, core.ProjectKind, err.(*meta.ErrNotFound).Type)
 				require.Equal(t, testProject.ID, err.(*meta.ErrNotFound).ID)
 			},
 		},
@@ -486,7 +486,7 @@ func TestProjectsStoreDelete(t *testing.T) {
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, core.ProjectLabel, err.(*meta.ErrNotFound).Type)
+				require.Equal(t, core.ProjectKind, err.(*meta.ErrNotFound).Type)
 				require.Equal(t, testProjectID, err.(*meta.ErrNotFound).ID)
 			},
 		},

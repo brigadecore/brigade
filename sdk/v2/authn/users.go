@@ -12,8 +12,8 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
-// UserLabel represents the canonical User label string
-const UserLabel = "User"
+// UserKind represents the canonical User kind string
+const UserKind = "User"
 
 // User represents a (human) Brigade user.
 type User struct {
@@ -37,7 +37,7 @@ func (u User) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       UserLabel,
+				Kind:       UserKind,
 			},
 			Alias: (Alias)(u),
 		},

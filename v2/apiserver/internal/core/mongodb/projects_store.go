@@ -57,7 +57,7 @@ func (p *projectsStore) Create(
 	if _, err := p.collection.InsertOne(ctx, project); err != nil {
 		if mongodb.IsDuplicateKeyError(err) {
 			return &meta.ErrConflict{
-				Type: core.ProjectLabel,
+				Type: core.ProjectKind,
 				ID:   project.ID,
 				Reason: fmt.Sprintf(
 					"A project with the ID %q already exists.",
@@ -165,7 +165,7 @@ func (p *projectsStore) Get(
 	err := res.Decode(&project)
 	if err == mongo.ErrNoDocuments {
 		return project, &meta.ErrNotFound{
-			Type: core.ProjectLabel,
+			Type: core.ProjectKind,
 			ID:   id,
 		}
 	}
@@ -196,7 +196,7 @@ func (p *projectsStore) Update(
 	}
 	if res.MatchedCount == 0 {
 		return &meta.ErrNotFound{
-			Type: core.ProjectLabel,
+			Type: core.ProjectKind,
 			ID:   project.ID,
 		}
 	}
@@ -210,7 +210,7 @@ func (p *projectsStore) Delete(ctx context.Context, id string) error {
 	}
 	if res.DeletedCount == 0 {
 		return &meta.ErrNotFound{
-			Type: core.ProjectLabel,
+			Type: core.ProjectKind,
 			ID:   id,
 		}
 	}

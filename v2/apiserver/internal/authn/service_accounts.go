@@ -12,8 +12,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ServiceAccountLabel represents the canonical Service Account label string
-const ServiceAccountLabel = "ServiceAccount"
+// ServiceAccountKind represents the canonical Service Account kind string
+const ServiceAccountKind = "ServiceAccount"
 
 // ServiceAccount represents a non-human Brigade user, such as an Event
 // gateway.

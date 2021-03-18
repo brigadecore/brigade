@@ -68,7 +68,7 @@ func (s *serviceAccountsStore) Create(
 	if _, err := s.collection.InsertOne(ctx, serviceAccount); err != nil {
 		if mongodb.IsDuplicateKeyError(err) {
 			return &meta.ErrConflict{
-				Type: authn.ServiceAccountLabel,
+				Type: authn.ServiceAccountKind,
 				ID:   serviceAccount.ID,
 				Reason: fmt.Sprintf(
 					"A service account with the ID %q already exists.",
@@ -142,7 +142,7 @@ func (s *serviceAccountsStore) Get(
 	err := res.Decode(&serviceAccount)
 	if err == mongo.ErrNoDocuments {
 		return serviceAccount, &meta.ErrNotFound{
-			Type: authn.ServiceAccountLabel,
+			Type: authn.ServiceAccountKind,
 			ID:   id,
 		}
 	}
@@ -163,7 +163,7 @@ func (s *serviceAccountsStore) GetByHashedToken(
 	err := res.Decode(&serviceAccount)
 	if err == mongo.ErrNoDocuments {
 		return serviceAccount, &meta.ErrNotFound{
-			Type: authn.ServiceAccountLabel,
+			Type: authn.ServiceAccountKind,
 		}
 	}
 	if err != nil {
@@ -188,7 +188,7 @@ func (s *serviceAccountsStore) Lock(ctx context.Context, id string) error {
 	}
 	if res.MatchedCount == 0 {
 		return &meta.ErrNotFound{
-			Type: authn.ServiceAccountLabel,
+			Type: authn.ServiceAccountKind,
 			ID:   id,
 		}
 	}
@@ -217,7 +217,7 @@ func (s *serviceAccountsStore) Unlock(
 	}
 	if res.MatchedCount == 0 {
 		return &meta.ErrNotFound{
-			Type: authn.ServiceAccountLabel,
+			Type: authn.ServiceAccountKind,
 			ID:   id,
 		}
 	}

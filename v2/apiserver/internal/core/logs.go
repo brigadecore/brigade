@@ -155,7 +155,7 @@ func (l *logsService) Stream(
 		job, ok := event.Worker.Job(selector.Job)
 		if !ok {
 			return nil, &meta.ErrNotFound{
-				Type: JobLabel,
+				Type: JobKind,
 				ID:   selector.Job,
 			}
 		}

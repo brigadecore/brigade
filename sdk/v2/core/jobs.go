@@ -13,8 +13,8 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
-// JobLabel represents the canonical Job label string
-const JobLabel = "Job"
+// JobKind represents the canonical Job kind string
+const JobKind = "Job"
 
 // JobPhase represents where a Job is within its lifecycle.
 type JobPhase string
@@ -96,7 +96,7 @@ func (j Job) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       JobLabel,
+				Kind:       JobKind,
 			},
 			Alias: (Alias)(j),
 		},

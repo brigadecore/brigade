@@ -48,7 +48,7 @@ func (w *workersStore) UpdateStatus(
 	}
 	if res.MatchedCount == 0 {
 		return &meta.ErrNotFound{
-			Type: core.EventLabel,
+			Type: core.EventKind,
 			ID:   eventID,
 		}
 	}
