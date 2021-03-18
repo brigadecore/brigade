@@ -25,4 +25,33 @@ export interface Worker {
    * configuration.
    */
   logLevel?: string
+  /**
+   * If applicable, contains git-specific Worker details.
+   */
+  git?: GitConfig
+}
+
+/**
+ * Represents git-specific Worker details.
+ */
+export interface GitConfig {
+  /**
+   * Specifies the remote repository where, if applicable, the Worker will have
+   * obtained source code from.
+   */
+  cloneURL: string
+  /**
+   * Specifies the exact commit where, if applicable, the Worker will have
+   * obtained source code from.
+   */
+  commit?: string
+  /**
+   * Specifies a symbolic reference to the commit where, if applicable, the
+   * Worker will have obtained source code from.
+   *
+   * It is sometimes useful for Brigade scripts (e.g. brigade.js or brigade.ts)
+   * to examine the value of this field to determine, for instance, the name of
+   * a branch or tag related to the Event the Worker is handling.
+   */
+  ref?: string
 }
