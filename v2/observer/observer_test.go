@@ -9,6 +9,7 @@ import (
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v2/system"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -26,6 +27,7 @@ func TestGetObserverConfig(t *testing.T) {
 			name:  "success with defaults",
 			setup: func() {},
 			assertions: func(config observerConfig, err error) {
+				require.Equal(t, 30*time.Second, config.healthcheckInterval)
 				require.Equal(t, time.Minute, config.delayBeforeCleanup)
 			},
 		},
@@ -60,16 +62,25 @@ func TestGetObserverConfig(t *testing.T) {
 }
 
 func TestNewObserver(t *testing.T) {
+	apiAddress := ""
+	apiToken := ""
+	apiClientOpts := &restmachinery.APIClientOptions{}
+
+	systemClient := system.NewAPIClient(
+		apiAddress,
+		apiToken,
+		apiClientOpts,
+	)
 	workerClient := core.NewWorkersClient(
-		"",
-		"",
-		&restmachinery.APIClientOptions{},
+		apiAddress,
+		apiToken,
+		apiClientOpts,
 	)
 	kubeClient := fake.NewSimpleClientset()
 	config := observerConfig{
 		delayBeforeCleanup: time.Minute,
 	}
-	observer := newObserver(workerClient, kubeClient, config)
+	observer := newObserver(systemClient, workerClient, kubeClient, config)
 	require.Same(t, kubeClient, observer.kubeClient)
 	require.NotNil(t, observer.deletingPodsSet)
 	require.NotNil(t, observer.syncMu)
@@ -92,10 +103,29 @@ func TestObserverRun(t *testing.T) {
 		assertions func(context.Context, error)
 	}{
 		{
+			name: "healthcheck loop produced error",
+			setup: func() *observer {
+				errCh := make(chan error)
+				return &observer{
+					runHealthcheckLoopFn: func(context.Context) {
+						errCh <- errors.New("something went wrong")
+					},
+					syncWorkerPodsFn: func(context.Context) {},
+					syncJobPodsFn:    func(context.Context) {},
+					errCh:            errCh,
+				}
+			},
+			assertions: func(_ context.Context, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+			},
+		},
+		{
 			name: "worker pod sync produced error",
 			setup: func() *observer {
 				errCh := make(chan error)
 				return &observer{
+					runHealthcheckLoopFn: func(context.Context) {},
 					syncWorkerPodsFn: func(context.Context) {
 						errCh <- errors.New("something went wrong")
 					},
@@ -113,7 +143,8 @@ func TestObserverRun(t *testing.T) {
 			setup: func() *observer {
 				errCh := make(chan error)
 				return &observer{
-					syncWorkerPodsFn: func(context.Context) {},
+					runHealthcheckLoopFn: func(context.Context) {},
+					syncWorkerPodsFn:     func(context.Context) {},
 					syncJobPodsFn: func(context.Context) {
 						errCh <- errors.New("something went wrong")
 					},
@@ -129,9 +160,10 @@ func TestObserverRun(t *testing.T) {
 			name: "context gets canceled",
 			setup: func() *observer {
 				return &observer{
-					syncWorkerPodsFn: func(context.Context) {},
-					syncJobPodsFn:    func(context.Context) {},
-					errCh:            make(chan error),
+					runHealthcheckLoopFn: func(context.Context) {},
+					syncWorkerPodsFn:     func(context.Context) {},
+					syncJobPodsFn:        func(context.Context) {},
+					errCh:                make(chan error),
 				}
 			},
 			assertions: func(ctx context.Context, err error) {
@@ -143,7 +175,8 @@ func TestObserverRun(t *testing.T) {
 			name: "timeout during shutdown",
 			setup: func() *observer {
 				return &observer{
-					syncWorkerPodsFn: func(context.Context) {},
+					runHealthcheckLoopFn: func(context.Context) {},
+					syncWorkerPodsFn:     func(context.Context) {},
 					syncJobPodsFn: func(context.Context) {
 						// We'll make this function stubbornly never shut down. Everything
 						// should still be ok.

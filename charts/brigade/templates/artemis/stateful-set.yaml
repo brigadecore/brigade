@@ -69,6 +69,11 @@ spec:
             port: core
           initialDelaySeconds: 10
           periodSeconds: 10
+        startupProbe:
+          tcpSocket:
+            port: core
+          failureThreshold: 30
+          periodSeconds: 10
         volumeMounts:
         - name: config-overrides
           mountPath: /var/lib/artemis/etc-override
