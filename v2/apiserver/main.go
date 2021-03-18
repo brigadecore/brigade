@@ -19,6 +19,7 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	sysAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/system/authn"
 	sysAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/system/authz"
+	systemREST "github.com/brigadecore/brigade/v2/apiserver/internal/system/rest"
 	"github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/brigadecore/brigade/v2/internal/signals"
 	"github.com/brigadecore/brigade/v2/internal/version"
@@ -42,6 +43,11 @@ func main() {
 	}
 
 	// Data stores
+	database, err := databaseConnection(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	var coolLogsStore core.CoolLogsStore
 	var eventsStore core.EventsStore
 	var jobsStore core.JobsStore
@@ -54,10 +60,6 @@ func main() {
 	var warmLogsStore core.LogsStore
 	var workersStore core.WorkersStore
 	{
-		database, err := database(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
 		coolLogsStore = coreMongodb.NewLogsStore(database)
 		eventsStore, err = coreMongodb.NewEventsStore(database)
 		if err != nil {
@@ -310,6 +312,11 @@ func main() {
 						"file:///brigade/schemas/worker-status.json",
 					),
 					Service: workersService,
+				},
+				&systemREST.SystemEndpoints{
+					APIServerVersion: version.Version(),
+					DatabaseClient:   database.Client(),
+					WriterFactory:    queueWriterFactory,
 				},
 			},
 			&apiServerConfig,

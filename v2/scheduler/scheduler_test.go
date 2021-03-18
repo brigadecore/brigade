@@ -111,12 +111,32 @@ func TestSchedulerRun(t *testing.T) {
 		assertions func(context.Context, error)
 	}{
 		{
+			name: "healthcheck loop produced error",
+			setup: func() *scheduler {
+				s := &scheduler{
+					manageJobCapacityFn:    func(context.Context) {},
+					manageWorkerCapacityFn: func(context.Context) {},
+					manageProjectsFn:       func(context.Context) {},
+					errCh:                  make(chan error),
+				}
+				s.runHealthcheckLoopFn = func(context.Context) {
+					s.errCh <- errors.New("something went wrong")
+				}
+				return s
+			},
+			assertions: func(_ context.Context, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+			},
+		},
+		{
 			name: "worker capacity manager produced error",
 			setup: func() *scheduler {
 				s := &scheduler{
-					manageJobCapacityFn: func(context.Context) {},
-					manageProjectsFn:    func(context.Context) {},
-					errCh:               make(chan error),
+					runHealthcheckLoopFn: func(context.Context) {},
+					manageJobCapacityFn:  func(context.Context) {},
+					manageProjectsFn:     func(context.Context) {},
+					errCh:                make(chan error),
 				}
 				s.manageWorkerCapacityFn = func(context.Context) {
 					s.errCh <- errors.New("something went wrong")
@@ -132,6 +152,7 @@ func TestSchedulerRun(t *testing.T) {
 			name: "job capacity manager produced error",
 			setup: func() *scheduler {
 				s := &scheduler{
+					runHealthcheckLoopFn:   func(context.Context) {},
 					manageWorkerCapacityFn: func(context.Context) {},
 					manageProjectsFn:       func(context.Context) {},
 					errCh:                  make(chan error),
@@ -150,6 +171,7 @@ func TestSchedulerRun(t *testing.T) {
 			name: "projects manager produced error",
 			setup: func() *scheduler {
 				s := &scheduler{
+					runHealthcheckLoopFn:   func(context.Context) {},
 					manageWorkerCapacityFn: func(context.Context) {},
 					manageJobCapacityFn:    func(context.Context) {},
 					errCh:                  make(chan error),
@@ -168,6 +190,7 @@ func TestSchedulerRun(t *testing.T) {
 			name: "context gets canceled",
 			setup: func() *scheduler {
 				return &scheduler{
+					runHealthcheckLoopFn:   func(context.Context) {},
 					manageWorkerCapacityFn: func(context.Context) {},
 					manageJobCapacityFn:    func(context.Context) {},
 					manageProjectsFn:       func(context.Context) {},
@@ -183,6 +206,7 @@ func TestSchedulerRun(t *testing.T) {
 			name: "timeout during shutdown",
 			setup: func() *scheduler {
 				return &scheduler{
+					runHealthcheckLoopFn:   func(context.Context) {},
 					manageWorkerCapacityFn: func(context.Context) {},
 					manageJobCapacityFn:    func(context.Context) {},
 					manageProjectsFn: func(context.Context) {
