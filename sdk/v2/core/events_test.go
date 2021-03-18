@@ -23,6 +23,10 @@ func TestEventListMarshalJSON(t *testing.T) {
 	metaTesting.RequireAPIVersionAndType(t, EventList{}, "EventList")
 }
 
+func TestSourceStateMarshalJSON(t *testing.T) {
+	metaTesting.RequireAPIVersionAndType(t, SourceState{}, "SourceState")
+}
+
 func TestNewEventsClient(t *testing.T) {
 	client := NewEventsClient(
 		rmTesting.TestAPIAddress,
@@ -86,6 +90,8 @@ func TestEventsClientCreate(t *testing.T) {
 
 func TestEventsClientList(t *testing.T) {
 	const testProjectID = "bluebook"
+	const testSource = "foo-gateway"
+	const testType = "bar-type"
 	const testWorkerPhase = WorkerPhaseRunning
 	testEvents := EventList{
 		Items: []Event{
@@ -134,6 +140,10 @@ func TestEventsClientList(t *testing.T) {
 					require.Equal(t, http.MethodGet, r.Method)
 					require.Equal(t, "/v2/events", r.URL.Path)
 					require.Equal(t, testProjectID, r.URL.Query().Get("projectID"))
+					require.Equal(t, testSource, r.URL.Query().Get("source"))
+					require.Contains(t, r.URL.Query().Get("sourceState"), "foo=bar")
+					require.Contains(t, r.URL.Query().Get("sourceState"), "bat=baz")
+					require.Equal(t, testType, r.URL.Query().Get("type"))
 					require.Equal(
 						t,
 						testWorkerPhase,
@@ -151,7 +161,13 @@ func TestEventsClientList(t *testing.T) {
 		events, err := client.List(
 			context.Background(),
 			&EventsSelector{
-				ProjectID:    testProjectID,
+				ProjectID: testProjectID,
+				Source:    testSource,
+				SourceState: map[string]string{
+					"foo": "bar",
+					"bat": "baz",
+				},
+				Type:         testType,
 				WorkerPhases: []WorkerPhase{WorkerPhaseRunning},
 			},
 			nil,
@@ -190,6 +206,45 @@ func TestEventsClientGet(t *testing.T) {
 	require.Equal(t, testEvent, event)
 }
 
+func TestEventsClientUpdateSourceState(t *testing.T) {
+	const testEventID = "12345"
+	testSourceState := SourceState{
+		State: map[string]string{
+			"foo": "bar",
+			"bat": "baz",
+		},
+	}
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				defer r.Body.Close()
+				require.Equal(t, http.MethodPut, r.Method)
+				require.Equal(
+					t,
+					fmt.Sprintf("/v2/events/%s/source-state", testEventID),
+					r.URL.Path,
+				)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
+				require.NoError(t, err)
+				sourceState := SourceState{}
+				err = json.Unmarshal(bodyBytes, &sourceState)
+				require.NoError(t, err)
+				require.Equal(t, testSourceState, sourceState)
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintln(w, "{}")
+			},
+		),
+	)
+	defer server.Close()
+	client := NewEventsClient(server.URL, rmTesting.TestAPIToken, nil)
+	err := client.UpdateSourceState(
+		context.Background(),
+		testEventID,
+		testSourceState,
+	)
+	require.NoError(t, err)
+}
+
 func TestEventsClientCancel(t *testing.T) {
 	const testEventID = "12345"
 	server := httptest.NewServer(
@@ -213,6 +268,8 @@ func TestEventsClientCancel(t *testing.T) {
 
 func TestEventsClientCancelMany(t *testing.T) {
 	const testProjectID = "bluebook"
+	const testSource = "foo-gateway"
+	const testType = "bar-event"
 	const testWorkerPhase = WorkerPhaseRunning
 	testResult := CancelManyEventsResult{
 		Count: 42,
@@ -223,6 +280,10 @@ func TestEventsClientCancelMany(t *testing.T) {
 				require.Equal(t, http.MethodPost, r.Method)
 				require.Equal(t, "/v2/events/cancellations", r.URL.Path)
 				require.Equal(t, testProjectID, r.URL.Query().Get("projectID"))
+				require.Equal(t, testSource, r.URL.Query().Get("source"))
+				require.Contains(t, r.URL.Query().Get("sourceState"), "foo=bar")
+				require.Contains(t, r.URL.Query().Get("sourceState"), "bat=baz")
+				require.Equal(t, testType, r.URL.Query().Get("type"))
 				require.Equal(
 					t,
 					testWorkerPhase,
@@ -240,7 +301,13 @@ func TestEventsClientCancelMany(t *testing.T) {
 	result, err := client.CancelMany(
 		context.Background(),
 		EventsSelector{
-			ProjectID:    testProjectID,
+			ProjectID: testProjectID,
+			Source:    testSource,
+			SourceState: map[string]string{
+				"foo": "bar",
+				"bat": "baz",
+			},
+			Type:         testType,
 			WorkerPhases: []WorkerPhase{WorkerPhaseRunning},
 		},
 	)
@@ -271,6 +338,8 @@ func TestEventsClientDelete(t *testing.T) {
 
 func TestEventsClientDeleteMany(t *testing.T) {
 	const testProjectID = "bluebook"
+	const testSource = "foo-gateway"
+	const testType = "bar-event"
 	const testWorkerPhase = WorkerPhaseRunning
 	testResult := DeleteManyEventsResult{
 		Count: 42,
@@ -281,6 +350,10 @@ func TestEventsClientDeleteMany(t *testing.T) {
 				require.Equal(t, http.MethodDelete, r.Method)
 				require.Equal(t, "/v2/events", r.URL.Path)
 				require.Equal(t, testProjectID, r.URL.Query().Get("projectID"))
+				require.Equal(t, testSource, r.URL.Query().Get("source"))
+				require.Contains(t, r.URL.Query().Get("sourceState"), "foo=bar")
+				require.Contains(t, r.URL.Query().Get("sourceState"), "bat=baz")
+				require.Equal(t, testType, r.URL.Query().Get("type"))
 				require.Equal(
 					t,
 					testWorkerPhase,
@@ -298,7 +371,13 @@ func TestEventsClientDeleteMany(t *testing.T) {
 	result, err := client.DeleteMany(
 		context.Background(),
 		EventsSelector{
-			ProjectID:    testProjectID,
+			ProjectID: testProjectID,
+			Source:    testSource,
+			SourceState: map[string]string{
+				"foo": "bar",
+				"bat": "baz",
+			},
+			Type:         testType,
 			WorkerPhases: []WorkerPhase{WorkerPhaseRunning},
 		},
 	)

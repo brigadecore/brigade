@@ -26,7 +26,7 @@ type Event struct {
 	// Projects on the basis of the Source, Type, and Labels fields, then used as
 	// a template to create a discrete Event for each subscribed Project.
 	ProjectID string `json:"projectID,omitempty"`
-	// Source specifies the source of the event, e.g. what gateway created it.
+	// Source specifies the source of the Event, e.g. what gateway created it.
 	// Gateways should populate this field with a unique string that clearly
 	// identifies themself as the source of the event. The ServiceAccount used by
 	// each gateway can be authorized (by a admin) to only create events having a
@@ -34,6 +34,9 @@ type Event struct {
 	// gateways maliciously creating events that spoof events from another
 	// gateway.
 	Source string `json:"source,omitempty"`
+	// SourceState encapsulates opaque, source-specific (e.g. gateway-specific)
+	// state.
+	SourceState *SourceState `json:"sourceState,omitempty"`
 	// Type specifies the exact event that has occurred in the upstream system.
 	// Values are opaque and source-specific.
 	Type string `json:"type,omitempty"`
@@ -112,13 +115,49 @@ func (e EventList) MarshalJSON() ([]byte, error) {
 	)
 }
 
+// SourceState encapsulates opaque, source-specific (e.g. gateway-specific)
+// state.
+type SourceState struct {
+	// State is a map of arbitrary and opaque key/value pairs that the source of
+	// an Event (e.g. the gateway that created it) can use to store
+	// source-specific state.
+	State map[string]string `json:"state,omitempty"`
+}
+
+// MarshalJSON amends SourceState instances with type metadata so that clients
+// do not need to be concerned with the tedium of doing so.
+func (s SourceState) MarshalJSON() ([]byte, error) {
+	type Alias SourceState
+	return json.Marshal(
+		struct {
+			meta.TypeMeta `json:",inline"`
+			Alias         `json:",inline"`
+		}{
+			TypeMeta: meta.TypeMeta{
+				APIVersion: meta.APIVersion,
+				Kind:       "SourceState",
+			},
+			Alias: (Alias)(s),
+		},
+	)
+}
+
 // EventsSelector represents useful filter criteria when selecting multiple
 // Events for API group operations like list, cancel, or delete.
 type EventsSelector struct {
-	// ProjectID specifies that Events belonging to the indicated Project should
-	// be selected.
+	// ProjectID specifies that only Events belonging to the indicated Project
+	// should be selected.
 	ProjectID string
-	// WorkerPhases specifies that Events with their Workers in any of the
+	// Source specifies that only Events from the indicated source should be
+	// selected.
+	Source string
+	// SourceState specifies that only Events having all of the indicated source
+	// state key/value pairs should be selected.
+	SourceState map[string]string
+	// Type specifies that only Events having the indicated type should be
+	// selected.
+	Type string
+	// WorkerPhases specifies that only Events with their Workers in any of the
 	// indicated phases should be selected.
 	WorkerPhases []WorkerPhase
 }
@@ -164,6 +203,9 @@ type EventsClient interface {
 	List(context.Context, *EventsSelector, *meta.ListOptions) (EventList, error)
 	// Get retrieves a single Event specified by its identifier.
 	Get(context.Context, string) (Event, error)
+	// UpdateSourceState updates source-specific (e.g. gateway-specific) Event
+	// state.
+	UpdateSourceState(context.Context, string, SourceState) error
 	// Cancel cancels a single Event specified by its identifier.
 	Cancel(context.Context, string) error
 	// CancelMany cancels multiple Events specified by the EventListOptions
@@ -223,19 +265,7 @@ func (e *eventsClient) List(
 	selector *EventsSelector,
 	opts *meta.ListOptions,
 ) (EventList, error) {
-	queryParams := map[string]string{}
-	if selector != nil {
-		if selector.ProjectID != "" {
-			queryParams["projectID"] = selector.ProjectID
-		}
-		if len(selector.WorkerPhases) > 0 {
-			workerPhaseStrs := make([]string, len(selector.WorkerPhases))
-			for i, workerPhase := range selector.WorkerPhases {
-				workerPhaseStrs[i] = string(workerPhase)
-			}
-			queryParams["workerPhases"] = strings.Join(workerPhaseStrs, ",")
-		}
-	}
+	queryParams := eventsSelectorToQueryParams(selector)
 	events := EventList{}
 	return events, e.ExecuteRequest(
 		ctx,
@@ -265,6 +295,22 @@ func (e *eventsClient) Get(
 	)
 }
 
+func (e *eventsClient) UpdateSourceState(
+	ctx context.Context,
+	id string,
+	sourceState SourceState,
+) error {
+	return e.ExecuteRequest(
+		ctx,
+		rm.OutboundRequest{
+			Method:      http.MethodPut,
+			Path:        fmt.Sprintf("v2/events/%s/source-state", id),
+			ReqBodyObj:  sourceState,
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
 func (e *eventsClient) Cancel(ctx context.Context, id string) error {
 	return e.ExecuteRequest(
 		ctx,
@@ -278,19 +324,9 @@ func (e *eventsClient) Cancel(ctx context.Context, id string) error {
 
 func (e *eventsClient) CancelMany(
 	ctx context.Context,
-	opts EventsSelector,
+	selector EventsSelector,
 ) (CancelManyEventsResult, error) {
-	queryParams := map[string]string{}
-	if opts.ProjectID != "" {
-		queryParams["projectID"] = opts.ProjectID
-	}
-	if len(opts.WorkerPhases) > 0 {
-		workerPhaseStrs := make([]string, len(opts.WorkerPhases))
-		for i, workerPhase := range opts.WorkerPhases {
-			workerPhaseStrs[i] = string(workerPhase)
-		}
-		queryParams["workerPhases"] = strings.Join(workerPhaseStrs, ",")
-	}
+	queryParams := eventsSelectorToQueryParams(&selector)
 	result := CancelManyEventsResult{}
 	return result, e.ExecuteRequest(
 		ctx,
@@ -319,17 +355,7 @@ func (e *eventsClient) DeleteMany(
 	ctx context.Context,
 	selector EventsSelector,
 ) (DeleteManyEventsResult, error) {
-	queryParams := map[string]string{}
-	if selector.ProjectID != "" {
-		queryParams["projectID"] = selector.ProjectID
-	}
-	if len(selector.WorkerPhases) > 0 {
-		workerPhaseStrs := make([]string, len(selector.WorkerPhases))
-		for i, workerPhase := range selector.WorkerPhases {
-			workerPhaseStrs[i] = string(workerPhase)
-		}
-		queryParams["workerPhases"] = strings.Join(workerPhaseStrs, ",")
-	}
+	queryParams := eventsSelectorToQueryParams(&selector)
 	result := DeleteManyEventsResult{}
 	return result, e.ExecuteRequest(
 		ctx,
@@ -349,4 +375,37 @@ func (e *eventsClient) Workers() WorkersClient {
 
 func (e *eventsClient) Logs() LogsClient {
 	return e.logsClient
+}
+
+func eventsSelectorToQueryParams(selector *EventsSelector) map[string]string {
+	if selector == nil {
+		return nil
+	}
+	queryParams := map[string]string{}
+	if selector.ProjectID != "" {
+		queryParams["projectID"] = selector.ProjectID
+	}
+	if selector.Source != "" {
+		queryParams["source"] = selector.Source
+	}
+	if len(selector.SourceState) > 0 {
+		sourceStateStrs := make([]string, len(selector.SourceState))
+		i := 0
+		for k, v := range selector.SourceState {
+			sourceStateStrs[i] = fmt.Sprintf("%s=%s", k, v)
+			i++
+		}
+		queryParams["sourceState"] = strings.Join(sourceStateStrs, ",")
+	}
+	if selector.Type != "" {
+		queryParams["type"] = selector.Type
+	}
+	if len(selector.WorkerPhases) > 0 {
+		workerPhaseStrs := make([]string, len(selector.WorkerPhases))
+		for i, workerPhase := range selector.WorkerPhases {
+			workerPhaseStrs[i] = string(workerPhase)
+		}
+		queryParams["workerPhases"] = strings.Join(workerPhaseStrs, ",")
+	}
+	return queryParams
 }
