@@ -71,15 +71,26 @@ func (e *eventsStore) List(
 	events := core.EventList{}
 
 	criteria := bson.M{
-		"worker.status.phase": bson.M{
-			"$in": selector.WorkerPhases,
-		},
 		"deleted": bson.M{
 			"$exists": false, // Don't grab logically deleted events
 		},
 	}
 	if selector.ProjectID != "" {
 		criteria["projectID"] = selector.ProjectID
+	}
+	if selector.Source != "" {
+		criteria["source"] = selector.Source
+	}
+	for k, v := range selector.SourceState {
+		criteria[fmt.Sprintf("sourceState.state.%s", k)] = v
+	}
+	if selector.Type != "" {
+		criteria["type"] = selector.Type
+	}
+	if len(selector.WorkerPhases) > 0 {
+		criteria["worker.status.phase"] = bson.M{
+			"$in": selector.WorkerPhases,
+		}
 	}
 	if opts.Continue != "" {
 		tokens := strings.Split(opts.Continue, ":")
@@ -142,7 +153,14 @@ func (e *eventsStore) Get(
 	id string,
 ) (core.Event, error) {
 	event := core.Event{}
-	res := e.collection.FindOne(ctx, bson.M{"id": id})
+	res := e.collection.FindOne(
+		ctx,
+		bson.M{
+			"id": id,
+			"deleted": bson.M{
+				"$exists": false, // Don't grab logically deleted events
+			},
+		})
 	err := res.Decode(&event)
 	if err == mongo.ErrNoDocuments {
 		return event, &meta.ErrNotFound{
@@ -166,6 +184,9 @@ func (e *eventsStore) GetByHashedWorkerToken(
 		ctx,
 		bson.M{
 			"worker.hashedToken": hashedWorkerToken,
+			"deleted": bson.M{
+				"$exists": false, // Don't grab logically deleted events
+			},
 		},
 	)
 	err := res.Decode(&event)
@@ -180,6 +201,41 @@ func (e *eventsStore) GetByHashedWorkerToken(
 	return event, nil
 }
 
+func (e *eventsStore) UpdateSourceState(
+	ctx context.Context,
+	id string,
+	sourceState core.SourceState,
+) error {
+	res, err := e.collection.UpdateOne(
+		ctx,
+		bson.M{
+			"id": id,
+			"deleted": bson.M{
+				"$exists": false, // Don't grab logically deleted events
+			},
+		},
+		bson.M{
+			"$set": bson.M{
+				"sourceState": sourceState,
+			},
+		},
+	)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error updating source state of event %q",
+			id,
+		)
+	}
+	if res.MatchedCount == 0 {
+		return &meta.ErrNotFound{
+			Type: "Event",
+			ID:   id,
+		}
+	}
+	return nil
+}
+
 func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 	cancellationTime := time.Now().UTC()
 
@@ -188,6 +244,9 @@ func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 		bson.M{
 			"id":                  id,
 			"worker.status.phase": core.WorkerPhasePending,
+			"deleted": bson.M{
+				"$exists": false, // Don't grab logically deleted events
+			},
 		},
 		bson.M{
 			"$set": bson.M{
@@ -293,6 +352,18 @@ func (e *eventsStore) CancelMany(
 
 	criteria := bson.M{
 		"projectID": selector.ProjectID,
+		"deleted": bson.M{
+			"$exists": false, // Don't grab logically deleted events
+		},
+	}
+	if selector.Source != "" {
+		criteria["source"] = selector.Source
+	}
+	for k, v := range selector.SourceState {
+		criteria[fmt.Sprintf("sourceState.state.%s", k)] = v
+	}
+	if selector.Type != "" {
+		criteria["type"] = selector.Type
 	}
 
 	if cancelPending {
@@ -399,6 +470,9 @@ func (e *eventsStore) Delete(ctx context.Context, id string) error {
 		ctx,
 		bson.M{
 			"id": id,
+			"deleted": bson.M{
+				"$exists": false, // Don't grab logically deleted events
+			},
 		},
 	)
 	if err != nil {
@@ -427,12 +501,23 @@ func (e *eventsStore) DeleteMany(
 	// Logical delete...
 	criteria := bson.M{
 		"projectID": selector.ProjectID,
-		"worker.status.phase": bson.M{
-			"$in": selector.WorkerPhases,
-		},
 		"deleted": bson.M{
-			"$exists": false,
+			"$exists": false, // Don't grab logically deleted events
 		},
+	}
+	if selector.Source != "" {
+		criteria["source"] = selector.Source
+	}
+	for k, v := range selector.SourceState {
+		criteria[fmt.Sprintf("sourceState.state.%s", k)] = v
+	}
+	if selector.Type != "" {
+		criteria["type"] = selector.Type
+	}
+	if len(selector.WorkerPhases) > 0 {
+		criteria["worker.status.phase"] = bson.M{
+			"$in": selector.WorkerPhases,
+		}
 	}
 	result, err := e.collection.UpdateMany(
 		ctx,

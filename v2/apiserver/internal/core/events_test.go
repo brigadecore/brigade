@@ -510,6 +510,100 @@ func TestEventsServiceGetByWorkerToken(t *testing.T) {
 	}
 }
 
+func TestEventsServiceUpdateSourceState(t *testing.T) {
+	testEventID := "123456789"
+	testCases := []struct {
+		name       string
+		service    EventsService
+		assertions func(error)
+	}{
+		{
+			name: "error getting event from store",
+			service: &eventsService{
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("error getting event")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error getting event")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "unauthorized",
+			service: &eventsService{
+				authorize: libAuthz.NeverAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "error updating source state in store",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+					UpdateSourceStateFn: func(
+						context.Context,
+						string,
+						SourceState,
+					) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error updating source state of event")
+			},
+		},
+		{
+			name: "success",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+					UpdateSourceStateFn: func(
+						context.Context,
+						string,
+						SourceState,
+					) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.service.UpdateSourceState(
+				context.Background(),
+				testEventID,
+				SourceState{},
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
 func TestEventsServiceCancel(t *testing.T) {
 	const testEventID = "123456789"
 	testCases := []struct {
