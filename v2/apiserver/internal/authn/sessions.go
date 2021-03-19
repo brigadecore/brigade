@@ -13,6 +13,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// SessionKind represents the canonical Session kind string
+const SessionKind = "Session"
+
 // OIDCAuthDetails encapsulates all information required for a client
 // authenticating by means of OpenID Connect to complete the authentication
 // process using a third-party identity provider.

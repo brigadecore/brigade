@@ -42,7 +42,7 @@ func TestSubstrateCountRunningWorkers(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name: "bar",
 				Labels: map[string]string{
-					myk8s.LabelComponent: "job",
+					myk8s.LabelComponent: myk8s.LabelKeyJob,
 				},
 			},
 			Status: corev1.PodStatus{
@@ -59,7 +59,7 @@ func TestSubstrateCountRunningWorkers(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name: "bat",
 				Labels: map[string]string{
-					myk8s.LabelComponent: "worker",
+					myk8s.LabelComponent: myk8s.LabelKeyWorker,
 				},
 			},
 			Status: corev1.PodStatus{
@@ -88,7 +88,7 @@ func TestSubstrateCountRunningJobs(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name: "bar",
 				Labels: map[string]string{
-					myk8s.LabelComponent: "worker",
+					myk8s.LabelComponent: myk8s.LabelKeyWorker,
 				},
 			},
 			Status: corev1.PodStatus{
@@ -105,7 +105,7 @@ func TestSubstrateCountRunningJobs(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name: "bat",
 				Labels: map[string]string{
-					myk8s.LabelComponent: "job",
+					myk8s.LabelComponent: myk8s.LabelKeyJob,
 				},
 			},
 			Status: corev1.PodStatus{

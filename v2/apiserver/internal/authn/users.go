@@ -11,6 +11,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// UserKind represents the canonical User kind string
+const UserKind = "User"
+
 // User represents a (human) Brigade user.
 type User struct {
 	// ObjectMeta encapsulates User metadata.
@@ -32,7 +35,7 @@ func (u User) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       "User",
+				Kind:       UserKind,
 			},
 			Alias: (Alias)(u),
 		},

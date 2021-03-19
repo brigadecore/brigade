@@ -14,6 +14,9 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+// EventKind represents the canonical Event kind string
+const EventKind = "Event"
+
 const defaultWorkspaceSize = "10Gi"
 
 // Event represents an occurrence in some upstream system. Once accepted into
@@ -79,7 +82,7 @@ func (e Event) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       "Event",
+				Kind:       EventKind,
 			},
 			Alias: (Alias)(e),
 		},

@@ -238,7 +238,7 @@ func TestEventsStoreGet(t *testing.T) {
 			assertions: func(_ core.Event, err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "Event", err.(*meta.ErrNotFound).Type)
+				require.Equal(t, core.EventKind, err.(*meta.ErrNotFound).Type)
 				require.Equal(t, testEventID, err.(*meta.ErrNotFound).ID)
 			},
 		},
@@ -325,7 +325,7 @@ func TestEventsStoreGetByHashedToken(t *testing.T) {
 			assertions: func(_ core.Event, err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "Event", err.(*meta.ErrNotFound).Type)
+				require.Equal(t, core.EventKind, err.(*meta.ErrNotFound).Type)
 			},
 		},
 
@@ -739,7 +739,7 @@ func TestEventsStoreDelete(t *testing.T) {
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "Event", err.(*meta.ErrNotFound).Type)
+				require.Equal(t, core.EventKind, err.(*meta.ErrNotFound).Type)
 				require.Equal(t, testEventID, err.(*meta.ErrNotFound).ID)
 			},
 		},

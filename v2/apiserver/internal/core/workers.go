@@ -282,7 +282,7 @@ func (w *workersService) Start(ctx context.Context, eventID string) error {
 
 	if event.Worker.Status.Phase != WorkerPhasePending {
 		return &meta.ErrConflict{
-			Type: "Event",
+			Type: EventKind,
 			ID:   event.ID,
 			Reason: fmt.Sprintf(
 				"Event %q worker has already been started.",

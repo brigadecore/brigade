@@ -11,6 +11,9 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
+// ProjectKind represents the canonical Project kind string
+const ProjectKind = "Project"
+
 // Project is Brigade's fundamental configuration, management, and isolation
 // construct.
 // - Configuration: Users define Projects to pair EventSubscriptions with
@@ -49,7 +52,7 @@ func (p Project) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       "Project",
+				Kind:       ProjectKind,
 			},
 			Alias: (Alias)(p),
 		},

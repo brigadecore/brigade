@@ -12,7 +12,7 @@ import (
 )
 
 func TestEventMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(t, &Event{}, "Event")
+	metaTesting.RequireAPIVersionAndType(t, &Event{}, EventKind)
 }
 
 func TestEventListMarshalJSON(t *testing.T) {
