@@ -12,6 +12,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ServiceAccountKind represents the canonical Service Account kind string
+const ServiceAccountKind = "ServiceAccount"
+
 // ServiceAccount represents a non-human Brigade user, such as an Event
 // gateway.
 type ServiceAccount struct {

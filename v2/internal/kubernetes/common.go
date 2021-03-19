@@ -12,6 +12,12 @@ const (
 	LabelJob       = "brigade.sh/job"
 	LabelProject   = "brigade.sh/project"
 
+	LabelKeyWorker         = "worker"
+	LabelKeyJob            = "job"
+	LabelKeyEvent          = "event"
+	LabelKeyWorkspace      = "workspace"
+	LabelKeyProjectSecrets = "project-secrets"
+
 	SecretTypeProjectSecrets = "brigade.sh/project-secrets"
 	SecretTypeEvent          = "brigade.sh/event"
 	SecretTypeJobSecrets     = "brigade.sh/job"
@@ -32,7 +38,7 @@ func WorkerPodName(eventID string) string {
 func WorkerPodsSelector() string {
 	return labels.Set(
 		map[string]string{
-			LabelComponent: "worker",
+			LabelComponent: LabelKeyWorker,
 		},
 	).AsSelector().String()
 }
@@ -48,7 +54,7 @@ func JobPodName(eventID, jobName string) string {
 func JobPodsSelector() string {
 	return labels.Set(
 		map[string]string{
-			LabelComponent: "job",
+			LabelComponent: LabelKeyJob,
 		},
 	).AsSelector().String()
 }

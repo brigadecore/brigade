@@ -53,7 +53,7 @@ func TestSyncJobPods(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testPodName,
 			Labels: map[string]string{
-				myk8s.LabelComponent: "job",
+				myk8s.LabelComponent: myk8s.LabelKeyJob,
 			},
 		},
 	}

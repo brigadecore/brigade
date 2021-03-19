@@ -12,6 +12,9 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
+// EventKind represents the canonical Event kind string
+const EventKind = "Event"
+
 // Event represents an occurrence in some upstream system. Once accepted into
 // the system, Brigade amends each Event with a plan for handling it in the form
 // of a Worker. An Event's status is, implicitly, the status of its Worker.
@@ -76,7 +79,7 @@ func (e Event) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       "Event",
+				Kind:       EventKind,
 			},
 			Alias: (Alias)(e),
 		},

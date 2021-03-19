@@ -7,6 +7,7 @@ import (
 
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/pkg/errors"
 )
 
@@ -113,10 +114,11 @@ func (l *logsService) Stream(
 	if selector.Job == "" { // If a job isn't specified, then we want worker logs
 		if selector.Container == "" {
 			// If a container isn't specified, we want the one named "worker"
-			selector.Container = "worker"
+			selector.Container = myk8s.LabelKeyWorker
 		}
 		// These are the only legitimate container names for ANY worker
-		if selector.Container != "worker" && selector.Container != "vcs" {
+		if selector.Container != myk8s.LabelKeyWorker &&
+			selector.Container != "vcs" {
 			// Any other container name is an error
 			return nil, &meta.ErrNotFound{
 				Type: "WorkerContainer",
@@ -153,7 +155,7 @@ func (l *logsService) Stream(
 		job, ok := event.Worker.Job(selector.Job)
 		if !ok {
 			return nil, &meta.ErrNotFound{
-				Type: "Job",
+				Type: JobKind,
 				ID:   selector.Job,
 			}
 		}

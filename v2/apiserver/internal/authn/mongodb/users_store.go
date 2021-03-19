@@ -56,7 +56,7 @@ func (u *usersStore) Create(ctx context.Context, user authn.User) error {
 	if _, err := u.collection.InsertOne(ctx, user); err != nil {
 		if mongodb.IsDuplicateKeyError(err) {
 			return &meta.ErrConflict{
-				Type:   "User",
+				Type:   authn.UserKind,
 				ID:     user.ID,
 				Reason: fmt.Sprintf("A user with the ID %q already exists.", user.ID),
 			}
@@ -126,7 +126,7 @@ func (u *usersStore) Get(
 	err := res.Decode(&user)
 	if err == mongo.ErrNoDocuments {
 		return user, &meta.ErrNotFound{
-			Type: "User",
+			Type: authn.UserKind,
 			ID:   id,
 		}
 	}
@@ -154,7 +154,7 @@ func (u *usersStore) Lock(ctx context.Context, id string) error {
 	}
 	if res.MatchedCount == 0 {
 		return &meta.ErrNotFound{
-			Type: "User",
+			Type: authn.UserKind,
 			ID:   id,
 		}
 	}
@@ -179,7 +179,7 @@ func (u *usersStore) Unlock(ctx context.Context, id string) error {
 	}
 	if res.MatchedCount == 0 {
 		return &meta.ErrNotFound{
-			Type: "User",
+			Type: authn.UserKind,
 			ID:   id,
 		}
 	}

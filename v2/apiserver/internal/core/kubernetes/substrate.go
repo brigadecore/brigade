@@ -304,7 +304,7 @@ func (s *substrate) CreateProject(
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "project-secrets",
 				Labels: map[string]string{
-					myk8s.LabelComponent: "project-secrets",
+					myk8s.LabelComponent: myk8s.LabelKeyProjectSecrets,
 					myk8s.LabelProject:   project.ID,
 				},
 			},
@@ -432,7 +432,7 @@ func (s *substrate) ScheduleWorker(
 			ObjectMeta: metav1.ObjectMeta{
 				Name: myk8s.EventSecretName(event.ID),
 				Labels: map[string]string{
-					myk8s.LabelComponent: "event",
+					myk8s.LabelComponent: myk8s.LabelKeyEvent,
 					myk8s.LabelProject:   event.ProjectID,
 					myk8s.LabelEvent:     event.ID,
 				},
@@ -846,7 +846,7 @@ func (s *substrate) createWorkerPod(
 
 	volumes := []corev1.Volume{
 		{
-			Name: "event",
+			Name: myk8s.LabelKeyEvent,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: myk8s.EventSecretName(event.ID),
@@ -870,7 +870,7 @@ func (s *substrate) createWorkerPod(
 
 	volumeMounts := []corev1.VolumeMount{
 		{
-			Name:      "event",
+			Name:      myk8s.LabelKeyEvent,
 			MountPath: "/var/event",
 			ReadOnly:  true,
 		},
@@ -933,7 +933,7 @@ func (s *substrate) createWorkerPod(
 			Name:      myk8s.WorkerPodName(event.ID),
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
-				myk8s.LabelComponent: "worker",
+				myk8s.LabelComponent: myk8s.LabelKeyWorker,
 				myk8s.LabelProject:   event.ProjectID,
 				myk8s.LabelEvent:     event.ID,
 			},
@@ -945,7 +945,7 @@ func (s *substrate) createWorkerPod(
 			InitContainers:     initContainers,
 			Containers: []corev1.Container{
 				{
-					Name:            "worker",
+					Name:            myk8s.LabelKeyWorker,
 					Image:           image,
 					ImagePullPolicy: corev1.PullPolicy(imagePullPolicy),
 					Command:         event.Worker.Spec.Container.Command,
@@ -987,7 +987,7 @@ func (s *substrate) createJobSecret(
 			Name:      myk8s.JobSecretName(eventID, jobName),
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
-				myk8s.LabelComponent: "job",
+				myk8s.LabelComponent: myk8s.LabelKeyJob,
 				myk8s.LabelProject:   project.ID,
 				myk8s.LabelEvent:     eventID,
 				myk8s.LabelJob:       jobName,
@@ -1082,7 +1082,7 @@ func (s *substrate) createJobPod(
 		volumes = append(
 			volumes,
 			corev1.Volume{
-				Name: "event",
+				Name: myk8s.LabelKeyEvent,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: myk8s.EventSecretName(event.ID),
@@ -1124,7 +1124,7 @@ func (s *substrate) createJobPod(
 				),
 				VolumeMounts: []corev1.VolumeMount{
 					{
-						Name:      "event",
+						Name:      myk8s.LabelKeyEvent,
 						MountPath: "/var/event",
 						ReadOnly:  true,
 					},
@@ -1166,7 +1166,7 @@ func (s *substrate) createJobPod(
 			Name:      myk8s.JobPodName(event.ID, jobName),
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
-				myk8s.LabelComponent: "job",
+				myk8s.LabelComponent: myk8s.LabelKeyJob,
 				myk8s.LabelProject:   event.ProjectID,
 				myk8s.LabelEvent:     event.ID,
 				myk8s.LabelJob:       jobName,
