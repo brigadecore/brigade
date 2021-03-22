@@ -63,11 +63,22 @@ logger.debug(`writing package.json to ${packageJSONPath}`)
 fs.writeFileSync(packageJSONPath, JSON.stringify(pkg))
 
 // Install dependencies
-logger.debug("installing dependencies")
-try {
-  execFileSync("yarn", ["install"], { cwd: configFilesPath })
-} catch(e) {
-  throw new Error(`error executing yarn install:\n\n${e.output}`)
+// If we find package-lock.json, we use npm. Otherwise, we use yarn.
+const packageLockJSONPath = path.join(configFilesPath, "package-lock.json")
+if (fs.existsSync(packageLockJSONPath)) {
+  logger.debug("installing dependencies using npm")
+  try {
+    execFileSync("npm", ["install"], { cwd: configFilesPath })
+  } catch(e) {
+    throw new Error(`error executing npm install:\n\n${e.output}`)
+  }
+} else {
+  logger.debug("installing dependencies using yarn")
+  try {
+    execFileSync("yarn", ["install"], { cwd: configFilesPath })
+  } catch(e) {
+    throw new Error(`error executing yarn install:\n\n${e.output}`)
+  }
 }
 
 // Experimental TypeScript support...
