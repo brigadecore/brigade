@@ -8,7 +8,7 @@ const { Check, KindJob } = require("@brigadecore/brigade-utils");
 const releaseTagRegex = /^refs\/tags\/(v[0-9]+(?:\.[0-9]+)*(?:\-.+)?)$/;
 
 const goImg = "brigadecore/go-tools:v0.1.0";
-const jsImg = "node:12.3.1-stretch";
+const jsImg = "node:14.6.0-stretch";
 const kanikoImg = "brigadecore/kaniko:v0.2.0";
 const helmImg = "brigadecore/helm-tools:v0.1.0";
 const localPath = "/workspaces/brigade";
