@@ -28,7 +28,7 @@ ifneq ($(SKIP_DOCKER),true)
 		-w /workspaces/brigade \
 		$(GO_DEV_IMAGE)
 
-	JS_DEV_IMAGE := node:12.3.1-stretch
+	JS_DEV_IMAGE := node:14.16.0-stretch
 
 	JS_DOCKER_CMD := docker run \
 		-it \
