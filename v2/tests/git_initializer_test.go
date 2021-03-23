@@ -204,7 +204,9 @@ var testcases = []testcase{
 				job.primaryContainer.command = ["sh"]
 				job.primaryContainer.arguments = ["-c", "'echo Goodbye World && exit 1'"]
 				await job.run()
-			});
+			})
+
+			events.process()
 		`, testJobName)},
 		assertions: func(
 			t *testing.T,
@@ -230,7 +232,9 @@ var defaultConfigFiles = map[string]string{
 			job.primaryContainer.command = ["ls"]
 			job.primaryContainer.arguments = ["-haltr", "/var/vcs"]
 			await job.run()
-		});
+		})
+
+		events.process()
 	`, testJobName)}
 
 func TestMain(t *testing.T) {
