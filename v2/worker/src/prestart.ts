@@ -35,19 +35,9 @@ const packageJSONPath = path.join(configFilesPath, "package.json")
 if (fs.existsSync(packageJSONPath)) {
   logger.debug(`found a package.json at ${packageJSONPath}`)
   // Install dependencies
-  // If we find package-lock.json, we use npm. Otherwise, we use yarn.
-  const packageLockJSONPath = path.join(configFilesPath, "package-lock.json")
-  if (fs.existsSync(packageLockJSONPath)) {
-    logger.debug("installing dependencies using npm")
-    try {
-      execFileSync("npm", ["install", "--prod"], {
-        cwd: configFilesPath,
-        stdio: debug ? "inherit" : undefined
-      })
-    } catch(e) {
-      throw new Error(`error executing npm install:\n\n${e.output}`)
-    }
-  } else {
+  // If we find yarn.json, we use yarn. Otherwise, we use npm.
+  const yarnLockPath = path.join(configFilesPath, "yarn.lock")
+  if (fs.existsSync(yarnLockPath)) {
     logger.debug("installing dependencies using yarn")
     try {
       execFileSync("yarn", ["install", "--prod"], {
@@ -57,7 +47,17 @@ if (fs.existsSync(packageJSONPath)) {
     } catch(e) {
       throw new Error(`error executing yarn install:\n\n${e.output}`)
     }
-  }  
+  } else {
+    logger.debug("installing dependencies using npm")
+    try {
+      execFileSync("npm", ["install", "--prod"], {
+        cwd: configFilesPath,
+        stdio: debug ? "inherit" : undefined
+      })
+    } catch(e) {
+      throw new Error(`error executing npm install:\n\n${e.output}`)
+    }
+  }
 }
 
 const moduleNamespace = "@brigadecore"
