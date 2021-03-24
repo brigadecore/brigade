@@ -1,0 +1,36 @@
+{
+  "name": "@brigadecore/brigadier-polyfill",
+  "version": "0.0.1-placeholder",
+  "description": "Brigade library for pipelines and events",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": "Brigade Core Maintainers",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "mocha --require ts-node/register --recursive ./test/**/*.ts",
+    "lint": "eslint ./",
+    "build": "tsc"
+  },
+  "files": [
+    "dist/*.js",
+    "dist/*.ts"
+  ],
+  "devDependencies": {
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.2.0",
+    "@typescript-eslint/eslint-plugin": "^4.9.1",
+    "@typescript-eslint/parser": "^4.9.1",
+    "chai": "^4.2.0",
+    "eslint": "^7.15.0",
+    "mocha": "^8.2.1",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.1.2"
+  },
+  "dependencies": {
+    "@types/node": "^14.14.11",
+    "axios": "^0.21.0",
+    "@brigadecore/brigadier": "../brigadier",
+    "eventsource": "^1.0.7",
+    "winston": "^3.3.3"
+  }
+}

@@ -6,10 +6,9 @@ const EventSource = require("eventsource") // eslint-disable-line @typescript-es
 import axios from "axios"
 import { Logger } from "winston" 
 
-import { Event } from "../../brigadier/src/events"
-import { Job as BrigadierJob } from "../../brigadier/src"
+import { Event, Job as BrigadierJob } from "@brigadecore/brigadier"
 
-import { logger } from "./brigadier"
+import { logger } from "./logger"
 
 export class Job extends BrigadierJob {
   logger: Logger
