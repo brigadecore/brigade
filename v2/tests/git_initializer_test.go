@@ -199,7 +199,7 @@ var testcases = []testcase{
 			"brigade.ts": fmt.Sprintf(`
 			import { events, Job } from "@brigadecore/brigadier"
 
-			events.on("github.com/brigadecore/brigade/cli", "exec", async event => {
+			events.on("brigade.sh/cli", "exec", async event => {
 				let job = new Job("%s", "alpine", event)
 				job.primaryContainer.command = ["sh"]
 				job.primaryContainer.arguments = ["-c", "'echo Goodbye World && exit 1'"]
@@ -224,7 +224,7 @@ var defaultConfigFiles = map[string]string{
 	"brigade.ts": fmt.Sprintf(`
 		import { events, Job } from "@brigadecore/brigadier"
 
-		events.on("github.com/brigadecore/brigade/cli", "exec", async event => {
+		events.on("brigade.sh/cli", "exec", async event => {
 			let job = new Job("%s", "alpine", event)
 			job.primaryContainer.sourceMountPath = "/var/vcs"
 			job.primaryContainer.command = ["ls"]
@@ -291,7 +291,7 @@ func TestMain(t *testing.T) {
 			// Create a new event
 			event := core.Event{
 				ProjectID: tc.project.ID,
-				Source:    "github.com/brigadecore/brigade/cli",
+				Source:    "brigade.sh/cli",
 				Type:      "exec",
 			}
 

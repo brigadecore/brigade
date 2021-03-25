@@ -11,7 +11,7 @@ spec:
       brigade.ts: |-
         import { events, Job, SerialGroup, ConcurrentGroup } from "@brigadecore/brigadier"
 
-        events.on("github.com/brigadecore/brigade/cli", "exec", async event => {
+        events.on("brigade.sh/cli", "exec", async event => {
           let job1 = new Job("job-1", "debian:latest", event)
           job1.primaryContainer.command = ["echo"]
           job1.primaryContainer.arguments = ["I'm job 1!"]

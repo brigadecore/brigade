@@ -101,7 +101,7 @@ var eventCommand = &cli.Command{
 					Name:    flagSource,
 					Aliases: []string{"s"},
 					Usage:   "Override the default event source",
-					Value:   "github.com/brigadecore/brigade/cli",
+					Value:   "brigade.sh/cli",
 				},
 				&cli.StringFlag{
 					Name:    flagType,

@@ -19,6 +19,6 @@ spec:
         const { events } = require("@brigadecore/brigadier");
         const colors = require("colors/safe");
 
-        events.on("github.com/brigadecore/brigade/cli", "exec", () => {
+        events.on("brigade.sh/cli", "exec", () => {
           console.log(colors.green("It's not easy being green."));
         });
