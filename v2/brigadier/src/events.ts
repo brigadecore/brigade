@@ -52,6 +52,68 @@ export class EventRegistry {
     this.handlers[`${eventSource}:${eventType}`] = eventHandler
     return this
   }
+
+  public process(): void {
+    let event: Event
+    if (process.env.BRIGADE_EVENT_FILE) {
+      console.log(`Loading dummy event from file ${process.env.BRIGADE_EVENT_FILE}`)
+      event = require(process.env.BRIGADE_EVENT_FILE)
+    } else {
+      console.log("No dummy event file provided")
+      console.log("Generating a dummy event")
+      let source: string
+      let type: string
+      if (process.env.BRIGADE_EVENT) {
+        const eventTokens = process.env.BRIGADE_EVENT.split(":")
+        if (eventTokens.length != 2) {
+          throw new Error(
+            `${process.env.BRIGADE_EVENT} is not a valid event of the form <source>:<type>`
+          )
+        }
+        source = eventTokens[0]
+        type = eventTokens[1]
+        console.log(`Using specified dummy event type ${source}:${type}`)
+      } else {
+        console.log("No dummy event type provided")
+        source = "github.com/brigadecore/brigade/cli"
+        type = "exec"
+        console.log(`Using default dummy event type ${source}:${type}`)
+      }
+      event = {
+        id: this.newUUID(),
+        source: source,
+        type: type,
+        project: {
+          id: this.newUUID(),
+          secrets: {}
+        },
+        worker: {
+          apiAddress: "https://brigade2.example.com",
+          apiToken: this.newUUID(),
+          configFilesDirectory: ".brigade",
+          defaultConfigFiles: {}
+        }
+      }
+    }
+    console.log("Processing the following dummy event:")
+    console.log(event)
+    this.fire(event)
+  }
+
+  protected fire(event: Event): void {
+    const handlerFn = this.handlers[`${event.source}:${event.type}`]
+    if (handlerFn) {
+      handlerFn(event) 
+    }
+  }
+
+  private newUUID(): string {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0, v = c == "x" ? r : (r & 0x3 | 0x8)
+      return v.toString(16)
+    })
+  }
+
 }
 
 /** Contains event handler registrations for a script. */

@@ -1,9 +1,7 @@
 import "mocha"
 import { assert } from "chai"
 
-import { Event } from "../../brigadier/src/events"
-
-import { Job, Container, JobHost } from "../src/brigadier"
+import { Container, Event, Job, JobHost } from "../src"
 
 describe("jobs", () => {
 

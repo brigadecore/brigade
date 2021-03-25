@@ -1,7 +1,7 @@
 import "mocha"
 import { assert } from "chai"
 
-import * as brigadier from "../src/brigadier"
+import * as brigadier from "../src"
 
 describe("brigadier", () => {
   it("has expected exports", () => {
