@@ -2,11 +2,14 @@ import * as fs from "fs"
 import { execFileSync } from "child_process"
 import * as path from "path"
 
-import { logger } from "./logger"
+import { Event, logger } from "@brigadecore/brigadier-polyfill"
 
-const event = require("/var/event/event.json") // eslint-disable-line @typescript-eslint/no-var-requires
+logger.info(`brigade-worker version: ${process.env.WORKER_VERSION}`)
+
+const event: Event = require("/var/event/event.json") // eslint-disable-line @typescript-eslint/no-var-requires
 
 logger.level = (event.worker.logLevel || "info").toLowerCase()
+const debug = logger.level == "debug"
 
 const configFilesPath = path.join("/var/vcs", event.worker.configFilesDirectory)
 
@@ -28,65 +31,71 @@ if (event.worker.defaultConfigFiles) {
   }
 }
 
-const brigadierPackageName = "@brigadecore/brigadier"
-const brigadierSrcPath = "/var/brigade-worker/src/brigadier"
 const packageJSONPath = path.join(configFilesPath, "package.json")
-let pkg
 if (fs.existsSync(packageJSONPath)) {
-  logger.debug(`found an existing package.json at ${packageJSONPath}`)
-  pkg = require(packageJSONPath)
-  logger.debug(`patching package.json to use ${brigadierPackageName} included in worker image`)
-  if (pkg.devDependencies) {
-    delete pkg.devDependencies[brigadierPackageName]
-  }
-  if (pkg.peerDependencies) {
-    delete pkg.peerDependencies[brigadierPackageName]
-  }
-  if (pkg.optionalDependencies) {
-    delete pkg.optionalDependencies[brigadierPackageName]
-  }
-  if (pkg.dependencies) {
-    delete pkg.dependencies[brigadierPackageName]
+  logger.debug(`found a package.json at ${packageJSONPath}`)
+  // Install dependencies
+  // If we find yarn.json, we use yarn. Otherwise, we use npm.
+  const yarnLockPath = path.join(configFilesPath, "yarn.lock")
+  if (fs.existsSync(yarnLockPath)) {
+    logger.debug("installing dependencies using yarn")
+    try {
+      execFileSync("yarn", ["install", "--prod"], {
+        cwd: configFilesPath,
+        stdio: debug ? "inherit" : undefined
+      })
+    } catch(e) {
+      throw new Error(`error executing yarn install:\n\n${e.output}`)
+    }
   } else {
-    pkg.dependencies = {}
-  }
-} else {
-  logger.debug(`no existing package.json found at ${packageJSONPath}`)
-  logger.debug("creating a minimal package.json")
-  pkg = {
-    private: true,
-    dependencies: {}
+    logger.debug("installing dependencies using npm")
+    try {
+      execFileSync("npm", ["install", "--prod"], {
+        cwd: configFilesPath,
+        stdio: debug ? "inherit" : undefined
+      })
+    } catch(e) {
+      throw new Error(`error executing npm install:\n\n${e.output}`)
+    }
   }
 }
-pkg.dependencies[brigadierPackageName] = brigadierSrcPath
-logger.debug(`writing package.json to ${packageJSONPath}`)
-fs.writeFileSync(packageJSONPath, JSON.stringify(pkg))
 
-// Install dependencies
-// If we find package-lock.json, we use npm. Otherwise, we use yarn.
-const packageLockJSONPath = path.join(configFilesPath, "package-lock.json")
-if (fs.existsSync(packageLockJSONPath)) {
-  logger.debug("installing dependencies using npm")
-  try {
-    execFileSync("npm", ["install"], { cwd: configFilesPath })
-  } catch(e) {
-    throw new Error(`error executing npm install:\n\n${e.output}`)
-  }
-} else {
-  logger.debug("installing dependencies using yarn")
-  try {
-    execFileSync("yarn", ["install"], { cwd: configFilesPath })
-  } catch(e) {
-    throw new Error(`error executing yarn install:\n\n${e.output}`)
-  }
+const moduleNamespace = "@brigadecore"
+const moduleNamespacePath = path.join(configFilesPath, "node_modules", moduleNamespace)
+if (!fs.existsSync(moduleNamespacePath)) {
+  logger.debug(`path ${moduleNamespacePath} does not exist; creating it`)
+  fs.mkdirSync(moduleNamespacePath, { recursive: true })
 }
+
+const moduleName = "brigadier"
+const modulePath = path.join(moduleNamespacePath, moduleName)
+if (fs.existsSync(modulePath)) {
+  logger.debug(`path ${modulePath} exists; deleting it`)
+  fs.rmSync(modulePath, { recursive: true, force: true })
+}
+
+const modulePolyfillPath = "/var/brigade-worker/brigadier-polyfill"
+logger.debug(`polyfilling ${moduleNamespace}/${moduleName} with ${modulePolyfillPath}`)
+fs.symlinkSync(modulePolyfillPath, modulePath)
 
 // Experimental TypeScript support...
 if (fs.existsSync(path.join(configFilesPath, "brigade.ts"))) {
   logger.debug("compiling brigade.ts")
   try {
-    execFileSync("tsc", ["--target", "ES6", "--module", "commonjs", "brigade.ts"], { cwd: configFilesPath })
+    execFileSync("tsc", ["--target", "ES6", "--module", "commonjs", "brigade.ts"], {
+      cwd: configFilesPath,
+      stdio: debug ? "inherit" : undefined
+    })
   } catch(e) {
     throw new Error(`error compiling brigade.ts:\n\n${e.output}`)
   }
+}
+
+try {
+  execFileSync("node", ["brigade.js"], {
+    cwd: configFilesPath,
+    stdio: "inherit"
+  })
+} catch(e) {
+  throw new Error(`error executing brigade.js:\n\n${e.output}`)
 }

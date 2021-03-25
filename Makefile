@@ -135,9 +135,24 @@ lint-js:
 		cd v2/brigadier && \
 		yarn install && \
 		yarn lint && \
+		cd ../brigadier-polyfill && \
+		yarn install && \
+		yarn lint && \
 		cd ../worker && \
 		yarn install && \
 		yarn lint \
+	'
+
+.PHONY: clean-js
+clean-js:
+	$(JS_DOCKER_CMD) sh -c ' \
+		rm -rf \
+			v2/brigadier/dist \
+			v2/brigadier/node_modules \
+			v2/brigadier-polyfill/dist \
+			v2/brigadier-polyfill/node_modules \
+			v2/worker/dist \
+			v2/worker/node_modules \
 	'
 
 .PHONY: test-unit-js
@@ -146,7 +161,8 @@ test-unit-js:
 		cd v2/brigadier && \
 		yarn install && \
 		yarn test && \
-		cd ../worker && \
+		yarn build && \
+		cd ../brigadier-polyfill && \
 		yarn install && \
 		yarn test \
 	'

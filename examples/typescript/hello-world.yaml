@@ -14,3 +14,5 @@ spec:
         events.on("github.com/brigadecore/brigade/cli", "exec", () => {
           console.log("Hello, World!")
         })
+
+        events.process()

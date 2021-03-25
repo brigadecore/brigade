@@ -22,3 +22,5 @@ spec:
         events.on("github.com/brigadecore/brigade/cli", "exec", () => {
           console.log(colors.green("It's not easy being green."));
         });
+
+        events.process();
