@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -14,9 +15,10 @@ import (
 )
 
 type EventsEndpoints struct {
-	AuthFilter        restmachinery.Filter
-	EventSchemaLoader gojsonschema.JSONLoader
-	Service           core.EventsService
+	AuthFilter              restmachinery.Filter
+	EventSchemaLoader       gojsonschema.JSONLoader
+	SourceStateSchemaLoader gojsonschema.JSONLoader
+	Service                 core.EventsService
 }
 
 func (e *EventsEndpoints) Register(router *mux.Router) {
@@ -37,6 +39,12 @@ func (e *EventsEndpoints) Register(router *mux.Router) {
 		"/v2/events/{id}",
 		e.AuthFilter.Decorate(e.get),
 	).Methods(http.MethodGet)
+
+	// Update event's source state
+	router.HandleFunc(
+		"/v2/events/{id}/source-state",
+		e.AuthFilter.Decorate(e.updateSourceState),
+	).Methods(http.MethodPut)
 
 	// Cancel event
 	router.HandleFunc(
@@ -80,8 +88,13 @@ func (e *EventsEndpoints) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *EventsEndpoints) list(w http.ResponseWriter, r *http.Request) {
-	selector := core.EventsSelector{
-		ProjectID: r.URL.Query().Get("projectID"),
+	selector, err := eventsSelectorFromURLQuery(r.URL.Query())
+	if err != nil {
+		restmachinery.WriteAPIResponse(
+			w,
+			http.StatusBadRequest,
+			err,
+		)
 	}
 	opts := meta.ListOptions{
 		Continue: r.URL.Query().Get("continue"),
@@ -101,15 +114,6 @@ func (e *EventsEndpoints) list(w http.ResponseWriter, r *http.Request) {
 				},
 			)
 			return
-		}
-	}
-
-	workerPhasesStr := r.URL.Query().Get("workerPhases")
-	if workerPhasesStr != "" {
-		workerPhaseStrs := strings.Split(workerPhasesStr, ",")
-		selector.WorkerPhases = make([]core.WorkerPhase, len(workerPhaseStrs))
-		for i, workerPhaseStr := range workerPhaseStrs {
-			selector.WorkerPhases[i] = core.WorkerPhase(workerPhaseStr)
 		}
 	}
 	restmachinery.ServeRequest(
@@ -137,6 +141,30 @@ func (e *EventsEndpoints) get(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+func (e *EventsEndpoints) updateSourceState(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	sourceState := core.SourceState{}
+	restmachinery.ServeRequest(
+		restmachinery.InboundRequest{
+			W:                   w,
+			R:                   r,
+			ReqBodySchemaLoader: e.SourceStateSchemaLoader,
+			ReqBodyObj:          &sourceState,
+			EndpointLogic: func() (interface{}, error) {
+				return nil,
+					e.Service.UpdateSourceState(
+						r.Context(),
+						mux.Vars(r)["id"],
+						sourceState,
+					)
+			},
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
 func (e *EventsEndpoints) cancel(w http.ResponseWriter, r *http.Request) {
 	restmachinery.ServeRequest(
 		restmachinery.InboundRequest{
@@ -154,16 +182,13 @@ func (e *EventsEndpoints) cancelMany(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	selector := core.EventsSelector{
-		ProjectID: r.URL.Query().Get("projectID"),
-	}
-	workerPhasesStr := r.URL.Query().Get("workerPhases")
-	if workerPhasesStr != "" {
-		workerPhaseStrs := strings.Split(workerPhasesStr, ",")
-		selector.WorkerPhases = make([]core.WorkerPhase, len(workerPhaseStrs))
-		for i, workerPhaseStr := range workerPhaseStrs {
-			selector.WorkerPhases[i] = core.WorkerPhase(workerPhaseStr)
-		}
+	selector, err := eventsSelectorFromURLQuery(r.URL.Query())
+	if err != nil {
+		restmachinery.WriteAPIResponse(
+			w,
+			http.StatusBadRequest,
+			err,
+		)
 	}
 	restmachinery.ServeRequest(
 		restmachinery.InboundRequest{
@@ -191,16 +216,13 @@ func (e *EventsEndpoints) delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *EventsEndpoints) deleteMany(w http.ResponseWriter, r *http.Request) {
-	selector := core.EventsSelector{
-		ProjectID: r.URL.Query().Get("projectID"),
-	}
-	workerPhasesStr := r.URL.Query().Get("workerPhases")
-	if workerPhasesStr != "" {
-		workerPhaseStrs := strings.Split(workerPhasesStr, ",")
-		selector.WorkerPhases = make([]core.WorkerPhase, len(workerPhaseStrs))
-		for i, workerPhaseStr := range workerPhaseStrs {
-			selector.WorkerPhases[i] = core.WorkerPhase(workerPhaseStr)
-		}
+	selector, err := eventsSelectorFromURLQuery(r.URL.Query())
+	if err != nil {
+		restmachinery.WriteAPIResponse(
+			w,
+			http.StatusBadRequest,
+			err,
+		)
 	}
 	restmachinery.ServeRequest(
 		restmachinery.InboundRequest{
@@ -212,4 +234,42 @@ func (e *EventsEndpoints) deleteMany(w http.ResponseWriter, r *http.Request) {
 			SuccessCode: http.StatusOK,
 		},
 	)
+}
+
+func eventsSelectorFromURLQuery(
+	queryParams url.Values,
+) (core.EventsSelector, *meta.ErrBadRequest) {
+	selector := core.EventsSelector{}
+	if queryParams == nil {
+		return selector, nil
+	}
+	selector.ProjectID = queryParams.Get("projectID")
+	selector.Source = queryParams.Get("source")
+	sourceStateStr := queryParams.Get("sourceState")
+	if sourceStateStr != "" {
+		sourceStateStrs := strings.Split(sourceStateStr, ",")
+		selector.SourceState = map[string]string{}
+		for _, kvStr := range sourceStateStrs {
+			kvTokens := strings.SplitN(kvStr, "=", 2)
+			if len(kvTokens) != 2 {
+				return selector, &meta.ErrBadRequest{
+					Reason: fmt.Sprintf(
+						`Invalid value %q for "sourceState" query parameter`,
+						sourceStateStr,
+					),
+				}
+			}
+			selector.SourceState[kvTokens[0]] = kvTokens[1]
+		}
+	}
+	selector.Type = queryParams.Get("type")
+	workerPhasesStr := queryParams.Get("workerPhases")
+	if workerPhasesStr != "" {
+		workerPhaseStrs := strings.Split(workerPhasesStr, ",")
+		selector.WorkerPhases = make([]core.WorkerPhase, len(workerPhaseStrs))
+		for i, workerPhaseStr := range workerPhaseStrs {
+			selector.WorkerPhases[i] = core.WorkerPhase(workerPhaseStr)
+		}
+	}
+	return selector, nil
 }

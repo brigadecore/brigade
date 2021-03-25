@@ -243,6 +243,9 @@ func main() {
 					EventSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/event.json",
 					),
+					SourceStateSchemaLoader: gojsonschema.NewReferenceLoader(
+						"file:///brigade/schemas/source-state.json",
+					),
 					Service: eventsService,
 				},
 				&coreREST.JobsEndpoints{

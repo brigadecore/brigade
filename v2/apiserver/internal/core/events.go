@@ -30,7 +30,7 @@ type Event struct {
 	// Projects on the basis of the Source, Type, and Labels fields, then used as
 	// a template to create a discrete Event for each subscribed Project.
 	ProjectID string `json:"projectID,omitempty" bson:"projectID,omitempty"`
-	// Source specifies the source of the event, e.g. what gateway created it.
+	// Source specifies the source of the Event, e.g. what gateway created it.
 	// Gateways should populate this field with a unique string that clearly
 	// identifies themself as the source of the event. The ServiceAccount used by
 	// each gateway can be authorized (by a admin) to only create events having a
@@ -38,6 +38,9 @@ type Event struct {
 	// gateways maliciously creating events that spoof events from another
 	// gateway.
 	Source string `json:"source,omitempty" bson:"source,omitempty"`
+	// SourceState encapsulates opaque, source-specific (e.g. gateway-specific)
+	// state.
+	SourceState *SourceState `json:"sourceState,omitempty" bson:"sourceState,omitempty"` // nolint: lll
 	// Type specifies the exact event that has occurred in the upstream system.
 	// Values are opaque and source-specific.
 	Type string `json:"type,omitempty" bson:"type,omitempty"`
@@ -89,6 +92,15 @@ func (e Event) MarshalJSON() ([]byte, error) {
 	)
 }
 
+// SourceState encapsulates opaque, source-specific (e.g. gateway-specific)
+// state.
+type SourceState struct {
+	// State is a map of arbitrary and opaque key/value pairs that the source of
+	// an Event (e.g. the gateway that created it) can use to store
+	// source-specific state.
+	State map[string]string `json:"state,omitempty" bson:"state,omitempty"`
+}
+
 // GitDetails represents git-specific Event details. These may override
 // Project-level GitConfig.
 type GitDetails struct {
@@ -105,10 +117,19 @@ type GitDetails struct {
 // EventsSelector represents useful filter criteria when selecting multiple
 // Events for API group operations like list, cancel, or delete.
 type EventsSelector struct {
-	// ProjectID specifies that Events belonging to the indicated Project should
-	// be selected.
+	// ProjectID specifies that only Events belonging to the indicated Project
+	// should be selected.
 	ProjectID string
-	// WorkerPhases specifies that Events with their Worker's in any of the
+	// Source specifies that only Events from the indicated source should be
+	// selected.
+	Source string
+	// SourceState specifies that only Events having all of the indicated source
+	// state key/value pairs should be selected.
+	SourceState map[string]string
+	// Type specifies that only Events having the indicated type should be
+	// selected.
+	Type string
+	// WorkerPhases specifies that only Events with their Workers in any of the
 	// indicated phases should be selected.
 	WorkerPhases []WorkerPhase
 }
@@ -211,6 +232,9 @@ type EventsService interface {
 	// If no such event is found, implementations MUST return a *meta.ErrNotFound
 	// error.
 	GetByWorkerToken(context.Context, string) (Event, error)
+	// UpdateSourceState updates source-specific (e.g. gateway-specific) Event
+	// state.
+	UpdateSourceState(context.Context, string, SourceState) error
 	// Cancel cancels a single Event specified by its identifier. If no such event
 	// is found, implementations MUST return a *meta.ErrNotFound error.
 	// Implementations MUST only cancel events whose Workers have not already
@@ -474,6 +498,28 @@ func (e *eventsService) GetByWorkerToken(
 	return event, nil
 }
 
+func (e *eventsService) UpdateSourceState(
+	ctx context.Context,
+	id string,
+	sourceState SourceState,
+) error {
+	event, err := e.eventsStore.Get(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", id)
+	}
+
+	if err = e.authorize(ctx, RoleEventCreator(event.Source)); err != nil {
+		return err
+	}
+
+	err = e.eventsStore.UpdateSourceState(ctx, id, sourceState)
+	return errors.Wrapf(
+		err,
+		"error updating source state of event %q in store",
+		id,
+	)
+}
+
 func (e *eventsService) Cancel(ctx context.Context, id string) error {
 	event, err := e.eventsStore.Get(ctx, id)
 	if err != nil {
@@ -710,6 +756,10 @@ type EventsStore interface {
 	// store by the provided hashed Worker token. If no such Event exists,
 	// implementations MUST return a *meta.ErrNotFound error.
 	GetByHashedWorkerToken(context.Context, string) (Event, error)
+	// UpdateSourceState updates source-specific (e.g. gateway-specific) Event
+	// state. Implementations MAY assume the Event's existence has been
+	// pre-confirmed by the caller.
+	UpdateSourceState(context.Context, string, SourceState) error
 	// Cancel updates the specified Event in the underlying data store to reflect
 	// that it has been canceled. Implementations MAY assume the Event's existence
 	// has been pre-confirmed by the caller. Implementations MUST only cancel

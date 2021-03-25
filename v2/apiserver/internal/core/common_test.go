@@ -57,6 +57,7 @@ type mockEventsStore struct {
 	) (EventList, error)
 	GetFn                    func(context.Context, string) (Event, error)
 	GetByHashedWorkerTokenFn func(context.Context, string) (Event, error)
+	UpdateSourceStateFn      func(context.Context, string, SourceState) error
 	CancelFn                 func(context.Context, string) error
 	CancelManyFn             func(
 		context.Context,
@@ -90,6 +91,14 @@ func (m *mockEventsStore) GetByHashedWorkerToken(
 	hashedToken string,
 ) (Event, error) {
 	return m.GetByHashedWorkerTokenFn(ctx, hashedToken)
+}
+
+func (m *mockEventsStore) UpdateSourceState(
+	ctx context.Context,
+	id string,
+	sourceState SourceState,
+) error {
+	return m.UpdateSourceStateFn(ctx, id, sourceState)
 }
 
 func (m *mockEventsStore) Cancel(ctx context.Context, id string) error {

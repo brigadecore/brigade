@@ -43,6 +43,22 @@
 			"allOf": [{ "$ref": "file:///brigade/schemas/common.json#/definitions/url" }],
 			"description": "The name of the source that is sending the event"
 		},
+		"sourceState": {
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"apiVersion": {
+					"$ref": "file:///brigade/schemas/common.json#/definitions/apiVersion"
+				},
+				"kind": {
+					"$ref": "file:///brigade/schemas/source-state.json#/definitions/kind"
+				},
+				"state": {
+					"$ref": "file:///brigade/schemas/source-state.json#/definitions/stateMap"
+				}
+			},
+			"description": "Source-specific (e.g. gateway-specific) state"
+		},
 		"type": {
 			"allOf": [{ "$ref": "file:///brigade/schemas/common.json#/definitions/label" }],
 			"description": "The type of the event"
@@ -62,7 +78,7 @@
 		},
 		"shortTitle": {
 			"type": "string",
-			"description": "A succint description of the event",
+			"description": "A succinct description of the event",
 			"maxLength": 50
 		},
 		"longTitle": {
