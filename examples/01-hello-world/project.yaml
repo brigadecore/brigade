@@ -3,16 +3,10 @@ apiVersion: brigade.sh/v2-alpha.1
 kind: Project
 metadata:
   id: hello-world
-description: The simplest possible demonstration
+description: The simplest possible example
 spec:
   workerTemplate:
     logLevel: DEBUG
     defaultConfigFiles:
-      brigade.ts: |-
-        import { events } from "@brigadecore/brigadier"
-
-        events.on("brigade.sh/cli", "exec", () => {
-          console.log("Hello, World!")
-        })
-
-        events.process()
+      brigade.js: |
+        console.log("Hello, World!");

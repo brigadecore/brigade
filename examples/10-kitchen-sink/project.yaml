@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/brigadecore/brigade/v2/v2/apiserver/schemas/project.json
+apiVersion: brigade.sh/v2-alpha.1
+kind: Project
+metadata:
+  id: kitchen-sink
+description: A project that demonstrates the kitchen sink!
+spec:
+  workerTemplate:
+    logLevel: DEBUG
+    configFilesDirectory: examples/10-kitchen-sink/.brigade
+    git:
+      cloneURL: https://github.com/brigadecore/brigade.git
+      ref: refs/heads/v2
