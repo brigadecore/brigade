@@ -11,7 +11,7 @@ spec:
       brigade.js: |-
         const { events } = require("@brigadecore/brigadier");
 
-        events.on("github.com/brigadecore/brigade/cli", "exec", () => {
+        events.on("brigade.sh/cli", "exec", () => {
           console.log("Hello, World!");
         });
 

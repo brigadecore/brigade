@@ -19,7 +19,7 @@ spec:
         import { events } from "@brigadecore/brigadier"
         import * as colors from "colors/safe"
 
-        events.on("github.com/brigadecore/brigade/cli", "exec", () => {
+        events.on("brigade.sh/cli", "exec", () => {
           console.log(colors.green("It's not easy being green."))
         })
 

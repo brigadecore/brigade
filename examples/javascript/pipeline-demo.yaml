@@ -11,7 +11,7 @@ spec:
       brigade.js: |-
         const { events, Job } = require("@brigadecore/brigadier");
 
-        events.on("github.com/brigadecore/brigade/cli", "exec", async event => {
+        events.on("brigade.sh/cli", "exec", async event => {
           let fooJob = new Job("foo", "debian:latest", event);
           fooJob.primaryContainer.command = ["echo"];
           fooJob.primaryContainer.arguments = ["foo"];
