@@ -1,4 +1,8 @@
 .git
 .gocache
-v2/brigadier/node_modules
-v2/worker/node_modules
+v2/brigadier/dist/
+v2/brigadier/node_modules/
+v2/brigadier-polyfill/dist/
+v2/brigadier-polyfill/node_modules/
+v2/worker/dist/
+v2/worker/node_modules/
