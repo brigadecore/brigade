@@ -22,3 +22,5 @@ spec:
           barJob.primaryContainer.arguments = ["bar"];
           await barJob.run();
         });
+
+        events.process();

@@ -33,3 +33,5 @@ spec:
             new SerialGroup(jobA, jobB)
           ).run();
         })
+
+        events.process();

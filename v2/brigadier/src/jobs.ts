@@ -78,6 +78,7 @@ export class Job implements Runnable {
    * rejects. Sidecars do not affect success or failure of the job.
    */
   public run(): Promise<void> {
+    console.log(`The Brigade worker would run job ${this.name} here.`)
     return Promise.resolve()
   }
 
@@ -90,6 +91,7 @@ export class Job implements Runnable {
    * real Brigade runtime environment, it returns the actual container logs.
    */
   public logs(): Promise<string> {
+    console.log(`The Brigade worker would returns logs from job ${this.name} here.`)
     return Promise.resolve("skipped logs")
   }
 
