@@ -384,3 +384,49 @@ func TestEventsClientDeleteMany(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, testResult, result)
 }
+
+func TestEventsSelectorToQueryParams(t *testing.T) {
+	testCases := []struct {
+		name       string
+		selector   *EventsSelector
+		assertions func(map[string]string)
+	}{
+		{
+			name: "nil selector",
+			assertions: func(queryParams map[string]string) {
+				require.Nil(t, queryParams)
+			},
+		},
+		{
+			name: "base case",
+			selector: &EventsSelector{
+				ProjectID: "blue-book",
+				Source:    "brigade.sh/cli",
+				SourceState: map[string]string{
+					"foo": "bar",
+					"bat": "baz",
+				},
+				Type:         "exec",
+				WorkerPhases: []WorkerPhase{WorkerPhasePending, WorkerPhaseStarting},
+			},
+			assertions: func(queryParams map[string]string) {
+				require.Equal(
+					t,
+					map[string]string{
+						"projectID":    "blue-book",
+						"source":       "brigade.sh/cli",
+						"sourceState":  "foo=bar,bat=baz",
+						"type":         "exec",
+						"workerPhases": "PENDING,STARTING",
+					},
+					queryParams,
+				)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.assertions(eventsSelectorToQueryParams(testCase.selector))
+		})
+	}
+}
