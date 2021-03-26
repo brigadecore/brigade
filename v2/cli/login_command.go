@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/bacongobbler/browser"
@@ -9,6 +10,7 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 var loginCommand = &cli.Command{
@@ -62,6 +64,16 @@ func login(c *cli.Context) error {
 	var tokenStr, authURL string
 
 	if rootLogin {
+
+		if password == "" &&
+			(c.Bool(flagNonInteractive) ||
+				!terminal.IsTerminal(int(os.Stdout.Fd()))) {
+			return errors.New(
+				"--root and --non-interactive flags together require the --password " +
+					"flag to also be used",
+			)
+		}
+
 		for {
 			if password != "" {
 				break

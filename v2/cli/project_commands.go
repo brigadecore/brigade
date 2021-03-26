@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/crypto/ssh/terminal"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
@@ -76,6 +74,12 @@ var projectCommand = &cli.Command{
 			Usage:   "List projects",
 			Flags: []cli.Flag{
 				cliFlagOutput,
+				&cli.StringFlag{
+					Name: flagContinue,
+					Usage: "Advanced-- passes an opaque value obtained from a " +
+						"previous command back to the server to access the next page " +
+						"of results",
+				},
 			},
 			Action: projectList,
 		},
@@ -154,7 +158,9 @@ func projectList(c *cli.Context) error {
 		return err
 	}
 
-	opts := meta.ListOptions{}
+	opts := meta.ListOptions{
+		Continue: c.String(flagContinue),
+	}
 
 	for {
 		projects, err :=
@@ -202,17 +208,12 @@ func projectList(c *cli.Context) error {
 			fmt.Println(string(prettyJSON))
 		}
 
-		if projects.RemainingItemCount < 1 || projects.Continue == "" {
-			break
-		}
-
-		// Exit after one page of output if this isn't a terminal
-		if !terminal.IsTerminal(int(os.Stdout.Fd())) {
-			break
-		}
-
 		if shouldContinue, err :=
-			shouldContinue(projects.RemainingItemCount); err != nil {
+			shouldContinue(
+				c,
+				projects.RemainingItemCount,
+				projects.Continue,
+			); err != nil {
 			return err
 		} else if !shouldContinue {
 			break
