@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
@@ -12,7 +11,6 @@ import (
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 var secretsCommand = &cli.Command{
@@ -26,6 +24,12 @@ var secretsCommand = &cli.Command{
 			Usage:   "List project secrets; values are always redacted",
 			Flags: []cli.Flag{
 				cliFlagOutput,
+				&cli.StringFlag{
+					Name: flagContinue,
+					Usage: "Advanced-- passes an opaque value obtained from a " +
+						"previous command back to the server to access the next page " +
+						"of results",
+				},
 				&cli.StringFlag{
 					Name:     flagID,
 					Aliases:  []string{"i", flagProject, "p"},
@@ -90,7 +94,9 @@ func secretsList(c *cli.Context) error {
 		return err
 	}
 
-	opts := meta.ListOptions{}
+	opts := meta.ListOptions{
+		Continue: c.String(flagContinue),
+	}
 
 	for {
 		secrets, err :=
@@ -129,17 +135,12 @@ func secretsList(c *cli.Context) error {
 			fmt.Println(string(prettyJSON))
 		}
 
-		if secrets.RemainingItemCount < 1 || secrets.Continue == "" {
-			break
-		}
-
-		// Exit after one page of output if this isn't a terminal
-		if !terminal.IsTerminal(int(os.Stdout.Fd())) {
-			break
-		}
-
 		if shouldContinue, err :=
-			shouldContinue(secrets.RemainingItemCount); err != nil {
+			shouldContinue(
+				c,
+				secrets.RemainingItemCount,
+				secrets.Continue,
+			); err != nil {
 			return err
 		} else if !shouldContinue {
 			break
