@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
-	"golang.org/x/crypto/ssh/terminal"
 	"k8s.io/apimachinery/pkg/util/duration"
 
 	"github.com/pkg/errors"
@@ -64,6 +62,12 @@ var serviceAccountCommand = &cli.Command{
 			Usage:   "List service accounts",
 			Flags: []cli.Flag{
 				cliFlagOutput,
+				&cli.StringFlag{
+					Name: flagContinue,
+					Usage: "Advanced-- passes an opaque value obtained from a " +
+						"previous command back to the server to access the next page " +
+						"of results",
+				},
 			},
 			Action: serviceAccountList,
 		},
@@ -140,7 +144,9 @@ func serviceAccountList(c *cli.Context) error {
 		return err
 	}
 
-	opts := meta.ListOptions{}
+	opts := meta.ListOptions{
+		Continue: c.String(flagContinue),
+	}
 
 	for {
 		serviceAccounts, err := client.Authn().ServiceAccounts().List(
@@ -192,18 +198,12 @@ func serviceAccountList(c *cli.Context) error {
 			fmt.Println(string(prettyJSON))
 		}
 
-		if serviceAccounts.RemainingItemCount < 1 ||
-			serviceAccounts.Continue == "" {
-			break
-		}
-
-		// Exit after one page of output if this isn't a terminal
-		if !terminal.IsTerminal(int(os.Stdout.Fd())) {
-			break
-		}
-
 		if shouldContinue, err :=
-			shouldContinue(serviceAccounts.RemainingItemCount); err != nil {
+			shouldContinue(
+				c,
+				serviceAccounts.RemainingItemCount,
+				serviceAccounts.Continue,
+			); err != nil {
 			return err
 		} else if !shouldContinue {
 			break

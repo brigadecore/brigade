@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 	"time"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/crypto/ssh/terminal"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
@@ -246,6 +244,12 @@ var eventCommand = &cli.Command{
 						"CANCELED phase; mutually exclusive with --terminal and " +
 						"--non-terminal",
 				},
+				&cli.StringFlag{
+					Name: flagContinue,
+					Usage: "Advanced-- passes an opaque value obtained from a " +
+						"previous command back to the server to access the next page " +
+						"of results",
+				},
 				&cli.BoolFlag{
 					Name: flagFailed,
 					Usage: "If set, will retrieve events with their worker in a FAILED " +
@@ -430,7 +434,9 @@ func eventList(c *cli.Context) error {
 		ProjectID:    projectID,
 		WorkerPhases: workerPhases,
 	}
-	opts := meta.ListOptions{}
+	opts := meta.ListOptions{
+		Continue: c.String(flagContinue),
+	}
 
 	for {
 		events, err := client.Core().Events().List(c.Context, &selector, &opts)
@@ -480,17 +486,12 @@ func eventList(c *cli.Context) error {
 			fmt.Println(string(prettyJSON))
 		}
 
-		if events.RemainingItemCount < 1 || events.Continue == "" {
-			break
-		}
-
-		// Exit after one page of output if this isn't a terminal
-		if !terminal.IsTerminal(int(os.Stdout.Fd())) {
-			break
-		}
-
 		if shouldContinue, err :=
-			shouldContinue(events.RemainingItemCount); err != nil {
+			shouldContinue(
+				c,
+				events.RemainingItemCount,
+				events.Continue,
+			); err != nil {
 			return err
 		} else if !shouldContinue {
 			break

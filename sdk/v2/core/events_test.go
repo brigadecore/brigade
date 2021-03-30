@@ -410,12 +410,16 @@ func TestEventsSelectorToQueryParams(t *testing.T) {
 				WorkerPhases: []WorkerPhase{WorkerPhasePending, WorkerPhaseStarting},
 			},
 			assertions: func(queryParams map[string]string) {
+				sourceState, ok := queryParams["sourceState"]
+				require.True(t, ok)
+				require.Contains(t, sourceState, "foo=bar")
+				require.Contains(t, sourceState, "bat=baz")
+				delete(queryParams, "sourceState")
 				require.Equal(
 					t,
 					map[string]string{
 						"projectID":    "blue-book",
 						"source":       "brigade.sh/cli",
-						"sourceState":  "foo=bar,bat=baz",
 						"type":         "exec",
 						"workerPhases": "PENDING,STARTING",
 					},

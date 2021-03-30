@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/brigadecore/brigade/sdk/v2/meta"
@@ -11,7 +10,6 @@ import (
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 var userCommand = &cli.Command{
@@ -39,6 +37,12 @@ var userCommand = &cli.Command{
 			Usage:   "List users",
 			Flags: []cli.Flag{
 				cliFlagOutput,
+				&cli.StringFlag{
+					Name: flagContinue,
+					Usage: "Advanced-- passes an opaque value obtained from a " +
+						"previous command back to the server to access the next page " +
+						"of results",
+				},
 			},
 			Action: userList,
 		},
@@ -83,7 +87,9 @@ func userList(c *cli.Context) error {
 		return err
 	}
 
-	opts := meta.ListOptions{}
+	opts := meta.ListOptions{
+		Continue: c.String(flagContinue),
+	}
 
 	for {
 		users, err :=
@@ -132,17 +138,12 @@ func userList(c *cli.Context) error {
 			fmt.Println(string(prettyJSON))
 		}
 
-		if users.RemainingItemCount < 1 || users.Continue == "" {
-			break
-		}
-
-		// Exit after one page of output if this isn't a terminal
-		if !terminal.IsTerminal(int(os.Stdout.Fd())) {
-			break
-		}
-
 		if shouldContinue, err :=
-			shouldContinue(users.RemainingItemCount); err != nil {
+			shouldContinue(
+				c,
+				users.RemainingItemCount,
+				users.Continue,
+			); err != nil {
 			return err
 		} else if !shouldContinue {
 			break
