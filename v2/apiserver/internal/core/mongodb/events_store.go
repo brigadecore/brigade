@@ -81,6 +81,12 @@ func (e *eventsStore) List(
 	if selector.Source != "" {
 		criteria["source"] = selector.Source
 	}
+	for k, v := range selector.Qualifiers {
+		criteria[fmt.Sprintf("qualifiers.%s", k)] = v
+	}
+	for k, v := range selector.Labels {
+		criteria[fmt.Sprintf("labels.%s", k)] = v
+	}
 	for k, v := range selector.SourceState {
 		criteria[fmt.Sprintf("sourceState.state.%s", k)] = v
 	}

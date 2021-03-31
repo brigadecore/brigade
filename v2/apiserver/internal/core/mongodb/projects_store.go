@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
@@ -120,15 +121,81 @@ func (p *projectsStore) ListSubscribers(
 	event core.Event,
 ) (core.ProjectList, error) {
 	projects := core.ProjectList{}
-	subscriptionMatchCriteria := bson.M{
+	// Finding all Projects that are subscribed to a given Event is rather tricky.
+	// Matching on the basis of source, type, and qualifiers is easy enough, but
+	// LABELS account for the difficulty. If we were selecting Events, it's easy
+	// enough to say "select all events that have (at least) these labels," but
+	// when selecting PROJECTS, we're effectively working in reverse. We want to
+	// select all Projects having an EventSubscription that matches the Event's
+	// source, type, and qualifiers, AND doesn't have any labels that PRECLUDE a
+	// match. The only practical way of expressing those criteria in a MongoDB
+	// query is to provide a JavaScript function as a "where" clause. That
+	// function contains the logic for determining whether a SINGLE document
+	// (Project) is a match for the Event. For a large number of Projects, such a
+	// query is wildly inefficient, since the function needs to be applied to
+	// every single document (Project). To compensate, we build PRELIMINARY match
+	// criteria based on matching source, type, and qualifiers. MongoDB sensibly
+	// applies these criteria FIRST, then iterates over the preliminary results
+	// only, applying the provided "where" function to each in turn.
+	preliminaryMatchCriteria := bson.M{
 		"source": event.Source,
 		"types": bson.M{
 			"$in": []string{event.Type, "*"},
 		},
 	}
-	if len(event.Labels) > 0 {
-		subscriptionMatchCriteria["labels"] = event.Labels
+	if len(event.Qualifiers) > 0 {
+		preliminaryMatchCriteria["qualifiers"] = event.Qualifiers
 	}
+	eventJSON, err := json.Marshal(
+		struct {
+			Source     string            `json:"source"`
+			Type       string            `json:"type"`
+			Qualifiers core.Qualifiers   `json:"qualifiers"`
+			Labels     map[string]string `json:"labels"`
+		}{
+			Source:     event.Source,
+			Type:       event.Type,
+			Qualifiers: event.Qualifiers,
+			Labels:     event.Labels,
+		},
+	)
+	// nolint: lll
+	where := fmt.Sprintf(`
+function() {
+	const project = this;
+	if (!project.spec.eventSubscriptions) {
+		return false;
+	}
+	const event = %s;
+	event.qualifiers = event.qualifiers || {};
+	event.labels = event.labels || {};
+	loop:
+	for (const subscription of project.spec.eventSubscriptions) {
+		subscription.qualifiers = subscription.qualifiers || {};
+		subscription.labels = subscription.labels || {};
+		if (subscription.source != event.source) continue;
+		if (!subscription.types.includes(event.type) && !subscription.types.includes("*")) continue; 
+		for (const key in event.qualifiers) {
+			if (subscription.qualifiers[key] != event.qualifiers[key]) continue loop;
+		}
+		for (const key in subscription.qualifiers) {
+			if (subscription.qualifiers[key] != event.qualifiers[key]) continue loop;
+		}
+		const eventLabelKeys = Object.keys(event.labels);
+		for (const labelKey in subscription.labels) {
+			if (!eventLabelKeys.includes(labelKey)) {
+				continue loop;
+			}
+			if (subscription.labels[labelKey] != event.labels[labelKey]) {
+				continue loop;
+			}
+		}
+		return true;
+	}
+	return false;
+}`,
+		eventJSON,
+	)
 	findOptions := options.Find()
 	findOptions.SetSort(
 		// bson.D preserves order so we use this wherever we sort so that if
@@ -142,8 +209,9 @@ func (p *projectsStore) ListSubscribers(
 		ctx,
 		bson.M{
 			"spec.eventSubscriptions": bson.M{
-				"$elemMatch": subscriptionMatchCriteria,
+				"$elemMatch": preliminaryMatchCriteria,
 			},
+			"$where": where,
 		},
 		findOptions,
 	)

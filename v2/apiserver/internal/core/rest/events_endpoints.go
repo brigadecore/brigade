@@ -245,6 +245,40 @@ func eventsSelectorFromURLQuery(
 	}
 	selector.ProjectID = queryParams.Get("projectID")
 	selector.Source = queryParams.Get("source")
+	qualifiersStr := queryParams.Get("qualifiers")
+	if qualifiersStr != "" {
+		qualifiersStrs := strings.Split(qualifiersStr, ",")
+		selector.Qualifiers = core.Qualifiers{}
+		for _, kvStr := range qualifiersStrs {
+			kvTokens := strings.SplitN(kvStr, "=", 2)
+			if len(kvTokens) != 2 {
+				return selector, &meta.ErrBadRequest{
+					Reason: fmt.Sprintf(
+						`Invalid value %q for "qualifiers" query parameter`,
+						qualifiersStr,
+					),
+				}
+			}
+			selector.Qualifiers[kvTokens[0]] = kvTokens[1]
+		}
+	}
+	labelsStr := queryParams.Get("labels")
+	if labelsStr != "" {
+		labelsStrs := strings.Split(labelsStr, ",")
+		selector.Labels = map[string]string{}
+		for _, kvStr := range labelsStrs {
+			kvTokens := strings.SplitN(kvStr, "=", 2)
+			if len(kvTokens) != 2 {
+				return selector, &meta.ErrBadRequest{
+					Reason: fmt.Sprintf(
+						`Invalid value %q for "labels" query parameter`,
+						labelsStr,
+					),
+				}
+			}
+			selector.Labels[kvTokens[0]] = kvTokens[1]
+		}
+	}
 	sourceStateStr := queryParams.Get("sourceState")
 	if sourceStateStr != "" {
 		sourceStateStrs := strings.Split(sourceStateStr, ",")

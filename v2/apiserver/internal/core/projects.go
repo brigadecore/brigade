@@ -109,19 +109,33 @@ type EventSubscription struct {
 	// "*" may be utilized to denote that ALL events originating from the
 	// specified Source are of interest.
 	Types []string `json:"types,omitempty" bson:"types,omitempty"`
-	// Labels defines an EXACT set of key/value pairs with which Events of
-	// interest must be labeled. An Event having additional labels not included in
-	// the subscription does NOT match that subscription. Likewise a subscription
-	// having additional labels not included in the Event does NOT match that
-	// Event. This strict requirement prevents accidental subscriptions. For
-	// instance, consider an Event gateway brokering events from GitHub. If Events
-	// (per that gateway's own documentation) were labeled `repo=<repository
-	// name>`, no would-be subscriber to Events from that gateway will succeed
-	// unless their subscription includes that matching label. This effectively
-	// PREVENTS a scenario where a subscriber who has forgotten to apply
-	// applicable labels accidentally subscribes to ALL events from the GitHub
-	// gateway, regardless of the repository of origin.
-	Labels Labels `json:"labels,omitempty" bson:"labels,omitempty"`
+	// Qualifiers specifies an EXACT set of key/value pairs with which an Event
+	// MUST also be qualified for a Project to be considered subscribed. To
+	// demonstrate the usefulness of this, consider any event from a hypothetical
+	// GitHub gateway. If, by design, that gateway does not intend for any Project
+	// to subscribe to ALL Events (i.e. regardless of which repository they
+	// originated from), then that gateway can QUALIFY Events it emits into
+	// Brigade's event bus with repo=<repository name>. Projects wishing to
+	// subscribe to Events from the GitHub gateway MUST include that Qualifier in
+	// their EventSubscription. Note that the Qualifiers field's "MUST match"
+	// subscription semantics differ from the Labels field's "MAY match"
+	// subscription semantics.
+	Qualifiers Qualifiers `json:"qualifiers,omitempty" bson:"qualifiers,omitempty"` // nolint: lll
+	// Labels optionally specifies filter criteria as key/value pairs with which
+	// an Event MUST also be labeled for a Project to be considered subscribed. If
+	// the Event has ADDITIONAL labels, not mentioned by this EventSubscription,
+	// these do not preclude a match. To demonstrate the usefulness of this,
+	// consider any event from a hypothetical Slack gateway. If, by design, that
+	// gateway intends for Projects to select between subscribing to ALL Events or
+	// ONLY events originating from a specific channel, then that gateway can
+	// LABEL Events it emits into Brigade's event bus with channel=<channel name>.
+	// Projects wishing to subscribe to ALL Events from the Slack gateway MAY omit
+	// that Label from their EventSubscription, while Projects wishing to
+	// subscribe to only Events originating from a specific channel MAY include
+	// that Label in their EventSubscription. Note that the Labels field's "MAY
+	// match" subscription semantics differ from the Qualifiers field's "MUST
+	// match" subscription semantics.
+	Labels map[string]string `json:"labels,omitempty" bson:"labels,omitempty"`
 }
 
 // KubernetesDetails represents Kubernetes-specific configuration.

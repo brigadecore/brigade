@@ -63,6 +63,19 @@
 			"allOf": [{ "$ref": "common.json#/definitions/label" }],
 			"description": "The type of the event"
 		},
+		"qualifiers": {
+			"type": [
+				"object",
+				"null"
+			],
+			"additionalProperties": true,
+			"patternProperties": {
+				"^[a-z][a-z\\d-]*[a-z\\d]$": {
+					"$ref": "common.json#/definitions/label"
+				}
+			},
+			"description": "Qualifiers to help Brigade route the event to subscribed projects"
+		},
 		"labels": {
 			"type": [
 				"object",
@@ -70,7 +83,7 @@
 			],
 			"additionalProperties": true,
 			"patternProperties": {
-				"^[\\w:/\\-\\.\\?=\\*]*$": {
+				"^[a-z][a-z\\d-]*[a-z\\d]$": {
 					"$ref": "common.json#/definitions/label"
 				}
 			},

@@ -385,14 +385,16 @@ func (s *substrate) ScheduleWorker(
 	// Create a secret with event details
 	eventJSON, err := json.MarshalIndent(
 		struct {
-			ID         string `json:"id"`
-			Project    proj   `json:"project"`
-			Source     string `json:"source"`
-			Type       string `json:"type"`
-			ShortTitle string `json:"shortTitle"`
-			LongTitle  string `json:"longTitle"`
-			Payload    string `json:"payload"`
-			Worker     worker `json:"worker"`
+			ID         string            `json:"id"`
+			Project    proj              `json:"project"`
+			Source     string            `json:"source"`
+			Type       string            `json:"type"`
+			Qualifiers core.Qualifiers   `json:"qualifiers"`
+			Labels     map[string]string `json:"labels"`
+			ShortTitle string            `json:"shortTitle"`
+			LongTitle  string            `json:"longTitle"`
+			Payload    string            `json:"payload"`
+			Worker     worker            `json:"worker"`
 		}{
 			ID: event.ID,
 			Project: proj{
@@ -402,6 +404,8 @@ func (s *substrate) ScheduleWorker(
 			},
 			Source:     event.Source,
 			Type:       event.Type,
+			Qualifiers: event.Qualifiers,
+			Labels:     event.Labels,
 			ShortTitle: event.ShortTitle,
 			LongTitle:  event.LongTitle,
 			Payload:    event.Payload,

@@ -209,7 +209,7 @@ func TestProjectsStoreListSubscribers(t *testing.T) {
 	testEvent := core.Event{
 		Source: "github.com/krancour/fake-gateway",
 		Type:   "push",
-		Labels: core.Labels{
+		Qualifiers: core.Qualifiers{
 			"foo": "bar",
 			"bat": "baz",
 		},

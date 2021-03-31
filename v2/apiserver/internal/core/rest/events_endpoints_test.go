@@ -23,6 +23,24 @@ func TestEventsSelectorFromURLQuery(t *testing.T) {
 			},
 		},
 		{
+			name: "invalid qualifiers",
+			queryParams: url.Values{
+				"qualifiers": []string{"key-value"},
+			},
+			assertions: func(selector core.EventsSelector, err *meta.ErrBadRequest) {
+				require.Contains(t, err.Error(), `Invalid value "key-value"`)
+			},
+		},
+		{
+			name: "invalid labels",
+			queryParams: url.Values{
+				"labels": []string{"key-value"},
+			},
+			assertions: func(selector core.EventsSelector, err *meta.ErrBadRequest) {
+				require.Contains(t, err.Error(), `Invalid value "key-value"`)
+			},
+		},
+		{
 			name: "invalid source state",
 			queryParams: url.Values{
 				"sourceState": []string{"key-value"},
@@ -36,7 +54,9 @@ func TestEventsSelectorFromURLQuery(t *testing.T) {
 			queryParams: url.Values{
 				"projectID":    []string{"blue-book"},
 				"source":       []string{"brigade.sh/cli"},
-				"sourceState":  []string{"foo=bar,bat=baz"},
+				"qualifiers":   []string{"foo=bar,bat=baz"},
+				"labels":       []string{"abc=easy-as,123=do-rei-mei"},
+				"sourceState":  []string{"baby=you,and=me-girl"},
 				"type":         []string{"exec"},
 				"workerPhases": []string{"PENDING,STARTING"},
 			},
@@ -47,9 +67,17 @@ func TestEventsSelectorFromURLQuery(t *testing.T) {
 					core.EventsSelector{
 						ProjectID: "blue-book",
 						Source:    "brigade.sh/cli",
-						SourceState: map[string]string{
+						Qualifiers: core.Qualifiers{
 							"foo": "bar",
 							"bat": "baz",
+						},
+						Labels: map[string]string{
+							"abc": "easy-as",
+							"123": "do-rei-mei",
+						},
+						SourceState: map[string]string{
+							"baby": "you",
+							"and":  "me-girl",
 						},
 						Type: "exec",
 						WorkerPhases: []core.WorkerPhase{
