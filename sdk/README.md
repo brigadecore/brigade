@@ -1,6 +1,6 @@
 # Brigade 2 SDK for Go
 
-The Brigade 2 SDK for Go provides Go language bindings for the new Brigade 2
+The [Brigade 2 SDK for Go][godoc] provides Go language bindings for the new Brigade 2
 API.
 
 This SDK remains under development, but has been made publicly available sooner
@@ -44,9 +44,9 @@ level, it's broken into:
 
 | Function | Returns | Purpose |
 |----------|---------|---------|
-| `Authn()`| `authn.APIClient` | Manages `User`s, `ServiceAccount`s. |
-| `Authz()`| `authz.APIClient` | Grants/revokes system-level `Roles` to/from `User` and `ServiceAccount`s. |
-| `Core()` | `core.APIClient` | Manages "core" Brigade components such as `Project`s and `Event`s. |
+| `Authn()`| [authn.APIClient] | Manages `User`s, `ServiceAccount`s. |
+| `Authz()`| [authz.APIClient] | Grants/revokes system-level `Roles` to/from `User` and `ServiceAccount`s. |
+| `Core()` | [core.APIClient] | Manages "core" Brigade components such as `Project`s and `Event`s. |
 
 Each of these, in turn, provides access to even more specialized clients.
 
@@ -76,7 +76,12 @@ if err != nil {
 }
 ```
 
-The SDK's godocs are quite thorough. Please explore those for further details.
+The SDK's [godoc] are quite thorough. Please explore those for further details.
+
+[godoc]: https://pkg.go.dev/github.com/brigadecore/brigade/sdk/v2
+[authn.APIClient]: https://pkg.go.dev/github.com/brigadecore/brigade/sdk/v2/authn#APIClient
+[authz.APIClient]: https://pkg.go.dev/github.com/brigadecore/brigade/sdk/v2/authz#APIClient
+[core.APIClient]: https://pkg.go.dev/github.com/brigadecore/brigade/sdk/v2/core#APIClient
 
 ## Using with Brigade 2
 
