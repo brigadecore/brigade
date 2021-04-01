@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "github.com/brigadecore/brigade/v2/project.schema.json",
+	"$id": "project.json",
 
 	"definitions": {
 
@@ -57,7 +57,7 @@
 				"source": {
 					"allOf": [
 						{
-							"$ref": "file:///brigade/schemas/common.json#/definitions/url"
+							"$ref": "common.json#/definitions/url"
 						}
 					],
 					"description": "The name of the event source"
@@ -67,7 +67,7 @@
 					"description": "Types of events from the source",
 					"minItems": 1,
 					"items": {
-						"$ref": "file:///brigade/schemas/common.json#/definitions/label"
+						"$ref": "common.json#/definitions/label"
 					}
 				},
 				"labels": {
@@ -78,7 +78,7 @@
 					"additionalProperties": true,
 					"patternProperties": {
 						"^[\\w:/\\-\\.\\?=\\*]*$": {
-							"$ref": "file:///brigade/schemas/common.json#/definitions/label"
+							"$ref": "common.json#/definitions/label"
 						}
 					}
 				}
@@ -161,7 +161,7 @@
 					],
 					"description": "Kubernetes secrets that can be used as image pull secrets for job images",
 					"items": {
-						"$ref": "file:///brigade/schemas/common.json#/definitions/identifier"
+						"$ref": "common.json#/definitions/identifier"
 					}
 				}
 			}
@@ -179,7 +179,7 @@
 					],
 					"description": "Kubernetes secrets that can be used as image pull secrets for the worker's images",
 					"items": {
-						"$ref": "file:///brigade/schemas/common.json#/definitions/identifier"
+						"$ref": "common.json#/definitions/identifier"
 					}
 				}
 			}
@@ -208,7 +208,7 @@
 				},
 				"git": {
 					"allOf": [
-						{ "$ref": "file:///brigade/schemas/common.json#/definitions/gitConfig" },
+						{ "$ref": "common.json#/definitions/gitConfig" },
 						{
 							"additionalProperties": {
 								"initSubmodules": {
@@ -261,7 +261,7 @@
 	"additionalProperties": false,
 	"properties": {
 		"apiVersion": {
-			"$ref": "file:///brigade/schemas/common.json#/definitions/apiVersion"
+			"$ref": "common.json#/definitions/apiVersion"
 		},
 		"kind": {
 			"$ref": "#/definitions/kind"
@@ -272,10 +272,10 @@
 		"description": {
 			"oneOf": [
 				{
-					"$ref": "file:///brigade/schemas/common.json#/definitions/empty"
+					"$ref": "common.json#/definitions/empty"
 				},
 				{
-					"$ref": "file:///brigade/schemas/common.json#/definitions/description"
+					"$ref": "common.json#/definitions/description"
 				}
 			],
 			"description": "A brief description of the project"

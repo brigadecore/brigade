@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "github.com/brigadecore/brigade/v2/job-status.schema.json",
+	"$id": "job-status.json",
 
 	"definitions": {
 
@@ -18,7 +18,7 @@
 	"additionalProperties": false,
 	"properties": {
 		"apiVersion": {
-			"$ref": "file:///brigade/schemas/common.json#/definitions/apiVersion"
+			"$ref": "common.json#/definitions/apiVersion"
 		},
 		"kind": {
 			"$ref": "#/definitions/kind"
