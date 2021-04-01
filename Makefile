@@ -301,6 +301,10 @@ publish-cli: build-cli
 # Targets to facilitate hacking on Brigade.                                    #
 ################################################################################
 
+.PHONY: hack-new-kind-cluster
+hack-new-kind-cluster:
+	hack/kind/new-cluster.sh
+
 .PHONY: hack-build-images
 hack-build-images: hack-build-apiserver hack-build-scheduler hack-build-observer hack-build-logger-linux hack-build-git-initializer hack-build-worker
 
