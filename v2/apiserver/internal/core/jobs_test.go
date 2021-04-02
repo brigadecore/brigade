@@ -898,9 +898,56 @@ func TestJobsServiceUpdateStatus(t *testing.T) {
 			},
 		},
 		{
+			name: "error retrieving event from store",
+			service: &jobsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "job not found",
+			service: &jobsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), `Job "italian" not found`)
+			},
+		},
+		{
 			name: "error updating job in store",
 			service: &jobsService{
 				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: []Job{
+									{
+										Name: testJobName,
+										Status: &JobStatus{
+											Phase: JobPhasePending,
+										},
+									},
+								},
+							},
+						}, nil
+					},
+				},
 				jobsStore: &mockJobsStore{
 					UpdateStatusFn: func(
 						context.Context,
@@ -919,9 +966,64 @@ func TestJobsServiceUpdateStatus(t *testing.T) {
 			},
 		},
 		{
+			name: "job's phase already terminal",
+			service: &jobsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: []Job{
+									{
+										Name: testJobName,
+										Status: &JobStatus{
+											Phase: JobPhaseCanceled,
+										},
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					UpdateStatusFn: func(
+						context.Context,
+						string,
+						string,
+						JobStatus,
+					) error {
+						require.Fail(
+							t,
+							"UpdateStatusFn should not have been called, but was",
+						)
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+		{
 			name: "success",
 			service: &jobsService{
 				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: []Job{
+									{
+										Name: testJobName,
+										Status: &JobStatus{
+											Phase: JobPhaseSucceeded,
+										},
+									},
+								},
+							},
+						}, nil
+					},
+				},
 				jobsStore: &mockJobsStore{
 					UpdateStatusFn: func(
 						context.Context,

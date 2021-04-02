@@ -384,16 +384,26 @@ func (w *workersService) UpdateStatus(
 		return err
 	}
 
-	if err := w.workersStore.UpdateStatus(
-		ctx,
-		eventID,
-		status,
-	); err != nil {
-		return errors.Wrapf(
-			err,
-			"error updating status of event %q worker in store",
+	// Check current phase of event worker
+	event, err := w.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+
+	// Only update status if worker's current phase is non-terminal
+	// TODO: do we want to return an error if the phase *is* terminal?
+	if !event.Worker.Status.Phase.IsTerminal() {
+		if err := w.workersStore.UpdateStatus(
+			ctx,
 			eventID,
-		)
+			status,
+		); err != nil {
+			return errors.Wrapf(
+				err,
+				"error updating status of event %q worker in store",
+				eventID,
+			)
+		}
 	}
 	return nil
 }

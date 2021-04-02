@@ -539,18 +539,35 @@ func (j *jobsService) UpdateStatus(
 		return err
 	}
 
-	if err := j.jobsStore.UpdateStatus(
-		ctx,
-		eventID,
-		jobName,
-		status,
-	); err != nil {
-		return errors.Wrapf(
-			err,
-			"error updating status of event %q worker job %q in store",
+	// Check current phase of the job
+	event, err := j.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+	job, ok := event.Worker.Job(jobName)
+	if !ok {
+		return &meta.ErrNotFound{
+			Type: JobKind,
+			ID:   jobName,
+		}
+	}
+
+	// Only update status if job's current phase is non-terminal
+	// TODO: do we want to return an error if the phase *is* terminal?
+	if !job.Status.Phase.IsTerminal() {
+		if err := j.jobsStore.UpdateStatus(
+			ctx,
 			eventID,
 			jobName,
-		)
+			status,
+		); err != nil {
+			return errors.Wrapf(
+				err,
+				"error updating status of event %q worker job %q in store",
+				eventID,
+				jobName,
+			)
+		}
 	}
 	return nil
 }
