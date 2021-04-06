@@ -402,6 +402,14 @@ func TestEventsSelectorToQueryParams(t *testing.T) {
 			selector: &EventsSelector{
 				ProjectID: "blue-book",
 				Source:    "brigade.sh/cli",
+				Qualifiers: map[string]string{
+					"foo": "bar",
+					"bat": "baz",
+				},
+				Labels: map[string]string{
+					"foo": "bar",
+					"bat": "baz",
+				},
 				SourceState: map[string]string{
 					"foo": "bar",
 					"bat": "baz",
@@ -410,10 +418,20 @@ func TestEventsSelectorToQueryParams(t *testing.T) {
 				WorkerPhases: []WorkerPhase{WorkerPhasePending, WorkerPhaseStarting},
 			},
 			assertions: func(queryParams map[string]string) {
+				qualifiers, ok := queryParams["qualifiers"]
+				require.True(t, ok)
+				require.Contains(t, qualifiers, "foo=bar")
+				require.Contains(t, qualifiers, "bat=baz")
+				labels, ok := queryParams["labels"]
+				require.True(t, ok)
+				require.Contains(t, labels, "foo=bar")
+				require.Contains(t, labels, "bat=baz")
 				sourceState, ok := queryParams["sourceState"]
 				require.True(t, ok)
 				require.Contains(t, sourceState, "foo=bar")
 				require.Contains(t, sourceState, "bat=baz")
+				delete(queryParams, "qualifiers")
+				delete(queryParams, "labels")
 				delete(queryParams, "sourceState")
 				require.Equal(
 					t,

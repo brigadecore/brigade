@@ -7,14 +7,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func TestLabelsMarshalBSONValue(t *testing.T) {
+func TestQualifiersMarshalBSONValue(t *testing.T) {
 	// These keys are NOT in lexical order
-	labels := Labels{
+	qualifiers := Qualifiers{
 		"foo": "bar",
 		"bat": "baz",
 		"abc": "xyz",
 	}
-	_, bsonBytes, err := bson.MarshalValue(labels)
+	_, bsonBytes, err := bson.MarshalValue(qualifiers)
 	require.NoError(t, err)
 	// Unmarshal into a generic bson.D and verify that the fields are now in
 	// lexical order.
