@@ -323,6 +323,7 @@ publish-cli: build-cli
 		ghr \
 			-u $(GITHUB_ORG) \
 			-r $(GITHUB_REPO) \
+			-c $$(git rev-parse HEAD) \
 			-t $${GITHUB_TOKEN} \
 			-delete \
 			${VERSION} ./bin \
