@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "github.com/brigadecore/brigade/v2/job.schema.json",
+	"$id": "job.json",
 
 	"definitions": {
 
@@ -138,7 +138,7 @@
 	"additionalProperties": false,
 	"properties": {
 		"apiVersion": {
-			"$ref": "file:///brigade/schemas/common.json#/definitions/apiVersion"
+			"$ref": "common.json#/definitions/apiVersion"
 		},
 		"kind": {
 			"$ref": "#/definitions/kind"
@@ -146,7 +146,7 @@
 		"name": {
 			"allOf": [
 				{
-					"$ref": "file:///brigade/schemas/common.json#/definitions/identifier"
+					"$ref": "common.json#/definitions/identifier"
 				}
 			],
 			"description": "The job's name; must be unique per worker"

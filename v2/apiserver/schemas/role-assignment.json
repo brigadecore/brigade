@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "github.com/brigadecore/brigade/v2/role-assignment.schema.json",
+	"$id": "role-assignment.json",
 
 	"definitions": {
 
@@ -65,13 +65,13 @@
 	"additionalProperties": false,
 	"properties": {
 		"apiVersion": {
-			"$ref": "file:///brigade/schemas/common.json#/definitions/apiVersion"
+			"$ref": "common.json#/definitions/apiVersion"
 		},
 		"kind": {
 			"$ref": "#/definitions/kind"
 		},
 		"principal": {
-			"$ref": "file:///brigade/schemas/common.json#/definitions/principalReference"
+			"$ref": "common.json#/definitions/principalReference"
 		},
 		"role": {
 			"anyOf": [
