@@ -371,7 +371,32 @@ func eventCreate(c *cli.Context) error {
 // nolint: gocyclo
 func eventList(c *cli.Context) error {
 	output := c.String(flagOutput)
-	projectID := c.String(flagProject)
+
+	qualifierStrs := c.StringSlice(flagQualifier)
+	qualifiers := map[string]string{}
+	for _, qualifierStr := range qualifierStrs {
+		keyValStrs := strings.SplitN(qualifierStr, "=", 2)
+		if len(keyValStrs) != 2 {
+			return errors.Errorf(
+				"invalid value %q for --qualifier flag",
+				qualifierStrs,
+			)
+		}
+		qualifiers[keyValStrs[0]] = keyValStrs[1]
+	}
+
+	labelStrs := c.StringSlice(flagLabel)
+	labels := map[string]string{}
+	for _, labelStr := range labelStrs {
+		keyValStrs := strings.SplitN(labelStr, "=", 2)
+		if len(labelStr) != 2 {
+			return errors.Errorf(
+				"invalid value %q for --label flag",
+				labelStrs,
+			)
+		}
+		labels[keyValStrs[0]] = keyValStrs[1]
+	}
 
 	workerPhases := []core.WorkerPhase{}
 
@@ -431,7 +456,11 @@ func eventList(c *cli.Context) error {
 	}
 
 	selector := core.EventsSelector{
-		ProjectID:    projectID,
+		ProjectID:    c.String(flagProject),
+		Source:       c.String(flagSource),
+		Type:         c.String(flagType),
+		Qualifiers:   qualifiers,
+		Labels:       labels,
 		WorkerPhases: workerPhases,
 	}
 	opts := meta.ListOptions{

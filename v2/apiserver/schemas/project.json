@@ -70,6 +70,18 @@
 						"$ref": "common.json#/definitions/label"
 					}
 				},
+				"qualifiers": {
+					"type": [
+						"object",
+						"null"
+					],
+					"additionalProperties": true,
+					"patternProperties": {
+						"^[a-z][a-z\\d-]*[a-z\\d]$": {
+							"$ref": "common.json#/definitions/label"
+						}
+					}
+				},
 				"labels": {
 					"type": [
 						"object",
@@ -77,7 +89,7 @@
 					],
 					"additionalProperties": true,
 					"patternProperties": {
-						"^[\\w:/\\-\\.\\?=\\*]*$": {
+						"^[a-z][a-z\\d-]*[a-z\\d]$": {
 							"$ref": "common.json#/definitions/label"
 						}
 					}

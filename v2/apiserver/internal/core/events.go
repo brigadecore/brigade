@@ -27,8 +27,9 @@ type Event struct {
 	meta.ObjectMeta `json:"metadata" bson:",inline"`
 	// ProjectID specifies the Project this Event is for. Often, this field will
 	// be left blank, in which case the Event is matched against subscribed
-	// Projects on the basis of the Source, Type, and Labels fields, then used as
-	// a template to create a discrete Event for each subscribed Project.
+	// Projects on the basis of the Source, Type, Qualifiers, and Labels fields,
+	// then used as a template to create a discrete Event for each subscribed
+	// Project.
 	ProjectID string `json:"projectID,omitempty" bson:"projectID,omitempty"`
 	// Source specifies the source of the Event, e.g. what gateway created it.
 	// Gateways should populate this field with a unique string that clearly
@@ -44,15 +45,37 @@ type Event struct {
 	// Type specifies the exact event that has occurred in the upstream system.
 	// Values are opaque and source-specific.
 	Type string `json:"type,omitempty" bson:"type,omitempty"`
-	// Labels convey additional event details for the purposes of matching Events
-	// to subscribed projects. For instance, no subscribers to the "GitHub" Source
-	// and the "push" Type are likely to want to hear about push events for ALL
-	// repositories. If the "GitHub" gateway labels events with the name of the
-	// repository from which the event originated (e.g. "repo=github.com/foo/bar")
-	// then subscribers can utilize those same criteria to narrow their
-	// subscription from all push events emitted by the GitHub gateway to just
-	// those having originated from a specific repository.
-	Labels Labels `json:"labels,omitempty" bson:"labels,omitempty"`
+	// Qualifiers provide critical disambiguation of an Event's type. A Project is
+	// considered subscribed to an Event IF AND ONLY IF (in addition to matching
+	// the Event's Source and Type) it matches ALL of the Event's qualifiers
+	// EXACTLY. To demonstrate the usefulness of this, consider any event from a
+	// hypothetical GitHub gateway. If, by design, that gateway does not intend
+	// for any Project to subscribe to ALL Events (i.e. regardless of which
+	// repository they originated from), then that gateway can QUALIFY Events it
+	// emits into Brigade's event bus with repo=<repository name>. Projects
+	// wishing to subscribe to Events from the GitHub gateway MUST include that
+	// Qualifier in their EventSubscription. Note that the Qualifiers field's
+	// "MUST match" subscription semantics differ from the Labels field's "MAY
+	// match" subscription semantics.
+	Qualifiers Qualifiers `json:"qualifiers,omitempty" bson:"qualifiers,omitempty"` // nolint: lll
+	// Labels convey supplementary Event details that Projects may OPTIONALLY use
+	// to narrow EventSubscription criteria. A Project is considered subscribed to
+	// an Event if (in addition to matching the Event's Source, Type, and
+	// Qualifiers) the Event has ALL labels expressed in the Project's
+	// EventSubscription. If the Event has ADDITIONAL labels, not mentioned by the
+	// EventSubscription, these do not preclude a match. To demonstrate the
+	// usefulness of this, consider any event from a hypothetical Slack gateway.
+	// If, by design, that gateway intends for Projects to select between
+	// subscribing to ALL Events or ONLY events originating from a specific
+	// channel, then that gateway can LABEL Events it emits into Brigade's event
+	// bus with channel=<channel name>. Projects wishing to subscribe to ALL
+	// Events from the Slack gateway MAY omit that Label from their
+	// EventSubscription, while Projects wishing to subscribe to only Events
+	// originating from a specific channel MAY include that Label in their
+	// EventSubscription. Note that the Labels field's "MAY match" subscription
+	// semantics differ from the Qualifiers field's "MUST match" subscription
+	// semantics.
+	Labels map[string]string `json:"labels,omitempty" bson:"labels,omitempty"`
 	// ShortTitle is an optional, succinct title for the Event, ideal for use in
 	// lists or in scenarios where UI real estate is constrained.
 	ShortTitle string `json:"shortTitle,omitempty" bson:"shortTitle,omitempty"`
@@ -132,6 +155,12 @@ type EventsSelector struct {
 	// WorkerPhases specifies that only Events with their Workers in any of the
 	// indicated phases should be selected.
 	WorkerPhases []WorkerPhase
+	// Qualifiers specifies that only Events qualified with these key/value pairs
+	// should be selected.
+	Qualifiers Qualifiers
+	// Labels specifies that only Events labeled with these key/value pairs should
+	// be selected.
+	Labels map[string]string
 }
 
 // EventList is an ordered and pageable list of Events.

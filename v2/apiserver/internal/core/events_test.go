@@ -147,7 +147,7 @@ func TestEventsServiceCreate(t *testing.T) {
 			event: Event{
 				Source: "github-gateway",
 				Type:   "push",
-				Labels: Labels{
+				Qualifiers: Qualifiers{
 					"repo": "github.com/foo/bar",
 				},
 			},
@@ -177,7 +177,7 @@ func TestEventsServiceCreate(t *testing.T) {
 			event: Event{
 				Source: "github-gateway",
 				Type:   "push",
-				Labels: Labels{
+				Qualifiers: Qualifiers{
 					"repo": "github.com/foo/bar",
 				},
 			},
@@ -208,7 +208,7 @@ func TestEventsServiceCreate(t *testing.T) {
 			event: Event{
 				Source: "github-gateway",
 				Type:   "push",
-				Labels: Labels{
+				Qualifiers: Qualifiers{
 					"repo": "github.com/foo/bar",
 				},
 			},
