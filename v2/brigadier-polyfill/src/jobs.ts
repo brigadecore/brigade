@@ -33,7 +33,7 @@ export class Job extends BrigadierJob {
           Authorization: `Bearer ${this.event.worker.apiToken}`
         },
         data: {
-          apiVersion: "brigade.sh/v2-alpha.1",
+          apiVersion: "brigade.sh/v2-alpha.2",
           kind: "Job",
           name: this.name,
           spec: {

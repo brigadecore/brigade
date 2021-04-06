@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const apiVersion = "brigade.sh/v2-alpha.1"
+const apiVersion = "brigade.sh/v2-alpha.2"
 
 func RequireAPIVersionAndType(
 	t *testing.T,
