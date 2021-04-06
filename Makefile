@@ -185,6 +185,37 @@ test-integration: hack-expose-apiserver
 			./tests/... || (cd - && $(MAKE) hack-unexpose-apiserver && exit 1)
 	@$(MAKE) hack-unexpose-apiserver
 
+# Validates the schemas in the v2/apiserver/schemas dir
+#
+# Adds references to any schema that are themselves $ref'd
+# in any of the others.
+.PHONY: validate-schemas
+validate-schemas:
+	$(JS_DOCKER_CMD) sh -c ' \
+		npm install -g ajv-cli@3.3.0 && \
+		for schema in $$(ls v2/apiserver/schemas/*.json); do \
+			ajv compile -s $$schema \
+				-r v2/apiserver/schemas/common.json \
+				-r v2/apiserver/schemas/source-state.json ; \
+		done \
+	'
+
+# Validates the examples in the examples/ dir
+#
+# Currently, they are project-specific;
+# we can add event, job, etc. examples and add validation here.
+.PHONY: validate-examples
+validate-examples:
+	$(JS_DOCKER_CMD) sh -c ' \
+		npm install -g ajv-cli@3.3.0 && \
+		echo "Validating example projects..." && \
+		for project in $$(ls examples/*/project.yaml); do \
+			ajv validate -d $$project \
+				-s v2/apiserver/schemas/project.json \
+				-r v2/apiserver/schemas/common.json ; \
+		done \
+	'
+
 ################################################################################
 # Build                                                                        #
 ################################################################################

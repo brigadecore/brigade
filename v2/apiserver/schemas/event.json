@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "github.com/brigadecore/brigade/event.schema.json",
+	"$id": "event.json",
 
 	"definitions": {
 
@@ -24,7 +24,7 @@
 	"additionalProperties": false,
 	"properties": {
 		"apiVersion": {
-			"$ref": "file:///brigade/schemas/common.json#/definitions/apiVersion"
+			"$ref": "common.json#/definitions/apiVersion"
 		},
 		"kind": {
 			"$ref": "#/definitions/kind"
@@ -34,13 +34,13 @@
 		},
 		"projectID": {
 			"oneOf": [
-				{ "$ref": "file:///brigade/schemas/common.json#/definitions/empty" },
-				{ "$ref": "file:///brigade/schemas/common.json#/definitions/identifier" }
+				{ "$ref": "common.json#/definitions/empty" },
+				{ "$ref": "common.json#/definitions/identifier" }
 			],
 			"description": "The ID of the project the event is for"
 		},
 		"source": {
-			"allOf": [{ "$ref": "file:///brigade/schemas/common.json#/definitions/url" }],
+			"allOf": [{ "$ref": "common.json#/definitions/url" }],
 			"description": "The name of the source that is sending the event"
 		},
 		"sourceState": {
@@ -48,19 +48,19 @@
 			"additionalProperties": false,
 			"properties": {
 				"apiVersion": {
-					"$ref": "file:///brigade/schemas/common.json#/definitions/apiVersion"
+					"$ref": "common.json#/definitions/apiVersion"
 				},
 				"kind": {
-					"$ref": "file:///brigade/schemas/source-state.json#/definitions/kind"
+					"$ref": "source-state.json#/definitions/kind"
 				},
 				"state": {
-					"$ref": "file:///brigade/schemas/source-state.json#/definitions/stateMap"
+					"$ref": "source-state.json#/definitions/stateMap"
 				}
 			},
 			"description": "Source-specific (e.g. gateway-specific) state"
 		},
 		"type": {
-			"allOf": [{ "$ref": "file:///brigade/schemas/common.json#/definitions/label" }],
+			"allOf": [{ "$ref": "common.json#/definitions/label" }],
 			"description": "The type of the event"
 		},
 		"labels": {
@@ -71,7 +71,7 @@
 			"additionalProperties": true,
 			"patternProperties": {
 				"^[\\w:/\\-\\.\\?=\\*]*$": {
-					"$ref": "file:///brigade/schemas/common.json#/definitions/label"
+					"$ref": "common.json#/definitions/label"
 				}
 			},
 			"description": "Labels to help Brigade route the event to subscribed projects"
@@ -87,7 +87,7 @@
 			"maxLength": 100
 		},
 		"git": {
-			"$ref": "file:///brigade/schemas/common.json#/definitions/gitConfig",
+			"allOf": [{ "$ref": "common.json#/definitions/gitConfig" }],
 			"additionalProperties": false
 		},
 		"payload": {

@@ -98,6 +98,20 @@ const testIntegrationJob = (e, p) => {
 }
 jobs[testIntegrationJobName] = testIntegrationJob;
 
+// Schema validation:
+
+const validateSchemasJobName = "validate-schemas";
+const validateSchemasJob = (e, p) => {
+  return new MakeTargetJob(validateSchemasJobName, jsImg, e);
+}
+jobs[validateSchemasJobName] = validateSchemasJob;
+
+const validateExamplesJobName = "validate-examples";
+const validateExamplesJob = (e, p) => {
+  return new MakeTargetJob(validateExamplesJobName, jsImg, e);
+}
+jobs[validateExamplesJobName] = validateExamplesJob;
+
 // Brigadier:
 
 const buildBrigadierJobName = "build-brigadier";
@@ -242,6 +256,9 @@ function runSuite(e, p) {
     run(e, p, testUnitJSJob(e, p)).catch((err) => { return err }),
     run(e, p, lintJSJob(e, p)).catch((err) => { return err }),
     run(e, p, testIntegrationJob(e, p)).catch((err) => { return err }),
+    // Schema validation:
+    run(e, p, validateSchemasJob(e, p)).catch((err) => { return err }),
+    run(e, p, validateExamplesJob(e, p)).catch((err) => { return err }),
     // Brigadier:
     run(e, p, buildBrigadierJob(e, p)).catch((err) => { return err }),
     // Docker images:
