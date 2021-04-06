@@ -1001,7 +1001,12 @@ func TestJobsServiceUpdateStatus(t *testing.T) {
 				},
 			},
 			assertions: func(err error) {
-				require.NoError(t, err)
+				require.Error(t, err)
+				require.Contains(
+					t,
+					err.Error(),
+					`job "italian" has already reached a terminal phase`,
+				)
 			},
 		},
 		{
@@ -1016,7 +1021,7 @@ func TestJobsServiceUpdateStatus(t *testing.T) {
 									{
 										Name: testJobName,
 										Status: &JobStatus{
-											Phase: JobPhaseSucceeded,
+											Phase: JobPhaseRunning,
 										},
 									},
 								},

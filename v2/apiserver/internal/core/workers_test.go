@@ -444,7 +444,12 @@ func TestWorkersServiceUpdateStatus(t *testing.T) {
 				},
 			},
 			assertions: func(err error) {
-				require.NoError(t, err)
+				require.Error(t, err)
+				require.Contains(
+					t,
+					err.Error(),
+					"worker has already reached a terminal phase",
+				)
 			},
 		},
 		{

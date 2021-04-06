@@ -552,24 +552,30 @@ func (j *jobsService) UpdateStatus(
 		}
 	}
 
-	// Only update status if job's current phase is non-terminal
-	// TODO: do we want to return an error if the phase *is* terminal?
-	if !job.Status.Phase.IsTerminal() {
-		if err := j.jobsStore.UpdateStatus(
+	// We have a conflict if the job's phase is already terminal
+	if job.Status.Phase.IsTerminal() {
+		return &meta.ErrConflict{
+			Type: JobKind,
+			ID:   job.Name,
+			Reason: fmt.Sprintf(
+				"Event %q job %q has already reached a terminal phase.",
+				eventID,
+				job.Name,
+			),
+		}
+	}
+
+	return errors.Wrapf(
+		j.jobsStore.UpdateStatus(
 			ctx,
 			eventID,
 			jobName,
 			status,
-		); err != nil {
-			return errors.Wrapf(
-				err,
-				"error updating status of event %q worker job %q in store",
-				eventID,
-				jobName,
-			)
-		}
-	}
-	return nil
+		),
+		"error updating status of event %q worker job %q in store",
+		eventID,
+		jobName,
+	)
 }
 
 func (j *jobsService) Cleanup(

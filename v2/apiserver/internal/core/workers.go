@@ -390,22 +390,27 @@ func (w *workersService) UpdateStatus(
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
 
-	// Only update status if worker's current phase is non-terminal
-	// TODO: do we want to return an error if the phase *is* terminal?
-	if !event.Worker.Status.Phase.IsTerminal() {
-		if err := w.workersStore.UpdateStatus(
+	// We have a conflict if the worker's phase is already terminal
+	if event.Worker.Status.Phase.IsTerminal() {
+		return &meta.ErrConflict{
+			Type: EventKind,
+			ID:   event.ID,
+			Reason: fmt.Sprintf(
+				"Event %q worker has already reached a terminal phase.",
+				event.ID,
+			),
+		}
+	}
+
+	return errors.Wrapf(
+		w.workersStore.UpdateStatus(
 			ctx,
 			eventID,
 			status,
-		); err != nil {
-			return errors.Wrapf(
-				err,
-				"error updating status of event %q worker in store",
-				eventID,
-			)
-		}
-	}
-	return nil
+		),
+		"error updating status of event %q worker in store",
+		eventID,
+	)
 }
 
 func (w *workersService) Cleanup(
