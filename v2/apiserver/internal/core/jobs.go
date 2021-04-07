@@ -539,20 +539,43 @@ func (j *jobsService) UpdateStatus(
 		return err
 	}
 
-	if err := j.jobsStore.UpdateStatus(
-		ctx,
-		eventID,
-		jobName,
-		status,
-	); err != nil {
-		return errors.Wrapf(
-			err,
-			"error updating status of event %q worker job %q in store",
+	// Check current phase of the job
+	event, err := j.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+	job, ok := event.Worker.Job(jobName)
+	if !ok {
+		return &meta.ErrNotFound{
+			Type: JobKind,
+			ID:   jobName,
+		}
+	}
+
+	// We have a conflict if the job's phase is already terminal
+	if job.Status.Phase.IsTerminal() {
+		return &meta.ErrConflict{
+			Type: JobKind,
+			ID:   job.Name,
+			Reason: fmt.Sprintf(
+				"Event %q job %q has already reached a terminal phase.",
+				eventID,
+				job.Name,
+			),
+		}
+	}
+
+	return errors.Wrapf(
+		j.jobsStore.UpdateStatus(
+			ctx,
 			eventID,
 			jobName,
-		)
-	}
-	return nil
+			status,
+		),
+		"error updating status of event %q worker job %q in store",
+		eventID,
+		jobName,
+	)
 }
 
 func (j *jobsService) Cleanup(
