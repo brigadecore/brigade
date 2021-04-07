@@ -8,7 +8,7 @@
 		"apiVersion": {
 			"type": "string",
 			"description": "The major version of the Brigade API with which this object conforms",
-			"enum": ["brigade.sh/v2-alpha.2"]
+			"enum": ["brigade.sh/v2-alpha.3"]
 		},
 
 		"description": {
