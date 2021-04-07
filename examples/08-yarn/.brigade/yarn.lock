@@ -2,10 +2,17 @@
 # yarn lockfile v1
 
 
-"@brigadecore/brigadier@2.0.0-alpha.1":
-  version "2.0.0-alpha.1"
-  resolved "https://registry.yarnpkg.com/@brigadecore/brigadier/-/brigadier-2.0.0-alpha.1.tgz#1b8d7a1879e87cf1748ac96705d9f25fdda1da6b"
-  integrity sha512-94mnFwkxrhXNGNeTRF1SKK6oTTnsXaHLGF7dGxTv2MXRa3NQE0W+WsXDYJCqLqnrn04vpqzkPyRFZyfd3ezGig==
+"@brigadecore/brigadier@2.0.0-alpha.3":
+  version "2.0.0-alpha.3"
+  resolved "https://registry.yarnpkg.com/@brigadecore/brigadier/-/brigadier-2.0.0-alpha.3.tgz#f6089dd9e219b89ef5bcbbb03bd4b9beb03dd657"
+  integrity sha512-DLfZwaYmJlWVyPLvV0RGD3fSzIfZTx9URIJ8JZ3F9UrJNUhb2G5m6BIdLx4smqsPtXjIOCqS99uet3e5H78TGg==
+  dependencies:
+    "@types/node" "^14.14.11"
+
+"@types/node@^14.14.11":
+  version "14.14.37"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.37.tgz#a3dd8da4eb84a996c36e331df98d82abd76b516e"
+  integrity sha512-XYmBiy+ohOR4Lh5jE379fV2IU+6Jn4g5qASinhitfyO71b/sCo6MKsMLF5tc7Zf2CE8hViVQyYSobJNke8OvUw==
 
 unique-names-generator@4.4.0:
   version "4.4.0"
