@@ -382,9 +382,30 @@ func TestWorkersServiceUpdateStatus(t *testing.T) {
 			},
 		},
 		{
+			name: "error retrieving event from store",
+			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
 			name: "error updating worker in store",
 			service: &workersService{
 				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
 				workersStore: &mockWorkersStore{
 					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
 						return errors.New("something went wrong")
@@ -398,9 +419,48 @@ func TestWorkersServiceUpdateStatus(t *testing.T) {
 			},
 		},
 		{
+			name: "worker's phase already terminal",
+			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhaseCanceled,
+								},
+							},
+						}, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
+						require.Fail(
+							t,
+							"UpdateStatusFn should not have been called, but was",
+						)
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(
+					t,
+					err.Error(),
+					"worker has already reached a terminal phase",
+				)
+			},
+		},
+		{
 			name: "success",
 			service: &workersService{
 				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
 				workersStore: &mockWorkersStore{
 					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
 						return nil
