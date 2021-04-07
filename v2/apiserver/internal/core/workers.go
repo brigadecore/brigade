@@ -384,18 +384,33 @@ func (w *workersService) UpdateStatus(
 		return err
 	}
 
-	if err := w.workersStore.UpdateStatus(
-		ctx,
-		eventID,
-		status,
-	); err != nil {
-		return errors.Wrapf(
-			err,
-			"error updating status of event %q worker in store",
-			eventID,
-		)
+	// Check current phase of event worker
+	event, err := w.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
-	return nil
+
+	// We have a conflict if the worker's phase is already terminal
+	if event.Worker.Status.Phase.IsTerminal() {
+		return &meta.ErrConflict{
+			Type: EventKind,
+			ID:   event.ID,
+			Reason: fmt.Sprintf(
+				"Event %q worker has already reached a terminal phase.",
+				event.ID,
+			),
+		}
+	}
+
+	return errors.Wrapf(
+		w.workersStore.UpdateStatus(
+			ctx,
+			eventID,
+			status,
+		),
+		"error updating status of event %q worker in store",
+		eventID,
+	)
 }
 
 func (w *workersService) Cleanup(
