@@ -10,7 +10,7 @@ apiserver:
 
   replicas: 1
 
-  ## Host should be set acccurately for a variety of reasons. This is used in
+  ## Host should be set accurately for a variety of reasons. This is used in
   ## ingress resources, cert generation, and in creating URLs for Open ID
   ## Connect "three legged" authentication.
   host: localhost:31600
@@ -640,7 +640,7 @@ mongodb:
   ##
   customLivenessProbe: {}
 
-  ## Custom Rediness probes MongoDB pods
+  ## Custom Readiness probes MongoDB pods
   ## Ignored when readinessProbe.enabled=true
   ##
   customReadinessProbe: {}
@@ -1033,7 +1033,7 @@ mongodb:
     ##
     customLivenessProbe: {}
 
-    ## Custom Rediness probes MongoDB Arbiter pods
+    ## Custom Readiness probes MongoDB Arbiter pods
     ## Ignored when arbiter.readinessProbe.enabled=true
     ##
     customReadinessProbe: {}
@@ -1323,7 +1323,7 @@ artemis:
     size: 8Gi
 
   ## Whether to run in a highly available configuration. This would be a good
-  ## idea in a producton environment, but shouldn't be needed otherwise.
+  ## idea in a production environment, but shouldn't be needed otherwise.
   ha:
     enabled: false
     ## Valid values are "hard" and "soft"
