@@ -24,10 +24,16 @@ func (r *rootPrincipal) Roles() []libAuthz.Role {
 		system.RoleAdmin(),
 		system.RoleReader(),
 		core.RoleEventCreator(libAuthz.RoleScopeGlobal),
-		core.RoleProjectAdmin(libAuthz.RoleScopeGlobal),
 		core.RoleProjectCreator(),
-		core.RoleProjectDeveloper(libAuthz.RoleScopeGlobal),
-		core.RoleProjectUser(libAuthz.RoleScopeGlobal),
+	}
+}
+
+// TODO: THIS ISN'T RIGHT
+func (r *rootPrincipal) ProjectRoles() []core.ProjectRole {
+	return []core.ProjectRole{
+		core.RoleProjectAdmin(core.ProjectIDGlobal),
+		core.RoleProjectDeveloper(core.ProjectIDGlobal),
+		core.RoleProjectUser(core.ProjectIDGlobal),
 	}
 }
 

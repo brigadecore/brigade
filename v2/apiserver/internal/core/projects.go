@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
 	libAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authn"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
@@ -176,30 +175,33 @@ type ProjectsService interface {
 }
 
 type projectsService struct {
-	authorize            libAuthz.AuthorizeFn
-	projectsStore        ProjectsStore
-	eventsStore          EventsStore
-	logsStore            CoolLogsStore
-	roleAssignmentsStore authz.RoleAssignmentsStore
-	substrate            Substrate
+	authorize                   libAuthz.AuthorizeFn
+	projectAuthorize            ProjectAuthorizeFn
+	projectsStore               ProjectsStore
+	eventsStore                 EventsStore
+	logsStore                   CoolLogsStore
+	projectRoleAssignmentsStore ProjectRoleAssignmentsStore
+	substrate                   Substrate
 }
 
 // NewProjectsService returns a specialized interface for managing Projects.
 func NewProjectsService(
 	authorizeFn libAuthz.AuthorizeFn,
+	projectAuthorize ProjectAuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
 	logsStore CoolLogsStore,
-	roleAssignmentsStore authz.RoleAssignmentsStore,
+	projectRoleAssignmentsStore ProjectRoleAssignmentsStore,
 	substrate Substrate,
 ) ProjectsService {
 	return &projectsService{
-		authorize:            authorizeFn,
-		projectsStore:        projectsStore,
-		eventsStore:          eventsStore,
-		logsStore:            logsStore,
-		roleAssignmentsStore: roleAssignmentsStore,
-		substrate:            substrate,
+		authorize:                   authorizeFn,
+		projectAuthorize:            projectAuthorize,
+		projectsStore:               projectsStore,
+		eventsStore:                 eventsStore,
+		logsStore:                   logsStore,
+		projectRoleAssignmentsStore: projectRoleAssignmentsStore,
+		substrate:                   substrate,
 	}
 }
 
@@ -232,25 +234,25 @@ func (p *projectsService) Create(
 	// Make the current user an admin, developer, and user of the project
 	principal := libAuthn.PrincipalFromContext(ctx)
 
-	var principalRef authz.PrincipalReference
+	var principalRef authn.PrincipalReference
 	switch prin := principal.(type) {
 	case *authn.User:
-		principalRef = authz.PrincipalReference{
-			Type: authz.PrincipalTypeUser,
+		principalRef = authn.PrincipalReference{
+			Type: authn.PrincipalTypeUser,
 			ID:   prin.ID,
 		}
 	case *authn.ServiceAccount:
-		principalRef = authz.PrincipalReference{
-			Type: authz.PrincipalTypeServiceAccount,
+		principalRef = authn.PrincipalReference{
+			Type: authn.PrincipalTypeServiceAccount,
 			ID:   prin.ID,
 		}
 	default:
 		return project, nil
 	}
 
-	if err = p.roleAssignmentsStore.Grant(
+	if err = p.projectRoleAssignmentsStore.Grant(
 		ctx,
-		authz.RoleAssignment{
+		ProjectRoleAssignment{
 			Principal: principalRef,
 			Role:      RoleProjectAdmin(project.ID),
 		},
@@ -263,9 +265,9 @@ func (p *projectsService) Create(
 			project.ID,
 		)
 	}
-	if err = p.roleAssignmentsStore.Grant(
+	if err = p.projectRoleAssignmentsStore.Grant(
 		ctx,
-		authz.RoleAssignment{
+		ProjectRoleAssignment{
 			Principal: principalRef,
 			Role:      RoleProjectDeveloper(project.ID),
 		},
@@ -278,9 +280,9 @@ func (p *projectsService) Create(
 			project.ID,
 		)
 	}
-	if err = p.roleAssignmentsStore.Grant(
+	if err = p.projectRoleAssignmentsStore.Grant(
 		ctx,
-		authz.RoleAssignment{
+		ProjectRoleAssignment{
 			Principal: principalRef,
 			Role:      RoleProjectUser(project.ID),
 		},
@@ -336,7 +338,7 @@ func (p *projectsService) Get(
 
 func (p *projectsService) Update(ctx context.Context, project Project) error {
 	if err :=
-		p.authorize(ctx, RoleProjectDeveloper(project.ID)); err != nil {
+		p.projectAuthorize(ctx, RoleProjectDeveloper(project.ID)); err != nil {
 		return err
 	}
 
@@ -351,7 +353,7 @@ func (p *projectsService) Update(ctx context.Context, project Project) error {
 }
 
 func (p *projectsService) Delete(ctx context.Context, id string) error {
-	if err := p.authorize(ctx, RoleProjectAdmin(id)); err != nil {
+	if err := p.projectAuthorize(ctx, RoleProjectAdmin(id)); err != nil {
 		return err
 	}
 
@@ -385,15 +387,7 @@ func (p *projectsService) Delete(ctx context.Context, id string) error {
 	// this and someone, in the future, created a new project with the same name,
 	// that new project would begin life with some existing principals having
 	// permissions they ought not have.
-	if err := p.roleAssignmentsStore.RevokeMany(
-		ctx,
-		authz.RoleAssignment{
-			Role: libAuthz.Role{
-				Type:  RoleTypeProject,
-				Scope: id,
-			},
-		},
-	); err != nil {
+	if err := p.projectRoleAssignmentsStore.RevokeMany(ctx, id); err != nil {
 		return errors.Wrapf(
 			err,
 			"error revoking all role assignments associated with project %q",

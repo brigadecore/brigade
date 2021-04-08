@@ -3,10 +3,9 @@ package authz
 import "context"
 
 type MockRoleAssignmentsStore struct {
-	GrantFn      func(context.Context, RoleAssignment) error
-	RevokeFn     func(context.Context, RoleAssignment) error
-	RevokeManyFn func(context.Context, RoleAssignment) error
-	ExistsFn     func(context.Context, RoleAssignment) (bool, error)
+	GrantFn  func(context.Context, RoleAssignment) error
+	RevokeFn func(context.Context, RoleAssignment) error
+	ExistsFn func(context.Context, RoleAssignment) (bool, error)
 }
 
 func (m *MockRoleAssignmentsStore) Grant(
@@ -21,13 +20,6 @@ func (m *MockRoleAssignmentsStore) Revoke(
 	roleAssignment RoleAssignment,
 ) error {
 	return m.RevokeFn(ctx, roleAssignment)
-}
-
-func (m *MockRoleAssignmentsStore) RevokeMany(
-	ctx context.Context,
-	roleAssignment RoleAssignment,
-) error {
-	return m.RevokeManyFn(ctx, roleAssignment)
 }
 
 func (m *MockRoleAssignmentsStore) Exists(

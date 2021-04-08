@@ -51,6 +51,7 @@ func main() {
 	var coolLogsStore core.CoolLogsStore
 	var eventsStore core.EventsStore
 	var jobsStore core.JobsStore
+	var projectRoleAssignmentsStore core.ProjectRoleAssignmentsStore
 	var projectsStore core.ProjectsStore
 	var roleAssignmentsStore authz.RoleAssignmentsStore
 	var secretsStore core.SecretsStore
@@ -69,6 +70,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		projectRoleAssignmentsStore =
+			coreMongodb.NewProjectRoleAssignmentsStore(database)
 		projectsStore, err = coreMongodb.NewProjectsStore(database)
 		if err != nil {
 			log.Fatal(err)
@@ -118,12 +121,15 @@ func main() {
 		)
 	}
 
-	// Authorizer
-	authorizer := sysAuthz.NewAuthorizer(roleAssignmentsStore)
+	// Authorizers
+	roleAuthorizer := sysAuthz.NewRoleAuthorizer(roleAssignmentsStore)
+	projectRoleAuthorizer :=
+		core.NewProjectRoleAuthorizer(projectRoleAssignmentsStore)
 
 	// Events service
 	eventsService := core.NewEventsService(
-		authorizer.Authorize,
+		roleAuthorizer.Authorize,
+		projectRoleAuthorizer.Authorize,
 		projectsStore,
 		eventsStore,
 		coolLogsStore,
@@ -132,7 +138,7 @@ func main() {
 
 	// Jobs service
 	jobsService := core.NewJobsService(
-		authorizer.Authorize,
+		roleAuthorizer.Authorize,
 		projectsStore,
 		eventsStore,
 		jobsStore,
@@ -141,7 +147,8 @@ func main() {
 
 	// Logs service
 	logsService := core.NewLogsService(
-		authorizer.Authorize,
+		roleAuthorizer.Authorize,
+		projectRoleAuthorizer.Authorize,
 		projectsStore,
 		eventsStore,
 		warmLogsStore,
@@ -150,38 +157,42 @@ func main() {
 
 	// Projects service
 	projectsService := core.NewProjectsService(
-		authorizer.Authorize,
+		roleAuthorizer.Authorize,
+		projectRoleAuthorizer.Authorize,
 		projectsStore,
 		eventsStore,
 		coolLogsStore,
-		roleAssignmentsStore,
+		projectRoleAssignmentsStore,
 		substrate,
 	)
 
 	// ProjectRoleAssignments service
 	projectRoleAssignmentsService := core.NewProjectRoleAssignmentsService(
-		authorizer.Authorize,
+		projectRoleAuthorizer.Authorize,
 		projectsStore,
 		usersStore,
 		serviceAccountsStore,
-		roleAssignmentsStore,
+		projectRoleAssignmentsStore,
 	)
 
 	// Roles service
 	roleAssignmentsService := authz.NewRoleAssignmentsService(
-		authorizer.Authorize,
+		roleAuthorizer.Authorize,
 		usersStore,
 		serviceAccountsStore,
 		roleAssignmentsStore,
 	)
 
 	// ServiceAccounts service
-	serviceAccountsService :=
-		authn.NewServiceAccountsService(authorizer.Authorize, serviceAccountsStore)
+	serviceAccountsService := authn.NewServiceAccountsService(
+		roleAuthorizer.Authorize,
+		serviceAccountsStore,
+	)
 
 	// Secrets service
 	secretsService := core.NewSecretsService(
-		authorizer.Authorize,
+		roleAuthorizer.Authorize,
+		projectRoleAuthorizer.Authorize,
 		projectsStore,
 		secretsStore,
 	)
@@ -201,18 +212,21 @@ func main() {
 	}
 
 	// Substrate service
-	substrateService := core.NewSubstrateService(authorizer.Authorize, substrate)
+	substrateService := core.NewSubstrateService(
+		roleAuthorizer.Authorize,
+		substrate,
+	)
 
 	// Users service
 	usersService := authn.NewUsersService(
-		authorizer.Authorize,
+		roleAuthorizer.Authorize,
 		usersStore,
 		sessionsStore,
 	)
 
 	// Workers service
 	workersService := core.NewWorkersService(
-		authorizer.Authorize,
+		roleAuthorizer.Authorize,
 		projectsStore,
 		eventsStore,
 		workersStore,

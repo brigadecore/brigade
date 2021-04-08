@@ -291,6 +291,7 @@ type EventsService interface {
 
 type eventsService struct {
 	authorize           libAuthz.AuthorizeFn
+	projectAuthorize    ProjectAuthorizeFn
 	projectsStore       ProjectsStore
 	eventsStore         EventsStore
 	logsStore           CoolLogsStore
@@ -301,17 +302,19 @@ type eventsService struct {
 // NewEventsService returns a specialized interface for managing Events.
 func NewEventsService(
 	authorizeFn libAuthz.AuthorizeFn,
+	projectAuthorize ProjectAuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
 	logsStore CoolLogsStore,
 	substrate Substrate,
 ) EventsService {
 	e := &eventsService{
-		authorize:     authorizeFn,
-		projectsStore: projectsStore,
-		eventsStore:   eventsStore,
-		logsStore:     logsStore,
-		substrate:     substrate,
+		authorize:        authorizeFn,
+		projectAuthorize: projectAuthorize,
+		projectsStore:    projectsStore,
+		eventsStore:      eventsStore,
+		logsStore:        logsStore,
+		substrate:        substrate,
 	}
 	e.createSingleEventFn = e.createSingleEvent
 	return e
@@ -340,7 +343,7 @@ func (e *eventsService) Create(
 		// that the principal is permitted to create events for the specified
 		// project. i.e. In practice, this would be how we make access decisions on
 		// events coming from a Brigade user.
-		if err := e.authorize(
+		if err := e.projectAuthorize(
 			ctx,
 			RoleProjectUser(event.ProjectID),
 		); err != nil {
@@ -555,7 +558,8 @@ func (e *eventsService) Cancel(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "error retrieving event %q from store", id)
 	}
 
-	if err = e.authorize(ctx, RoleProjectUser(event.ProjectID)); err != nil {
+	if err =
+		e.projectAuthorize(ctx, RoleProjectUser(event.ProjectID)); err != nil {
 		return err
 	}
 
@@ -597,7 +601,8 @@ func (e *eventsService) CancelMany(
 		}
 	}
 
-	if err := e.authorize(ctx, RoleProjectUser(selector.ProjectID)); err != nil {
+	if err :=
+		e.projectAuthorize(ctx, RoleProjectUser(selector.ProjectID)); err != nil {
 		return CancelManyEventsResult{}, err
 	}
 
@@ -656,7 +661,8 @@ func (e *eventsService) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "error retrieving event %q from store", id)
 	}
 
-	if err = e.authorize(ctx, RoleProjectUser(event.ProjectID)); err != nil {
+	if err =
+		e.projectAuthorize(ctx, RoleProjectUser(event.ProjectID)); err != nil {
 		return err
 	}
 
@@ -698,7 +704,8 @@ func (e *eventsService) DeleteMany(
 		}
 	}
 
-	if err := e.authorize(ctx, RoleProjectUser(selector.ProjectID)); err != nil {
+	if err :=
+		e.projectAuthorize(ctx, RoleProjectUser(selector.ProjectID)); err != nil {
 		return DeleteManyEventsResult{}, err
 	}
 

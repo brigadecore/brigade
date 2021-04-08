@@ -80,27 +80,30 @@ type LogsService interface {
 }
 
 type logsService struct {
-	authorize     libAuthz.AuthorizeFn
-	projectsStore ProjectsStore
-	eventsStore   EventsStore
-	warmLogsStore LogsStore
-	coolLogsStore LogsStore
+	authorize        libAuthz.AuthorizeFn
+	projectAuthorize ProjectAuthorizeFn
+	projectsStore    ProjectsStore
+	eventsStore      EventsStore
+	warmLogsStore    LogsStore
+	coolLogsStore    LogsStore
 }
 
 // NewLogsService returns a specialized interface for accessing logs.
 func NewLogsService(
 	authorizeFn libAuthz.AuthorizeFn,
+	projectAuthorize ProjectAuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
 	warmLogsStore LogsStore,
 	coolLogsStore LogsStore,
 ) LogsService {
 	return &logsService{
-		authorize:     authorizeFn,
-		projectsStore: projectsStore,
-		eventsStore:   eventsStore,
-		warmLogsStore: warmLogsStore,
-		coolLogsStore: coolLogsStore,
+		authorize:        authorizeFn,
+		projectAuthorize: projectAuthorize,
+		projectsStore:    projectsStore,
+		eventsStore:      eventsStore,
+		warmLogsStore:    warmLogsStore,
+		coolLogsStore:    coolLogsStore,
 	}
 }
 
@@ -146,7 +149,8 @@ func (l *logsService) Stream(
 	// misstep. So, out of an abundance of caution, we raise the bar a little on
 	// this one read-only operation and require the principal to be a project user
 	// in order to stream logs.
-	if err = l.authorize(ctx, RoleProjectUser(event.ProjectID)); err != nil {
+	if err =
+		l.projectAuthorize(ctx, RoleProjectUser(event.ProjectID)); err != nil {
 		return nil, err
 	}
 

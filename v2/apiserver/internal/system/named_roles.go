@@ -7,7 +7,6 @@ import libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 // ServiceAccounts.
 func RoleAdmin() libAuthz.Role {
 	return libAuthz.Role{
-		Type: RoleTypeSystem,
 		Name: "ADMIN",
 	}
 }
@@ -15,7 +14,6 @@ func RoleAdmin() libAuthz.Role {
 // RoleReader returns a system-level Role that enables global read access.
 func RoleReader() libAuthz.Role {
 	return libAuthz.Role{
-		Type: RoleTypeSystem,
 		Name: "READER",
 	}
 }

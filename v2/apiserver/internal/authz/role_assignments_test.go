@@ -55,8 +55,8 @@ func TestRoleAssignmentsServiceGrant(t *testing.T) {
 		{
 			name: "error retrieving user from store",
 			roleAssignment: RoleAssignment{
-				Principal: PrincipalReference{
-					Type: PrincipalTypeUser,
+				Principal: authn.PrincipalReference{
+					Type: authn.PrincipalTypeUser,
 					ID:   "foo",
 				},
 			},
@@ -77,8 +77,8 @@ func TestRoleAssignmentsServiceGrant(t *testing.T) {
 		{
 			name: "error retrieving service account from store",
 			roleAssignment: RoleAssignment{
-				Principal: PrincipalReference{
-					Type: PrincipalTypeServiceAccount,
+				Principal: authn.PrincipalReference{
+					Type: authn.PrincipalTypeServiceAccount,
 					ID:   "foo",
 				},
 			},
@@ -99,8 +99,8 @@ func TestRoleAssignmentsServiceGrant(t *testing.T) {
 		{
 			name: "error granting the role",
 			roleAssignment: RoleAssignment{
-				Principal: PrincipalReference{
-					Type: PrincipalTypeServiceAccount,
+				Principal: authn.PrincipalReference{
+					Type: authn.PrincipalTypeServiceAccount,
 					ID:   "foo",
 				},
 			},
@@ -126,8 +126,8 @@ func TestRoleAssignmentsServiceGrant(t *testing.T) {
 		{
 			name: "success",
 			roleAssignment: RoleAssignment{
-				Principal: PrincipalReference{
-					Type: PrincipalTypeServiceAccount,
+				Principal: authn.PrincipalReference{
+					Type: authn.PrincipalTypeServiceAccount,
 					ID:   "foo",
 				},
 			},
@@ -180,8 +180,8 @@ func TestRoleAssignmentsServiceRevoke(t *testing.T) {
 		{
 			name: "error retrieving user from store",
 			roleAssignment: RoleAssignment{
-				Principal: PrincipalReference{
-					Type: PrincipalTypeUser,
+				Principal: authn.PrincipalReference{
+					Type: authn.PrincipalTypeUser,
 					ID:   "foo",
 				},
 			},
@@ -202,8 +202,8 @@ func TestRoleAssignmentsServiceRevoke(t *testing.T) {
 		{
 			name: "error retrieving service account from store",
 			roleAssignment: RoleAssignment{
-				Principal: PrincipalReference{
-					Type: PrincipalTypeServiceAccount,
+				Principal: authn.PrincipalReference{
+					Type: authn.PrincipalTypeServiceAccount,
 					ID:   "foo",
 				},
 			},
@@ -224,8 +224,8 @@ func TestRoleAssignmentsServiceRevoke(t *testing.T) {
 		{
 			name: "error revoking the role",
 			roleAssignment: RoleAssignment{
-				Principal: PrincipalReference{
-					Type: PrincipalTypeServiceAccount,
+				Principal: authn.PrincipalReference{
+					Type: authn.PrincipalTypeServiceAccount,
 					ID:   "foo",
 				},
 			},
@@ -251,8 +251,8 @@ func TestRoleAssignmentsServiceRevoke(t *testing.T) {
 		{
 			name: "success",
 			roleAssignment: RoleAssignment{
-				Principal: PrincipalReference{
-					Type: PrincipalTypeServiceAccount,
+				Principal: authn.PrincipalReference{
+					Type: authn.PrincipalTypeServiceAccount,
 					ID:   "foo",
 				},
 			},

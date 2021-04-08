@@ -3,7 +3,7 @@ package rest
 import (
 	"net/http"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
@@ -17,7 +17,7 @@ import (
 type ProjectRoleAssignmentsEndpoints struct {
 	AuthFilter                        restmachinery.Filter
 	ProjectRoleAssignmentSchemaLoader gojsonschema.JSONLoader
-	Service                           authz.RoleAssignmentsService
+	Service                           core.ProjectRoleAssignmentsService
 }
 
 func (p *ProjectRoleAssignmentsEndpoints) Register(router *mux.Router) {
@@ -38,15 +38,15 @@ func (p *ProjectRoleAssignmentsEndpoints) grant(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	roleAssignment := authz.RoleAssignment{}
+	projectRoleAssignment := core.ProjectRoleAssignment{}
 	restmachinery.ServeRequest(
 		restmachinery.InboundRequest{
 			W:                   w,
 			R:                   r,
 			ReqBodySchemaLoader: p.ProjectRoleAssignmentSchemaLoader,
-			ReqBodyObj:          &roleAssignment,
+			ReqBodyObj:          &projectRoleAssignment,
 			EndpointLogic: func() (interface{}, error) {
-				return nil, p.Service.Grant(r.Context(), roleAssignment)
+				return nil, p.Service.Grant(r.Context(), projectRoleAssignment)
 			},
 			SuccessCode: http.StatusOK,
 		},
@@ -57,14 +57,13 @@ func (p *ProjectRoleAssignmentsEndpoints) revoke(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	roleAssignment := authz.RoleAssignment{
-		Role: libAuthz.Role{
-			Type:  core.RoleTypeProject,
-			Name:  libAuthz.RoleName(r.URL.Query().Get("roleName")),
-			Scope: r.URL.Query().Get("roleScope"),
+	projectRoleAssignment := core.ProjectRoleAssignment{
+		Role: core.ProjectRole{
+			Name:      libAuthz.RoleName(r.URL.Query().Get("roleName")),
+			ProjectID: r.URL.Query().Get("projectID"),
 		},
-		Principal: authz.PrincipalReference{
-			Type: authz.PrincipalType(r.URL.Query().Get("principalType")),
+		Principal: authn.PrincipalReference{
+			Type: authn.PrincipalType(r.URL.Query().Get("principalType")),
 			ID:   r.URL.Query().Get("principalID"),
 		},
 	}
@@ -73,7 +72,7 @@ func (p *ProjectRoleAssignmentsEndpoints) revoke(
 			W: w,
 			R: r,
 			EndpointLogic: func() (interface{}, error) {
-				return nil, p.Service.Revoke(r.Context(), roleAssignment)
+				return nil, p.Service.Revoke(r.Context(), projectRoleAssignment)
 			},
 			SuccessCode: http.StatusOK,
 		},

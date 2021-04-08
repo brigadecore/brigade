@@ -4,43 +4,67 @@ import (
 	"context"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
-	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/pkg/errors"
 )
 
+// ProjectRoleAssignment represents the assignment of a ProjectRole to a
+// principal such as a User or ServiceAccount.
+type ProjectRoleAssignment struct {
+	// Role assigns a ProjectRole to the specified principal.
+	Role ProjectRole `json:"role" bson:"role"`
+	// Principal specifies the principal to whom the ProjectRole is assigned.
+	Principal authn.PrincipalReference `json:"principal" bson:"principal"`
+}
+
+// ProjectRoleAssignmentsService is the specialized interface for managing
+// ProjectRoleAssignments. It's decoupled from underlying technology choices
+// (e.g. data store, message bus, etc.) to keep business logic reusable and
+// consistent while the underlying tech stack remains free to change.
+type ProjectRoleAssignmentsService interface {
+	// Grant grants the ProjectRole specified by the ProjectRoleAssignment to the
+	// principal also specified by the ProjectRoleAssignment. If the specified
+	// principal does not exist, implementations must return a *meta.ErrNotFound
+	// error.
+	Grant(ctx context.Context, roleAssignment ProjectRoleAssignment) error
+	// Revoke revokes the ProjectRole specified by the ProjectRoleAssignment for
+	// the principal also specified by the ProjectRoleAssignment. If the specified
+	// principal does not exist, implementations must return a *meta.ErrNotFound
+	// error.
+	Revoke(ctx context.Context, roleAssignment ProjectRoleAssignment) error
+}
+
 type projectRoleAssignmentsService struct {
-	authorize            libAuthz.AuthorizeFn
-	projectsStore        ProjectsStore
-	usersStore           authn.UsersStore
-	serviceAccountsStore authn.ServiceAccountsStore
-	roleAssignmentsStore authz.RoleAssignmentsStore
+	projectAuthorize            ProjectAuthorizeFn
+	projectsStore               ProjectsStore
+	usersStore                  authn.UsersStore
+	serviceAccountsStore        authn.ServiceAccountsStore
+	projectRoleAssignmentsStore ProjectRoleAssignmentsStore
 }
 
 // NewProjectRoleAssignmentsService returns a specialized interface for managing
 // project-level RoleAssignments.
 func NewProjectRoleAssignmentsService(
-	authorizeFn libAuthz.AuthorizeFn,
+	projectAuthorize ProjectAuthorizeFn,
 	projectsStore ProjectsStore,
 	usersStore authn.UsersStore,
 	serviceAccountsStore authn.ServiceAccountsStore,
-	roleAssignmentsStore authz.RoleAssignmentsStore,
-) authz.RoleAssignmentsService {
+	projectRoleAssignmentsStore ProjectRoleAssignmentsStore,
+) ProjectRoleAssignmentsService {
 	return &projectRoleAssignmentsService{
-		authorize:            authorizeFn,
-		projectsStore:        projectsStore,
-		usersStore:           usersStore,
-		serviceAccountsStore: serviceAccountsStore,
-		roleAssignmentsStore: roleAssignmentsStore,
+		projectAuthorize:            projectAuthorize,
+		projectsStore:               projectsStore,
+		usersStore:                  usersStore,
+		serviceAccountsStore:        serviceAccountsStore,
+		projectRoleAssignmentsStore: projectRoleAssignmentsStore,
 	}
 }
 
 func (p *projectRoleAssignmentsService) Grant(
 	ctx context.Context,
-	roleAssignment authz.RoleAssignment,
+	projectRoleAssignment ProjectRoleAssignment,
 ) error {
-	projectID := roleAssignment.Role.Scope
-	if err := p.authorize(ctx, RoleProjectAdmin(projectID)); err != nil {
+	projectID := projectRoleAssignment.Role.ProjectID
+	if err := p.projectAuthorize(ctx, RoleProjectAdmin(projectID)); err != nil {
 		return err
 	}
 
@@ -54,14 +78,14 @@ func (p *projectRoleAssignmentsService) Grant(
 		)
 	}
 
-	if roleAssignment.Principal.Type == authz.PrincipalTypeUser {
+	if projectRoleAssignment.Principal.Type == authn.PrincipalTypeUser {
 		// Make sure the User exists
-		user, err := p.usersStore.Get(ctx, roleAssignment.Principal.ID)
+		user, err := p.usersStore.Get(ctx, projectRoleAssignment.Principal.ID)
 		if err != nil {
 			return errors.Wrapf(
 				err,
 				"error retrieving user %q from store",
-				roleAssignment.Principal.ID,
+				projectRoleAssignment.Principal.ID,
 			)
 		}
 		// From an end-user's perspective, User IDs are case insensitive, but when
@@ -69,15 +93,17 @@ func (p *projectRoleAssignmentsService) Grant(
 		// the ID from the inbound RoleAssignment-- which may have incorrect case.
 		// Instead we replace it with the ID (with correct case) from the User we
 		// found.
-		roleAssignment.Principal.ID = user.ID
-	} else if roleAssignment.Principal.Type == authz.PrincipalTypeServiceAccount {
+		projectRoleAssignment.Principal.ID = user.ID
+	} else if projectRoleAssignment.Principal.Type == authn.PrincipalTypeServiceAccount { // nolint: lll
 		// Make sure the ServiceAccount exists
-		if _, err :=
-			p.serviceAccountsStore.Get(ctx, roleAssignment.Principal.ID); err != nil {
+		if _, err := p.serviceAccountsStore.Get(
+			ctx,
+			projectRoleAssignment.Principal.ID,
+		); err != nil {
 			return errors.Wrapf(
 				err,
 				"error retrieving service account %q from store",
-				roleAssignment.Principal.ID,
+				projectRoleAssignment.Principal.ID,
 			)
 		}
 	} else {
@@ -85,14 +111,16 @@ func (p *projectRoleAssignmentsService) Grant(
 	}
 
 	// Give them the Role
-	if err := p.roleAssignmentsStore.Grant(ctx, roleAssignment); err != nil {
+	if err := p.projectRoleAssignmentsStore.Grant(
+		ctx, projectRoleAssignment,
+	); err != nil {
 		return errors.Wrapf(
 			err,
 			"error granting project %q role %q to %s %q in store",
 			projectID,
-			roleAssignment.Role.Name,
-			roleAssignment.Principal.Type,
-			roleAssignment.Principal.ID,
+			projectRoleAssignment.Role.Name,
+			projectRoleAssignment.Principal.Type,
+			projectRoleAssignment.Principal.ID,
 		)
 	}
 
@@ -101,10 +129,10 @@ func (p *projectRoleAssignmentsService) Grant(
 
 func (p *projectRoleAssignmentsService) Revoke(
 	ctx context.Context,
-	roleAssignment authz.RoleAssignment,
+	projectRoleAssignment ProjectRoleAssignment,
 ) error {
-	projectID := roleAssignment.Role.Scope
-	if err := p.authorize(ctx, RoleProjectAdmin(projectID)); err != nil {
+	projectID := projectRoleAssignment.Role.ProjectID
+	if err := p.projectAuthorize(ctx, RoleProjectAdmin(projectID)); err != nil {
 		return err
 	}
 
@@ -118,14 +146,14 @@ func (p *projectRoleAssignmentsService) Revoke(
 		)
 	}
 
-	if roleAssignment.Principal.Type == authz.PrincipalTypeUser {
+	if projectRoleAssignment.Principal.Type == authn.PrincipalTypeUser {
 		// Make sure the User exists
-		user, err := p.usersStore.Get(ctx, roleAssignment.Principal.ID)
+		user, err := p.usersStore.Get(ctx, projectRoleAssignment.Principal.ID)
 		if err != nil {
 			return errors.Wrapf(
 				err,
 				"error retrieving user %q from store",
-				roleAssignment.Principal.ID,
+				projectRoleAssignment.Principal.ID,
 			)
 		}
 		// From an end-user's perspective, User IDs are case insensitive, but when
@@ -133,15 +161,17 @@ func (p *projectRoleAssignmentsService) Revoke(
 		// the ID from the inbound RoleAssignment-- which may have incorrect case.
 		// Instead we replace it with the ID (with correct case) from the User we
 		// found.
-		roleAssignment.Principal.ID = user.ID
-	} else if roleAssignment.Principal.Type == authz.PrincipalTypeServiceAccount {
+		projectRoleAssignment.Principal.ID = user.ID
+	} else if projectRoleAssignment.Principal.Type == authn.PrincipalTypeServiceAccount { // nolint: lll
 		// Make sure the ServiceAccount exists
-		if _, err :=
-			p.serviceAccountsStore.Get(ctx, roleAssignment.Principal.ID); err != nil {
+		if _, err := p.serviceAccountsStore.Get(
+			ctx,
+			projectRoleAssignment.Principal.ID,
+		); err != nil {
 			return errors.Wrapf(
 				err,
 				"error retrieving service account %q from store",
-				roleAssignment.Principal.ID,
+				projectRoleAssignment.Principal.ID,
 			)
 		}
 	} else {
@@ -149,15 +179,43 @@ func (p *projectRoleAssignmentsService) Revoke(
 	}
 
 	// Revoke the Role
-	if err := p.roleAssignmentsStore.Revoke(ctx, roleAssignment); err != nil {
+	if err := p.projectRoleAssignmentsStore.Revoke(
+		ctx,
+		projectRoleAssignment,
+	); err != nil {
 		return errors.Wrapf(
 			err,
 			"error revoking project %q role %q for %s %q in store",
 			projectID,
-			roleAssignment.Role.Name,
-			roleAssignment.Principal.Type,
-			roleAssignment.Principal.ID,
+			projectRoleAssignment.Role.Name,
+			projectRoleAssignment.Principal.Type,
+			projectRoleAssignment.Principal.ID,
 		)
 	}
 	return nil
+}
+
+// ProjectRoleAssignmentsStore is an interface for components that implement
+// ProjectRoleAssignment persistence concerns.
+type ProjectRoleAssignmentsStore interface {
+	// Grant the ProjectRole specified by the ProjectRoleAssignment to the
+	// principal specified by the RoleAssignment.
+	Grant(context.Context, ProjectRoleAssignment) error
+	// Revoke the ProjectRole specified by the RoleAssignment for the principal
+	// specified by the RoleAssignment.
+	Revoke(context.Context, ProjectRoleAssignment) error
+	// RevokeMany revokes all ProjectRoleAssignments for the given project ID.
+	RevokeMany(ctx context.Context, projectID string) error
+	// Exists returns a bool indicating whether the specified
+	// ProjectRoleAssignment exists within the store. Implementations MUST also
+	// return true if a ProjectRoleAssignment exists in the store that logically
+	// "overlaps" the specified ProjectRoleAssignment. For instance, when seeking
+	// to determine whether a ProjectRoleAssignment exists that endows some
+	// principal P with Role X for Project Y, and such a ProjectRoleAssignment
+	// does not exist, but one does that endows that principal P with Role X
+	// having GLOBAL SCOPE (*), then true MUST be returned. Implementations MUST
+	// also return an error if and only if anything goes wrong. i.e. Errors are
+	// never used to communicate that the specified ProjectRoleAssignment does not
+	// exist in the store. They are only used to convey an actual failure.
+	Exists(context.Context, ProjectRoleAssignment) (bool, error)
 }

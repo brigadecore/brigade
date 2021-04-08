@@ -2,7 +2,6 @@ package core
 
 import (
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 )
 
 // Core-specific, system-level roles...
@@ -14,7 +13,6 @@ import (
 // Projects, but should NOT be able to impersonate other gateways.
 func RoleEventCreator(eventSource string) libAuthz.Role {
 	return libAuthz.Role{
-		Type:  system.RoleTypeSystem,
 		Name:  "EVENT_CREATOR",
 		Scope: eventSource,
 	}
@@ -24,7 +22,6 @@ func RoleEventCreator(eventSource string) libAuthz.Role {
 // create new Projects.
 func RoleProjectCreator() libAuthz.Role {
 	return libAuthz.Role{
-		Type: system.RoleTypeSystem,
 		Name: "PROJECT_CREATOR",
 	}
 }
@@ -35,11 +32,10 @@ func RoleProjectCreator() libAuthz.Role {
 // manage the Project whose ID matches the value of the Scope field. If the
 // value of the Scope field is RoleScopeGlobal ("*"), then the Role is unbounded
 // and enables a principal to manage all Projects.
-func RoleProjectAdmin(projectID string) libAuthz.Role {
-	return libAuthz.Role{
-		Type:  RoleTypeProject,
-		Name:  "ADMIN",
-		Scope: projectID,
+func RoleProjectAdmin(projectID string) ProjectRole {
+	return ProjectRole{
+		Name:      "ADMIN",
+		ProjectID: projectID,
 	}
 }
 
@@ -47,11 +43,10 @@ func RoleProjectAdmin(projectID string) libAuthz.Role {
 // update the Project whose ID matches the value of the Scope field. If the
 // value of the Scope field is RoleScopeGlobal ("*"), then the Role is unbounded
 // and enables a principal to update all Projects.
-func RoleProjectDeveloper(projectID string) libAuthz.Role {
-	return libAuthz.Role{
-		Type:  RoleTypeProject,
-		Name:  "DEVELOPER",
-		Scope: projectID,
+func RoleProjectDeveloper(projectID string) ProjectRole {
+	return ProjectRole{
+		Name:      "DEVELOPER",
+		ProjectID: projectID,
 	}
 }
 
@@ -60,11 +55,10 @@ func RoleProjectDeveloper(projectID string) libAuthz.Role {
 // Scope field. If the value of the Scope field is RoleScopeGlobal ("*"), then
 // the Role is unbounded and enables a principal to create and manage Events for
 // all Projects.
-func RoleProjectUser(projectID string) libAuthz.Role {
-	return libAuthz.Role{
-		Type:  RoleTypeProject,
-		Name:  "USER",
-		Scope: projectID,
+func RoleProjectUser(projectID string) ProjectRole {
+	return ProjectRole{
+		Name:      "USER",
+		ProjectID: projectID,
 	}
 }
 
@@ -79,7 +73,6 @@ func RoleProjectUser(projectID string) libAuthz.Role {
 // Observer component.
 func RoleObserver() libAuthz.Role {
 	return libAuthz.Role{
-		Type: system.RoleTypeSystem,
 		Name: "OBSERVER",
 	}
 }
@@ -89,7 +82,6 @@ func RoleObserver() libAuthz.Role {
 // This Role exists exclusively for use by Brigade's Scheduler component.
 func RoleScheduler() libAuthz.Role {
 	return libAuthz.Role{
-		Type: system.RoleTypeSystem,
 		Name: "SCHEDULER",
 	}
 }
@@ -99,7 +91,6 @@ func RoleScheduler() libAuthz.Role {
 // exclusively for the use of Brigade Workers.
 func RoleWorker(eventID string) libAuthz.Role {
 	return libAuthz.Role{
-		Type:  system.RoleTypeSystem,
 		Name:  "WORKER",
 		Scope: eventID,
 	}

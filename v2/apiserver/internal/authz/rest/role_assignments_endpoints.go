@@ -3,10 +3,10 @@ package rest
 import (
 	"net/http"
 
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/gorilla/mux"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -58,12 +58,11 @@ func (r *RoleAssignmentsEndpoints) revoke(
 ) {
 	roleAssignment := authz.RoleAssignment{
 		Role: libAuthz.Role{
-			Type:  system.RoleTypeSystem,
 			Name:  libAuthz.RoleName(req.URL.Query().Get("roleName")),
 			Scope: req.URL.Query().Get("roleScope"),
 		},
-		Principal: authz.PrincipalReference{
-			Type: authz.PrincipalType(req.URL.Query().Get("principalType")),
+		Principal: authn.PrincipalReference{
+			Type: authn.PrincipalType(req.URL.Query().Get("principalType")),
 			ID:   req.URL.Query().Get("principalID"),
 		},
 	}

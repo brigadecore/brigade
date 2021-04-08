@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
@@ -24,23 +23,25 @@ func TestNewProjectsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}
 	logsStore := &mockLogsStore{}
-	roleAssignmentsStore := &authz.MockRoleAssignmentsStore{}
+	projectRoleAssignmentsStore := &mockProjectRoleAssignmentsStore{}
 	substrate := &mockSubstrate{}
 	svc := NewProjectsService(
 		libAuthz.AlwaysAuthorize,
+		alwaysAuthorize,
 		projectsStore,
 		eventsStore,
 		logsStore,
-		roleAssignmentsStore,
+		projectRoleAssignmentsStore,
 		substrate,
 	)
 	require.NotNil(t, svc.(*projectsService).authorize)
+	require.NotNil(t, svc.(*projectsService).projectAuthorize)
 	require.Same(t, projectsStore, svc.(*projectsService).projectsStore)
 	require.Same(t, eventsStore, svc.(*projectsService).eventsStore)
 	require.Same(
 		t,
-		roleAssignmentsStore,
-		svc.(*projectsService).roleAssignmentsStore,
+		projectRoleAssignmentsStore,
+		svc.(*projectsService).projectRoleAssignmentsStore,
 	)
 	require.Same(t, substrate, svc.(*projectsService).substrate)
 }
@@ -256,7 +257,7 @@ func TestProjectServiceUpdate(t *testing.T) {
 		{
 			name: "unauthorized",
 			service: &projectsService{
-				authorize: libAuthz.NeverAuthorize,
+				projectAuthorize: neverAuthorize,
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -266,7 +267,7 @@ func TestProjectServiceUpdate(t *testing.T) {
 		{
 			name: "error updating project in store",
 			service: &projectsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					UpdateFn: func(context.Context, Project) error {
 						return errors.New("store error")
@@ -282,7 +283,7 @@ func TestProjectServiceUpdate(t *testing.T) {
 		{
 			name: "success",
 			service: &projectsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					UpdateFn: func(context.Context, Project) error {
 						return nil
@@ -311,7 +312,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "unauthorized",
 			service: &projectsService{
-				authorize: libAuthz.NeverAuthorize,
+				projectAuthorize: neverAuthorize,
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -321,7 +322,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error retrieving project from store",
 			service: &projectsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, errors.New("store error")
@@ -337,7 +338,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error deleting events associated with project",
 			service: &projectsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -369,7 +370,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error deleting project logs",
 			service: &projectsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -394,8 +395,8 @@ func TestProjectServiceDelete(t *testing.T) {
 						return errors.New("error deleting project logs")
 					},
 				},
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeManyFn: func(context.Context, string) error {
 						return nil
 					},
 				},
@@ -413,7 +414,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error deleting role assignments associated with project",
 			service: &projectsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -438,8 +439,8 @@ func TestProjectServiceDelete(t *testing.T) {
 						return nil
 					},
 				},
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeManyFn: func(context.Context, string) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -457,7 +458,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error deleting project from store",
 			service: &projectsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -482,8 +483,8 @@ func TestProjectServiceDelete(t *testing.T) {
 						return nil
 					},
 				},
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeManyFn: func(context.Context, string) error {
 						return nil
 					},
 				},
@@ -497,7 +498,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error deleting project from substrate",
 			service: &projectsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -522,8 +523,8 @@ func TestProjectServiceDelete(t *testing.T) {
 						return nil
 					},
 				},
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeManyFn: func(context.Context, string) error {
 						return nil
 					},
 				},
@@ -542,7 +543,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "success",
 			service: &projectsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -567,8 +568,8 @@ func TestProjectServiceDelete(t *testing.T) {
 						return nil
 					},
 				},
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeManyFn: func(context.Context, string) error {
 						return nil
 					},
 				},

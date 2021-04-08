@@ -21,37 +21,40 @@ func (p *principal) Roles() []libAuthz.Role {
 	return p.roles
 }
 
-func TestNewAuthorizer(t *testing.T) {
+func TestNewRoleAuthorizer(t *testing.T) {
 	roleAssignmentsStore := &authz.MockRoleAssignmentsStore{}
-	svc := NewAuthorizer(roleAssignmentsStore)
-	require.Same(t, roleAssignmentsStore, svc.(*authorizer).roleAssignmentsStore)
+	svc := NewRoleAuthorizer(roleAssignmentsStore)
+	require.Same(
+		t,
+		roleAssignmentsStore,
+		svc.(*roleAuthorizer).roleAssignmentsStore,
+	)
 }
 
-func TestAuthorizerAuthorize(t *testing.T) {
+func TestRoleAuthorizerAuthorize(t *testing.T) {
 	testRequiredRole := libAuthz.Role{
-		Type:  "foo",
 		Name:  "foo",
 		Scope: "foo",
 	}
 	testCases := []struct {
-		name       string
-		principal  interface{}
-		authorizer Authorizer
-		assertions func(error)
+		name           string
+		principal      interface{}
+		roleAuthorizer RoleAuthorizer
+		assertions     func(error)
 	}{
 		{
-			name:       "principal is nil",
-			principal:  nil,
-			authorizer: &authorizer{},
+			name:           "principal is nil",
+			principal:      nil,
+			roleAuthorizer: &roleAuthorizer{},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrAuthorization{}, err)
 			},
 		},
 		{
-			name:       "roleHolder does not have role",
-			principal:  &principal{},
-			authorizer: &authorizer{},
+			name:           "roleHolder does not have role",
+			principal:      &principal{},
+			roleAuthorizer: &roleAuthorizer{},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrAuthorization{}, err)
@@ -64,7 +67,7 @@ func TestAuthorizerAuthorize(t *testing.T) {
 					testRequiredRole,
 				},
 			},
-			authorizer: &authorizer{},
+			roleAuthorizer: &roleAuthorizer{},
 			assertions: func(err error) {
 				require.NoError(t, err)
 			},
@@ -72,7 +75,7 @@ func TestAuthorizerAuthorize(t *testing.T) {
 		{
 			name:      "error looking up user role assignment",
 			principal: &authn.User{},
-			authorizer: &authorizer{
+			roleAuthorizer: &roleAuthorizer{
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
 					ExistsFn: func(context.Context, authz.RoleAssignment) (bool, error) {
 						return false, errors.New("something went wrong")
@@ -87,7 +90,7 @@ func TestAuthorizerAuthorize(t *testing.T) {
 		{
 			name:      "user does not have role",
 			principal: &authn.User{},
-			authorizer: &authorizer{
+			roleAuthorizer: &roleAuthorizer{
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
 					ExistsFn: func(context.Context, authz.RoleAssignment) (bool, error) {
 						return false, nil
@@ -102,7 +105,7 @@ func TestAuthorizerAuthorize(t *testing.T) {
 		{
 			name:      "user has role",
 			principal: &authn.User{},
-			authorizer: &authorizer{
+			roleAuthorizer: &roleAuthorizer{
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
 					ExistsFn: func(context.Context, authz.RoleAssignment) (bool, error) {
 						return true, nil
@@ -116,7 +119,7 @@ func TestAuthorizerAuthorize(t *testing.T) {
 		{
 			name:      "error looking up service account role assignment",
 			principal: &authn.ServiceAccount{},
-			authorizer: &authorizer{
+			roleAuthorizer: &roleAuthorizer{
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
 					ExistsFn: func(context.Context, authz.RoleAssignment) (bool, error) {
 						return false, errors.New("something went wrong")
@@ -131,7 +134,7 @@ func TestAuthorizerAuthorize(t *testing.T) {
 		{
 			name:      "service account does not have role",
 			principal: &authn.ServiceAccount{},
-			authorizer: &authorizer{
+			roleAuthorizer: &roleAuthorizer{
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
 					ExistsFn: func(context.Context, authz.RoleAssignment) (bool, error) {
 						return false, nil
@@ -146,7 +149,7 @@ func TestAuthorizerAuthorize(t *testing.T) {
 		{
 			name:      "service account has role",
 			principal: &authn.ServiceAccount{},
-			authorizer: &authorizer{
+			roleAuthorizer: &roleAuthorizer{
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
 					ExistsFn: func(context.Context, authz.RoleAssignment) (bool, error) {
 						return true, nil
@@ -158,9 +161,9 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			},
 		},
 		{
-			name:       "principal is an unknown type",
-			principal:  struct{}{},
-			authorizer: &authorizer{},
+			name:           "principal is an unknown type",
+			principal:      struct{}{},
+			roleAuthorizer: &roleAuthorizer{},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrAuthorization{}, err)
@@ -171,7 +174,7 @@ func TestAuthorizerAuthorize(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			ctx := context.Background()
 			ctx = libAuthn.ContextWithPrincipal(ctx, testCase.principal)
-			err := testCase.authorizer.Authorize(ctx, testRequiredRole)
+			err := testCase.roleAuthorizer.Authorize(ctx, testRequiredRole)
 			testCase.assertions(err)
 		})
 	}

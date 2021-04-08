@@ -18,28 +18,32 @@ type roleHolder interface {
 	Roles() []libAuthz.Role
 }
 
-// Authorizer is the public interface for the component returned by the
-// NewAuthorizer function.
-type Authorizer interface {
+// RoleAuthorizer is the public interface for the component returned by the
+// NewRoleAuthorizer function.
+type RoleAuthorizer interface {
 	// Authorize retrieves a principal from the provided Context and asserts that
 	// it has at least one of the allowed Roles. If it does not, implementations
 	// MUST return a *meta.ErrAuthorization error.
 	Authorize(ctx context.Context, allowedRoles ...libAuthz.Role) error
 }
 
-// authorizer is a component that can authorize a request.
-type authorizer struct {
+// roleAuthorizer is a component that can authorize a request based on a
+// system-level Role.
+type roleAuthorizer struct {
 	roleAssignmentsStore authz.RoleAssignmentsStore
 }
 
-// NewAuthorizer returns a component that can authorize a request.
-func NewAuthorizer(roleAssignmentsStore authz.RoleAssignmentsStore) Authorizer {
-	return &authorizer{
+// NewRoleAuthorizer returns a component that can authorize a request based on
+// a system-level Role.
+func NewRoleAuthorizer(
+	roleAssignmentsStore authz.RoleAssignmentsStore,
+) RoleAuthorizer {
+	return &roleAuthorizer{
 		roleAssignmentsStore: roleAssignmentsStore,
 	}
 }
 
-func (a *authorizer) Authorize(
+func (r *roleAuthorizer) Authorize(
 	ctx context.Context,
 	allowedRoles ...libAuthz.Role,
 ) error {
@@ -59,13 +63,13 @@ func (a *authorizer) Authorize(
 		}
 		return &meta.ErrAuthorization{}
 	case *authn.User:
-		roleAssignment.Principal = authz.PrincipalReference{
-			Type: authz.PrincipalTypeUser,
+		roleAssignment.Principal = authn.PrincipalReference{
+			Type: authn.PrincipalTypeUser,
 			ID:   p.ID,
 		}
 	case *authn.ServiceAccount:
-		roleAssignment.Principal = authz.PrincipalReference{
-			Type: authz.PrincipalTypeServiceAccount,
+		roleAssignment.Principal = authn.PrincipalReference{
+			Type: authn.PrincipalTypeServiceAccount,
 			ID:   p.ID,
 		}
 	default: // What kind of principal is this??? This shouldn't happen.
@@ -73,7 +77,7 @@ func (a *authorizer) Authorize(
 	}
 	// We only get here if the principal was a User or ServiceAccount
 	for _, roleAssignment.Role = range allowedRoles {
-		if exists, err := a.roleAssignmentsStore.Exists(
+		if exists, err := r.roleAssignmentsStore.Exists(
 			ctx,
 			roleAssignment,
 		); err != nil {
