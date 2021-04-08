@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/brigadecore/brigade/sdk/v2/authn"
 	"github.com/brigadecore/brigade/sdk/v2/authz"
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	libAuthz "github.com/brigadecore/brigade/sdk/v2/lib/authz"
@@ -165,7 +166,6 @@ func grantSystemRole(roleName libAuthz.RoleName) func(c *cli.Context) error {
 
 		roleAssignment := authz.RoleAssignment{
 			Role: libAuthz.Role{
-				Type: system.RoleTypeSystem,
 				Name: roleName,
 			},
 		}
@@ -180,7 +180,7 @@ func grantSystemRole(roleName libAuthz.RoleName) func(c *cli.Context) error {
 			return err
 		}
 
-		roleAssignment.Principal.Type = authz.PrincipalTypeUser
+		roleAssignment.Principal.Type = authn.PrincipalTypeUser
 		for _, roleAssignment.Principal.ID = range userIDs {
 			if err = client.Authz().RoleAssignments().Grant(
 				c.Context,
@@ -189,7 +189,7 @@ func grantSystemRole(roleName libAuthz.RoleName) func(c *cli.Context) error {
 				return err
 			}
 		}
-		roleAssignment.Principal.Type = authz.PrincipalTypeServiceAccount
+		roleAssignment.Principal.Type = authn.PrincipalTypeServiceAccount
 		for _, roleAssignment.Principal.ID = range serviceAccountIDs {
 			if err = client.Authz().RoleAssignments().Grant(
 				c.Context,
@@ -218,7 +218,6 @@ func revokeSystemRole(
 
 		roleAssignment := authz.RoleAssignment{
 			Role: libAuthz.Role{
-				Type: system.RoleTypeSystem,
 				Name: roleName,
 			},
 		}
@@ -233,7 +232,7 @@ func revokeSystemRole(
 			return err
 		}
 
-		roleAssignment.Principal.Type = authz.PrincipalTypeUser
+		roleAssignment.Principal.Type = authn.PrincipalTypeUser
 		for _, roleAssignment.Principal.ID = range userIDs {
 			if err = client.Authz().RoleAssignments().Revoke(
 				c.Context,
@@ -242,7 +241,7 @@ func revokeSystemRole(
 				return err
 			}
 		}
-		roleAssignment.Principal.Type = authz.PrincipalTypeServiceAccount
+		roleAssignment.Principal.Type = authn.PrincipalTypeServiceAccount
 		for _, roleAssignment.Principal.ID = range serviceAccountIDs {
 			if err = client.Authz().RoleAssignments().Revoke(
 				c.Context,
