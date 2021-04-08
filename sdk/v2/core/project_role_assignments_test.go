@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/brigadecore/brigade/sdk/v2/authz"
+	"github.com/brigadecore/brigade/sdk/v2/authn"
 	rmTesting "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery/testing" // nolint: lll
 	libAuthz "github.com/brigadecore/brigade/sdk/v2/lib/authz"
 	"github.com/stretchr/testify/require"
@@ -28,14 +28,13 @@ func TestNewProjectRoleAssignmentsClient(t *testing.T) {
 }
 
 func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
-	testRoleAssignment := authz.RoleAssignment{
-		Role: libAuthz.Role{
-			Type:  RoleTypeProject,
-			Name:  libAuthz.RoleName("ceo"),
-			Scope: "bluebook",
+	testProjectRoleAssignment := ProjectRoleAssignment{
+		Role: ProjectRole{
+			Name:      libAuthz.RoleName("ceo"),
+			ProjectID: "bluebook",
 		},
-		Principal: authz.PrincipalReference{
-			Type: authz.PrincipalTypeUser,
+		Principal: authn.PrincipalReference{
+			Type: authn.PrincipalTypeUser,
 			ID:   "tony@starkindustries.com",
 		},
 	}
@@ -47,10 +46,10 @@ func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
 				require.Equal(t, "/v2/project-role-assignments", r.URL.Path)
 				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
-				roleAssignment := authz.RoleAssignment{}
-				err = json.Unmarshal(bodyBytes, &roleAssignment)
+				projectRoleAssignment := ProjectRoleAssignment{}
+				err = json.Unmarshal(bodyBytes, &projectRoleAssignment)
 				require.NoError(t, err)
-				require.Equal(t, testRoleAssignment, roleAssignment)
+				require.Equal(t, testProjectRoleAssignment, projectRoleAssignment)
 				w.WriteHeader(http.StatusOK)
 			},
 		),
@@ -61,19 +60,18 @@ func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
 		rmTesting.TestAPIToken,
 		nil,
 	)
-	err := client.Grant(context.Background(), testRoleAssignment)
+	err := client.Grant(context.Background(), testProjectRoleAssignment)
 	require.NoError(t, err)
 }
 
 func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
-	testRoleAssignment := authz.RoleAssignment{
-		Role: libAuthz.Role{
-			Type:  RoleTypeProject,
-			Name:  libAuthz.RoleName("ceo"),
-			Scope: "bluebook",
+	testProjectRoleAssignment := ProjectRoleAssignment{
+		Role: ProjectRole{
+			Name:      libAuthz.RoleName("ceo"),
+			ProjectID: "bluebook",
 		},
-		Principal: authz.PrincipalReference{
-			Type: authz.PrincipalTypeUser,
+		Principal: authn.PrincipalReference{
+			Type: authn.PrincipalTypeUser,
 			ID:   "tony@starkindustries.com",
 		},
 	}
@@ -84,22 +82,22 @@ func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
 				require.Equal(t, "/v2/project-role-assignments", r.URL.Path)
 				require.Equal(
 					t,
-					testRoleAssignment.Role.Name,
+					testProjectRoleAssignment.Role.Name,
 					libAuthz.RoleName(r.URL.Query().Get("roleName")),
 				)
 				require.Equal(
 					t,
-					testRoleAssignment.Role.Scope,
-					r.URL.Query().Get("roleScope"),
+					testProjectRoleAssignment.Role.ProjectID,
+					r.URL.Query().Get("projectID"),
 				)
 				require.Equal(
 					t,
-					testRoleAssignment.Principal.Type,
-					authz.PrincipalType(r.URL.Query().Get("principalType")),
+					testProjectRoleAssignment.Principal.Type,
+					authn.PrincipalType(r.URL.Query().Get("principalType")),
 				)
 				require.Equal(
 					t,
-					testRoleAssignment.Principal.ID,
+					testProjectRoleAssignment.Principal.ID,
 					r.URL.Query().Get("principalID"),
 				)
 				w.WriteHeader(http.StatusOK)
@@ -112,6 +110,6 @@ func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
 		rmTesting.TestAPIToken,
 		nil,
 	)
-	err := client.Revoke(context.Background(), testRoleAssignment)
+	err := client.Revoke(context.Background(), testProjectRoleAssignment)
 	require.NoError(t, err)
 }

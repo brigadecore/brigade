@@ -8,10 +8,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/brigadecore/brigade/sdk/v2/authn"
 	rmTesting "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery/testing" // nolint: lll
 	libAuthz "github.com/brigadecore/brigade/sdk/v2/lib/authz"
 	metaTesting "github.com/brigadecore/brigade/sdk/v2/meta/testing"
-	"github.com/brigadecore/brigade/sdk/v2/system"
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,11 +32,10 @@ func TestNewRoleAssignmentsClient(t *testing.T) {
 func TestRoleAssignmentsClientGrant(t *testing.T) {
 	testRoleAssignment := RoleAssignment{
 		Role: libAuthz.Role{
-			Type: system.RoleTypeSystem,
 			Name: libAuthz.RoleName("ceo"),
 		},
-		Principal: PrincipalReference{
-			Type: PrincipalTypeUser,
+		Principal: authn.PrincipalReference{
+			Type: authn.PrincipalTypeUser,
 			ID:   "tony@starkindustries.com",
 		},
 	}
@@ -65,11 +64,10 @@ func TestRoleAssignmentsClientGrant(t *testing.T) {
 func TestRoleAssignmentsClientRevoke(t *testing.T) {
 	testRoleAssignment := RoleAssignment{
 		Role: libAuthz.Role{
-			Type: system.RoleTypeSystem,
 			Name: libAuthz.RoleName("ceo"),
 		},
-		Principal: PrincipalReference{
-			Type: PrincipalTypeUser,
+		Principal: authn.PrincipalReference{
+			Type: authn.PrincipalTypeUser,
 			ID:   "tony@starkindustries.com",
 		},
 	}
@@ -80,18 +78,13 @@ func TestRoleAssignmentsClientRevoke(t *testing.T) {
 				require.Equal(t, "/v2/role-assignments", r.URL.Path)
 				require.Equal(
 					t,
-					testRoleAssignment.Role.Type,
-					libAuthz.RoleType(r.URL.Query().Get("roleType")),
-				)
-				require.Equal(
-					t,
 					testRoleAssignment.Role.Name,
 					libAuthz.RoleName(r.URL.Query().Get("roleName")),
 				)
 				require.Equal(
 					t,
 					testRoleAssignment.Principal.Type,
-					PrincipalType(r.URL.Query().Get("principalType")),
+					authn.PrincipalType(r.URL.Query().Get("principalType")),
 				)
 				require.Equal(
 					t,

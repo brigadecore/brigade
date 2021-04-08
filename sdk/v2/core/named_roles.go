@@ -2,7 +2,6 @@ package core
 
 import (
 	libAuthz "github.com/brigadecore/brigade/sdk/v2/lib/authz"
-	"github.com/brigadecore/brigade/sdk/v2/system"
 )
 
 const (
@@ -43,7 +42,6 @@ const (
 // Projects, but should NOT be able to impersonate other gateways.
 func RoleEventCreator(eventSource string) libAuthz.Role {
 	return libAuthz.Role{
-		Type:  system.RoleTypeSystem,
 		Name:  RoleNameEventCreator,
 		Scope: eventSource,
 	}
@@ -53,46 +51,42 @@ func RoleEventCreator(eventSource string) libAuthz.Role {
 // create new Projects.
 func RoleProjectCreator() libAuthz.Role {
 	return libAuthz.Role{
-		Type: system.RoleTypeSystem,
 		Name: RoleNameProjectCreator,
 	}
 }
 
 // Core-specific, project-level roles...
 
-// RoleProjectAdmin returns a project-level Role that enables a principal to
-// manage the Project whose ID matches the value of the Scope field. If the
-// value of the Scope field is RoleScopeGlobal ("*"), then the Role is unbounded
-// and enables a principal to manage all Projects.
-func RoleProjectAdmin(projectID string) libAuthz.Role {
-	return libAuthz.Role{
-		Type:  RoleTypeProject,
-		Name:  RoleNameProjectAdmin,
-		Scope: projectID,
+// RoleProjectAdmin returns a ProjectRole that enables a principal to manage the
+// Project whose ID matches the value of the Scope field. If the value of the
+// Scope field is RoleScopeGlobal ("*"), then the Role is unbounded and enables
+// a principal to manage all Projects.
+func RoleProjectAdmin(projectID string) ProjectRole {
+	return ProjectRole{
+		Name:      RoleNameProjectAdmin,
+		ProjectID: projectID,
 	}
 }
 
-// RoleProjectDeveloper returns a project-level Role that enables a principal to
-// update the Project whose ID matches the value of the Scope field. If the
-// value of the Scope field is RoleScopeGlobal ("*"), then the Role is unbounded
-// and enables a principal to update all Projects.
-func RoleProjectDeveloper(projectID string) libAuthz.Role {
-	return libAuthz.Role{
-		Type:  RoleTypeProject,
-		Name:  RoleNameProjectDeveloper,
-		Scope: projectID,
+// RoleProjectDeveloper returns a ProjectRole that enables a principal to update
+// the Project whose ID matches the value of the Scope field. If the value of
+// the Scope field is RoleScopeGlobal ("*"), then the Role is unbounded and
+// enables a principal to update all Projects.
+func RoleProjectDeveloper(projectID string) ProjectRole {
+	return ProjectRole{
+		Name:      RoleNameProjectDeveloper,
+		ProjectID: projectID,
 	}
 }
 
-// RoleProjectUser returns a project-level Role that enables a principal to
-// create and manage Events for the Project whose ID matches the value of the
-// Scope field. If the value of the Scope field is RoleScopeGlobal ("*"), then
-// the Role is unbounded and enables a principal to create and manage Events for
-// all Projects.
-func RoleProjectUser(projectID string) libAuthz.Role {
-	return libAuthz.Role{
-		Type:  RoleTypeProject,
-		Name:  RoleNameProjectUser,
-		Scope: projectID,
+// RoleProjectUser returns a ProjectRole that enables a principal to create and
+// manage Events for the Project whose ID matches the value of the Scope field.
+// If the value of the Scope field is RoleScopeGlobal ("*"), then the Role is
+// unbounded and enables a principal to create and manage Events for all
+// Projects.
+func RoleProjectUser(projectID string) ProjectRole {
+	return ProjectRole{
+		Name:      RoleNameProjectUser,
+		ProjectID: projectID,
 	}
 }

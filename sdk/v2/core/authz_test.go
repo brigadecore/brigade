@@ -14,10 +14,10 @@ func TestNewAuthzClient(t *testing.T) {
 		nil,
 	)
 	require.IsType(t, &authzClient{}, client)
-	require.NotNil(t, client.(*authzClient).roleAssignmentsClient)
+	require.NotNil(t, client.(*authzClient).projectRoleAssignmentsClient)
 	require.Equal(
 		t,
-		client.(*authzClient).roleAssignmentsClient,
-		client.RoleAssignments(),
+		client.(*authzClient).projectRoleAssignmentsClient,
+		client.ProjectRoleAssignments(),
 	)
 }
