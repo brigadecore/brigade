@@ -5,6 +5,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v2/system"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
@@ -238,46 +240,61 @@ var defaultConfigFiles = map[string]string{
 	`, testJobName)}
 
 func TestMain(t *testing.T) {
+	ctx := context.Background()
+
+	// TODO: send in/parameterize this value
+	apiServerAddress := "https://localhost:7000"
+	// TODO: send in/parameterize this value
+	rootPassword := "F00Bar!!!"
+	apiClientOpts := &restmachinery.APIClientOptions{
+		AllowInsecureConnections: true,
+	}
+
+	authClient := authn.NewSessionsClient(
+		apiServerAddress,
+		"",
+		apiClientOpts,
+	)
+
+	token, err := authClient.CreateRootSession(ctx, rootPassword)
+	require.NoError(t, err, "error creating root session")
+	tokenStr := token.Value
+
+	// Check pingRaw endpoint for expected version
+	wantResp := os.Getenv("VERSION")
+	require.NotEmpty(t, wantResp, "expected the VERSION env var to be non-empty")
+
+	systemClient := system.NewAPIClient(
+		apiServerAddress,
+		tokenStr,
+		apiClientOpts,
+	)
+	resp, err := systemClient.PingRaw(ctx)
+	require.NoError(t, err)
+	require.Equal(t, wantResp, resp, "ping response did not match expected")
+
+	// Create the api client for use in tests below
+	client := sdk.NewAPIClient(
+		apiServerAddress,
+		tokenStr,
+		apiClientOpts,
+	)
+
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-
-			// TODO: send in/parameterize this value
-			apiServerAddress := "https://localhost:7000"
-			// TODO: send in/parameterize this value
-			rootPassword := "F00Bar!!!"
-			apiClientOpts := &restmachinery.APIClientOptions{
-				AllowInsecureConnections: true,
-			}
-
-			authClient := authn.NewSessionsClient(
-				apiServerAddress,
-				"",
-				apiClientOpts,
-			)
-
-			token, err := authClient.CreateRootSession(ctx, rootPassword)
-			require.NoError(t, err, "error creating root session")
-			tokenStr := token.Value
-
-			client := sdk.NewAPIClient(
-				apiServerAddress,
-				tokenStr,
-				apiClientOpts,
-			)
-
-			// Update the project with defaults
 			tc.project.ID = "test-project"
-			if len(tc.configFiles) > 0 {
-				tc.project.Spec.WorkerTemplate.DefaultConfigFiles = tc.configFiles
-			} else {
-				tc.project.Spec.WorkerTemplate.DefaultConfigFiles = defaultConfigFiles
-			}
 
 			// Delete the test project (we're sharing the name between tests)
 			err = client.Core().Projects().Delete(ctx, tc.project.ID)
 			if _, ok := errors.Cause(err).(*meta.ErrNotFound); !ok {
 				require.NoError(t, err, "error deleting project")
+			}
+
+			// Update the project with defaults, if needed
+			if len(tc.configFiles) > 0 {
+				tc.project.Spec.WorkerTemplate.DefaultConfigFiles = tc.configFiles
+			} else {
+				tc.project.Spec.WorkerTemplate.DefaultConfigFiles = defaultConfigFiles
 			}
 
 			// Create the test project

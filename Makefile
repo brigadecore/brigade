@@ -177,9 +177,11 @@ lint-chart:
 
 .PHONY: test-integration
 test-integration: hack-expose-apiserver
-	@cd v2 && \
+	@export VERSION=${VERSION} && \
+		cd v2 && \
 		go test \
 			-v \
+			--count=1 \
 			-timeout=10m \
 			-tags=integration \
 			./tests/... || (cd - && $(MAKE) hack-unexpose-apiserver && exit 1)

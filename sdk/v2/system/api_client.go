@@ -16,8 +16,11 @@ type PingResponse struct {
 
 // APIClient is the client for system checks involving the Brigade API.
 type APIClient interface {
-	// Ping pings the API Server
+	// Ping sends a GET request to the API Server's versioned ping endpoint
 	Ping(ctx context.Context) (PingResponse, error)
+
+	// PingRaw sends a GET request to the API Server's unversioned ping endpoint
+	PingRaw(ctx context.Context) (string, error)
 }
 
 type apiClient struct {
@@ -43,6 +46,19 @@ func (a *apiClient) Ping(ctx context.Context) (PingResponse, error) {
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        "v2/ping",
+			SuccessCode: http.StatusOK,
+			RespObj:     &pingResponse,
+		},
+	)
+}
+
+func (a *apiClient) PingRaw(ctx context.Context) (string, error) {
+	var pingResponse string
+	return pingResponse, a.ExecuteRequest(
+		ctx,
+		rm.OutboundRequest{
+			Method:      http.MethodGet,
+			Path:        "ping",
 			SuccessCode: http.StatusOK,
 			RespObj:     &pingResponse,
 		},
