@@ -35,7 +35,7 @@ func TestRoleAssignmentsClientGrant(t *testing.T) {
 			Type: system.RoleTypeSystem,
 			Name: libAuthz.RoleName("ceo"),
 		},
-		Principal: PrincipalReference{
+		Principal: libAuthz.PrincipalReference{
 			Type: PrincipalTypeUser,
 			ID:   "tony@starkindustries.com",
 		},
@@ -68,7 +68,7 @@ func TestRoleAssignmentsClientRevoke(t *testing.T) {
 			Type: system.RoleTypeSystem,
 			Name: libAuthz.RoleName("ceo"),
 		},
-		Principal: PrincipalReference{
+		Principal: libAuthz.PrincipalReference{
 			Type: PrincipalTypeUser,
 			ID:   "tony@starkindustries.com",
 		},
@@ -91,7 +91,7 @@ func TestRoleAssignmentsClientRevoke(t *testing.T) {
 				require.Equal(
 					t,
 					testRoleAssignment.Principal.Type,
-					PrincipalType(r.URL.Query().Get("principalType")),
+					libAuthz.PrincipalType(r.URL.Query().Get("principalType")),
 				)
 				require.Equal(
 					t,
