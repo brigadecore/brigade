@@ -46,7 +46,7 @@ func TestNewProjectRoleAssignmentsService(t *testing.T) {
 func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 	testCases := []struct {
 		name           string
-		roleAssignment authz.RoleAssignment
+		roleAssignment libAuthz.RoleAssignment
 		service        authz.RoleAssignmentsService
 		assertions     func(error)
 	}{
@@ -62,7 +62,7 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 		},
 		{
 			name: "error retrieving project from store",
-			roleAssignment: authz.RoleAssignment{
+			roleAssignment: libAuthz.RoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeUser,
 					ID:   "foo",
@@ -84,7 +84,7 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 		},
 		{
 			name: "error retrieving user from store",
-			roleAssignment: authz.RoleAssignment{
+			roleAssignment: libAuthz.RoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeUser,
 					ID:   "foo",
@@ -111,7 +111,7 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 		},
 		{
 			name: "error retrieving service account from store",
-			roleAssignment: authz.RoleAssignment{
+			roleAssignment: libAuthz.RoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeServiceAccount,
 					ID:   "foo",
@@ -138,7 +138,7 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 		},
 		{
 			name: "error granting the role",
-			roleAssignment: authz.RoleAssignment{
+			roleAssignment: libAuthz.RoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeServiceAccount,
 					ID:   "foo",
@@ -157,7 +157,7 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					GrantFn: func(context.Context, authz.RoleAssignment) error {
+					GrantFn: func(context.Context, libAuthz.RoleAssignment) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -170,7 +170,7 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 		},
 		{
 			name: "success",
-			roleAssignment: authz.RoleAssignment{
+			roleAssignment: libAuthz.RoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeServiceAccount,
 					ID:   "foo",
@@ -189,7 +189,7 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					GrantFn: func(context.Context, authz.RoleAssignment) error {
+					GrantFn: func(context.Context, libAuthz.RoleAssignment) error {
 						return nil
 					},
 				},
@@ -213,7 +213,7 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 	testCases := []struct {
 		name           string
-		roleAssignment authz.RoleAssignment
+		roleAssignment libAuthz.RoleAssignment
 		service        authz.RoleAssignmentsService
 		assertions     func(error)
 	}{
@@ -229,7 +229,7 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 		},
 		{
 			name: "error retrieving project from store",
-			roleAssignment: authz.RoleAssignment{
+			roleAssignment: libAuthz.RoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeUser,
 					ID:   "foo",
@@ -251,7 +251,7 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 		},
 		{
 			name: "error retrieving user from store",
-			roleAssignment: authz.RoleAssignment{
+			roleAssignment: libAuthz.RoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeUser,
 					ID:   "foo",
@@ -278,7 +278,7 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 		},
 		{
 			name: "error retrieving service account from store",
-			roleAssignment: authz.RoleAssignment{
+			roleAssignment: libAuthz.RoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeServiceAccount,
 					ID:   "foo",
@@ -305,7 +305,7 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 		},
 		{
 			name: "error revoking the role",
-			roleAssignment: authz.RoleAssignment{
+			roleAssignment: libAuthz.RoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeServiceAccount,
 					ID:   "foo",
@@ -324,7 +324,7 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeFn: func(context.Context, authz.RoleAssignment) error {
+					RevokeFn: func(context.Context, libAuthz.RoleAssignment) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -337,7 +337,7 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 		},
 		{
 			name: "success",
-			roleAssignment: authz.RoleAssignment{
+			roleAssignment: libAuthz.RoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeServiceAccount,
 					ID:   "foo",
@@ -356,7 +356,7 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeFn: func(context.Context, authz.RoleAssignment) error {
+					RevokeFn: func(context.Context, libAuthz.RoleAssignment) error {
 						return nil
 					},
 				},

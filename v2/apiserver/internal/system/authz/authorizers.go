@@ -47,7 +47,7 @@ func (a *authorizer) Authorize(
 	if principal == nil {
 		return &meta.ErrAuthorization{}
 	}
-	roleAssignment := authz.RoleAssignment{}
+	roleAssignment := libAuthz.RoleAssignment{}
 	switch p := principal.(type) {
 	case roleHolder: // Any principal with hard-coded roles
 		for _, allowedRole := range allowedRoles {
