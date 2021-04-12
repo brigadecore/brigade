@@ -8,15 +8,11 @@ import (
 // Core-specific, system-level roles...
 
 // RoleEventCreator returns a system-level Role that enables principals to
-// create Events for all Projects-- provided the Events have a value in the
-// Source field that matches the value in this Role's Scope field. This is
-// useful for Event gateways, which should be able to create Events for all
-// Projects, but should NOT be able to impersonate other gateways.
-func RoleEventCreator(eventSource string) libAuthz.Role {
+// create Events for all Projects.
+func RoleEventCreator() libAuthz.Role {
 	return libAuthz.Role{
-		Type:  system.RoleTypeSystem,
-		Name:  "EVENT_CREATOR",
-		Scope: eventSource,
+		Type: system.RoleTypeSystem,
+		Name: "EVENT_CREATOR",
 	}
 }
 
@@ -32,39 +28,29 @@ func RoleProjectCreator() libAuthz.Role {
 // Core-specific, project-level roles...
 
 // RoleProjectAdmin returns a project-level Role that enables a principal to
-// manage the Project whose ID matches the value of the Scope field. If the
-// value of the Scope field is RoleScopeGlobal ("*"), then the Role is unbounded
-// and enables a principal to manage all Projects.
-func RoleProjectAdmin(projectID string) libAuthz.Role {
+// manage a Project.
+func RoleProjectAdmin() libAuthz.Role {
 	return libAuthz.Role{
-		Type:  RoleTypeProject,
-		Name:  "ADMIN",
-		Scope: projectID,
+		Type: RoleTypeProject,
+		Name: "ADMIN",
 	}
 }
 
 // RoleProjectDeveloper returns a project-level Role that enables a principal to
-// update the Project whose ID matches the value of the Scope field. If the
-// value of the Scope field is RoleScopeGlobal ("*"), then the Role is unbounded
-// and enables a principal to update all Projects.
-func RoleProjectDeveloper(projectID string) libAuthz.Role {
+// update a Project.
+func RoleProjectDeveloper() libAuthz.Role {
 	return libAuthz.Role{
-		Type:  RoleTypeProject,
-		Name:  "DEVELOPER",
-		Scope: projectID,
+		Type: RoleTypeProject,
+		Name: "DEVELOPER",
 	}
 }
 
 // RoleProjectUser returns a project-level Role that enables a principal to
-// create and manage Events for the Project whose ID matches the value of the
-// Scope field. If the value of the Scope field is RoleScopeGlobal ("*"), then
-// the Role is unbounded and enables a principal to create and manage Events for
-// all Projects.
-func RoleProjectUser(projectID string) libAuthz.Role {
+// create and manage Events for a Project.
+func RoleProjectUser() libAuthz.Role {
 	return libAuthz.Role{
-		Type:  RoleTypeProject,
-		Name:  "USER",
-		Scope: projectID,
+		Type: RoleTypeProject,
+		Name: "USER",
 	}
 }
 
@@ -97,10 +83,9 @@ func RoleScheduler() libAuthz.Role {
 // RoleWorker returns an event-level Role that enables principals to create new
 // Jobs, monitor the status of those Jobs, and access their logs. This Role is
 // exclusively for the use of Brigade Workers.
-func RoleWorker(eventID string) libAuthz.Role {
+func RoleWorker() libAuthz.Role {
 	return libAuthz.Role{
-		Type:  system.RoleTypeSystem,
-		Name:  "WORKER",
-		Scope: eventID,
+		Type: system.RoleTypeSystem,
+		Name: "WORKER",
 	}
 }

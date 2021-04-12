@@ -14,11 +14,11 @@ import (
 )
 
 type principal struct {
-	roles []libAuthz.Role
+	roleAssignments []libAuthz.RoleAssignment
 }
 
-func (p *principal) Roles() []libAuthz.Role {
-	return p.roles
+func (p *principal) RoleAssignments() []libAuthz.RoleAssignment {
+	return p.roleAssignments
 }
 
 func TestNewAuthorizer(t *testing.T) {
@@ -28,11 +28,11 @@ func TestNewAuthorizer(t *testing.T) {
 }
 
 func TestAuthorizerAuthorize(t *testing.T) {
-	testRequiredRole := libAuthz.Role{
-		Type:  "foo",
-		Name:  "foo",
-		Scope: "foo",
+	testRole := libAuthz.Role{
+		Type: "foo",
+		Name: "foo",
 	}
+	const testScope = "foo"
 	testCases := []struct {
 		name       string
 		principal  interface{}
@@ -49,7 +49,7 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			},
 		},
 		{
-			name:       "roleHolder does not have role",
+			name:       "roleAssignmentsHolder does not have role",
 			principal:  &principal{},
 			authorizer: &authorizer{},
 			assertions: func(err error) {
@@ -58,10 +58,13 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			},
 		},
 		{
-			name: "roleHolder has role",
+			name: "roleAssignmentsHolder has role",
 			principal: &principal{
-				roles: []libAuthz.Role{
-					testRequiredRole,
+				roleAssignments: []libAuthz.RoleAssignment{
+					{
+						Role:  testRole,
+						Scope: testScope,
+					},
 				},
 			},
 			authorizer: &authorizer{},
@@ -189,7 +192,7 @@ func TestAuthorizerAuthorize(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			ctx := context.Background()
 			ctx = libAuthn.ContextWithPrincipal(ctx, testCase.principal)
-			err := testCase.authorizer.Authorize(ctx, testRequiredRole)
+			err := testCase.authorizer.Authorize(ctx, testRole, testScope)
 			testCase.assertions(err)
 		})
 	}
