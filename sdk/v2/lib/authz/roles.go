@@ -18,7 +18,4 @@ type Role struct {
 	Type RoleType `json:"type,omitempty"`
 	// Name is the name of a Role and has domain-specific meaning.
 	Name RoleName `json:"name,omitempty"`
-	// Scope qualifies the scope of the Role. The value is opaque and has meaning
-	// only in relation to a specific RoleName.
-	Scope string `json:"scope,omitempty"`
 }
