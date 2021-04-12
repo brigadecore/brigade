@@ -16,7 +16,11 @@ import (
 )
 
 func TestRoleAssignmentMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(t, RoleAssignment{}, "RoleAssignment")
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		libAuthz.RoleAssignment{},
+		"RoleAssignment",
+	)
 }
 
 func TestNewRoleAssignmentsClient(t *testing.T) {
@@ -30,7 +34,7 @@ func TestNewRoleAssignmentsClient(t *testing.T) {
 }
 
 func TestRoleAssignmentsClientGrant(t *testing.T) {
-	testRoleAssignment := RoleAssignment{
+	testRoleAssignment := libAuthz.RoleAssignment{
 		Role: libAuthz.Role{
 			Type: system.RoleTypeSystem,
 			Name: libAuthz.RoleName("ceo"),
@@ -48,7 +52,7 @@ func TestRoleAssignmentsClientGrant(t *testing.T) {
 				require.Equal(t, "/v2/role-assignments", r.URL.Path)
 				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
-				roleAssignment := RoleAssignment{}
+				roleAssignment := libAuthz.RoleAssignment{}
 				err = json.Unmarshal(bodyBytes, &roleAssignment)
 				require.NoError(t, err)
 				require.Equal(t, testRoleAssignment, roleAssignment)
@@ -63,7 +67,7 @@ func TestRoleAssignmentsClientGrant(t *testing.T) {
 }
 
 func TestRoleAssignmentsClientRevoke(t *testing.T) {
-	testRoleAssignment := RoleAssignment{
+	testRoleAssignment := libAuthz.RoleAssignment{
 		Role: libAuthz.Role{
 			Type: system.RoleTypeSystem,
 			Name: libAuthz.RoleName("ceo"),
