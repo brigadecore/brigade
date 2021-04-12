@@ -158,10 +158,10 @@ func grantProjectRole(
 
 		roleAssignment := libAuthz.RoleAssignment{
 			Role: libAuthz.Role{
-				Type:  core.RoleTypeProject,
-				Name:  roleName,
-				Scope: projectID,
+				Type: core.RoleTypeProject,
+				Name: roleName,
 			},
+			Scope: projectID,
 		}
 
 		roleAssignment.Principal.Type = authz.PrincipalTypeUser
@@ -208,10 +208,10 @@ func revokeProjectRole(
 
 		roleAssignment := libAuthz.RoleAssignment{
 			Role: libAuthz.Role{
-				Type:  core.RoleTypeProject,
-				Name:  roleName,
-				Scope: projectID,
+				Type: core.RoleTypeProject,
+				Name: roleName,
 			},
+			Scope: projectID,
 		}
 
 		roleAssignment.Principal.Type = authz.PrincipalTypeUser
