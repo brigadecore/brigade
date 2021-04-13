@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	mongoTesting "github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
@@ -13,8 +13,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func TestGrant(t *testing.T) {
-	testRoleAssignment := libAuthz.RoleAssignment{}
+func TestProjectRoleAssignmentStoreGrant(t *testing.T) {
+	testProjectRoleAssignment := core.ProjectRoleAssignment{}
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
@@ -39,7 +39,11 @@ func TestGrant(t *testing.T) {
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error upserting role assignment")
+				require.Contains(
+					t,
+					err.Error(),
+					"error upserting project role assignment",
+				)
 			},
 		},
 		{
@@ -51,7 +55,7 @@ func TestGrant(t *testing.T) {
 					interface{},
 					...*options.FindOneAndReplaceOptions,
 				) *mongo.SingleResult {
-					res, err := mongoTesting.MockSingleResult(testRoleAssignment)
+					res, err := mongoTesting.MockSingleResult(testProjectRoleAssignment)
 					require.NoError(t, err)
 					return res
 				},
@@ -63,17 +67,17 @@ func TestGrant(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			store := &roleAssignmentsStore{
+			store := &projectRoleAssignmentsStore{
 				collection: testCase.collection,
 			}
-			err := store.Grant(context.Background(), testRoleAssignment)
+			err := store.Grant(context.Background(), testProjectRoleAssignment)
 			testCase.assertions(err)
 		})
 	}
 }
 
-func TestRevoke(t *testing.T) {
-	testRoleAssignment := libAuthz.RoleAssignment{}
+func TestProjectRoleAssignmentStoreRevoke(t *testing.T) {
+	testProjectRoleAssignment := core.ProjectRoleAssignment{}
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
@@ -93,7 +97,11 @@ func TestRevoke(t *testing.T) {
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error deleting role assignment")
+				require.Contains(
+					t,
+					err.Error(),
+					"error deleting project role assignment",
+				)
 			},
 		},
 		{
@@ -116,17 +124,74 @@ func TestRevoke(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			store := &roleAssignmentsStore{
+			store := &projectRoleAssignmentsStore{
 				collection: testCase.collection,
 			}
-			err := store.Revoke(context.Background(), testRoleAssignment)
+			err := store.Revoke(context.Background(), testProjectRoleAssignment)
 			testCase.assertions(err)
 		})
 	}
 }
 
-func TestExists(t *testing.T) {
-	testRoleAssignment := libAuthz.RoleAssignment{}
+func TestProjectRoleAssignmentStoreRevokeByProjectID(t *testing.T) {
+	const testProjectID = "bluebook"
+	testCases := []struct {
+		name       string
+		collection mongodb.Collection
+		assertions func(error)
+	}{
+		{
+			name: "error",
+			collection: &mongoTesting.MockCollection{
+				DeleteManyFn: func(
+					context.Context,
+					interface{},
+					...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return nil, errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(
+					t,
+					err.Error(),
+					"error deleting project role assignments",
+				)
+			},
+		},
+		{
+			name: "success",
+			collection: &mongoTesting.MockCollection{
+				DeleteManyFn: func(
+					context.Context,
+					interface{},
+					...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return &mongo.DeleteResult{
+						DeletedCount: 1,
+					}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &projectRoleAssignmentsStore{
+				collection: testCase.collection,
+			}
+			err := store.RevokeByProjectID(context.Background(), testProjectID)
+			testCase.assertions(err)
+		})
+	}
+}
+
+func TestProjectRoleAssignmentStoreExists(t *testing.T) {
+	testProjectRoleAssignment := core.ProjectRoleAssignment{}
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
@@ -168,7 +233,11 @@ func TestExists(t *testing.T) {
 				require.False(t, exists)
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error finding role assignment")
+				require.Contains(
+					t,
+					err.Error(),
+					"error finding project role assignment",
+				)
 			},
 		},
 		{
@@ -179,7 +248,7 @@ func TestExists(t *testing.T) {
 					filter interface{},
 					opts ...*options.FindOneOptions,
 				) *mongo.SingleResult {
-					res, err := mongoTesting.MockSingleResult(testRoleAssignment)
+					res, err := mongoTesting.MockSingleResult(testProjectRoleAssignment)
 					require.NoError(t, err)
 					return res
 				},
@@ -192,10 +261,11 @@ func TestExists(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			store := &roleAssignmentsStore{
+			store := &projectRoleAssignmentsStore{
 				collection: testCase.collection,
 			}
-			exists, err := store.Exists(context.Background(), testRoleAssignment)
+			exists, err :=
+				store.Exists(context.Background(), testProjectRoleAssignment)
 			testCase.assertions(exists, err)
 		})
 	}

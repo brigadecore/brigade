@@ -172,22 +172,6 @@ type RoleAssignmentsStore interface {
 	// Revoke the role specified by the RoleAssignment for the principal specified
 	// by the RoleAssignment.
 	Revoke(context.Context, libAuthz.RoleAssignment) error
-	// RevokeMany revokes all RoleAssignments that share ALL properties of the
-	// specified RoleAssignment. Properties left unspecified are ignored, i.e.
-	// not factored into the match.
-	//
-	// Example -- revoking all project-level RoleAssignments for a given Project:
-	//
-	//   err := p.roleAssignmentsStore.RevokeMany(
-	// 	  ctx,
-	// 	  authz.RoleAssignment{
-	// 		  Role: libAuthz.Role{
-	// 			  Type:  RoleTypeProject,
-	// 			  Scope: projectID,
-	// 		  },
-	// 	  },
-	//   )
-	RevokeMany(ctx context.Context, roleAssignment libAuthz.RoleAssignment) error
 
 	// Exists returns a bool indicating whether the specified RoleAssignment
 	// exists within the store. Implementations MUST also return true if a

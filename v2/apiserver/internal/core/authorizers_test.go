@@ -1,4 +1,4 @@
-package authz
+package core
 
 import (
 	"context"
@@ -6,79 +6,81 @@ import (
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
 	libAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authn"
-	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
 )
 
 type principal struct {
-	roleAssignments []libAuthz.RoleAssignment
+	projectRoleAssignments []ProjectRoleAssignment
 }
 
-func (p *principal) RoleAssignments() []libAuthz.RoleAssignment {
-	return p.roleAssignments
+func (p *principal) ProjectRoleAssignments() []ProjectRoleAssignment {
+	return p.projectRoleAssignments
 }
 
-func TestNewAuthorizer(t *testing.T) {
-	roleAssignmentsStore := &authz.MockRoleAssignmentsStore{}
-	svc := NewAuthorizer(roleAssignmentsStore)
-	require.Same(t, roleAssignmentsStore, svc.(*authorizer).roleAssignmentsStore)
+func TestNewProjectAuthorizer(t *testing.T) {
+	projectRoleAssignmentsStore := &mockProjectRoleAssignmentsStore{}
+	svc := NewProjectAuthorizer(projectRoleAssignmentsStore)
+	require.Same(
+		t,
+		projectRoleAssignmentsStore,
+		svc.(*projectAuthorizer).projectRoleAssignmentsStore,
+	)
 }
 
-func TestAuthorizerAuthorize(t *testing.T) {
-	testRole := libAuthz.Role{
+func TestProjectAuthorizerAuthorize(t *testing.T) {
+	testProjectRole := ProjectRole{
 		Name: "foo",
 	}
-	const testScope = "foo"
+	const testProjectID = "foo"
 	testCases := []struct {
-		name       string
-		principal  interface{}
-		authorizer Authorizer
-		assertions func(error)
+		name              string
+		principal         interface{}
+		projectAuthorizer ProjectAuthorizer
+		assertions        func(error)
 	}{
 		{
-			name:       "principal is nil",
-			principal:  nil,
-			authorizer: &authorizer{},
+			name:              "principal is nil",
+			principal:         nil,
+			projectAuthorizer: &projectAuthorizer{},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrAuthorization{}, err)
 			},
 		},
 		{
-			name:       "roleAssignmentsHolder does not have role",
-			principal:  &principal{},
-			authorizer: &authorizer{},
+			name:              "projectRoleAssignmentsHolder does not have project role", // nolint: lll
+			principal:         &principal{},
+			projectAuthorizer: &projectAuthorizer{},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrAuthorization{}, err)
 			},
 		},
 		{
-			name: "roleAssignmentsHolder has role",
+			name: "projectRoleAssignmentsHolder has project role",
 			principal: &principal{
-				roleAssignments: []libAuthz.RoleAssignment{
+				projectRoleAssignments: []ProjectRoleAssignment{
 					{
-						Role:  testRole,
-						Scope: testScope,
+						ProjectID: testProjectID,
+						Role:      testProjectRole,
 					},
 				},
 			},
-			authorizer: &authorizer{},
+			projectAuthorizer: &projectAuthorizer{},
 			assertions: func(err error) {
 				require.NoError(t, err)
 			},
 		},
 		{
-			name:      "error looking up user role assignment",
+			name:      "error looking up user project role assignment",
 			principal: &authn.User{},
-			authorizer: &authorizer{
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
+			projectAuthorizer: &projectAuthorizer{
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
 					ExistsFn: func(
 						context.Context,
-						libAuthz.RoleAssignment,
+						ProjectRoleAssignment,
 					) (bool, error) {
 						return false, errors.New("something went wrong")
 					},
@@ -90,13 +92,13 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			},
 		},
 		{
-			name:      "user does not have role",
+			name:      "user does not have project role",
 			principal: &authn.User{},
-			authorizer: &authorizer{
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
+			projectAuthorizer: &projectAuthorizer{
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
 					ExistsFn: func(
 						context.Context,
-						libAuthz.RoleAssignment,
+						ProjectRoleAssignment,
 					) (bool, error) {
 						return false, nil
 					},
@@ -108,13 +110,13 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			},
 		},
 		{
-			name:      "user has role",
+			name:      "user has project role",
 			principal: &authn.User{},
-			authorizer: &authorizer{
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
+			projectAuthorizer: &projectAuthorizer{
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
 					ExistsFn: func(
 						context.Context,
-						libAuthz.RoleAssignment,
+						ProjectRoleAssignment,
 					) (bool, error) {
 						return true, nil
 					},
@@ -125,13 +127,13 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			},
 		},
 		{
-			name:      "error looking up service account role assignment",
+			name:      "error looking up service account project role assignment",
 			principal: &authn.ServiceAccount{},
-			authorizer: &authorizer{
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
+			projectAuthorizer: &projectAuthorizer{
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
 					ExistsFn: func(
 						context.Context,
-						libAuthz.RoleAssignment,
+						ProjectRoleAssignment,
 					) (bool, error) {
 						return false, errors.New("something went wrong")
 					},
@@ -143,13 +145,13 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			},
 		},
 		{
-			name:      "service account does not have role",
+			name:      "service account does not have project role",
 			principal: &authn.ServiceAccount{},
-			authorizer: &authorizer{
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
+			projectAuthorizer: &projectAuthorizer{
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
 					ExistsFn: func(
 						context.Context,
-						libAuthz.RoleAssignment,
+						ProjectRoleAssignment,
 					) (bool, error) {
 						return false, nil
 					},
@@ -161,13 +163,13 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			},
 		},
 		{
-			name:      "service account has role",
+			name:      "service account has project role",
 			principal: &authn.ServiceAccount{},
-			authorizer: &authorizer{
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
+			projectAuthorizer: &projectAuthorizer{
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
 					ExistsFn: func(
 						context.Context,
-						libAuthz.RoleAssignment,
+						ProjectRoleAssignment,
 					) (bool, error) {
 						return true, nil
 					},
@@ -178,9 +180,9 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			},
 		},
 		{
-			name:       "principal is an unknown type",
-			principal:  struct{}{},
-			authorizer: &authorizer{},
+			name:              "principal is an unknown type",
+			principal:         struct{}{},
+			projectAuthorizer: &projectAuthorizer{},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrAuthorization{}, err)
@@ -191,7 +193,11 @@ func TestAuthorizerAuthorize(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			ctx := context.Background()
 			ctx = libAuthn.ContextWithPrincipal(ctx, testCase.principal)
-			err := testCase.authorizer.Authorize(ctx, testRole, testScope)
+			err := testCase.projectAuthorizer.Authorize(
+				ctx,
+				testProjectID,
+				testProjectRole,
+			)
 			testCase.assertions(err)
 		})
 	}

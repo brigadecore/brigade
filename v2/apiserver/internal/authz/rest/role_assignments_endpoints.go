@@ -6,7 +6,6 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/gorilla/mux"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -58,7 +57,6 @@ func (r *RoleAssignmentsEndpoints) revoke(
 ) {
 	roleAssignment := libAuthz.RoleAssignment{
 		Role: libAuthz.Role{
-			Type: system.RoleTypeSystem,
 			Name: libAuthz.RoleName(req.URL.Query().Get("role")),
 		},
 		Scope: req.URL.Query().Get("scope"),

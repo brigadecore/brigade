@@ -12,14 +12,9 @@
 
 		"role": {
 			"type": "object",
-			"required": ["type", "name"],
+			"required": ["name"],
 			"additionalProperties": false,
 			"properties": {
-				"type": {
-					"type": "string",
-					"description": "The type of role being assigned-- must be SYSTEM",
-					"enum": ["SYSTEM"]
-				},
 				"name": {
 					"type": "string",
 					"description": "A role name",
@@ -34,14 +29,9 @@
 
 		"eventCreatorRole": {
 			"type": "object",
-			"required": ["type", "name"],
+			"required": ["name"],
 			"additionalProperties": false,
 			"properties": {
-				"type": {
-					"type": "string",
-					"description": "The type of role being assigned-- must be SYSTEM",
-					"enum": ["SYSTEM"]
-				},
 				"name": {
 					"type": "string",
 					"description": "A role name",
