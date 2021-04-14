@@ -250,7 +250,7 @@ func (p *projectsService) Create(
 
 	if err = p.roleAssignmentsStore.Grant(
 		ctx,
-		authz.RoleAssignment{
+		libAuthz.RoleAssignment{
 			Principal: principalRef,
 			Role:      RoleProjectAdmin(project.ID),
 		},
@@ -265,7 +265,7 @@ func (p *projectsService) Create(
 	}
 	if err = p.roleAssignmentsStore.Grant(
 		ctx,
-		authz.RoleAssignment{
+		libAuthz.RoleAssignment{
 			Principal: principalRef,
 			Role:      RoleProjectDeveloper(project.ID),
 		},
@@ -280,7 +280,7 @@ func (p *projectsService) Create(
 	}
 	if err = p.roleAssignmentsStore.Grant(
 		ctx,
-		authz.RoleAssignment{
+		libAuthz.RoleAssignment{
 			Principal: principalRef,
 			Role:      RoleProjectUser(project.ID),
 		},
@@ -387,7 +387,7 @@ func (p *projectsService) Delete(ctx context.Context, id string) error {
 	// permissions they ought not have.
 	if err := p.roleAssignmentsStore.RevokeMany(
 		ctx,
-		authz.RoleAssignment{
+		libAuthz.RoleAssignment{
 			Role: libAuthz.Role{
 				Type:  RoleTypeProject,
 				Scope: id,

@@ -28,7 +28,7 @@ func TestNewProjectRoleAssignmentsClient(t *testing.T) {
 }
 
 func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
-	testRoleAssignment := authz.RoleAssignment{
+	testRoleAssignment := libAuthz.RoleAssignment{
 		Role: libAuthz.Role{
 			Type:  RoleTypeProject,
 			Name:  libAuthz.RoleName("ceo"),
@@ -47,7 +47,7 @@ func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
 				require.Equal(t, "/v2/project-role-assignments", r.URL.Path)
 				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
-				roleAssignment := authz.RoleAssignment{}
+				roleAssignment := libAuthz.RoleAssignment{}
 				err = json.Unmarshal(bodyBytes, &roleAssignment)
 				require.NoError(t, err)
 				require.Equal(t, testRoleAssignment, roleAssignment)
@@ -66,7 +66,7 @@ func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
 }
 
 func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
-	testRoleAssignment := authz.RoleAssignment{
+	testRoleAssignment := libAuthz.RoleAssignment{
 		Role: libAuthz.Role{
 			Type:  RoleTypeProject,
 			Name:  libAuthz.RoleName("ceo"),

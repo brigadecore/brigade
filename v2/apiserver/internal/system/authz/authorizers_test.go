@@ -74,7 +74,10 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			principal: &authn.User{},
 			authorizer: &authorizer{
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					ExistsFn: func(context.Context, authz.RoleAssignment) (bool, error) {
+					ExistsFn: func(
+						context.Context,
+						libAuthz.RoleAssignment,
+					) (bool, error) {
 						return false, errors.New("something went wrong")
 					},
 				},
@@ -89,7 +92,10 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			principal: &authn.User{},
 			authorizer: &authorizer{
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					ExistsFn: func(context.Context, authz.RoleAssignment) (bool, error) {
+					ExistsFn: func(
+						context.Context,
+						libAuthz.RoleAssignment,
+					) (bool, error) {
 						return false, nil
 					},
 				},
@@ -104,7 +110,10 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			principal: &authn.User{},
 			authorizer: &authorizer{
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					ExistsFn: func(context.Context, authz.RoleAssignment) (bool, error) {
+					ExistsFn: func(
+						context.Context,
+						libAuthz.RoleAssignment,
+					) (bool, error) {
 						return true, nil
 					},
 				},
@@ -118,7 +127,10 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			principal: &authn.ServiceAccount{},
 			authorizer: &authorizer{
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					ExistsFn: func(context.Context, authz.RoleAssignment) (bool, error) {
+					ExistsFn: func(
+						context.Context,
+						libAuthz.RoleAssignment,
+					) (bool, error) {
 						return false, errors.New("something went wrong")
 					},
 				},
@@ -133,7 +145,10 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			principal: &authn.ServiceAccount{},
 			authorizer: &authorizer{
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					ExistsFn: func(context.Context, authz.RoleAssignment) (bool, error) {
+					ExistsFn: func(
+						context.Context,
+						libAuthz.RoleAssignment,
+					) (bool, error) {
 						return false, nil
 					},
 				},
@@ -148,7 +163,10 @@ func TestAuthorizerAuthorize(t *testing.T) {
 			principal: &authn.ServiceAccount{},
 			authorizer: &authorizer{
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					ExistsFn: func(context.Context, authz.RoleAssignment) (bool, error) {
+					ExistsFn: func(
+						context.Context,
+						libAuthz.RoleAssignment,
+					) (bool, error) {
 						return true, nil
 					},
 				},

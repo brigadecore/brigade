@@ -38,7 +38,7 @@ func (p *ProjectRoleAssignmentsEndpoints) grant(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	roleAssignment := authz.RoleAssignment{}
+	roleAssignment := libAuthz.RoleAssignment{}
 	restmachinery.ServeRequest(
 		restmachinery.InboundRequest{
 			W:                   w,
@@ -57,7 +57,7 @@ func (p *ProjectRoleAssignmentsEndpoints) revoke(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	roleAssignment := authz.RoleAssignment{
+	roleAssignment := libAuthz.RoleAssignment{
 		Role: libAuthz.Role{
 			Type:  core.RoleTypeProject,
 			Name:  libAuthz.RoleName(r.URL.Query().Get("roleName")),
