@@ -59,12 +59,12 @@ func (a *authorizer) Authorize(
 		}
 		return &meta.ErrAuthorization{}
 	case *authn.User:
-		roleAssignment.Principal = authz.PrincipalReference{
+		roleAssignment.Principal = libAuthz.PrincipalReference{
 			Type: authz.PrincipalTypeUser,
 			ID:   p.ID,
 		}
 	case *authn.ServiceAccount:
-		roleAssignment.Principal = authz.PrincipalReference{
+		roleAssignment.Principal = libAuthz.PrincipalReference{
 			Type: authz.PrincipalTypeServiceAccount,
 			ID:   p.ID,
 		}
