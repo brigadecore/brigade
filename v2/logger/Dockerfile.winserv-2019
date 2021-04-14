@@ -19,7 +19,7 @@ RUN powershell -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iex (
 RUN choco install -y ruby --version 2.6.5.1 --params "'/InstallDir:C:\ruby26'"
 RUN choco install -y msys2 --params "'/NoPath /NoUpdate /InstallDir:C:\ruby26\msys64'"
 
-RUN ridk install 2 3 \
+RUN ridk install 3 \
   && echo gem: --no-document >> C:\ProgramData\gemrc \
   && gem install cool.io -v 1.5.4 --platform ruby \
   && gem install oj -v 3.3.10 \
