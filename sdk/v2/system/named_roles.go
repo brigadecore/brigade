@@ -3,28 +3,12 @@ package system
 import libAuthz "github.com/brigadecore/brigade/sdk/v2/lib/authz"
 
 const (
-	// RoleNameAdmin is the name of a system-level Role that enables principals to
+	// RoleAdmin is the name of a system-level Role that enables principals to
 	// manage Users, ServiceAccounts, and system-level permissions for Users and
 	// ServiceAccounts.
-	RoleNameAdmin libAuthz.RoleName = "ADMIN"
+	RoleAdmin libAuthz.Role = "ADMIN"
 
-	// RoleNameReader is the name of a system-level Role that enables global read
+	// RoleReader is the name of a system-level Role that enables global read
 	// access.
-	RoleNameReader libAuthz.RoleName = "READER"
+	RoleReader libAuthz.Role = "READER"
 )
-
-// RoleAdmin returns a system-level Role that enables principals to manage
-// Users, ServiceAccounts, and system-level permissions for Users and
-// ServiceAccounts.
-func RoleAdmin() libAuthz.Role {
-	return libAuthz.Role{
-		Name: RoleNameAdmin,
-	}
-}
-
-// RoleReader returns a system-level Role that enables global read access.
-func RoleReader() libAuthz.Role {
-	return libAuthz.Role{
-		Name: RoleNameReader,
-	}
-}
