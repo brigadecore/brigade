@@ -17,56 +17,40 @@ func TestMatches(t *testing.T) {
 		{
 			name: "names do not match",
 			roleAssignment: RoleAssignment{
-				Role: Role{
-					Name: "foo",
-				},
+				Role:  "foo",
 				Scope: "foo",
 			},
-			role: Role{
-				Name: "bar",
-			},
+			role:    "bar",
 			scope:   "foo",
 			matches: false,
 		},
 		{
 			name: "scopes do not match",
 			roleAssignment: RoleAssignment{
-				Role: Role{
-					Name: "foo",
-				},
+				Role:  "foo",
 				Scope: "foo",
 			},
-			role: Role{
-				Name: "foo",
-			},
+			role:    "foo",
 			scope:   "bar",
 			matches: false,
 		},
 		{
 			name: "scopes are an exact match",
 			roleAssignment: RoleAssignment{
-				Role: Role{
-					Name: "foo",
-				},
+				Role:  "foo",
 				Scope: "foo",
 			},
-			role: Role{
-				Name: "foo",
-			},
+			role:    "foo",
 			scope:   "foo",
 			matches: true,
 		},
 		{
 			name: "a global scope matches b scope",
 			roleAssignment: RoleAssignment{
-				Role: Role{
-					Name: "foo",
-				},
+				Role:  "foo",
 				Scope: RoleScopeGlobal,
 			},
-			role: Role{
-				Name: "foo",
-			},
+			role:    "foo",
 			scope:   "foo",
 			matches: true,
 		},

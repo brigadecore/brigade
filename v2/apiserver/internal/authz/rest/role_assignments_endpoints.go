@@ -56,9 +56,7 @@ func (r *RoleAssignmentsEndpoints) revoke(
 	req *http.Request,
 ) {
 	roleAssignment := libAuthz.RoleAssignment{
-		Role: libAuthz.Role{
-			Name: libAuthz.RoleName(req.URL.Query().Get("role")),
-		},
+		Role:  libAuthz.Role(req.URL.Query().Get("role")),
 		Scope: req.URL.Query().Get("scope"),
 		Principal: libAuthz.PrincipalReference{
 			Type: libAuthz.PrincipalType(req.URL.Query().Get("principalType")),

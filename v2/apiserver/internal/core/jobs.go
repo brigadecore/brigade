@@ -245,7 +245,7 @@ func (j *jobsService) Create(
 	eventID string,
 	job Job,
 ) error {
-	if err := j.authorize(ctx, RoleWorker(), eventID); err != nil {
+	if err := j.authorize(ctx, RoleWorker, eventID); err != nil {
 		return err
 	}
 
@@ -391,7 +391,7 @@ func (j *jobsService) Start(
 	eventID string,
 	jobName string,
 ) error {
-	if err := j.authorize(ctx, RoleScheduler(), ""); err != nil {
+	if err := j.authorize(ctx, RoleScheduler, ""); err != nil {
 		return err
 	}
 
@@ -461,7 +461,7 @@ func (j *jobsService) GetStatus(
 	eventID string,
 	jobName string,
 ) (JobStatus, error) {
-	if err := j.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := j.authorize(ctx, system.RoleReader, ""); err != nil {
 		return JobStatus{}, err
 	}
 
@@ -485,7 +485,7 @@ func (j *jobsService) WatchStatus(
 	eventID string,
 	jobName string,
 ) (<-chan JobStatus, error) {
-	if err := j.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := j.authorize(ctx, system.RoleReader, ""); err != nil {
 		return nil, err
 	}
 
@@ -535,7 +535,7 @@ func (j *jobsService) UpdateStatus(
 	jobName string,
 	status JobStatus,
 ) error {
-	if err := j.authorize(ctx, RoleObserver(), ""); err != nil {
+	if err := j.authorize(ctx, RoleObserver, ""); err != nil {
 		return err
 	}
 
@@ -583,7 +583,7 @@ func (j *jobsService) Cleanup(
 	eventID string,
 	jobName string,
 ) error {
-	if err := j.authorize(ctx, RoleObserver(), ""); err != nil {
+	if err := j.authorize(ctx, RoleObserver, ""); err != nil {
 		return err
 	}
 

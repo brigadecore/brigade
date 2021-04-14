@@ -30,9 +30,7 @@ func TestNewProjectAuthorizer(t *testing.T) {
 }
 
 func TestProjectAuthorizerAuthorize(t *testing.T) {
-	testProjectRole := ProjectRole{
-		Name: "foo",
-	}
+	const testProjectRole = "foo"
 	const testProjectID = "foo"
 	testCases := []struct {
 		name              string

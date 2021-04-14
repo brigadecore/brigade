@@ -146,7 +146,7 @@ func (l *logsService) Stream(
 	// this one read-only operation and require the principal to be a project user
 	// in order to stream logs.
 	if err =
-		l.projectAuthorize(ctx, event.ProjectID, RoleProjectUser()); err != nil {
+		l.projectAuthorize(ctx, event.ProjectID, RoleProjectUser); err != nil {
 		return nil, err
 	}
 
