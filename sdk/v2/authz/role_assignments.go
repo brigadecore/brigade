@@ -11,30 +11,13 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
-// PrincipalType is a type whose values can be used to disambiguate one type of
-// principal from another. For instance, when assigning a Role to a principal
-// via a RoleAssignment, a PrincipalType field is used to indicate whether the
-// value of the PrincipalID field reflects a User ID or a ServiceAccount ID.
-type PrincipalType string
-
 const (
 	// PrincipalTypeServiceAccount represents a principal that is a
 	// ServiceAccount.
-	PrincipalTypeServiceAccount PrincipalType = "SERVICE_ACCOUNT"
+	PrincipalTypeServiceAccount libAuthz.PrincipalType = "SERVICE_ACCOUNT"
 	// PrincipalTypeUser represents a principal that is a User.
-	PrincipalTypeUser PrincipalType = "USER"
+	PrincipalTypeUser libAuthz.PrincipalType = "USER"
 )
-
-// PrincipalReference is a reference to any sort of security principal (human
-// user, service account, etc.)
-type PrincipalReference struct {
-	// Type qualifies what kind of principal is referenced by the ID field-- for
-	// instance, a User or a ServiceAccount.
-	Type PrincipalType `json:"type,omitempty"`
-	// ID references a principal. The Type qualifies what type of principal that
-	// is-- for instance, a User or a ServiceAccount.
-	ID string `json:"id,omitempty"`
-}
 
 // RoleAssignment represents the assignment of a Role to a principal such as a
 // User or ServiceAccount.
@@ -42,7 +25,7 @@ type RoleAssignment struct {
 	// Role assigns a Role to the specified principal.
 	Role libAuthz.Role `json:"role"`
 	// Principal specifies the principal to whom the Role is assigned.
-	Principal PrincipalReference `json:"principal"`
+	Principal libAuthz.PrincipalReference `json:"principal"`
 }
 
 // MarshalJSON amends RoleAssignment instances with type metadata so that

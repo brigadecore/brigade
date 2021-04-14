@@ -232,15 +232,15 @@ func (p *projectsService) Create(
 	// Make the current user an admin, developer, and user of the project
 	principal := libAuthn.PrincipalFromContext(ctx)
 
-	var principalRef authz.PrincipalReference
+	var principalRef libAuthz.PrincipalReference
 	switch prin := principal.(type) {
 	case *authn.User:
-		principalRef = authz.PrincipalReference{
+		principalRef = libAuthz.PrincipalReference{
 			Type: authz.PrincipalTypeUser,
 			ID:   prin.ID,
 		}
 	case *authn.ServiceAccount:
-		principalRef = authz.PrincipalReference{
+		principalRef = libAuthz.PrincipalReference{
 			Type: authz.PrincipalTypeServiceAccount,
 			ID:   prin.ID,
 		}

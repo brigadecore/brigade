@@ -62,8 +62,8 @@ func (r *RoleAssignmentsEndpoints) revoke(
 			Name:  libAuthz.RoleName(req.URL.Query().Get("roleName")),
 			Scope: req.URL.Query().Get("roleScope"),
 		},
-		Principal: authz.PrincipalReference{
-			Type: authz.PrincipalType(req.URL.Query().Get("principalType")),
+		Principal: libAuthz.PrincipalReference{
+			Type: libAuthz.PrincipalType(req.URL.Query().Get("principalType")),
 			ID:   req.URL.Query().Get("principalID"),
 		},
 	}

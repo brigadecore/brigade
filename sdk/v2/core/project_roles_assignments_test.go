@@ -34,7 +34,7 @@ func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
 			Name:  libAuthz.RoleName("ceo"),
 			Scope: "bluebook",
 		},
-		Principal: authz.PrincipalReference{
+		Principal: libAuthz.PrincipalReference{
 			Type: authz.PrincipalTypeUser,
 			ID:   "tony@starkindustries.com",
 		},
@@ -72,7 +72,7 @@ func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
 			Name:  libAuthz.RoleName("ceo"),
 			Scope: "bluebook",
 		},
-		Principal: authz.PrincipalReference{
+		Principal: libAuthz.PrincipalReference{
 			Type: authz.PrincipalTypeUser,
 			ID:   "tony@starkindustries.com",
 		},
@@ -95,7 +95,7 @@ func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
 				require.Equal(
 					t,
 					testRoleAssignment.Principal.Type,
-					authz.PrincipalType(r.URL.Query().Get("principalType")),
+					libAuthz.PrincipalType(r.URL.Query().Get("principalType")),
 				)
 				require.Equal(
 					t,
