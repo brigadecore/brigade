@@ -6,6 +6,7 @@ import (
 
 	"github.com/brigadecore/brigade/sdk/v2/authz"
 	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
+	libAuthz "github.com/brigadecore/brigade/sdk/v2/lib/authz"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
@@ -27,7 +28,7 @@ func NewProjectRoleAssignmentsClient(
 
 func (p *projectRoleAssignmentsClient) Grant(
 	ctx context.Context,
-	roleAssignment authz.RoleAssignment,
+	roleAssignment libAuthz.RoleAssignment,
 ) error {
 	return p.ExecuteRequest(
 		ctx,
@@ -42,7 +43,7 @@ func (p *projectRoleAssignmentsClient) Grant(
 
 func (p *projectRoleAssignmentsClient) Revoke(
 	ctx context.Context,
-	roleAssignment authz.RoleAssignment,
+	roleAssignment libAuthz.RoleAssignment,
 ) error {
 	queryParams := map[string]string{
 		"roleName":      string(roleAssignment.Role.Name),

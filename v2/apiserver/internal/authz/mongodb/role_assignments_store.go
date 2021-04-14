@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
@@ -30,7 +31,7 @@ func NewRoleAssignmentsStore(
 
 func (r *roleAssignmentsStore) Grant(
 	ctx context.Context,
-	roleAssignment authz.RoleAssignment,
+	roleAssignment libAuthz.RoleAssignment,
 ) error {
 	tru := true
 	if res := r.collection.FindOneAndReplace(
@@ -52,7 +53,7 @@ func (r *roleAssignmentsStore) Grant(
 
 func (r *roleAssignmentsStore) Revoke(
 	ctx context.Context,
-	roleAssignment authz.RoleAssignment,
+	roleAssignment libAuthz.RoleAssignment,
 ) error {
 	if _, err := r.collection.DeleteOne(ctx, roleAssignment); err != nil {
 		return errors.Wrapf(
@@ -66,7 +67,7 @@ func (r *roleAssignmentsStore) Revoke(
 
 func (r *roleAssignmentsStore) RevokeMany(
 	ctx context.Context,
-	roleAssignment authz.RoleAssignment,
+	roleAssignment libAuthz.RoleAssignment,
 ) error {
 	criteria := bson.M{}
 	if roleAssignment.Role.Type != "" {
@@ -92,7 +93,7 @@ func (r *roleAssignmentsStore) RevokeMany(
 
 func (r *roleAssignmentsStore) Exists(
 	ctx context.Context,
-	roleAssignment authz.RoleAssignment,
+	roleAssignment libAuthz.RoleAssignment,
 ) (bool, error) {
 	criteria := bson.M{
 		"role.type":      roleAssignment.Role.Type,

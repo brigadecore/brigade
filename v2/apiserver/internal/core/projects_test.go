@@ -395,7 +395,7 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+					RevokeManyFn: func(context.Context, libAuthz.RoleAssignment) error {
 						return nil
 					},
 				},
@@ -439,7 +439,7 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+					RevokeManyFn: func(context.Context, libAuthz.RoleAssignment) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -483,7 +483,7 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+					RevokeManyFn: func(context.Context, libAuthz.RoleAssignment) error {
 						return nil
 					},
 				},
@@ -523,7 +523,7 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+					RevokeManyFn: func(context.Context, libAuthz.RoleAssignment) error {
 						return nil
 					},
 				},
@@ -568,7 +568,7 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, authz.RoleAssignment) error {
+					RevokeManyFn: func(context.Context, libAuthz.RoleAssignment) error {
 						return nil
 					},
 				},
