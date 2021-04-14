@@ -156,28 +156,27 @@ func grantProjectRole(
 			return err
 		}
 
-		roleAssignment := libAuthz.RoleAssignment{
-			Role: libAuthz.Role{
-				Type: core.RoleTypeProject,
+		projectRoleAssignment := core.ProjectRoleAssignment{
+			ProjectID: projectID,
+			Role: core.ProjectRole{
 				Name: roleName,
 			},
-			Scope: projectID,
 		}
 
-		roleAssignment.Principal.Type = authz.PrincipalTypeUser
-		for _, roleAssignment.Principal.ID = range userIDs {
+		projectRoleAssignment.Principal.Type = authz.PrincipalTypeUser
+		for _, projectRoleAssignment.Principal.ID = range userIDs {
 			if err = client.Core().Projects().Authz().RoleAssignments().Grant(
 				c.Context,
-				roleAssignment,
+				projectRoleAssignment,
 			); err != nil {
 				return err
 			}
 		}
-		roleAssignment.Principal.Type = authz.PrincipalTypeServiceAccount
-		for _, roleAssignment.Principal.ID = range serviceAccountIDs {
+		projectRoleAssignment.Principal.Type = authz.PrincipalTypeServiceAccount
+		for _, projectRoleAssignment.Principal.ID = range serviceAccountIDs {
 			if err = client.Core().Projects().Authz().RoleAssignments().Grant(
 				c.Context,
-				roleAssignment,
+				projectRoleAssignment,
 			); err != nil {
 				return err
 			}
@@ -206,28 +205,27 @@ func revokeProjectRole(
 			return err
 		}
 
-		roleAssignment := libAuthz.RoleAssignment{
-			Role: libAuthz.Role{
-				Type: core.RoleTypeProject,
+		projectRoleAssignment := core.ProjectRoleAssignment{
+			ProjectID: projectID,
+			Role: core.ProjectRole{
 				Name: roleName,
 			},
-			Scope: projectID,
 		}
 
-		roleAssignment.Principal.Type = authz.PrincipalTypeUser
-		for _, roleAssignment.Principal.ID = range userIDs {
+		projectRoleAssignment.Principal.Type = authz.PrincipalTypeUser
+		for _, projectRoleAssignment.Principal.ID = range userIDs {
 			if err = client.Core().Projects().Authz().RoleAssignments().Revoke(
 				c.Context,
-				roleAssignment,
+				projectRoleAssignment,
 			); err != nil {
 				return err
 			}
 		}
-		roleAssignment.Principal.Type = authz.PrincipalTypeServiceAccount
-		for _, roleAssignment.Principal.ID = range serviceAccountIDs {
+		projectRoleAssignment.Principal.Type = authz.PrincipalTypeServiceAccount
+		for _, projectRoleAssignment.Principal.ID = range serviceAccountIDs {
 			if err = client.Core().Projects().Authz().RoleAssignments().Revoke(
 				c.Context,
-				roleAssignment,
+				projectRoleAssignment,
 			); err != nil {
 				return err
 			}
