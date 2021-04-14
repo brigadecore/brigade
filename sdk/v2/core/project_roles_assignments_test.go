@@ -30,10 +30,10 @@ func TestNewProjectRoleAssignmentsClient(t *testing.T) {
 func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
 	testRoleAssignment := libAuthz.RoleAssignment{
 		Role: libAuthz.Role{
-			Type:  RoleTypeProject,
-			Name:  libAuthz.RoleName("ceo"),
-			Scope: "bluebook",
+			Type: RoleTypeProject,
+			Name: libAuthz.RoleName("ceo"),
 		},
+		Scope: "bluebook",
 		Principal: libAuthz.PrincipalReference{
 			Type: authz.PrincipalTypeUser,
 			ID:   "tony@starkindustries.com",
@@ -68,10 +68,10 @@ func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
 func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
 	testRoleAssignment := libAuthz.RoleAssignment{
 		Role: libAuthz.Role{
-			Type:  RoleTypeProject,
-			Name:  libAuthz.RoleName("ceo"),
-			Scope: "bluebook",
+			Type: RoleTypeProject,
+			Name: libAuthz.RoleName("ceo"),
 		},
+		Scope: "bluebook",
 		Principal: libAuthz.PrincipalReference{
 			Type: authz.PrincipalTypeUser,
 			ID:   "tony@starkindustries.com",
@@ -85,12 +85,12 @@ func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
 				require.Equal(
 					t,
 					testRoleAssignment.Role.Name,
-					libAuthz.RoleName(r.URL.Query().Get("roleName")),
+					libAuthz.RoleName(r.URL.Query().Get("role")),
 				)
 				require.Equal(
 					t,
-					testRoleAssignment.Role.Scope,
-					r.URL.Query().Get("roleScope"),
+					testRoleAssignment.Scope,
+					r.URL.Query().Get("scope"),
 				)
 				require.Equal(
 					t,

@@ -60,7 +60,7 @@ func (r *roleAssignmentsService) Grant(
 	ctx context.Context,
 	roleAssignment libAuthz.RoleAssignment,
 ) error {
-	if err := r.authorize(ctx, system.RoleAdmin()); err != nil {
+	if err := r.authorize(ctx, system.RoleAdmin(), ""); err != nil {
 		return err
 	}
 
@@ -101,7 +101,7 @@ func (r *roleAssignmentsService) Grant(
 			err,
 			"error granting role %q with scope %q to %s %q in store",
 			roleAssignment.Role.Name,
-			roleAssignment.Role.Scope,
+			roleAssignment.Scope,
 			roleAssignment.Principal.Type,
 			roleAssignment.Principal.ID,
 		)
@@ -114,7 +114,7 @@ func (r *roleAssignmentsService) Revoke(
 	ctx context.Context,
 	roleAssignment libAuthz.RoleAssignment,
 ) error {
-	if err := r.authorize(ctx, system.RoleAdmin()); err != nil {
+	if err := r.authorize(ctx, system.RoleAdmin(), ""); err != nil {
 		return err
 	}
 
@@ -155,7 +155,7 @@ func (r *roleAssignmentsService) Revoke(
 			err,
 			"error revoking role %q with scope %q for %s %q in store",
 			roleAssignment.Role.Name,
-			roleAssignment.Role.Scope,
+			roleAssignment.Scope,
 			roleAssignment.Principal.Type,
 			roleAssignment.Principal.ID,
 		)

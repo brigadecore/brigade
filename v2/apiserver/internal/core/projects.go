@@ -207,7 +207,7 @@ func (p *projectsService) Create(
 	ctx context.Context,
 	project Project,
 ) (Project, error) {
-	if err := p.authorize(ctx, RoleProjectCreator()); err != nil {
+	if err := p.authorize(ctx, RoleProjectCreator(), ""); err != nil {
 		return project, err
 	}
 
@@ -252,7 +252,8 @@ func (p *projectsService) Create(
 		ctx,
 		libAuthz.RoleAssignment{
 			Principal: principalRef,
-			Role:      RoleProjectAdmin(project.ID),
+			Role:      RoleProjectAdmin(),
+			Scope:     project.ID,
 		},
 	); err != nil {
 		return project, errors.Wrapf(
@@ -267,7 +268,8 @@ func (p *projectsService) Create(
 		ctx,
 		libAuthz.RoleAssignment{
 			Principal: principalRef,
-			Role:      RoleProjectDeveloper(project.ID),
+			Role:      RoleProjectDeveloper(),
+			Scope:     project.ID,
 		},
 	); err != nil {
 		return project, errors.Wrapf(
@@ -282,7 +284,8 @@ func (p *projectsService) Create(
 		ctx,
 		libAuthz.RoleAssignment{
 			Principal: principalRef,
-			Role:      RoleProjectUser(project.ID),
+			Role:      RoleProjectUser(),
+			Scope:     project.ID,
 		},
 	); err != nil {
 		return project, errors.Wrapf(
@@ -301,7 +304,7 @@ func (p *projectsService) List(
 	ctx context.Context,
 	opts meta.ListOptions,
 ) (ProjectList, error) {
-	if err := p.authorize(ctx, system.RoleReader()); err != nil {
+	if err := p.authorize(ctx, system.RoleReader(), ""); err != nil {
 		return ProjectList{}, err
 	}
 
@@ -319,7 +322,7 @@ func (p *projectsService) Get(
 	ctx context.Context,
 	id string,
 ) (Project, error) {
-	if err := p.authorize(ctx, system.RoleReader()); err != nil {
+	if err := p.authorize(ctx, system.RoleReader(), ""); err != nil {
 		return Project{}, err
 	}
 
@@ -336,7 +339,7 @@ func (p *projectsService) Get(
 
 func (p *projectsService) Update(ctx context.Context, project Project) error {
 	if err :=
-		p.authorize(ctx, RoleProjectDeveloper(project.ID)); err != nil {
+		p.authorize(ctx, RoleProjectDeveloper(), project.ID); err != nil {
 		return err
 	}
 
@@ -351,7 +354,7 @@ func (p *projectsService) Update(ctx context.Context, project Project) error {
 }
 
 func (p *projectsService) Delete(ctx context.Context, id string) error {
-	if err := p.authorize(ctx, RoleProjectAdmin(id)); err != nil {
+	if err := p.authorize(ctx, RoleProjectAdmin(), id); err != nil {
 		return err
 	}
 
@@ -389,9 +392,9 @@ func (p *projectsService) Delete(ctx context.Context, id string) error {
 		ctx,
 		libAuthz.RoleAssignment{
 			Role: libAuthz.Role{
-				Type:  RoleTypeProject,
-				Scope: id,
+				Type: RoleTypeProject,
 			},
+			Scope: id,
 		},
 	); err != nil {
 		return errors.Wrapf(

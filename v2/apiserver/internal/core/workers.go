@@ -271,7 +271,7 @@ func NewWorkersService(
 }
 
 func (w *workersService) Start(ctx context.Context, eventID string) error {
-	if err := w.authorize(ctx, RoleScheduler()); err != nil {
+	if err := w.authorize(ctx, RoleScheduler(), ""); err != nil {
 		return err
 	}
 
@@ -324,7 +324,7 @@ func (w *workersService) GetStatus(
 	ctx context.Context,
 	eventID string,
 ) (WorkerStatus, error) {
-	if err := w.authorize(ctx, system.RoleReader()); err != nil {
+	if err := w.authorize(ctx, system.RoleReader(), ""); err != nil {
 		return WorkerStatus{}, err
 	}
 
@@ -340,7 +340,7 @@ func (w *workersService) WatchStatus(
 	ctx context.Context,
 	eventID string,
 ) (<-chan WorkerStatus, error) {
-	if err := w.authorize(ctx, system.RoleReader()); err != nil {
+	if err := w.authorize(ctx, system.RoleReader(), ""); err != nil {
 		return nil, err
 	}
 
@@ -380,7 +380,7 @@ func (w *workersService) UpdateStatus(
 	eventID string,
 	status WorkerStatus,
 ) error {
-	if err := w.authorize(ctx, RoleObserver()); err != nil {
+	if err := w.authorize(ctx, RoleObserver(), ""); err != nil {
 		return err
 	}
 
@@ -417,7 +417,7 @@ func (w *workersService) Cleanup(
 	ctx context.Context,
 	eventID string,
 ) error {
-	if err := w.authorize(ctx, RoleObserver()); err != nil {
+	if err := w.authorize(ctx, RoleObserver(), ""); err != nil {
 		return err
 	}
 
