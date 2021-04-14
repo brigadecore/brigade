@@ -37,7 +37,7 @@ func NewProjectRoleAssignmentsService(
 
 func (p *projectRoleAssignmentsService) Grant(
 	ctx context.Context,
-	roleAssignment authz.RoleAssignment,
+	roleAssignment libAuthz.RoleAssignment,
 ) error {
 	projectID := roleAssignment.Role.Scope
 	if err := p.authorize(ctx, RoleProjectAdmin(projectID)); err != nil {
@@ -101,7 +101,7 @@ func (p *projectRoleAssignmentsService) Grant(
 
 func (p *projectRoleAssignmentsService) Revoke(
 	ctx context.Context,
-	roleAssignment authz.RoleAssignment,
+	roleAssignment libAuthz.RoleAssignment,
 ) error {
 	projectID := roleAssignment.Role.Scope
 	if err := p.authorize(ctx, RoleProjectAdmin(projectID)); err != nil {

@@ -156,7 +156,7 @@ func grantProjectRole(
 			return err
 		}
 
-		roleAssignment := authz.RoleAssignment{
+		roleAssignment := libAuthz.RoleAssignment{
 			Role: libAuthz.Role{
 				Type:  core.RoleTypeProject,
 				Name:  roleName,
@@ -206,7 +206,7 @@ func revokeProjectRole(
 			return err
 		}
 
-		roleAssignment := authz.RoleAssignment{
+		roleAssignment := libAuthz.RoleAssignment{
 			Role: libAuthz.Role{
 				Type:  core.RoleTypeProject,
 				Name:  roleName,

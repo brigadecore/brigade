@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	mongoTesting "github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestGrant(t *testing.T) {
-	testRoleAssignment := authz.RoleAssignment{}
+	testRoleAssignment := libAuthz.RoleAssignment{}
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
@@ -73,7 +73,7 @@ func TestGrant(t *testing.T) {
 }
 
 func TestRevoke(t *testing.T) {
-	testRoleAssignment := authz.RoleAssignment{}
+	testRoleAssignment := libAuthz.RoleAssignment{}
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
@@ -126,7 +126,7 @@ func TestRevoke(t *testing.T) {
 }
 
 func TestRevokeMany(t *testing.T) {
-	testRoleAssignment := authz.RoleAssignment{}
+	testRoleAssignment := libAuthz.RoleAssignment{}
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
@@ -179,7 +179,7 @@ func TestRevokeMany(t *testing.T) {
 }
 
 func TestExists(t *testing.T) {
-	testRoleAssignment := authz.RoleAssignment{}
+	testRoleAssignment := libAuthz.RoleAssignment{}
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
