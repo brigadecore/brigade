@@ -90,7 +90,7 @@ func TestRoleAssignmentsClientRevoke(t *testing.T) {
 				require.Equal(
 					t,
 					testRoleAssignment.Role.Name,
-					libAuthz.RoleName(r.URL.Query().Get("roleName")),
+					libAuthz.RoleName(r.URL.Query().Get("role")),
 				)
 				require.Equal(
 					t,

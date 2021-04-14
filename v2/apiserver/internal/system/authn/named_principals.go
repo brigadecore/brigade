@@ -19,15 +19,27 @@ var (
 // the "root" user.
 type rootPrincipal struct{}
 
-func (r *rootPrincipal) Roles() []libAuthz.Role {
-	return []libAuthz.Role{
-		system.RoleAdmin(),
-		system.RoleReader(),
-		core.RoleEventCreator(libAuthz.RoleScopeGlobal),
-		core.RoleProjectAdmin(libAuthz.RoleScopeGlobal),
-		core.RoleProjectCreator(),
-		core.RoleProjectDeveloper(libAuthz.RoleScopeGlobal),
-		core.RoleProjectUser(libAuthz.RoleScopeGlobal),
+func (r *rootPrincipal) RoleAssignments() []libAuthz.RoleAssignment {
+	return []libAuthz.RoleAssignment{
+		{Role: system.RoleAdmin()},
+		{Role: system.RoleReader()},
+		{
+			Role:  core.RoleEventCreator(),
+			Scope: libAuthz.RoleScopeGlobal,
+		},
+		{
+			Role:  core.RoleProjectAdmin(),
+			Scope: libAuthz.RoleScopeGlobal,
+		},
+		{Role: core.RoleProjectCreator()},
+		{
+			Role:  core.RoleProjectDeveloper(),
+			Scope: libAuthz.RoleScopeGlobal,
+		},
+		{
+			Role:  core.RoleProjectUser(),
+			Scope: libAuthz.RoleScopeGlobal,
+		},
 	}
 }
 
@@ -37,10 +49,10 @@ func (r *rootPrincipal) Roles() []libAuthz.Role {
 // Workers and Jobs.
 type schedulerPrincipal struct{}
 
-func (s *schedulerPrincipal) Roles() []libAuthz.Role {
-	return []libAuthz.Role{
-		system.RoleReader(),
-		core.RoleScheduler(),
+func (s *schedulerPrincipal) RoleAssignments() []libAuthz.RoleAssignment {
+	return []libAuthz.RoleAssignment{
+		{Role: system.RoleReader()},
+		{Role: core.RoleScheduler()},
 	}
 }
 
@@ -50,10 +62,10 @@ func (s *schedulerPrincipal) Roles() []libAuthz.Role {
 // Worker and Job statuses.
 type observerPrincipal struct{}
 
-func (o *observerPrincipal) Roles() []libAuthz.Role {
-	return []libAuthz.Role{
-		system.RoleReader(),
-		core.RoleObserver(),
+func (o *observerPrincipal) RoleAssignments() []libAuthz.RoleAssignment {
+	return []libAuthz.RoleAssignment{
+		{Role: system.RoleReader()},
+		{Role: core.RoleObserver()},
 	}
 }
 
@@ -64,10 +76,13 @@ type workerPrincipal struct {
 	eventID string
 }
 
-func (w *workerPrincipal) Roles() []libAuthz.Role {
-	return []libAuthz.Role{
-		system.RoleReader(),
-		core.RoleWorker(w.eventID),
+func (w *workerPrincipal) RoleAssignments() []libAuthz.RoleAssignment {
+	return []libAuthz.RoleAssignment{
+		{Role: system.RoleReader()},
+		{
+			Role:  core.RoleWorker(),
+			Scope: w.eventID,
+		},
 	}
 }
 

@@ -65,12 +65,12 @@ func (r *roleAssignmentsClient) Revoke(
 ) error {
 	queryParams := map[string]string{
 		"roleType":      string(roleAssignment.Role.Type),
-		"roleName":      string(roleAssignment.Role.Name),
+		"role":          string(roleAssignment.Role.Name),
 		"principalType": string(roleAssignment.Principal.Type),
 		"principalID":   roleAssignment.Principal.ID,
 	}
-	if roleAssignment.Role.Scope != "" {
-		queryParams["roleScope"] = string(roleAssignment.Role.Scope)
+	if roleAssignment.Scope != "" {
+		queryParams["scope"] = string(roleAssignment.Scope)
 	}
 	return r.ExecuteRequest(
 		ctx,

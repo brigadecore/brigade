@@ -46,8 +46,8 @@ func (p *projectRoleAssignmentsClient) Revoke(
 	roleAssignment libAuthz.RoleAssignment,
 ) error {
 	queryParams := map[string]string{
-		"roleName":      string(roleAssignment.Role.Name),
-		"roleScope":     roleAssignment.Role.Scope,
+		"role":          string(roleAssignment.Role.Name),
+		"scope":         roleAssignment.Scope,
 		"principalType": string(roleAssignment.Principal.Type),
 		"principalID":   roleAssignment.Principal.ID,
 	}

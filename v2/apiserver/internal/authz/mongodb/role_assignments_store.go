@@ -76,8 +76,8 @@ func (r *roleAssignmentsStore) RevokeMany(
 	if roleAssignment.Role.Name != "" {
 		criteria["role.name"] = roleAssignment.Role.Name
 	}
-	if roleAssignment.Role.Scope != "" {
-		criteria["role.scope"] = roleAssignment.Role.Scope
+	if roleAssignment.Scope != "" {
+		criteria["scope"] = roleAssignment.Scope
 	}
 	if roleAssignment.Principal.Type != "" {
 		criteria["principal.type"] = roleAssignment.Principal.Type
@@ -101,20 +101,19 @@ func (r *roleAssignmentsStore) Exists(
 		"principal.type": roleAssignment.Principal.Type,
 		"principal.id":   roleAssignment.Principal.ID,
 	}
-	if roleAssignment.Role.Scope == "" {
-		criteria["role.scope"] = bson.M{
+	if roleAssignment.Scope == "" {
+		criteria["scope"] = bson.M{
 			"$exists": false,
 		}
 	} else {
-		criteria["role.scope"] = bson.M{
-			"$in": []string{roleAssignment.Role.Scope, "*"},
+		criteria["scope"] = bson.M{
+			"$in": []string{roleAssignment.Scope, "*"},
 		}
 	}
-	err := r.collection.FindOne(ctx, criteria).Err()
-	if err == mongo.ErrNoDocuments {
+	if err :=
+		r.collection.FindOne(ctx, criteria).Err(); err == mongo.ErrNoDocuments {
 		return false, nil
-	}
-	if err != nil {
+	} else if err != nil {
 		return false, errors.Wrap(err, "error finding role assignment")
 	}
 	return true, nil

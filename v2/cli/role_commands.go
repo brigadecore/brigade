@@ -172,7 +172,7 @@ func grantSystemRole(roleName libAuthz.RoleName) func(c *cli.Context) error {
 
 		// Special logic for EVENT_CREATOR
 		if roleName == core.RoleNameEventCreator {
-			roleAssignment.Role.Scope = c.String(flagSource)
+			roleAssignment.Scope = c.String(flagSource)
 		}
 
 		client, err := getClient(c)
@@ -225,7 +225,7 @@ func revokeSystemRole(
 
 		// Special logic for EVENT_CREATOR
 		if roleName == core.RoleNameEventCreator {
-			roleAssignment.Role.Scope = c.String(flagSource)
+			roleAssignment.Scope = c.String(flagSource)
 		}
 
 		client, err := getClient(c)
