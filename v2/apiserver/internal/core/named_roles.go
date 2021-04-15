@@ -2,7 +2,6 @@ package core
 
 import (
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 )
 
 // Core-specific, system-level roles...
@@ -11,7 +10,6 @@ import (
 // create Events for all Projects.
 func RoleEventCreator() libAuthz.Role {
 	return libAuthz.Role{
-		Type: system.RoleTypeSystem,
 		Name: "EVENT_CREATOR",
 	}
 }
@@ -20,36 +18,32 @@ func RoleEventCreator() libAuthz.Role {
 // create new Projects.
 func RoleProjectCreator() libAuthz.Role {
 	return libAuthz.Role{
-		Type: system.RoleTypeSystem,
 		Name: "PROJECT_CREATOR",
 	}
 }
 
-// Core-specific, project-level roles...
+// Core-specific, ProjectRoles...
 
-// RoleProjectAdmin returns a project-level Role that enables a principal to
-// manage a Project.
-func RoleProjectAdmin() libAuthz.Role {
-	return libAuthz.Role{
-		Type: RoleTypeProject,
+// RoleProjectAdmin returns a ProjectRole that enables a principal to manage a
+// Project.
+func RoleProjectAdmin() ProjectRole {
+	return ProjectRole{
 		Name: "ADMIN",
 	}
 }
 
-// RoleProjectDeveloper returns a project-level Role that enables a principal to
-// update a Project.
-func RoleProjectDeveloper() libAuthz.Role {
-	return libAuthz.Role{
-		Type: RoleTypeProject,
+// RoleProjectDeveloper returns a ProjectRole that enables a principal to update
+// a Project.
+func RoleProjectDeveloper() ProjectRole {
+	return ProjectRole{
 		Name: "DEVELOPER",
 	}
 }
 
-// RoleProjectUser returns a project-level Role that enables a principal to
-// create and manage Events for a Project.
-func RoleProjectUser() libAuthz.Role {
-	return libAuthz.Role{
-		Type: RoleTypeProject,
+// RoleProjectUser returns a ProjectRole that enables a principal to create and
+// manage Events for a Project.
+func RoleProjectUser() ProjectRole {
+	return ProjectRole{
 		Name: "USER",
 	}
 }
@@ -65,7 +59,6 @@ func RoleProjectUser() libAuthz.Role {
 // Observer component.
 func RoleObserver() libAuthz.Role {
 	return libAuthz.Role{
-		Type: system.RoleTypeSystem,
 		Name: "OBSERVER",
 	}
 }
@@ -75,7 +68,6 @@ func RoleObserver() libAuthz.Role {
 // This Role exists exclusively for use by Brigade's Scheduler component.
 func RoleScheduler() libAuthz.Role {
 	return libAuthz.Role{
-		Type: system.RoleTypeSystem,
 		Name: "SCHEDULER",
 	}
 }
@@ -85,7 +77,6 @@ func RoleScheduler() libAuthz.Role {
 // exclusively for the use of Brigade Workers.
 func RoleWorker() libAuthz.Role {
 	return libAuthz.Role{
-		Type: system.RoleTypeSystem,
 		Name: "WORKER",
 	}
 }

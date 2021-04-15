@@ -65,38 +65,11 @@ func (r *roleAssignmentsStore) Revoke(
 	return nil
 }
 
-func (r *roleAssignmentsStore) RevokeMany(
-	ctx context.Context,
-	roleAssignment libAuthz.RoleAssignment,
-) error {
-	criteria := bson.M{}
-	if roleAssignment.Role.Type != "" {
-		criteria["role.type"] = roleAssignment.Role.Type
-	}
-	if roleAssignment.Role.Name != "" {
-		criteria["role.name"] = roleAssignment.Role.Name
-	}
-	if roleAssignment.Scope != "" {
-		criteria["scope"] = roleAssignment.Scope
-	}
-	if roleAssignment.Principal.Type != "" {
-		criteria["principal.type"] = roleAssignment.Principal.Type
-	}
-	if roleAssignment.Principal.ID != "" {
-		criteria["principal.id"] = roleAssignment.Principal.ID
-	}
-	if _, err := r.collection.DeleteMany(ctx, criteria); err != nil {
-		return errors.Wrap(err, "error deleting role assignments")
-	}
-	return nil
-}
-
 func (r *roleAssignmentsStore) Exists(
 	ctx context.Context,
 	roleAssignment libAuthz.RoleAssignment,
 ) (bool, error) {
 	criteria := bson.M{
-		"role.type":      roleAssignment.Role.Type,
 		"role.name":      roleAssignment.Role.Name,
 		"principal.type": roleAssignment.Principal.Type,
 		"principal.id":   roleAssignment.Principal.ID,

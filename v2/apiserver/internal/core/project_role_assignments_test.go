@@ -12,19 +12,98 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMatches(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		projectRoleAssignment ProjectRoleAssignment
+		projectRole           ProjectRole
+		projectID             string
+		matches               bool
+	}{
+		{
+			name: "names do not match",
+			projectRoleAssignment: ProjectRoleAssignment{
+				Role: ProjectRole{
+					Name: "foo",
+				},
+				ProjectID: "foo",
+			},
+			projectRole: ProjectRole{
+				Name: "bar",
+			},
+			projectID: "foo",
+			matches:   false,
+		},
+		{
+			name: "scopes do not match",
+			projectRoleAssignment: ProjectRoleAssignment{
+				Role: ProjectRole{
+					Name: "foo",
+				},
+				ProjectID: "foo",
+			},
+			projectRole: ProjectRole{
+				Name: "foo",
+			},
+			projectID: "bar",
+			matches:   false,
+		},
+		{
+			name: "scopes are an exact match",
+			projectRoleAssignment: ProjectRoleAssignment{
+				Role: ProjectRole{
+					Name: "foo",
+				},
+				ProjectID: "foo",
+			},
+			projectRole: ProjectRole{
+				Name: "foo",
+			},
+			projectID: "foo",
+			matches:   true,
+		},
+		{
+			name: "a global project scope matches b project",
+			projectRoleAssignment: ProjectRoleAssignment{
+				Role: ProjectRole{
+					Name: "foo",
+				},
+				ProjectID: ProjectRoleScopeGlobal,
+			},
+			projectRole: ProjectRole{
+				Name: "foo",
+			},
+			projectID: "foo",
+			matches:   true,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			require.Equal(
+				t,
+				testCase.matches,
+				testCase.projectRoleAssignment.Matches(
+					testCase.projectID,
+					testCase.projectRole,
+				),
+			)
+		})
+	}
+}
+
 func TestNewProjectRoleAssignmentsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	usersStore := &authn.MockUsersStore{}
 	serviceAccountsStore := &authn.MockServiceAccountStore{}
-	roleAssignmentsStore := &authz.MockRoleAssignmentsStore{}
+	projectRoleAssignmentsStore := &mockProjectRoleAssignmentsStore{}
 	svc := NewProjectRoleAssignmentsService(
-		libAuthz.AlwaysAuthorize,
+		alwaysProjectAuthorize,
 		projectsStore,
 		usersStore,
 		serviceAccountsStore,
-		roleAssignmentsStore,
+		projectRoleAssignmentsStore,
 	)
-	require.NotNil(t, svc.(*projectRoleAssignmentsService).authorize)
+	require.NotNil(t, svc.(*projectRoleAssignmentsService).projectAuthorize)
 	require.Same(
 		t,
 		projectsStore,
@@ -38,22 +117,22 @@ func TestNewProjectRoleAssignmentsService(t *testing.T) {
 	)
 	require.Same(
 		t,
-		roleAssignmentsStore,
-		svc.(*projectRoleAssignmentsService).roleAssignmentsStore,
+		projectRoleAssignmentsStore,
+		svc.(*projectRoleAssignmentsService).projectRoleAssignmentsStore,
 	)
 }
 
 func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 	testCases := []struct {
-		name           string
-		roleAssignment libAuthz.RoleAssignment
-		service        authz.RoleAssignmentsService
-		assertions     func(error)
+		name                  string
+		projectRoleAssignment ProjectRoleAssignment
+		service               ProjectRoleAssignmentsService
+		assertions            func(error)
 	}{
 		{
 			name: "unauthorized",
 			service: &projectRoleAssignmentsService{
-				authorize: libAuthz.NeverAuthorize,
+				projectAuthorize: neverProjectAuthorize,
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -62,14 +141,14 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 		},
 		{
 			name: "error retrieving project from store",
-			roleAssignment: libAuthz.RoleAssignment{
+			projectRoleAssignment: ProjectRoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeUser,
 					ID:   "foo",
 				},
 			},
 			service: &projectRoleAssignmentsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, errors.New("something went wrong")
@@ -84,14 +163,14 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 		},
 		{
 			name: "error retrieving user from store",
-			roleAssignment: libAuthz.RoleAssignment{
+			projectRoleAssignment: ProjectRoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeUser,
 					ID:   "foo",
 				},
 			},
 			service: &projectRoleAssignmentsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -111,14 +190,14 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 		},
 		{
 			name: "error retrieving service account from store",
-			roleAssignment: libAuthz.RoleAssignment{
+			projectRoleAssignment: ProjectRoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeServiceAccount,
 					ID:   "foo",
 				},
 			},
 			service: &projectRoleAssignmentsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -138,14 +217,14 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 		},
 		{
 			name: "error granting the role",
-			roleAssignment: libAuthz.RoleAssignment{
+			projectRoleAssignment: ProjectRoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeServiceAccount,
 					ID:   "foo",
 				},
 			},
 			service: &projectRoleAssignmentsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -156,8 +235,8 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 						return authn.ServiceAccount{}, nil
 					},
 				},
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					GrantFn: func(context.Context, libAuthz.RoleAssignment) error {
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					GrantFn: func(context.Context, ProjectRoleAssignment) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -170,14 +249,14 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 		},
 		{
 			name: "success",
-			roleAssignment: libAuthz.RoleAssignment{
+			projectRoleAssignment: ProjectRoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeServiceAccount,
 					ID:   "foo",
 				},
 			},
 			service: &projectRoleAssignmentsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -188,8 +267,8 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 						return authn.ServiceAccount{}, nil
 					},
 				},
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					GrantFn: func(context.Context, libAuthz.RoleAssignment) error {
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					GrantFn: func(context.Context, ProjectRoleAssignment) error {
 						return nil
 					},
 				},
@@ -203,7 +282,7 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			err := testCase.service.Grant(
 				context.Background(),
-				testCase.roleAssignment,
+				testCase.projectRoleAssignment,
 			)
 			testCase.assertions(err)
 		})
@@ -212,15 +291,15 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 
 func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 	testCases := []struct {
-		name           string
-		roleAssignment libAuthz.RoleAssignment
-		service        authz.RoleAssignmentsService
-		assertions     func(error)
+		name                  string
+		projectRoleAssignment ProjectRoleAssignment
+		service               ProjectRoleAssignmentsService
+		assertions            func(error)
 	}{
 		{
 			name: "unauthorized",
 			service: &projectRoleAssignmentsService{
-				authorize: libAuthz.NeverAuthorize,
+				projectAuthorize: neverProjectAuthorize,
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -229,14 +308,14 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 		},
 		{
 			name: "error retrieving project from store",
-			roleAssignment: libAuthz.RoleAssignment{
+			projectRoleAssignment: ProjectRoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeUser,
 					ID:   "foo",
 				},
 			},
 			service: &projectRoleAssignmentsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, errors.New("something went wrong")
@@ -251,14 +330,14 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 		},
 		{
 			name: "error retrieving user from store",
-			roleAssignment: libAuthz.RoleAssignment{
+			projectRoleAssignment: ProjectRoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeUser,
 					ID:   "foo",
 				},
 			},
 			service: &projectRoleAssignmentsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -278,14 +357,14 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 		},
 		{
 			name: "error retrieving service account from store",
-			roleAssignment: libAuthz.RoleAssignment{
+			projectRoleAssignment: ProjectRoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeServiceAccount,
 					ID:   "foo",
 				},
 			},
 			service: &projectRoleAssignmentsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -305,14 +384,14 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 		},
 		{
 			name: "error revoking the role",
-			roleAssignment: libAuthz.RoleAssignment{
+			projectRoleAssignment: ProjectRoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeServiceAccount,
 					ID:   "foo",
 				},
 			},
 			service: &projectRoleAssignmentsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -323,8 +402,8 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 						return authn.ServiceAccount{}, nil
 					},
 				},
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeFn: func(context.Context, libAuthz.RoleAssignment) error {
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeFn: func(context.Context, ProjectRoleAssignment) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -337,14 +416,14 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 		},
 		{
 			name: "success",
-			roleAssignment: libAuthz.RoleAssignment{
+			projectRoleAssignment: ProjectRoleAssignment{
 				Principal: libAuthz.PrincipalReference{
 					Type: authz.PrincipalTypeServiceAccount,
 					ID:   "foo",
 				},
 			},
 			service: &projectRoleAssignmentsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
@@ -355,8 +434,8 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 						return authn.ServiceAccount{}, nil
 					},
 				},
-				roleAssignmentsStore: &authz.MockRoleAssignmentsStore{
-					RevokeFn: func(context.Context, libAuthz.RoleAssignment) error {
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeFn: func(context.Context, ProjectRoleAssignment) error {
 						return nil
 					},
 				},
@@ -370,9 +449,44 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			err := testCase.service.Revoke(
 				context.Background(),
-				testCase.roleAssignment,
+				testCase.projectRoleAssignment,
 			)
 			testCase.assertions(err)
 		})
 	}
+}
+
+type mockProjectRoleAssignmentsStore struct {
+	GrantFn      func(context.Context, ProjectRoleAssignment) error
+	RevokeFn     func(context.Context, ProjectRoleAssignment) error
+	RevokeManyFn func(ctx context.Context, projectID string) error
+	ExistsFn     func(context.Context, ProjectRoleAssignment) (bool, error)
+}
+
+func (m *mockProjectRoleAssignmentsStore) Grant(
+	ctx context.Context,
+	projectRoleAssignment ProjectRoleAssignment,
+) error {
+	return m.GrantFn(ctx, projectRoleAssignment)
+}
+
+func (m *mockProjectRoleAssignmentsStore) Revoke(
+	ctx context.Context,
+	projectRoleAssignment ProjectRoleAssignment,
+) error {
+	return m.RevokeFn(ctx, projectRoleAssignment)
+}
+
+func (m *mockProjectRoleAssignmentsStore) RevokeByProjectID(
+	ctx context.Context,
+	projectID string,
+) error {
+	return m.RevokeManyFn(ctx, projectID)
+}
+
+func (m *mockProjectRoleAssignmentsStore) Exists(
+	ctx context.Context,
+	projectRoleAssignment ProjectRoleAssignment,
+) (bool, error) {
+	return m.ExistsFn(ctx, projectRoleAssignment)
 }

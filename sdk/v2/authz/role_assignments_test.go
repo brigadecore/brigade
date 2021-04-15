@@ -11,7 +11,6 @@ import (
 	rmTesting "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery/testing" // nolint: lll
 	libAuthz "github.com/brigadecore/brigade/sdk/v2/lib/authz"
 	metaTesting "github.com/brigadecore/brigade/sdk/v2/meta/testing"
-	"github.com/brigadecore/brigade/sdk/v2/system"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,7 +35,6 @@ func TestNewRoleAssignmentsClient(t *testing.T) {
 func TestRoleAssignmentsClientGrant(t *testing.T) {
 	testRoleAssignment := libAuthz.RoleAssignment{
 		Role: libAuthz.Role{
-			Type: system.RoleTypeSystem,
 			Name: libAuthz.RoleName("ceo"),
 		},
 		Principal: libAuthz.PrincipalReference{
@@ -69,7 +67,6 @@ func TestRoleAssignmentsClientGrant(t *testing.T) {
 func TestRoleAssignmentsClientRevoke(t *testing.T) {
 	testRoleAssignment := libAuthz.RoleAssignment{
 		Role: libAuthz.Role{
-			Type: system.RoleTypeSystem,
 			Name: libAuthz.RoleName("ceo"),
 		},
 		Principal: libAuthz.PrincipalReference{
@@ -82,11 +79,6 @@ func TestRoleAssignmentsClientRevoke(t *testing.T) {
 			func(w http.ResponseWriter, r *http.Request) {
 				require.Equal(t, http.MethodDelete, r.Method)
 				require.Equal(t, "/v2/role-assignments", r.URL.Path)
-				require.Equal(
-					t,
-					testRoleAssignment.Role.Type,
-					libAuthz.RoleType(r.URL.Query().Get("roleType")),
-				)
 				require.Equal(
 					t,
 					testRoleAssignment.Role.Name,

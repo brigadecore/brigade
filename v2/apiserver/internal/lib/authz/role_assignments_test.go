@@ -15,32 +15,14 @@ func TestMatches(t *testing.T) {
 		matches        bool
 	}{
 		{
-			name: "types do not match",
-			roleAssignment: RoleAssignment{
-				Role: Role{
-					Type: "foo",
-					Name: "foo",
-				},
-				Scope: "foo",
-			},
-			role: Role{
-				Type: "bar",
-				Name: "foo",
-			},
-			scope:   "foo",
-			matches: false,
-		},
-		{
 			name: "names do not match",
 			roleAssignment: RoleAssignment{
 				Role: Role{
-					Type: "foo",
 					Name: "foo",
 				},
 				Scope: "foo",
 			},
 			role: Role{
-				Type: "foo",
 				Name: "bar",
 			},
 			scope:   "foo",
@@ -50,13 +32,11 @@ func TestMatches(t *testing.T) {
 			name: "scopes do not match",
 			roleAssignment: RoleAssignment{
 				Role: Role{
-					Type: "foo",
 					Name: "foo",
 				},
 				Scope: "foo",
 			},
 			role: Role{
-				Type: "foo",
 				Name: "foo",
 			},
 			scope:   "bar",
@@ -66,13 +46,11 @@ func TestMatches(t *testing.T) {
 			name: "scopes are an exact match",
 			roleAssignment: RoleAssignment{
 				Role: Role{
-					Type: "foo",
 					Name: "foo",
 				},
 				Scope: "foo",
 			},
 			role: Role{
-				Type: "foo",
 				Name: "foo",
 			},
 			scope:   "foo",
@@ -82,13 +60,11 @@ func TestMatches(t *testing.T) {
 			name: "a global scope matches b scope",
 			roleAssignment: RoleAssignment{
 				Role: Role{
-					Type: "foo",
 					Name: "foo",
 				},
 				Scope: RoleScopeGlobal,
 			},
 			role: Role{
-				Type: "foo",
 				Name: "foo",
 			},
 			scope:   "foo",
