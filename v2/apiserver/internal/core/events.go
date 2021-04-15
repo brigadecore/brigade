@@ -261,6 +261,9 @@ type EventsService interface {
 	// If no such event is found, implementations MUST return a *meta.ErrNotFound
 	// error.
 	GetByWorkerToken(context.Context, string) (Event, error)
+	// Clones an Event and creates a new Event after removing the original's
+	// metadata and Worker configuration
+	Clone(context.Context, string) (EventList, error)
 	// UpdateSourceState updates source-specific (e.g. gateway-specific) Event
 	// state.
 	UpdateSourceState(context.Context, string, SourceState) error
@@ -530,6 +533,29 @@ func (e *eventsService) GetByWorkerToken(
 		return event, errors.Wrap(err, "error retrieving event from store")
 	}
 	return event, nil
+}
+
+func (e *eventsService) Clone(
+	ctx context.Context,
+	id string,
+) (EventList, error) {
+	events := EventList{}
+
+	if err := e.authorize(ctx, system.RoleReader(), ""); err != nil {
+		return events, err
+	}
+
+	event, err := e.eventsStore.Get(ctx, id)
+	if err != nil {
+		return events, errors.Wrapf(err, "error retrieving event %q from store", id)
+	}
+
+	// Clone all event details *except* metadata and worker config
+	clone := event
+	clone.ObjectMeta = meta.ObjectMeta{}
+	clone.Worker = Worker{}
+
+	return e.Create(ctx, clone)
 }
 
 func (e *eventsService) UpdateSourceState(

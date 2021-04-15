@@ -206,6 +206,45 @@ func TestEventsClientGet(t *testing.T) {
 	require.Equal(t, testEvent, event)
 }
 
+func TestEventsClientClone(t *testing.T) {
+	const testEventID = "12345"
+	testEvents := EventList{
+		Items: []Event{
+			{
+				ObjectMeta: meta.ObjectMeta{
+					ID: "12345",
+				},
+			},
+			{
+				ObjectMeta: meta.ObjectMeta{
+					ID: "abcde",
+				},
+			},
+		},
+	}
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodPut, r.Method)
+				require.Equal(
+					t,
+					fmt.Sprintf("/v2/events/%s/clone", testEventID),
+					r.URL.Path,
+				)
+				bodyBytes, err := json.Marshal(testEvents)
+				require.NoError(t, err)
+				w.WriteHeader(http.StatusCreated)
+				fmt.Fprintln(w, string(bodyBytes))
+			},
+		),
+	)
+	defer server.Close()
+	client := NewEventsClient(server.URL, rmTesting.TestAPIToken, nil)
+	events, err := client.Clone(context.Background(), testEventID)
+	require.NoError(t, err)
+	require.Equal(t, testEvents, events)
+}
+
 func TestEventsClientUpdateSourceState(t *testing.T) {
 	const testEventID = "12345"
 	testSourceState := SourceState{
