@@ -7,7 +7,7 @@
 		"kind": {
 			"type": "string",
 			"description": "The type of object represented by the document",
-			"enum": ["RoleAssignment"]
+			"enum": ["ProjectRoleAssignment"]
 		}
 
 	},
@@ -28,14 +28,9 @@
 		},
 		"role": {
 			"type": "object",
-			"required": ["type", "name", "scope"],
+			"required": ["name", "projectID"],
 			"additionalProperties": false,
 			"properties": {
-				"type": {
-					"type": "string",
-					"description": "The type of role being assigned-- must be PROJECT",
-					"enum": ["PROJECT"]
-				},
 				"name": {
 					"type": "string",
 					"description": "A role name",
@@ -45,7 +40,7 @@
 						"USER"
 					]
 				},
-				"scope": {
+				"projectID": {
 					"type": "string",
 					"description": "The project this role should be scoped to",
 					"pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",

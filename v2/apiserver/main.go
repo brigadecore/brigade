@@ -52,6 +52,7 @@ func main() {
 	var eventsStore core.EventsStore
 	var jobsStore core.JobsStore
 	var projectsStore core.ProjectsStore
+	var projectRoleAssignmentsStore core.ProjectRoleAssignmentsStore
 	var roleAssignmentsStore authz.RoleAssignmentsStore
 	var secretsStore core.SecretsStore
 	var serviceAccountsStore authn.ServiceAccountsStore
@@ -73,6 +74,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		projectRoleAssignmentsStore =
+			coreMongodb.NewProjectRoleAssignmentsStore(database)
 		roleAssignmentsStore = authzMongodb.NewRoleAssignmentsStore(database)
 		secretsStore = coreKubernetes.NewSecretsStore(kubeClient)
 		serviceAccountsStore, err = authnMongodb.NewServiceAccountsStore(database)
@@ -118,12 +121,14 @@ func main() {
 		)
 	}
 
-	// Authorizer
+	// Authorizers
 	authorizer := sysAuthz.NewAuthorizer(roleAssignmentsStore)
+	projectAuthorizer := core.NewProjectAuthorizer(projectRoleAssignmentsStore)
 
 	// Events service
 	eventsService := core.NewEventsService(
 		authorizer.Authorize,
+		projectAuthorizer.Authorize,
 		projectsStore,
 		eventsStore,
 		coolLogsStore,
@@ -141,7 +146,7 @@ func main() {
 
 	// Logs service
 	logsService := core.NewLogsService(
-		authorizer.Authorize,
+		projectAuthorizer.Authorize,
 		projectsStore,
 		eventsStore,
 		warmLogsStore,
@@ -151,20 +156,21 @@ func main() {
 	// Projects service
 	projectsService := core.NewProjectsService(
 		authorizer.Authorize,
+		projectAuthorizer.Authorize,
 		projectsStore,
 		eventsStore,
 		coolLogsStore,
-		roleAssignmentsStore,
+		projectRoleAssignmentsStore,
 		substrate,
 	)
 
 	// ProjectRoleAssignments service
 	projectRoleAssignmentsService := core.NewProjectRoleAssignmentsService(
-		authorizer.Authorize,
+		projectAuthorizer.Authorize,
 		projectsStore,
 		usersStore,
 		serviceAccountsStore,
-		roleAssignmentsStore,
+		projectRoleAssignmentsStore,
 	)
 
 	// Roles service
@@ -182,6 +188,7 @@ func main() {
 	// Secrets service
 	secretsService := core.NewSecretsService(
 		authorizer.Authorize,
+		projectAuthorizer.Authorize,
 		projectsStore,
 		secretsStore,
 	)

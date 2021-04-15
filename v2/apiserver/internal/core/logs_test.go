@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
@@ -21,13 +20,13 @@ func TestLogsService(t *testing.T) {
 	warmLogsStore := &mockLogsStore{}
 	coolLogsStore := &mockLogsStore{}
 	svc := NewLogsService(
-		libAuthz.AlwaysAuthorize,
+		alwaysProjectAuthorize,
 		projectsStore,
 		eventsStore,
 		warmLogsStore,
 		coolLogsStore,
 	)
-	require.NotNil(t, svc.(*logsService).authorize)
+	require.NotNil(t, svc.(*logsService).projectAuthorize)
 	require.Same(t, projectsStore, svc.(*logsService).projectsStore)
 	require.Same(t, eventsStore, svc.(*logsService).eventsStore)
 	require.Same(t, warmLogsStore, svc.(*logsService).warmLogsStore)
@@ -74,7 +73,7 @@ func TestLogsServiceStream(t *testing.T) {
 		{
 			name: "unauthorized",
 			service: &logsService{
-				authorize: libAuthz.NeverAuthorize,
+				projectAuthorize: neverProjectAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -92,7 +91,7 @@ func TestLogsServiceStream(t *testing.T) {
 				Job: "foo",
 			},
 			service: &logsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -113,7 +112,7 @@ func TestLogsServiceStream(t *testing.T) {
 				Container: "bar",
 			},
 			service: &logsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
@@ -139,7 +138,7 @@ func TestLogsServiceStream(t *testing.T) {
 			name:     "error retrieving project from store",
 			selector: LogsSelector{},
 			service: &logsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -161,7 +160,7 @@ func TestLogsServiceStream(t *testing.T) {
 			name:     "warm logs succeed",
 			selector: LogsSelector{},
 			service: &logsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -205,7 +204,7 @@ func TestLogsServiceStream(t *testing.T) {
 			name:     "warm logs store has unexpected error",
 			selector: LogsSelector{},
 			service: &logsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -237,7 +236,7 @@ func TestLogsServiceStream(t *testing.T) {
 			name:     "cool logs succeed",
 			selector: LogsSelector{},
 			service: &logsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil
@@ -281,7 +280,7 @@ func TestLogsServiceStream(t *testing.T) {
 			name:     "warm and cool logs both fail",
 			selector: LogsSelector{},
 			service: &logsService{
-				authorize: libAuthz.AlwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{}, nil

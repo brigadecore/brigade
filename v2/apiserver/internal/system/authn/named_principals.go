@@ -27,18 +27,23 @@ func (r *rootPrincipal) RoleAssignments() []libAuthz.RoleAssignment {
 			Role:  core.RoleEventCreator(),
 			Scope: libAuthz.RoleScopeGlobal,
 		},
-		{
-			Role:  core.RoleProjectAdmin(),
-			Scope: libAuthz.RoleScopeGlobal,
-		},
 		{Role: core.RoleProjectCreator()},
+	}
+}
+
+func (r *rootPrincipal) ProjectRoleAssignments() []core.ProjectRoleAssignment {
+	return []core.ProjectRoleAssignment{
 		{
-			Role:  core.RoleProjectDeveloper(),
-			Scope: libAuthz.RoleScopeGlobal,
+			ProjectID: core.ProjectRoleScopeGlobal,
+			Role:      core.RoleProjectAdmin(),
 		},
 		{
-			Role:  core.RoleProjectUser(),
-			Scope: libAuthz.RoleScopeGlobal,
+			ProjectID: core.ProjectRoleScopeGlobal,
+			Role:      core.RoleProjectDeveloper(),
+		},
+		{
+			ProjectID: core.ProjectRoleScopeGlobal,
+			Role:      core.RoleProjectUser(),
 		},
 	}
 }

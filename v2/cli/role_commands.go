@@ -165,7 +165,6 @@ func grantSystemRole(roleName libAuthz.RoleName) func(c *cli.Context) error {
 
 		roleAssignment := libAuthz.RoleAssignment{
 			Role: libAuthz.Role{
-				Type: system.RoleTypeSystem,
 				Name: roleName,
 			},
 		}
@@ -218,7 +217,6 @@ func revokeSystemRole(
 
 		roleAssignment := libAuthz.RoleAssignment{
 			Role: libAuthz.Role{
-				Type: system.RoleTypeSystem,
 				Name: roleName,
 			},
 		}
