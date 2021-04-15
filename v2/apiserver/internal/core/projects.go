@@ -176,30 +176,33 @@ type ProjectsService interface {
 }
 
 type projectsService struct {
-	authorize            libAuthz.AuthorizeFn
-	projectsStore        ProjectsStore
-	eventsStore          EventsStore
-	logsStore            CoolLogsStore
-	roleAssignmentsStore authz.RoleAssignmentsStore
-	substrate            Substrate
+	authorize                   libAuthz.AuthorizeFn
+	projectAuthorize            ProjectAuthorizeFn
+	projectsStore               ProjectsStore
+	eventsStore                 EventsStore
+	logsStore                   CoolLogsStore
+	projectRoleAssignmentsStore ProjectRoleAssignmentsStore
+	substrate                   Substrate
 }
 
 // NewProjectsService returns a specialized interface for managing Projects.
 func NewProjectsService(
 	authorizeFn libAuthz.AuthorizeFn,
+	projectAuthorize ProjectAuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
 	logsStore CoolLogsStore,
-	roleAssignmentsStore authz.RoleAssignmentsStore,
+	projectRoleAssignmentsStore ProjectRoleAssignmentsStore,
 	substrate Substrate,
 ) ProjectsService {
 	return &projectsService{
-		authorize:            authorizeFn,
-		projectsStore:        projectsStore,
-		eventsStore:          eventsStore,
-		logsStore:            logsStore,
-		roleAssignmentsStore: roleAssignmentsStore,
-		substrate:            substrate,
+		authorize:                   authorizeFn,
+		projectAuthorize:            projectAuthorize,
+		projectsStore:               projectsStore,
+		eventsStore:                 eventsStore,
+		logsStore:                   logsStore,
+		projectRoleAssignmentsStore: projectRoleAssignmentsStore,
+		substrate:                   substrate,
 	}
 }
 
@@ -248,12 +251,12 @@ func (p *projectsService) Create(
 		return project, nil
 	}
 
-	if err = p.roleAssignmentsStore.Grant(
+	if err = p.projectRoleAssignmentsStore.Grant(
 		ctx,
-		libAuthz.RoleAssignment{
-			Principal: principalRef,
+		ProjectRoleAssignment{
+			ProjectID: project.ID,
 			Role:      RoleProjectAdmin(),
-			Scope:     project.ID,
+			Principal: principalRef,
 		},
 	); err != nil {
 		return project, errors.Wrapf(
@@ -264,12 +267,12 @@ func (p *projectsService) Create(
 			project.ID,
 		)
 	}
-	if err = p.roleAssignmentsStore.Grant(
+	if err = p.projectRoleAssignmentsStore.Grant(
 		ctx,
-		libAuthz.RoleAssignment{
-			Principal: principalRef,
+		ProjectRoleAssignment{
+			ProjectID: project.ID,
 			Role:      RoleProjectDeveloper(),
-			Scope:     project.ID,
+			Principal: principalRef,
 		},
 	); err != nil {
 		return project, errors.Wrapf(
@@ -280,12 +283,12 @@ func (p *projectsService) Create(
 			project.ID,
 		)
 	}
-	if err = p.roleAssignmentsStore.Grant(
+	if err = p.projectRoleAssignmentsStore.Grant(
 		ctx,
-		libAuthz.RoleAssignment{
-			Principal: principalRef,
+		ProjectRoleAssignment{
+			ProjectID: project.ID,
 			Role:      RoleProjectUser(),
-			Scope:     project.ID,
+			Principal: principalRef,
 		},
 	); err != nil {
 		return project, errors.Wrapf(
@@ -339,7 +342,7 @@ func (p *projectsService) Get(
 
 func (p *projectsService) Update(ctx context.Context, project Project) error {
 	if err :=
-		p.authorize(ctx, RoleProjectDeveloper(), project.ID); err != nil {
+		p.projectAuthorize(ctx, project.ID, RoleProjectDeveloper()); err != nil {
 		return err
 	}
 
@@ -354,7 +357,7 @@ func (p *projectsService) Update(ctx context.Context, project Project) error {
 }
 
 func (p *projectsService) Delete(ctx context.Context, id string) error {
-	if err := p.authorize(ctx, RoleProjectAdmin(), id); err != nil {
+	if err := p.projectAuthorize(ctx, id, RoleProjectAdmin()); err != nil {
 		return err
 	}
 
@@ -388,15 +391,8 @@ func (p *projectsService) Delete(ctx context.Context, id string) error {
 	// this and someone, in the future, created a new project with the same name,
 	// that new project would begin life with some existing principals having
 	// permissions they ought not have.
-	if err := p.roleAssignmentsStore.RevokeMany(
-		ctx,
-		libAuthz.RoleAssignment{
-			Role: libAuthz.Role{
-				Type: RoleTypeProject,
-			},
-			Scope: id,
-		},
-	); err != nil {
+	if err :=
+		p.projectRoleAssignmentsStore.RevokeByProjectID(ctx, id); err != nil {
 		return errors.Wrapf(
 			err,
 			"error revoking all role assignments associated with project %q",

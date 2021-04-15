@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"time"
 
-	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/pkg/errors"
@@ -80,27 +79,27 @@ type LogsService interface {
 }
 
 type logsService struct {
-	authorize     libAuthz.AuthorizeFn
-	projectsStore ProjectsStore
-	eventsStore   EventsStore
-	warmLogsStore LogsStore
-	coolLogsStore LogsStore
+	projectAuthorize ProjectAuthorizeFn
+	projectsStore    ProjectsStore
+	eventsStore      EventsStore
+	warmLogsStore    LogsStore
+	coolLogsStore    LogsStore
 }
 
 // NewLogsService returns a specialized interface for accessing logs.
 func NewLogsService(
-	authorizeFn libAuthz.AuthorizeFn,
+	projectAuthorize ProjectAuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
 	warmLogsStore LogsStore,
 	coolLogsStore LogsStore,
 ) LogsService {
 	return &logsService{
-		authorize:     authorizeFn,
-		projectsStore: projectsStore,
-		eventsStore:   eventsStore,
-		warmLogsStore: warmLogsStore,
-		coolLogsStore: coolLogsStore,
+		projectAuthorize: projectAuthorize,
+		projectsStore:    projectsStore,
+		eventsStore:      eventsStore,
+		warmLogsStore:    warmLogsStore,
+		coolLogsStore:    coolLogsStore,
 	}
 }
 
@@ -146,7 +145,8 @@ func (l *logsService) Stream(
 	// misstep. So, out of an abundance of caution, we raise the bar a little on
 	// this one read-only operation and require the principal to be a project user
 	// in order to stream logs.
-	if err = l.authorize(ctx, RoleProjectUser(), event.ProjectID); err != nil {
+	if err =
+		l.projectAuthorize(ctx, event.ProjectID, RoleProjectUser()); err != nil {
 		return nil, err
 	}
 

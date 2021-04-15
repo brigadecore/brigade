@@ -2,7 +2,6 @@ package core
 
 import (
 	libAuthz "github.com/brigadecore/brigade/sdk/v2/lib/authz"
-	"github.com/brigadecore/brigade/sdk/v2/system"
 )
 
 const (
@@ -40,7 +39,6 @@ const (
 // create Events for all Projects.
 func RoleEventCreator() libAuthz.Role {
 	return libAuthz.Role{
-		Type: system.RoleTypeSystem,
 		Name: RoleNameEventCreator,
 	}
 }
@@ -49,36 +47,32 @@ func RoleEventCreator() libAuthz.Role {
 // create new Projects.
 func RoleProjectCreator() libAuthz.Role {
 	return libAuthz.Role{
-		Type: system.RoleTypeSystem,
 		Name: RoleNameProjectCreator,
 	}
 }
 
 // Core-specific, project-level roles...
 
-// RoleProjectAdmin returns a project-level Role that enables a principal to
-// manage a Project.
-func RoleProjectAdmin() libAuthz.Role {
-	return libAuthz.Role{
-		Type: RoleTypeProject,
+// RoleProjectAdmin returns a ProjectRole that enables a principal to manage a
+// Project.
+func RoleProjectAdmin() ProjectRole {
+	return ProjectRole{
 		Name: RoleNameProjectAdmin,
 	}
 }
 
-// RoleProjectDeveloper returns a project-level Role that enables a principal to
-// update a Project.
-func RoleProjectDeveloper() libAuthz.Role {
-	return libAuthz.Role{
-		Type: RoleTypeProject,
+// RoleProjectDeveloper returns a ProjectRole that enables a principal to update
+// a Project.
+func RoleProjectDeveloper() ProjectRole {
+	return ProjectRole{
 		Name: RoleNameProjectDeveloper,
 	}
 }
 
-// RoleProjectUser returns a project-level Role that enables a principal to
-// create and manage Events for a Project.
-func RoleProjectUser() libAuthz.Role {
-	return libAuthz.Role{
-		Type: RoleTypeProject,
+// RoleProjectUser returns a ProjectRole that enables a principal to create and
+// manage Events for a Project.
+func RoleProjectUser() ProjectRole {
+	return ProjectRole{
 		Name: RoleNameProjectUser,
 	}
 }
