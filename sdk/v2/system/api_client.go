@@ -2,10 +2,12 @@ package system
 
 import (
 	"context"
+	"io/ioutil"
 	"net/http"
 
 	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/pkg/errors"
 )
 
 // PingResponse represents the expected response object returned by the
@@ -19,8 +21,9 @@ type APIClient interface {
 	// Ping sends a GET request to the API Server's versioned ping endpoint
 	Ping(ctx context.Context) (PingResponse, error)
 
-	// PingRaw sends a GET request to the API Server's unversioned ping endpoint
-	PingRaw(ctx context.Context) (string, error)
+	// UnversionedPing sends a GET request to the API Server's unversioned
+	// ping endpoint
+	UnversionedPing(ctx context.Context) ([]byte, error)
 }
 
 type apiClient struct {
@@ -52,15 +55,22 @@ func (a *apiClient) Ping(ctx context.Context) (PingResponse, error) {
 	)
 }
 
-func (a *apiClient) PingRaw(ctx context.Context) (string, error) {
-	var pingResponse string
-	return pingResponse, a.ExecuteRequest(
+func (a *apiClient) UnversionedPing(ctx context.Context) ([]byte, error) {
+	resp, err := a.SubmitRequest(
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
 			Path:        "ping",
 			SuccessCode: http.StatusOK,
-			RespObj:     &pingResponse,
 		},
 	)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "error submitting request")
+	}
+
+	respBodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "error reading response body")
+	}
+	return respBodyBytes, nil
 }

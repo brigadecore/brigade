@@ -260,7 +260,7 @@ func TestMain(t *testing.T) {
 	require.NoError(t, err, "error creating root session")
 	tokenStr := token.Value
 
-	// Check pingRaw endpoint for expected version
+	// Check unversionedPing endpoint for expected version
 	wantResp := os.Getenv("VERSION")
 	require.NotEmpty(t, wantResp, "expected the VERSION env var to be non-empty")
 
@@ -269,9 +269,9 @@ func TestMain(t *testing.T) {
 		tokenStr,
 		apiClientOpts,
 	)
-	resp, err := systemClient.PingRaw(ctx)
+	resp, err := systemClient.UnversionedPing(ctx)
 	require.NoError(t, err)
-	require.Equal(t, wantResp, resp, "ping response did not match expected")
+	require.Equal(t, wantResp, string(resp), "ping response did not match expected")
 
 	// Create the api client for use in tests below
 	client := sdk.NewAPIClient(
