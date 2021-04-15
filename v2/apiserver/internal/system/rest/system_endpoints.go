@@ -84,7 +84,9 @@ func (h *SystemEndpoints) healthz(w http.ResponseWriter, r *http.Request) {
 }
 
 // unversionedPing returns the api server version and http.StatusOK.
-// This is handy for auxiliary components to verify their connectivity.
+// This exists for auxiliary components to verify their connectivity
+// and get version information without needing to know the version
+// beforehand (as they would via the standard ping endpoint).
 func (h *SystemEndpoints) unversionedPing(
 	w http.ResponseWriter,
 	r *http.Request,

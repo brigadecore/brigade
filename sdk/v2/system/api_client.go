@@ -64,13 +64,14 @@ func (a *apiClient) UnversionedPing(ctx context.Context) ([]byte, error) {
 			SuccessCode: http.StatusOK,
 		},
 	)
+	defer resp.Body.Close()
 	if err != nil {
-		return []byte{}, errors.Wrap(err, "error submitting request")
+		return nil, errors.Wrap(err, "error submitting request")
 	}
 
 	respBodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return []byte{}, errors.Wrap(err, "error reading response body")
+		return nil, errors.Wrap(err, "error reading response body")
 	}
 	return respBodyBytes, nil
 }
