@@ -64,20 +64,24 @@ export class EventRegistry {
       let source: string
       let type: string
       if (process.env.BRIGADE_EVENT) {
-        const eventTokens = process.env.BRIGADE_EVENT.split(":")
-        if (eventTokens.length != 2) {
+        let eventTokens: string[] = []
+        const match = process.env.BRIGADE_EVENT.match(/^(.+?):(.+)$/)
+        if (match) {
+          eventTokens = Array.from(match)
+        }
+        if (eventTokens.length != 3) {
           throw new Error(
             `${process.env.BRIGADE_EVENT} is not a valid event of the form <source>:<type>`
           )
         }
-        source = eventTokens[0]
-        type = eventTokens[1]
-        console.log(`Using specified dummy event type ${source}:${type}`)
+        source = eventTokens[1]
+        type = eventTokens[2]
+        console.log(`Using specified dummy event with source "${source}" and type "${type}"`)
       } else {
         console.log("No dummy event type provided")
-        source = "github.com/brigadecore/brigade/cli"
+        source = "brigade.sh/cli"
         type = "exec"
-        console.log(`Using default dummy event type ${source}:${type}`)
+        console.log(`Using default dummy event with source "${source}" and type "${type}"`)
       }
       event = {
         id: this.newUUID(),
