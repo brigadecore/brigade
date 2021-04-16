@@ -36,6 +36,12 @@ func (h *SystemEndpoints) Register(router *mux.Router) {
 		"/v2/ping",
 		h.ping,
 	).Methods(http.MethodGet)
+
+	// Get /ping (unversioned)
+	router.HandleFunc(
+		"/ping",
+		h.unversionedPing,
+	).Methods(http.MethodGet)
 }
 
 // healthz is the main healthcheck endpoint for the api server.  The endpoint
@@ -77,6 +83,26 @@ func (h *SystemEndpoints) healthz(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// unversionedPing returns the api server version and http.StatusOK.
+// This exists for auxiliary components to verify their connectivity
+// and get version information without needing to know the version
+// beforehand (as they would via the standard ping endpoint).
+func (h *SystemEndpoints) unversionedPing(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	restmachinery.ServeRequest(
+		restmachinery.InboundRequest{
+			W: w,
+			R: r,
+			EndpointLogic: func() (interface{}, error) {
+				return []byte(h.APIServerVersion), nil
+			},
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
 // ping returns the api server version and http.StatusOK.  This is handy for
 // auxiliary components to verify their connectivity.
 func (h *SystemEndpoints) ping(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +113,6 @@ func (h *SystemEndpoints) ping(w http.ResponseWriter, r *http.Request) {
 			EndpointLogic: func() (interface{}, error) {
 				return PingResponse{Version: h.APIServerVersion}, nil
 			},
-
 			SuccessCode: http.StatusOK,
 		},
 	)
