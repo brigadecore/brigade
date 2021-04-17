@@ -155,14 +155,14 @@ func grantProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 		}
 
 		projectRoleAssignment := core.ProjectRoleAssignment{
-			ProjectID: projectID,
-			Role:      role,
+			Role: role,
 		}
 
 		projectRoleAssignment.Principal.Type = authz.PrincipalTypeUser
 		for _, projectRoleAssignment.Principal.ID = range userIDs {
 			if err = client.Core().Projects().Authz().RoleAssignments().Grant(
 				c.Context,
+				projectID,
 				projectRoleAssignment,
 			); err != nil {
 				return err
@@ -172,6 +172,7 @@ func grantProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 		for _, projectRoleAssignment.Principal.ID = range serviceAccountIDs {
 			if err = client.Core().Projects().Authz().RoleAssignments().Grant(
 				c.Context,
+				projectID,
 				projectRoleAssignment,
 			); err != nil {
 				return err
@@ -200,14 +201,14 @@ func revokeProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 		}
 
 		projectRoleAssignment := core.ProjectRoleAssignment{
-			ProjectID: projectID,
-			Role:      role,
+			Role: role,
 		}
 
 		projectRoleAssignment.Principal.Type = authz.PrincipalTypeUser
 		for _, projectRoleAssignment.Principal.ID = range userIDs {
 			if err = client.Core().Projects().Authz().RoleAssignments().Revoke(
 				c.Context,
+				projectID,
 				projectRoleAssignment,
 			); err != nil {
 				return err
@@ -217,6 +218,7 @@ func revokeProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 		for _, projectRoleAssignment.Principal.ID = range serviceAccountIDs {
 			if err = client.Core().Projects().Authz().RoleAssignments().Revoke(
 				c.Context,
+				projectID,
 				projectRoleAssignment,
 			); err != nil {
 				return err
