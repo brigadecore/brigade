@@ -93,7 +93,7 @@ func (s *substrateService) CountRunningWorkers(
 	// a hypothetical new dashboard, wanting to grant users some summary-level
 	// insight into what's going on with the substrate, so we'll only require
 	// system.RoleReader() to authorize this operation.
-	if err := s.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := s.authorize(ctx, system.RoleReader, ""); err != nil {
 		return SubstrateWorkerCount{}, err
 	}
 
@@ -115,7 +115,7 @@ func (s *substrateService) CountRunningJobs(
 	// a hypothetical new dashboard, wanting to grant users some summary-level
 	// insight into what's going on with the substrate, so we'll only require
 	// system.RoleReader() to authorize this operation.
-	if err := s.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := s.authorize(ctx, system.RoleReader, ""); err != nil {
 		return SubstrateJobCount{}, err
 	}
 

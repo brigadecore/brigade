@@ -29,9 +29,7 @@ func TestNewProjectRoleAssignmentsClient(t *testing.T) {
 
 func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
 	testProjectRoleAssignment := ProjectRoleAssignment{
-		Role: ProjectRole{
-			Name: libAuthz.RoleName("ceo"),
-		},
+		Role:      libAuthz.Role("ceo"),
 		ProjectID: "bluebook",
 		Principal: libAuthz.PrincipalReference{
 			Type: authz.PrincipalTypeUser,
@@ -66,9 +64,7 @@ func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
 
 func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
 	testProjectRoleAssignment := ProjectRoleAssignment{
-		Role: ProjectRole{
-			Name: libAuthz.RoleName("ceo"),
-		},
+		Role:      libAuthz.Role("ceo"),
 		ProjectID: "bluebook",
 		Principal: libAuthz.PrincipalReference{
 			Type: authz.PrincipalTypeUser,
@@ -82,8 +78,8 @@ func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
 				require.Equal(t, "/v2/project-role-assignments", r.URL.Path)
 				require.Equal(
 					t,
-					testProjectRoleAssignment.Role.Name,
-					libAuthz.RoleName(r.URL.Query().Get("role")),
+					testProjectRoleAssignment.Role,
+					libAuthz.Role(r.URL.Query().Get("role")),
 				)
 				require.Equal(
 					t,

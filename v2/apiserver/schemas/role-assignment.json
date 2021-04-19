@@ -8,43 +8,6 @@
 			"type": "string",
 			"description": "The type of object represented by the document",
 			"enum": ["RoleAssignment"]
-		},
-
-		"role": {
-			"type": "object",
-			"required": ["name"],
-			"additionalProperties": false,
-			"properties": {
-				"name": {
-					"type": "string",
-					"description": "A role name",
-					"enum": [
-						"ADMIN",
-						"PROJECT_CREATOR",
-						"READER"
-					]
-				}
-			}
-		},
-
-		"eventCreatorRole": {
-			"type": "object",
-			"required": ["name"],
-			"additionalProperties": false,
-			"properties": {
-				"name": {
-					"type": "string",
-					"description": "A role name",
-					"enum": ["EVENT_CREATOR"]
-				},
-				"scope": {
-					"type": "string",
-					"description": "The event source this role should be scoped to",
-					"pattern": "^[a-zA-Z][a-zA-Z\\d./-]*[a-zA-Z\\d]$",
-					"minLength": 3,
-					"maxLength": 50
-				}
-			}
 		}
 
 	},
@@ -64,9 +27,12 @@
 			"$ref": "common.json#/definitions/principalReference"
 		},
 		"role": {
-			"anyOf": [
-				{ "$ref": "#/definitions/role" },
-				{ "$ref": "#/definitions/eventCreatorRole" }
+			"type": "string",
+			"description": "A role name",
+			"enum": [
+				"ADMIN",
+				"PROJECT_CREATOR",
+				"READER"
 			]
 		}
 	}

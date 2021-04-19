@@ -35,7 +35,7 @@ func (p *projectRoleAssignmentsStore) Grant(
 	tru := true
 	criteria := bson.M{
 		"projectID":      projectRoleAssignment.ProjectID,
-		"role.name":      projectRoleAssignment.Role.Name,
+		"role":           projectRoleAssignment.Role,
 		"principal.type": projectRoleAssignment.Principal.Type,
 		"principal.id":   projectRoleAssignment.Principal.ID,
 	}
@@ -62,7 +62,7 @@ func (p *projectRoleAssignmentsStore) Revoke(
 ) error {
 	criteria := bson.M{
 		"projectID":      projectRoleAssignment.ProjectID,
-		"role.name":      projectRoleAssignment.Role.Name,
+		"role":           projectRoleAssignment.Role,
 		"principal.type": projectRoleAssignment.Principal.Type,
 		"principal.id":   projectRoleAssignment.Principal.ID,
 	}
@@ -99,7 +99,7 @@ func (p *projectRoleAssignmentsStore) Exists(
 ) (bool, error) {
 	criteria := bson.M{
 		"projectID":      projectRoleAssignment.ProjectID,
-		"role.name":      projectRoleAssignment.Role.Name,
+		"role":           projectRoleAssignment.Role,
 		"principal.type": projectRoleAssignment.Principal.Type,
 		"principal.id":   projectRoleAssignment.Principal.ID,
 	}

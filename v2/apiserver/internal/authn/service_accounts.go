@@ -126,7 +126,7 @@ func (s *serviceAccountsService) Create(
 ) (Token, error) {
 	token := Token{}
 
-	if err := s.authorize(ctx, system.RoleAdmin(), ""); err != nil {
+	if err := s.authorize(ctx, system.RoleAdmin, ""); err != nil {
 		return token, err
 	}
 
@@ -148,7 +148,7 @@ func (s *serviceAccountsService) List(
 	ctx context.Context,
 	opts meta.ListOptions,
 ) (ServiceAccountList, error) {
-	if err := s.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := s.authorize(ctx, system.RoleReader, ""); err != nil {
 		return ServiceAccountList{}, err
 	}
 
@@ -167,7 +167,7 @@ func (s *serviceAccountsService) Get(
 	ctx context.Context,
 	id string,
 ) (ServiceAccount, error) {
-	if err := s.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := s.authorize(ctx, system.RoleReader, ""); err != nil {
 		return ServiceAccount{}, err
 	}
 
@@ -203,7 +203,7 @@ func (s *serviceAccountsService) GetByToken(
 }
 
 func (s *serviceAccountsService) Lock(ctx context.Context, id string) error {
-	if err := s.authorize(ctx, system.RoleAdmin(), ""); err != nil {
+	if err := s.authorize(ctx, system.RoleAdmin, ""); err != nil {
 		return err
 	}
 
@@ -221,7 +221,7 @@ func (s *serviceAccountsService) Unlock(
 	ctx context.Context,
 	id string,
 ) (Token, error) {
-	if err := s.authorize(ctx, system.RoleAdmin(), ""); err != nil {
+	if err := s.authorize(ctx, system.RoleAdmin, ""); err != nil {
 		return Token{}, err
 	}
 

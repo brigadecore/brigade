@@ -14,12 +14,12 @@ import (
 // ProjectRoleAssignment represents the assignment of a ProjectRole to a
 // principal such as a User or ServiceAccount.
 type ProjectRoleAssignment struct {
-	// Role assigns a Role to the specified principal.
-	Role ProjectRole `json:"role"`
-	// Principal specifies the principal to whom the Role is assigned.
-	Principal libAuthz.PrincipalReference `json:"principal"`
 	// ProjectID qualifies the scope of the Role.
 	ProjectID string `json:"projectID,omitempty"`
+	// Role assigns a Role to the specified principal.
+	Role libAuthz.Role `json:"role"`
+	// Principal specifies the principal to whom the Role is assigned.
+	Principal libAuthz.PrincipalReference `json:"principal"`
 }
 
 // MarshalJSON amends ProjectRoleAssignment instances with type metadata so that
@@ -87,7 +87,7 @@ func (p *projectRoleAssignmentsClient) Revoke(
 	projectRoleAssignment ProjectRoleAssignment,
 ) error {
 	queryParams := map[string]string{
-		"role":          string(projectRoleAssignment.Role.Name),
+		"role":          string(projectRoleAssignment.Role),
 		"projectID":     projectRoleAssignment.ProjectID,
 		"principalType": string(projectRoleAssignment.Principal.Type),
 		"principalID":   projectRoleAssignment.Principal.ID,

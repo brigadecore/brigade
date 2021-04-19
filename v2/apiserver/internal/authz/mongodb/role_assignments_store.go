@@ -70,7 +70,7 @@ func (r *roleAssignmentsStore) Exists(
 	roleAssignment libAuthz.RoleAssignment,
 ) (bool, error) {
 	criteria := bson.M{
-		"role.name":      roleAssignment.Role.Name,
+		"role":           roleAssignment.Role,
 		"principal.type": roleAssignment.Principal.Type,
 		"principal.id":   roleAssignment.Principal.ID,
 	}

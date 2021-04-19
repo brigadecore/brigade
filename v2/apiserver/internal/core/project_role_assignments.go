@@ -9,24 +9,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ProjectRoleAssignment represents the assignment of a ProjectRole to a
+// ProjectRoleAssignment represents the assignment of a project-level Role to a
 // principal such as a User or ServiceAccount.
 type ProjectRoleAssignment struct {
-	// Role assigns a Role to the specified principal.
-	Role ProjectRole `json:"role" bson:"role"`
-	// Principal specifies the principal to whom the Role is assigned.
-	Principal libAuthz.PrincipalReference `json:"principal" bson:"principal"`
 	// ProjectID qualifies the scope of the Role.
 	ProjectID string `json:"projectID,omitempty" bson:"projectID,omitempty"`
+	// Role assigns a Role to the specified principal.
+	Role libAuthz.Role `json:"role" bson:"role"`
+	// Principal specifies the principal to whom the Role is assigned.
+	Principal libAuthz.PrincipalReference `json:"principal" bson:"principal"`
 }
 
 // Matches determines if this ProjectRoleAssignment matches the projectID and
 // role arguments.
 func (p ProjectRoleAssignment) Matches(
 	projectID string,
-	role ProjectRole,
+	role libAuthz.Role,
 ) bool {
-	return p.Role.Name == role.Name &&
+	return p.Role == role &&
 		(p.ProjectID == projectID || p.ProjectID == ProjectRoleScopeGlobal)
 }
 
@@ -35,16 +35,16 @@ func (p ProjectRoleAssignment) Matches(
 // (e.g. data store, message bus, etc.) to keep business logic reusable and
 // consistent while the underlying tech stack remains free to change.
 type ProjectRoleAssignmentsService interface {
-	// Grant grants the ProjectRole specified by the ProjectRoleAssignment to the
-	// principal also specified by the ProjectRoleAssignment. If the specified
-	// Project or principal does not exist, implementations must return a
-	// *meta.ErrNotFound error.
+	// Grant grants the project-level Role specified by the ProjectRoleAssignment
+	// to the principal also specified by the ProjectRoleAssignment. If the
+	// specified Project or principal does not exist, implementations must return
+	// a *meta.ErrNotFound error.
 	Grant(context.Context, ProjectRoleAssignment) error
 
-	// Revoke revokes the ProjectRole specified by the ProjectRoleAssignment for
-	// the principal also specified by the ProjectRoleAssignment. If the specified
-	// principal does not exist, implementations must return a *meta.ErrNotFound
-	// error.
+	// Revoke revokes the project-level Role specified by the
+	// ProjectRoleAssignment for the principal also specified by the
+	// ProjectRoleAssignment. If the specified principal does not exist,
+	// implementations must return a *meta.ErrNotFound error.
 	Revoke(context.Context, ProjectRoleAssignment) error
 }
 
@@ -79,7 +79,7 @@ func (p *projectRoleAssignmentsService) Grant(
 	projectRoleAssignment ProjectRoleAssignment,
 ) error {
 	projectID := projectRoleAssignment.ProjectID
-	if err := p.projectAuthorize(ctx, projectID, RoleProjectAdmin()); err != nil {
+	if err := p.projectAuthorize(ctx, projectID, RoleProjectAdmin); err != nil {
 		return err
 	}
 
@@ -134,7 +134,7 @@ func (p *projectRoleAssignmentsService) Grant(
 			err,
 			"error granting project %q role %q to %s %q in store",
 			projectID,
-			projectRoleAssignment.Role.Name,
+			projectRoleAssignment.Role,
 			projectRoleAssignment.Principal.Type,
 			projectRoleAssignment.Principal.ID,
 		)
@@ -148,7 +148,7 @@ func (p *projectRoleAssignmentsService) Revoke(
 	projectRoleAssignment ProjectRoleAssignment,
 ) error {
 	projectID := projectRoleAssignment.ProjectID
-	if err := p.projectAuthorize(ctx, projectID, RoleProjectAdmin()); err != nil {
+	if err := p.projectAuthorize(ctx, projectID, RoleProjectAdmin); err != nil {
 		return err
 	}
 
@@ -203,7 +203,7 @@ func (p *projectRoleAssignmentsService) Revoke(
 			err,
 			"error revoking project %q role %q for %s %q in store",
 			projectID,
-			projectRoleAssignment.Role.Name,
+			projectRoleAssignment.Role,
 			projectRoleAssignment.Principal.Type,
 			projectRoleAssignment.Principal.ID,
 		)
@@ -214,7 +214,7 @@ func (p *projectRoleAssignmentsService) Revoke(
 // ProjectRoleAssignmentsStore is an interface for components that implement
 // ProjectRoleAssignment persistence concerns.
 type ProjectRoleAssignmentsStore interface {
-	// Grant the ProjectRole specified by the ProjectRoleAssignment to the
+	// Grant the project-level Role specified by the ProjectRoleAssignment to the
 	// principal specified by the ProjectRoleAssignment.
 	Grant(context.Context, ProjectRoleAssignment) error
 	// Revoke the Project specified by the ProjectRoleAssignment for the principal

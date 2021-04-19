@@ -59,38 +59,38 @@ var projectRolesCommands = &cli.Command{
 			Usage: "Grant a project-level role to a user or service account",
 			Subcommands: []*cli.Command{
 				{
-					Name: string(core.RoleNameProjectAdmin),
+					Name: string(core.RoleProjectAdmin),
 					Usage: fmt.Sprintf(
 						"Grant the %s project role, which enables management of all "+
 							"aspects of the project, including its secrets, as well as "+
 							"project-level permissions for other users and service "+
 							"accounts.",
-						core.RoleNameProjectAdmin,
+						core.RoleProjectAdmin,
 					),
 					Flags:  projectRoleGrantFlags,
-					Action: grantProjectRole(core.RoleNameProjectAdmin),
+					Action: grantProjectRole(core.RoleProjectAdmin),
 				},
 				{
-					Name: string(core.RoleNameProjectDeveloper),
+					Name: string(core.RoleProjectDeveloper),
 					Usage: fmt.Sprintf(
 						"Grant the %s project role, which enables updating the project "+
 							"definition, but does NOT enable management of the project's "+
 							"secrets or project-level permissions for other users and "+
 							"service accounts.",
-						core.RoleNameProjectDeveloper,
+						core.RoleProjectDeveloper,
 					),
 					Flags:  projectRoleGrantFlags,
-					Action: grantProjectRole(core.RoleNameProjectDeveloper),
+					Action: grantProjectRole(core.RoleProjectDeveloper),
 				},
 				{
-					Name: string(core.RoleNameProjectUser),
+					Name: string(core.RoleProjectUser),
 					Usage: fmt.Sprintf(
 						"Grant the %s project role, which enables creation and management "+
 							"of events associated with the project",
-						core.RoleNameProjectUser,
+						core.RoleProjectUser,
 					),
 					Flags:  projectRoleGrantFlags,
-					Action: grantProjectRole(core.RoleNameProjectUser),
+					Action: grantProjectRole(core.RoleProjectUser),
 				},
 			},
 		},
@@ -99,47 +99,45 @@ var projectRolesCommands = &cli.Command{
 			Usage: "Revoke a project-level role from a user or service account",
 			Subcommands: []*cli.Command{
 				{
-					Name: string(core.RoleNameProjectAdmin),
+					Name: string(core.RoleProjectAdmin),
 					Usage: fmt.Sprintf(
 						"Revoke the %s project role, which enables management of all "+
 							"aspects of the project, including its secrets, as well as "+
 							"project-level permissions for other users and service "+
 							"accounts.",
-						core.RoleNameProjectAdmin,
+						core.RoleProjectAdmin,
 					),
 					Flags:  projectRoleRevokeFlags,
-					Action: revokeProjectRole(core.RoleNameProjectAdmin),
+					Action: revokeProjectRole(core.RoleProjectAdmin),
 				},
 				{
-					Name: string(core.RoleNameProjectDeveloper),
+					Name: string(core.RoleProjectDeveloper),
 					Usage: fmt.Sprintf(
 						"Revoke the %s project role, which enables updating the project "+
 							"definition, but does NOT enable management of the project's "+
 							"secrets or project-level permissions for other users and "+
 							"service accounts.",
-						core.RoleNameProjectDeveloper,
+						core.RoleProjectDeveloper,
 					),
 					Flags:  projectRoleRevokeFlags,
-					Action: revokeProjectRole(core.RoleNameProjectDeveloper),
+					Action: revokeProjectRole(core.RoleProjectDeveloper),
 				},
 				{
-					Name: string(core.RoleNameProjectUser),
+					Name: string(core.RoleProjectUser),
 					Usage: fmt.Sprintf(
 						"Revoke the %s project role, which enables creation and "+
 							"management of events associated with the project",
-						core.RoleNameProjectUser,
+						core.RoleProjectUser,
 					),
 					Flags:  projectRoleRevokeFlags,
-					Action: revokeProjectRole(core.RoleNameProjectUser),
+					Action: revokeProjectRole(core.RoleProjectUser),
 				},
 			},
 		},
 	},
 }
 
-func grantProjectRole(
-	roleName libAuthz.RoleName,
-) func(c *cli.Context) error {
+func grantProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		projectID := c.String(flagID)
 		userIDs := c.StringSlice(flagUser)
@@ -158,9 +156,7 @@ func grantProjectRole(
 
 		projectRoleAssignment := core.ProjectRoleAssignment{
 			ProjectID: projectID,
-			Role: core.ProjectRole{
-				Name: roleName,
-			},
+			Role:      role,
 		}
 
 		projectRoleAssignment.Principal.Type = authz.PrincipalTypeUser
@@ -186,9 +182,7 @@ func grantProjectRole(
 	}
 }
 
-func revokeProjectRole(
-	roleName libAuthz.RoleName,
-) func(c *cli.Context) error {
+func revokeProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		projectID := c.String(flagID)
 		userIDs := c.StringSlice(flagUser)
@@ -207,9 +201,7 @@ func revokeProjectRole(
 
 		projectRoleAssignment := core.ProjectRoleAssignment{
 			ProjectID: projectID,
-			Role: core.ProjectRole{
-				Name: roleName,
-			},
+			Role:      role,
 		}
 
 		projectRoleAssignment.Principal.Type = authz.PrincipalTypeUser

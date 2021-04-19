@@ -13,26 +13,26 @@ import (
 
 // ProjectAuthorizeFn is the signature for any function that can, presumably,
 // retrieve a principal from the provided Context and make an access control
-// decision based on the principal having (or not having) the specified
-// ProjectRole for the specified Project. Implementations MUST return a
-// *meta.ErrAuthorization error if the principal is not authorized.
+// decision based on the principal having (or not having) the specified Role for
+// the specified Project. Implementations MUST return a *meta.ErrAuthorization
+// error if the principal is not authorized.
 type ProjectAuthorizeFn func(
 	ctx context.Context,
 	projectID string,
-	projectRole ProjectRole,
+	role libAuthz.Role,
 ) error
 
 // alwaysProjectAuthorize is an implementation of the ProjectAuthorizeFn
 // function signature that unconditionally passes authorization requests by
 // returning nil. This is used only for testing purposes.
-func alwaysProjectAuthorize(context.Context, string, ProjectRole) error {
+func alwaysProjectAuthorize(context.Context, string, libAuthz.Role) error {
 	return nil
 }
 
 // neverProjectAuthorize is an implementation of the ProjectAuthorizeFn function
 // signature that unconditionally fails authorization requests by returning a
 // *meta.ErrAuthorization error. This is used only for testing purposes.
-func neverProjectAuthorize(context.Context, string, ProjectRole) error {
+func neverProjectAuthorize(context.Context, string, libAuthz.Role) error {
 	return &meta.ErrAuthorization{}
 }
 
@@ -47,9 +47,9 @@ type projectRoleAssignmentsHolder interface {
 // NewProjectAuthorizer function.
 type ProjectAuthorizer interface {
 	// Authorize retrieves a principal from the provided Context and asserts that
-	// it has the specified ProjectRole for the specified Project. If it does not,
+	// it has the specified Role for the specified Project. If it does not,
 	// implementations MUST return a *meta.ErrAuthorization error.
-	Authorize(ctx context.Context, projectID string, role ProjectRole) error
+	Authorize(ctx context.Context, projectID string, role libAuthz.Role) error
 }
 
 // projectAuthorizer is a component that can authorize a request.
@@ -69,7 +69,7 @@ func NewProjectAuthorizer(
 func (p *projectAuthorizer) Authorize(
 	ctx context.Context,
 	projectID string,
-	projectRole ProjectRole,
+	role libAuthz.Role,
 ) error {
 	principal := libAuthn.PrincipalFromContext(ctx)
 	if principal == nil {
@@ -77,13 +77,13 @@ func (p *projectAuthorizer) Authorize(
 	}
 	projectRoleAssignment := ProjectRoleAssignment{
 		ProjectID: projectID,
-		Role:      projectRole,
+		Role:      role,
 	}
 	switch p := principal.(type) {
 	case projectRoleAssignmentsHolder:
 		// A principal with hard-coded RoleAssignments
 		for _, projectRoleAssignment = range p.ProjectRoleAssignments() {
-			if projectRoleAssignment.Matches(projectID, projectRole) {
+			if projectRoleAssignment.Matches(projectID, role) {
 				return nil
 			}
 		}

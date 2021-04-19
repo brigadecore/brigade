@@ -210,7 +210,7 @@ func (p *projectsService) Create(
 	ctx context.Context,
 	project Project,
 ) (Project, error) {
-	if err := p.authorize(ctx, RoleProjectCreator(), ""); err != nil {
+	if err := p.authorize(ctx, RoleProjectCreator, ""); err != nil {
 		return project, err
 	}
 
@@ -255,7 +255,7 @@ func (p *projectsService) Create(
 		ctx,
 		ProjectRoleAssignment{
 			ProjectID: project.ID,
-			Role:      RoleProjectAdmin(),
+			Role:      RoleProjectAdmin,
 			Principal: principalRef,
 		},
 	); err != nil {
@@ -271,7 +271,7 @@ func (p *projectsService) Create(
 		ctx,
 		ProjectRoleAssignment{
 			ProjectID: project.ID,
-			Role:      RoleProjectDeveloper(),
+			Role:      RoleProjectDeveloper,
 			Principal: principalRef,
 		},
 	); err != nil {
@@ -287,7 +287,7 @@ func (p *projectsService) Create(
 		ctx,
 		ProjectRoleAssignment{
 			ProjectID: project.ID,
-			Role:      RoleProjectUser(),
+			Role:      RoleProjectUser,
 			Principal: principalRef,
 		},
 	); err != nil {
@@ -307,7 +307,7 @@ func (p *projectsService) List(
 	ctx context.Context,
 	opts meta.ListOptions,
 ) (ProjectList, error) {
-	if err := p.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := p.authorize(ctx, system.RoleReader, ""); err != nil {
 		return ProjectList{}, err
 	}
 
@@ -325,7 +325,7 @@ func (p *projectsService) Get(
 	ctx context.Context,
 	id string,
 ) (Project, error) {
-	if err := p.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := p.authorize(ctx, system.RoleReader, ""); err != nil {
 		return Project{}, err
 	}
 
@@ -342,7 +342,7 @@ func (p *projectsService) Get(
 
 func (p *projectsService) Update(ctx context.Context, project Project) error {
 	if err :=
-		p.projectAuthorize(ctx, project.ID, RoleProjectDeveloper()); err != nil {
+		p.projectAuthorize(ctx, project.ID, RoleProjectDeveloper); err != nil {
 		return err
 	}
 
@@ -357,7 +357,7 @@ func (p *projectsService) Update(ctx context.Context, project Project) error {
 }
 
 func (p *projectsService) Delete(ctx context.Context, id string) error {
-	if err := p.projectAuthorize(ctx, id, RoleProjectAdmin()); err != nil {
+	if err := p.projectAuthorize(ctx, id, RoleProjectAdmin); err != nil {
 		return err
 	}
 

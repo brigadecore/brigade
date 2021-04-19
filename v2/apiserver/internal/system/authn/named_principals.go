@@ -21,13 +21,13 @@ type rootPrincipal struct{}
 
 func (r *rootPrincipal) RoleAssignments() []libAuthz.RoleAssignment {
 	return []libAuthz.RoleAssignment{
-		{Role: system.RoleAdmin()},
-		{Role: system.RoleReader()},
+		{Role: system.RoleAdmin},
+		{Role: system.RoleReader},
 		{
-			Role:  core.RoleEventCreator(),
+			Role:  core.RoleEventCreator,
 			Scope: libAuthz.RoleScopeGlobal,
 		},
-		{Role: core.RoleProjectCreator()},
+		{Role: core.RoleProjectCreator},
 	}
 }
 
@@ -35,15 +35,15 @@ func (r *rootPrincipal) ProjectRoleAssignments() []core.ProjectRoleAssignment {
 	return []core.ProjectRoleAssignment{
 		{
 			ProjectID: core.ProjectRoleScopeGlobal,
-			Role:      core.RoleProjectAdmin(),
+			Role:      core.RoleProjectAdmin,
 		},
 		{
 			ProjectID: core.ProjectRoleScopeGlobal,
-			Role:      core.RoleProjectDeveloper(),
+			Role:      core.RoleProjectDeveloper,
 		},
 		{
 			ProjectID: core.ProjectRoleScopeGlobal,
-			Role:      core.RoleProjectUser(),
+			Role:      core.RoleProjectUser,
 		},
 	}
 }
@@ -56,8 +56,8 @@ type schedulerPrincipal struct{}
 
 func (s *schedulerPrincipal) RoleAssignments() []libAuthz.RoleAssignment {
 	return []libAuthz.RoleAssignment{
-		{Role: system.RoleReader()},
-		{Role: core.RoleScheduler()},
+		{Role: system.RoleReader},
+		{Role: core.RoleScheduler},
 	}
 }
 
@@ -69,8 +69,8 @@ type observerPrincipal struct{}
 
 func (o *observerPrincipal) RoleAssignments() []libAuthz.RoleAssignment {
 	return []libAuthz.RoleAssignment{
-		{Role: system.RoleReader()},
-		{Role: core.RoleObserver()},
+		{Role: system.RoleReader},
+		{Role: core.RoleObserver},
 	}
 }
 
@@ -83,9 +83,9 @@ type workerPrincipal struct {
 
 func (w *workerPrincipal) RoleAssignments() []libAuthz.RoleAssignment {
 	return []libAuthz.RoleAssignment{
-		{Role: system.RoleReader()},
+		{Role: system.RoleReader},
 		{
-			Role:  core.RoleWorker(),
+			Role:  core.RoleWorker,
 			Scope: w.eventID,
 		},
 	}
