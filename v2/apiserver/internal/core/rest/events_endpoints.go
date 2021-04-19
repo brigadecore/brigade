@@ -40,6 +40,12 @@ func (e *EventsEndpoints) Register(router *mux.Router) {
 		e.AuthFilter.Decorate(e.get),
 	).Methods(http.MethodGet)
 
+	// Clone event
+	router.HandleFunc(
+		"/v2/events/{id}/clone",
+		e.AuthFilter.Decorate(e.clone),
+	).Methods(http.MethodPost)
+
 	// Update event's source state
 	router.HandleFunc(
 		"/v2/events/{id}/source-state",
@@ -69,6 +75,25 @@ func (e *EventsEndpoints) Register(router *mux.Router) {
 		"/v2/events",
 		e.AuthFilter.Decorate(e.deleteMany),
 	).Methods(http.MethodDelete)
+}
+
+func (e *EventsEndpoints) clone(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	restmachinery.ServeRequest(
+		restmachinery.InboundRequest{
+			W: w,
+			R: r,
+			EndpointLogic: func() (interface{}, error) {
+				return e.Service.Clone(
+					r.Context(),
+					mux.Vars(r)["id"],
+				)
+			},
+			SuccessCode: http.StatusCreated,
+		},
+	)
 }
 
 func (e *EventsEndpoints) create(w http.ResponseWriter, r *http.Request) {
