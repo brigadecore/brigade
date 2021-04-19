@@ -22,13 +22,13 @@ type ProjectRoleAssignmentsEndpoints struct {
 func (p *ProjectRoleAssignmentsEndpoints) Register(router *mux.Router) {
 	// Grant a Project Role to a User or Service Account
 	router.HandleFunc(
-		"/v2/project-role-assignments",
+		"/v2/projects/{id}/role-assignments",
 		p.AuthFilter.Decorate(p.grant),
 	).Methods(http.MethodPost)
 
 	// Revoke a Project Role for a User or Service Account
 	router.HandleFunc(
-		"/v2/project-role-assignments",
+		"/v2/projects/{id}/role-assignments",
 		p.AuthFilter.Decorate(p.revoke),
 	).Methods(http.MethodDelete)
 }
@@ -45,6 +45,7 @@ func (p *ProjectRoleAssignmentsEndpoints) grant(
 			ReqBodySchemaLoader: p.ProjectRoleAssignmentSchemaLoader,
 			ReqBodyObj:          &projectRoleAssignment,
 			EndpointLogic: func() (interface{}, error) {
+				projectRoleAssignment.ProjectID = mux.Vars(r)["id"]
 				return nil, p.Service.Grant(r.Context(), projectRoleAssignment)
 			},
 			SuccessCode: http.StatusOK,
@@ -57,8 +58,8 @@ func (p *ProjectRoleAssignmentsEndpoints) revoke(
 	r *http.Request,
 ) {
 	projectRoleAssignment := core.ProjectRoleAssignment{
+		ProjectID: mux.Vars(r)["id"],
 		Role:      libAuthz.Role(r.URL.Query().Get("role")),
-		ProjectID: r.URL.Query().Get("projectID"),
 		Principal: libAuthz.PrincipalReference{
 			Type: libAuthz.PrincipalType(r.URL.Query().Get("principalType")),
 			ID:   r.URL.Query().Get("principalID"),

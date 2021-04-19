@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -28,9 +29,9 @@ func TestNewProjectRoleAssignmentsClient(t *testing.T) {
 }
 
 func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
+	const testProjectID = "bluebook"
 	testProjectRoleAssignment := ProjectRoleAssignment{
-		Role:      libAuthz.Role("ceo"),
-		ProjectID: "bluebook",
+		Role: libAuthz.Role("ceo"),
 		Principal: libAuthz.PrincipalReference{
 			Type: authz.PrincipalTypeUser,
 			ID:   "tony@starkindustries.com",
@@ -41,7 +42,11 @@ func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
 			func(w http.ResponseWriter, r *http.Request) {
 				defer r.Body.Close()
 				require.Equal(t, http.MethodPost, r.Method)
-				require.Equal(t, "/v2/project-role-assignments", r.URL.Path)
+				require.Equal(
+					t,
+					fmt.Sprintf("/v2/projects/%s/role-assignments", testProjectID),
+					r.URL.Path,
+				)
 				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				projectRoleAssignment := ProjectRoleAssignment{}
@@ -58,14 +63,15 @@ func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
 		rmTesting.TestAPIToken,
 		nil,
 	)
-	err := client.Grant(context.Background(), testProjectRoleAssignment)
+	err :=
+		client.Grant(context.Background(), testProjectID, testProjectRoleAssignment)
 	require.NoError(t, err)
 }
 
 func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
+	const testProjectID = "bluebook"
 	testProjectRoleAssignment := ProjectRoleAssignment{
-		Role:      libAuthz.Role("ceo"),
-		ProjectID: "bluebook",
+		Role: libAuthz.Role("ceo"),
 		Principal: libAuthz.PrincipalReference{
 			Type: authz.PrincipalTypeUser,
 			ID:   "tony@starkindustries.com",
@@ -75,16 +81,15 @@ func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				require.Equal(t, http.MethodDelete, r.Method)
-				require.Equal(t, "/v2/project-role-assignments", r.URL.Path)
+				require.Equal(
+					t,
+					fmt.Sprintf("/v2/projects/%s/role-assignments", testProjectID),
+					r.URL.Path,
+				)
 				require.Equal(
 					t,
 					testProjectRoleAssignment.Role,
 					libAuthz.Role(r.URL.Query().Get("role")),
-				)
-				require.Equal(
-					t,
-					testProjectRoleAssignment.ProjectID,
-					r.URL.Query().Get("projectID"),
 				)
 				require.Equal(
 					t,
@@ -106,6 +111,10 @@ func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
 		rmTesting.TestAPIToken,
 		nil,
 	)
-	err := client.Revoke(context.Background(), testProjectRoleAssignment)
+	err := client.Revoke(
+		context.Background(),
+		testProjectID,
+		testProjectRoleAssignment,
+	)
 	require.NoError(t, err)
 }
