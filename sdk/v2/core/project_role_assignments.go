@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
@@ -14,8 +15,6 @@ import (
 // ProjectRoleAssignment represents the assignment of a ProjectRole to a
 // principal such as a User or ServiceAccount.
 type ProjectRoleAssignment struct {
-	// ProjectID qualifies the scope of the Role.
-	ProjectID string `json:"projectID,omitempty"`
 	// Role assigns a Role to the specified principal.
 	Role libAuthz.Role `json:"role"`
 	// Principal specifies the principal to whom the Role is assigned.
@@ -43,12 +42,21 @@ func (p ProjectRoleAssignment) MarshalJSON() ([]byte, error) {
 // ProjectRoleAssignmentsClient is the specialized client for managing
 // ProjectRoleAssignments with the Brigade API.
 type ProjectRoleAssignmentsClient interface {
-	// Grant grants the ProjectRole specified by the ProjectRoleAssignment to the
-	// principal also specified by the ProjectRoleAssignment.
-	Grant(context.Context, ProjectRoleAssignment) error
-	// Revoke revokes the ProjectRole specified by the ProjectRoleAssignment for
-	// the principal also specified by the ProjectRoleAssignment.
-	Revoke(context.Context, ProjectRoleAssignment) error
+	// Grant grants the project-level Role specified by the ProjectRoleAssignment
+	// to the principal also specified by the ProjectRoleAssignment.
+	Grant(
+		ctx context.Context,
+		projectID string,
+		projectRoleAssignment ProjectRoleAssignment,
+	) error
+	// Revoke revokes the project-level Role specified by the
+	// ProjectRoleAssignment for the principal also specified by the
+	// ProjectRoleAssignment.
+	Revoke(
+		ctx context.Context,
+		projectID string,
+		projectRoleAssignment ProjectRoleAssignment,
+	) error
 }
 
 type projectRoleAssignmentsClient struct {
@@ -69,13 +77,14 @@ func NewProjectRoleAssignmentsClient(
 
 func (p *projectRoleAssignmentsClient) Grant(
 	ctx context.Context,
+	projectID string,
 	projectRoleAssignment ProjectRoleAssignment,
 ) error {
 	return p.ExecuteRequest(
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodPost,
-			Path:        "v2/project-role-assignments",
+			Path:        fmt.Sprintf("v2/projects/%s/role-assignments", projectID),
 			ReqBodyObj:  projectRoleAssignment,
 			SuccessCode: http.StatusOK,
 		},
@@ -84,11 +93,11 @@ func (p *projectRoleAssignmentsClient) Grant(
 
 func (p *projectRoleAssignmentsClient) Revoke(
 	ctx context.Context,
+	projectID string,
 	projectRoleAssignment ProjectRoleAssignment,
 ) error {
 	queryParams := map[string]string{
 		"role":          string(projectRoleAssignment.Role),
-		"projectID":     projectRoleAssignment.ProjectID,
 		"principalType": string(projectRoleAssignment.Principal.Type),
 		"principalID":   projectRoleAssignment.Principal.ID,
 	}
@@ -96,7 +105,7 @@ func (p *projectRoleAssignmentsClient) Revoke(
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodDelete,
-			Path:        "v2/project-role-assignments",
+			Path:        fmt.Sprintf("v2/projects/%s/role-assignments", projectID),
 			QueryParams: queryParams,
 			SuccessCode: http.StatusOK,
 		},
