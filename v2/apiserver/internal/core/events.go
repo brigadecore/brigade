@@ -539,6 +539,9 @@ func (e *eventsService) Clone(
 	ctx context.Context,
 	id string,
 ) (EventList, error) {
+	// No authz call here as we'll defer to the checks in e.Create() invoked
+	// below
+
 	event, err := e.eventsStore.Get(ctx, id)
 	if err != nil {
 		return EventList{}, errors.Wrapf(
@@ -552,6 +555,12 @@ func (e *eventsService) Clone(
 	clone := event
 	clone.ObjectMeta = meta.ObjectMeta{}
 	clone.Worker = Worker{}
+
+	// Add a label for tracing the original cloned event id
+	if clone.Labels == nil {
+		clone.Labels = map[string]string{}
+	}
+	clone.Labels["cloneOf"] = id
 
 	return e.Create(ctx, clone)
 }
