@@ -57,9 +57,7 @@ func (p *ProjectRoleAssignmentsEndpoints) revoke(
 	r *http.Request,
 ) {
 	projectRoleAssignment := core.ProjectRoleAssignment{
-		Role: core.ProjectRole{
-			Name: libAuthz.RoleName(r.URL.Query().Get("role")),
-		},
+		Role:      libAuthz.Role(r.URL.Query().Get("role")),
 		ProjectID: r.URL.Query().Get("projectID"),
 		Principal: libAuthz.PrincipalReference{
 			Type: libAuthz.PrincipalType(r.URL.Query().Get("principalType")),

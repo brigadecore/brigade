@@ -12,67 +12,51 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMatches(t *testing.T) {
+func TestProjectRoleAssignmentMatches(t *testing.T) {
 	testCases := []struct {
 		name                  string
 		projectRoleAssignment ProjectRoleAssignment
-		projectRole           ProjectRole
+		role                  libAuthz.Role
 		projectID             string
 		matches               bool
 	}{
 		{
 			name: "names do not match",
 			projectRoleAssignment: ProjectRoleAssignment{
-				Role: ProjectRole{
-					Name: "foo",
-				},
+				Role:      "foo",
 				ProjectID: "foo",
 			},
-			projectRole: ProjectRole{
-				Name: "bar",
-			},
+			role:      "bar",
 			projectID: "foo",
 			matches:   false,
 		},
 		{
 			name: "scopes do not match",
 			projectRoleAssignment: ProjectRoleAssignment{
-				Role: ProjectRole{
-					Name: "foo",
-				},
+				Role:      "foo",
 				ProjectID: "foo",
 			},
-			projectRole: ProjectRole{
-				Name: "foo",
-			},
+			role:      "foo",
 			projectID: "bar",
 			matches:   false,
 		},
 		{
 			name: "scopes are an exact match",
 			projectRoleAssignment: ProjectRoleAssignment{
-				Role: ProjectRole{
-					Name: "foo",
-				},
+				Role:      "foo",
 				ProjectID: "foo",
 			},
-			projectRole: ProjectRole{
-				Name: "foo",
-			},
+			role:      "foo",
 			projectID: "foo",
 			matches:   true,
 		},
 		{
 			name: "a global project scope matches b project",
 			projectRoleAssignment: ProjectRoleAssignment{
-				Role: ProjectRole{
-					Name: "foo",
-				},
+				Role:      "foo",
 				ProjectID: ProjectRoleScopeGlobal,
 			},
-			projectRole: ProjectRole{
-				Name: "foo",
-			},
+			role:      "foo",
 			projectID: "foo",
 			matches:   true,
 		},
@@ -84,7 +68,7 @@ func TestMatches(t *testing.T) {
 				testCase.matches,
 				testCase.projectRoleAssignment.Matches(
 					testCase.projectID,
-					testCase.projectRole,
+					testCase.role,
 				),
 			)
 		})

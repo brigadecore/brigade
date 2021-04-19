@@ -14,7 +14,7 @@
 
 	"title": "ProjectRoleAssignment",
 	"type": "object",
-	"required": ["apiVersion", "kind", "principal", "role"],
+	"required": ["apiVersion", "kind", "principal", "projectID", "role"],
 	"additionalProperties": false,
 	"properties": {
 		"apiVersion": {
@@ -26,28 +26,21 @@
 		"principal": {
 			"$ref": "common.json#/definitions/principalReference"
 		},
+		"projectID": {
+			"type": "string",
+			"description": "The project this role should be scoped to",
+			"pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
+			"minLength": 3,
+			"maxLength": 18
+		},
 		"role": {
-			"type": "object",
-			"required": ["name", "projectID"],
-			"additionalProperties": false,
-			"properties": {
-				"name": {
-					"type": "string",
-					"description": "A role name",
-					"enum": [
-						"ADMIN",
-						"DEVELOPER",
-						"USER"
-					]
-				},
-				"projectID": {
-					"type": "string",
-					"description": "The project this role should be scoped to",
-					"pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
-					"minLength": 3,
-					"maxLength": 18
-				}
-			}
+			"type": "string",
+			"description": "A role name",
+			"enum": [
+				"ADMIN",
+				"DEVELOPER",
+				"USER"
+			]
 		}
 	}
 }

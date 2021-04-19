@@ -22,8 +22,8 @@ type roleAssignmentsHolder interface {
 // NewAuthorizer function.
 type Authorizer interface {
 	// Authorize retrieves a principal from the provided Context and asserts that
-	// it has at least one of the allowed Roles. If it does not, implementations
-	// MUST return a *meta.ErrAuthorization error.
+	// it has the specified Role with the specified scope. If it does not,
+	// implementations MUST return a *meta.ErrAuthorization error.
 	Authorize(ctx context.Context, roles libAuthz.Role, scope string) error
 }
 

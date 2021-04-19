@@ -14,7 +14,7 @@ type RoleAssignment struct {
 	// Principal specifies the principal to whom the Role is assigned.
 	Principal PrincipalReference `json:"principal"`
 	// Scope qualifies the scope of the Role. The value is opaque and has meaning
-	// only in relation to a specific RoleName.
+	// only in relation to a specific Role.
 	Scope string `json:"scope,omitempty"`
 }
 

@@ -334,7 +334,7 @@ func (e *eventsService) Create(
 		// events coming from gateways.
 		if err := e.authorize(
 			ctx,
-			RoleEventCreator(),
+			RoleEventCreator,
 			event.Source,
 		); err != nil {
 			return events, err
@@ -347,7 +347,7 @@ func (e *eventsService) Create(
 		if err := e.projectAuthorize(
 			ctx,
 			event.ProjectID,
-			RoleProjectUser(),
+			RoleProjectUser,
 		); err != nil {
 			return events, err
 		}
@@ -481,7 +481,7 @@ func (e *eventsService) List(
 	selector EventsSelector,
 	opts meta.ListOptions,
 ) (EventList, error) {
-	if err := e.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := e.authorize(ctx, system.RoleReader, ""); err != nil {
 		return EventList{}, err
 	}
 
@@ -504,7 +504,7 @@ func (e *eventsService) Get(
 	ctx context.Context,
 	id string,
 ) (Event, error) {
-	if err := e.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := e.authorize(ctx, system.RoleReader, ""); err != nil {
 		return Event{}, err
 	}
 
@@ -542,7 +542,7 @@ func (e *eventsService) UpdateSourceState(
 		return errors.Wrapf(err, "error retrieving event %q from store", id)
 	}
 
-	if err = e.authorize(ctx, RoleEventCreator(), event.Source); err != nil {
+	if err = e.authorize(ctx, RoleEventCreator, event.Source); err != nil {
 		return err
 	}
 
@@ -561,7 +561,7 @@ func (e *eventsService) Cancel(ctx context.Context, id string) error {
 	}
 
 	if err =
-		e.projectAuthorize(ctx, event.ProjectID, RoleProjectUser()); err != nil {
+		e.projectAuthorize(ctx, event.ProjectID, RoleProjectUser); err != nil {
 		return err
 	}
 
@@ -604,7 +604,7 @@ func (e *eventsService) CancelMany(
 	}
 
 	if err :=
-		e.projectAuthorize(ctx, selector.ProjectID, RoleProjectUser()); err != nil {
+		e.projectAuthorize(ctx, selector.ProjectID, RoleProjectUser); err != nil {
 		return CancelManyEventsResult{}, err
 	}
 
@@ -664,7 +664,7 @@ func (e *eventsService) Delete(ctx context.Context, id string) error {
 	}
 
 	if err =
-		e.projectAuthorize(ctx, event.ProjectID, RoleProjectUser()); err != nil {
+		e.projectAuthorize(ctx, event.ProjectID, RoleProjectUser); err != nil {
 		return err
 	}
 
@@ -709,7 +709,7 @@ func (e *eventsService) DeleteMany(
 	if err := e.projectAuthorize(
 		ctx,
 		selector.ProjectID,
-		RoleProjectUser(),
+		RoleProjectUser,
 	); err != nil {
 		return DeleteManyEventsResult{}, err
 	}

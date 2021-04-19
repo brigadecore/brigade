@@ -8,9 +8,9 @@ import (
 
 // AuthorizeFn is the signature for any function that can, presumably, retrieve
 // a principal from the provided Context and make an access control decision
-// based on the principal having (or not having) at least one of the provided
-// Roles. Implementations MUST return a *meta.ErrAuthorization error if the
-// principal is not authorized.
+// based on the principal having (or not having) the specified Role with the
+// specified scope. Implementations MUST return a *meta.ErrAuthorization error
+// if the principal is not authorized.
 type AuthorizeFn func(ctx context.Context, role Role, scope string) error
 
 // AlwaysAuthorize is an implementation of the AuthorizeFn function signature

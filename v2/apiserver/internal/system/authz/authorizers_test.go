@@ -28,9 +28,7 @@ func TestNewAuthorizer(t *testing.T) {
 }
 
 func TestAuthorizerAuthorize(t *testing.T) {
-	testRole := libAuthz.Role{
-		Name: "foo",
-	}
+	const testRole = "foo"
 	const testScope = "foo"
 	testCases := []struct {
 		name       string

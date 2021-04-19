@@ -135,7 +135,7 @@ func (s *secretsService) List(
 	projectID string,
 	opts meta.ListOptions,
 ) (SecretList, error) {
-	if err := s.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := s.authorize(ctx, system.RoleReader, ""); err != nil {
 		return SecretList{}, err
 	}
 
@@ -167,7 +167,7 @@ func (s *secretsService) Set(
 	projectID string,
 	secret Secret,
 ) error {
-	if err := s.projectAuthorize(ctx, projectID, RoleProjectAdmin()); err != nil {
+	if err := s.projectAuthorize(ctx, projectID, RoleProjectAdmin); err != nil {
 		return err
 	}
 
@@ -194,7 +194,7 @@ func (s *secretsService) Unset(
 	projectID string,
 	key string,
 ) error {
-	if err := s.projectAuthorize(ctx, projectID, RoleProjectAdmin()); err != nil {
+	if err := s.projectAuthorize(ctx, projectID, RoleProjectAdmin); err != nil {
 		return err
 	}
 

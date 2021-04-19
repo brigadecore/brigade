@@ -109,7 +109,7 @@ func (u *usersService) List(
 	ctx context.Context,
 	opts meta.ListOptions,
 ) (UserList, error) {
-	if err := u.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := u.authorize(ctx, system.RoleReader, ""); err != nil {
 		return UserList{}, err
 	}
 
@@ -124,7 +124,7 @@ func (u *usersService) List(
 }
 
 func (u *usersService) Get(ctx context.Context, id string) (User, error) {
-	if err := u.authorize(ctx, system.RoleReader(), ""); err != nil {
+	if err := u.authorize(ctx, system.RoleReader, ""); err != nil {
 		return User{}, err
 	}
 
@@ -140,7 +140,7 @@ func (u *usersService) Get(ctx context.Context, id string) (User, error) {
 }
 
 func (u *usersService) Lock(ctx context.Context, id string) error {
-	if err := u.authorize(ctx, system.RoleAdmin(), ""); err != nil {
+	if err := u.authorize(ctx, system.RoleAdmin, ""); err != nil {
 		return err
 	}
 
@@ -154,7 +154,7 @@ func (u *usersService) Lock(ctx context.Context, id string) error {
 }
 
 func (u *usersService) Unlock(ctx context.Context, id string) error {
-	if err := u.authorize(ctx, system.RoleAdmin(), ""); err != nil {
+	if err := u.authorize(ctx, system.RoleAdmin, ""); err != nil {
 		return err
 	}
 
