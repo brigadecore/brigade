@@ -539,15 +539,13 @@ func (e *eventsService) Clone(
 	ctx context.Context,
 	id string,
 ) (EventList, error) {
-	events := EventList{}
-
-	if err := e.authorize(ctx, system.RoleReader(), ""); err != nil {
-		return events, err
-	}
-
 	event, err := e.eventsStore.Get(ctx, id)
 	if err != nil {
-		return events, errors.Wrapf(err, "error retrieving event %q from store", id)
+		return EventList{}, errors.Wrapf(
+			err,
+			"error retrieving event %q from store",
+			id,
+		)
 	}
 
 	// Clone all event details *except* metadata and worker config

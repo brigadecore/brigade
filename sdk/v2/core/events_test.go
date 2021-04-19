@@ -225,7 +225,7 @@ func TestEventsClientClone(t *testing.T) {
 	server := httptest.NewServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodPut, r.Method)
+				require.Equal(t, http.MethodPost, r.Method)
 				require.Equal(
 					t,
 					fmt.Sprintf("/v2/events/%s/clone", testEventID),
