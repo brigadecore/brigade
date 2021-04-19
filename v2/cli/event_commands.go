@@ -77,6 +77,21 @@ var eventCommand = &cli.Command{
 			Action: eventCancelMany,
 		},
 		{
+			Name:  "clone",
+			Usage: "Clone an existing event",
+			Description: "Clones the provided event and runs it " +
+				"using the worker configuration currently specified by the project.",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     flagID,
+					Aliases:  []string{"i", flagEvent, "e"},
+					Usage:    "Clone the specified event (required)",
+					Required: true,
+				},
+			},
+			Action: eventClone,
+		},
+		{
 			Name:        "create",
 			Usage:       "Create a new event",
 			Description: "Creates a new event for the specified project",
@@ -779,6 +794,28 @@ func eventDeleteMany(c *cli.Context) error {
 		return err
 	}
 	fmt.Printf("Deleted %d events.\n", events.Count)
+
+	return nil
+}
+
+func eventClone(c *cli.Context) error {
+	id := c.String(flagID)
+
+	client, err := getClient(c)
+	if err != nil {
+		return err
+	}
+
+	events, err := client.Core().Events().Clone(c.Context, id)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf(
+		"Created event %q from original event %q.\n\n",
+		events.Items[0].ID,
+		id,
+	)
 
 	return nil
 }
