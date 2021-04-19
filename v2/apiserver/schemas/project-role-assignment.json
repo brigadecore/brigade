@@ -14,7 +14,7 @@
 
 	"title": "ProjectRoleAssignment",
 	"type": "object",
-	"required": ["apiVersion", "kind", "principal", "projectID", "role"],
+	"required": ["apiVersion", "kind", "principal", "role"],
 	"additionalProperties": false,
 	"properties": {
 		"apiVersion": {
