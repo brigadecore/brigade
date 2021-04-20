@@ -27,6 +27,7 @@ const (
 	flagPending        = "pending"
 	flagProject        = "project"
 	flagQualifier      = "qualifier"
+	flagRole           = "role"
 	flagRoot           = "root"
 	flagRunning        = "running"
 	flagServer         = "server"
