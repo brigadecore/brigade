@@ -5,9 +5,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb"
 	mongoTesting "github.com/brigadecore/brigade/v2/apiserver/internal/lib/mongodb/testing" // nolint: lll
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -72,6 +75,126 @@ func TestProjectRoleAssignmentStoreGrant(t *testing.T) {
 			}
 			err := store.Grant(context.Background(), testProjectRoleAssignment)
 			testCase.assertions(err)
+		})
+	}
+}
+
+func TestProjectRoleAssignmentsStoreList(t *testing.T) {
+	testProjectRoleAssignment := core.ProjectRoleAssignment{
+		ProjectID: "avengers-initiative",
+		Principal: libAuthz.PrincipalReference{
+			Type: authz.PrincipalTypeUser,
+			ID:   "tony@starkindustries.com",
+		},
+		Role: libAuthz.Role("ceo"),
+	}
+
+	testCases := []struct {
+		name       string
+		collection mongodb.Collection
+		assertions func(core.ProjectRoleAssignmentList, error)
+	}{
+
+		{
+			name: "error finding project role assignments",
+			collection: &mongoTesting.MockCollection{
+				FindFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOptions,
+				) (*mongo.Cursor, error) {
+					return nil, errors.New("something went wrong")
+				},
+			},
+			assertions: func(_ core.ProjectRoleAssignmentList, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(
+					t,
+					err.Error(),
+					"error finding project role assignments",
+				)
+			},
+		},
+
+		{
+			name: "project role assignments found; no more pages of results exist",
+			collection: &mongoTesting.MockCollection{
+				FindFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOptions,
+				) (*mongo.Cursor, error) {
+					cursor, err := mongoTesting.MockCursor(testProjectRoleAssignment)
+					require.NoError(t, err)
+					return cursor, nil
+				},
+				CountDocumentsFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.CountOptions,
+				) (int64, error) {
+					return 0, nil
+				},
+			},
+			assertions: func(
+				projectRoleAssignments core.ProjectRoleAssignmentList,
+				err error,
+			) {
+				require.NoError(t, err)
+				require.Empty(t, projectRoleAssignments.Continue)
+				require.Zero(t, projectRoleAssignments.RemainingItemCount)
+			},
+		},
+
+		{
+			name: "project role assignments found; more pages of results exist",
+			collection: &mongoTesting.MockCollection{
+				FindFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.FindOptions,
+				) (*mongo.Cursor, error) {
+					cursor, err := mongoTesting.MockCursor(testProjectRoleAssignment)
+					require.NoError(t, err)
+					return cursor, nil
+				},
+				CountDocumentsFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.CountOptions,
+				) (int64, error) {
+					return 5, nil
+				},
+			},
+			assertions: func(
+				projectRoleAssignments core.ProjectRoleAssignmentList,
+				err error,
+			) {
+				require.NoError(t, err)
+				require.Equal(
+					t,
+					"avengers-initiative:USER:tony@starkindustries.com:ceo",
+					projectRoleAssignments.Continue,
+				)
+				require.Equal(t, int64(5), projectRoleAssignments.RemainingItemCount)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &projectRoleAssignmentsStore{
+				collection: testCase.collection,
+			}
+			roleAssignments, err := store.List(
+				context.Background(),
+				core.ProjectRoleAssignmentsSelector{},
+				meta.ListOptions{
+					Limit: 1,
+				},
+			)
+			testCase.assertions(roleAssignments, err)
 		})
 	}
 }
