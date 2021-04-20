@@ -290,6 +290,10 @@ type EventsService interface {
 		context.Context,
 		EventsSelector,
 	) (DeleteManyEventsResult, error)
+	// Retry copies an Event, including Worker configuration, and creates a new
+	// Event from this information.  Note that it does not carry over Job state
+	// in the process.
+	Retry(context.Context, string) (EventList, error)
 }
 
 type eventsService struct {
@@ -403,13 +407,22 @@ func (e *eventsService) createSingleEvent(
 
 	event.ID = uuid.NewV4().String()
 
-	workerSpec := project.Spec.WorkerTemplate
+	// Defer to the Worker.Spec on the event itself, which may already exist if
+	// the event is a retry of another.  Else, proceed with inheriting from the
+	// project.Spec.  Since a Worker would minimally have a HashedToken from
+	// prior creation, this is what we check to determine if the event.Worker was
+	// previously initialized.
+	workerSpec := event.Worker.Spec
+	if event.Worker.HashedToken == "" {
+		workerSpec = project.Spec.WorkerTemplate
+	}
 
 	if workerSpec.WorkspaceSize == "" {
 		workerSpec.WorkspaceSize = defaultWorkspaceSize
 	}
 
-	// If they exist, git details from the event override project-level git config
+	// If they exist, git details from the event override any pre-existing git
+	// config
 	if event.Git != nil {
 		if workerSpec.Git == nil {
 			workerSpec.Git = &GitConfig{}
@@ -810,6 +823,42 @@ func (e *eventsService) DeleteMany(
 	}
 
 	return result, nil
+}
+
+func (e *eventsService) Retry(
+	ctx context.Context,
+	id string,
+) (EventList, error) {
+	// No authz call here as we'll defer to the checks in e.Create() invoked
+	// below
+
+	event, err := e.eventsStore.Get(ctx, id)
+	if err != nil {
+		return EventList{}, errors.Wrapf(
+			err,
+			"error retrieving event %q from store",
+			id,
+		)
+	}
+
+	// Copy all event details, including worker configuration, only omitting
+	// metadata and worker jobs array
+	retry := event
+	retry.ObjectMeta = meta.ObjectMeta{}
+	// TODO: logic for:
+	// "skips jobs that succeeded already and retries those that didn't, assuming no shared volumes"
+	// "copy the battle plan also; clear the state on failed jobs."
+	// "We could then amend the logic for Job creation to short circuit when a "new" job is created,
+	// but it already exists and is already in a success state."
+	retry.Worker.Jobs = nil
+
+	// Add a label for tracing the original event id
+	if retry.Labels == nil {
+		retry.Labels = map[string]string{}
+	}
+	retry.Labels["retryOf"] = id
+
+	return e.Create(ctx, retry)
 }
 
 // EventsStore is an interface for components that implement Event persistence

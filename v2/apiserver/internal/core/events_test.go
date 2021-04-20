@@ -578,6 +578,7 @@ func TestEventsServiceClone(t *testing.T) {
 				require.Contains(t, err.Error(), "something went wrong")
 			},
 		},
+		// TODO: add non-trivial event details to verify cloned event config
 		{
 			name: "success",
 			service: &eventsService{
@@ -1321,6 +1322,114 @@ func TestEventsServiceDeleteMany(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			_, err :=
 				testCase.service.DeleteMany(context.Background(), testCase.selector)
+			testCase.assertions(err)
+		})
+	}
+}
+
+func TestEventsServiceRetry(t *testing.T) {
+	testEventID := "123456789"
+	testCases := []struct {
+		name       string
+		service    EventsService
+		assertions func(error)
+	}{
+		{
+			name: "unauthorized",
+			service: &eventsService{
+				authorize: libAuthz.NeverAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "error getting event from store",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("error getting event")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error getting event")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "error creating retry event",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
+						return ProjectList{
+							Items: []Project{{}, {}},
+						}, nil
+					},
+				},
+				createSingleEventFn: func(
+					context.Context,
+					Project,
+					Event,
+				) (Event, error) {
+					return Event{}, errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+			},
+		},
+		// TODO: add non-trivial event details to verify retried event config
+		{
+			name: "success",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
+						return ProjectList{
+							Items: []Project{{}, {}},
+						}, nil
+					},
+				},
+				createSingleEventFn: func(
+					context.Context,
+					Project,
+					Event,
+				) (Event, error) {
+					return Event{}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			_, err := testCase.service.Retry(
+				context.Background(),
+				testEventID,
+			)
 			testCase.assertions(err)
 		})
 	}
