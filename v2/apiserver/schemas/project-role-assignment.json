@@ -30,9 +30,9 @@
 			"type": "string",
 			"description": "A role name",
 			"enum": [
-				"ADMIN",
-				"DEVELOPER",
-				"USER"
+				"PROJECT_ADMIN",
+				"PROJECT_DEVELOPER",
+				"PROJECT_USER"
 			]
 		}
 	}
