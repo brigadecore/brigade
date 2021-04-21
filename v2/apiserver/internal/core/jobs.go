@@ -245,6 +245,10 @@ func (j *jobsService) Create(
 	eventID string,
 	job Job,
 ) error {
+	var useWorkspace = job.Spec.PrimaryContainer.WorkspaceMountPath != ""
+	var usePrivileged = job.Spec.PrimaryContainer.Privileged
+	var useDockerSocket = job.Spec.PrimaryContainer.UseHostDockerSocket
+
 	if err := j.authorize(ctx, RoleWorker, eventID); err != nil {
 		return err
 	}
@@ -253,15 +257,45 @@ func (j *jobsService) Create(
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
-	if _, ok := event.Worker.Job(job.Name); ok {
-		return &meta.ErrConflict{
-			Type: JobKind,
-			ID:   job.Name,
-			Reason: fmt.Sprintf(
-				"Event %q already has a job named %q.",
+	if originalJob, ok := event.Worker.Job(job.Name); ok {
+		// If we aren't dealing with a retry event, return an error
+		if event.Labels == nil || event.Labels["retryOf"] == "" {
+			return &meta.ErrConflict{
+				Type: JobKind,
+				ID:   job.Name,
+				Reason: fmt.Sprintf(
+					"Event %q already has a job named %q.",
+					eventID,
+					job.Name,
+				),
+			}
+		}
+		// TODO: unit tests!
+
+		// Else, deal with retry event job
+		//
+		// If the job has already succeeded, simply return, as we don't want to
+		// replace this job in the store or schedule again
+		if originalJob.Status != nil &&
+			originalJob.Status.Phase == JobPhaseSucceeded {
+			return nil
+		}
+		// We don't currently support retrying jobs that require a shared workspace
+		if useWorkspace && event.Worker.Spec.UseWorkspace {
+			return &meta.ErrConflict{
+				Reason: "The job attempting to be retried requires a shared " +
+					"workspace.  Only jobs that don't require a shared workspace may " +
+					"be retried.",
+			}
+		}
+		// Delete the job from the store and rebuild/reschedule as normal below
+		if err = j.jobsStore.Delete(ctx, eventID, originalJob); err != nil {
+			return errors.Wrapf(
+				err,
+				"unable to delete job %s from event %s",
+				originalJob.Name,
 				eventID,
-				job.Name,
-			),
+			)
 		}
 	}
 
@@ -271,9 +305,6 @@ func (j *jobsService) Create(
 	//   1. Use shared workspace
 	//   2. Run in privileged mode
 	//   3. Mount the host's Docker socket
-	var useWorkspace = job.Spec.PrimaryContainer.WorkspaceMountPath != ""
-	var usePrivileged = job.Spec.PrimaryContainer.Privileged
-	var useDockerSocket = job.Spec.PrimaryContainer.UseHostDockerSocket
 	for _, sidecarContainer := range job.Spec.SidecarContainers {
 		if sidecarContainer.WorkspaceMountPath != "" {
 			useWorkspace = true
@@ -374,16 +405,12 @@ func (j *jobsService) Create(
 		)
 	}
 
-	if err = j.substrate.ScheduleJob(ctx, project, event, job.Name); err != nil {
-		return errors.Wrapf(
-			err,
-			"error scheduling event %q job %q on the substrate",
-			event.ID,
-			job.Name,
-		)
-	}
-
-	return nil
+	return errors.Wrapf(
+		j.substrate.ScheduleJob(ctx, project, event, job.Name),
+		"error scheduling event %q job %q on the substrate",
+		event.ID,
+		job.Name,
+	)
 }
 
 func (j *jobsService) Start(
@@ -624,6 +651,9 @@ type JobsStore interface {
 	// Create persists a new Job for the specified Event in the underlying data
 	// store.
 	Create(ctx context.Context, eventID string, job Job) error
+	// Delete removes a Job from the specified Event in the underlying data
+	// store.
+	Delete(ctx context.Context, eventID string, job Job) error
 	// UpdateStatus updates the status of the specified Job in the underlying data
 	// store. If the specified job is not found, implementations MUST return a
 	// *meta.ErrNotFound error.

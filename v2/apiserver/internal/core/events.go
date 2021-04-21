@@ -407,14 +407,13 @@ func (e *eventsService) createSingleEvent(
 
 	event.ID = uuid.NewV4().String()
 
-	// Defer to the Worker.Spec on the event itself, which may already exist if
-	// the event is a retry of another.  Else, proceed with inheriting from the
-	// project.Spec.  Since a Worker would minimally have a HashedToken from
-	// prior creation, this is what we check to determine if the event.Worker was
-	// previously initialized.
-	workerSpec := event.Worker.Spec
-	if event.Worker.HashedToken == "" {
-		workerSpec = project.Spec.WorkerTemplate
+	jobs := []Job{}
+	workerSpec := project.Spec.WorkerTemplate
+	// If the event is a retry of another, defer to the Worker.Spec on the event
+	// itself.  Retain the Jobs slice as well.
+	if event.Labels != nil && event.Labels["retryOf"] != "" {
+		workerSpec = event.Worker.Spec
+		jobs = event.Worker.Jobs
 	}
 
 	if workerSpec.WorkspaceSize == "" {
@@ -461,6 +460,7 @@ func (e *eventsService) createSingleEvent(
 	token := crypto.NewToken(256)
 
 	event.Worker = Worker{
+		Jobs: jobs,
 		Spec: workerSpec,
 		Status: WorkerStatus{
 			Phase: WorkerPhasePending,
@@ -845,12 +845,6 @@ func (e *eventsService) Retry(
 	// metadata and worker jobs array
 	retry := event
 	retry.ObjectMeta = meta.ObjectMeta{}
-	// TODO: logic for:
-	// "skips jobs that succeeded already and retries those that didn't, assuming no shared volumes"
-	// "copy the battle plan also; clear the state on failed jobs."
-	// "We could then amend the logic for Job creation to short circuit when a "new" job is created,
-	// but it already exists and is already in a success state."
-	retry.Worker.Jobs = nil
 
 	// Add a label for tracing the original event id
 	if retry.Labels == nil {

@@ -1222,6 +1222,7 @@ func TestJobsServiceCleanup(t *testing.T) {
 
 type mockJobsStore struct {
 	CreateFn       func(ctx context.Context, eventID string, job Job) error
+	DeleteFn       func(ctx context.Context, eventID string, job Job) error
 	UpdateStatusFn func(
 		ctx context.Context,
 		eventID string,
@@ -1236,6 +1237,14 @@ func (m *mockJobsStore) Create(
 	job Job,
 ) error {
 	return m.CreateFn(ctx, eventID, job)
+}
+
+func (m *mockJobsStore) Delete(
+	ctx context.Context,
+	eventID string,
+	job Job,
+) error {
+	return m.DeleteFn(ctx, eventID, job)
 }
 
 func (m *mockJobsStore) UpdateStatus(
