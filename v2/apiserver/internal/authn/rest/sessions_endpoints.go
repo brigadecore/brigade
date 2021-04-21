@@ -65,12 +65,15 @@ func (s *SessionsEndpoints) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	oidcAuthOpts := &authn.OIDCAuthOptions{
+		AuthSuccessURL: r.URL.Query().Get("authSuccessURL"),
+	}
 	restmachinery.ServeRequest(
 		restmachinery.InboundRequest{
 			W: w,
 			R: r,
 			EndpointLogic: func() (interface{}, error) {
-				return s.Service.CreateUserSession(r.Context())
+				return s.Service.CreateUserSession(r.Context(), oidcAuthOpts)
 			},
 			SuccessCode: http.StatusCreated,
 		},
@@ -116,13 +119,17 @@ func (s *SessionsEndpoints) authenticate(
 						`query parameters.`,
 				}
 			}
-			if err := s.Service.Authenticate(
+			authSuccessURL, err := s.Service.Authenticate(
 				r.Context(),
 				oauth2State,
 				oidcCode,
-			); err != nil {
+			)
+			if err != nil {
 				return nil,
 					errors.Wrap(err, "error completing OpenID Connect authentication")
+			}
+			if authSuccessURL != "" {
+				http.Redirect(w, r, authSuccessURL, http.StatusMovedPermanently)
 			}
 			return []byte("You're now authenticated. You may resume using the CLI."),
 				nil
