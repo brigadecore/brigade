@@ -130,6 +130,7 @@ func (s *SessionsEndpoints) authenticate(
 			}
 			if authSuccessURL != "" {
 				http.Redirect(w, r, authSuccessURL, http.StatusMovedPermanently)
+				return nil, nil
 			}
 			return []byte("You're now authenticated. You may resume using the CLI."),
 				nil
