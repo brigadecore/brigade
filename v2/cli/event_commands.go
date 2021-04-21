@@ -84,6 +84,12 @@ var eventCommand = &cli.Command{
 				"asynchronously according to current project configuration, like " +
 				"any other new event.",
 			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:    flagFollow,
+					Aliases: []string{"f"},
+					Usage: "Synchronously wait for the event to be processed and " +
+						"stream logs from its worker",
+				},
 				&cli.StringFlag{
 					Name:     flagID,
 					Aliases:  []string{"i", flagEvent, "e"},
@@ -98,6 +104,12 @@ var eventCommand = &cli.Command{
 			Usage:       "Create a new event",
 			Description: "Creates a new event for the specified project",
 			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:    flagFollow,
+					Aliases: []string{"f"},
+					Usage: "Synchronously wait for the event to be processed and " +
+						"stream logs from its worker",
+				},
 				&cli.StringFlag{
 					Name:  flagPayload,
 					Usage: "The event payload",
@@ -331,6 +343,7 @@ var eventCommand = &cli.Command{
 }
 
 func eventCreate(c *cli.Context) error {
+	follow := c.Bool(flagFollow)
 	payload := c.String(flagPayload)
 	payloadFile := c.String(flagPayloadFile)
 	projectID := c.String(flagProject)
@@ -380,9 +393,24 @@ func eventCreate(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Created event %q.\n\n", events.Items[0].ID)
+	event = events.Items[0]
+	fmt.Printf("Created event %q.\n\n", event.ID)
 
-	return nil
+	if !follow {
+		return nil
+	}
+
+	fmt.Println("Waiting for event's worker to be RUNNING...")
+
+	return streamLogs(
+		c.Context,
+		client.Core().Events().Logs(),
+		event.ID,
+		nil,
+		&core.LogStreamOptions{
+			Follow: true,
+		},
+	)
 }
 
 // nolint: gocyclo
@@ -802,6 +830,7 @@ func eventDeleteMany(c *cli.Context) error {
 
 func eventClone(c *cli.Context) error {
 	id := c.String(flagID)
+	follow := c.Bool(flagFollow)
 
 	client, err := getClient(c)
 	if err != nil {
@@ -812,12 +841,25 @@ func eventClone(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
 	fmt.Printf(
 		"Created event %q from original event %q.\n\n",
 		event.ID,
 		id,
 	)
 
-	return nil
+	if !follow {
+		return nil
+	}
+
+	fmt.Println("Waiting for event's worker to be RUNNING...")
+
+	return streamLogs(
+		c.Context,
+		client.Core().Events().Logs(),
+		event.ID,
+		nil,
+		&core.LogStreamOptions{
+			Follow: true,
+		},
+	)
 }
