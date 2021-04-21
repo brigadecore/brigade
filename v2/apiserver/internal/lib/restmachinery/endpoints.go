@@ -210,17 +210,19 @@ func ServeWebUIRequest(req InboundWebUIRequest) {
 		return
 	}
 	req.W.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	req.W.WriteHeader(req.SuccessCode)
-	var responseBody []byte
-	switch r := respBodyObj.(type) {
-	case []byte:
-		responseBody = r
-	case string:
-		responseBody = []byte(r)
-	case fmt.Stringer:
-		responseBody = []byte(r.String())
-	}
-	if _, err := req.W.Write(responseBody); err != nil {
-		log.Println(errors.Wrap(err, "error writing response body"))
+	if respBodyObj != nil {
+		req.W.WriteHeader(req.SuccessCode)
+		var responseBody []byte
+		switch r := respBodyObj.(type) {
+		case []byte:
+			responseBody = r
+		case string:
+			responseBody = []byte(r)
+		case fmt.Stringer:
+			responseBody = []byte(r.String())
+		}
+		if _, err := req.W.Write(responseBody); err != nil {
+			log.Println(errors.Wrap(err, "error writing response body"))
+		}
 	}
 }
