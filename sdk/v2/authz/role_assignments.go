@@ -55,7 +55,8 @@ type RoleAssignmentsSelector struct {
 	// Principal specifies that only RoleAssignments for the specified Principal
 	// should be selected.
 	Principal *libAuthz.PrincipalReference
-	// TODO: Document this
+	// Role specifies that only RoleAssignments for the specified Role should be
+	// selected.
 	Role libAuthz.Role
 }
 
