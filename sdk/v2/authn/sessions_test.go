@@ -57,6 +57,9 @@ func TestSessionsClientCreateRootSession(t *testing.T) {
 }
 
 func TestSessionsClientCreateUserSession(t *testing.T) {
+	testOIDCAuthOptions := &OIDCAuthOptions{
+		SuccessURL: "https://example.com/success",
+	}
 	testOIDCAuthDetails := OIDCAuthDetails{
 		Token: "opensesame",
 	}
@@ -66,6 +69,11 @@ func TestSessionsClientCreateUserSession(t *testing.T) {
 				require.Equal(t, http.MethodPost, r.Method)
 				require.Equal(t, "/v2/sessions", r.URL.Path)
 				require.Empty(t, r.Header.Get("Authorization"))
+				require.Equal(
+					t,
+					testOIDCAuthOptions.SuccessURL,
+					r.URL.Query().Get("authSuccessURL"),
+				)
 				bodyBytes, err := json.Marshal(testOIDCAuthDetails)
 				require.NoError(t, err)
 				w.WriteHeader(http.StatusCreated)
@@ -75,7 +83,8 @@ func TestSessionsClientCreateUserSession(t *testing.T) {
 	)
 	defer server.Close()
 	client := NewSessionsClient(server.URL, rmTesting.TestAPIToken, nil)
-	OIDCAuthDetails, err := client.CreateUserSession(context.Background())
+	OIDCAuthDetails, err :=
+		client.CreateUserSession(context.Background(), testOIDCAuthOptions)
 	require.NoError(t, err)
 	require.Equal(t, testOIDCAuthDetails, OIDCAuthDetails)
 }

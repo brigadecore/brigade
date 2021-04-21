@@ -31,9 +31,17 @@
 			"description": "A role name",
 			"enum": [
 				"ADMIN",
+				"EVENT_CREATOR",
 				"PROJECT_CREATOR",
 				"READER"
 			]
+		},
+		"scope": {
+			"type": "string",
+			"description": "The event source this role should be scoped to",
+			"pattern": "^[a-zA-Z][a-zA-Z\\d./-]*[a-zA-Z\\d]$",
+			"minLength": 3,
+			"maxLength": 50
 		}
 	}
 }
