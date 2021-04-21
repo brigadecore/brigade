@@ -140,6 +140,9 @@ func TestSessionsServiceCreateRootSession(t *testing.T) {
 
 func TestSessionsServiceCreateUserSession(t *testing.T) {
 	const testAuthURL = "https://localhost:8080/oidc?state=foo"
+	testOIDCOpts := &OIDCAuthOptions{
+		AuthSuccessURL: "https://example.com/success",
+	}
 	testCases := []struct {
 		name       string
 		service    SessionsService
@@ -187,7 +190,7 @@ func TestSessionsServiceCreateUserSession(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			authDetails, err :=
-				testCase.service.CreateUserSession(context.Background())
+				testCase.service.CreateUserSession(context.Background(), testOIDCOpts)
 			testCase.assertions(authDetails, err)
 		})
 	}
@@ -629,7 +632,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			err := testCase.service.Authenticate(
+			_, err := testCase.service.Authenticate(
 				context.Background(),
 				testCase.oauth2State,
 				testCase.oidcCode,

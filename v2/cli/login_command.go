@@ -93,7 +93,7 @@ func login(c *cli.Context) error {
 		tokenStr = token.Value
 	} else {
 		oidcAuthDetails, err :=
-			client.CreateUserSession(c.Context)
+			client.CreateUserSession(c.Context, nil)
 		if err != nil {
 			return err
 		}
