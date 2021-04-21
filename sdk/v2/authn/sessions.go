@@ -12,6 +12,15 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
+// OIDCAuthOptions encapsulates user-specified options when creating a new
+// session using an OpenID Connect workflow.
+type OIDCAuthOptions struct {
+	// SuccessURL indicates where users should be redirected to after successful
+	// completion of the OpenID Connect authentication workflow. If this is left
+	// unspecified, users will be redirected to a default success page.
+	SuccessURL string
+}
+
 // OIDCAuthDetails encapsulates all information required for a client
 // authenticating by means of OpenID Connect to complete the authentication
 // process using a third-party OIDC identity provider.
@@ -58,7 +67,7 @@ type SessionsClient interface {
 	// Connect authentication workflow. It returns an OIDCAuthDetails containing
 	// all information required to continue the authentication process with a
 	// third-party OIDC identity provider.
-	CreateUserSession(context.Context) (OIDCAuthDetails, error)
+	CreateUserSession(context.Context, *OIDCAuthOptions) (OIDCAuthDetails, error)
 	// Delete deletes the Session identified by the token in use by this client.
 	Delete(context.Context) error
 }
@@ -110,9 +119,16 @@ func (s *sessionsClient) CreateRootSession(
 
 func (s *sessionsClient) CreateUserSession(
 	ctx context.Context,
+	opts *OIDCAuthOptions,
 ) (OIDCAuthDetails, error) {
 	includeAuthHeader := false
 	oidcAuthDetails := OIDCAuthDetails{}
+	queryParams := map[string]string{}
+	if opts != nil {
+		if opts.SuccessURL != "" {
+			queryParams["authSuccessURL"] = opts.SuccessURL
+		}
+	}
 	return oidcAuthDetails, s.ExecuteRequest(
 		ctx,
 		rm.OutboundRequest{
@@ -121,6 +137,7 @@ func (s *sessionsClient) CreateUserSession(
 			IncludeAuthHeader: &includeAuthHeader,
 			SuccessCode:       http.StatusCreated,
 			RespObj:           &oidcAuthDetails,
+			QueryParams:       queryParams,
 		},
 	)
 }

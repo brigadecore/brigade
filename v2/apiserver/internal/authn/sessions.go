@@ -16,6 +16,16 @@ import (
 // SessionKind represents the canonical Session kind string
 const SessionKind = "Session"
 
+// OIDCAuthOptions encapsulates user-specified options when creating a new
+// Session that with authenticate using an OpenID Connect workflow.
+type OIDCAuthOptions struct {
+	// AuthSuccessURL indicates where users should be redirected to after
+	// successful completion of the OpenID Connect authentication workflow. If
+	// this is left unspecified, users will be redirected to a default success
+	// page.
+	AuthSuccessURL string
+}
+
 // OIDCAuthDetails encapsulates all information required for a client
 // authenticating by means of OpenID Connect to complete the authentication
 // process using a third-party identity provider.
@@ -73,6 +83,10 @@ type Session struct {
 	// Expires, if set, specified an expiry date/time for the Session and its
 	// associated token.
 	Expires *time.Time `json:"expires" bson:"expires"`
+	// AuthSuccessURL indicates a URL to redirect the User to after successful
+	// completion of an OpenID Connect authentication workflow. If not specified,
+	// a default URL is used.
+	AuthSuccessURL string `json:"authSuccessURL" bson:"authSuccessURL"`
 }
 
 type sessionIDContextKey struct{}
@@ -180,24 +194,25 @@ type SessionsService interface {
 	// with a third-party OIDC identity provider. If authentication using OpenID
 	// Connect is not enabled, implementations MUST return a *meta.ErrNotSupported
 	// error.
-	CreateUserSession(context.Context) (OIDCAuthDetails, error)
+	CreateUserSession(context.Context, *OIDCAuthOptions) (OIDCAuthDetails, error)
 	// Authenticate completes the final steps of the OpenID Connect authentication
 	// workflow (if authentication using OpenID connect has been enabled by the
-	// system administrator). It uses the provided oauth2State to identify an
-	// as-yet anonymous Session (with an as-yet unactivated token). It
-	// communicates with the third-party OIDC identity provider, exchanging the
-	// provided oidcCode for user information. This information can be used to
-	// correlate the as-yet anonymous Session to an existing User. If the User is
-	// previously unknown to Brigade, implementations MUST seamlessly create one
-	// (with read-only permissions) based on information provided by the identity
-	// provider. Finally, the Session's token is activated. If authentication
-	// using OpenID Connect is not enabled, implementations MUST return a
-	// *meta.ErrNotSupported error.
+	// system administrator) and returns a URL to which the user may be
+	// redirected. It uses the provided oauth2State to identify an as-yet
+	// anonymous Session (with an as-yet unactivated token). It communicates with
+	// the third-party OIDC identity provider, exchanging the provided oidcCode
+	// for user information. This information can be used to correlate the as-yet
+	// anonymous Session to an existing User. If the User is previously unknown to
+	// Brigade, implementations MUST seamlessly create one (with read-only
+	// permissions) based on information provided by the identity provider.
+	// Finally, the Session's token is activated. If authentication using OpenID
+	// Connect is not enabled, implementations MUST return a *meta.ErrNotSupported
+	// error.
 	Authenticate(
 		ctx context.Context,
 		oauth2State string,
 		oidcCode string,
-	) error
+	) (string, error)
 	// GetByToken retrieves the Session having the provided token. If no such
 	// Session is found or is found but is expired, implementations MUST return a
 	// *meta.ErrAuthentication error.
@@ -283,6 +298,7 @@ func (s *sessionsService) CreateRootSession(
 
 func (s *sessionsService) CreateUserSession(
 	ctx context.Context,
+	opts *OIDCAuthOptions,
 ) (OIDCAuthDetails, error) {
 	if !s.config.OpenIDConnectEnabled {
 		return OIDCAuthDetails{}, &meta.ErrNotSupported{
@@ -302,6 +318,9 @@ func (s *sessionsService) CreateUserSession(
 		HashedToken:       crypto.Hash("", token),
 		Expires:           &expiryTime,
 	}
+	if opts != nil {
+		session.AuthSuccessURL = opts.AuthSuccessURL
+	}
 	session.Created = &now
 	if err := s.sessionsStore.Create(ctx, session); err != nil {
 		return OIDCAuthDetails{}, errors.Wrapf(
@@ -320,9 +339,9 @@ func (s *sessionsService) Authenticate(
 	ctx context.Context,
 	oauth2State string,
 	oidcCode string,
-) error {
+) (string, error) {
 	if !s.config.OpenIDConnectEnabled {
-		return &meta.ErrNotSupported{
+		return "", &meta.ErrNotSupported{
 			Details: "Authentication using OpenID Connect is not supported by this " +
 				"server.",
 		}
@@ -332,34 +351,34 @@ func (s *sessionsService) Authenticate(
 		crypto.Hash("", oauth2State),
 	)
 	if err != nil {
-		return errors.Wrap(
+		return "", errors.Wrap(
 			err,
 			"error retrieving session from store by hashed OAuth2 state",
 		)
 	}
 	oauth2Token, err := s.config.OAuth2Helper.Exchange(ctx, oidcCode)
 	if err != nil {
-		return errors.Wrap(
+		return "", errors.Wrap(
 			err,
 			"error exchanging OpenID Connect code for OAuth2 token",
 		)
 	}
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
-		return errors.New(
+		return "", errors.New(
 			"OAuth2 token, did not include an OpenID Connect identity token",
 		)
 	}
 	idToken, err := s.config.OpenIDConnectTokenVerifier.Verify(ctx, rawIDToken)
 	if err != nil {
-		return errors.Wrap(err, "error verifying OpenID Connect identity token")
+		return "", errors.Wrap(err, "error verifying OpenID Connect identity token")
 	}
 	claims := struct {
 		Name  string `json:"name"`
 		Email string `json:"email"`
 	}{}
 	if err = idToken.Claims(&claims); err != nil {
-		return errors.Wrap(
+		return "", errors.Wrap(
 			err,
 			"error decoding OpenID Connect identity token claims",
 		)
@@ -375,11 +394,11 @@ func (s *sessionsService) Authenticate(
 				Name: claims.Name,
 			}
 			if err = s.usersStore.Create(ctx, user); err != nil {
-				return errors.Wrapf(err, "error storing new user %q", user.ID)
+				return "", errors.Wrapf(err, "error storing new user %q", user.ID)
 			}
 		} else {
 			// It was something else that went wrong when searching for the user.
-			return err
+			return "", err
 		}
 	}
 	if err := s.sessionsStore.Authenticate(
@@ -388,13 +407,13 @@ func (s *sessionsService) Authenticate(
 		user.ID,
 		time.Now().UTC().Add(time.Hour),
 	); err != nil {
-		return errors.Wrapf(
+		return "", errors.Wrapf(
 			err,
 			"error storing authentication details for session %q",
 			session.ID,
 		)
 	}
-	return nil
+	return session.AuthSuccessURL, nil
 }
 
 func (s *sessionsService) GetByToken(
