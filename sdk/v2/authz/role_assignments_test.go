@@ -3,6 +3,7 @@ package authz
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -14,11 +15,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRoleAssignmentMarshalJSON(t *testing.T) {
+func TestRoleAssignmentListMarshalJSON(t *testing.T) {
 	metaTesting.RequireAPIVersionAndType(
 		t,
-		libAuthz.RoleAssignment{},
-		"RoleAssignment",
+		RoleAssignmentList{},
+		RoleAssignmentListKind,
 	)
 }
 
@@ -60,6 +61,65 @@ func TestRoleAssignmentsClientGrant(t *testing.T) {
 	client := NewRoleAssignmentsClient(server.URL, rmTesting.TestAPIToken, nil)
 	err := client.Grant(context.Background(), testRoleAssignment)
 	require.NoError(t, err)
+}
+
+func TestRoleAssignmentsClientList(t *testing.T) {
+	testRoleAssignments := RoleAssignmentList{
+		Items: []libAuthz.RoleAssignment{
+			{
+				Principal: libAuthz.PrincipalReference{
+					Type: PrincipalTypeUser,
+					ID:   "tony@starkindustries.com",
+				},
+				Role:  libAuthz.Role("ceo"),
+				Scope: "corporate",
+			},
+		},
+	}
+	testRoleAssignmentsSelector := RoleAssignmentsSelector{
+		Principal: &libAuthz.PrincipalReference{
+			Type: PrincipalTypeUser,
+			ID:   "tony@starkindustries.com",
+		},
+		Role: libAuthz.Role("ceo"),
+	}
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				defer r.Body.Close()
+				require.Equal(t, http.MethodGet, r.Method)
+				require.Equal(t, "/v2/role-assignments", r.URL.Path)
+				require.Equal(
+					t,
+					testRoleAssignmentsSelector.Principal.Type,
+					libAuthz.PrincipalType(r.URL.Query().Get("principalType")),
+				)
+				require.Equal(
+					t,
+					testRoleAssignmentsSelector.Principal.ID,
+					r.URL.Query().Get("principalID"),
+				)
+				require.Equal(
+					t,
+					testRoleAssignmentsSelector.Role,
+					libAuthz.Role(r.URL.Query().Get("role")),
+				)
+				bodyBytes, err := json.Marshal(testRoleAssignments)
+				require.NoError(t, err)
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintln(w, string(bodyBytes))
+			},
+		),
+	)
+	defer server.Close()
+	client := NewRoleAssignmentsClient(server.URL, rmTesting.TestAPIToken, nil)
+	roleAssignments, err := client.List(
+		context.Background(),
+		&testRoleAssignmentsSelector,
+		nil,
+	)
+	require.NoError(t, err)
+	require.Equal(t, testRoleAssignments, roleAssignments)
 }
 
 func TestRoleAssignmentsClientRevoke(t *testing.T) {

@@ -3,8 +3,13 @@ package authz
 import (
 	"testing"
 
+	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
+
+func TestRoleAssignmentMarshalJSON(t *testing.T) {
+	metaTesting.RequireAPIVersionAndType(t, &RoleAssignment{}, RoleAssignmentKind)
+}
 
 func TestMatches(t *testing.T) {
 	testCases := []struct {
