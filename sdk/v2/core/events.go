@@ -235,7 +235,7 @@ type EventsClient interface {
 	// Clones a pre-existing Event, removing the original's metadata and Worker
 	// config in the process.  A new Event is created using the rest of the
 	// details preserved from the original.
-	Clone(context.Context, string) (EventList, error)
+	Clone(context.Context, string) (Event, error)
 	// UpdateSourceState updates source-specific (e.g. gateway-specific) Event
 	// state.
 	UpdateSourceState(context.Context, string, SourceState) error
@@ -331,15 +331,15 @@ func (e *eventsClient) Get(
 func (e *eventsClient) Clone(
 	ctx context.Context,
 	id string,
-) (EventList, error) {
-	events := EventList{}
-	return events, e.ExecuteRequest(
+) (Event, error) {
+	event := Event{}
+	return event, e.ExecuteRequest(
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        fmt.Sprintf("v2/events/%s/clone", id),
 			SuccessCode: http.StatusCreated,
-			RespObj:     &events,
+			RespObj:     &event,
 		},
 	)
 }

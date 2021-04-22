@@ -808,14 +808,14 @@ func eventClone(c *cli.Context) error {
 		return err
 	}
 
-	events, err := client.Core().Events().Clone(c.Context, id)
+	event, err := client.Core().Events().Clone(c.Context, id)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf(
 		"Created event %q from original event %q.\n\n",
-		events.Items[0].ID,
+		event.ID,
 		id,
 	)
 
