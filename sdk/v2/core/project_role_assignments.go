@@ -12,6 +12,16 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
+const (
+	// ProjectRoleAssignmentKind represents the canonical ProjectRoleAssignment
+	// kind string
+	ProjectRoleAssignmentKind = "ProjectRoleAssignment"
+
+	// ProjectRoleAssignmentListKind represents the canonical
+	// ProjectRoleAssignmentList kind string
+	ProjectRoleAssignmentListKind = "ProjectRoleAssignmentList"
+)
+
 // ProjectRoleAssignment represents the assignment of a ProjectRole to a
 // principal such as a User or ServiceAccount.
 type ProjectRoleAssignment struct {
@@ -32,11 +42,49 @@ func (p ProjectRoleAssignment) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       "ProjectRoleAssignment",
+				Kind:       ProjectRoleAssignmentKind,
 			},
 			Alias: (Alias)(p),
 		},
 	)
+}
+
+// ProjectRoleAssignmentList is an ordered and pageable list of
+// ProjectRoleAssignments.
+type ProjectRoleAssignmentList struct {
+	// ListMeta contains list metadata.
+	meta.ListMeta `json:"metadata"`
+	// Items is a slice of ProjectRoleAssignments.
+	Items []ProjectRoleAssignment `json:"items,omitempty"`
+}
+
+// MarshalJSON amends ProjectRoleAssignmentList instances with type metadata so
+// that clients do not need to be concerned with the tedium of doing so.
+func (p ProjectRoleAssignmentList) MarshalJSON() ([]byte, error) {
+	type Alias ProjectRoleAssignmentList
+	return json.Marshal(
+		struct {
+			meta.TypeMeta `json:",inline"`
+			Alias         `json:",inline"`
+		}{
+			TypeMeta: meta.TypeMeta{
+				APIVersion: meta.APIVersion,
+				Kind:       ProjectRoleAssignmentListKind,
+			},
+			Alias: (Alias)(p),
+		},
+	)
+}
+
+// ProjectRoleAssignmentsSelector represents useful filter criteria when
+// selecting multiple ProjectRoleAssignments for API group operations like list.
+type ProjectRoleAssignmentsSelector struct {
+	// Principal specifies that only ProjectRoleAssignments for the specified
+	// Principal should be selected.
+	Principal *libAuthz.PrincipalReference
+	// Role specified that only ProjectRoleAssignments for the specified Role
+	// should be selected.
+	Role libAuthz.Role
 }
 
 // ProjectRoleAssignmentsClient is the specialized client for managing
@@ -49,6 +97,16 @@ type ProjectRoleAssignmentsClient interface {
 		projectID string,
 		projectRoleAssignment ProjectRoleAssignment,
 	) error
+	// List returns a ProjectRoleAssignmentsList, with its Items
+	// (ProjectRoleAssignments) ordered by principal type, principalID, project,
+	// and role. Criteria for which ProjectRoleAssignments should be retrieved can
+	// be specified using the ProjectRoleAssignmentsSelector parameter.
+	List(
+		ctx context.Context,
+		projectID string,
+		selector *ProjectRoleAssignmentsSelector,
+		opts *meta.ListOptions,
+	) (ProjectRoleAssignmentList, error)
 	// Revoke revokes the project-level Role specified by the
 	// ProjectRoleAssignment for the principal also specified by the
 	// ProjectRoleAssignment.
@@ -87,6 +145,35 @@ func (p *projectRoleAssignmentsClient) Grant(
 			Path:        fmt.Sprintf("v2/projects/%s/role-assignments", projectID),
 			ReqBodyObj:  projectRoleAssignment,
 			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (p *projectRoleAssignmentsClient) List(
+	ctx context.Context,
+	projectID string,
+	selector *ProjectRoleAssignmentsSelector,
+	opts *meta.ListOptions,
+) (ProjectRoleAssignmentList, error) {
+	queryParams := map[string]string{}
+	if selector != nil {
+		if selector.Principal != nil {
+			queryParams["principalType"] = string(selector.Principal.Type)
+			queryParams["principalID"] = string(selector.Principal.ID)
+		}
+		if selector.Role != "" {
+			queryParams["role"] = string(selector.Role)
+		}
+	}
+	projectRoleAssignments := ProjectRoleAssignmentList{}
+	return projectRoleAssignments, p.ExecuteRequest(
+		ctx,
+		rm.OutboundRequest{
+			Method:      http.MethodGet,
+			Path:        fmt.Sprintf("v2/projects/%s/role-assignments", projectID),
+			QueryParams: p.AppendListQueryParams(queryParams, opts),
+			SuccessCode: http.StatusOK,
+			RespObj:     &projectRoleAssignments,
 		},
 	)
 }

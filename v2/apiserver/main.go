@@ -166,6 +166,7 @@ func main() {
 
 	// ProjectRoleAssignments service
 	projectRoleAssignmentsService := core.NewProjectRoleAssignmentsService(
+		authorizer.Authorize,
 		projectAuthorizer.Authorize,
 		projectsStore,
 		usersStore,
