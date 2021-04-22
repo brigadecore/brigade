@@ -9,8 +9,17 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
+
+func TestProjectRoleAssignmentMarshalJSON(t *testing.T) {
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		&ProjectRoleAssignment{},
+		ProjectRoleAssignmentKind,
+	)
+}
 
 func TestProjectRoleAssignmentMatches(t *testing.T) {
 	testCases := []struct {
@@ -75,18 +84,28 @@ func TestProjectRoleAssignmentMatches(t *testing.T) {
 	}
 }
 
+func TestProjectRoleAssignmentListMarshalJSON(t *testing.T) {
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		&ProjectRoleAssignmentList{},
+		ProjectRoleAssignmentListKind,
+	)
+}
+
 func TestNewProjectRoleAssignmentsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	usersStore := &authn.MockUsersStore{}
 	serviceAccountsStore := &authn.MockServiceAccountStore{}
 	projectRoleAssignmentsStore := &mockProjectRoleAssignmentsStore{}
 	svc := NewProjectRoleAssignmentsService(
+		libAuthz.AlwaysAuthorize,
 		alwaysProjectAuthorize,
 		projectsStore,
 		usersStore,
 		serviceAccountsStore,
 		projectRoleAssignmentsStore,
 	)
+	require.NotNil(t, svc.(*projectRoleAssignmentsService).authorize)
 	require.NotNil(t, svc.(*projectRoleAssignmentsService).projectAuthorize)
 	require.Same(
 		t,
@@ -273,6 +292,72 @@ func TestProjectRoleAssignmentsServiceGrant(t *testing.T) {
 	}
 }
 
+func TestProjectRoleAssignmentsServiceList(t *testing.T) {
+	testCases := []struct {
+		name       string
+		service    ProjectRoleAssignmentsService
+		assertions func(error)
+	}{
+		{
+			name: "unauthorized",
+			service: &projectRoleAssignmentsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "error getting project role assignments from store",
+			service: &projectRoleAssignmentsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					ListFn: func(
+						context.Context,
+						ProjectRoleAssignmentsSelector,
+						meta.ListOptions,
+					) (ProjectRoleAssignmentList, error) {
+						return ProjectRoleAssignmentList{},
+							errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(
+					t,
+					err.Error(),
+					"error retrieving project role assignments from store",
+				)
+			},
+		},
+		{
+			name: "success",
+			service: &projectRoleAssignmentsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					ListFn: func(
+						context.Context,
+						ProjectRoleAssignmentsSelector,
+						meta.ListOptions,
+					) (ProjectRoleAssignmentList, error) {
+						return ProjectRoleAssignmentList{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+		})
+	}
+}
+
 func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 	testCases := []struct {
 		name                  string
@@ -441,7 +526,12 @@ func TestProjectRoleAssignmentsServiceRevoke(t *testing.T) {
 }
 
 type mockProjectRoleAssignmentsStore struct {
-	GrantFn      func(context.Context, ProjectRoleAssignment) error
+	GrantFn func(context.Context, ProjectRoleAssignment) error
+	ListFn  func(
+		context.Context,
+		ProjectRoleAssignmentsSelector,
+		meta.ListOptions,
+	) (ProjectRoleAssignmentList, error)
 	RevokeFn     func(context.Context, ProjectRoleAssignment) error
 	RevokeManyFn func(ctx context.Context, projectID string) error
 	ExistsFn     func(context.Context, ProjectRoleAssignment) (bool, error)
@@ -452,6 +542,14 @@ func (m *mockProjectRoleAssignmentsStore) Grant(
 	projectRoleAssignment ProjectRoleAssignment,
 ) error {
 	return m.GrantFn(ctx, projectRoleAssignment)
+}
+
+func (m *mockProjectRoleAssignmentsStore) List(
+	ctx context.Context,
+	selector ProjectRoleAssignmentsSelector,
+	opts meta.ListOptions,
+) (ProjectRoleAssignmentList, error) {
+	return m.ListFn(ctx, selector, opts)
 }
 
 func (m *mockProjectRoleAssignmentsStore) Revoke(

@@ -1,11 +1,14 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/gorilla/mux"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -25,6 +28,12 @@ func (p *ProjectRoleAssignmentsEndpoints) Register(router *mux.Router) {
 		"/v2/projects/{id}/role-assignments",
 		p.AuthFilter.Decorate(p.grant),
 	).Methods(http.MethodPost)
+
+	// List associations between Users and/or Service Accounts and Roles
+	router.HandleFunc(
+		"/v2/projects/{id}/role-assignments",
+		p.AuthFilter.Decorate(p.list),
+	).Methods(http.MethodGet)
 
 	// Revoke a Project Role for a User or Service Account
 	router.HandleFunc(
@@ -47,6 +56,54 @@ func (p *ProjectRoleAssignmentsEndpoints) grant(
 			EndpointLogic: func() (interface{}, error) {
 				projectRoleAssignment.ProjectID = mux.Vars(r)["id"]
 				return nil, p.Service.Grant(r.Context(), projectRoleAssignment)
+			},
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (p *ProjectRoleAssignmentsEndpoints) list(
+	w http.ResponseWriter,
+	req *http.Request,
+) {
+	principalType := req.URL.Query().Get("principalType")
+	principalID := req.URL.Query().Get("principalID")
+	selector := core.ProjectRoleAssignmentsSelector{
+		ProjectID: mux.Vars(req)["id"],
+		Role:      libAuthz.Role(req.URL.Query().Get("role")),
+	}
+	if principalType != "" && principalID != "" {
+		selector.Principal = &libAuthz.PrincipalReference{
+			Type: libAuthz.PrincipalType(req.URL.Query().Get("principalType")),
+			ID:   req.URL.Query().Get("principalID"),
+		}
+	}
+	opts := meta.ListOptions{
+		Continue: req.URL.Query().Get("continue"),
+	}
+	if limitStr := req.URL.Query().Get("limit"); limitStr != "" {
+		var err error
+		if opts.Limit, err = strconv.ParseInt(limitStr, 10, 64); err != nil ||
+			opts.Limit < 1 || opts.Limit > 100 {
+			restmachinery.WriteAPIResponse(
+				w,
+				http.StatusBadRequest,
+				&meta.ErrBadRequest{
+					Reason: fmt.Sprintf(
+						`Invalid value %q for "limit" query parameter`,
+						limitStr,
+					),
+				},
+			)
+			return
+		}
+	}
+	restmachinery.ServeRequest(
+		restmachinery.InboundRequest{
+			W: w,
+			R: req,
+			EndpointLogic: func() (interface{}, error) {
+				return p.Service.List(req.Context(), selector, opts)
 			},
 			SuccessCode: http.StatusOK,
 		},
