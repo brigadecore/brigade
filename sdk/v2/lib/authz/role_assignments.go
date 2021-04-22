@@ -6,6 +6,9 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 )
 
+// RoleAssignmentKind represents the canonical RoleAssignment kind string
+const RoleAssignmentKind = "RoleAssignment"
+
 // RoleAssignment represents the assignment of a Role to a principal such as a
 // User or ServiceAccount.
 type RoleAssignment struct {
@@ -29,7 +32,7 @@ func (r RoleAssignment) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       "RoleAssignment",
+				Kind:       RoleAssignmentKind,
 			},
 			Alias: (Alias)(r),
 		},

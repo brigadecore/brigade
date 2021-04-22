@@ -1,5 +1,14 @@
 package authz
 
+import (
+	"encoding/json"
+
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+)
+
+// RoleAssignmentKind represents the canonical RoleAssignment kind string
+const RoleAssignmentKind = "RoleAssignment"
+
 // RoleAssignment represents the assignment of a Role to a principal such as a
 // User or ServiceAccount.
 type RoleAssignment struct {
@@ -10,6 +19,23 @@ type RoleAssignment struct {
 	// Scope qualifies the scope of the Role. The value is opaque and has meaning
 	// only in relation to a specific Role.
 	Scope string `json:"scope,omitempty" bson:"scope,omitempty"`
+}
+
+// MarshalJSON amends RoleAssignment instances with type metadata.
+func (r RoleAssignment) MarshalJSON() ([]byte, error) {
+	type Alias RoleAssignment
+	return json.Marshal(
+		struct {
+			meta.TypeMeta `json:",inline"`
+			Alias         `json:",inline"`
+		}{
+			TypeMeta: meta.TypeMeta{
+				APIVersion: meta.APIVersion,
+				Kind:       RoleAssignmentKind,
+			},
+			Alias: (Alias)(r),
+		},
+	)
 }
 
 // Matches determines if this RoleAssignment matches the role and scope
