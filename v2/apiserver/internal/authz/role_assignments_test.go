@@ -8,8 +8,17 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
 )
+
+func TestRoleAssignmentListMarshalJSON(t *testing.T) {
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		&RoleAssignmentList{},
+		RoleAssignmentListKind,
+	)
+}
 
 func TestNewRoleAssignmentsService(t *testing.T) {
 	usersStore := &authn.MockUsersStore{}
@@ -156,6 +165,71 @@ func TestRoleAssignmentsServiceGrant(t *testing.T) {
 				testCase.roleAssignment,
 			)
 			testCase.assertions(err)
+		})
+	}
+}
+
+func TestRoleAssignmentsServiceList(t *testing.T) {
+	testCases := []struct {
+		name       string
+		service    RoleAssignmentsService
+		assertions func(error)
+	}{
+		{
+			name: "unauthorized",
+			service: &roleAssignmentsService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "error getting role assignments from store",
+			service: &roleAssignmentsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				roleAssignmentsStore: &MockRoleAssignmentsStore{
+					ListFn: func(
+						context.Context,
+						RoleAssignmentsSelector,
+						meta.ListOptions,
+					) (RoleAssignmentList, error) {
+						return RoleAssignmentList{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(
+					t,
+					err.Error(),
+					"error retrieving role assignments from store",
+				)
+			},
+		},
+		{
+			name: "success",
+			service: &roleAssignmentsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				roleAssignmentsStore: &MockRoleAssignmentsStore{
+					ListFn: func(
+						context.Context,
+						RoleAssignmentsSelector,
+						meta.ListOptions,
+					) (RoleAssignmentList, error) {
+						return RoleAssignmentList{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
 		})
 	}
 }

@@ -1,11 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/brigadecore/brigade/sdk/v2/authz"
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	libAuthz "github.com/brigadecore/brigade/sdk/v2/lib/authz"
+	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/ghodss/yaml"
+	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
@@ -95,6 +100,38 @@ var projectRolesCommands = &cli.Command{
 			},
 		},
 		{
+			Name:    "list",
+			Aliases: []string{"ls"},
+			Usage:   "List principals and their project-level roles",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     flagID,
+					Aliases:  []string{"i", flagProject, "p"},
+					Usage:    "List principals and their roles for the specified project",
+					Required: true,
+				},
+				&cli.StringFlag{
+					Name:    flagRole,
+					Aliases: []string{"r"},
+					Usage:   "Narrow results to the specified role",
+				},
+				&cli.StringFlag{
+					Name:    flagServiceAccount,
+					Aliases: []string{"s"},
+					Usage: "Narrow results to the specified service account; " +
+						"mutually exclusive with --user",
+				},
+				&cli.StringFlag{
+					Name:    flagUser,
+					Aliases: []string{"u"},
+					Usage: "Narrow results to the specified user; mutually " +
+						"exclusive with --service-account",
+				},
+				cliFlagOutput,
+			},
+			Action: listProjectRoles,
+		},
+		{
 			Name:  "revoke",
 			Usage: "Revoke a project-level role from a user or service account",
 			Subcommands: []*cli.Command{
@@ -181,6 +218,114 @@ func grantProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 
 		return nil
 	}
+}
+
+func listProjectRoles(c *cli.Context) error {
+	projectID := c.String(flagProject)
+	userID := c.String(flagUser)
+	serviceAccountID := c.String(flagServiceAccount)
+	role := c.String(flagRole)
+	output := c.String(flagOutput)
+
+	if userID != "" && serviceAccountID != "" {
+		return errors.New(
+			"--user and --service-account filter flags are mutually exclusive",
+		)
+	}
+
+	if err := validateOutputFormat(output); err != nil {
+		return err
+	}
+
+	selector := core.ProjectRoleAssignmentsSelector{
+		Role: libAuthz.Role(role),
+	}
+
+	if userID != "" {
+		selector.Principal = &libAuthz.PrincipalReference{
+			Type: authz.PrincipalTypeUser,
+			ID:   userID,
+		}
+	} else if serviceAccountID != "" {
+		selector.Principal = &libAuthz.PrincipalReference{
+			Type: authz.PrincipalTypeServiceAccount,
+			ID:   serviceAccountID,
+		}
+	}
+
+	client, err := getClient(c)
+	if err != nil {
+		return err
+	}
+
+	opts := meta.ListOptions{}
+
+	for {
+		roleAssignments, err :=
+			client.Core().Projects().Authz().RoleAssignments().List(
+				c.Context,
+				projectID,
+				&selector,
+				&opts,
+			)
+		if err != nil {
+			return err
+		}
+
+		if len(roleAssignments.Items) == 0 {
+			fmt.Println("No role assignments found.")
+			return nil
+		}
+
+		switch strings.ToLower(output) {
+		case flagOutputTable:
+			table := uitable.New()
+			table.AddRow("PRINCIPAL TYPE", "PRINCIPAL ID", "ROLE")
+			for _, roleAssignment := range roleAssignments.Items {
+				table.AddRow(
+					roleAssignment.Principal.Type,
+					roleAssignment.Principal.ID,
+					roleAssignment.Role,
+				)
+			}
+			fmt.Println(table)
+
+		case flagOutputYAML:
+			yamlBytes, err := yaml.Marshal(roleAssignments)
+			if err != nil {
+				return errors.Wrap(
+					err,
+					"error formatting output from list role assignments operation",
+				)
+			}
+			fmt.Println(string(yamlBytes))
+
+		case flagOutputJSON:
+			prettyJSON, err := json.MarshalIndent(roleAssignments, "", "  ")
+			if err != nil {
+				return errors.Wrap(
+					err,
+					"error formatting output from list role assignments operation",
+				)
+			}
+			fmt.Println(string(prettyJSON))
+		}
+
+		if shouldContinue, err :=
+			shouldContinue(
+				c,
+				roleAssignments.RemainingItemCount,
+				roleAssignments.Continue,
+			); err != nil {
+			return err
+		} else if !shouldContinue {
+			break
+		}
+
+		opts.Continue = roleAssignments.Continue
+	}
+
+	return nil
 }
 
 func revokeProjectRole(role libAuthz.Role) func(c *cli.Context) error {

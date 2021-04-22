@@ -2,18 +2,31 @@ package core
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
+)
+
+const (
+	// ProjectRoleAssignmentKind represents the canonical ProjectRoleAssignment
+	// kind string
+	ProjectRoleAssignmentKind = "ProjectRoleAssignment"
+
+	// ProjectRoleAssignmentListKind represents the canonical
+	// ProjectRoleAssignmentList kind string
+	ProjectRoleAssignmentListKind = "ProjectRoleAssignmentList"
 )
 
 // ProjectRoleAssignment represents the assignment of a project-level Role to a
 // principal such as a User or ServiceAccount.
 type ProjectRoleAssignment struct {
 	// ProjectID qualifies the scope of the Role.
-	ProjectID string `json:"projectID,omitempty" bson:"projectID,omitempty"`
+	ProjectID string `json:"-" bson:"projectID,omitempty"`
 	// Role assigns a Role to the specified principal.
 	Role libAuthz.Role `json:"role" bson:"role"`
 	// Principal specifies the principal to whom the Role is assigned.
@@ -30,6 +43,63 @@ func (p ProjectRoleAssignment) Matches(
 		(p.ProjectID == projectID || p.ProjectID == ProjectRoleScopeGlobal)
 }
 
+// MarshalJSON amends ProjectRoleAssignment instances with type metadata.
+func (p ProjectRoleAssignment) MarshalJSON() ([]byte, error) {
+	type Alias ProjectRoleAssignment
+	return json.Marshal(
+		struct {
+			meta.TypeMeta `json:",inline"`
+			Alias         `json:",inline"`
+		}{
+			TypeMeta: meta.TypeMeta{
+				APIVersion: meta.APIVersion,
+				Kind:       ProjectRoleAssignmentKind,
+			},
+			Alias: (Alias)(p),
+		},
+	)
+}
+
+// ProjectRoleAssignmentList is an ordered and pageable list of
+// ProjectRoleAssignments.
+type ProjectRoleAssignmentList struct {
+	// ListMeta contains list metadata.
+	meta.ListMeta `json:"metadata"`
+	// Items is a slice of ProjectRoleAssignments.
+	Items []ProjectRoleAssignment `json:"items,omitempty"`
+}
+
+// MarshalJSON amends ProjectRoleAssignmentList instances with type metadata.
+func (p ProjectRoleAssignmentList) MarshalJSON() ([]byte, error) {
+	type Alias ProjectRoleAssignmentList
+	return json.Marshal(
+		struct {
+			meta.TypeMeta `json:",inline"`
+			Alias         `json:",inline"`
+		}{
+			TypeMeta: meta.TypeMeta{
+				APIVersion: meta.APIVersion,
+				Kind:       ProjectRoleAssignmentListKind,
+			},
+			Alias: (Alias)(p),
+		},
+	)
+}
+
+// ProjectRoleAssignmentsSelector represents useful filter criteria when
+// selecting multiple ProjectRoleAssignments for API group operations like list.
+type ProjectRoleAssignmentsSelector struct {
+	// Principal specifies that only ProjectRoleAssignments for the specified
+	// principal should be selected.
+	Principal *libAuthz.PrincipalReference
+	// ProjectID specifies that only ProjectRoleAssignments for the specified
+	// Project should be selected.
+	ProjectID string
+	// Role specifies that only ProjectRoleAssignments for the specified
+	// Role should be selected.
+	Role libAuthz.Role
+}
+
 // ProjectRoleAssignmentsService is the specialized interface for managing
 // ProjectRoleAssignments. It's decoupled from underlying technology choices
 // (e.g. data store, message bus, etc.) to keep business logic reusable and
@@ -41,6 +111,16 @@ type ProjectRoleAssignmentsService interface {
 	// a *meta.ErrNotFound error.
 	Grant(context.Context, ProjectRoleAssignment) error
 
+	// List returns a ProjectRoleAssignmentList, with its Items
+	// (ProjectRoleAssignments) ordered by projectID, principal type, principalID,
+	// and role. Criteria for which ProjectRoleAssignments should be retrieved can
+	// be specified using the ProjectRoleAssignmentsSelector parameter.
+	List(
+		context.Context,
+		ProjectRoleAssignmentsSelector,
+		meta.ListOptions,
+	) (ProjectRoleAssignmentList, error)
+
 	// Revoke revokes the project-level Role specified by the
 	// ProjectRoleAssignment for the principal also specified by the
 	// ProjectRoleAssignment. If the specified principal does not exist,
@@ -49,6 +129,7 @@ type ProjectRoleAssignmentsService interface {
 }
 
 type projectRoleAssignmentsService struct {
+	authorize                   libAuthz.AuthorizeFn
 	projectAuthorize            ProjectAuthorizeFn
 	projectsStore               ProjectsStore
 	usersStore                  authn.UsersStore
@@ -59,6 +140,7 @@ type projectRoleAssignmentsService struct {
 // NewProjectRoleAssignmentsService returns a specialized interface for managing
 // project-level RoleAssignments.
 func NewProjectRoleAssignmentsService(
+	authorize libAuthz.AuthorizeFn,
 	projectAuthorize ProjectAuthorizeFn,
 	projectsStore ProjectsStore,
 	usersStore authn.UsersStore,
@@ -66,6 +148,7 @@ func NewProjectRoleAssignmentsService(
 	projectRoleAssignmentsStore ProjectRoleAssignmentsStore,
 ) ProjectRoleAssignmentsService {
 	return &projectRoleAssignmentsService{
+		authorize:                   authorize,
 		projectAuthorize:            projectAuthorize,
 		projectsStore:               projectsStore,
 		usersStore:                  usersStore,
@@ -143,6 +226,25 @@ func (p *projectRoleAssignmentsService) Grant(
 	return nil
 }
 
+func (p *projectRoleAssignmentsService) List(
+	ctx context.Context,
+	selector ProjectRoleAssignmentsSelector,
+	opts meta.ListOptions,
+) (ProjectRoleAssignmentList, error) {
+	if err := p.authorize(ctx, system.RoleReader, ""); err != nil {
+		return ProjectRoleAssignmentList{}, err
+	}
+
+	if opts.Limit == 0 {
+		opts.Limit = 20
+	}
+
+	roleAssignments, err :=
+		p.projectRoleAssignmentsStore.List(ctx, selector, opts)
+	return roleAssignments,
+		errors.Wrap(err, "error retrieving role assignments from store")
+}
+
 func (p *projectRoleAssignmentsService) Revoke(
 	ctx context.Context,
 	projectRoleAssignment ProjectRoleAssignment,
@@ -217,13 +319,21 @@ type ProjectRoleAssignmentsStore interface {
 	// Grant the project-level Role specified by the ProjectRoleAssignment to the
 	// principal specified by the ProjectRoleAssignment.
 	Grant(context.Context, ProjectRoleAssignment) error
+	// List returns a ProjectRoleAssignmentsList, with its Items
+	// (ProjectRoleAssignments) ordered by projectID, principal type, principalID,
+	// and role. Criteria for which RoleAssignments should be retrieved can be
+	// specified using the RoleAssignmentsSelector parameter.
+	List(
+		context.Context,
+		ProjectRoleAssignmentsSelector,
+		meta.ListOptions,
+	) (ProjectRoleAssignmentList, error)
 	// Revoke the Project specified by the ProjectRoleAssignment for the principal
 	// specified by the ProjectRoleAssignment.
 	Revoke(context.Context, ProjectRoleAssignment) error
 	// RevokeByProjectID revokes all ProjectRoleAssignments for the specified
 	// Project.
 	RevokeByProjectID(ctx context.Context, projectID string) error
-
 	// Exists returns a bool indicating whether the specified
 	// ProjectRoleAssignment exists within the store. Implementations MUST also
 	// return true if a ProjectRoleAssignment exists in the store that logically
