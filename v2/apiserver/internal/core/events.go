@@ -263,7 +263,7 @@ type EventsService interface {
 	GetByWorkerToken(context.Context, string) (Event, error)
 	// Clones an Event and creates a new Event after removing the original's
 	// metadata and Worker configuration
-	Clone(context.Context, string) (EventList, error)
+	Clone(context.Context, string) (Event, error)
 	// UpdateSourceState updates source-specific (e.g. gateway-specific) Event
 	// state.
 	UpdateSourceState(context.Context, string, SourceState) error
@@ -538,13 +538,13 @@ func (e *eventsService) GetByWorkerToken(
 func (e *eventsService) Clone(
 	ctx context.Context,
 	id string,
-) (EventList, error) {
+) (Event, error) {
 	// No authz call here as we'll defer to the checks in e.Create() invoked
 	// below
 
 	event, err := e.eventsStore.Get(ctx, id)
 	if err != nil {
-		return EventList{}, errors.Wrapf(
+		return Event{}, errors.Wrapf(
 			err,
 			"error retrieving event %q from store",
 			id,
@@ -562,7 +562,12 @@ func (e *eventsService) Clone(
 	}
 	clone.Labels["cloneOf"] = id
 
-	return e.Create(ctx, clone)
+	events, err := e.Create(ctx, clone)
+	if err != nil {
+		return Event{}, err
+	}
+
+	return events.Items[0], nil
 }
 
 func (e *eventsService) UpdateSourceState(
