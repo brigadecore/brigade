@@ -249,10 +249,9 @@ type EventsClient interface {
 	// DeleteMany deletes multiple Events specified by the EventListOptions
 	// parameter.
 	DeleteMany(context.Context, EventsSelector) (DeleteManyEventsResult, error)
-	// Retry copies an Event, including Worker configuration, and creates a new
-	// Event from this information.  Note that it does not carry over Job state
-	// in the process.
-	Retry(context.Context, string) (EventList, error)
+	// Retry copies an Event, including Worker configuration and Jobs, and
+	// creates a new Event from this information.
+	Retry(context.Context, string) (Event, error)
 
 	// Workers returns a specialized client for Worker management.
 	Workers() WorkersClient
@@ -425,15 +424,15 @@ func (e *eventsClient) DeleteMany(
 func (e *eventsClient) Retry(
 	ctx context.Context,
 	id string,
-) (EventList, error) {
-	events := EventList{}
-	return events, e.ExecuteRequest(
+) (Event, error) {
+	event := Event{}
+	return event, e.ExecuteRequest(
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodPost,
 			Path:        fmt.Sprintf("v2/events/%s/retry", id),
 			SuccessCode: http.StatusCreated,
-			RespObj:     &events,
+			RespObj:     &event,
 		},
 	)
 }

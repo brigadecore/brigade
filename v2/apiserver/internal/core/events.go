@@ -290,10 +290,9 @@ type EventsService interface {
 		context.Context,
 		EventsSelector,
 	) (DeleteManyEventsResult, error)
-	// Retry copies an Event, including Worker configuration, and creates a new
-	// Event from this information.  Note that it does not carry over Job state
-	// in the process.
-	Retry(context.Context, string) (EventList, error)
+	// Retry copies an Event, including Worker configuration and Jobs, and
+	// creates a new Event from this information.
+	Retry(context.Context, string) (Event, error)
 }
 
 type eventsService struct {
@@ -828,13 +827,13 @@ func (e *eventsService) DeleteMany(
 func (e *eventsService) Retry(
 	ctx context.Context,
 	id string,
-) (EventList, error) {
+) (Event, error) {
 	// No authz call here as we'll defer to the checks in e.Create() invoked
 	// below
 
 	event, err := e.eventsStore.Get(ctx, id)
 	if err != nil {
-		return EventList{}, errors.Wrapf(
+		return Event{}, errors.Wrapf(
 			err,
 			"error retrieving event %q from store",
 			id,
@@ -852,7 +851,12 @@ func (e *eventsService) Retry(
 	}
 	retry.Labels["retryOf"] = id
 
-	return e.Create(ctx, retry)
+	events, err := e.Create(ctx, retry)
+	if err != nil {
+		return Event{}, err
+	}
+
+	return events.Items[0], nil
 }
 
 // EventsStore is an interface for components that implement Event persistence

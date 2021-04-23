@@ -485,18 +485,9 @@ func TestEventsSelectorToQueryParams(t *testing.T) {
 
 func TestEventsClientRetry(t *testing.T) {
 	const testEventID = "12345"
-	testEvents := EventList{
-		Items: []Event{
-			{
-				ObjectMeta: meta.ObjectMeta{
-					ID: "12345",
-				},
-			},
-			{
-				ObjectMeta: meta.ObjectMeta{
-					ID: "abcde",
-				},
-			},
+	testEvent := Event{
+		ObjectMeta: meta.ObjectMeta{
+			ID: "12345",
 		},
 	}
 	server := httptest.NewServer(
@@ -508,7 +499,7 @@ func TestEventsClientRetry(t *testing.T) {
 					fmt.Sprintf("/v2/events/%s/retry", testEventID),
 					r.URL.Path,
 				)
-				bodyBytes, err := json.Marshal(testEvents)
+				bodyBytes, err := json.Marshal(testEvent)
 				require.NoError(t, err)
 				w.WriteHeader(http.StatusCreated)
 				fmt.Fprintln(w, string(bodyBytes))
@@ -517,7 +508,7 @@ func TestEventsClientRetry(t *testing.T) {
 	)
 	defer server.Close()
 	client := NewEventsClient(server.URL, rmTesting.TestAPIToken, nil)
-	events, err := client.Retry(context.Background(), testEventID)
+	event, err := client.Retry(context.Background(), testEventID)
 	require.NoError(t, err)
-	require.Equal(t, testEvents, events)
+	require.Equal(t, testEvent, event)
 }
