@@ -1,5 +1,5 @@
 import * as fs from "fs"
-import { execFileSync } from "child_process"
+import { execFileSync, ExecFileSyncOptions } from "child_process"
 import * as path from "path"
 
 import { Event, logger } from "@brigadecore/brigadier-polyfill"
@@ -31,71 +31,157 @@ if (event.worker.defaultConfigFiles) {
   }
 }
 
+// Figure out whether we should use npm or yarn as the package manager. If we
+// find yarn.lock, we use yarn. Otherwise, we use npm.
+const yarnLockPath = path.join(configFilesPath, "yarn.lock")
+let useYarn = false
+if (fs.existsSync(yarnLockPath)) {
+  logger.debug("using yarn as the package manager")
+  useYarn = true
+} else {
+  logger.debug("using npm as the package manager")
+}
+
+// If we can find a package.json, load it into an object
+let packageJSON: any // eslint-disable-line @typescript-eslint/no-explicit-any
 const packageJSONPath = path.join(configFilesPath, "package.json")
 if (fs.existsSync(packageJSONPath)) {
   logger.debug(`found a package.json at ${packageJSONPath}`)
-  // Install dependencies
-  // If we find yarn.json, we use yarn. Otherwise, we use npm.
-  const yarnLockPath = path.join(configFilesPath, "yarn.lock")
-  if (fs.existsSync(yarnLockPath)) {
-    logger.debug("installing dependencies using yarn")
-    try {
-      execFileSync("yarn", ["install", "--prod"], {
-        cwd: configFilesPath,
-        stdio: debug ? "inherit" : undefined
-      })
-    } catch(e) {
-      throw new Error(`error executing yarn install:\n\n${e.output}`)
-    }
-  } else {
-    logger.debug("installing dependencies using npm")
-    try {
-      execFileSync("npm", ["install", "--prod"], {
-        cwd: configFilesPath,
-        stdio: debug ? "inherit" : undefined
-      })
-    } catch(e) {
-      throw new Error(`error executing npm install:\n\n${e.output}`)
-    }
-  }
+  packageJSON = require(packageJSONPath)
 }
 
+// prepExecOpts-- include more or less output in the worker's own logs,
+// depending on whether we are debugging or not.
+const prepExecOpts: ExecFileSyncOptions = {
+  cwd: configFilesPath,
+  stdio: debug ? "inherit" : undefined
+}
+
+// Install dependencies, if any
+if (packageJSON) {
+  useYarn ? yarnInstall() : npmInstall()
+}
+
+// Add/replace @brigadecore/brigadier with the worker's brigadier polyfill
 const moduleNamespace = "@brigadecore"
 const moduleNamespacePath = path.join(configFilesPath, "node_modules", moduleNamespace)
 if (!fs.existsSync(moduleNamespacePath)) {
   logger.debug(`path ${moduleNamespacePath} does not exist; creating it`)
   fs.mkdirSync(moduleNamespacePath, { recursive: true })
 }
-
 const moduleName = "brigadier"
 const modulePath = path.join(moduleNamespacePath, moduleName)
 if (fs.existsSync(modulePath)) {
   logger.debug(`path ${modulePath} exists; deleting it`)
   fs.rmSync(modulePath, { recursive: true, force: true })
 }
-
 const modulePolyfillPath = "/var/brigade-worker/brigadier-polyfill"
 logger.debug(`polyfilling ${moduleNamespace}/${moduleName} with ${modulePolyfillPath}`)
 fs.symlinkSync(modulePolyfillPath, modulePath)
 
-// Experimental TypeScript support...
-if (fs.existsSync(path.join(configFilesPath, "brigade.ts"))) {
-  logger.debug("compiling brigade.ts")
+// Build, if applicable
+if (packageJSON?.scripts?.build) {
+  useYarn ? yarnBuild() : npmBuild()
+} else if (fs.existsSync(path.join(configFilesPath, "tsconfig.json"))) {
+  compileWithTSCConfig()
+} else if (fs.existsSync(path.join(configFilesPath, "brigade.ts"))) {
+  defaultCompile()
+} else {
+  logger.debug("found nothing to compile")
+}
+
+// runExecOpts-- unconditionally include output in the worker's own logs.
+const runExecOpts: ExecFileSyncOptions = {
+  cwd: configFilesPath,
+  stdio: "inherit"
+}
+
+// Now run
+if (packageJSON?.scripts?.run) {
+  useYarn ? yarnRun() : npmRun()
+} else if (fs.existsSync(path.join(configFilesPath, "brigade.js"))) {
+  nodeRun()
+} else {
+  throw new Error("found nothing to run")
+}
+
+function yarnInstall(): void {
+  logger.debug("installing dependencies using yarn")
   try {
-    execFileSync("tsc", ["--target", "ES6", "--module", "commonjs", "brigade.ts"], {
-      cwd: configFilesPath,
-      stdio: debug ? "inherit" : undefined
-    })
+    execFileSync("yarn", ["install", "--prod"], prepExecOpts)
+  } catch(e) {
+    throw new Error(`error executing yarn install:\n\n${e.output}`)
+  }
+}
+
+function npmInstall(): void {
+  logger.debug("installing dependencies using npm")
+  try {
+    execFileSync("npm", ["install", "--prod"], prepExecOpts)
+  } catch(e) {
+    throw new Error(`error executing npm install:\n\n${e.output}`)
+  }
+}
+
+function yarnBuild(): void {
+  logger.debug("running build script with yarn")
+  try {
+    execFileSync("yarn", ["build"], prepExecOpts)
+  } catch(e) {
+    throw new Error(`error executing yarn build:\n\n${e.output}`)
+  } 
+}
+
+function npmBuild(): void {
+  logger.debug("running build script with npm")
+  try {
+    execFileSync("npm", ["run-script", "build"], prepExecOpts)
+  } catch(e) {
+    throw new Error(`error executing npm run-script build:\n\n${e.output}`)
+  }
+}
+
+function compileWithTSCConfig() {
+  logger.debug("compiling typescript project with configuration from tsconfig.json")
+  try {
+    execFileSync("tsc", [], prepExecOpts)
+  } catch(e) {
+    throw new Error(`error executing tsc:\n\n${e.output}`)
+  }
+}
+
+function defaultCompile() {
+  logger.debug("compiling brigade.ts with flags --target ES6 --module commonjs --esModuleInterop")
+  try {
+    execFileSync("tsc", ["--target", "ES6", "--module", "commonjs", "--esModuleInterop", "brigade.ts"], prepExecOpts)
   } catch(e) {
     throw new Error(`error compiling brigade.ts:\n\n${e.output}`)
   }
 }
 
-try {
-  execFileSync("node", ["brigade.js"], {
-    cwd: configFilesPath,
-    stdio: "inherit"
-  })
-} catch(e) {
-  throw new Error(`error executing brigade.js:\n\n${e.output}`)
+function yarnRun(): void {
+  logger.debug("running script with yarn")
+  try {
+    execFileSync("yarn", ["run", "run"], runExecOpts)
+  } catch(e) {
+    throw new Error(`error executing yarn run run:\n\n${e.output}`)
+  }
+}
+
+function npmRun(): void {
+  logger.debug("running script with npm")
+  try {
+    execFileSync("npm", ["run-script", "run"], runExecOpts)
+  } catch(e) {
+    throw new Error(`error executing npm run-script run:\n\n${e.output}`)
+  }
+}
+
+function nodeRun(): void {
+  logger.debug("running node brigade.js")
+  try {
+    execFileSync("node", ["brigade.js"], runExecOpts)
+  } catch(e) {
+    throw new Error(`error executing node brigade.js:\n\n${e.output}`)
+  }
 }
