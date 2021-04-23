@@ -578,14 +578,23 @@ func TestEventsServiceClone(t *testing.T) {
 				require.Contains(t, err.Error(), "something went wrong")
 			},
 		},
-		// TODO: add non-trivial event details to verify cloned event config
 		{
 			name: "success",
 			service: &eventsService{
 				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
-						return Event{}, nil
+						return Event{
+							Source: "eventsource",
+							Type:   "eventtype",
+							Worker: Worker{
+								Spec: WorkerSpec{
+									DefaultConfigFiles: map[string]string{
+										"brigade.js": "test",
+									},
+								},
+							},
+						}, nil
 					},
 				},
 				projectsStore: &mockProjectsStore{
@@ -596,10 +605,17 @@ func TestEventsServiceClone(t *testing.T) {
 					},
 				},
 				createSingleEventFn: func(
-					context.Context,
-					Project,
-					Event,
+					_ context.Context,
+					_ Project,
+					event Event,
 				) (Event, error) {
+					// We expect to see a label for tracing purposes
+					require.Contains(t, event.Labels, "cloneOf")
+					// Event details like source and type should be carried over
+					require.Equal(t, "eventsource", event.Source)
+					require.Equal(t, "eventtype", event.Type)
+					// But Worker config should not
+					require.Empty(t, event.Worker.Spec)
 					return Event{}, nil
 				},
 			},
@@ -1394,14 +1410,23 @@ func TestEventsServiceRetry(t *testing.T) {
 				require.Contains(t, err.Error(), "something went wrong")
 			},
 		},
-		// TODO: add non-trivial event details to verify retried event config
 		{
 			name: "success",
 			service: &eventsService{
 				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
-						return Event{}, nil
+						return Event{
+							Source: "eventsource",
+							Type:   "eventtype",
+							Worker: Worker{
+								Spec: WorkerSpec{
+									DefaultConfigFiles: map[string]string{
+										"brigade.js": "test",
+									},
+								},
+							},
+						}, nil
 					},
 				},
 				projectsStore: &mockProjectsStore{
@@ -1412,10 +1437,22 @@ func TestEventsServiceRetry(t *testing.T) {
 					},
 				},
 				createSingleEventFn: func(
-					context.Context,
-					Project,
-					Event,
+					_ context.Context,
+					_ Project,
+					event Event,
 				) (Event, error) {
+					// We expect to see a label for tracing purposes
+					require.Contains(t, event.Labels, "retryOf")
+					// Event details like source and type should be carried over
+					require.Equal(t, "eventsource", event.Source)
+					require.Equal(t, "eventtype", event.Type)
+					// As well as Worker config
+					require.NotEmpty(t, event.Worker.Spec)
+					require.Equal(
+						t,
+						map[string]string{"brigade.js": "test"},
+						event.Worker.Spec.DefaultConfigFiles,
+					)
 					return Event{}, nil
 				},
 			},

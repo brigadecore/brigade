@@ -270,7 +270,6 @@ func (j *jobsService) Create(
 				),
 			}
 		}
-		// TODO: unit tests!
 
 		// Else, deal with retry event job
 		//
@@ -292,7 +291,7 @@ func (j *jobsService) Create(
 		if err = j.jobsStore.Delete(ctx, eventID, originalJob); err != nil {
 			return errors.Wrapf(
 				err,
-				"unable to delete job %s from event %s",
+				"unable to delete job %q from event %q in preparation for retry",
 				originalJob.Name,
 				eventID,
 			)

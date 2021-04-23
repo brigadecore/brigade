@@ -444,6 +444,200 @@ func TestJobsServiceCreate(t *testing.T) {
 	}
 }
 
+func TestJobsServiceCreateRetry(t *testing.T) {
+	const testEventID = "123456789"
+	const testJobName = "italian"
+	testCases := []struct {
+		name               string
+		service            JobsService
+		workspaceMountPath string
+		assertions         func(error)
+	}{
+		{
+			name: "job for retry requires shared workspace",
+			service: &jobsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Labels: map[string]string{
+								"retryOf": testEventID,
+							},
+							Worker: Worker{
+								Spec: WorkerSpec{
+									UseWorkspace: true,
+								},
+								Jobs: []Job{
+									{
+										Name: testJobName,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			workspaceMountPath: "/workspace",
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrConflict{}, err)
+				require.Contains(
+					t,
+					err.Error(),
+					"job attempting to be retried requires a shared workspace",
+				)
+			},
+		},
+		{
+			name: "error deleting original job from store",
+			service: &jobsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Labels: map[string]string{
+								"retryOf": testEventID,
+							},
+							Worker: Worker{
+								Spec: WorkerSpec{
+									UseWorkspace: true,
+								},
+								Jobs: []Job{
+									{
+										Name: testJobName,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					DeleteFn: func(_ context.Context, _ string, job Job) error {
+						require.Equal(t, testJobName, job.Name)
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			workspaceMountPath: "",
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "unable to delete job")
+				require.Contains(t, err.Error(), "something went wrong")
+			},
+		},
+		{
+			name: "job retry success - no-op",
+			service: &jobsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Labels: map[string]string{
+								"retryOf": testEventID,
+							},
+							Worker: Worker{
+								Jobs: []Job{
+									{
+										Name: testJobName,
+										Status: &JobStatus{
+											Phase: JobPhaseSucceeded,
+										},
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				// No other methods mocked out; they should not be called
+			},
+			workspaceMountPath: "",
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "job retry success - reschedule",
+			service: &jobsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Labels: map[string]string{
+								"retryOf": testEventID,
+							},
+							Worker: Worker{
+								Jobs: []Job{
+									{
+										Name: testJobName,
+										Status: &JobStatus{
+											Phase: JobPhaseFailed,
+										},
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					CreateFn: func(_ context.Context, _ string, job Job) error {
+						return nil
+					},
+					DeleteFn: func(_ context.Context, _ string, job Job) error {
+						require.Equal(t, testJobName, job.Name)
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					StoreJobEnvironmentFn: func(
+						_ context.Context,
+						_ Project,
+						_ string,
+						_ string,
+						jobSpec JobSpec,
+					) error {
+						return nil
+					},
+					ScheduleJobFn: func(context.Context, Project, Event, string) error {
+						return nil
+					},
+				},
+			},
+			workspaceMountPath: "",
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.assertions(
+				testCase.service.Create(
+					context.Background(),
+					testEventID,
+					Job{
+						Name: testJobName,
+						Spec: JobSpec{
+							PrimaryContainer: JobContainerSpec{
+								WorkspaceMountPath: testCase.workspaceMountPath,
+							},
+							SidecarContainers: map[string]JobContainerSpec{
+								"foo": {
+									WorkspaceMountPath: testCase.workspaceMountPath,
+								},
+							},
+						},
+					},
+				),
+			)
+		})
+	}
+}
+
 func TestJobsServiceStart(t *testing.T) {
 	const testEventID = "123456789"
 	const testJobName = "foo"
