@@ -1351,21 +1351,6 @@ func TestEventsServiceRetry(t *testing.T) {
 		assertions func(error)
 	}{
 		{
-			name: "unauthorized",
-			service: &eventsService{
-				authorize: libAuthz.NeverAuthorize,
-				eventsStore: &mockEventsStore{
-					GetFn: func(context.Context, string) (Event, error) {
-						return Event{}, nil
-					},
-				},
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.IsType(t, &meta.ErrAuthorization{}, err)
-			},
-		},
-		{
 			name: "error getting event from store",
 			service: &eventsService{
 				authorize: libAuthz.AlwaysAuthorize,
@@ -1382,12 +1367,64 @@ func TestEventsServiceRetry(t *testing.T) {
 			},
 		},
 		{
+			name: "unauthorized",
+			service: &eventsService{
+				authorize: libAuthz.NeverAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhaseFailed,
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "original event worker has non-terminal phase",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhaseStarting,
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(
+					t,
+					err.Error(),
+					"non-terminal and may not yet be retried",
+				)
+			},
+		},
+		{
 			name: "error creating retry event",
 			service: &eventsService{
 				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
-						return Event{}, nil
+						return Event{
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhaseFailed,
+								},
+							},
+						}, nil
 					},
 				},
 				projectsStore: &mockProjectsStore{
@@ -1420,6 +1457,9 @@ func TestEventsServiceRetry(t *testing.T) {
 							Source: "eventsource",
 							Type:   "eventtype",
 							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhaseFailed,
+								},
 								Spec: WorkerSpec{
 									DefaultConfigFiles: map[string]string{
 										"brigade.js": "test",

@@ -253,6 +253,28 @@ func (j *jobsService) Create(
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
+
+	// Perform some validations...
+
+	// Determine if ANY of the job's containers:
+	//   1. Use shared workspace
+	//   2. Run in privileged mode
+	//   3. Mount the host's Docker socket
+	var useWorkspace = job.Spec.PrimaryContainer.WorkspaceMountPath != ""
+	var usePrivileged = job.Spec.PrimaryContainer.Privileged
+	var useDockerSocket = job.Spec.PrimaryContainer.UseHostDockerSocket
+	for _, sidecarContainer := range job.Spec.SidecarContainers {
+		if sidecarContainer.WorkspaceMountPath != "" {
+			useWorkspace = true
+		}
+		if sidecarContainer.Privileged {
+			usePrivileged = true
+		}
+		if sidecarContainer.UseHostDockerSocket {
+			useDockerSocket = true
+		}
+	}
+
 	if originalJob, ok := event.Worker.Job(job.Name); ok {
 		// If we aren't dealing with a retry event, return an error
 		if event.Labels == nil || event.Labels[RetryLabelKey] == "" {
@@ -269,20 +291,15 @@ func (j *jobsService) Create(
 
 		// Else, deal with retry event job
 		//
-		// If the job has already succeeded, simply return, as we don't want to
-		// replace this job in the store or schedule again
-		if originalJob.Status != nil &&
+		// If the job has already succeeded and does not use a shared workspace,
+		// simply return, as we don't want to replace this job in the store or
+		// reschedule
+		if !useWorkspace &&
+			originalJob.Status != nil &&
 			originalJob.Status.Phase == JobPhaseSucceeded {
 			return nil
 		}
-		// We don't currently support retrying jobs that require a shared workspace
-		if useWorkspace && event.Worker.Spec.UseWorkspace {
-			return &meta.ErrConflict{
-				Reason: "The job attempting to be retried requires a shared " +
-					"workspace.  Only jobs that don't require a shared workspace may " +
-					"be retried.",
-			}
-		}
+
 		// Delete the job from the store and rebuild/reschedule as normal below
 		if err = j.jobsStore.Delete(ctx, eventID, originalJob); err != nil {
 			return errors.Wrapf(
@@ -291,27 +308,6 @@ func (j *jobsService) Create(
 				originalJob.Name,
 				eventID,
 			)
-		}
-	}
-
-	// Perform some validations...
-
-	var useWorkspace = job.Spec.PrimaryContainer.WorkspaceMountPath != ""
-	var usePrivileged = job.Spec.PrimaryContainer.Privileged
-	var useDockerSocket = job.Spec.PrimaryContainer.UseHostDockerSocket
-	// Determine if ANY of the job's containers:
-	//   1. Use shared workspace
-	//   2. Run in privileged mode
-	//   3. Mount the host's Docker socket
-	for _, sidecarContainer := range job.Spec.SidecarContainers {
-		if sidecarContainer.WorkspaceMountPath != "" {
-			useWorkspace = true
-		}
-		if sidecarContainer.Privileged {
-			usePrivileged = true
-		}
-		if sidecarContainer.UseHostDockerSocket {
-			useDockerSocket = true
 		}
 	}
 

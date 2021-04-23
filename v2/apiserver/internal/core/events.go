@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -847,6 +848,14 @@ func (e *eventsService) Retry(
 			err,
 			"error retrieving event %q from store",
 			id,
+		)
+	}
+
+	// Only allow retry if the event Worker has reached a terminal phase
+	if !event.Worker.Status.Phase.IsTerminal() {
+		return Event{}, fmt.Errorf(
+			"worker phase %q is non-terminal and may not yet be retried",
+			event.Worker.Status.Phase,
 		)
 	}
 
