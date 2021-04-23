@@ -7,6 +7,7 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
+	"github.com/brigadecore/brigade/v2/internal/retries"
 	"github.com/pkg/errors"
 )
 
@@ -178,6 +179,37 @@ func (l *logsService) Stream(
 				"error retrieving project %q from store",
 				event.ProjectID,
 			)
+	}
+
+	// Wait for the target Worker or Job to move past PENDING and STARTING phases
+	if err = retries.ManageRetries(
+		ctx,
+		"waiting for worker or job to move past PENDING and STARTING phases",
+		50, // A generous number of retries. Let the client hang up if they want.
+		20*time.Second,
+		func() (bool, error) {
+			if event, err = l.eventsStore.Get(ctx, eventID); err != nil {
+				return false, errors.Wrapf(
+					err,
+					"error retrieving event %q from store",
+					eventID,
+				)
+			}
+			if selector.Job == "" { // Worker...
+				// If the Event's Worker's phase is PENDING or STARTING, then retry.
+				// Otherwise, exit the retry loop.
+				return event.Worker.Status.Phase == WorkerPhasePending ||
+					event.Worker.Status.Phase == WorkerPhaseStarting, nil
+			}
+			// Else Job...
+			// If the Job's phase is PENDING or STARTING, then retry.
+			// Otherwise, exit the retry loop.
+			job, _ := event.Worker.Job(selector.Job)
+			return job.Status.Phase == JobPhasePending ||
+				job.Status.Phase == JobPhaseStarting, nil
+		},
+	); err != nil {
+		return nil, err
 	}
 
 	logCh, err := l.warmLogsStore.StreamLogs(ctx, project, event, selector, opts)
