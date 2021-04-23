@@ -556,7 +556,7 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 			},
 		},
 		{
-			name: "job retry success - reschedule",
+			name: "job retry success - reschedule only non-successful",
 			service: &jobsService{
 				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
@@ -571,6 +571,12 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 										Name: testJobName,
 										Status: &JobStatus{
 											Phase: JobPhaseFailed,
+										},
+									},
+									{
+										Name: "successful",
+										Status: &JobStatus{
+											Phase: JobPhaseSucceeded,
 										},
 									},
 								},
@@ -602,7 +608,12 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 					) error {
 						return nil
 					},
-					ScheduleJobFn: func(context.Context, Project, Event, string) error {
+					ScheduleJobFn: func(
+						_ context.Context,
+						_ Project,
+						_ Event,
+						job string) error {
+						require.Equal(t, testJobName, job)
 						return nil
 					},
 				},

@@ -841,7 +841,7 @@ func (e *eventsService) Retry(
 	}
 
 	// Copy all event details, including worker configuration, only omitting
-	// metadata and worker jobs array
+	// metadata
 	retry := event
 	retry.ObjectMeta = meta.ObjectMeta{}
 
