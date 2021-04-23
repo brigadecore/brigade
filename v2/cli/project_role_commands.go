@@ -204,6 +204,12 @@ func grantProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 			); err != nil {
 				return err
 			}
+			fmt.Printf(
+				"Granted role %q for project %q to user %q.\n",
+				projectRoleAssignment.Role,
+				projectID,
+				projectRoleAssignment.Principal.ID,
+			)
 		}
 		projectRoleAssignment.Principal.Type = authz.PrincipalTypeServiceAccount
 		for _, projectRoleAssignment.Principal.ID = range serviceAccountIDs {
@@ -214,6 +220,12 @@ func grantProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 			); err != nil {
 				return err
 			}
+			fmt.Printf(
+				"Granted role %q for project %q to service account %q.\n",
+				projectRoleAssignment.Role,
+				projectID,
+				projectRoleAssignment.Principal.ID,
+			)
 		}
 
 		return nil
@@ -358,6 +370,12 @@ func revokeProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 			); err != nil {
 				return err
 			}
+			fmt.Printf(
+				"Revoked role %q for project %q from user %q.\n",
+				projectRoleAssignment.Role,
+				projectID,
+				projectRoleAssignment.Principal.ID,
+			)
 		}
 		projectRoleAssignment.Principal.Type = authz.PrincipalTypeServiceAccount
 		for _, projectRoleAssignment.Principal.ID = range serviceAccountIDs {
@@ -368,6 +386,12 @@ func revokeProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 			); err != nil {
 				return err
 			}
+			fmt.Printf(
+				"Revoked role %q for project %q from service account %q.\n",
+				projectRoleAssignment.Role,
+				projectID,
+				projectRoleAssignment.Principal.ID,
+			)
 		}
 
 		return nil
