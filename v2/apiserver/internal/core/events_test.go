@@ -610,7 +610,7 @@ func TestEventsServiceClone(t *testing.T) {
 					event Event,
 				) (Event, error) {
 					// We expect to see a label for tracing purposes
-					require.Contains(t, event.Labels, "cloneOf")
+					require.Contains(t, event.Labels, CloneLabelKey)
 					// Event details like source and type should be carried over
 					require.Equal(t, "eventsource", event.Source)
 					require.Equal(t, "eventtype", event.Type)
@@ -1442,7 +1442,7 @@ func TestEventsServiceRetry(t *testing.T) {
 					event Event,
 				) (Event, error) {
 					// We expect to see a label for tracing purposes
-					require.Contains(t, event.Labels, "retryOf")
+					require.Contains(t, event.Labels, RetryLabelKey)
 					// Event details like source and type should be carried over
 					require.Equal(t, "eventsource", event.Source)
 					require.Equal(t, "eventtype", event.Type)

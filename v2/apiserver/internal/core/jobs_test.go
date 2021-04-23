@@ -461,7 +461,7 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Labels: map[string]string{
-								"retryOf": testEventID,
+								RetryLabelKey: testEventID,
 							},
 							Worker: Worker{
 								Spec: WorkerSpec{
@@ -496,7 +496,7 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Labels: map[string]string{
-								"retryOf": testEventID,
+								RetryLabelKey: testEventID,
 							},
 							Worker: Worker{
 								Spec: WorkerSpec{
@@ -533,7 +533,7 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Labels: map[string]string{
-								"retryOf": testEventID,
+								RetryLabelKey: testEventID,
 							},
 							Worker: Worker{
 								Jobs: []Job{
@@ -563,7 +563,7 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 					GetFn: func(context.Context, string) (Event, error) {
 						return Event{
 							Labels: map[string]string{
-								"retryOf": testEventID,
+								RetryLabelKey: testEventID,
 							},
 							Worker: Worker{
 								Jobs: []Job{

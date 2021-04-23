@@ -14,10 +14,20 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-// EventKind represents the canonical Event kind string
-const EventKind = "Event"
+const (
+	// EventKind represents the canonical Event kind string
+	EventKind = "Event"
 
-const defaultWorkspaceSize = "10Gi"
+	// CloneLabelKey is the label key used for tracing the original event
+	// on any cloned event
+	CloneLabelKey = "brigade.sh/cloneOf"
+
+	// RetryLabelKey is the label key used for tracing the original event
+	// on any retried event
+	RetryLabelKey = "brigade.sh/retryOf"
+
+	defaultWorkspaceSize = "10Gi"
+)
 
 // Event represents an occurrence in some upstream system. Once accepted into
 // the system, Brigade amends each Event with a plan for handling it in the form
@@ -410,7 +420,7 @@ func (e *eventsService) createSingleEvent(
 	workerSpec := project.Spec.WorkerTemplate
 	// If the event is a retry of another, defer to the Worker.Spec on the event
 	// itself.  Retain the Jobs slice as well.
-	if event.Labels != nil && event.Labels["retryOf"] != "" {
+	if event.Labels != nil && event.Labels[RetryLabelKey] != "" {
 		workerSpec = event.Worker.Spec
 		jobs = event.Worker.Jobs
 	}
@@ -572,7 +582,7 @@ func (e *eventsService) Clone(
 	if clone.Labels == nil {
 		clone.Labels = map[string]string{}
 	}
-	clone.Labels["cloneOf"] = id
+	clone.Labels[CloneLabelKey] = id
 
 	events, err := e.Create(ctx, clone)
 	if err != nil {
@@ -849,7 +859,7 @@ func (e *eventsService) Retry(
 	if retry.Labels == nil {
 		retry.Labels = map[string]string{}
 	}
-	retry.Labels["retryOf"] = id
+	retry.Labels[RetryLabelKey] = id
 
 	events, err := e.Create(ctx, retry)
 	if err != nil {

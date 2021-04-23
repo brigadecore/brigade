@@ -245,10 +245,6 @@ func (j *jobsService) Create(
 	eventID string,
 	job Job,
 ) error {
-	var useWorkspace = job.Spec.PrimaryContainer.WorkspaceMountPath != ""
-	var usePrivileged = job.Spec.PrimaryContainer.Privileged
-	var useDockerSocket = job.Spec.PrimaryContainer.UseHostDockerSocket
-
 	if err := j.authorize(ctx, RoleWorker, eventID); err != nil {
 		return err
 	}
@@ -259,7 +255,7 @@ func (j *jobsService) Create(
 	}
 	if originalJob, ok := event.Worker.Job(job.Name); ok {
 		// If we aren't dealing with a retry event, return an error
-		if event.Labels == nil || event.Labels["retryOf"] == "" {
+		if event.Labels == nil || event.Labels[RetryLabelKey] == "" {
 			return &meta.ErrConflict{
 				Type: JobKind,
 				ID:   job.Name,
@@ -300,6 +296,9 @@ func (j *jobsService) Create(
 
 	// Perform some validations...
 
+	var useWorkspace = job.Spec.PrimaryContainer.WorkspaceMountPath != ""
+	var usePrivileged = job.Spec.PrimaryContainer.Privileged
+	var useDockerSocket = job.Spec.PrimaryContainer.UseHostDockerSocket
 	// Determine if ANY of the job's containers:
 	//   1. Use shared workspace
 	//   2. Run in privileged mode
