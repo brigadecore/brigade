@@ -79,8 +79,10 @@ var eventCommand = &cli.Command{
 		{
 			Name:  "clone",
 			Usage: "Clone an existing event",
-			Description: "Clones the provided event and runs it " +
-				"using the worker configuration currently specified by the project.",
+			Description: "Creates a new event with the same source, type, and " +
+				"payload as an existing event. The new event will be handled " +
+				"asynchronously according to current project configuration, like " +
+				"any other new event.",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:     flagID,
