@@ -11,6 +11,7 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
+	"github.com/brigadecore/brigade/v2/internal/retries"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,22 +56,50 @@ func (l *logsStore) StreamLogs(
 			Follow:     opts.Follow,
 		},
 	)
-	podLogs, err := req.Stream(ctx)
-	if err != nil {
-		if statusErr, ok := err.(*k8sErrors.StatusError); ok {
-			if statusErr.Status().Code == http.StatusNotFound {
-				err = &meta.ErrNotFound{
-					Type: "Pod",
-					ID:   podName,
+
+	// The LogsService only would have called us for a Worker or Job that has
+	// already moved past the PENDING and STARTING phases. So at this point, the
+	// only two possibilities are that the Pod exists OR that it DID exist and has
+	// already blinked out of existence after completion. If it's gone, we just
+	// return a *meta.ErrNotFound and the LogsService will fall back to the cool
+	// logs. If it exists, but the target container is still initializing, we
+	// retry.
+	var podLogs io.ReadCloser
+	var err error
+	if err = retries.ManageRetries(
+		ctx,
+		"waiting for container to be initialized",
+		50, // A generous number of retries. Let the client hang up if they want.
+		10*time.Second,
+		func() (bool, error) {
+			podLogs, err = req.Stream(ctx)
+			if err != nil {
+				if statusErr, ok := err.(*k8sErrors.StatusError); ok {
+					if statusErr.Status().Code == http.StatusNotFound {
+						return false, &meta.ErrNotFound{ // Don't retry
+							Type: "Pod",
+							ID:   podName,
+						}
+					}
+					if strings.Contains(
+						statusErr.Error(),
+						"is waiting to start: PodInitializing",
+					) {
+						return true, nil // Retry
+					}
 				}
+				// Something else is wrong
+				return false, errors.Wrapf( // Don't retry
+					err,
+					"error opening log stream for pod %q in namespace %q",
+					podName,
+					project.Kubernetes.Namespace,
+				)
 			}
-		}
-		return nil, errors.Wrapf(
-			err,
-			"error opening log stream for pod %q in namespace %q",
-			podName,
-			project.Kubernetes.Namespace,
-		)
+			return false, nil // We got what we wanted
+		},
+	); err != nil {
+		return nil, err
 	}
 
 	logEntryCh := make(chan core.LogEntry)
