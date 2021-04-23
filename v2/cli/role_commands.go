@@ -216,6 +216,11 @@ func grantSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			); err != nil {
 				return err
 			}
+			fmt.Printf(
+				"Granted role %q to user %q.\n",
+				roleAssignment.Role,
+				roleAssignment.Principal.ID,
+			)
 		}
 		roleAssignment.Principal.Type = authz.PrincipalTypeServiceAccount
 		for _, roleAssignment.Principal.ID = range serviceAccountIDs {
@@ -225,6 +230,11 @@ func grantSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			); err != nil {
 				return err
 			}
+			fmt.Printf(
+				"Granted role %q to service account %q.\n",
+				roleAssignment.Role,
+				roleAssignment.Principal.ID,
+			)
 		}
 
 		return nil
@@ -370,6 +380,11 @@ func revokeSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			); err != nil {
 				return err
 			}
+			fmt.Printf(
+				"Revoked role %q for user %q.\n",
+				roleAssignment.Role,
+				roleAssignment.Principal.ID,
+			)
 		}
 		roleAssignment.Principal.Type = authz.PrincipalTypeServiceAccount
 		for _, roleAssignment.Principal.ID = range serviceAccountIDs {
@@ -379,6 +394,11 @@ func revokeSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			); err != nil {
 				return err
 			}
+			fmt.Printf(
+				"Revoked role %q for service account %q.\n",
+				roleAssignment.Role,
+				roleAssignment.Principal.ID,
+			)
 		}
 
 		return nil
