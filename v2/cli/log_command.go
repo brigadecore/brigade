@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
@@ -43,11 +44,11 @@ func logs(c *cli.Context) error {
 	eventID := c.String(flagID)
 	follow := c.Bool(flagFollow)
 
-	selector := core.LogsSelector{
+	selector := &core.LogsSelector{
 		Job:       c.String(flagJob),
 		Container: c.String(flagContainer),
 	}
-	opts := core.LogStreamOptions{
+	opts := &core.LogStreamOptions{
 		Follow: follow,
 	}
 
@@ -56,8 +57,23 @@ func logs(c *cli.Context) error {
 		return err
 	}
 
-	logEntryCh, errCh, err :=
-		client.Core().Events().Logs().Stream(c.Context, eventID, &selector, &opts)
+	return streamLogs(
+		c.Context,
+		client.Core().Events().Logs(),
+		eventID,
+		selector,
+		opts,
+	)
+}
+
+func streamLogs(
+	ctx context.Context,
+	logsClient core.LogsClient,
+	eventID string,
+	selector *core.LogsSelector,
+	opts *core.LogStreamOptions,
+) error {
+	logEntryCh, errCh, err := logsClient.Stream(ctx, eventID, selector, opts)
 	if err != nil {
 		return err
 	}
@@ -80,7 +96,7 @@ func logs(c *cli.Context) error {
 			// there are pending messages on the logEntryCh still. nil channels are
 			// never readable, so we'll just nil out errCh and move on.
 			errCh = nil
-		case <-c.Context.Done():
+		case <-ctx.Done():
 			return nil
 		}
 		// If BOTH logEntryCh and errCh were closed, we're done.
