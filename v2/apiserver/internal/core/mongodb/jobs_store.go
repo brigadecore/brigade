@@ -56,37 +56,6 @@ func (j *jobsStore) Create(
 	return nil
 }
 
-func (j *jobsStore) Delete(
-	ctx context.Context,
-	eventID string,
-	job core.Job,
-) error {
-	res, err := j.collection.UpdateOne(
-		ctx,
-		bson.M{"id": eventID},
-		bson.M{
-			"$pull": bson.M{
-				"worker.jobs": job,
-			},
-		},
-	)
-	if err != nil {
-		return errors.Wrapf(
-			err,
-			"error deleting event %q job %q",
-			eventID,
-			job.Name,
-		)
-	}
-	if res.MatchedCount == 0 {
-		return &meta.ErrNotFound{
-			Type: core.EventKind,
-			ID:   eventID,
-		}
-	}
-	return nil
-}
-
 func (j *jobsStore) UpdateStatus(
 	ctx context.Context,
 	eventID string,

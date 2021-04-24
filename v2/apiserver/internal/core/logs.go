@@ -168,6 +168,18 @@ func (l *logsService) Stream(
 				}
 			}
 		}
+
+		// If the event is a retry of another, we may need to inspect the original
+		// to access job logs
+		// TODO: we still only want to look up orig event ID if job is cached
+		if event.Labels != nil && event.Labels[RetryLabelKey] != "" {
+			origEventID := event.Labels[RetryLabelKey]
+			event, err = l.eventsStore.Get(ctx, origEventID)
+			if err != nil {
+				return nil,
+					errors.Wrapf(err, "error retrieving original event %q from store", origEventID)
+			}
+		}
 	}
 
 	// Make sure the project exists
@@ -188,11 +200,11 @@ func (l *logsService) Stream(
 		50, // A generous number of retries. Let the client hang up if they want.
 		20*time.Second,
 		func() (bool, error) {
-			if event, err = l.eventsStore.Get(ctx, eventID); err != nil {
+			if event, err = l.eventsStore.Get(ctx, event.ID); err != nil {
 				return false, errors.Wrapf(
 					err,
 					"error retrieving event %q from store",
-					eventID,
+					event.ID,
 				)
 			}
 			if selector.Job == "" { // Worker...

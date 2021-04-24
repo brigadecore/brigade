@@ -420,10 +420,15 @@ func (e *eventsService) createSingleEvent(
 	jobs := []Job{}
 	workerSpec := project.Spec.WorkerTemplate
 	// If the event is a retry of another, defer to the Worker.Spec on the event
-	// itself.  Retain the Jobs slice as well.
+	// itself.  Retain/cache any successful jobs that do not use a shared
+	// workspace.
 	if event.Labels != nil && event.Labels[RetryLabelKey] != "" {
 		workerSpec = event.Worker.Spec
-		jobs = event.Worker.Jobs
+		for _, job := range event.Worker.Jobs {
+			if job.Status.Phase == JobPhaseSucceeded && !job.UsesWorkspace() {
+				jobs = append(jobs, job)
+			}
+		}
 	}
 
 	if workerSpec.WorkspaceSize == "" {
@@ -853,10 +858,14 @@ func (e *eventsService) Retry(
 
 	// Only allow retry if the event Worker has reached a terminal phase
 	if !event.Worker.Status.Phase.IsTerminal() {
-		return Event{}, fmt.Errorf(
-			"worker phase %q is non-terminal and may not yet be retried",
-			event.Worker.Status.Phase,
-		)
+		return Event{}, &meta.ErrConflict{
+			Type: EventKind,
+			ID:   event.ID,
+			Reason: fmt.Sprintf(
+				"Event worker phase %q is non-terminal and may not yet be retried",
+				event.Worker.Status.Phase,
+			),
+		}
 	}
 
 	// Copy all event details, including worker configuration, only omitting
@@ -865,6 +874,9 @@ func (e *eventsService) Retry(
 	retry.ObjectMeta = meta.ObjectMeta{}
 
 	// Add a label for tracing the original event id
+	// TODO: we may want to consider checking to see if this is a retry of a
+	// retry -- in which case we may want to preserve the first/orig event
+	// being retried, for log lookup purposes.
 	if retry.Labels == nil {
 		retry.Labels = map[string]string{}
 	}

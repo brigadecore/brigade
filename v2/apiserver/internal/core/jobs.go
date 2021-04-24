@@ -84,6 +84,18 @@ type Job struct {
 	Status *JobStatus `json:"status" bson:"status"`
 }
 
+// UsesWorkspace returns a boolean value indicating whether or not the job
+// uses a shared workspace.
+func (j Job) UsesWorkspace() bool {
+	var usesWorkspace = j.Spec.PrimaryContainer.WorkspaceMountPath != ""
+	for _, sidecarContainer := range j.Spec.SidecarContainers {
+		if sidecarContainer.WorkspaceMountPath != "" {
+			usesWorkspace = true
+		}
+	}
+	return usesWorkspace
+}
+
 // JobSpec is the technical blueprint for a Job.
 type JobSpec struct {
 	// PrimaryContainer specifies the details of an OCI container that forms the
@@ -253,6 +265,24 @@ func (j *jobsService) Create(
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
+	if _, ok := event.Worker.Job(job.Name); ok {
+		// If we have a match and this is a retry, the job must be one pre-selected
+		// to be cached (has succeeded and does not use a shared workspace),
+		// therefore, return now to prevent rescheduling.
+		if event.Labels != nil || event.Labels[RetryLabelKey] != "" {
+			return nil
+		}
+
+		return &meta.ErrConflict{
+			Type: JobKind,
+			ID:   job.Name,
+			Reason: fmt.Sprintf(
+				"Event %q already has a job named %q.",
+				eventID,
+				job.Name,
+			),
+		}
+	}
 
 	// Perform some validations...
 
@@ -272,42 +302,6 @@ func (j *jobsService) Create(
 		}
 		if sidecarContainer.UseHostDockerSocket {
 			useDockerSocket = true
-		}
-	}
-
-	if originalJob, ok := event.Worker.Job(job.Name); ok {
-		// If we aren't dealing with a retry event, return an error
-		if event.Labels == nil || event.Labels[RetryLabelKey] == "" {
-			return &meta.ErrConflict{
-				Type: JobKind,
-				ID:   job.Name,
-				Reason: fmt.Sprintf(
-					"Event %q already has a job named %q.",
-					eventID,
-					job.Name,
-				),
-			}
-		}
-
-		// Else, deal with retry event job
-		//
-		// If the job has already succeeded and does not use a shared workspace,
-		// simply return, as we don't want to replace this job in the store or
-		// reschedule
-		if !useWorkspace &&
-			originalJob.Status != nil &&
-			originalJob.Status.Phase == JobPhaseSucceeded {
-			return nil
-		}
-
-		// Delete the job from the store and rebuild/reschedule as normal below
-		if err = j.jobsStore.Delete(ctx, eventID, originalJob); err != nil {
-			return errors.Wrapf(
-				err,
-				"unable to delete job %q from event %q in preparation for retry",
-				originalJob.Name,
-				eventID,
-			)
 		}
 	}
 
@@ -645,9 +639,6 @@ type JobsStore interface {
 	// Create persists a new Job for the specified Event in the underlying data
 	// store.
 	Create(ctx context.Context, eventID string, job Job) error
-	// Delete removes a Job from the specified Event in the underlying data
-	// store.
-	Delete(ctx context.Context, eventID string, job Job) error
 	// UpdateStatus updates the status of the specified Job in the underlying data
 	// store. If the specified job is not found, implementations MUST return a
 	// *meta.ErrNotFound error.

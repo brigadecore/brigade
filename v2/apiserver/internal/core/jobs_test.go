@@ -454,43 +454,6 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 		assertions         func(error)
 	}{
 		{
-			name: "error deleting original job from store",
-			service: &jobsService{
-				authorize: libAuthz.AlwaysAuthorize,
-				eventsStore: &mockEventsStore{
-					GetFn: func(context.Context, string) (Event, error) {
-						return Event{
-							Labels: map[string]string{
-								RetryLabelKey: testEventID,
-							},
-							Worker: Worker{
-								Spec: WorkerSpec{
-									UseWorkspace: true,
-								},
-								Jobs: []Job{
-									{
-										Name: testJobName,
-									},
-								},
-							},
-						}, nil
-					},
-				},
-				jobsStore: &mockJobsStore{
-					DeleteFn: func(_ context.Context, _ string, job Job) error {
-						require.Equal(t, testJobName, job.Name)
-						return errors.New("something went wrong")
-					},
-				},
-			},
-			workspaceMountPath: "",
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "unable to delete job")
-				require.Contains(t, err.Error(), "something went wrong")
-			},
-		},
-		{
 			name: "job retry success - no-op",
 			service: &jobsService{
 				authorize: libAuthz.AlwaysAuthorize,
@@ -555,10 +518,6 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 					CreateFn: func(_ context.Context, _ string, job Job) error {
 						return nil
 					},
-					DeleteFn: func(_ context.Context, _ string, job Job) error {
-						require.Equal(t, testJobName, job.Name)
-						return nil
-					},
 				},
 				substrate: &mockSubstrate{
 					StoreJobEnvironmentFn: func(
@@ -621,10 +580,6 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 				},
 				jobsStore: &mockJobsStore{
 					CreateFn: func(_ context.Context, _ string, job Job) error {
-						return nil
-					},
-					DeleteFn: func(_ context.Context, _ string, job Job) error {
-						require.Equal(t, testJobName, job.Name)
 						return nil
 					},
 				},
@@ -1457,7 +1412,6 @@ func TestJobsServiceCleanup(t *testing.T) {
 
 type mockJobsStore struct {
 	CreateFn       func(ctx context.Context, eventID string, job Job) error
-	DeleteFn       func(ctx context.Context, eventID string, job Job) error
 	UpdateStatusFn func(
 		ctx context.Context,
 		eventID string,
@@ -1472,14 +1426,6 @@ func (m *mockJobsStore) Create(
 	job Job,
 ) error {
 	return m.CreateFn(ctx, eventID, job)
-}
-
-func (m *mockJobsStore) Delete(
-	ctx context.Context,
-	eventID string,
-	job Job,
-) error {
-	return m.DeleteFn(ctx, eventID, job)
 }
 
 func (m *mockJobsStore) UpdateStatus(
