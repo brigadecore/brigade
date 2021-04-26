@@ -406,7 +406,7 @@ func TestFilter(t *testing.T) {
 			name: "user session found; token not activated",
 			filter: &tokenAuthFilter{
 				config: TokenAuthFilterConfig{
-					OpenIDConnectEnabled: true,
+					ThirdPartyAuthEnabled: true,
 				},
 				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
 					return core.Event{}, &meta.ErrNotFound{}
@@ -440,7 +440,7 @@ func TestFilter(t *testing.T) {
 			name: "user session found; token expired",
 			filter: &tokenAuthFilter{
 				config: TokenAuthFilterConfig{
-					OpenIDConnectEnabled: true,
+					ThirdPartyAuthEnabled: true,
 				},
 				findEventByTokenFn: func(context.Context, string) (core.Event, error) {
 					return core.Event{}, &meta.ErrNotFound{}
@@ -479,7 +479,7 @@ func TestFilter(t *testing.T) {
 			name: "user session found; token valid; error finding user",
 			filter: &tokenAuthFilter{
 				config: TokenAuthFilterConfig{
-					OpenIDConnectEnabled: true,
+					ThirdPartyAuthEnabled: true,
 					FindUserFn: func(ctx context.Context, id string) (authn.User, error) {
 						return authn.User{}, errors.New("something went wrong")
 					},
@@ -521,7 +521,7 @@ func TestFilter(t *testing.T) {
 			name: "user session found; token valid; user locked",
 			filter: &tokenAuthFilter{
 				config: TokenAuthFilterConfig{
-					OpenIDConnectEnabled: true,
+					ThirdPartyAuthEnabled: true,
 					FindUserFn: func(ctx context.Context, id string) (authn.User, error) {
 						now := time.Now().UTC()
 						return authn.User{
@@ -566,7 +566,7 @@ func TestFilter(t *testing.T) {
 			name: "user session found; success",
 			filter: &tokenAuthFilter{
 				config: TokenAuthFilterConfig{
-					OpenIDConnectEnabled: true,
+					ThirdPartyAuthEnabled: true,
 					FindUserFn: func(ctx context.Context, id string) (authn.User, error) {
 						return authn.User{}, nil
 					},

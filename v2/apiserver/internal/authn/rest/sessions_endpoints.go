@@ -33,7 +33,7 @@ func (s *SessionsEndpoints) Register(router *mux.Router) {
 		s.AuthFilter.Decorate(s.delete),
 	).Methods(http.MethodDelete)
 
-	// OIDC callback
+	// Third-party auth callbacks
 	router.HandleFunc(
 		"/v2/session/auth",
 		s.authenticate, // No filters applied to this request
@@ -65,15 +65,15 @@ func (s *SessionsEndpoints) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oidcAuthOpts := &authn.OIDCAuthOptions{
-		AuthSuccessURL: r.URL.Query().Get("authSuccessURL"),
+	thirdPartyAuthOpts := &authn.ThirdPartyAuthOptions{
+		SuccessURL: r.URL.Query().Get("successURL"),
 	}
 	restmachinery.ServeRequest(
 		restmachinery.InboundRequest{
 			W: w,
 			R: r,
 			EndpointLogic: func() (interface{}, error) {
-				return s.Service.CreateUserSession(r.Context(), oidcAuthOpts)
+				return s.Service.CreateUserSession(r.Context(), thirdPartyAuthOpts)
 			},
 			SuccessCode: http.StatusCreated,
 		},
@@ -106,27 +106,25 @@ func (s *SessionsEndpoints) authenticate(
 ) {
 	defer r.Body.Close() // nolint: errcheck
 
-	oauth2State := r.URL.Query().Get("state")
-	oidcCode := r.URL.Query().Get("code")
-
+	state := r.URL.Query().Get("state")
+	code := r.URL.Query().Get("code")
 	restmachinery.ServeWebUIRequest(restmachinery.InboundWebUIRequest{
 		W: w,
 		EndpointLogic: func() (interface{}, error) {
-			if oauth2State == "" || oidcCode == "" {
+			if state == "" || code == "" {
 				return nil, &meta.ErrBadRequest{
-					Reason: `The OpenID Connect authentication completion request ` +
-						`lacked one or both of the "oauth2State" and "oidcCode" ` +
-						`query parameters.`,
+					Reason: `The third-party authentication completion request ` +
+						`lacked one or both of the "state" and "code" query parameters.`,
 				}
 			}
 			authSuccessURL, err := s.Service.Authenticate(
 				r.Context(),
-				oauth2State,
-				oidcCode,
+				state,
+				code,
 			)
 			if err != nil {
 				return nil,
-					errors.Wrap(err, "error completing OpenID Connect authentication")
+					errors.Wrap(err, "error completing third-party authentication")
 			}
 			if authSuccessURL != "" {
 				http.Redirect(w, r, authSuccessURL, http.StatusMovedPermanently)

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
@@ -20,7 +21,7 @@ import (
 // test functions uses a series of test cases that cumulatively build upon one
 // another.
 
-func TestDatabase(t *testing.T) {
+func TestDatabaseConnection(t *testing.T) {
 	testCases := []struct {
 		name       string
 		setup      func()
@@ -273,6 +274,140 @@ func TestSubstrateConfig(t *testing.T) {
 	}
 }
 
+func TestThirdPartyAuthHelper(t *testing.T) {
+	testCases := []struct {
+		name       string
+		setup      func()
+		assertions func(authn.ThirdPartyAuthHelper, error)
+	}{
+		{
+			name: "THIRD_PARTY_AUTH_STRATEGY has invalid value",
+			setup: func() {
+				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", "bogus")
+			},
+			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+				require.Error(t, err)
+				require.Contains(
+					t,
+					err.Error(),
+					"unrecognized THIRD_PARTY_AUTH_STRATEGY",
+				)
+			},
+		},
+		{
+			name: "OIDC_PROVIDER_URL required but not set",
+			setup: func() {
+				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", "oidc")
+			},
+			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "OIDC_PROVIDER_URL")
+			},
+		},
+		{
+			name: "OIDC_CLIENT_ID required but not set",
+			setup: func() {
+				// This needs to be a legit-looking URL unless we want to mock out all
+				// kinds of OIDC stuff. There's no real harm in this. This is an
+				// bygone AAD tenant once owned by krancour.
+				os.Setenv(
+					"OIDC_PROVIDER_URL",
+					"https://login.microsoftonline.com/cc18ecf3-7acb-4d14-ba43-fc25dc310191/v2.0", // nolint: lll
+				)
+			},
+			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "OIDC_CLIENT_ID")
+			},
+		},
+		{
+			name: "OIDC_CLIENT_SECRET required but not set",
+			setup: func() {
+				// Even though we used a real provider URL, this client ID is made up
+				os.Setenv("OIDC_CLIENT_ID", "hal9000")
+			},
+			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "OIDC_CLIENT_SECRET")
+			},
+		},
+		{
+			name: "OIDC_REDIRECT_URL_BASE required but not set",
+			setup: func() {
+				// Even though we used a real provider URL, this client secret is made
+				// up
+				os.Setenv("OIDC_CLIENT_SECRET", "hello, dave")
+			},
+			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "OIDC_REDIRECT_URL_BASE")
+			},
+		},
+		{
+			name: "success getting OIDC-based ThirdPartyAuthHelper",
+			setup: func() {
+				os.Setenv("OIDC_REDIRECT_URL_BASE", "https://brigade.example.com")
+			},
+			assertions: func(helper authn.ThirdPartyAuthHelper, err error) {
+				require.NoError(t, err)
+				require.Equal(
+					t,
+					"*oidc.thirdPartyAuthHelper",
+					reflect.TypeOf(helper).String(),
+				)
+			},
+		},
+		{
+			name: "GITHUB_CLIENT_ID required but not set",
+			setup: func() {
+				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyGitHub)
+				os.Setenv("GITHUB_AUTH_ENABLED", "true")
+			},
+			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "GITHUB_CLIENT_ID")
+			},
+		},
+		{
+			name: "GITHUB_CLIENT_SECRET required but not set",
+			setup: func() {
+				os.Setenv("GITHUB_CLIENT_ID", "foo")
+			},
+			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "GITHUB_CLIENT_SECRET")
+			},
+		},
+		{
+			name: "success getting github-based ThirdPartyAuthHelper",
+			setup: func() {
+				os.Setenv("GITHUB_CLIENT_SECRET", "bar")
+			},
+			assertions: func(helper authn.ThirdPartyAuthHelper, err error) {
+				require.NoError(t, err)
+				require.Equal(
+					t,
+					"*github.thirdPartyAuthHelper",
+					reflect.TypeOf(helper).String(),
+				)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.setup()
+			thirdPartyAuthHelper, err := thirdPartyAuthHelper(context.Background())
+			testCase.assertions(thirdPartyAuthHelper, err)
+		})
+	}
+}
+
 func TestSessionsServiceConfig(t *testing.T) {
 	testCases := []struct {
 		name       string
@@ -291,21 +426,9 @@ func TestSessionsServiceConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "OIDC_ENABLED not parsable as bool",
-			setup: func() {
-				os.Setenv("ROOT_USER_ENABLED", "true")
-				os.Setenv("OIDC_ENABLED", "aw hell no")
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "was not parsable as a bool")
-				require.Contains(t, err.Error(), "OIDC_ENABLED")
-			},
-		},
-		{
 			name: "ROOT_USER_SESSION_TTL not parsable as duration",
 			setup: func() {
-				os.Setenv("OIDC_ENABLED", "true")
+				os.Setenv("ROOT_USER_ENABLED", "true")
 				os.Setenv("ROOT_USER_SESSION_TTL", "in like an hour")
 			},
 			assertions: func(err error) {
@@ -326,74 +449,21 @@ func TestSessionsServiceConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "OIDC_USER_SESSION_TTL not parsable as duration",
+			name: "USER_SESSION_TTL not parsable as duration",
 			setup: func() {
 				os.Setenv("ROOT_USER_PASSWORD", "12345")
-				os.Setenv("OIDC_USER_SESSION_TTL", "in like a day")
+				os.Setenv("USER_SESSION_TTL", "in like a day")
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "was not parsable as a duration")
-				require.Contains(t, err.Error(), "OIDC_USER_SESSION_TTL")
-			},
-		},
-		{
-			name: "OIDC_PROVIDER_URL required but not set",
-			setup: func() {
-				os.Setenv("OIDC_USER_SESSION_TTL", "1h")
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "value not found for")
-				require.Contains(t, err.Error(), "OIDC_PROVIDER_URL")
-			},
-		},
-		{
-			name: "OIDC_CLIENT_ID required but not set",
-			setup: func() {
-				// This needs to be a legit URL unless we want to mock out all kinds of
-				// OIDC stuff. There's no real harm in this. This is an AAD tenant owned
-				// by krancour.
-				os.Setenv(
-					"OIDC_PROVIDER_URL",
-					"https://login.microsoftonline.com/cc18ecf3-7acb-4d14-ba43-fc25dc310191/v2.0", // nolint: lll
-				)
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "value not found for")
-				require.Contains(t, err.Error(), "OIDC_CLIENT_ID")
-			},
-		},
-		{
-			name: "OIDC_CLIENT_SECRET required but not set",
-			setup: func() {
-				// Even thought we used a real provider URL, this client ID is made up
-				os.Setenv("OIDC_CLIENT_ID", "hal9000")
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "value not found for")
-				require.Contains(t, err.Error(), "OIDC_CLIENT_SECRET")
-			},
-		},
-		{
-			name: "OIDC_REDIRECT_URL_BASE required but not set",
-			setup: func() {
-				// Even thought we used a real provider URL, this client secret is made
-				// up
-				os.Setenv("OIDC_CLIENT_SECRET", "hello, dave")
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "value not found for")
-				require.Contains(t, err.Error(), "OIDC_REDIRECT_URL_BASE")
+				require.Contains(t, err.Error(), "USER_SESSION_TTL")
 			},
 		},
 		{
 			name: "success",
 			setup: func() {
-				os.Setenv("OIDC_REDIRECT_URL_BASE", "https://localhost")
+				os.Setenv("USER_SESSION_TTL", "1h")
 			},
 			assertions: func(err error) {
 				require.NoError(t, err)
@@ -403,7 +473,7 @@ func TestSessionsServiceConfig(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			testCase.setup()
-			_, err := sessionsServiceConfig(context.Background())
+			_, err := sessionsServiceConfig()
 			testCase.assertions(err)
 		})
 	}
@@ -427,21 +497,9 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "OIDC_ENABLED not parsable as bool",
-			setup: func() {
-				os.Setenv("ROOT_USER_ENABLED", "true")
-				os.Setenv("OIDC_ENABLED", "yuppers")
-			},
-			assertions: func(_ sysAuthn.TokenAuthFilterConfig, err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "was not parsable as a bool")
-				require.Contains(t, err.Error(), "OIDC_ENABLED")
-			},
-		},
-		{
 			name: "SCHEDULER_TOKEN not set",
 			setup: func() {
-				os.Setenv("OIDC_ENABLED", "true")
+				os.Setenv("ROOT_USER_ENABLED", "true")
 			},
 			assertions: func(_ sysAuthn.TokenAuthFilterConfig, err error) {
 				require.Error(t, err)
@@ -464,12 +522,13 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 			name: "success",
 			setup: func() {
 				os.Setenv("OBSERVER_TOKEN", "bar")
+				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", "github")
 			},
 			assertions: func(config sysAuthn.TokenAuthFilterConfig, err error) {
 				require.NoError(t, err)
 				require.NotNil(t, config.FindUserFn)
 				require.True(t, config.RootUserEnabled)
-				require.True(t, config.OpenIDConnectEnabled)
+				require.True(t, config.ThirdPartyAuthEnabled)
 			},
 		},
 	}

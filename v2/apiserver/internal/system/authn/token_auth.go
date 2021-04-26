@@ -23,11 +23,11 @@ type TokenAuthFilterConfig struct {
 	// RootUserEnabled indicates whether the TokenAuthFilter should permit the
 	// "root" user to authenticate using a password.
 	RootUserEnabled bool
-	// OpenIDConnectEnabled indicates whether the TokenAuthFilter service should
-	// permit User authentication via OpenID Connect.
-	OpenIDConnectEnabled bool
+	// ThirdPartyAuthEnabled indicates whether the TokenAuthFilter service should
+	// permit User authentication via third-parties.
+	ThirdPartyAuthEnabled bool
 	// FindUserFn is a function for locating a User. This field is applicable only
-	// when value of the OpenIDConnectEnabled field is true.
+	// when the value of the ThirdPartyAuthEnabled field is true.
 	FindUserFn func(ctx context.Context, id string) (authn.User, error)
 	// HashedSchedulerToken is a secure hash of the token used by the scheduler
 	// component.
@@ -202,14 +202,14 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 			)
 			return
 		}
-		if !session.Root && !t.config.OpenIDConnectEnabled {
+		if !session.Root && !t.config.ThirdPartyAuthEnabled {
 			t.writeResponse(
 				w,
 				http.StatusUnauthorized,
 				&meta.ErrAuthentication{
 					Reason: "Supplied token was for a session whose owner " +
-						"authenticated with OpenID Connect, but authentication using " +
-						"OpenID Connect is no longer supported by this server.",
+						"authenticated using a third-party, but authentication using " +
+						"a third-party is no longer supported by this server.",
 				},
 			)
 			return
