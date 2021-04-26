@@ -13,11 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOIDCAuthDetailsMarshalJSON(t *testing.T) {
+func TestThirdPartyAuthDetailsMarshalJSON(t *testing.T) {
 	metaTesting.RequireAPIVersionAndType(
 		t,
-		OIDCAuthDetails{},
-		"OIDCAuthDetails",
+		ThirdPartyAuthDetails{},
+		"ThirdPartyAuthDetails",
 	)
 }
 
@@ -57,10 +57,10 @@ func TestSessionsClientCreateRootSession(t *testing.T) {
 }
 
 func TestSessionsClientCreateUserSession(t *testing.T) {
-	testOIDCAuthOptions := &OIDCAuthOptions{
+	testThirdPartyAuthOpts := &ThirdPartyAuthOptions{
 		SuccessURL: "https://example.com/success",
 	}
-	testOIDCAuthDetails := OIDCAuthDetails{
+	testThirdPartyAuthDetails := ThirdPartyAuthDetails{
 		Token: "opensesame",
 	}
 	server := httptest.NewServer(
@@ -71,10 +71,10 @@ func TestSessionsClientCreateUserSession(t *testing.T) {
 				require.Empty(t, r.Header.Get("Authorization"))
 				require.Equal(
 					t,
-					testOIDCAuthOptions.SuccessURL,
-					r.URL.Query().Get("authSuccessURL"),
+					testThirdPartyAuthOpts.SuccessURL,
+					r.URL.Query().Get("successURL"),
 				)
-				bodyBytes, err := json.Marshal(testOIDCAuthDetails)
+				bodyBytes, err := json.Marshal(testThirdPartyAuthDetails)
 				require.NoError(t, err)
 				w.WriteHeader(http.StatusCreated)
 				fmt.Fprintln(w, string(bodyBytes))
@@ -83,10 +83,10 @@ func TestSessionsClientCreateUserSession(t *testing.T) {
 	)
 	defer server.Close()
 	client := NewSessionsClient(server.URL, rmTesting.TestAPIToken, nil)
-	OIDCAuthDetails, err :=
-		client.CreateUserSession(context.Background(), testOIDCAuthOptions)
+	thirdPartyAuthDetails, err :=
+		client.CreateUserSession(context.Background(), testThirdPartyAuthOpts)
 	require.NoError(t, err)
-	require.Equal(t, testOIDCAuthDetails, OIDCAuthDetails)
+	require.Equal(t, testThirdPartyAuthDetails, thirdPartyAuthDetails)
 }
 
 func TestSessionsClientDelete(t *testing.T) {
