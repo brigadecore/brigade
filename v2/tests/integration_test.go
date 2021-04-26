@@ -16,7 +16,6 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/system"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,6 +40,9 @@ var testcases = []testcase{
 	{
 		name: "GitHub - no ref",
 		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "github-no-ref",
+			},
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
@@ -64,6 +66,9 @@ var testcases = []testcase{
 	{
 		name: "GitHub - full ref",
 		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "github-full-ref",
+			},
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
@@ -88,6 +93,9 @@ var testcases = []testcase{
 	{
 		name: "GitHub - casual ref",
 		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "github-casual-ref",
+			},
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
@@ -112,6 +120,9 @@ var testcases = []testcase{
 	{
 		name: "GitHub - commit sha",
 		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "github-sha",
+			},
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
@@ -136,6 +147,9 @@ var testcases = []testcase{
 	{
 		name: "GitHub - submodules",
 		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "github-submodules",
+			},
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
@@ -160,6 +174,9 @@ var testcases = []testcase{
 	{
 		name: "GitHub - vcs failure",
 		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "github-vcs-fail",
+			},
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
@@ -189,6 +206,9 @@ var testcases = []testcase{
 	{
 		name: "GitHub - job fails",
 		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "github-job-fail",
+			},
 			Spec: core.ProjectSpec{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
@@ -282,14 +302,6 @@ func TestMain(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.project.ID = "test-project"
-
-			// Delete the test project (we're sharing the name between tests)
-			err = client.Core().Projects().Delete(ctx, tc.project.ID)
-			if _, ok := errors.Cause(err).(*meta.ErrNotFound); !ok {
-				require.NoError(t, err, "error deleting project")
-			}
-
 			// Update the project with defaults, if needed
 			if len(tc.configFiles) > 0 {
 				tc.project.Spec.WorkerTemplate.DefaultConfigFiles = tc.configFiles
@@ -321,6 +333,10 @@ func TestMain(t *testing.T) {
 			require.Equal(t, 1, len(eList.Items), "event list items should be exactly one")
 
 			tc.assertions(t, ctx, client, eList.Items[0])
+
+			// Delete the test project
+			err = client.Core().Projects().Delete(ctx, tc.project.ID)
+			require.NoError(t, err, "error deleting project")
 		})
 	}
 }
