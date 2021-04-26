@@ -169,15 +169,13 @@ func (l *logsService) Stream(
 			}
 		}
 
-		// If the event is a retry of another, we may need to inspect the original
-		// to access job logs
-		// TODO: we still only want to look up orig event ID if job is cached
-		if event.Labels != nil && event.Labels[RetryLabelKey] != "" {
-			origEventID := event.Labels[RetryLabelKey]
-			event, err = l.eventsStore.Get(ctx, origEventID)
+		// Check to see if we need to look up logs via a specific event ID,
+		// as job may be cached and carried over on a retry event
+		if job.Status != nil && job.Status.LogsEventID != "" {
+			event, err = l.eventsStore.Get(ctx, job.Status.LogsEventID)
 			if err != nil {
 				return nil,
-					errors.Wrapf(err, "error retrieving original event %q from store", origEventID)
+					errors.Wrapf(err, "error retrieving original event %q from store", job.Status.LogsEventID)
 			}
 		}
 	}

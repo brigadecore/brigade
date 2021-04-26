@@ -176,6 +176,9 @@ type JobStatus struct {
 	Ended *time.Time `json:"ended,omitempty" bson:"ended,omitempty"`
 	// Phase indicates where the Job is in its lifecycle.
 	Phase JobPhase `json:"phase,omitempty" bson:"phase,omitempty"`
+	// LogsEventID indicates which event ID the job logs are associated with.
+	// This is useful for looking up logs for a cached job for retry events.
+	LogsEventID string `json:"logsEventID,omitempty" bson:"logsEventID,omitempty"`
 }
 
 // JobsService is the specialized interface for managing Jobs. It's

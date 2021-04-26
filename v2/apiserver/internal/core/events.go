@@ -426,6 +426,10 @@ func (e *eventsService) createSingleEvent(
 		workerSpec = event.Worker.Spec
 		for _, job := range event.Worker.Jobs {
 			if job.Status.Phase == JobPhaseSucceeded && !job.UsesWorkspace() {
+				// Capture event ID for logs, if not already set.
+				if job.Status.LogsEventID == "" {
+					job.Status.LogsEventID = event.Labels[RetryLabelKey]
+				}
 				jobs = append(jobs, job)
 			}
 		}
@@ -874,9 +878,6 @@ func (e *eventsService) Retry(
 	retry.ObjectMeta = meta.ObjectMeta{}
 
 	// Add a label for tracing the original event id
-	// TODO: we may want to consider checking to see if this is a retry of a
-	// retry -- in which case we may want to preserve the first/orig event
-	// being retried, for log lookup purposes.
 	if retry.Labels == nil {
 		retry.Labels = map[string]string{}
 	}
