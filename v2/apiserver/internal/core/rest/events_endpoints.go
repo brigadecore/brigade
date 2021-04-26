@@ -78,7 +78,7 @@ func (e *EventsEndpoints) Register(router *mux.Router) {
 
 	// Retry event
 	router.HandleFunc(
-		"/v2/events/{id}/retry",
+		"/v2/events/{id}/retries",
 		e.AuthFilter.Decorate(e.retry),
 	).Methods(http.MethodPost)
 }

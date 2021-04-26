@@ -104,6 +104,7 @@ func NewLogsService(
 	}
 }
 
+// nolint: gocyclo
 func (l *logsService) Stream(
 	ctx context.Context,
 	eventID string,
@@ -175,7 +176,11 @@ func (l *logsService) Stream(
 			event, err = l.eventsStore.Get(ctx, job.Status.LogsEventID)
 			if err != nil {
 				return nil,
-					errors.Wrapf(err, "error retrieving original event %q from store", job.Status.LogsEventID)
+					errors.Wrapf(
+						err,
+						"error retrieving original event %q from store",
+						job.Status.LogsEventID,
+					)
 			}
 		}
 	}

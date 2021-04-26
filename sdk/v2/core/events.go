@@ -250,7 +250,9 @@ type EventsClient interface {
 	// parameter.
 	DeleteMany(context.Context, EventsSelector) (DeleteManyEventsResult, error)
 	// Retry copies an Event, including Worker configuration and Jobs, and
-	// creates a new Event from this information.
+	// creates a new Event from this information. Where possible, jobs are not
+	// re-scheduled and their results re-used, for example when a job has
+	// succeeded and does not make use of a shared workspace.
 	Retry(context.Context, string) (Event, error)
 
 	// Workers returns a specialized client for Worker management.
@@ -430,7 +432,7 @@ func (e *eventsClient) Retry(
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodPost,
-			Path:        fmt.Sprintf("v2/events/%s/retry", id),
+			Path:        fmt.Sprintf("v2/events/%s/retries", id),
 			SuccessCode: http.StatusCreated,
 			RespObj:     &event,
 		},

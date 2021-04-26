@@ -496,7 +496,7 @@ func TestEventsClientRetry(t *testing.T) {
 				require.Equal(t, http.MethodPost, r.Method)
 				require.Equal(
 					t,
-					fmt.Sprintf("/v2/events/%s/retry", testEventID),
+					fmt.Sprintf("/v2/events/%s/retries", testEventID),
 					r.URL.Path,
 				)
 				bodyBytes, err := json.Marshal(testEvent)
