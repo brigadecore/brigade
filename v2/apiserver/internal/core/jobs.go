@@ -96,6 +96,27 @@ func (j Job) UsesWorkspace() bool {
 	return usesWorkspace
 }
 
+// DeepEquals returns a boolean value indicating whether or not a Job is
+// equivalent to another.
+func (j Job) DeepEquals(j2 Job) bool {
+	if j.Name != j2.Name {
+		return false
+	}
+	if !j.Spec.PrimaryContainer.DeepEquals(j2.Spec.PrimaryContainer) {
+		return false
+	}
+	if len(j.Spec.SidecarContainers) != len(j2.Spec.SidecarContainers) {
+		return false
+	}
+	for container, spec := range j.Spec.SidecarContainers {
+		if j2Spec, ok := j2.Spec.SidecarContainers[container]; !ok ||
+			!spec.DeepEquals(j2Spec) {
+			return false
+		}
+	}
+	return true
+}
+
 // JobSpec is the technical blueprint for a Job.
 type JobSpec struct {
 	// PrimaryContainer specifies the details of an OCI container that forms the
@@ -152,6 +173,17 @@ type JobContainerSpec struct {
 	// into the container, but that may be disallowed by Project-level
 	// configuration.
 	UseHostDockerSocket bool `json:"useHostDockerSocket" bson:"useHostDockerSocket"` // nolint: lll
+}
+
+// DeepEquals returns a boolean value indicating whether or not a
+// JobContainerSpec is equivalent to another.
+func (j JobContainerSpec) DeepEquals(j2 JobContainerSpec) bool {
+	return j.ContainerSpec.DeepEquals(j2.ContainerSpec) &&
+		j.WorkingDirectory == j2.WorkingDirectory &&
+		j.WorkspaceMountPath == j2.WorkspaceMountPath &&
+		j.SourceMountPath == j2.SourceMountPath &&
+		j.Privileged == j2.Privileged &&
+		j.UseHostDockerSocket == j2.UseHostDockerSocket
 }
 
 // JobHost represents criteria for selecting a suitable host (substrate node)
@@ -268,11 +300,26 @@ func (j *jobsService) Create(
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
-	if _, ok := event.Worker.Job(job.Name); ok {
+	if originalJob, ok := event.Worker.Job(job.Name); ok {
 		// If we have a match and this is a retry, the job must be one pre-selected
-		// to be cached (has succeeded and does not use a shared workspace),
-		// therefore, return now to prevent rescheduling.
+		// as eligible for caching (e.g., it has succeeded and does not use a
+		// shared workspace).
 		if event.Labels != nil || event.Labels[RetryLabelKey] != "" {
+			// However, we want to compare this job configuration to the original.
+			// If it differs, we'll want to return an error
+			if !originalJob.DeepEquals(job) {
+				return &meta.ErrConflict{
+					Type: JobKind,
+					ID:   job.Name,
+					Reason: fmt.Sprintf(
+						"Job %q is not eligible for caching, as it is not equivalent "+
+							"to the original job from event %q",
+						job.Name,
+						event.Labels[RetryLabelKey],
+					),
+				}
+			}
+
 			return nil
 		}
 

@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -454,6 +455,60 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 		assertions         func(error)
 	}{
 		{
+			name: "job retry error - not equivalent",
+			service: &jobsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Labels: map[string]string{
+								RetryLabelKey: testEventID,
+							},
+							Worker: Worker{
+								Jobs: []Job{
+									{
+										Name: testJobName,
+										Spec: JobSpec{
+											PrimaryContainer: JobContainerSpec{
+												WorkspaceMountPath: "",
+											},
+											SidecarContainers: map[string]JobContainerSpec{
+												// The original job names this "foo"
+												"bar": {
+													WorkspaceMountPath: "",
+												},
+											},
+										},
+										Status: &JobStatus{
+											Phase: JobPhaseSucceeded,
+										},
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				// No other methods mocked out; they should not be called
+			},
+			workspaceMountPath: "",
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(
+					t,
+					err.Error(),
+					fmt.Sprintf("Job %q is not eligible for caching", testJobName),
+				)
+				require.Contains(
+					t,
+					err.Error(),
+					fmt.Sprintf(
+						"not equivalent to the original job from event %q",
+						testEventID,
+					),
+				)
+			},
+		},
+		{
 			name: "job retry success - no-op",
 			service: &jobsService{
 				authorize: libAuthz.AlwaysAuthorize,
@@ -467,6 +522,16 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 								Jobs: []Job{
 									{
 										Name: testJobName,
+										Spec: JobSpec{
+											PrimaryContainer: JobContainerSpec{
+												WorkspaceMountPath: "",
+											},
+											SidecarContainers: map[string]JobContainerSpec{
+												"foo": {
+													WorkspaceMountPath: "",
+												},
+											},
+										},
 										Status: &JobStatus{
 											Phase: JobPhaseSucceeded,
 										},
@@ -500,6 +565,16 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 								Jobs: []Job{
 									{
 										Name: testJobName,
+										Spec: JobSpec{
+											PrimaryContainer: JobContainerSpec{
+												WorkspaceMountPath: "/workspace",
+											},
+											SidecarContainers: map[string]JobContainerSpec{
+												"foo": {
+													WorkspaceMountPath: "/workspace",
+												},
+											},
+										},
 										Status: &JobStatus{
 											Phase: JobPhaseSucceeded,
 										},
@@ -558,6 +633,16 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 								Jobs: []Job{
 									{
 										Name: testJobName,
+										Spec: JobSpec{
+											PrimaryContainer: JobContainerSpec{
+												WorkspaceMountPath: "",
+											},
+											SidecarContainers: map[string]JobContainerSpec{
+												"foo": {
+													WorkspaceMountPath: "",
+												},
+											},
+										},
 										Status: &JobStatus{
 											Phase: JobPhaseFailed,
 										},
