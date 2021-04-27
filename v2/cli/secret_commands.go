@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
@@ -49,12 +51,21 @@ var secretsCommand = &cli.Command{
 					Usage:    "Set secrets for the specified project (required)",
 					Required: true,
 				},
+				&cli.StringFlag{
+					Name:    flagFile,
+					Aliases: []string{"f"},
+					Usage: "A file containing secrets as key=value pairs, one pair " +
+						"per line",
+					Required:  false,
+					TakesFile: true,
+				},
 				&cli.StringSliceFlag{
 					Name:    flagSet,
 					Aliases: []string{"s"},
-					Usage: "Set a secret using the specified key=value pair " +
-						"(required)",
-					Required: true,
+					Usage: "Set a secret using the specified key=value pair. Secrets " +
+						"specified using this flag take precedence over any specified " +
+						"using the --file flag",
+					Required: false,
 				},
 			},
 			Action: secretsSet,
@@ -153,18 +164,52 @@ func secretsList(c *cli.Context) error {
 }
 
 func secretsSet(c *cli.Context) error {
+	filename := c.String(flagFile)
 	projectID := c.String(flagID)
-	kvPairsStr := c.StringSlice(flagSet)
+	kvPairStrs := c.StringSlice(flagSet)
 
-	// We'll make two passes-- we'll parse all the input into a map first,
-	// verifying as we go that the input looks good. Only after we know it's good
-	// will we iterate over the k/v pairs in the map to set secrets via the API.
+	if filename == "" && len(kvPairStrs) == 0 {
+		return errors.New(
+			"either a secrets file must be provided using the --file flag or " +
+				"key/value pairs must be specified with one or more occurrences of " +
+				"the --set flag",
+		)
+	}
+
+	// We'll make two passes-- we'll parse all the input, both from the file (if
+	// applicable) and command line input, into a map first, verifying as we go
+	// that the input looks good. Only after we know it's good will we iterate
+	// over the k/v pairs in the map to set secrets via the API.
 
 	kvPairs := map[string]string{}
-	for _, kvPairStr := range kvPairsStr {
+
+	if filename != "" {
+		// Read and parse the file
+		secretsFile, err := os.Open(filename)
+		if err != nil {
+			return errors.Wrapf(err, "error opening secrets file %s", filename)
+		}
+		defer secretsFile.Close()
+		scanner := bufio.NewScanner(secretsFile)
+		for scanner.Scan() {
+			kvTokens := strings.SplitN(scanner.Text(), "=", 2)
+			if len(kvTokens) != 2 || kvTokens[0] == "" || kvTokens[1] == "" {
+				return errors.Errorf(
+					"secrets file %s is formatted incorrectly",
+					filename,
+				)
+			}
+			kvPairs[kvTokens[0]] = kvTokens[1]
+		}
+	}
+
+	for _, kvPairStr := range kvPairStrs {
 		kvTokens := strings.SplitN(kvPairStr, "=", 2)
-		if len(kvTokens) != 2 {
-			return errors.New("secrets set argument %q is formatted incorrectly")
+		if len(kvTokens) != 2 || kvTokens[0] == "" || kvTokens[1] == "" {
+			return errors.Errorf(
+				"secrets set argument %q is formatted incorrectly",
+				kvPairStr,
+			)
 		}
 		kvPairs[kvTokens[0]] = kvTokens[1]
 	}
@@ -190,9 +235,8 @@ func secretsSet(c *cli.Context) error {
 		); err != nil {
 			return err
 		}
+		fmt.Printf("Set secret %q for project %q.\n", k, projectID)
 	}
-
-	fmt.Printf("Set secrets for project %q.\n", projectID)
 
 	return nil
 }
@@ -218,9 +262,8 @@ func secretsUnset(c *cli.Context) error {
 		); err != nil {
 			return err
 		}
+		fmt.Printf("Unset secret %q for project %q.\n", key, projectID)
 	}
-
-	fmt.Printf("Unset secrets for project %q.\n", projectID)
 
 	return nil
 }
