@@ -428,7 +428,9 @@ func (e *eventsService) createSingleEvent(
 		workerSpec = event.Worker.Spec
 		for _, job := range event.Worker.Jobs {
 			if job.Status.Phase == JobPhaseSucceeded && !job.UsesWorkspace() {
-				// Capture event ID for logs, if not already set.
+				// Capture event ID for tracing original logs.  Note that it may
+				// already be set (e.g. via a retry of another retry), in which case
+				// we do not want to override it.
 				if job.Status.LogsEventID == "" {
 					job.Status.LogsEventID = event.Labels[RetryLabelKey]
 				}
