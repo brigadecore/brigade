@@ -25,10 +25,11 @@ const (
 )
 
 type testcase struct {
-	name        string
-	project     core.Project
-	configFiles map[string]string
-	assertions  func(
+	name              string
+	postProjectCreate func(context.Context, sdk.APIClient) error
+	project           core.Project
+	configFiles       map[string]string
+	assertions        func(
 		t *testing.T,
 		ctx context.Context,
 		client sdk.APIClient,
@@ -172,6 +173,44 @@ var testcases = []testcase{
 		},
 	},
 	{
+		name: "GitHub - private repo",
+		postProjectCreate: func(ctx context.Context, client sdk.APIClient) error {
+			return client.Core().Projects().Secrets().Set(
+				ctx,
+				"github-private-ssh",
+				core.Secret{
+					Key:   "gitSSHKey",
+					Value: os.Getenv("BRIGADE_CI_PRIVATE_REPO_SSH_KEY"),
+				},
+			)
+		},
+		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "github-private-ssh",
+			},
+			Spec: core.ProjectSpec{
+				WorkerTemplate: core.WorkerSpec{
+					Git: &core.GitConfig{
+						CloneURL: "git@github.com:brigadecore/private-test-repo.git",
+						Ref:      "main",
+					},
+				},
+			},
+		},
+		configFiles: defaultConfigFiles,
+		assertions: func(
+			t *testing.T,
+			ctx context.Context,
+			client sdk.APIClient,
+			e core.Event,
+		) {
+			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
+			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
+			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseSucceeded)
+			assertJobLogs(t, ctx, client, e, testJobName, "README.md")
+		},
+	},
+	{
 		name: "GitHub - vcs failure",
 		project: core.Project{
 			ObjectMeta: meta.ObjectMeta{
@@ -301,6 +340,12 @@ func TestMain(t *testing.T) {
 	)
 
 	for _, tc := range testcases {
+		// Skip private repo test if required env var not present
+		if tc.name == "GitHub - private repo" &&
+			os.Getenv("BRIGADE_CI_PRIVATE_REPO_SSH_KEY") == "" {
+			continue
+		}
+
 		t.Run(tc.name, func(t *testing.T) {
 			// Update the project with defaults, if needed
 			if len(tc.configFiles) > 0 {
@@ -312,6 +357,10 @@ func TestMain(t *testing.T) {
 			// Create the test project
 			_, err = client.Core().Projects().Create(ctx, tc.project)
 			require.NoError(t, err, "error creating project")
+			// Run post-project create logic, if defined
+			if tc.postProjectCreate != nil {
+				require.NoError(t, tc.postProjectCreate(ctx, client))
+			}
 
 			// Verify there are no events for this project
 			eList, err := client.Core().Events().List(
