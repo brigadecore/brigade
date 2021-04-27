@@ -254,10 +254,15 @@ func TestEventsServiceCreateSingleEvent(t *testing.T) {
 			Ref:      "dev",
 		},
 	}
+	testEventRetryLabel := map[string]string{
+		RetryLabelKey: "1234567",
+	}
 	testCases := []struct {
-		name       string
-		service    *eventsService
-		assertions func(Event, error)
+		name        string
+		eventLabels map[string]string
+		worker      Worker
+		service     *eventsService
+		assertions  func(Event, error)
 	}{
 		{
 			name: "error creating event in store",
@@ -295,6 +300,124 @@ func TestEventsServiceCreateSingleEvent(t *testing.T) {
 			},
 		},
 		{
+			name:        "event retry - cache job",
+			eventLabels: testEventRetryLabel,
+			worker: Worker{
+				Jobs: []Job{
+					{
+						Name: "foo",
+						Status: &JobStatus{
+							Phase: JobPhaseSucceeded,
+						},
+					},
+				},
+			},
+			service: &eventsService{
+				eventsStore: &mockEventsStore{
+					CreateFn: func(context.Context, Event) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					ScheduleWorkerFn: func(c context.Context, p Project, e Event) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(event Event, err error) {
+				require.NoError(t, err)
+				require.Equal(t, 1, len(event.Worker.Jobs))
+				require.Equal(
+					t,
+					Job{
+						Name: "foo",
+						Status: &JobStatus{
+							LogsEventID: "1234567",
+							Phase:       JobPhaseSucceeded,
+						},
+					},
+					event.Worker.Jobs[0],
+				)
+			},
+		},
+		{
+			name:        "event retry - cache job, logs ID already set",
+			eventLabels: testEventRetryLabel,
+			worker: Worker{
+				Jobs: []Job{
+					{
+						Name: "foo",
+						Status: &JobStatus{
+							LogsEventID: "abcdefgh",
+							Phase:       JobPhaseSucceeded,
+						},
+					},
+				},
+			},
+			service: &eventsService{
+				eventsStore: &mockEventsStore{
+					CreateFn: func(context.Context, Event) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					ScheduleWorkerFn: func(c context.Context, p Project, e Event) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(event Event, err error) {
+				require.NoError(t, err)
+				require.Equal(t, 1, len(event.Worker.Jobs))
+				require.Equal(
+					t,
+					Job{
+						Name: "foo",
+						Status: &JobStatus{
+							LogsEventID: "abcdefgh",
+							Phase:       JobPhaseSucceeded,
+						},
+					},
+					event.Worker.Jobs[0],
+				)
+			},
+		},
+		{
+			name:        "event retry - reschedule job",
+			eventLabels: testEventRetryLabel,
+			worker: Worker{
+				Jobs: []Job{
+					{
+						Name: "foo",
+						Spec: JobSpec{
+							PrimaryContainer: JobContainerSpec{
+								WorkspaceMountPath: "/workspace",
+							},
+						},
+						Status: &JobStatus{
+							Phase: JobPhaseSucceeded,
+						},
+					},
+				},
+			},
+			service: &eventsService{
+				eventsStore: &mockEventsStore{
+					CreateFn: func(context.Context, Event) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					ScheduleWorkerFn: func(c context.Context, p Project, e Event) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(event Event, err error) {
+				require.NoError(t, err)
+				require.Empty(t, event.Worker.Jobs)
+			},
+		},
+		{
 			name: "success",
 			service: &eventsService{
 				eventsStore: &mockEventsStore{
@@ -327,6 +450,8 @@ func TestEventsServiceCreateSingleEvent(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			testEvent.Labels = testCase.eventLabels
+			testEvent.Worker = testCase.worker
 			event, err := testCase.service.createSingleEvent(
 				context.Background(),
 				testProject,
