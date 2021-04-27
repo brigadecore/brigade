@@ -84,6 +84,9 @@ func (l *logsStore) StreamLogs(
 					if strings.Contains(
 						statusErr.Error(),
 						"is waiting to start: PodInitializing",
+					) || strings.Contains(
+						statusErr.Error(),
+						"is waiting to start: ContainerCreating",
 					) {
 						return true, nil // Retry
 					}
