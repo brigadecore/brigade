@@ -47,15 +47,17 @@ spec:
               name: {{ include "brigade.apiserver.fullname" . }}
               key: root-user-password
         {{- end }}
-        - name: OIDC_ENABLED
-          value: {{ quote .Values.apiserver.oidc.enabled }}
-        {{- if .Values.apiserver.oidc.enabled }}
-        - name: OIDC_USER_SESSION_TTL
-          value: {{ .Values.apiserver.oidc.userSessionTTL }}
+        - name: THIRD_PARTY_AUTH_STRATEGY
+          value: {{ quote .Values.apiserver.thirdPartyAuth.strategy }}
+        {{- if not (eq .Values.apiserver.thirdPartyAuth.strategy "disabled") }}
+        - name: USER_SESSION_TTL
+          value: {{ .Values.apiserver.thirdPartyAuth.userSessionTTL }}
+        {{- end }}
+        {{- if eq .Values.apiserver.thirdPartyAuth.strategy "oidc" }}
         - name: OIDC_PROVIDER_URL
-          value: {{ .Values.apiserver.oidc.providerURL }}
+          value: {{ .Values.apiserver.thirdPartyAuth.oidc.providerURL }}
         - name: OIDC_CLIENT_ID
-          value: {{ .Values.apiserver.oidc.clientID }}
+          value: {{ .Values.apiserver.thirdPartyAuth.oidc.clientID }}
         - name: OIDC_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
@@ -67,6 +69,15 @@ spec:
           {{- else }}
           value: http://{{ .Values.apiserver.host }}
           {{- end }}
+        {{- end }}
+        {{- if eq .Values.apiserver.thirdPartyAuth.strategy "github" }}
+        - name: GITHUB_CLIENT_ID
+          value: {{ .Values.apiserver.thirdPartyAuth.github.clientID }}
+        - name: GITHUB_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: github-client-secret
         {{- end }}
         - name: SCHEDULER_TOKEN
           valueFrom:

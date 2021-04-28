@@ -197,13 +197,18 @@ func main() {
 	// Session service
 	var sessionsService authn.SessionsService
 	{
-		config, err := sessionsServiceConfig(ctx)
+		thirdPartyAuthHelper, err := thirdPartyAuthHelper(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
+		config, err := sessionsServiceConfig()
 		if err != nil {
 			log.Fatal(err)
 		}
 		sessionsService = authn.NewSessionsService(
 			sessionsStore,
 			usersStore,
+			thirdPartyAuthHelper,
 			&config,
 		)
 	}

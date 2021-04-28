@@ -8,25 +8,33 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
-	"github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/oauth2"
 )
 
-func TestOIDCAuthDetailsMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(t, OIDCAuthDetails{}, "OIDCAuthDetails")
+func TestThirdPartyAuthDetailsMarshalJSON(t *testing.T) {
+	metaTesting.RequireAPIVersionAndType(
+		t,
+		ThirdPartyAuthDetails{},
+		"ThirdPartyAuthDetails",
+	)
 }
 
 func TestNewSessionsService(t *testing.T) {
 	const testRootPassword = "12345"
 	sessionsStore := &mockSessionsStore{}
 	usersStore := &MockUsersStore{}
+	thirdPartyAuthHelper := &MockThirdPartyAuthHelper{}
 	config := &SessionsServiceConfig{
 		RootUserEnabled:  true,
 		RootUserPassword: testRootPassword,
 	}
-	svc := NewSessionsService(sessionsStore, usersStore, config)
+	svc := NewSessionsService(
+		sessionsStore,
+		usersStore,
+		thirdPartyAuthHelper,
+		config,
+	)
 	require.Same(t, sessionsStore, svc.(*sessionsService).sessionsStore)
 	require.Same(t, usersStore, svc.(*sessionsService).usersStore)
 	require.Equal(
@@ -140,47 +148,44 @@ func TestSessionsServiceCreateRootSession(t *testing.T) {
 
 func TestSessionsServiceCreateUserSession(t *testing.T) {
 	const testAuthURL = "https://localhost:8080/oidc?state=foo"
-	testOIDCOpts := &OIDCAuthOptions{
-		AuthSuccessURL: "https://example.com/success",
+	testThirdPartyAuthOpts := &ThirdPartyAuthOptions{
+		SuccessURL: "https://example.com/success",
 	}
 	testCases := []struct {
 		name       string
 		service    SessionsService
-		assertions func(authDetails OIDCAuthDetails, err error)
+		assertions func(authDetails ThirdPartyAuthDetails, err error)
 	}{
 		{
-			name: "OpenID Connect not supported",
+			name: "third-party authentication disabled",
 			service: &sessionsService{
 				config: SessionsServiceConfig{
-					OpenIDConnectEnabled: false,
+					ThirdPartyAuthEnabled: false,
 				},
 			},
-			assertions: func(authDetails OIDCAuthDetails, err error) {
+			assertions: func(authDetails ThirdPartyAuthDetails, err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrNotSupported{}, err)
 			},
 		},
 		{
-			name: "OpenID Connect supported",
+			name: "third-party authentication enabled",
 			service: &sessionsService{
 				sessionsStore: &mockSessionsStore{
 					CreateFn: func(context.Context, Session) error {
 						return nil
 					},
 				},
-				config: SessionsServiceConfig{
-					OpenIDConnectEnabled: true,
-					OAuth2Helper: &mockOAuth2Helper{
-						AuthCodeURLFn: func(
-							state string,
-							opts ...oauth2.AuthCodeOption,
-						) string {
-							return testAuthURL
-						},
+				thirdPartyAuthHelper: &MockThirdPartyAuthHelper{
+					AuthURLFn: func(oauth2State string) string {
+						return testAuthURL
 					},
 				},
+				config: SessionsServiceConfig{
+					ThirdPartyAuthEnabled: true,
+				},
 			},
-			assertions: func(authDetails OIDCAuthDetails, err error) {
+			assertions: func(authDetails ThirdPartyAuthDetails, err error) {
 				require.NoError(t, err)
 				require.Len(t, authDetails.Token, 256)
 				require.Equal(t, testAuthURL, authDetails.AuthURL)
@@ -189,8 +194,10 @@ func TestSessionsServiceCreateUserSession(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			authDetails, err :=
-				testCase.service.CreateUserSession(context.Background(), testOIDCOpts)
+			authDetails, err := testCase.service.CreateUserSession(
+				context.Background(),
+				testThirdPartyAuthOpts,
+			)
 			testCase.assertions(authDetails, err)
 		})
 	}
@@ -206,10 +213,10 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 	}{
 
 		{
-			name: "OpenID Connect not supported",
+			name: "third-party authentication disabled",
 			service: &sessionsService{
 				config: SessionsServiceConfig{
-					OpenIDConnectEnabled: false,
+					ThirdPartyAuthEnabled: false,
 				},
 			},
 			assertions: func(err error) {
@@ -232,7 +239,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 					},
 				},
 				config: SessionsServiceConfig{
-					OpenIDConnectEnabled: true,
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(err error) {
@@ -247,7 +254,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 		},
 
 		{
-			name: "OAuth2 token exchange fails",
+			name: "OAuth2 code/identity exchange fails",
 			service: &sessionsService{
 				sessionsStore: &mockSessionsStore{
 					GetByHashedOAuth2StateFn: func(
@@ -257,17 +264,17 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 						return Session{}, nil
 					},
 				},
-				config: SessionsServiceConfig{
-					OpenIDConnectEnabled: true,
-					OAuth2Helper: &mockOAuth2Helper{
-						ExchangeFn: func(
-							ctx context.Context,
-							code string,
-							opts ...oauth2.AuthCodeOption,
-						) (*oauth2.Token, error) {
-							return nil, errors.New("error exchanging token")
-						},
+				thirdPartyAuthHelper: &MockThirdPartyAuthHelper{
+					ExchangeFn: func(
+						context.Context,
+						string,
+						string,
+					) (ThirdPartyIdentity, error) {
+						return ThirdPartyIdentity{}, errors.New("something went wrong")
 					},
+				},
+				config: SessionsServiceConfig{
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(err error) {
@@ -275,98 +282,9 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 				require.Contains(
 					t,
 					err.Error(),
-					"error exchanging OpenID Connect code for OAuth2 token",
+					"error exchanging OAuth2 code for user identity",
 				)
-				require.Contains(t, err.Error(), "error exchanging token")
-			},
-		},
-
-		{
-			name: "OAuth2 token does not contain an OpenID Connect identity token",
-			service: &sessionsService{
-				sessionsStore: &mockSessionsStore{
-					GetByHashedOAuth2StateFn: func(
-						ctx context.Context,
-						oauth2State string,
-					) (Session, error) {
-						return Session{}, nil
-					},
-				},
-				config: SessionsServiceConfig{
-					OpenIDConnectEnabled: true,
-					OAuth2Helper: &mockOAuth2Helper{
-						ExchangeFn: func(
-							ctx context.Context,
-							code string,
-							opts ...oauth2.AuthCodeOption,
-						) (*oauth2.Token, error) {
-							return &oauth2.Token{}, nil
-						},
-					},
-				},
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(
-					t,
-					err.Error(),
-					"did not include an OpenID Connect identity token",
-				)
-			},
-		},
-
-		{
-			name: "error verifying OpenID Connect identity token",
-			service: &sessionsService{
-				sessionsStore: &mockSessionsStore{
-					GetByHashedOAuth2StateFn: func(
-						ctx context.Context,
-						oauth2State string,
-					) (Session, error) {
-						return Session{}, nil
-					},
-				},
-				config: SessionsServiceConfig{
-					OpenIDConnectEnabled: true,
-					OAuth2Helper: &mockOAuth2Helper{
-						ExchangeFn: func(
-							ctx context.Context,
-							code string,
-							opts ...oauth2.AuthCodeOption,
-						) (*oauth2.Token, error) {
-							token := &oauth2.Token{}
-							setUnexportedField(
-								token,
-								"raw",
-								map[string]interface{}{
-									"id_token": "fakeidtoken",
-								},
-							)
-							return token, nil
-						},
-					},
-					OpenIDConnectTokenVerifier: &mockOpenIDConnectTokenVerifier{
-						VerifyFn: func(
-							ctx context.Context,
-							rawIDToken string,
-						) (*oidc.IDToken, error) {
-							return nil, errors.New("error verifying token")
-						},
-					},
-				},
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(
-					t,
-					err.Error(),
-					"error verifying OpenID Connect identity token",
-				)
-				require.Contains(
-					t,
-					err.Error(),
-					"error verifying token",
-				)
+				require.Contains(t, err.Error(), "something went wrong")
 			},
 		},
 
@@ -383,46 +301,25 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 				},
 				usersStore: &MockUsersStore{
 					GetFn: func(_ context.Context, id string) (User, error) {
-						return User{}, errors.New("error searching for user")
+						return User{}, errors.New("something went wrong")
+					},
+				},
+				thirdPartyAuthHelper: &MockThirdPartyAuthHelper{
+					ExchangeFn: func(
+						context.Context,
+						string,
+						string,
+					) (ThirdPartyIdentity, error) {
+						return ThirdPartyIdentity{}, nil
 					},
 				},
 				config: SessionsServiceConfig{
-					OpenIDConnectEnabled: true,
-					OAuth2Helper: &mockOAuth2Helper{
-						ExchangeFn: func(
-							ctx context.Context,
-							code string,
-							opts ...oauth2.AuthCodeOption,
-						) (*oauth2.Token, error) {
-							token := &oauth2.Token{}
-							setUnexportedField(
-								token,
-								"raw",
-								map[string]interface{}{
-									"id_token": "fakeidtoken",
-								},
-							)
-							return token, nil
-						},
-					},
-					OpenIDConnectTokenVerifier: &mockOpenIDConnectTokenVerifier{
-						VerifyFn: func(
-							ctx context.Context,
-							rawIDToken string,
-						) (*oidc.IDToken, error) {
-							token := &oidc.IDToken{}
-							setUnexportedField(
-								token, "claims",
-								[]byte(`{"name": "tony@starkindustries.com", "email": "tony@starkindustries.com"}`), // nolint: lll
-							)
-							return token, nil
-						},
-					},
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), "error searching for user")
+				require.Contains(t, err.Error(), "something went wrong")
 			},
 		},
 
@@ -445,47 +342,26 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 						}
 					},
 					CreateFn: func(context.Context, User) error {
-						return errors.New("error creating new user")
+						return errors.New("something went wrong")
+					},
+				},
+				thirdPartyAuthHelper: &MockThirdPartyAuthHelper{
+					ExchangeFn: func(
+						context.Context,
+						string,
+						string,
+					) (ThirdPartyIdentity, error) {
+						return ThirdPartyIdentity{}, nil
 					},
 				},
 				config: SessionsServiceConfig{
-					OpenIDConnectEnabled: true,
-					OAuth2Helper: &mockOAuth2Helper{
-						ExchangeFn: func(
-							ctx context.Context,
-							code string,
-							opts ...oauth2.AuthCodeOption,
-						) (*oauth2.Token, error) {
-							token := &oauth2.Token{}
-							setUnexportedField(
-								token,
-								"raw",
-								map[string]interface{}{
-									"id_token": "fakeidtoken",
-								},
-							)
-							return token, nil
-						},
-					},
-					OpenIDConnectTokenVerifier: &mockOpenIDConnectTokenVerifier{
-						VerifyFn: func(
-							ctx context.Context,
-							rawIDToken string,
-						) (*oidc.IDToken, error) {
-							token := &oidc.IDToken{}
-							setUnexportedField(
-								token, "claims",
-								[]byte(`{"name": "tony@starkindustries.com", "email": "tony@starkindustries.com"}`), // nolint: lll
-							)
-							return token, nil
-						},
-					},
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error storing new user")
-				require.Contains(t, err.Error(), "error creating new user")
+				require.Contains(t, err.Error(), "something went wrong")
 			},
 		},
 
@@ -505,7 +381,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 						userID string,
 						expires time.Time,
 					) error {
-						return errors.New("error authenticating")
+						return errors.New("something went wrong")
 					},
 				},
 				usersStore: &MockUsersStore{
@@ -519,38 +395,17 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 						return nil
 					},
 				},
+				thirdPartyAuthHelper: &MockThirdPartyAuthHelper{
+					ExchangeFn: func(
+						context.Context,
+						string,
+						string,
+					) (ThirdPartyIdentity, error) {
+						return ThirdPartyIdentity{}, nil
+					},
+				},
 				config: SessionsServiceConfig{
-					OpenIDConnectEnabled: true,
-					OAuth2Helper: &mockOAuth2Helper{
-						ExchangeFn: func(
-							ctx context.Context,
-							code string,
-							opts ...oauth2.AuthCodeOption,
-						) (*oauth2.Token, error) {
-							token := &oauth2.Token{}
-							setUnexportedField(
-								token,
-								"raw",
-								map[string]interface{}{
-									"id_token": "fakeidtoken",
-								},
-							)
-							return token, nil
-						},
-					},
-					OpenIDConnectTokenVerifier: &mockOpenIDConnectTokenVerifier{
-						VerifyFn: func(
-							ctx context.Context,
-							rawIDToken string,
-						) (*oidc.IDToken, error) {
-							token := &oidc.IDToken{}
-							setUnexportedField(
-								token, "claims",
-								[]byte(`{"name": "tony@starkindustries.com", "email": "tony@starkindustries.com"}`), // nolint: lll
-							)
-							return token, nil
-						},
-					},
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(err error) {
@@ -560,7 +415,7 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 					err.Error(),
 					"error storing authentication details for session",
 				)
-				require.Contains(t, err.Error(), "error authenticating")
+				require.Contains(t, err.Error(), "something went wrong")
 			},
 		},
 
@@ -591,38 +446,17 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 						return nil
 					},
 				},
+				thirdPartyAuthHelper: &MockThirdPartyAuthHelper{
+					ExchangeFn: func(
+						context.Context,
+						string,
+						string,
+					) (ThirdPartyIdentity, error) {
+						return ThirdPartyIdentity{}, nil
+					},
+				},
 				config: SessionsServiceConfig{
-					OpenIDConnectEnabled: true,
-					OAuth2Helper: &mockOAuth2Helper{
-						ExchangeFn: func(
-							ctx context.Context,
-							code string,
-							opts ...oauth2.AuthCodeOption,
-						) (*oauth2.Token, error) {
-							token := &oauth2.Token{}
-							setUnexportedField(
-								token,
-								"raw",
-								map[string]interface{}{
-									"id_token": "fakeidtoken",
-								},
-							)
-							return token, nil
-						},
-					},
-					OpenIDConnectTokenVerifier: &mockOpenIDConnectTokenVerifier{
-						VerifyFn: func(
-							ctx context.Context,
-							rawIDToken string,
-						) (*oidc.IDToken, error) {
-							token := &oidc.IDToken{}
-							setUnexportedField(
-								token, "claims",
-								[]byte(`{"name": "tony@starkindustries.com", "email": "tony@starkindustries.com"}`), // nolint: lll
-							)
-							return token, nil
-						},
-					},
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(err error) {
@@ -798,39 +632,4 @@ func (m *mockSessionsStore) DeleteByUser(
 	userID string,
 ) error {
 	return m.DeleteByUserFn(ctx, userID)
-}
-
-type mockOAuth2Helper struct {
-	AuthCodeURLFn func(state string, opts ...oauth2.AuthCodeOption) string
-	ExchangeFn    func(
-		ctx context.Context,
-		code string,
-		opts ...oauth2.AuthCodeOption,
-	) (*oauth2.Token, error)
-}
-
-func (m *mockOAuth2Helper) AuthCodeURL(
-	state string,
-	opts ...oauth2.AuthCodeOption,
-) string {
-	return m.AuthCodeURLFn(state, opts...)
-}
-
-func (m *mockOAuth2Helper) Exchange(
-	ctx context.Context,
-	code string,
-	opts ...oauth2.AuthCodeOption,
-) (*oauth2.Token, error) {
-	return m.ExchangeFn(ctx, code, opts...)
-}
-
-type mockOpenIDConnectTokenVerifier struct {
-	VerifyFn func(ctx context.Context, rawIDToken string) (*oidc.IDToken, error)
-}
-
-func (m *mockOpenIDConnectTokenVerifier) Verify(
-	ctx context.Context,
-	rawIDToken string,
-) (*oidc.IDToken, error) {
-	return m.VerifyFn(ctx, rawIDToken)
 }
