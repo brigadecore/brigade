@@ -428,7 +428,7 @@ func TestSubstrateCreateProject(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			kubeClient := testCase.setup()
 			s := &substrate{
-				generateNewNamespaceFn: func(string) string {
+				generateNewNamespaceFn: func() string {
 					return testNamespace
 				},
 				kubeClient: kubeClient,
@@ -494,7 +494,7 @@ func TestSubstrateDeleteProject(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			kubeClient := testCase.setup()
 			s := &substrate{
-				generateNewNamespaceFn: func(string) string {
+				generateNewNamespaceFn: func() string {
 					return testNamespace
 				},
 				kubeClient: kubeClient,
@@ -1548,13 +1548,11 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 }
 
 func TestGenerateNewNamespace(t *testing.T) {
-	const testProjectID = "foo"
-	namespace := generateNewNamespace(testProjectID)
-	tokens := strings.SplitN(namespace, "-", 3)
-	require.Len(t, tokens, 3)
+	namespace := generateNewNamespace()
+	tokens := strings.SplitN(namespace, "-", 2)
+	require.Len(t, tokens, 2)
 	require.Equal(t, "brigade", tokens[0])
-	require.Equal(t, testProjectID, tokens[1])
-	_, err := uuid.FromString(tokens[2])
+	_, err := uuid.FromString(tokens[1])
 	require.NoError(t, err)
 }
 

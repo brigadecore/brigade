@@ -17,11 +17,12 @@
 			"additionalProperties": false,
 			"properties": {
 				"id": {
-					"type": "string",
-					"description": "A meaningful identifier for the project",
-					"pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
-					"minLength": 3,
-					"maxLength": 18
+					"allOf": [
+						{
+							"$ref": "common.json#/definitions/identifier"
+						}
+					],
+					"description": "A meaningful identifier for the project"
 				}
 			}
 		},
