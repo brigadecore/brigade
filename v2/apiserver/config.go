@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/authn/github"
+	myOIDC "github.com/brigadecore/brigade/v2/apiserver/internal/authn/oidc"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core/kubernetes"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
@@ -15,11 +17,18 @@ import (
 	sysAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/system/authn"
 	"github.com/brigadecore/brigade/v2/internal/os"
 	"github.com/coreos/go-oidc"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readconcern"
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 	"golang.org/x/oauth2"
+)
+
+const (
+	thirdPartyAuthStrategyDisabled = "disabled"
+	thirdPartyAuthStrategyOIDC     = "oidc"
+	thirdPartyAuthStrategyGitHub   = "github"
 )
 
 // databaseConnection returns a *mongo.Database connection based on
@@ -123,75 +132,102 @@ func substrateConfig() (kubernetes.SubstrateConfig, error) {
 	return config, err
 }
 
-// sessionsServiceConfig returns an authn.SessionsServiceConfig based on
-// configuration obtained from environment variables.
-func sessionsServiceConfig(
+// thirdPartyAuthHelper returns an appropriate instance of
+// authn.ThirdPartyAuthHelper based on configuration obtained from environment
+// variables.
+func thirdPartyAuthHelper(
 	ctx context.Context,
-) (authn.SessionsServiceConfig, error) {
-	config := authn.SessionsServiceConfig{}
-	var err error
-	config.RootUserEnabled, err = os.GetBoolFromEnvVar("ROOT_USER_ENABLED", false)
-	if err != nil {
-		return config, err
-	}
-	config.OpenIDConnectEnabled, err =
-		os.GetBoolFromEnvVar("OIDC_ENABLED", false)
-	if err != nil {
-		return config, err
-	}
-	if config.RootUserEnabled {
-		if config.RootUserSessionTTL, err = os.GetDurationFromEnvVar(
-			"ROOT_USER_SESSION_TTL",
-			time.Hour,
-		); err != nil {
-			return config, err
-		}
-		config.RootUserPassword, err = os.GetRequiredEnvVar("ROOT_USER_PASSWORD")
-		if err != nil {
-			return config, err
-		}
-	}
-	if config.OpenIDConnectEnabled {
-		if config.UserSessionTTL, err = os.GetDurationFromEnvVar(
-			"OIDC_USER_SESSION_TTL",
-			time.Hour,
-		); err != nil {
-			return config, err
-		}
+) (authn.ThirdPartyAuthHelper, error) {
+	thirdPartyAuthStrategy :=
+		os.GetEnvVar("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyDisabled)
+	switch authn.ThirdPartyAuthStrategy(thirdPartyAuthStrategy) {
+	case thirdPartyAuthStrategyOIDC:
 		providerURL, err := os.GetRequiredEnvVar("OIDC_PROVIDER_URL")
 		if err != nil {
-			return config, err
+			return nil, err
 		}
 		provider, err := oidc.NewProvider(ctx, providerURL)
 		if err != nil {
-			return config, err
+			return nil, err
 		}
 		clientID, err := os.GetRequiredEnvVar("OIDC_CLIENT_ID")
 		if err != nil {
-			return config, err
+			return nil, err
 		}
 		clientSecret, err := os.GetRequiredEnvVar("OIDC_CLIENT_SECRET")
 		if err != nil {
-			return config, err
+			return nil, err
 		}
 		redirectURLBase, err := os.GetRequiredEnvVar("OIDC_REDIRECT_URL_BASE")
 		if err != nil {
-			return config, err
+			return nil, err
 		}
-		config.OAuth2Helper = &oauth2.Config{
-			Endpoint:     provider.Endpoint(),
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-			RedirectURL:  fmt.Sprintf("%s/%s", redirectURLBase, "v2/session/auth"),
-			Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
-		}
-		config.OpenIDConnectTokenVerifier = provider.Verifier(
-			&oidc.Config{
-				ClientID: clientID,
+		return myOIDC.NewThirdPartyAuthHelper(
+			&oauth2.Config{
+				Endpoint:     provider.Endpoint(),
+				ClientID:     clientID,
+				ClientSecret: clientSecret,
+				RedirectURL:  fmt.Sprintf("%s/%s", redirectURLBase, "v2/session/auth"),
+				Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 			},
+			provider.Verifier(
+				&oidc.Config{
+					ClientID: clientID,
+				},
+			),
+		), nil
+	case thirdPartyAuthStrategyGitHub:
+		config := github.ThirdPartyAuthHelperConfig{}
+		var err error
+		if config.ClientID, err =
+			os.GetRequiredEnvVar("GITHUB_CLIENT_ID"); err != nil {
+			return nil, err
+		}
+		if config.ClientSecret, err =
+			os.GetRequiredEnvVar("GITHUB_CLIENT_SECRET"); err != nil {
+			return nil, err
+		}
+		return github.NewThirdPartyAuthHelper(config), nil
+	case thirdPartyAuthStrategyDisabled:
+		return nil, nil
+	default:
+		return nil, errors.Errorf(
+			"unrecognized THIRD_PARTY_AUTH_STRATEGY %q",
+			thirdPartyAuthStrategy,
 		)
 	}
-	return config, nil
+}
+
+// sessionsServiceConfig returns an authn.SessionsServiceConfig based on
+// configuration obtained from environment variables.
+// nolint: gocyclo
+func sessionsServiceConfig() (authn.SessionsServiceConfig, error) {
+	config := authn.SessionsServiceConfig{}
+	var err error
+	if config.RootUserEnabled, err =
+		os.GetBoolFromEnvVar("ROOT_USER_ENABLED", false); err != nil {
+		return config, err
+	}
+	if config.RootUserSessionTTL, err = os.GetDurationFromEnvVar(
+		"ROOT_USER_SESSION_TTL",
+		time.Hour,
+	); err != nil {
+		return config, err
+	}
+	if config.RootUserEnabled {
+		if config.RootUserPassword, err =
+			os.GetRequiredEnvVar("ROOT_USER_PASSWORD"); err != nil {
+			return config, err
+		}
+	}
+	thirdPartyAuthStrategy :=
+		os.GetEnvVar("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyDisabled)
+	config.ThirdPartyAuthEnabled = thirdPartyAuthStrategy != "disabled"
+	config.UserSessionTTL, err = os.GetDurationFromEnvVar(
+		"USER_SESSION_TTL",
+		time.Hour,
+	)
+	return config, err
 }
 
 // tokenAuthFilterConfig returns an sysAuthn.TokenAuthFilterConfig based on
@@ -203,16 +239,13 @@ func tokenAuthFilterConfig(
 		FindUserFn: findUserFn,
 	}
 	var err error
-	config.RootUserEnabled, err =
-		os.GetBoolFromEnvVar("ROOT_USER_ENABLED", false)
-	if err != nil {
+	if config.RootUserEnabled, err =
+		os.GetBoolFromEnvVar("ROOT_USER_ENABLED", false); err != nil {
 		return config, err
 	}
-	config.OpenIDConnectEnabled, err =
-		os.GetBoolFromEnvVar("OIDC_ENABLED", false)
-	if err != nil {
-		return config, err
-	}
+	thirdPartyAuthStrategy :=
+		os.GetEnvVar("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyDisabled)
+	config.ThirdPartyAuthEnabled = thirdPartyAuthStrategy != "disabled"
 	schedulerToken, err := os.GetRequiredEnvVar("SCHEDULER_TOKEN")
 	if err != nil {
 		return config, err

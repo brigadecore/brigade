@@ -31,34 +31,38 @@ apiserver:
     ## For example, "60s", "2h45m", "168h" (1 week)
     sessionTTL: 1h
 
-  oidc:
-    ## Whether to enable OpenID Connect. OpenID Connect (an authentication
-    ## protocol built on top of OAuth2) delegates authentication to a trusted
-    ## public or private identity provider. This is HIGHLY recommended for any
-    ## installation of Brigade with an anticipated user base of n > 1.
-    ##
+  ## Options for authenticating via a third-party authentication provider.
+  thirdPartyAuth:
+    ## Valid values are "oidc" (for OpenID Connect), "github" (for OAuth2 with
+    ## GitHub as the identity provider), or "disabled"
+    strategy: disabled
+    ## OpenId Connect configuration. Only applicable when thirdPartyAuth == oidc
     ## OpenID Connect support REQUIRES TLS to be enabled.
-    enabled: false
-    ##
+    oidc:
+      ## ProviderURL examples:
+      ##
+      ##   Google Identity Platform:
+      ##     https://accounts.google.com
+      ##
+      ##   Azure Active Directory: 
+      ##     https://login.microsoftonline.com/{tenant id}/v2.0
+      ##
+      ## Any OpenID Connect provider SHOULD work, but we've tested with those
+      ## above.
+      # providerURL: ""
+      ## The API server uses the client ID and client secret to authenticate
+      ## itself to the OpenID Connect identity provider.
+      # clientID: ""
+      # clientSecret: ""
+    github:
+      ## The API server uses the client ID and client secret to authenticate
+      ## itself to GitHub.
+      # clientID: ""
+      # clientSecret: ""
     ## User Session TTL dictates the default time-to-live for user sessions.
     ## Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
     ## For example, "60s", "2h45m", "168h" (1 week)
     userSessionTTL: 168h
-    ## ProviderURL examples:
-    ##
-    ##   Google Identity Platform:
-    ##     https://accounts.google.com
-    ##
-    ##   Azure Active Directory: 
-    ##     https://login.microsoftonline.com/{tenant id}/v2.0
-    ##
-    ## Any OpenID Connect provider SHOULD work, but we've tested with those
-    ## above.
-    # providerURL: ""
-    ## The API server uses the client ID and client secret to authenticate
-    ## itself to the OpenID Connect identity provider.
-    # clientID: ""
-    # clientSecret: ""
 
   tls:
     ## Whether to enable TLS. If true then you MUST either set

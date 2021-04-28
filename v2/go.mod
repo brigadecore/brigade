@@ -14,6 +14,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-billy/v5 v5.0.0
 	github.com/go-git/go-git/v5 v5.2.0
+	github.com/google/go-github/v33 v33.0.0
 	github.com/gorilla/mux v1.7.4
 	github.com/gosuri/uitable v0.0.4
 	github.com/kr/pty v1.1.8 // indirect

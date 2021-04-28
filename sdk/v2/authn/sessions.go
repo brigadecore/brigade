@@ -12,24 +12,24 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
-// OIDCAuthOptions encapsulates user-specified options when creating a new
-// session using an OpenID Connect workflow.
-type OIDCAuthOptions struct {
+// ThirdPartyAuthOptions encapsulates user-specified options when creating a new
+// Session that will authenticate using a third-party identity provider.
+type ThirdPartyAuthOptions struct {
 	// SuccessURL indicates where users should be redirected to after successful
-	// completion of the OpenID Connect authentication workflow. If this is left
+	// completion of a third-party authentication workflow. If this is left
 	// unspecified, users will be redirected to a default success page.
 	SuccessURL string
 }
 
-// OIDCAuthDetails encapsulates all information required for a client
-// authenticating by means of OpenID Connect to complete the authentication
-// process using a third-party OIDC identity provider.
-type OIDCAuthDetails struct {
+// ThirdPartyAuthDetails encapsulates all information required for a client
+// authenticating by means of a third-party identity provider to complete the
+// authentication workflow.
+type ThirdPartyAuthDetails struct {
 	// AuthURL is a URL that can be requested in a user's web browser to complete
-	// authentication via a third-party OIDC identity provider.
+	// authentication via a third-party identity provider.
 	AuthURL string `json:"authURL,omitempty"`
 	// Token is an opaque bearer token issued by Brigade to correlate a User with
-	// a Session. It remains unactivated (useless) until the OIDC authentication
+	// a Session. It remains unactivated (useless) until the authentication
 	// workflow is successfully completed. Clients may expect that that the token
 	// expires (at an interval determined by a system administrator) and, for
 	// simplicity, is NOT refreshable. When the token has expired,
@@ -37,10 +37,10 @@ type OIDCAuthDetails struct {
 	Token string `json:"token,omitempty"`
 }
 
-// MarshalJSON amends OIDCAuthDetails instances with type metadata so
+// MarshalJSON amends ThirdPartyAuthDetails instances with type metadata so
 // that clients do not need to be concerned with the tedium of doing so.
-func (o OIDCAuthDetails) MarshalJSON() ([]byte, error) {
-	type Alias OIDCAuthDetails
+func (t ThirdPartyAuthDetails) MarshalJSON() ([]byte, error) {
+	type Alias ThirdPartyAuthDetails
 	return json.Marshal(
 		struct {
 			meta.TypeMeta `json:",inline"`
@@ -48,9 +48,9 @@ func (o OIDCAuthDetails) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       "OIDCAuthDetails",
+				Kind:       "ThirdPartyAuthDetails",
 			},
-			Alias: (Alias)(o),
+			Alias: (Alias)(t),
 		},
 	)
 }
@@ -63,11 +63,13 @@ type SessionsClient interface {
 	// operations exposed by the Brigade API, a valid token is not required to
 	// invoke this.
 	CreateRootSession(ctx context.Context, password string) (Token, error)
-	// CreateUserSession creates a new User Session and initiates an OpenID
-	// Connect authentication workflow. It returns an OIDCAuthDetails containing
-	// all information required to continue the authentication process with a
-	// third-party OIDC identity provider.
-	CreateUserSession(context.Context, *OIDCAuthOptions) (OIDCAuthDetails, error)
+	// CreateUserSession creates a new User Session and initiates an
+	// authentication workflow with a third-party identity provider. It returns
+	// ThirdPartyAuthDetails containing all information required to continue the
+	// authentication process.
+	CreateUserSession(
+		context.Context, *ThirdPartyAuthOptions,
+	) (ThirdPartyAuthDetails, error)
 	// Delete deletes the Session identified by the token in use by this client.
 	Delete(context.Context) error
 }
@@ -119,24 +121,24 @@ func (s *sessionsClient) CreateRootSession(
 
 func (s *sessionsClient) CreateUserSession(
 	ctx context.Context,
-	opts *OIDCAuthOptions,
-) (OIDCAuthDetails, error) {
+	opts *ThirdPartyAuthOptions,
+) (ThirdPartyAuthDetails, error) {
 	includeAuthHeader := false
-	oidcAuthDetails := OIDCAuthDetails{}
+	thirdPartyAuthDetails := ThirdPartyAuthDetails{}
 	queryParams := map[string]string{}
 	if opts != nil {
 		if opts.SuccessURL != "" {
-			queryParams["authSuccessURL"] = opts.SuccessURL
+			queryParams["successURL"] = opts.SuccessURL
 		}
 	}
-	return oidcAuthDetails, s.ExecuteRequest(
+	return thirdPartyAuthDetails, s.ExecuteRequest(
 		ctx,
 		rm.OutboundRequest{
 			Method:            http.MethodPost,
 			Path:              "v2/sessions",
 			IncludeAuthHeader: &includeAuthHeader,
 			SuccessCode:       http.StatusCreated,
-			RespObj:           &oidcAuthDetails,
+			RespObj:           &thirdPartyAuthDetails,
 			QueryParams:       queryParams,
 		},
 	)

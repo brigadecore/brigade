@@ -16,8 +16,8 @@ import (
 var loginCommand = &cli.Command{
 	Name:  "login",
 	Usage: "Log in to Brigade",
-	Description: "By default, initiates authentication using OpenID " +
-		"Connect. This may not be supported by all Brigade API servers.",
+	Description: "By default, initiates authentication using a third-party " +
+		"identity provider. This may not be supported by all Brigade API servers.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    flagServer,
@@ -41,7 +41,8 @@ var loginCommand = &cli.Command{
 		&cli.BoolFlag{
 			Name:    flagRoot,
 			Aliases: []string{"r"},
-			Usage:   "Log in as the root user; does not use OpenID Connect",
+			Usage: "Log in as the root user; does not use any third party " +
+				"authentication",
 		},
 	},
 	Action: login,
@@ -92,13 +93,13 @@ func login(c *cli.Context) error {
 		}
 		tokenStr = token.Value
 	} else {
-		oidcAuthDetails, err :=
+		thirdPartyAuthDetails, err :=
 			client.CreateUserSession(c.Context, nil)
 		if err != nil {
 			return err
 		}
-		authURL = oidcAuthDetails.AuthURL
-		tokenStr = oidcAuthDetails.Token
+		authURL = thirdPartyAuthDetails.AuthURL
+		tokenStr = thirdPartyAuthDetails.Token
 	}
 
 	if err := saveConfig(

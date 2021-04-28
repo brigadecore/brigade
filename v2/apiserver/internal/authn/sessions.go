@@ -7,34 +7,33 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
-	"github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
-	"golang.org/x/oauth2"
 )
+
+type ThirdPartyAuthStrategy string
 
 // SessionKind represents the canonical Session kind string
 const SessionKind = "Session"
 
-// OIDCAuthOptions encapsulates user-specified options when creating a new
-// Session that with authenticate using an OpenID Connect workflow.
-type OIDCAuthOptions struct {
-	// AuthSuccessURL indicates where users should be redirected to after
-	// successful completion of the OpenID Connect authentication workflow. If
-	// this is left unspecified, users will be redirected to a default success
-	// page.
-	AuthSuccessURL string
+// ThirdPartyAuthOptions encapsulates user-specified options when creating a new
+// Session that will authenticate using a third-party identity provider.
+type ThirdPartyAuthOptions struct {
+	// SuccessURL indicates where users should be redirected to after successful
+	// completion of a third-party authentication workflow. If this is left
+	// unspecified, users will be redirected to a default success page.
+	SuccessURL string
 }
 
-// OIDCAuthDetails encapsulates all information required for a client
-// authenticating by means of OpenID Connect to complete the authentication
-// process using a third-party identity provider.
-type OIDCAuthDetails struct {
+// ThirdPartyAuthDetails encapsulates all information required for a client
+// authenticating by means of a third-party identity provider to complete the
+// authentication workflow.
+type ThirdPartyAuthDetails struct {
 	// AuthURL is a URL that can be requested in a user's web browser to complete
-	// authentication via a third-party OIDC identity provider.
+	// authentication via a third-party identity provider.
 	AuthURL string `json:"authURL"`
 	// Token is an opaque bearer token issued by Brigade to correlate a User with
-	// a Session. It remains unactivated (useless) until the OIDC authentication
+	// a Session. It remains unactivated (useless) until the authentication
 	// workflow is successfully completed. Clients may expect that that the token
 	// expires (at an interval determined by a system administrator) and, for
 	// simplicity, is NOT refreshable. When the token has expired,
@@ -42,9 +41,9 @@ type OIDCAuthDetails struct {
 	Token string `json:"token"`
 }
 
-// MarshalJSON amends OIDCAuthDetails instances with type metadata.
-func (o OIDCAuthDetails) MarshalJSON() ([]byte, error) {
-	type Alias OIDCAuthDetails
+// MarshalJSON amends ThirdPartyAuthDetails instances with type metadata.
+func (t ThirdPartyAuthDetails) MarshalJSON() ([]byte, error) {
+	type Alias ThirdPartyAuthDetails
 	return json.Marshal(
 		struct {
 			meta.TypeMeta `json:",inline"`
@@ -52,16 +51,16 @@ func (o OIDCAuthDetails) MarshalJSON() ([]byte, error) {
 		}{
 			TypeMeta: meta.TypeMeta{
 				APIVersion: meta.APIVersion,
-				Kind:       "OIDCAuthDetails",
+				Kind:       "ThirdPartyAuthDetails",
 			},
-			Alias: (Alias)(o),
+			Alias: (Alias)(t),
 		},
 	)
 }
 
 // Session encapsulates details of a session belonging either to the root user
 // or a discrete User that has authenticated (or is in the process of
-// authenticating) via OpenID Connect.
+// authenticating) via OpenID Connect or GitHub.
 type Session struct {
 	// ObjectMeta encapsulates Session metadata.
 	meta.ObjectMeta `json:"metadata" bson:",inline"`
@@ -71,7 +70,7 @@ type Session struct {
 	// UserID, if set, identifies the discrete User to whom this Session belongs.
 	UserID string `json:"userID" bson:"userID"`
 	// HashedOAuth2State, if set, is a secure hash of the OAuth 2 "state" code
-	// used in completing authentication via OpenID Connect.
+	// used in completing authentication via a third-party identity provider.
 	HashedOAuth2State string `json:"-" bson:"hashedOAuth2State"`
 	// HashedToken is a secure hash of the opaque bearer token associated with
 	// this Session.
@@ -84,8 +83,8 @@ type Session struct {
 	// associated token.
 	Expires *time.Time `json:"expires" bson:"expires"`
 	// AuthSuccessURL indicates a URL to redirect the User to after successful
-	// completion of an OpenID Connect authentication workflow. If not specified,
-	// a default URL is used.
+	// completion of a third-party authentication workflow. If not specified, a
+	// default URL is used.
 	AuthSuccessURL string `json:"authSuccessURL" bson:"authSuccessURL"`
 }
 
@@ -110,37 +109,6 @@ func SessionIDFromContext(ctx context.Context) string {
 	return token.(string)
 }
 
-// OAuth2Helper is an interface for the subset of *oauth2.Config functions used
-// for Brigade Session management. Dependence on this interface instead of
-// directly upon the *oauth2.Config allows for the possibility of utilizing a
-// mock implementation for testing purposes. Adding only the subset of functions
-// that we actually use limits the effort involved in creating such mocks.
-type OAuth2Helper interface {
-	// AuthCodeURL given an OAuth 2 state code and oauth2.AuthCodeOption returns
-	// the URL that a user may visit with their web browser in order to complete
-	// authentication using OpenID Connect.
-	AuthCodeURL(
-		state string,
-		opts ...oauth2.AuthCodeOption,
-	) string
-	// Exchange exchanges the given OAuth 2 code for an *oauth2.Token.
-	Exchange(
-		ctx context.Context,
-		code string,
-		opts ...oauth2.AuthCodeOption,
-	) (*oauth2.Token, error)
-}
-
-// OpenIDConnectTokenVerifier is an interface for the subset of
-// *oidc.IDTokenVerifier used for Brigade Session management. Dependence on this
-// interface instead of directly upon the *oidc.IDTokenVerifier allows for the
-// possibility of utilizing a mock implementation for testing purposes. Adding
-// only the subset of functions that we actually use limits the effort involved
-// in creating such mocks.
-type OpenIDConnectTokenVerifier interface {
-	Verify(ctx context.Context, rawIDToken string) (*oidc.IDToken, error)
-}
-
 // SessionsServiceConfig encapsulates several configuration options for the
 // Sessions service.
 type SessionsServiceConfig struct {
@@ -155,20 +123,12 @@ type SessionsServiceConfig struct {
 	// attempting to authenticate as the "root" user. This field is applicable
 	// only when value of the RootUserEnabled field is true.
 	RootUserPassword string
-	// OpenIDConnectEnabled indicates whether the Session service should permit
-	// User authentication via OpenID Connect.
-	OpenIDConnectEnabled bool
+	// ThirdPartyAuthEnabled indicates whether authentication using a third-party
+	// identity provider is supported by the Sessions service.
+	ThirdPartyAuthEnabled bool
 	// UserSessionTTL specifies the TTL for user sessions. This value will be
 	// used to set the Expires field on the Session record for each user.
 	UserSessionTTL time.Duration
-	// OAuth2Helper provides authentication-related functions configured for a
-	// specific OpenID Connect identity provider. This field is applicable only
-	// when value of the OpenIDConnectEnabled field is true.
-	OAuth2Helper OAuth2Helper
-	// OpenIDConnectTokenVerifier provides an OpenID Connect token verifier. This
-	// field is applicable only when value of the OpenIDConnectEnabled field is
-	// true.
-	OpenIDConnectTokenVerifier OpenIDConnectTokenVerifier
 }
 
 // SessionsService is the specialized interface for managing Sessions. It's
@@ -187,32 +147,29 @@ type SessionsService interface {
 		username string,
 		password string,
 	) (Token, error)
-	// CreateUserSession creates a new User Session and initiates an OpenID
-	// Connect authentication workflow (if authentication using OpenID connect has
-	// been enabled by the system administrator). It returns an OIDCAuthDetails
-	// containing all information required to continue the authentication process
-	// with a third-party OIDC identity provider. If authentication using OpenID
-	// Connect is not enabled, implementations MUST return a *meta.ErrNotSupported
-	// error.
-	CreateUserSession(context.Context, *OIDCAuthOptions) (OIDCAuthDetails, error)
-	// Authenticate completes the final steps of the OpenID Connect authentication
-	// workflow (if authentication using OpenID connect has been enabled by the
-	// system administrator) and returns a URL to which the user may be
-	// redirected. It uses the provided oauth2State to identify an as-yet
-	// anonymous Session (with an as-yet unactivated token). It communicates with
-	// the third-party OIDC identity provider, exchanging the provided oidcCode
-	// for user information. This information can be used to correlate the as-yet
-	// anonymous Session to an existing User. If the User is previously unknown to
-	// Brigade, implementations MUST seamlessly create one (with read-only
-	// permissions) based on information provided by the identity provider.
-	// Finally, the Session's token is activated. If authentication using OpenID
-	// Connect is not enabled, implementations MUST return a *meta.ErrNotSupported
-	// error.
-	Authenticate(
-		ctx context.Context,
-		oauth2State string,
-		oidcCode string,
-	) (string, error)
+	// CreateUserSession creates a new User Session and initiates a third-party
+	// authentication workflow (if enabled by the system administrator). It
+	// returns ThirdPartyAuthDetails containing all information required to
+	// continue the authentication process with the third-party identity provider.
+	// If authentication using a third-party is not enabled, implementations MUST
+	// return a *meta.ErrNotSupported error.
+	CreateUserSession(
+		context.Context,
+		*ThirdPartyAuthOptions,
+	) (ThirdPartyAuthDetails, error)
+	// Authenticate completes the final steps of the third-party authentication
+	// workflow (if enabled by the system administrator) and returns a URL to
+	// which the user may be redirected. It uses the provided state to identify an
+	// as-yet anonymous Session (with an as-yet unactivated token). It
+	// communicates with the third-party identity provider, exchanging the
+	// provided code for user information. This information can be used to
+	// correlate the as-yet anonymous Session to an existing User. If the User is
+	// previously unknown to Brigade, implementations MUST seamlessly create one
+	// (with no initial permissions) based on information provided by the identity
+	// provider. Finally, the Session's token is activated. If authentication
+	// using a third-party is not enabled, implementations MUST return a
+	// *meta.ErrNotSupported error.
+	Authenticate(ctx context.Context, state string, code string) (string, error)
 	// GetByToken retrieves the Session having the provided token. If no such
 	// Session is found or is found but is expired, implementations MUST return a
 	// *meta.ErrAuthentication error.
@@ -225,6 +182,7 @@ type SessionsService interface {
 type sessionsService struct {
 	sessionsStore          SessionsStore
 	usersStore             UsersStore
+	thirdPartyAuthHelper   ThirdPartyAuthHelper
 	config                 SessionsServiceConfig
 	hashedRootUserPassword string
 }
@@ -233,15 +191,17 @@ type sessionsService struct {
 func NewSessionsService(
 	sessionsStore SessionsStore,
 	usersStore UsersStore,
+	thirdPartyAuthHelper ThirdPartyAuthHelper,
 	config *SessionsServiceConfig,
 ) SessionsService {
 	if config == nil {
 		config = &SessionsServiceConfig{}
 	}
 	svc := &sessionsService{
-		sessionsStore: sessionsStore,
-		usersStore:    usersStore,
-		config:        *config,
+		sessionsStore:        sessionsStore,
+		usersStore:           usersStore,
+		thirdPartyAuthHelper: thirdPartyAuthHelper,
+		config:               *config,
 	}
 	if config.RootUserPassword != "" {
 		svc.hashedRootUserPassword = crypto.Hash("root", config.RootUserPassword)
@@ -298,12 +258,12 @@ func (s *sessionsService) CreateRootSession(
 
 func (s *sessionsService) CreateUserSession(
 	ctx context.Context,
-	opts *OIDCAuthOptions,
-) (OIDCAuthDetails, error) {
-	if !s.config.OpenIDConnectEnabled {
-		return OIDCAuthDetails{}, &meta.ErrNotSupported{
-			Details: "Authentication using OpenID Connect is not supported by this " +
-				"server.",
+	opts *ThirdPartyAuthOptions,
+) (ThirdPartyAuthDetails, error) {
+	if !s.config.ThirdPartyAuthEnabled {
+		return ThirdPartyAuthDetails{}, &meta.ErrNotSupported{
+			Details: "Authentication using a third party identity provider is not " +
+				"supported by this server.",
 		}
 	}
 	oauth2State := crypto.NewToken(30)
@@ -319,36 +279,36 @@ func (s *sessionsService) CreateUserSession(
 		Expires:           &expiryTime,
 	}
 	if opts != nil {
-		session.AuthSuccessURL = opts.AuthSuccessURL
+		session.AuthSuccessURL = opts.SuccessURL
 	}
 	session.Created = &now
 	if err := s.sessionsStore.Create(ctx, session); err != nil {
-		return OIDCAuthDetails{}, errors.Wrapf(
+		return ThirdPartyAuthDetails{}, errors.Wrapf(
 			err,
 			"error storing new user session %q",
 			session.ID,
 		)
 	}
-	return OIDCAuthDetails{
+	return ThirdPartyAuthDetails{
 		Token:   token,
-		AuthURL: s.config.OAuth2Helper.AuthCodeURL(oauth2State),
+		AuthURL: s.thirdPartyAuthHelper.AuthURL(oauth2State),
 	}, nil
 }
 
 func (s *sessionsService) Authenticate(
 	ctx context.Context,
-	oauth2State string,
-	oidcCode string,
+	state string,
+	code string,
 ) (string, error) {
-	if !s.config.OpenIDConnectEnabled {
+	if !s.config.ThirdPartyAuthEnabled {
 		return "", &meta.ErrNotSupported{
-			Details: "Authentication using OpenID Connect is not supported by this " +
-				"server.",
+			Details: "Authentication using a third party identity provider is not " +
+				"supported by this server.",
 		}
 	}
 	session, err := s.sessionsStore.GetByHashedOAuth2State(
 		ctx,
-		crypto.Hash("", oauth2State),
+		crypto.Hash("", state),
 	)
 	if err != nil {
 		return "", errors.Wrap(
@@ -356,42 +316,21 @@ func (s *sessionsService) Authenticate(
 			"error retrieving session from store by hashed OAuth2 state",
 		)
 	}
-	oauth2Token, err := s.config.OAuth2Helper.Exchange(ctx, oidcCode)
+	thirdPartyUserIdentity, err :=
+		s.thirdPartyAuthHelper.Exchange(ctx, state, code)
 	if err != nil {
-		return "", errors.Wrap(
-			err,
-			"error exchanging OpenID Connect code for OAuth2 token",
-		)
+		return "",
+			errors.Wrap(err, "error exchanging OAuth2 code for user identity")
 	}
-	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
-	if !ok {
-		return "", errors.New(
-			"OAuth2 token, did not include an OpenID Connect identity token",
-		)
-	}
-	idToken, err := s.config.OpenIDConnectTokenVerifier.Verify(ctx, rawIDToken)
-	if err != nil {
-		return "", errors.Wrap(err, "error verifying OpenID Connect identity token")
-	}
-	claims := struct {
-		Name  string `json:"name"`
-		Email string `json:"email"`
-	}{}
-	if err = idToken.Claims(&claims); err != nil {
-		return "", errors.Wrap(
-			err,
-			"error decoding OpenID Connect identity token claims",
-		)
-	}
-	user, err := s.usersStore.Get(ctx, claims.Email)
+	user, err := s.usersStore.Get(ctx, thirdPartyUserIdentity.ID)
 	if err != nil {
 		if _, ok := errors.Cause(err).(*meta.ErrNotFound); ok {
 			// User wasn't found. That's ok. We'll create one.
 			user = User{
 				ObjectMeta: meta.ObjectMeta{
-					ID: claims.Email,
+					ID: thirdPartyUserIdentity.ID,
 				},
-				Name: claims.Name,
+				Name: thirdPartyUserIdentity.Name,
 			}
 			if err = s.usersStore.Create(ctx, user); err != nil {
 				return "", errors.Wrapf(err, "error storing new user %q", user.ID)
@@ -446,9 +385,9 @@ type SessionsStore interface {
 	// a Session having the indicated identifier already exists.
 	Create(context.Context, Session) error
 	// GetByHashedOAuth2State returns a Session having the indicated secure hash
-	// of the OAuth 2 "state" code. This is used in completing the OpenID Connect
-	// authentication workflow. If no such Session exists, implementations MUST
-	// return a *meta.ErrNotFound error.
+	// of the OAuth 2 "state" code. This is used in completing both OpenID Connect
+	// and GitHub authentication workflows. If no such Session exists,
+	// implementations MUST return a *meta.ErrNotFound error.
 	GetByHashedOAuth2State(context.Context, string) (Session, error)
 	// GetByHashedToken returns a Session having the indicated secure hash of the
 	// opaque bearer token. If no such Session exists, implementations MUST
@@ -456,8 +395,8 @@ type SessionsStore interface {
 	GetByHashedToken(context.Context, string) (Session, error)
 	// Authenticate updates the specified, as-yet-anonymous Session (with an
 	// as-yet unactivated token) to denote ownership by the indicated User and to
-	// assign the specified expiry date/time. This is used in completing the
-	// OpenID Connect authentication workflow.
+	// assign the specified expiry date/time. This is used in completing
+	// third-party authentication workflows.
 	Authenticate(
 		ctx context.Context,
 		sessionID string,
