@@ -76,6 +76,9 @@ const testIntegrationJobName = "test-integration";
 const testIntegrationJob = (e, p) => {
   let kind = new KindJob(testIntegrationJobName);
   kind.mountPath = localPath;
+  kind.env = {
+    "BRIGADE_CI_PRIVATE_REPO_SSH_KEY": p.secrets.privateRepoSSHKey
+  };
   kind.tasks.push(
     // Install git and golang deps
     "apk add --update --no-cache git gcc musl-dev",
