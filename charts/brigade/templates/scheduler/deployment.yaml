@@ -51,6 +51,10 @@ spec:
             secretKeyRef:
               name: {{ include "brigade.artemis.fullname" . }}
               key: password
+        - name: MAX_CONCURRENT_WORKERS
+          value: {{ quote .Values.scheduler.scheduling.maxConcurrentWorkers }}
+        - name: MAX_CONCURRENT_JOBS
+          value: {{ quote .Values.scheduler.scheduling.maxConcurrentJobs }}
       {{- with .Values.scheduler.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
