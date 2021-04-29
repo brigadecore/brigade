@@ -7,7 +7,7 @@ description: A project that demonstrates the kitchen sink!
 spec:
   workerTemplate:
     logLevel: DEBUG
-    configFilesDirectory: examples/10-kitchen-sink/.brigade
+    configFilesDirectory: examples/11-kitchen-sink/.brigade
     git:
       cloneURL: https://github.com/brigadecore/brigade.git
       ref: refs/heads/v2
