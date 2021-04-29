@@ -3,6 +3,7 @@ package os
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -25,6 +26,14 @@ func GetRequiredEnvVar(name string) (string, error) {
 		)
 	}
 	return val, nil
+}
+
+func GetStringSliceFromEnvVar(name string, defaultValue []string) []string {
+	valStr := os.Getenv(name)
+	if valStr == "" {
+		return defaultValue
+	}
+	return strings.Split(valStr, ",")
 }
 
 func GetIntFromEnvVar(name string, defaultValue int) (int, error) {
