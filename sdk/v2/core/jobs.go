@@ -82,7 +82,7 @@ type Job struct {
 	// Spec is the technical blueprint for the Job.
 	Spec JobSpec `json:"spec"`
 	// Status contains details of the Job's current state.
-	Status *JobStatus `json:"status"`
+	Status *JobStatus `json:"status,omitempty"`
 }
 
 // MarshalJSON amends Job instances with type metadata so that clients do not
