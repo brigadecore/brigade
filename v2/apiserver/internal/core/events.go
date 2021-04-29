@@ -337,7 +337,7 @@ func (e *eventsService) Create(
 		// events coming from gateways.
 		if err := e.authorize(
 			ctx,
-			RoleEventCreator,
+			system.RoleEventCreator,
 			event.Source,
 		); err != nil {
 			return events, err
@@ -580,7 +580,7 @@ func (e *eventsService) UpdateSourceState(
 		return errors.Wrapf(err, "error retrieving event %q from store", id)
 	}
 
-	if err = e.authorize(ctx, RoleEventCreator, event.Source); err != nil {
+	if err = e.authorize(ctx, system.RoleEventCreator, event.Source); err != nil {
 		return err
 	}
 
