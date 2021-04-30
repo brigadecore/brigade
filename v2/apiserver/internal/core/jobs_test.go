@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -455,7 +454,7 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 		assertions         func(error)
 	}{
 		{
-			name: "job retry error - not equivalent",
+			name: "job retry - not equivalent",
 			service: &jobsService{
 				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
@@ -488,25 +487,34 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 						}, nil
 					},
 				},
-				// No other methods mocked out; they should not be called
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					CreateFn: func(context.Context, string, Job) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					StoreJobEnvironmentFn: func(
+						context.Context,
+						Project,
+						string,
+						string,
+						JobSpec,
+					) error {
+						return nil
+					},
+					ScheduleJobFn: func(context.Context, Project, Event, string) error {
+						return nil
+					},
+				},
 			},
 			workspaceMountPath: "",
 			assertions: func(err error) {
-				require.Error(t, err)
-				require.IsType(t, &meta.ErrConflict{}, err)
-				require.Contains(
-					t,
-					err.Error(),
-					fmt.Sprintf("Job %q is not eligible for caching", testJobName),
-				)
-				require.Contains(
-					t,
-					err.Error(),
-					fmt.Sprintf(
-						"not equivalent to the original job from event %q",
-						testEventID,
-					),
-				)
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -567,6 +575,9 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 									WorkspaceMountPath: testCase.workspaceMountPath,
 								},
 							},
+						},
+						Status: &JobStatus{
+							Phase: JobPhaseSucceeded,
 						},
 					},
 				),

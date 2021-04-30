@@ -302,8 +302,8 @@ type EventsService interface {
 		EventsSelector,
 	) (DeleteManyEventsResult, error)
 	// Retry copies an Event, including Worker configuration and Jobs, and
-	// creates a new Event from this information.  Where possible, jobs are not
-	// re-scheduled and their results re-used, for example when a job has
+	// creates a new Event from this information.  Where possible, job results
+	// are inherited and the job not re-scheduled, for example when a job has
 	// succeeded and does not make use of a shared workspace.
 	Retry(context.Context, string) (Event, error)
 }
@@ -422,21 +422,10 @@ func (e *eventsService) createSingleEvent(
 	jobs := []Job{}
 	workerSpec := project.Spec.WorkerTemplate
 	// If the event is a retry of another, defer to the Worker.Spec on the event
-	// itself.  Retain/cache any successful jobs that do not use a shared
-	// workspace.
+	// itself, as well any pre-selected Jobs eligible for inheriting.
 	if event.Labels != nil && event.Labels[RetryLabelKey] != "" {
 		workerSpec = event.Worker.Spec
-		for _, job := range event.Worker.Jobs {
-			if job.Status.Phase == JobPhaseSucceeded && !job.UsesWorkspace() {
-				// Capture event ID for tracing original logs.  Note that it may
-				// already be set (e.g. via a retry of another retry), in which case
-				// we do not want to override it.
-				if job.Status.LogsEventID == "" {
-					job.Status.LogsEventID = event.Labels[RetryLabelKey]
-				}
-				jobs = append(jobs, job)
-			}
-		}
+		jobs = event.Worker.Jobs
 	}
 
 	if workerSpec.WorkspaceSize == "" {
@@ -886,6 +875,22 @@ func (e *eventsService) Retry(
 		retry.Labels = map[string]string{}
 	}
 	retry.Labels[RetryLabelKey] = id
+
+	// Only inherit jobs which have succeeded and do not require a shared
+	// workspace
+	var jobs []Job
+	for _, job := range retry.Worker.Jobs {
+		if job.Status.Phase == JobPhaseSucceeded && !job.UsesWorkspace() {
+			// Capture event ID for tracing original logs.  Note that it may
+			// already be set (e.g. via a retry of another retry), in which case
+			// we do not want to override it.
+			if job.Status.LogsEventID == "" {
+				job.Status.LogsEventID = id
+			}
+			jobs = append(jobs, job)
+		}
+	}
+	retry.Worker.Jobs = jobs
 
 	events, err := e.Create(ctx, retry)
 	if err != nil {
