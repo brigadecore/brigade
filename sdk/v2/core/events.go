@@ -337,7 +337,7 @@ func (e *eventsClient) Clone(
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodPost,
-			Path:        fmt.Sprintf("v2/events/%s/clone", id),
+			Path:        fmt.Sprintf("v2/events/%s/clones", id),
 			SuccessCode: http.StatusCreated,
 			RespObj:     &event,
 		},

@@ -219,7 +219,7 @@ func TestEventsClientClone(t *testing.T) {
 				require.Equal(t, http.MethodPost, r.Method)
 				require.Equal(
 					t,
-					fmt.Sprintf("/v2/events/%s/clone", testEventID),
+					fmt.Sprintf("/v2/events/%s/clones", testEventID),
 					r.URL.Path,
 				)
 				bodyBytes, err := json.Marshal(testEvent)
