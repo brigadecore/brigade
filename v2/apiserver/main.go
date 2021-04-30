@@ -208,6 +208,7 @@ func main() {
 		sessionsService = authn.NewSessionsService(
 			sessionsStore,
 			usersStore,
+			roleAssignmentsStore.Grant,
 			thirdPartyAuthHelper,
 			&config,
 		)

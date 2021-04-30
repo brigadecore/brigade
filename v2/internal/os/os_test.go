@@ -78,6 +78,48 @@ func TestGetRequiredEnvVar(t *testing.T) {
 	}
 }
 
+func TestGetStringSliceFromEnvVar(t *testing.T) {
+	testDefaultVal := []string{}
+	testCases := []struct {
+		name       string
+		setup      func()
+		assertions func()
+	}{
+		{
+			name: "env var exists",
+			setup: func() {
+				err := os.Setenv("SLICE1", "foo,bar")
+				require.NoError(t, err)
+			},
+			assertions: func() {
+				require.Equal(
+					t,
+					[]string{"foo", "bar"},
+					GetStringSliceFromEnvVar("SLICE1", testDefaultVal),
+				)
+			},
+		},
+		{
+			name: "env var does not exist",
+			assertions: func() {
+				require.Equal(
+					t,
+					testDefaultVal,
+					GetStringSliceFromEnvVar("SLICE2", testDefaultVal),
+				)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if testCase.setup != nil {
+				testCase.setup()
+			}
+			testCase.assertions()
+		})
+	}
+}
+
 func TestGetIntFromEnvVar(t *testing.T) {
 	const testDefaultVal = 1
 	testCases := []struct {

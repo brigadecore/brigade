@@ -52,6 +52,8 @@ spec:
         {{- if not (eq .Values.apiserver.thirdPartyAuth.strategy "disabled") }}
         - name: USER_SESSION_TTL
           value: {{ .Values.apiserver.thirdPartyAuth.userSessionTTL }}
+        - name: ADMIN_USER_IDS
+          value: {{ join "," .Values.apiserver.thirdPartyAuth.admins }}
         {{- end }}
         {{- if eq .Values.apiserver.thirdPartyAuth.strategy "oidc" }}
         - name: OIDC_PROVIDER_URL

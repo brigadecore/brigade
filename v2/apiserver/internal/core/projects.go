@@ -210,7 +210,7 @@ func (p *projectsService) Create(
 	ctx context.Context,
 	project Project,
 ) (Project, error) {
-	if err := p.authorize(ctx, RoleProjectCreator, ""); err != nil {
+	if err := p.authorize(ctx, system.RoleProjectCreator, ""); err != nil {
 		return project, err
 	}
 
