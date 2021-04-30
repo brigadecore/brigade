@@ -42,7 +42,7 @@ func (e *EventsEndpoints) Register(router *mux.Router) {
 
 	// Clone event
 	router.HandleFunc(
-		"/v2/events/{id}/clone",
+		"/v2/events/{id}/clones",
 		e.AuthFilter.Decorate(e.clone),
 	).Methods(http.MethodPost)
 
