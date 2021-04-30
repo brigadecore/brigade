@@ -227,6 +227,8 @@ func sessionsServiceConfig() (authn.SessionsServiceConfig, error) {
 		"USER_SESSION_TTL",
 		time.Hour,
 	)
+	config.AdminUserIDs =
+		os.GetStringSliceFromEnvVar("ADMIN_USER_IDS", []string{})
 	return config, err
 }
 
