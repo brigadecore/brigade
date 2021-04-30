@@ -63,6 +63,13 @@ apiserver:
     ## Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
     ## For example, "60s", "2h45m", "168h" (1 week)
     userSessionTTL: 168h
+    ## List user IDs from third-party identity provider (email address if using
+    ## OpenID Connect or GitHub handle if using GitHub) who will AUTOMATICALLY
+    ## be granted system admin permissions the first time they log in. This is
+    ## useful for automating post-install setup. Absent this option, one would
+    ## have to log in, log out, log back in as root, grant themselves
+    ## permissions, then log out, then log back in as themselves.
+    admins: []
 
   tls:
     ## Whether to enable TLS. If true then you MUST either set

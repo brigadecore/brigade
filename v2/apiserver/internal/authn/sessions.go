@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 )
@@ -129,6 +131,9 @@ type SessionsServiceConfig struct {
 	// UserSessionTTL specifies the TTL for user sessions. This value will be
 	// used to set the Expires field on the Session record for each user.
 	UserSessionTTL time.Duration
+	// AdminUserIDs enumerates users who should be granted system admin privileges
+	// the first time they log in.
+	AdminUserIDs []string
 }
 
 // SessionsService is the specialized interface for managing Sessions. It's
@@ -180,8 +185,12 @@ type SessionsService interface {
 
 // sessionsService is an implementation of the SessionsService interface.
 type sessionsService struct {
-	sessionsStore          SessionsStore
-	usersStore             UsersStore
+	sessionsStore SessionsStore
+	usersStore    UsersStore
+	// Instead of getting the whole RoleAssignmentsStore, we get just the one
+	// function we need from that store. This is a workaround to avoid an import
+	// cycle.
+	grantRoleFn            func(context.Context, libAuthz.RoleAssignment) error
 	thirdPartyAuthHelper   ThirdPartyAuthHelper
 	config                 SessionsServiceConfig
 	hashedRootUserPassword string
@@ -191,6 +200,7 @@ type sessionsService struct {
 func NewSessionsService(
 	sessionsStore SessionsStore,
 	usersStore UsersStore,
+	grantRoleFn func(context.Context, libAuthz.RoleAssignment) error,
 	thirdPartyAuthHelper ThirdPartyAuthHelper,
 	config *SessionsServiceConfig,
 ) SessionsService {
@@ -200,6 +210,7 @@ func NewSessionsService(
 	svc := &sessionsService{
 		sessionsStore:        sessionsStore,
 		usersStore:           usersStore,
+		grantRoleFn:          grantRoleFn,
 		thirdPartyAuthHelper: thirdPartyAuthHelper,
 		config:               *config,
 	}
@@ -334,6 +345,34 @@ func (s *sessionsService) Authenticate(
 			}
 			if err = s.usersStore.Create(ctx, user); err != nil {
 				return "", errors.Wrapf(err, "error storing new user %q", user.ID)
+			}
+			for _, adminID := range s.config.AdminUserIDs {
+				if user.ID == adminID {
+					for _, role := range []libAuthz.Role{
+						system.RoleAdmin,
+						system.RoleProjectCreator,
+						system.RoleReader,
+					} {
+						if err = s.grantRoleFn(
+							ctx,
+							libAuthz.RoleAssignment{
+								Principal: libAuthz.PrincipalReference{
+									Type: "USER",
+									ID:   user.ID,
+								},
+								Role: role,
+							},
+						); err != nil {
+							return "", errors.Wrapf(
+								err,
+								"error assigning role %q to user %q",
+								role,
+								user.ID,
+							)
+						}
+					}
+					break
+				}
 			}
 		} else {
 			// It was something else that went wrong when searching for the user.

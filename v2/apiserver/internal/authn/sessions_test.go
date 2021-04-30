@@ -32,6 +32,7 @@ func TestNewSessionsService(t *testing.T) {
 	svc := NewSessionsService(
 		sessionsStore,
 		usersStore,
+		nil,
 		thirdPartyAuthHelper,
 		config,
 	)
