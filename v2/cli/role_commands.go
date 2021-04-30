@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/brigadecore/brigade/sdk/v2/authz"
-	"github.com/brigadecore/brigade/sdk/v2/core"
 	libAuthz "github.com/brigadecore/brigade/sdk/v2/lib/authz"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/brigadecore/brigade/sdk/v2/system"
@@ -63,11 +62,11 @@ var rolesCommands = &cli.Command{
 					Action: grantSystemRole(system.RoleAdmin),
 				},
 				{
-					Name: string(core.RoleEventCreator),
+					Name: string(system.RoleEventCreator),
 					Usage: fmt.Sprintf(
 						"Grant the %s role, which enables creation of events for all "+
 							"projects.",
-						core.RoleEventCreator,
+						system.RoleEventCreator,
 					),
 					Flags: append(
 						roleGrantFlags,
@@ -78,16 +77,16 @@ var rolesCommands = &cli.Command{
 							Required: true,
 						},
 					),
-					Action: grantSystemRole(core.RoleEventCreator),
+					Action: grantSystemRole(system.RoleEventCreator),
 				},
 				{
-					Name: string(core.RoleProjectCreator),
+					Name: string(system.RoleProjectCreator),
 					Usage: fmt.Sprintf(
 						"Grant the %s role, which enables creation of new projects.",
-						core.RoleProjectCreator,
+						system.RoleProjectCreator,
 					),
 					Flags:  roleGrantFlags,
-					Action: grantSystemRole(core.RoleProjectCreator),
+					Action: grantSystemRole(system.RoleProjectCreator),
 				},
 				{
 					Name: string(system.RoleReader),
@@ -142,11 +141,11 @@ var rolesCommands = &cli.Command{
 					Action: revokeSystemRole(system.RoleAdmin),
 				},
 				{
-					Name: string(core.RoleEventCreator),
+					Name: string(system.RoleEventCreator),
 					Usage: fmt.Sprintf(
 						"Grant the %s role, which enables creation of events for all "+
 							"projects.",
-						core.RoleEventCreator,
+						system.RoleEventCreator,
 					),
 					Flags: append(
 						roleRevokeFlags,
@@ -157,16 +156,16 @@ var rolesCommands = &cli.Command{
 							Required: true,
 						},
 					),
-					Action: revokeSystemRole(core.RoleEventCreator),
+					Action: revokeSystemRole(system.RoleEventCreator),
 				},
 				{
-					Name: string(core.RoleProjectCreator),
+					Name: string(system.RoleProjectCreator),
 					Usage: fmt.Sprintf(
 						"Revoke the %s role, which enables creation of new projects.",
-						core.RoleProjectCreator,
+						system.RoleProjectCreator,
 					),
 					Flags:  roleRevokeFlags,
-					Action: revokeSystemRole(core.RoleProjectCreator),
+					Action: revokeSystemRole(system.RoleProjectCreator),
 				},
 				{
 					Name: string(system.RoleReader),
@@ -199,7 +198,7 @@ func grantSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 		}
 
 		// Special logic for EVENT_CREATOR
-		if role == core.RoleEventCreator {
+		if role == system.RoleEventCreator {
 			roleAssignment.Scope = c.String(flagSource)
 		}
 
@@ -363,7 +362,7 @@ func revokeSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 		}
 
 		// Special logic for EVENT_CREATOR
-		if role == core.RoleEventCreator {
+		if role == system.RoleEventCreator {
 			roleAssignment.Scope = c.String(flagSource)
 		}
 

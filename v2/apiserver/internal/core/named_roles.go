@@ -5,16 +5,6 @@ import (
 )
 
 const (
-	// Core-specific, system-level roles...
-
-	// RoleEventCreator represents a system-level Role that enables principals to
-	// create Events for all Projects.
-	RoleEventCreator libAuthz.Role = "EVENT_CREATOR"
-
-	// RoleProjectCreator represents a system-level Role that enables principals
-	// to create new Projects.
-	RoleProjectCreator libAuthz.Role = "PROJECT_CREATOR"
-
 	// Core-specific, ProjectRoles...
 
 	// RoleProjectAdmin represents a project-level Role that enables a principal

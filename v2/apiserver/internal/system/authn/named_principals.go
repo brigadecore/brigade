@@ -24,10 +24,10 @@ func (r *rootPrincipal) RoleAssignments() []libAuthz.RoleAssignment {
 		{Role: system.RoleAdmin},
 		{Role: system.RoleReader},
 		{
-			Role:  core.RoleEventCreator,
+			Role:  system.RoleEventCreator,
 			Scope: libAuthz.RoleScopeGlobal,
 		},
-		{Role: core.RoleProjectCreator},
+		{Role: system.RoleProjectCreator},
 	}
 }
 
