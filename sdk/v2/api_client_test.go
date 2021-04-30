@@ -20,4 +20,6 @@ func TestNewAPIClient(t *testing.T) {
 	require.Equal(t, client.(*apiClient).authzClient, client.Authz())
 	require.NotNil(t, client.(*apiClient).coreClient)
 	require.Equal(t, client.(*apiClient).coreClient, client.Core())
+	require.NotNil(t, client.(*apiClient).systemClient)
+	require.Equal(t, client.(*apiClient).systemClient, client.System())
 }
