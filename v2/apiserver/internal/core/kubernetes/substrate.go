@@ -133,7 +133,7 @@ func (s *substrate) CreateProject(
 	ctx context.Context,
 	project core.Project,
 ) (core.Project, error) {
-	// Assign a unique Kubernetes namespace name for the Project,
+	// Generate and assign a unique Kubernetes namespace name for the Project,
 	// but don't create it yet
 	project.Kubernetes = &core.KubernetesDetails{
 		Namespace: s.generateNewNamespaceFn(),
