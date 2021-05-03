@@ -58,14 +58,3 @@ func JobPodsSelector() string {
 		},
 	).AsSelector().String()
 }
-
-// GenerateLabel checks to see if the label candidate length exceeds the
-// maximum Kubernetes label length of 63 chars and if so, truncates it and
-// injects an ellipsis before the last 6 chars.
-func GenerateLabel(label string) string {
-	if len(label) > 63 {
-		return label[:54] + "..." +
-			label[len(label)-6:]
-	}
-	return label
-}

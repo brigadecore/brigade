@@ -146,7 +146,7 @@ func (s *substrate) CreateProject(
 			ObjectMeta: metav1.ObjectMeta{
 				Name: project.Kubernetes.Namespace,
 				Labels: map[string]string{
-					myk8s.LabelProject: myk8s.GenerateLabel(project.ID),
+					myk8s.LabelProject: project.ID,
 				},
 			},
 		},
@@ -308,7 +308,7 @@ func (s *substrate) CreateProject(
 				Name: "project-secrets",
 				Labels: map[string]string{
 					myk8s.LabelComponent: myk8s.LabelKeyProjectSecrets,
-					myk8s.LabelProject:   myk8s.GenerateLabel(project.ID),
+					myk8s.LabelProject:   project.ID,
 				},
 			},
 			Type: myk8s.SecretTypeProjectSecrets,
@@ -440,7 +440,7 @@ func (s *substrate) ScheduleWorker(
 				Name: myk8s.EventSecretName(event.ID),
 				Labels: map[string]string{
 					myk8s.LabelComponent: myk8s.LabelKeyEvent,
-					myk8s.LabelProject:   myk8s.GenerateLabel(event.ProjectID),
+					myk8s.LabelProject:   event.ProjectID,
 					myk8s.LabelEvent:     event.ID,
 				},
 			},
@@ -788,7 +788,7 @@ func (s *substrate) createWorkspacePVC(
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
 				myk8s.LabelComponent: "workspace",
-				myk8s.LabelProject:   myk8s.GenerateLabel(event.ProjectID),
+				myk8s.LabelProject:   event.ProjectID,
 				myk8s.LabelEvent:     event.ID,
 			},
 		},
@@ -941,7 +941,7 @@ func (s *substrate) createWorkerPod(
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
 				myk8s.LabelComponent: myk8s.LabelKeyWorker,
-				myk8s.LabelProject:   myk8s.GenerateLabel(event.ProjectID),
+				myk8s.LabelProject:   event.ProjectID,
 				myk8s.LabelEvent:     event.ID,
 			},
 		},
@@ -995,7 +995,7 @@ func (s *substrate) createJobSecret(
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
 				myk8s.LabelComponent: myk8s.LabelKeyJob,
-				myk8s.LabelProject:   myk8s.GenerateLabel(project.ID),
+				myk8s.LabelProject:   project.ID,
 				myk8s.LabelEvent:     eventID,
 				myk8s.LabelJob:       jobName,
 			},
@@ -1174,7 +1174,7 @@ func (s *substrate) createJobPod(
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
 				myk8s.LabelComponent: myk8s.LabelKeyJob,
-				myk8s.LabelProject:   myk8s.GenerateLabel(event.ProjectID),
+				myk8s.LabelProject:   event.ProjectID,
 				myk8s.LabelEvent:     event.ID,
 				myk8s.LabelJob:       jobName,
 			},

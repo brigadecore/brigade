@@ -51,7 +51,7 @@
 			"type": "string",
 			"pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
 			"minLength": 3,
-			"maxLength": 253
+			"maxLength": 63
 		},
 
 		"label": {
