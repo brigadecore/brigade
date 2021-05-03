@@ -1,10 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
@@ -14,6 +15,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
+
+var secretValFromEnvVarRegex = regexp.MustCompile(`^\$\{(\w+)\}$`)
 
 var secretsCommand = &cli.Command{
 	Name:    "secret",
@@ -54,8 +57,8 @@ var secretsCommand = &cli.Command{
 				&cli.StringFlag{
 					Name:    flagFile,
 					Aliases: []string{"f"},
-					Usage: "A file containing secrets as key=value pairs, one pair " +
-						"per line",
+					Usage: `A "flat" JSON or YAML file containing secrets as ` +
+						`key/value pairs`,
 					Required:  false,
 					TakesFile: true,
 				},
@@ -181,25 +184,36 @@ func secretsSet(c *cli.Context) error {
 	// that the input looks good. Only after we know it's good will we iterate
 	// over the k/v pairs in the map to set secrets via the API.
 
-	kvPairs := map[string]string{}
+	secrets := map[string]string{}
 
 	if filename != "" {
-		// Read and parse the file
 		secretsFile, err := os.Open(filename)
 		if err != nil {
 			return errors.Wrapf(err, "error opening secrets file %s", filename)
 		}
 		defer secretsFile.Close()
-		scanner := bufio.NewScanner(secretsFile)
-		for scanner.Scan() {
-			kvTokens := strings.SplitN(scanner.Text(), "=", 2)
-			if len(kvTokens) != 2 || kvTokens[0] == "" || kvTokens[1] == "" {
-				return errors.Errorf(
-					"secrets file %s is formatted incorrectly",
+		secretBytes, err := ioutil.ReadAll(secretsFile)
+		if err != nil {
+			return errors.Wrapf(err, "error reading secrets file %s", filename)
+		}
+		if strings.HasSuffix(filename, ".yaml") ||
+			strings.HasSuffix(filename, ".yml") {
+			if secretBytes, err = yaml.YAMLToJSON(secretBytes); err != nil {
+				return errors.Wrapf(
+					err,
+					"error converting secrets file %s to JSON",
 					filename,
 				)
 			}
-			kvPairs[kvTokens[0]] = kvTokens[1]
+		}
+		if err := json.Unmarshal(secretBytes, &secrets); err != nil {
+			return errors.Wrapf(err, "error parsing secrets file %s", filename)
+		}
+		for k, v := range secrets {
+			if matches :=
+				secretValFromEnvVarRegex.FindStringSubmatch(v); len(matches) == 2 {
+				secrets[k] = os.Getenv(matches[1])
+			}
 		}
 	}
 
@@ -211,7 +225,7 @@ func secretsSet(c *cli.Context) error {
 				kvPairStr,
 			)
 		}
-		kvPairs[kvTokens[0]] = kvTokens[1]
+		secrets[kvTokens[0]] = kvTokens[1]
 	}
 
 	client, err := getClient(c)
@@ -219,11 +233,7 @@ func secretsSet(c *cli.Context) error {
 		return err
 	}
 
-	// Note: The pattern for setting multiple secrets RESTfully in one shot isn't
-	// clear, so for now we settle for iterating over the secrets and making an
-	// API call for each one. This can be revisited in the future if someone is
-	// aware of or discovers the right pattern for this.
-	for k, v := range kvPairs {
+	for k, v := range secrets {
 		secret := core.Secret{
 			Key:   k,
 			Value: v,
@@ -250,10 +260,6 @@ func secretsUnset(c *cli.Context) error {
 		return err
 	}
 
-	// Note: The pattern for deleting multiple secrets RESTfully in one shot isn't
-	// clear, so for now we settle for iterating over the secrets and making an
-	// API call for each one. This can be revisited in the future if someone is
-	// aware of or discovers the right pattern for this.
 	for _, key := range keys {
 		if err := client.Core().Projects().Secrets().Unset(
 			c.Context,
