@@ -51,14 +51,14 @@
 			"type": "string",
 			"pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
 			"minLength": 3,
-			"maxLength": 50
+			"maxLength": 63
 		},
 
 		"label": {
 			"type": "string",
 			"pattern": "^[\\w:/\\-\\.\\?=\\*]*$",
 			"minLength": 1,
-			"maxLength": 250
+			"maxLength": 63
 		},
 
 		"principalReference": {
@@ -89,7 +89,7 @@
 			"type": "string",
 			"pattern": "^[\\w:/\\-\\.\\?=@]*$",
 			"minLength": 5,
-			"maxLength": 250
+			"maxLength": 63
 		}
 	}
 }
