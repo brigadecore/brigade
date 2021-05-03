@@ -68,7 +68,7 @@ type SubstrateConfig struct {
 // substrate is a Kubernetes-based implementation of the core.Substrate
 // interface.
 type substrate struct {
-	generateNewNamespaceFn func(projectID string) string
+	generateNewNamespaceFn func() string
 	kubeClient             kubernetes.Interface
 	queueWriterFactory     queue.WriterFactory
 	config                 SubstrateConfig
@@ -136,7 +136,7 @@ func (s *substrate) CreateProject(
 	// Generate and assign a unique Kubernetes namespace name for the Project,
 	// but don't create it yet
 	project.Kubernetes = &core.KubernetesDetails{
-		Namespace: s.generateNewNamespaceFn(project.ID),
+		Namespace: s.generateNewNamespaceFn(),
 	}
 
 	// Create the Project's Kubernetes namespace
@@ -145,6 +145,9 @@ func (s *substrate) CreateProject(
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: project.Kubernetes.Namespace,
+				Labels: map[string]string{
+					myk8s.LabelProject: project.ID,
+				},
 			},
 		},
 		metav1.CreateOptions{},
@@ -718,8 +721,8 @@ func (s *substrate) DeleteWorkerAndJobs(
 	return nil
 }
 
-func generateNewNamespace(projectID string) string {
-	return fmt.Sprintf("brigade-%s-%s", projectID, uuid.NewV4().String())
+func generateNewNamespace() string {
+	return fmt.Sprintf("brigade-%s", uuid.NewV4().String())
 }
 
 func (s *substrate) countRunningPods(
