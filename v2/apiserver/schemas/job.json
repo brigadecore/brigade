@@ -144,12 +144,11 @@
 			"$ref": "#/definitions/kind"
 		},
 		"name": {
-			"allOf": [
-				{
-					"$ref": "common.json#/definitions/identifier"
-				}
-			],
-			"description": "The job's name; must be unique per worker"
+			"type": "string",
+			"description": "The job's name; must be unique per worker",
+			"pattern": "^[a-z][a-z\\d-]*[a-z\\d]$",
+			"minLength": 1,
+			"maxLength": 63
 		},
 		"spec": {
 			"$ref": "#/definitions/jobSpec"
