@@ -92,12 +92,13 @@ For security reasons, root user sessions are invalidated one hour after they
 are created. If you play with Brigade 2 for more than an hour, or you walk away
 and come back, you will have to log in again.
 
-For drastically improved security, we support authentication using [Open ID
-Connect](https://openid.net/connect/) and third-party identity providers like
-[Azure Active
-Directory](https://azure.microsoft.com/en-us/services/active-directory/) or
-[Google Cloud Identity Platform](https://cloud.google.com/identity-platform/),
-but configuring that is a bit more involved and doesn't work well if you're
+For drastically improved security, Brigade supports authentication via
+[GitHub OAuth](https://docs.github.com/en/github/authenticating-to-github/authorizing-oauth-apps)
+and [Open ID Connect](https://openid.net/connect/). For the latter, some
+third-party identity providers include
+[Azure Active Directory](https://azure.microsoft.com/en-us/services/active-directory/)
+or [Google Cloud Identity Platform](https://cloud.google.com/identity-platform/).
+However, configuring these is a bit more involved and doesn't work well if you're
 taking Brigade 2 for a test drive in a local environment like minikube or kind.
 
 ### Creating a Project
