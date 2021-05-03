@@ -58,7 +58,7 @@
 			"type": "string",
 			"pattern": "^[\\w:/\\-\\.\\?=\\*]*$",
 			"minLength": 1,
-			"maxLength": 253
+			"maxLength": 63
 		},
 
 		"principalReference": {
@@ -89,7 +89,7 @@
 			"type": "string",
 			"pattern": "^[\\w:/\\-\\.\\?=@]*$",
 			"minLength": 5,
-			"maxLength": 253
+			"maxLength": 63
 		}
 	}
 }
