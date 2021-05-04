@@ -16,7 +16,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var secretValFromEnvVarRegex = regexp.MustCompile(`^\$\{(\w+)\}$`)
+var secretValFromEnvVarRegex = regexp.MustCompile(`\$\{(\w+)\}`)
 
 var secretsCommand = &cli.Command{
 	Name:    "secret",
@@ -210,10 +210,7 @@ func secretsSet(c *cli.Context) error {
 			return errors.Wrapf(err, "error parsing secrets file %s", filename)
 		}
 		for k, v := range secrets {
-			if matches :=
-				secretValFromEnvVarRegex.FindStringSubmatch(v); len(matches) == 2 {
-				secrets[k] = os.Getenv(matches[1])
-			}
+			secrets[k] = resolveEnvVars(v)
 		}
 	}
 
@@ -272,4 +269,20 @@ func secretsUnset(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func resolveEnvVars(val string) string {
+	for {
+		matches := secretValFromEnvVarRegex.FindStringSubmatch(val)
+		if len(matches) != 2 {
+			break
+		}
+		val = strings.Replace(
+			val,
+			matches[0],
+			os.Getenv(matches[1]),
+			1,
+		)
+	}
+	return val
 }
