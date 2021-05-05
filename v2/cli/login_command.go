@@ -121,14 +121,14 @@ func login(c *cli.Context) error {
 			return errors.Wrapf(
 				err,
 				"Error opening authentication URL using the system's default web "+
-					"browser.\n\nPlease visit  %s  to complete authentication.\n",
+					"browser.\n\nPlease visit %s to complete authentication.\n",
 				authURL,
 			)
 		}
 		return nil
 	}
 
-	fmt.Printf("Please visit  %s  to complete authentication.\n", authURL)
+	fmt.Printf("Please visit %s to complete authentication.\n", authURL)
 
 	return nil
 }
