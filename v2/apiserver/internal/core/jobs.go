@@ -88,13 +88,15 @@ type Job struct {
 // UsesWorkspace returns a boolean value indicating whether or not the job
 // uses a shared workspace.
 func (j Job) UsesWorkspace() bool {
-	var usesWorkspace = j.Spec.PrimaryContainer.WorkspaceMountPath != ""
+	if j.Spec.PrimaryContainer.WorkspaceMountPath != "" {
+		return true
+	}
 	for _, sidecarContainer := range j.Spec.SidecarContainers {
 		if sidecarContainer.WorkspaceMountPath != "" {
-			usesWorkspace = true
+			return true
 		}
 	}
-	return usesWorkspace
+	return false
 }
 
 // JobSpec is the technical blueprint for a Job.
@@ -271,23 +273,24 @@ func (j *jobsService) Create(
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
 	if originalJob, ok := event.Worker.Job(job.Name); ok {
-		// If we have a match and this isn't a retry, return an error
-		if event.Labels == nil || event.Labels[RetryLabelKey] == "" {
-			return &meta.ErrConflict{
-				Type: JobKind,
-				ID:   job.Name,
-				Reason: fmt.Sprintf(
-					"Event %q already has a job named %q.",
-					eventID,
-					job.Name,
-				),
+		// If we're dealing with a job intended for retry, inspect to be sure the
+		// provided job configuration matches the original.  If so, we will skip
+		// re-scheduling and inherit the original's results.
+		if event.Labels != nil || event.Labels[RetryLabelKey] != "" {
+			if reflect.DeepEqual(originalJob, job) {
+				return nil
 			}
 		}
-		// Else, we're dealing with a job intended for retry.
-		// However, only if the provided job configuration matches the original
-		// will we skip re-scheduling; otherwise, we'll want to reschedule.
-		if reflect.DeepEqual(originalJob, job) {
-			return nil
+		// We have a match and this isn't a retry or this is a retry and
+		// the job differs in some way, return an error.
+		return &meta.ErrConflict{
+			Type: JobKind,
+			ID:   job.Name,
+			Reason: fmt.Sprintf(
+				"Event %q already has a job named %q.",
+				eventID,
+				job.Name,
+			),
 		}
 	}
 

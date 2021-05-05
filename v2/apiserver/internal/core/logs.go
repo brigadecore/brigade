@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
@@ -175,11 +176,15 @@ func (l *logsService) Stream(
 		if job.Status != nil && job.Status.LogsEventID != "" {
 			event, err = l.eventsStore.Get(ctx, job.Status.LogsEventID)
 			if err != nil {
+				if _, ok := err.(*meta.ErrNotFound); ok {
+					return nil,
+						fmt.Errorf("error retrieving logs for job %q", job.Name)
+				}
 				return nil,
 					errors.Wrapf(
 						err,
-						"error retrieving original event %q from store",
-						job.Status.LogsEventID,
+						"error retrieving logs for job %q",
+						job.Name,
 					)
 			}
 		}
