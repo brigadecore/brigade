@@ -19,6 +19,7 @@ spec:
   - host: {{ .Values.apiserver.host }}
     http:
       paths:
+      {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
       - pathType: ImplementationSpecific
         path: /
         backend:
@@ -30,6 +31,15 @@ spec:
               {{- else }}
               number: 80
               {{- end }}
+      {{- else }}
+      - backend:
+          serviceName: {{ include "brigade.apiserver.fullname" . }}
+          {{- if .Values.apiserver.tls.enabled }}
+          servicePort: 443
+          {{- else }}
+          servicePort: 80
+          {{- end }}
+      {{- end}}
   {{- if .Values.apiserver.ingress.tls.enabled }}
   tls:
   - hosts:
