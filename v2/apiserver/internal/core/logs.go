@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
@@ -104,6 +105,7 @@ func NewLogsService(
 	}
 }
 
+// nolint: gocyclo
 func (l *logsService) Stream(
 	ctx context.Context,
 	eventID string,
@@ -168,6 +170,24 @@ func (l *logsService) Stream(
 				}
 			}
 		}
+
+		// Check to see if we need to look up logs via a specific event ID,
+		// as job may be cached and carried over on a retry event
+		if job.Status != nil && job.Status.LogsEventID != "" {
+			event, err = l.eventsStore.Get(ctx, job.Status.LogsEventID)
+			if err != nil {
+				if _, ok := err.(*meta.ErrNotFound); ok {
+					return nil,
+						fmt.Errorf("error retrieving logs for job %q", job.Name)
+				}
+				return nil,
+					errors.Wrapf(
+						err,
+						"error retrieving logs for job %q",
+						job.Name,
+					)
+			}
+		}
 	}
 
 	// Make sure the project exists
@@ -188,11 +208,11 @@ func (l *logsService) Stream(
 		50, // A generous number of retries. Let the client hang up if they want.
 		20*time.Second,
 		func() (bool, error) {
-			if event, err = l.eventsStore.Get(ctx, eventID); err != nil {
+			if event, err = l.eventsStore.Get(ctx, event.ID); err != nil {
 				return false, errors.Wrapf(
 					err,
 					"error retrieving event %q from store",
-					eventID,
+					event.ID,
 				)
 			}
 			if selector.Job == "" { // Worker...

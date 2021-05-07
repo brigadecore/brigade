@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
 	"time"
 
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
@@ -82,6 +83,20 @@ type Job struct {
 	Spec JobSpec `json:"spec" bson:"spec"`
 	// Status contains details of the Job's current state.
 	Status *JobStatus `json:"status" bson:"status"`
+}
+
+// UsesWorkspace returns a boolean value indicating whether or not the job
+// uses a shared workspace.
+func (j Job) UsesWorkspace() bool {
+	if j.Spec.PrimaryContainer.WorkspaceMountPath != "" {
+		return true
+	}
+	for _, sidecarContainer := range j.Spec.SidecarContainers {
+		if sidecarContainer.WorkspaceMountPath != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // JobSpec is the technical blueprint for a Job.
@@ -164,6 +179,10 @@ type JobStatus struct {
 	Ended *time.Time `json:"ended,omitempty" bson:"ended,omitempty"`
 	// Phase indicates where the Job is in its lifecycle.
 	Phase JobPhase `json:"phase,omitempty" bson:"phase,omitempty"`
+	// LogsEventID indicates which event ID the job logs are associated with.
+	// This is useful for looking up logs for an inherited job associated with
+	// retry events.
+	LogsEventID string `json:"logsEventID,omitempty" bson:"logsEventID,omitempty"`
 }
 
 // JobsService is the specialized interface for managing Jobs. It's
@@ -253,7 +272,17 @@ func (j *jobsService) Create(
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
-	if _, ok := event.Worker.Job(job.Name); ok {
+	if originalJob, ok := event.Worker.Job(job.Name); ok {
+		// If we're dealing with a job intended for retry, inspect to be sure the
+		// provided job configuration matches the original.  If so, we will skip
+		// re-scheduling and inherit the original's results.
+		if event.Labels != nil && event.Labels[RetryLabelKey] != "" {
+			if reflect.DeepEqual(originalJob, job) {
+				return nil
+			}
+		}
+		// We have a match and this isn't a retry or this is a retry and
+		// the job differs in some way, return an error.
 		return &meta.ErrConflict{
 			Type: JobKind,
 			ID:   job.Name,
@@ -374,16 +403,12 @@ func (j *jobsService) Create(
 		)
 	}
 
-	if err = j.substrate.ScheduleJob(ctx, project, event, job.Name); err != nil {
-		return errors.Wrapf(
-			err,
-			"error scheduling event %q job %q on the substrate",
-			event.ID,
-			job.Name,
-		)
-	}
-
-	return nil
+	return errors.Wrapf(
+		j.substrate.ScheduleJob(ctx, project, event, job.Name),
+		"error scheduling event %q job %q on the substrate",
+		event.ID,
+		job.Name,
+	)
 }
 
 func (j *jobsService) Start(

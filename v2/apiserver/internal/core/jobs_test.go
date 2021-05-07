@@ -444,6 +444,125 @@ func TestJobsServiceCreate(t *testing.T) {
 	}
 }
 
+func TestJobsServiceCreateRetry(t *testing.T) {
+	const testEventID = "123456789"
+	const testJobName = "italian"
+	testCases := []struct {
+		name               string
+		service            JobsService
+		workspaceMountPath string
+		assertions         func(error)
+	}{
+		{
+			name: "job retry - not equivalent",
+			service: &jobsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Labels: map[string]string{
+								RetryLabelKey: testEventID,
+							},
+							Worker: Worker{
+								Jobs: []Job{
+									{
+										Name: testJobName,
+										Spec: JobSpec{
+											PrimaryContainer: JobContainerSpec{
+												WorkspaceMountPath: "",
+											},
+											SidecarContainers: map[string]JobContainerSpec{
+												// The original job names this "foo"
+												"bar": {
+													WorkspaceMountPath: "",
+												},
+											},
+										},
+										Status: &JobStatus{
+											Phase: JobPhaseSucceeded,
+										},
+									},
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			workspaceMountPath: "",
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrConflict{}, err)
+			},
+		},
+		{
+			name: "job retry success - no-op",
+			service: &jobsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Labels: map[string]string{
+								RetryLabelKey: testEventID,
+							},
+							Worker: Worker{
+								Jobs: []Job{
+									{
+										Name: testJobName,
+										Spec: JobSpec{
+											PrimaryContainer: JobContainerSpec{
+												WorkspaceMountPath: "",
+											},
+											SidecarContainers: map[string]JobContainerSpec{
+												"foo": {
+													WorkspaceMountPath: "",
+												},
+											},
+										},
+										Status: &JobStatus{
+											Phase: JobPhaseSucceeded,
+										},
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				// No other methods mocked out; they should not be called
+			},
+			workspaceMountPath: "",
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.assertions(
+				testCase.service.Create(
+					context.Background(),
+					testEventID,
+					Job{
+						Name: testJobName,
+						Spec: JobSpec{
+							PrimaryContainer: JobContainerSpec{
+								WorkspaceMountPath: testCase.workspaceMountPath,
+							},
+							SidecarContainers: map[string]JobContainerSpec{
+								"foo": {
+									WorkspaceMountPath: testCase.workspaceMountPath,
+								},
+							},
+						},
+						Status: &JobStatus{
+							Phase: JobPhaseSucceeded,
+						},
+					},
+				),
+			)
+		})
+	}
+}
+
 func TestJobsServiceStart(t *testing.T) {
 	const testEventID = "123456789"
 	const testJobName = "foo"
