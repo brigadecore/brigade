@@ -52,6 +52,7 @@ Check out the quickstart on the docs [here](https://docs.brigade.sh/intro/quicks
 - [Brigadeterm](https://github.com/slok/brigadeterm) - a simple terminal ui for brigade pipelining system.
 - [Brigade exporter](https://github.com/slok/brigade-exporter) - a [Prometheus](https://prometheus.io) exporter to gather metrics from Brigade.
 - Gateways
+  - [GitHub App](https://github.com/brigadecore/brigade-github-app): A GitHub gateway utilizing the [GitHub Checks API](https://docs.github.com/en/rest/guides/getting-started-with-the-checks-api)
   - [BitBucket events](https://github.com/lukepatrick/brigade-bitbucket-gateway): Gateway Support for BitBucket repositories
   - [GitLab events](https://github.com/lukepatrick/brigade-gitlab-gateway): Gateway Support for GitLab repositories
   - [Kubernetes events](https://github.com/brigadecore/brigade-k8s-gateway): Gateway that listens to Kubernetes event stream
