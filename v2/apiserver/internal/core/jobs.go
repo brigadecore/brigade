@@ -276,7 +276,7 @@ func (j *jobsService) Create(
 		// If we're dealing with a job intended for retry, inspect to be sure the
 		// provided job configuration matches the original.  If so, we will skip
 		// re-scheduling and inherit the original's results.
-		if event.Labels != nil || event.Labels[RetryLabelKey] != "" {
+		if event.Labels != nil && event.Labels[RetryLabelKey] != "" {
 			if reflect.DeepEqual(originalJob, job) {
 				return nil
 			}
