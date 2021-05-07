@@ -1,8 +1,8 @@
 {{- if .Values.apiserver.ingress.enabled }}
-{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion }}
-apiVersion: networking.k8s.io/v1beta1
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
+apiVersion: networking.k8s.io/v1
 {{- else }}
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
@@ -19,6 +19,19 @@ spec:
   - host: {{ .Values.apiserver.host }}
     http:
       paths:
+      {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
+      - pathType: ImplementationSpecific
+        path: /
+        backend:
+          service:
+            name: {{ include "brigade.apiserver.fullname" . }}
+            port:
+              {{- if .Values.apiserver.tls.enabled }}
+              number: 443
+              {{- else }}
+              number: 80
+              {{- end }}
+      {{- else }}
       - backend:
           serviceName: {{ include "brigade.apiserver.fullname" . }}
           {{- if .Values.apiserver.tls.enabled }}
@@ -26,6 +39,7 @@ spec:
           {{- else }}
           servicePort: 80
           {{- end }}
+      {{- end}}
   {{- if .Values.apiserver.ingress.tls.enabled }}
   tls:
   - hosts:
