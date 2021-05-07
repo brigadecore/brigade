@@ -161,6 +161,8 @@ apiserver:
     ## If you're going to use an ingress controller, you can change the service
     ## type to CLusterIP.
     type: LoadBalancer
+    ## Host port the service will be mapped to when service type is either
+    ## NodePort or LoadBalancer. If not specified, Kubernetes chooses.
     # nodePort: 31600
 
 scheduler:
