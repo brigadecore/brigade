@@ -338,6 +338,31 @@ var eventCommand = &cli.Command{
 			},
 			Action: eventList,
 		},
+		{
+			Name:  "retry",
+			Usage: "Retry an event",
+			Description: "Creates a new event with the same event details and " +
+				"worker configuration as an existing event.  While successful jobs " +
+				"will not be retried, those of any other phase will be, " +
+				"provided they do not require a shared workspace.  The new event " +
+				"will be handled asynchronously according to current project" +
+				"configuration, like any other new event.",
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:    flagFollow,
+					Aliases: []string{"f"},
+					Usage: "Synchronously wait for the event to be processed and " +
+						"stream logs from its worker",
+				},
+				&cli.StringFlag{
+					Name:     flagID,
+					Aliases:  []string{"i", flagEvent, "e"},
+					Usage:    "Retry the specified event (required)",
+					Required: true,
+				},
+			},
+			Action: eventRetry,
+		},
 		logsCommand,
 	},
 }
@@ -841,6 +866,43 @@ func eventClone(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	fmt.Printf(
+		"Created event %q from original event %q.\n\n",
+		event.ID,
+		id,
+	)
+
+	if !follow {
+		return nil
+	}
+
+	fmt.Println("Waiting for event's worker to be RUNNING...")
+
+	return streamLogs(
+		c.Context,
+		client.Core().Events().Logs(),
+		event.ID,
+		nil,
+		&core.LogStreamOptions{
+			Follow: true,
+		},
+	)
+}
+
+func eventRetry(c *cli.Context) error {
+	id := c.String(flagID)
+	follow := c.Bool(flagFollow)
+
+	client, err := getClient(c)
+	if err != nil {
+		return err
+	}
+
+	event, err := client.Core().Events().Retry(c.Context, id)
+	if err != nil {
+		return err
+	}
+
 	fmt.Printf(
 		"Created event %q from original event %q.\n\n",
 		event.ID,

@@ -254,10 +254,15 @@ func TestEventsServiceCreateSingleEvent(t *testing.T) {
 			Ref:      "dev",
 		},
 	}
+	testEventRetryLabel := map[string]string{
+		RetryLabelKey: "1234567",
+	}
 	testCases := []struct {
-		name       string
-		service    *eventsService
-		assertions func(Event, error)
+		name        string
+		eventLabels map[string]string
+		worker      Worker
+		service     *eventsService
+		assertions  func(Event, error)
 	}{
 		{
 			name: "error creating event in store",
@@ -295,6 +300,44 @@ func TestEventsServiceCreateSingleEvent(t *testing.T) {
 			},
 		},
 		{
+			name:        "event retry - inherit worker spec and job",
+			eventLabels: testEventRetryLabel,
+			worker: Worker{
+				Spec: WorkerSpec{
+					DefaultConfigFiles: map[string]string{
+						"defaultConfig": "myConfig",
+					},
+				},
+				Jobs: []Job{
+					{
+						Name: "foo",
+					},
+				},
+			},
+			service: &eventsService{
+				eventsStore: &mockEventsStore{
+					CreateFn: func(context.Context, Event) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					ScheduleWorkerFn: func(c context.Context, p Project, e Event) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(event Event, err error) {
+				require.NoError(t, err)
+				require.Equal(t, 1, len(event.Worker.Jobs))
+				require.Equal(t, Job{Name: "foo"}, event.Worker.Jobs[0])
+				require.Equal(
+					t,
+					map[string]string{"defaultConfig": "myConfig"},
+					event.Worker.Spec.DefaultConfigFiles,
+				)
+			},
+		},
+		{
 			name: "success",
 			service: &eventsService{
 				eventsStore: &mockEventsStore{
@@ -327,6 +370,8 @@ func TestEventsServiceCreateSingleEvent(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			testEvent.Labels = testCase.eventLabels
+			testEvent.Worker = testCase.worker
 			event, err := testCase.service.createSingleEvent(
 				context.Background(),
 				testProject,
@@ -584,7 +629,17 @@ func TestEventsServiceClone(t *testing.T) {
 				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
-						return Event{}, nil
+						return Event{
+							Source: "eventsource",
+							Type:   "eventtype",
+							Worker: Worker{
+								Spec: WorkerSpec{
+									DefaultConfigFiles: map[string]string{
+										"brigade.js": "test",
+									},
+								},
+							},
+						}, nil
 					},
 				},
 				projectsStore: &mockProjectsStore{
@@ -595,10 +650,17 @@ func TestEventsServiceClone(t *testing.T) {
 					},
 				},
 				createSingleEventFn: func(
-					context.Context,
-					Project,
-					Event,
+					_ context.Context,
+					_ Project,
+					event Event,
 				) (Event, error) {
+					// We expect to see a label for tracing purposes
+					require.Contains(t, event.Labels, CloneLabelKey)
+					// Event details like source and type should be carried over
+					require.Equal(t, "eventsource", event.Source)
+					require.Equal(t, "eventtype", event.Type)
+					// But Worker config should not
+					require.Empty(t, event.Worker.Spec)
 					return Event{}, nil
 				},
 			},
@@ -1321,6 +1383,317 @@ func TestEventsServiceDeleteMany(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			_, err :=
 				testCase.service.DeleteMany(context.Background(), testCase.selector)
+			testCase.assertions(err)
+		})
+	}
+}
+
+func TestEventsServiceRetry(t *testing.T) {
+	testEventID := "123456789"
+	testCases := []struct {
+		name       string
+		service    EventsService
+		assertions func(error)
+	}{
+		{
+			name: "error getting event from store",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("error getting event")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error getting event")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "unauthorized",
+			service: &eventsService{
+				authorize: libAuthz.NeverAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhaseFailed,
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "original event worker has non-terminal phase",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhaseStarting,
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(
+					t,
+					err.Error(),
+					"non-terminal and may not yet be retried",
+				)
+			},
+		},
+		{
+			name: "error creating retry event",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhaseFailed,
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
+						return ProjectList{
+							Items: []Project{{}, {}},
+						}, nil
+					},
+				},
+				createSingleEventFn: func(
+					context.Context,
+					Project,
+					Event,
+				) (Event, error) {
+					return Event{}, errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+			},
+		},
+		{
+			name: "inherit job",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhaseSucceeded,
+								},
+								Jobs: []Job{
+									{
+										Name: "foo",
+										Status: &JobStatus{
+											Phase: JobPhaseSucceeded,
+										},
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
+						return ProjectList{
+							Items: []Project{{}, {}},
+						}, nil
+					},
+				},
+				createSingleEventFn: func(
+					_ context.Context,
+					_ Project,
+					event Event,
+				) (Event, error) {
+					// We expect to inherit one job
+					require.Equal(t, 1, len(event.Worker.Jobs))
+					// We expect to see the job's LogsEventID field match the event ID
+					require.Equal(t, testEventID, event.Worker.Jobs[0].Status.LogsEventID)
+					return Event{}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "inherit job - logs ID already exists",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhaseSucceeded,
+								},
+								Jobs: []Job{
+									{
+										Name: "foo",
+										Status: &JobStatus{
+											Phase:       JobPhaseSucceeded,
+											LogsEventID: "abcdefgh",
+										},
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
+						return ProjectList{
+							Items: []Project{{}, {}},
+						}, nil
+					},
+				},
+				createSingleEventFn: func(
+					_ context.Context,
+					_ Project,
+					event Event,
+				) (Event, error) {
+					// We expect to inherit one job
+					require.Equal(t, 1, len(event.Worker.Jobs))
+					// We expect to see the job's original LogsEventID field retained
+					require.Equal(t, "abcdefgh", event.Worker.Jobs[0].Status.LogsEventID)
+					return Event{}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "do not inherit job",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhaseSucceeded,
+								},
+								Jobs: []Job{
+									{
+										Name: "foo",
+										Spec: JobSpec{
+											PrimaryContainer: JobContainerSpec{
+												WorkspaceMountPath: "/workspace",
+											},
+										},
+										Status: &JobStatus{
+											Phase: JobPhaseSucceeded,
+										},
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
+						return ProjectList{
+							Items: []Project{{}, {}},
+						}, nil
+					},
+				},
+				createSingleEventFn: func(
+					_ context.Context,
+					_ Project,
+					event Event,
+				) (Event, error) {
+					// We expect to inherit no jobs
+					require.Equal(t, 0, len(event.Worker.Jobs))
+					return Event{}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "success",
+			service: &eventsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Source: "eventsource",
+							Type:   "eventtype",
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhaseFailed,
+								},
+								Spec: WorkerSpec{
+									DefaultConfigFiles: map[string]string{
+										"brigade.js": "test",
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
+						return ProjectList{
+							Items: []Project{{}, {}},
+						}, nil
+					},
+				},
+				createSingleEventFn: func(
+					_ context.Context,
+					_ Project,
+					event Event,
+				) (Event, error) {
+					// We expect to see a label for tracing purposes
+					require.Contains(t, event.Labels, RetryLabelKey)
+					// Event details like source and type should be carried over
+					require.Equal(t, "eventsource", event.Source)
+					require.Equal(t, "eventtype", event.Type)
+					// As well as Worker config
+					require.NotEmpty(t, event.Worker.Spec)
+					require.Equal(
+						t,
+						map[string]string{"brigade.js": "test"},
+						event.Worker.Spec.DefaultConfigFiles,
+					)
+					return Event{}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			_, err := testCase.service.Retry(
+				context.Background(),
+				testEventID,
+			)
 			testCase.assertions(err)
 		})
 	}

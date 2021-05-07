@@ -75,6 +75,12 @@ func (e *EventsEndpoints) Register(router *mux.Router) {
 		"/v2/events",
 		e.AuthFilter.Decorate(e.deleteMany),
 	).Methods(http.MethodDelete)
+
+	// Retry event
+	router.HandleFunc(
+		"/v2/events/{id}/retries",
+		e.AuthFilter.Decorate(e.retry),
+	).Methods(http.MethodPost)
 }
 
 func (e *EventsEndpoints) clone(
@@ -257,6 +263,25 @@ func (e *EventsEndpoints) deleteMany(w http.ResponseWriter, r *http.Request) {
 				return e.Service.DeleteMany(r.Context(), selector)
 			},
 			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (e *EventsEndpoints) retry(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	restmachinery.ServeRequest(
+		restmachinery.InboundRequest{
+			W: w,
+			R: r,
+			EndpointLogic: func() (interface{}, error) {
+				return e.Service.Retry(
+					r.Context(),
+					mux.Vars(r)["id"],
+				)
+			},
+			SuccessCode: http.StatusCreated,
 		},
 	)
 }

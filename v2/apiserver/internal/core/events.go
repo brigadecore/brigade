@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -14,10 +15,20 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-// EventKind represents the canonical Event kind string
-const EventKind = "Event"
+const (
+	// EventKind represents the canonical Event kind string
+	EventKind = "Event"
 
-const defaultWorkspaceSize = "10Gi"
+	// CloneLabelKey is the label key used for tracing the original event
+	// on any cloned event
+	CloneLabelKey = "brigade.sh/cloneOf"
+
+	// RetryLabelKey is the label key used for tracing the original event
+	// on any retried event
+	RetryLabelKey = "brigade.sh/retryOf"
+
+	defaultWorkspaceSize = "10Gi"
+)
 
 // Event represents an occurrence in some upstream system. Once accepted into
 // the system, Brigade amends each Event with a plan for handling it in the form
@@ -290,6 +301,11 @@ type EventsService interface {
 		context.Context,
 		EventsSelector,
 	) (DeleteManyEventsResult, error)
+	// Retry copies an Event, including Worker configuration and Jobs, and
+	// creates a new Event from this information.  Where possible, job results
+	// are inherited and the job not re-scheduled, for example when a job has
+	// succeeded and does not make use of a shared workspace.
+	Retry(context.Context, string) (Event, error)
 }
 
 type eventsService struct {
@@ -403,13 +419,21 @@ func (e *eventsService) createSingleEvent(
 
 	event.ID = uuid.NewV4().String()
 
+	jobs := []Job{}
 	workerSpec := project.Spec.WorkerTemplate
+	// If the event is a retry of another, defer to the Worker.Spec on the event
+	// itself, as well any pre-selected Jobs eligible for inheriting.
+	if event.Labels != nil && event.Labels[RetryLabelKey] != "" {
+		workerSpec = event.Worker.Spec
+		jobs = event.Worker.Jobs
+	}
 
 	if workerSpec.WorkspaceSize == "" {
 		workerSpec.WorkspaceSize = defaultWorkspaceSize
 	}
 
-	// If they exist, git details from the event override project-level git config
+	// If they exist, git details from the event override any pre-existing git
+	// config
 	if event.Git != nil {
 		if workerSpec.Git == nil {
 			workerSpec.Git = &GitConfig{}
@@ -448,6 +472,7 @@ func (e *eventsService) createSingleEvent(
 	token := crypto.NewToken(256)
 
 	event.Worker = Worker{
+		Jobs: jobs,
 		Spec: workerSpec,
 		Status: WorkerStatus{
 			Phase: WorkerPhasePending,
@@ -560,7 +585,7 @@ func (e *eventsService) Clone(
 	if clone.Labels == nil {
 		clone.Labels = map[string]string{}
 	}
-	clone.Labels["cloneOf"] = id
+	clone.Labels[CloneLabelKey] = id
 
 	events, err := e.Create(ctx, clone)
 	if err != nil {
@@ -810,6 +835,69 @@ func (e *eventsService) DeleteMany(
 	}
 
 	return result, nil
+}
+
+func (e *eventsService) Retry(
+	ctx context.Context,
+	id string,
+) (Event, error) {
+	// No authz call here as we'll defer to the checks in e.Create() invoked
+	// below
+
+	event, err := e.eventsStore.Get(ctx, id)
+	if err != nil {
+		return Event{}, errors.Wrapf(
+			err,
+			"error retrieving event %q from store",
+			id,
+		)
+	}
+
+	// Only allow retry if the event Worker has reached a terminal phase
+	if !event.Worker.Status.Phase.IsTerminal() {
+		return Event{}, &meta.ErrConflict{
+			Type: EventKind,
+			ID:   event.ID,
+			Reason: fmt.Sprintf(
+				"Event worker phase %q is non-terminal and may not yet be retried",
+				event.Worker.Status.Phase,
+			),
+		}
+	}
+
+	// Copy all event details, including worker configuration, only omitting
+	// metadata
+	retry := event
+	retry.ObjectMeta = meta.ObjectMeta{}
+
+	// Add a label for tracing the original event id
+	if retry.Labels == nil {
+		retry.Labels = map[string]string{}
+	}
+	retry.Labels[RetryLabelKey] = id
+
+	// Only inherit jobs which have succeeded and do not require a shared
+	// workspace
+	var jobs []Job
+	for _, job := range retry.Worker.Jobs {
+		if job.Status.Phase == JobPhaseSucceeded && !job.UsesWorkspace() {
+			// Capture event ID for tracing original logs.  Note that it may
+			// already be set (e.g. via a retry of another retry), in which case
+			// we do not want to override it.
+			if job.Status.LogsEventID == "" {
+				job.Status.LogsEventID = id
+			}
+			jobs = append(jobs, job)
+		}
+	}
+	retry.Worker.Jobs = jobs
+
+	events, err := e.Create(ctx, retry)
+	if err != nil {
+		return Event{}, err
+	}
+
+	return events.Items[0], nil
 }
 
 // EventsStore is an interface for components that implement Event persistence
