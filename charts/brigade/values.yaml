@@ -72,26 +72,34 @@ apiserver:
     admins: []
 
   tls:
-    ## Whether to enable TLS. If true then you MUST either set
-    ## generateSelfSignedCert to true (which is its default) OR provide your own
-    ## certificate using the cert and key fields. TLS SHOULD always be enabled,
-    ## even when ingress is used because other components within the Kubernetes
-    ## cluster (e.g. Brigade gateways) will interact with the apiserver and
-    ## will not go through the ingress controller to do so, but SHOULD still
-    ## interact over a secure connection. It is advised that this be disabled
-    ## ONLY if utilizing a service mesh to enforce secure connections to the
-    ## apiserver for you.
+    ## Whether to enable TLS. If true then you MUST do ONE of three things to
+    ## ensure the existence of a TLS certificate:
+    ##
+    ## 1. Set generateSelfSignedCert below to true (the default)
+    ## 2. OR Set values for BOTH the cert and key fields below
+    ## 3. OR create a cert secret named <Helm release name>-apiserver-cert in
+    ##    the same namespace as Brigade. This secret could be created manually
+    ##    or through other means, such as a cert manager.
+    ##
+    ## TLS SHOULD always be enabled, even when ingress is used because other
+    ## components within the Kubernetes cluster (e.g. Brigade gateways) will
+    ## interact with the apiserver and will not go through the ingress
+    ## controller to do so, but SHOULD still interact over a secure connection.
+    ## It is advised that this be disabled ONLY if utilizing a service mesh to
+    ## enforce secure connections to the apiserver for you.
     enabled: true
     ## Whether to generate a self-signed certificate. If true, a new certificate
     ## will be generated for every revision of the corresponding Helm release.
     ## Since the certificate is self-signed, it will not be trusted by clients
     ## and should absolutely not be used for production, but having this enabled
-    ## as a sensible default effectively discourages the more heavy-handed
-    ## option to disable TLS entirely. If TLS is enabled and cert generation is
-    ## DISABLED, users MUST provide their own cert and private key below.
+    ## as a default effectively discourages the more heavy-handed option to
+    ## disable TLS entirely. If TLS is enabled and cert generation is DISABLED,
+    ## users MUST provide their own cert and private key below OR create a cert
+    ## secret named <Helm release name>-apiserver-cert in the same namespace as
+    ## Brigade.
     generateSelfSignedCert: true
-    cert: base 64 encoded cert goes here
-    key: base 64 encoded key goes here
+    # cert: base 64 encoded cert goes here
+    # key: base 64 encoded key goes here
 
   ingress:
     ## Whether to enable ingress. By default, this is disabled and the
@@ -102,25 +110,35 @@ apiserver:
     ## documentation to customize the behavior of the ingress resource.
     annotations:
       # kubernetes.io/ingress.class: nginx
-      # kubernetes.io/tls-acme: "true"
     tls:
-      ## Whether to enable TLS. If true then you MUST either set
-      ## generateSelfSignedCert to true (which is its default) OR provide your
-      ## own certificate using the cert and key fields. Note that if your
-      ## ingress controller can provision certificates on yur behalf using ACME
-      ## (for instance) or other means, then TLS should be disabled below.
-      enabled: false
+      ## Whether to enable TLS. If true then you MUST do ONE of three things to
+      ## ensure the existence of a TLS certificate:
+      ##
+      ## 1. Set generateSelfSignedCert below to true (the default)
+      ## 2. OR Set values for BOTH the cert and key fields below
+      ## 3. OR create a cert secret named
+      ##    <Helm release name>-apiserver-ingress-cert in the same namespace as
+      ##    Brigade. This secret could be created manually or through other
+      ##    means, such as a cert manager.
+      ##
+      ## Note there is a wide disparity in the feature set of various ingress
+      ## controllers and some ingress controllers may be able to provision a
+      ## certificate for you even with TLS disabled here. Consult your ingress
+      ## controller's documentation.
+      enabled: true
       ## Whether to generate a self-signed certificate. If true, a new
       ## certificate will be generated for every revision of the corresponding
       ## Helm release. Since the certificate is self-signed, it will not be
       ## trusted by clients and should absolutely not be used for production,
-      ## but having this enabled as a sensible default effectively discourages
-      ## the more heavy-handed option to disable TLS entirely. If ingress TLS is
-      ## enabled and cert generation is DISABLED, users MUST provide their own
-      ## cert and private key below.
+      ## but having this enabled as a default effectively discourages the more
+      ## heavy-handed option to disable TLS entirely. If ingress TLS is enabled
+      ## and cert generation is DISABLED, users MUST provide their own cert and
+      ## private key below OR create a cert secret named
+      ## <Helm release name>-apiserver-ingres-cert in the same namespace as
+      ## Brigade.
       generateSelfSignedCert: true
-      cert: base 64 encoded cert goes here
-      key: base 64 encoded key goes here
+      # cert: base 64 encoded cert goes here
+      # key: base 64 encoded key goes here
 
   resources: {}
     # We usually recommend not to specify default resources and to leave this as
@@ -142,7 +160,9 @@ apiserver:
   service:
     ## If you're going to use an ingress controller, you can change the service
     ## type to CLusterIP.
-    type: NodePort
+    type: LoadBalancer
+    ## Host port the service will be mapped to when service type is either
+    ## NodePort or LoadBalancer. If not specified, Kubernetes chooses.
     # nodePort: 31600
 
 scheduler:

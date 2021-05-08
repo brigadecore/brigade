@@ -14,7 +14,7 @@ spec:
   - port: 80
   {{- end }}
     targetPort: 8080
-    {{- if and (eq .Values.apiserver.service.type "NodePort") .Values.apiserver.service.nodePort}}
+    {{- if and (or (eq .Values.apiserver.service.type "NodePort") (eq .Values.apiserver.service.type "LoadBalancer")) .Values.apiserver.service.nodePort}}
     nodePort: {{ .Values.apiserver.service.nodePort }}
     {{- end }}
     protocol: TCP
