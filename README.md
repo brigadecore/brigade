@@ -109,13 +109,13 @@ accomplished using a file that looks suspiciously like a Kubernetes manifest
 (but isn't).
 
 You can download an example from
-[here](https://raw.githubusercontent.com/brigadecore/brigade/v2/examples/javascript/pipeline-demo.yaml):
+[here](https://raw.githubusercontent.com/brigadecore/brigade/v2/examples/04-simple-pipeline/project.yaml):
 
-With this file stored locally, at a location such as `~/pipeline-demo.yaml`, for
+With this file stored locally, at a location such as `~/simple-pipeline.yaml`, for
 instance, you can direct Brigade to create a new project from this file:
 
 ```console
-$ brig -k project create --file ~/pipeline-demo.yaml
+$ brig -k project create --file ~/simple-pipeline.yaml
 ```
 
 If you want to alter the example, note that with an appropriate editor or IDE
@@ -126,25 +126,22 @@ you can receive context help while editing the example!
 
 ### Creating an Event
 
-With your first project set up, it's time to create your first event:
+With your first project set up, it's time to create your first event. You can
+use the `--follow` flag to wait for event handling to begin and have the logs
+streamed straight to the CLI:
 
 ```console
-$ brig -k event create --project pipeline-demo
+$ brig -k event create --project simple-pipeline --follow
 ```
 
-On success, this step will reveal the ID of the new event, which will be handled
-_asynchronously_ by Brigade 2.
+Be patient with your first event. Events are handled asynchronously, and after a
+new install, additional time is required for the images required to handle your
+event to be pulled. There's also up to a thirty second delay between the
+creation of a new project (previous section) and the Brigade scheduler beginning
+to schedule workers to handle that project's events.
 
-### Watch the Event
-
-To view the status of the event:
-
-```console
-$ brig -k event get --id <event id from previous step>
-```
-
-Eventually, the worker spawned to process the event, and any jobs spawned by
-the worker, should all display a `SUCCEEDED` status.
+On success, you'll see the logs produced by the worker that handled your event.
+The client will disconnect at the end of the stream.
 
 Congratulations! You're using Brigade 2!
 
@@ -159,7 +156,7 @@ Be sure to check out:
 
 * [Brigade SDK for Go](https://github.com/brigadecore/brigade/tree/v2/sdk) (used by Brigade itself)
 * [Brigade SDK for JavaScript](https://github.com/krancour/brigade-sdk-for-js) (and TypeScript)]
-* [Brigade SDK for Rust](https://github.com/brigadecore/brigade-sdk-for-rust) (still very new)
+* [Brigade SDK for Rust](https://github.com/brigadecore/brigade-sdk-for-rust) (still a work-in-progress)
 
 ## More Docs to Come
 
