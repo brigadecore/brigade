@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/brigadecore/brigade/v2/v2/apiserver/schemas/project.json
-apiVersion: brigade.sh/v2-alpha.3
+apiVersion: brigade.sh/v2-alpha.4
 kind: Project
 metadata:
   id: kitchen-sink
