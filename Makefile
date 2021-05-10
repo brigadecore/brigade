@@ -327,6 +327,7 @@ publish-cli: build-cli
 			-r $(GITHUB_REPO) \
 			-c $$(git rev-parse HEAD) \
 			-t $${GITHUB_TOKEN} \
+			-n ${VERSION} \
 			${VERSION} ./bin \
 	'
 
