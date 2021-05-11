@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@brigadecore/brigadier@2.0.0-alpha.3":
-  version "2.0.0-alpha.3"
-  resolved "https://registry.yarnpkg.com/@brigadecore/brigadier/-/brigadier-2.0.0-alpha.3.tgz#f6089dd9e219b89ef5bcbbb03bd4b9beb03dd657"
-  integrity sha512-DLfZwaYmJlWVyPLvV0RGD3fSzIfZTx9URIJ8JZ3F9UrJNUhb2G5m6BIdLx4smqsPtXjIOCqS99uet3e5H78TGg==
+"@brigadecore/brigadier@2.0.0-alpha.4":
+  version "2.0.0-alpha.4"
+  resolved "https://registry.yarnpkg.com/@brigadecore/brigadier/-/brigadier-2.0.0-alpha.4.tgz#96b77325af8c4f4f85bdad965d915f25085d55fb"
+  integrity sha512-Rl5fnFEFRTLJmbn4KIhxhtYYM2Ehd8gYB+8rHv5/qbUbIKALK3sZ/EygcU8z6hmyEojeQ0vvS7xLhxIjKcuLzQ==
   dependencies:
     "@types/node" "^14.14.11"
 
