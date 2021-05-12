@@ -35,6 +35,7 @@ var eventCommand = &cli.Command{
 						"(required)",
 					Required: true,
 				},
+				nonInteractiveFlag,
 				&cli.BoolFlag{
 					Name:    flagYes,
 					Aliases: []string{"y"},
@@ -68,6 +69,7 @@ var eventCommand = &cli.Command{
 					Usage: "If set, will additionally abort and cancel events with " +
 						"their worker in a STARTING phase",
 				},
+				nonInteractiveFlag,
 				&cli.BoolFlag{
 					Name:    flagYes,
 					Aliases: []string{"y"},
@@ -152,6 +154,7 @@ var eventCommand = &cli.Command{
 						"(required)",
 					Required: true,
 				},
+				nonInteractiveFlag,
 				&cli.BoolFlag{
 					Name:    flagYes,
 					Aliases: []string{"y"},
@@ -232,6 +235,7 @@ var eventCommand = &cli.Command{
 					Usage: "If set, will delete events with their worker in an UNKNOWN " +
 						"phase; mutually exclusive with --any-phase and --terminal",
 				},
+				nonInteractiveFlag,
 				&cli.BoolFlag{
 					Name:    flagYes,
 					Aliases: []string{"y"},
@@ -284,6 +288,7 @@ var eventCommand = &cli.Command{
 					Usage: "If set, will retrieve events with their worker in a FAILED " +
 						"phase; mutually exclusive with  --terminal and --non-terminal",
 				},
+				nonInteractiveFlag,
 				&cli.BoolFlag{
 					Name: flagNonTerminal,
 					Usage: "If set, will retrieve events with their worker in any " +
@@ -409,7 +414,7 @@ func eventCreate(c *cli.Context) error {
 		Payload:   payload,
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -520,7 +525,7 @@ func eventList(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -610,7 +615,7 @@ func eventGet(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -698,7 +703,7 @@ func eventCancel(c *cli.Context) error {
 		return nil
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -733,7 +738,7 @@ func eventCancelMany(c *cli.Context) error {
 		return nil
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -763,7 +768,7 @@ func eventDelete(c *cli.Context) error {
 		return nil
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -834,7 +839,7 @@ func eventDeleteMany(c *cli.Context) error {
 		return nil
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -857,7 +862,7 @@ func eventClone(c *cli.Context) error {
 	id := c.String(flagID)
 	follow := c.Bool(flagFollow)
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -893,7 +898,7 @@ func eventRetry(c *cli.Context) error {
 	id := c.String(flagID)
 	follow := c.Bool(flagFollow)
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}

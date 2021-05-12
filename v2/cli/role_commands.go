@@ -110,6 +110,7 @@ var rolesCommands = &cli.Command{
 					Aliases: []string{"r"},
 					Usage:   "Narrow results to the specified role",
 				},
+				nonInteractiveFlag,
 				&cli.StringFlag{
 					Name:    flagServiceAccount,
 					Aliases: []string{"s"},
@@ -202,7 +203,7 @@ func grantSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			roleAssignment.Scope = c.String(flagSource)
 		}
 
-		client, err := getClient(c)
+		client, err := getClient()
 		if err != nil {
 			return err
 		}
@@ -272,7 +273,7 @@ func listSystemRoles(c *cli.Context) error {
 		}
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -366,7 +367,7 @@ func revokeSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			roleAssignment.Scope = c.String(flagSource)
 		}
 
-		client, err := getClient(c)
+		client, err := getClient()
 		if err != nil {
 			return err
 		}
