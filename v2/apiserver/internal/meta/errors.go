@@ -113,9 +113,15 @@ type ErrNotFound struct {
 	// ID is the identifier of the resource of type Type that could not be
 	// located.
 	ID string `json:"id,omitempty"`
+	// Reason is a natural language explanation around why the resource could not
+	// be located.
+	Reason string `json:"reason,omitempty"`
 }
 
 func (e *ErrNotFound) Error() string {
+	if e.Reason != "" {
+		return e.Reason
+	}
 	return fmt.Sprintf("%s %q not found.", e.Type, e.ID)
 }
 
