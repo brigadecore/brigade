@@ -2,13 +2,12 @@ package main
 
 import (
 	"github.com/pkg/errors"
-	"github.com/urfave/cli/v2"
 
 	"github.com/brigadecore/brigade/sdk/v2"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
-func getClient(c *cli.Context) (sdk.APIClient, error) {
+func getClient() (sdk.APIClient, error) {
 	cfg, err := getConfig()
 	if err != nil {
 		return nil, errors.Wrapf(
@@ -20,7 +19,7 @@ func getClient(c *cli.Context) (sdk.APIClient, error) {
 		cfg.APIAddress,
 		cfg.APIToken,
 		&restmachinery.APIClientOptions{
-			AllowInsecureConnections: c.Bool(flagInsecure),
+			AllowInsecureConnections: cfg.IgnoreCertErrors,
 		},
 	), nil
 }

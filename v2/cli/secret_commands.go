@@ -41,6 +41,7 @@ var secretsCommand = &cli.Command{
 					Usage:    "Retrieve secrets for the specified project (required)",
 					Required: true,
 				},
+				nonInteractiveFlag,
 			},
 			Action: secretsList,
 		},
@@ -103,7 +104,7 @@ func secretsList(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -225,7 +226,7 @@ func secretsSet(c *cli.Context) error {
 		secrets[kvTokens[0]] = kvTokens[1]
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -252,7 +253,7 @@ func secretsUnset(c *cli.Context) error {
 	projectID := c.String(flagID)
 	keys := c.StringSlice(flagUnset)
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}

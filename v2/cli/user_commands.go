@@ -43,6 +43,7 @@ var userCommand = &cli.Command{
 						"previous command back to the server to access the next page " +
 						"of results",
 				},
+				nonInteractiveFlag,
 			},
 			Action: userList,
 		},
@@ -82,7 +83,7 @@ func userList(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -163,7 +164,7 @@ func userGet(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -212,7 +213,7 @@ func userGet(c *cli.Context) error {
 func userLock(c *cli.Context) error {
 	id := c.String(flagID)
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -229,7 +230,7 @@ func userLock(c *cli.Context) error {
 func userUnlock(c *cli.Context) error {
 	id := c.String(flagID)
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}

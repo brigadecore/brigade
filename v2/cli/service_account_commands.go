@@ -68,6 +68,7 @@ var serviceAccountCommand = &cli.Command{
 						"previous command back to the server to access the next page " +
 						"of results",
 				},
+				nonInteractiveFlag,
 			},
 			Action: serviceAccountList,
 		},
@@ -104,7 +105,7 @@ func serviceAccountCreate(c *cli.Context) error {
 	description := c.String(flagDescription)
 	id := c.String(flagID)
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -139,7 +140,7 @@ func serviceAccountList(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -223,7 +224,7 @@ func serviceAccountGet(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -276,7 +277,7 @@ func serviceAccountGet(c *cli.Context) error {
 func serviceAccountLock(c *cli.Context) error {
 	id := c.String(flagID)
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -293,7 +294,7 @@ func serviceAccountLock(c *cli.Context) error {
 func serviceAccountUnlock(c *cli.Context) error {
 	id := c.String(flagID)
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}

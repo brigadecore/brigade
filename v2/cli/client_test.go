@@ -2,14 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
 )
 
 func TestGetClient(t *testing.T) {
@@ -33,9 +31,7 @@ func TestGetClient(t *testing.T) {
 	cfg, err := getConfig()
 	require.NoError(t, err)
 	require.Equal(t, testConfig, cfg)
-	client, err := getClient(
-		cli.NewContext(cli.NewApp(), &flag.FlagSet{}, nil),
-	)
+	client, err := getClient()
 	require.NoError(t, err)
 	require.NotNil(t, client)
 }

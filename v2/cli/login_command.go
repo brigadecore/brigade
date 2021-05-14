@@ -19,6 +19,12 @@ var loginCommand = &cli.Command{
 	Description: "By default, initiates authentication using a third-party " +
 		"identity provider. This may not be supported by all Brigade API servers.",
 	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:    flagInsecure,
+			Aliases: []string{"k"},
+			Usage:   "Allow insecure API server connections when using HTTPS",
+		},
+		nonInteractiveFlag,
 		&cli.StringFlag{
 			Name:    flagServer,
 			Aliases: []string{"s"},
@@ -104,8 +110,9 @@ func login(c *cli.Context) error {
 
 	if err := saveConfig(
 		config{
-			APIAddress: address,
-			APIToken:   tokenStr,
+			APIAddress:       address,
+			APIToken:         tokenStr,
+			IgnoreCertErrors: c.Bool(flagInsecure),
 		},
 	); err != nil {
 		return errors.Wrap(err, "error persisting configuration")
