@@ -12,8 +12,9 @@ import (
 )
 
 type config struct {
-	APIAddress string `json:"apiAddress"`
-	APIToken   string `json:"apiToken"`
+	APIAddress       string `json:"apiAddress"`
+	APIToken         string `json:"apiToken"`
+	IgnoreCertErrors bool   `json:"ignoreCertErrors"`
 }
 
 var getHomeDir = homedir.Dir

@@ -11,6 +11,12 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+var nonInteractiveFlag = &cli.BoolFlag{
+	Name:    flagNonInteractive,
+	Aliases: []string{"n"},
+	Usage:   "Disable all interactive prompts",
+}
+
 // confirmed prompts the user to confirm an irreversible action and returns a
 // bool indicating assent (true) or dissent (false).
 func confirmed(c *cli.Context) (bool, error) {

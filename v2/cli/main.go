@@ -18,18 +18,6 @@ func main() {
 		version.Version(),
 		version.Commit(),
 	)
-	app.Flags = []cli.Flag{
-		&cli.BoolFlag{
-			Name:    flagInsecure,
-			Aliases: []string{"k"},
-			Usage:   "Allow insecure API server connections when using HTTPS",
-		},
-		&cli.BoolFlag{
-			Name:    flagNonInteractive,
-			Aliases: []string{"n"},
-			Usage:   "Disable all interactive prompts",
-		},
-	}
 	app.Commands = []*cli.Command{
 		eventCommand,
 		loginCommand,

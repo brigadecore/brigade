@@ -46,6 +46,7 @@ var projectCommand = &cli.Command{
 					Usage:    "Delete the specified project (required)",
 					Required: true,
 				},
+				nonInteractiveFlag,
 				&cli.BoolFlag{
 					Name:    flagYes,
 					Aliases: []string{"y"},
@@ -80,6 +81,7 @@ var projectCommand = &cli.Command{
 						"previous command back to the server to access the next page " +
 						"of results",
 				},
+				nonInteractiveFlag,
 			},
 			Action: projectList,
 		},
@@ -129,7 +131,7 @@ func projectCreate(c *cli.Context) error {
 		return errors.Wrapf(err, "error unmarshaling project file %s", filename)
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -153,7 +155,7 @@ func projectList(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -233,7 +235,7 @@ func projectGet(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -315,7 +317,7 @@ func projectUpdate(c *cli.Context) error {
 		return errors.New("project definition does not specify an ID")
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
@@ -344,7 +346,7 @@ func projectDelete(c *cli.Context) error {
 		return nil
 	}
 
-	client, err := getClient(c)
+	client, err := getClient()
 	if err != nil {
 		return err
 	}
