@@ -56,10 +56,15 @@ type ErrNotFound struct {
 }
 
 func (e *ErrNotFound) Error() string {
-	if e.Reason != "" {
+	if e.Type == "" && e.ID == "" && e.Reason != "" {
 		return e.Reason
 	}
-	return fmt.Sprintf("%s %q not found.", e.Type, e.ID)
+
+	msg := fmt.Sprintf("%s %q not found", e.Type, e.ID)
+	if e.Reason != "" {
+		return msg + fmt.Sprintf(": %s", e.Reason)
+	}
+	return msg + "."
 }
 
 // ErrConflict represents an error wherein a request cannot be completed because
