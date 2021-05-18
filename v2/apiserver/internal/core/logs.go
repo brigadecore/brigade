@@ -178,7 +178,13 @@ func (l *logsService) Stream(
 			if err != nil {
 				if _, ok := err.(*meta.ErrNotFound); ok {
 					return nil,
-						fmt.Errorf("error retrieving logs for job %q", job.Name)
+						&meta.ErrNotFound{
+							Reason: fmt.Sprintf(
+								"Unable to retrieve logs for job %q: the "+
+									"original logs inherited by this job no longer exist.",
+								job.Name,
+							),
+						}
 				}
 				return nil,
 					errors.Wrapf(

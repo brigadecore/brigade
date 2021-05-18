@@ -157,6 +157,86 @@ func TestLogsServiceStream(t *testing.T) {
 			},
 		},
 		{
+			name: "error retrieving inherited logs - event not found",
+			selector: LogsSelector{
+				Job: "italian",
+			},
+			service: &logsService{
+				projectAuthorize: alwaysProjectAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(_ context.Context, eventID string) (Event, error) {
+						if eventID == testEventID {
+							return Event{
+								Worker: Worker{
+									Jobs: []Job{
+										{
+											Name: "italian",
+											Status: &JobStatus{
+												LogsEventID: "abcdefg",
+											},
+										},
+									},
+								},
+							}, nil
+						}
+						// Else, return ErrNotFound to simulate not being able to locate
+						// logs for the "abcdefg" LogsEventID
+						return Event{}, &meta.ErrNotFound{}
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(_ <-chan LogEntry, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotFound{}, err)
+				require.Contains(t, err.Error(), "Unable to retrieve logs for job")
+			},
+		},
+		{
+			name: "error retrieving inherited logs - something went wrong",
+			selector: LogsSelector{
+				Job: "italian",
+			},
+			service: &logsService{
+				projectAuthorize: alwaysProjectAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(_ context.Context, eventID string) (Event, error) {
+						if eventID == testEventID {
+							return Event{
+								Worker: Worker{
+									Jobs: []Job{
+										{
+											Name: "italian",
+											Status: &JobStatus{
+												LogsEventID: "abcdefg",
+											},
+										},
+									},
+								},
+							}, nil
+						}
+						// Else, return a generic error when attempting to locate logs
+						// for the "abcdefg" LogsEventID
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(_ <-chan LogEntry, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving logs")
+			},
+		},
+		{
 			name:     "warm logs succeed",
 			selector: LogsSelector{},
 			service: &logsService{
