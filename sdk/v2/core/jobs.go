@@ -118,9 +118,12 @@ type JobSpec struct {
 	// sidecar container), then logic within those containers must account for
 	// these constraints.
 	SidecarContainers map[string]JobContainerSpec `json:"sidecarContainers,omitempty"` // nolint: lll
-	// TimeoutSeconds specifies the time, in seconds, that must elapse before a
-	// running Job should be considered to have timed out.
-	TimeoutSeconds int64 `json:"timeoutSeconds,omitempty"`
+	// TimeoutDuration specifies the time duration that must elapse before a
+	// running Job should be considered to have timed out. This duration string
+	// is a sequence of decimal numbers, each with optional fraction and a unit
+	// suffix, such as "300ms", "3.14s" or "2h45m".
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	TimeoutDuration string `json:"timeoutDuration,omitempty"`
 	// Host specifies criteria for selecting a suitable host (substrate node) for
 	// the Job. This is useful in cases where a Job requires a specific,
 	// non-default operating system (i.e. Windows) or specific hardware (e.g. a
@@ -239,6 +242,9 @@ type JobsClient interface {
 		status JobStatus,
 	) error
 	Cleanup(ctx context.Context, eventID, jobName string) error
+	// Timeout, given an Event identifier and Job name, executes timeout logic
+	// for a Job that has exceeded its timeout limit.
+	Timeout(ctx context.Context, eventID, jobName string) error
 }
 
 type jobsClient struct {
@@ -376,6 +382,25 @@ func (j *jobsClient) Cleanup(
 			Method: http.MethodPut,
 			Path: fmt.Sprintf(
 				"v2/events/%s/worker/jobs/%s/cleanup",
+				eventID,
+				jobName,
+			),
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (j *jobsClient) Timeout(
+	ctx context.Context,
+	eventID,
+	jobName string,
+) error {
+	return j.ExecuteRequest(
+		ctx,
+		rm.OutboundRequest{
+			Method: http.MethodPut,
+			Path: fmt.Sprintf(
+				"v2/events/%s/worker/jobs/%s/timeout",
 				eventID,
 				jobName,
 			),

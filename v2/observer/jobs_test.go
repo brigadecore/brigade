@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -104,6 +105,8 @@ func TestSyncJobPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				timedPodsSet:       map[string]context.CancelFunc{},
+				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
 				updateJobStatusFn: func(
 					ctx context.Context,
 					eventID string,
@@ -132,6 +135,8 @@ func TestSyncJobPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				timedPodsSet:       map[string]context.CancelFunc{},
+				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
 				updateJobStatusFn: func(
 					ctx context.Context,
 					eventID string,
@@ -157,6 +162,8 @@ func TestSyncJobPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				timedPodsSet:       map[string]context.CancelFunc{},
+				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
 				updateJobStatusFn: func(
 					ctx context.Context,
 					eventID string,
@@ -178,6 +185,10 @@ func TestSyncJobPod(t *testing.T) {
 		{
 			name: "pod phase is running and container[0] succeeded",
 			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{Name: "foo"}},
 				},
@@ -199,6 +210,10 @@ func TestSyncJobPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
 				updateJobStatusFn: func(
 					ctx context.Context,
 					eventID string,
@@ -221,6 +236,8 @@ func TestSyncJobPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				timedPodsSet:       map[string]context.CancelFunc{},
+				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
 				updateJobStatusFn: func(
 					ctx context.Context,
 					eventID string,
@@ -239,6 +256,10 @@ func TestSyncJobPod(t *testing.T) {
 		{
 			name: "pod phase is running and container[0] failed",
 			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{Name: "foo"}},
 				},
@@ -260,6 +281,10 @@ func TestSyncJobPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
 				updateJobStatusFn: func(
 					ctx context.Context,
 					eventID string,
@@ -277,11 +302,19 @@ func TestSyncJobPod(t *testing.T) {
 		{
 			name: "pod phase is succeeded",
 			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
 				Status: corev1.PodStatus{
 					Phase: corev1.PodSucceeded,
 				},
 			},
 			observer: &observer{
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
 				updateJobStatusFn: func(
 					ctx context.Context,
 					eventID string,
@@ -297,11 +330,19 @@ func TestSyncJobPod(t *testing.T) {
 		{
 			name: "pod phase is failed",
 			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
 				Status: corev1.PodStatus{
 					Phase: corev1.PodFailed,
 				},
 			},
 			observer: &observer{
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
 				updateJobStatusFn: func(
 					ctx context.Context,
 					eventID string,
@@ -317,11 +358,19 @@ func TestSyncJobPod(t *testing.T) {
 		{
 			name: "pod phase is unknown",
 			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
 				Status: corev1.PodStatus{
 					Phase: corev1.PodUnknown,
 				},
 			},
 			observer: &observer{
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
 				updateJobStatusFn: func(
 					ctx context.Context,
 					eventID string,
@@ -419,6 +468,191 @@ func TestDeleteJobResources(t *testing.T) {
 				testEventID,
 				testJobName,
 			)
+		})
+	}
+}
+
+func TestStartJobPodTimer(t *testing.T) {
+	testCases := []struct {
+		name     string
+		pod      *corev1.Pod
+		observer *observer
+	}{
+		{
+			name: "pod already in terminal state",
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodSucceeded,
+				},
+			},
+			observer: &observer{
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+			},
+		},
+		{
+			name: "pod has no timeout annotation",
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+				},
+			},
+			observer: &observer{
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+			},
+		},
+		{
+			name: "pod has invalid timeout annotation",
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+					Annotations: map[string]string{
+						myk8s.AnnotationTimeoutDuration: "1",
+					},
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+				},
+			},
+			observer: &observer{
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+				errFn: func(i ...interface{}) {
+					require.Len(t, i, 1)
+					err, ok := i[0].(error)
+					require.True(t, ok)
+					require.Contains(t, err.Error(), "unable to parse timeout duration")
+				},
+			},
+		},
+		{
+			name: "timed pod times out; api call fails",
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+					Annotations: map[string]string{
+						myk8s.AnnotationTimeoutDuration: "1ms",
+					},
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+				},
+			},
+			observer: &observer{
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+				timeoutJobFn: func(
+					ctx context.Context,
+					eventID string,
+					jobName string,
+				) error {
+					return errors.New("something went wrong")
+				},
+				errFn: func(i ...interface{}) {
+					require.Len(t, i, 1)
+					err, ok := i[0].(error)
+					require.True(t, ok)
+					require.Contains(t, err.Error(), "something went wrong")
+					require.Contains(t, err.Error(), "error timing out job")
+				},
+			},
+		},
+		{
+			name: "timed pod times out; success",
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+					Annotations: map[string]string{
+						myk8s.AnnotationTimeoutDuration: "1ms",
+					},
+					Labels: map[string]string{
+						myk8s.LabelJob: "italian",
+					},
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+				},
+			},
+			observer: &observer{
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+				timeoutJobFn: func(
+					ctx context.Context,
+					eventID string,
+					jobName string,
+				) error {
+					require.Equal(t, jobName, "italian")
+					return nil
+				},
+				errFn: func(i ...interface{}) {
+					require.Fail(
+						t,
+						"errFn should not have been called, but was",
+					)
+				},
+			},
+		},
+		{
+			name: "timed pod context canceled",
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+				},
+			},
+			observer: &observer{
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+				timeoutJobFn: func(
+					ctx context.Context,
+					eventID string,
+					jobName string,
+				) error {
+					require.Fail(
+						t,
+						"timeoutJobFn should not have been called, but was",
+					)
+					return nil
+				},
+				errFn: func(i ...interface{}) {
+					require.Fail(
+						t,
+						"errFn should not have been called, but was",
+					)
+				},
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer func() {
+				cancel()
+				require.Empty(t, testCase.observer.timedPodsSet)
+			}()
+
+			testCase.observer.startJobPodTimer(ctx, testCase.pod)
 		})
 	}
 }

@@ -251,3 +251,35 @@ func TestJobClientCleanup(t *testing.T) {
 	)
 	require.NoError(t, err)
 }
+
+func TestJobClientTimeout(t *testing.T) {
+	const testEventID = "12345"
+	const testJobName = "Italian"
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				defer r.Body.Close()
+				require.Equal(t, http.MethodPut, r.Method)
+				require.Equal(
+					t,
+					fmt.Sprintf(
+						"/v2/events/%s/worker/jobs/%s/timeout",
+						testEventID,
+						testJobName,
+					),
+					r.URL.Path,
+				)
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintln(w, "{}")
+			},
+		),
+	)
+	defer server.Close()
+	client := NewJobsClient(server.URL, rmTesting.TestAPIToken, nil)
+	err := client.Timeout(
+		context.Background(),
+		testEventID,
+		testJobName,
+	)
+	require.NoError(t, err)
+}

@@ -2,7 +2,7 @@ import { Event } from "./events"
 import { ConcurrentGroup, SerialGroup } from "./groups"
 import { Runnable } from "./runnables"
 
-const defaultTimeout: number = 1000 * 60 * 15
+const defaultTimeoutSeconds: number = 60 * 15
 
 /**
  * A Brigade job.
@@ -33,11 +33,11 @@ export class Job implements Runnable {
   public sidecarContainers: { [key: string]: Container } = {}
 
   /**
-   * The duration, in milliseconds, after which Brigade should automatically
+   * The duration, in seconds, after which Brigade should automatically
    * terminate and fail the job if it has not completed. The default is 15
    * minutes.
    */
-  public timeout: number = defaultTimeout
+  public timeoutSeconds: number = defaultTimeoutSeconds
 
   /** Specifies requirements for the job execution environment. */
   public host: JobHost = new JobHost()
