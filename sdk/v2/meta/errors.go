@@ -50,10 +50,21 @@ type ErrNotFound struct {
 	// ID is the identifier of the resource of type Type that could not be
 	// located.
 	ID string `json:"id,omitempty"`
+	// Reason is a natural language explanation around why the resource could not
+	// be located.
+	Reason string `json:"reason,omitempty"`
 }
 
 func (e *ErrNotFound) Error() string {
-	return fmt.Sprintf("%s %q not found.", e.Type, e.ID)
+	if e.Type == "" && e.ID == "" && e.Reason != "" {
+		return e.Reason
+	}
+
+	msg := fmt.Sprintf("%s %q not found", e.Type, e.ID)
+	if e.Reason != "" {
+		return msg + fmt.Sprintf(": %s", e.Reason)
+	}
+	return msg + "."
 }
 
 // ErrConflict represents an error wherein a request cannot be completed because
