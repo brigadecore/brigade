@@ -1,0 +1,214 @@
+// ===================================================================
+// Flexbox Grid Mixins
+// Version 0.1.5
+// Description: Sass Mixins to generate Flexbox grid
+// Author: thingsym
+// GitHub: https://github.com/thingsym/flexbox-grid-mixins
+// MIT License
+// ===================================================================
+
+@charset 'utf-8';
+
+@mixin grid($display: flex, $flex-direction: null, $flex-wrap: null, $flex-flow: null, $justify-content: null, $align-items: null, $align-content: null, $gutter: null, $grid-type: skeleton)
+{
+	box-sizing: border-box;
+
+	@if $display {
+		display: $display;
+	}
+
+	@if $flex-direction {
+		flex-direction: $flex-direction;
+	}
+	@if $flex-wrap {
+		flex-wrap: $flex-wrap;
+	}
+
+	@if $flex-flow {
+		flex-flow: $flex-flow;
+	}
+
+	@if $justify-content {
+		justify-content: $justify-content;
+	}
+	@if $align-items {
+		align-items: $align-items;
+	}
+	@if $align-content {
+		align-content: $align-content;
+	}
+
+	@if $grid-type == skeleton {
+		@if $gutter {
+			@include grid-margin($margin: 0 $gutter / 2 * -1);
+		}
+	}
+
+	@content;
+}
+
+@mixin grid-col($col: null, $grid-columns: 12, $col-offset: null, $gutter: null, $condensed: false, $align-self: null, $flex-grow: 0, $flex-shrink: 1, $flex-basis: auto, $order: null, $shorthand: true, $grid-type: skeleton, $last-child: false, $width: null, $max-width: null, $min-width: null, $height: null, $max-height: null, $min-height: null)
+{
+	box-sizing: border-box;
+
+	@if type-of($col) == number and unitless($col) == true {
+		$flex-shrink: 0;
+		$flex-basis: percentage($col / $grid-columns);
+
+		@if $grid-type == skeleton {
+			@if $gutter and unit($gutter) == '%' {
+				$flex-basis: $flex-basis - $gutter;
+			} @else if $gutter and unitless($gutter) == false {
+				$flex-basis: calc( #{$flex-basis} - #{$gutter});
+			}
+
+		} @else if $grid-type == margin-offset {
+			@if $gutter and unit($gutter) == '%' {
+				$flex-basis: (100% - ($gutter * ($grid-columns / $col - 1))) / ($grid-columns / $col);
+			} @else if $gutter and unitless($gutter) == false {
+				$flex-basis: calc( #{$flex-basis} - #{$gutter * ($grid-columns / $col - 1) / ($grid-columns / $col)});
+			}
+		}
+
+		@if $col-offset and unit($col-offset) == '%' {
+			$flex-basis: $flex-basis + $col-offset;
+		} @else if $col-offset and unitless($col-offset) == false {
+			$flex-basis: calc( #{$flex-basis} + #{$col-offset});
+		}
+	} @else if type-of($col) == number and unitless($col) == false {
+		$flex-grow: 0;
+		$flex-shrink: 0;
+		$flex-basis: $col;
+	} @else if type-of($col) == string and $col == 'auto' {
+		// flex: auto;
+		$flex-grow: 1;
+		$flex-shrink: 1;
+		$flex-basis: auto;
+	} @else if type-of($col) == string and $col == 'equal' {
+		// flex: 1;
+		$flex-grow: 1;
+		$flex-shrink: 1;
+		$flex-basis: 0;
+	} @else if type-of($col) == string and $col == 'none' {
+		// flex: none;
+		$flex-grow: 0;
+		$flex-shrink: 0;
+		$flex-basis: auto;
+	} @else if type-of($col) == string and $col == 'initial' {
+		// flex: initial;
+		$flex-grow: 0;
+		$flex-shrink: 1;
+		$flex-basis: auto;
+	} @else if type-of($col) == string and $col == 'breakpoint' {
+		// deprecated
+		$flex-grow: 0;
+		$flex-shrink: 1;
+		$flex-basis: auto;
+		$width: 100%;
+	} @else if type-of($col) == string and $col == 'positive' {
+		// positive number
+		@if $flex-grow == 0 {
+			$flex-grow: 1;
+		}
+		$flex-shrink: 0;
+		$flex-basis: 0;
+	}
+
+	@if type-of($shorthand) == bool and $shorthand == true {
+		flex: $flex-grow $flex-shrink $flex-basis;
+	} @else {
+		flex-basis: $flex-basis;
+		flex-grow: $flex-grow;
+		flex-shrink: $flex-shrink;
+	}
+
+	@if $align-self != null {
+		align-self: $align-self;
+	}
+
+	@if type-of($order) == number {
+		order: $order;
+	}
+
+	@if type-of($width) == bool and $width == true {
+		width: $flex-basis;
+	} @else if type-of($width) == number and unitless($width) == false {
+		width: $width;
+	} @else if type-of($width) == string and $width == 'auto' {
+		width: auto;
+	}
+
+	@if type-of($max-width) == bool and $max-width == true {
+		max-width: $flex-basis;
+	} @else if type-of($max-width) == number and unitless($max-width) == false {
+		max-width: $max-width;
+	} @else if type-of($max-width) == string and $max-width == 'auto' {
+		max-width: auto;
+	}
+
+	@if type-of($min-width) == bool and $min-width == true {
+		min-width: $flex-basis;
+	} @else if type-of($min-width) == number and unitless($min-width) == false {
+		min-width: $min-width;
+	} @else if type-of($min-width) == string and $min-width == 'auto' {
+		min-width: auto;
+	}
+
+	@if $height != null {
+		height: $height;
+	}
+	@if $max-height != null {
+		max-height: $max-height;
+	}
+	@if $min-height != null {
+		min-height: $min-height;
+	}
+
+	@if $gutter and unitless($gutter) == false {
+		@if $grid-type == skeleton {
+			@if type-of($condensed) == bool and $condensed == true {
+				@include grid-col-margin($margin: 0 $gutter / 2);
+			} @else {
+				@include grid-col-margin($margin: 0 $gutter / 2 $gutter);
+			}
+		} @else if $grid-type == margin-offset {
+			@if type-of($col) == string and $col == 'breakpoint' {
+				@include grid-col-margin($margin-right: 0);
+			} @else if type-of($last-child) == bool and $last-child == true {
+				@include grid-col-margin($margin-right: 0);
+			} @else {
+				@include grid-col-margin($margin-right: $gutter);
+			}
+
+			@if $condensed == false {
+				@include grid-col-margin($margin-bottom: $gutter);
+			}
+		}
+	}
+
+	@content;
+}
+
+@mixin grid-margin($margin: null, $margin-top: null, $margin-right: null, $margin-bottom: null, $margin-left: null)
+{
+	@if $margin != null {
+		margin: $margin;
+	}
+	@if $margin-top != null {
+		margin-top: $margin-top;
+	}
+	@if $margin-bottom != null {
+		margin-bottom: $margin-bottom;
+	}
+	@if $margin-left != null {
+		margin-left: $margin-left;
+	}
+	@if $margin-right != null {
+		margin-right: $margin-right;
+	}
+}
+
+@mixin grid-col-margin($margin: null, $margin-top: null, $margin-right: null, $margin-bottom: null, $margin-left: null)
+{
+	@include grid-margin($margin, $margin-top, $margin-right, $margin-bottom, $margin-left);
+}

@@ -430,3 +430,13 @@ load-%:
 	@echo "Loading $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
 	@kind load docker-image $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
 			|| echo >&2 "kind not installed or error loading image: $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
+
+docs-stop-preview:
+	@docker rm -f brigade-docs &> /dev/null || true
+
+docs-preview: docs-stop-preview
+	@docker run -d -v $$PWD:/src -p 1313:1313 --name brigade-docs -w /src/docs \
+	klakegg/hugo:0.54.0-ext-alpine server -D -F --noHTTPCache --watch --bind=0.0.0.0
+	# Wait for the documentation web server to finish rendering
+	@until docker logs brigade-docs | grep -m 1  "Web Server is available"; do : ; done
+	@open "http://localhost:1313"
