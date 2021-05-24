@@ -11,7 +11,7 @@ relativeURLs = "true"
 # main docs 'index' menu on left
 [[menu.index]]
     name = "Home"
-    url = "https://brigade.sh"
+    url = "/"
     weight = 10
 [[menu.index]]
     name = "Getting Started"
