@@ -49,6 +49,12 @@ func (w *WorkersEndpoints) Register(router *mux.Router) {
 		"/v2/events/{eventID}/worker/cleanup",
 		w.AuthFilter.Decorate(w.cleanup),
 	).Methods(http.MethodPut)
+
+	// Timeout a worker
+	router.HandleFunc(
+		"/v2/events/{eventID}/worker/timeout",
+		w.AuthFilter.Decorate(w.timeout),
+	).Methods(http.MethodPut)
 }
 
 func (w *WorkersEndpoints) start(wr http.ResponseWriter, r *http.Request) {
@@ -167,6 +173,23 @@ func (w *WorkersEndpoints) cleanup(
 			EndpointLogic: func() (interface{}, error) {
 				return nil,
 					w.Service.Cleanup(r.Context(), mux.Vars(r)["eventID"])
+			},
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (w *WorkersEndpoints) timeout(
+	wr http.ResponseWriter,
+	r *http.Request,
+) {
+	restmachinery.ServeRequest(
+		restmachinery.InboundRequest{
+			W: wr,
+			R: r,
+			EndpointLogic: func() (interface{}, error) {
+				return nil,
+					w.Service.Timeout(r.Context(), mux.Vars(r)["eventID"])
 			},
 			SuccessCode: http.StatusOK,
 		},

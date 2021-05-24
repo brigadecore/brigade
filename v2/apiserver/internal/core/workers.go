@@ -157,6 +157,12 @@ type WorkerSpec struct {
 	// source control system and would like to embed configuration (e.g.
 	// brigade.json) or scripts (e.g. brigade.js) directly within the WorkerSpec.
 	DefaultConfigFiles map[string]string `json:"defaultConfigFiles,omitempty" bson:"defaultConfigFiles,omitempty"` // nolint: lll
+	// TimeoutDuration specifies the time duration that must elapse before a
+	// running Job should be considered to have timed out. This duration string
+	// is a possibly signed sequence of decimal numbers, each with optional
+	// fraction and a unit suffix, such as "300ms", "-1.5h" or "2h45m".
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	TimeoutDuration string `json:"timeoutDuration,omitempty" bson:"timeoutDuration,omitempty"` // nolint: lll
 }
 
 // GitConfig represents git-specific Worker details.
@@ -243,6 +249,9 @@ type WorkersService interface {
 	// Cleanup removes Worker-related resources from the substrate, presumably
 	// upon completion, without deleting the Worker from the data store.
 	Cleanup(ctx context.Context, eventID string) error
+	// Timeout updates the status of an Event's Worker that has timed out and
+	// then proceeds to remove Worker-related resources from the substrate.
+	Timeout(ctx context.Context, eventID string) error
 }
 
 type workersService struct {
@@ -250,6 +259,7 @@ type workersService struct {
 	projectsStore ProjectsStore
 	eventsStore   EventsStore
 	workersStore  WorkersStore
+	jobsStore     JobsStore
 	substrate     Substrate
 }
 
@@ -259,6 +269,7 @@ func NewWorkersService(
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
 	workersStore WorkersStore,
+	jobsStore JobsStore,
 	substrate Substrate,
 ) WorkersService {
 	return &workersService{
@@ -266,6 +277,7 @@ func NewWorkersService(
 		projectsStore: projectsStore,
 		eventsStore:   eventsStore,
 		workersStore:  workersStore,
+		jobsStore:     jobsStore,
 		substrate:     substrate,
 	}
 }
@@ -441,6 +453,57 @@ func (w *workersService) Cleanup(
 		)
 	}
 	return nil
+}
+
+func (w *workersService) Timeout(
+	ctx context.Context,
+	eventID string,
+) error {
+	if err := w.authorize(ctx, RoleObserver, ""); err != nil {
+		return err
+	}
+
+	event, err := w.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+
+	now := time.Now()
+	status := event.Worker.Status
+	status.Phase = WorkerPhaseTimedOut
+	status.Ended = &now
+	if err = w.UpdateStatus(ctx, eventID, status); err != nil {
+		return errors.Wrapf(
+			err,
+			"error updating status for event %q worker",
+			eventID,
+		)
+	}
+
+	// Update all applicable worker job statuses with JobPhaseAborted
+	// TODO: go func here?  How about errors?
+	for _, job := range event.Worker.Jobs {
+		if job.Status != nil && !job.Status.Phase.IsTerminal() {
+			status := *job.Status
+			status.Phase = JobPhaseAborted
+			status.Ended = &now
+			if err := w.jobsStore.UpdateStatus(
+				ctx,
+				eventID,
+				job.Name,
+				status,
+			); err != nil {
+				return errors.Wrapf(
+					err,
+					"error updating status for worker job %q for event %q",
+					job.Name,
+					eventID,
+				)
+			}
+		}
+	}
+
+	return w.Cleanup(ctx, eventID)
 }
 
 // WorkersStore is an interface for components that implement Worker persistence

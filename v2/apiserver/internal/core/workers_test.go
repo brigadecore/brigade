@@ -15,18 +15,21 @@ func TestNewWorkersService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}
 	workersStore := &mockWorkersStore{}
+	jobsStore := &mockJobsStore{}
 	substrate := &mockSubstrate{}
 	svc := NewWorkersService(
 		libAuthz.AlwaysAuthorize,
 		projectsStore,
 		eventsStore,
 		workersStore,
+		jobsStore,
 		substrate,
 	)
 	require.NotNil(t, svc.(*workersService).authorize)
 	require.Same(t, projectsStore, svc.(*workersService).projectsStore)
 	require.Same(t, eventsStore, svc.(*workersService).eventsStore)
 	require.Same(t, workersStore, svc.(*workersService).workersStore)
+	require.Same(t, jobsStore, svc.(*workersService).jobsStore)
 	require.Same(t, substrate, svc.(*workersService).substrate)
 }
 
@@ -592,6 +595,263 @@ func TestWorkersServiceCleanup(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			err := testCase.service.Cleanup(context.Background(), testEventID)
+			testCase.assertions(err)
+		})
+	}
+}
+
+func TestWorkersServiceTimeout(t *testing.T) {
+	const testEventID = "123456789"
+	const testJobName = "italian"
+	var testStartedTime = time.Unix(1234, 56789)
+	var testEvent = Event{
+		Worker: Worker{
+			Status: WorkerStatus{
+				Started: &testStartedTime,
+				Phase:   WorkerPhasePending,
+			},
+			Jobs: []Job{
+				{
+					Name: testJobName,
+					Status: &JobStatus{
+						Started: &testStartedTime,
+						Phase:   JobPhaseRunning,
+					},
+				},
+			},
+		},
+	}
+	testCases := []struct {
+		name       string
+		service    WorkersService
+		assertions func(error)
+	}{
+		{
+			name: "unauthorized",
+			service: &workersService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "error updating status",
+			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return testEvent, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error updating status")
+			},
+		},
+		{
+			name: "error getting event from store",
+			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "error updating job status",
+			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return testEvent, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
+						return nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					UpdateStatusFn: func(
+						context.Context,
+						string,
+						string,
+						JobStatus,
+					) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error updating status for worker job")
+			},
+		},
+		{
+			name: "job with terminal phase not updated",
+			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: []Job{
+									{
+										Name: testJobName,
+										Status: &JobStatus{
+											Phase: JobPhaseSucceeded,
+										},
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
+						return nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					UpdateStatusFn: func(
+						context.Context,
+						string,
+						string,
+						JobStatus,
+					) error {
+						require.Fail(
+							t,
+							"jobsStore.UpdateStatusFn should not have been called, but was",
+						)
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					DeleteWorkerAndJobsFn: func(context.Context, Project, Event) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "error cleaning up",
+			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return testEvent, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
+						return nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					UpdateStatusFn: func(
+						context.Context,
+						string,
+						string,
+						JobStatus,
+					) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					DeleteWorkerAndJobsFn: func(context.Context, Project, Event) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error deleting event")
+			},
+		},
+		{
+			name: "success",
+			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return testEvent, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					UpdateStatusFn: func(
+						_ context.Context,
+						_ string,
+						status WorkerStatus,
+					) error {
+						require.Equal(t, WorkerPhaseTimedOut, status.Phase)
+						require.Equal(t, &testStartedTime, status.Started)
+						require.NotNil(t, status.Ended)
+						return nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					UpdateStatusFn: func(
+						_ context.Context,
+						_ string,
+						_ string,
+						status JobStatus,
+					) error {
+						require.Equal(t, JobPhaseAborted, status.Phase)
+						require.Equal(t, &testStartedTime, status.Started)
+						require.NotNil(t, status.Ended)
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					DeleteWorkerAndJobsFn: func(context.Context, Project, Event) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.service.Timeout(context.Background(), testEventID)
 			testCase.assertions(err)
 		})
 	}

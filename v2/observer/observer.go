@@ -42,6 +42,7 @@ type observer struct {
 	// All of these internal functions are overridable for testing purposes
 	runHealthcheckLoopFn    func(ctx context.Context)
 	startJobPodTimerFn      func(ctx context.Context, pod *corev1.Pod)
+	startWorkerPodTimerFn   func(ctx context.Context, pod *corev1.Pod)
 	syncWorkerPodsFn        func(ctx context.Context)
 	syncWorkerPodFn         func(obj interface{})
 	deleteWorkerResourcesFn func(namespace, podName, eventID string)
@@ -72,6 +73,7 @@ func newObserver(
 	}
 	o.runHealthcheckLoopFn = o.runHealthcheckLoop
 	o.startJobPodTimerFn = o.startJobPodTimer
+	o.startWorkerPodTimerFn = o.startWorkerPodTimer
 	o.syncWorkerPodsFn = o.syncWorkerPods
 	o.syncWorkerPodFn = o.syncWorkerPod
 	o.deleteWorkerResourcesFn = o.deleteWorkerResources

@@ -231,6 +231,7 @@ func main() {
 		projectsStore,
 		eventsStore,
 		workersStore,
+		jobsStore,
 		substrate,
 	)
 
