@@ -487,11 +487,34 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 						}, nil
 					},
 				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					CreateFn: func(context.Context, string, Job) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					StoreJobEnvironmentFn: func(
+						_ context.Context,
+						_ Project,
+						_ string,
+						_ string,
+						jobSpec JobSpec,
+					) error {
+						return nil
+					},
+					ScheduleJobFn: func(context.Context, Project, Event, string) error {
+						return nil
+					},
+				},
 			},
 			workspaceMountPath: "",
 			assertions: func(err error) {
-				require.Error(t, err)
-				require.IsType(t, &meta.ErrConflict{}, err)
+				require.NoError(t, err)
 			},
 		},
 		{
