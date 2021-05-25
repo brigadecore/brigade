@@ -95,7 +95,7 @@ Involuntary removal or demotion is handled through a vote by a majority of the c
 
 ## Stepping Down/Emeritus Process
 
-If and when contributors' committment levels change, contributors can consider stepping down (moving down the contributor ladder) vs moving to emeritus status (completely stepping away from the project).
+If and when contributors' commitment levels change, contributors can consider stepping down (moving down the contributor ladder) vs moving to emeritus status (completely stepping away from the project).
 
 Contact the Maintainers about changing to Emeritus status, or reducing your contributor level.
 
