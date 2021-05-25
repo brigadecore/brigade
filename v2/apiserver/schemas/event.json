@@ -100,8 +100,20 @@
 			"maxLength": 100
 		},
 		"git": {
-			"allOf": [{ "$ref": "common.json#/definitions/gitConfig" }],
-			"additionalProperties": false
+			"type": "object",
+			"description": "Event details pertaining specifically to git",
+			"additionalProperties": false,
+			"properties": {
+				"cloneURL": {
+					"$ref": "common.json#/definitions/gitCloneURL"
+				},
+				"commit": {
+					"$ref": "common.json#/definitions/gitCommit"
+				},
+				"ref": {
+					"$ref": "common.json#/definitions/gitRef"
+				}
+			}
 		},
 		"payload": {
 			"type": "string",
