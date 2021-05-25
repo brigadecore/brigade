@@ -3,16 +3,15 @@
 Hello! We are excited to have you contribute to Brigade! This contributor ladder outlines the different contributor roles within the project, along with the responsibilites and privileges that come with them. Community members generally start at the first levels of the "ladder" and advance up it as their involvement in the project grows. Our project members are happy to help you advance along the contributor ladder.
 
 Each of the contributor roles below is organized into lists of three types of things:
-* "Responsibilities" are things that contributor is expected to do
-* "Requirements" are qualifications a person needs to meet to be in that role
-* "Privileges" are things contributors on that level are entitled to
+* "Responsibilities" are things that a contributor is expected to do
+* "Requirements" are qualifications a contributor needs to meet to be in that role
+* "Privileges" are things a contributor on that level is entitled to
 
 ## Community Participant
 
-Description: A Community Participant participates in the community and contributes their time, thoughts, etc. Community Participants are users who have stopped being anonymous and are active in project discussions.
-
+Description: A Community Participant participates in the community and contributes their time, thoughts, etc. 
 * Responsibilities:
-    * Must follow the [CNCF CoC](https://https://github.com/cncf/foundation/blob/master/code-of-conduct.md)
+    * Must follow the [CNCF CoC](https://github.com/cncf/foundation/blob/master/code-of-conduct.md)
 * How users can get involved with the community:
     * Participating in discussions in GitHub, Slack, and meetings
     * Helping other users
@@ -26,7 +25,7 @@ Description: A Community Participant participates in the community and contribut
 Description: A Contributor contributes directly to the project and adds value to it. Contributions need not be code. People at the Contributor level may be new contributors, or they may only contribute occasionally.
 
 * Responsibilities include:
-    * Following the [CNCF CoC](https://https://github.com/cncf/foundation/blob/master/code-of-conduct.md)
+    * Following the [CNCF CoC](https://github.com/cncf/foundation/blob/master/code-of-conduct.md)
     * Following the project [Contributing Guide](https://github.com/brigadecore/brigade/blob/master/CONTRIBUTING.md)
 * Requirements (one or several of the below):
     * Reports, and sometimes resolves issues
@@ -51,7 +50,6 @@ Description: Maintainers are very established contributors who are responsible f
 A Maintainer has the rights, responsiblities, and requirements of a Contributor, plus:
 
 * Responsibilities include:
-    * Following the reviewing guide
     * Reviewing and approving PRs that involve multiple parts of the project
     * Is supportive of new and infrequent contributors, and helps get useful PRs in shape to commit
     * Mentoring new Maintainers
@@ -62,13 +60,13 @@ A Maintainer has the rights, responsiblities, and requirements of a Contributor,
 * Requirements
     * Experience as a Contributor for at least 6 months
     * Demonstrates a broad knowledge of the project across multiple areas
-    * Is able to exercise judgement for the good of the project, independant of their employer, friends, or team
+    * Is able to exercise judgement for the good of the project, independant of their employer, social circles, or teams
     * Mentors other Contributors
   
 * Additional privileges:
     * Represent the project in public as a Maintainer
     * Communicate with the CNCF on behalf of the project
-    * Have a vote in Maintainer decision-making meetings
+    * Have a vote in Maintainer decisions
 
 Process of becoming a maintainer:
 
@@ -78,7 +76,7 @@ Process of becoming a maintainer:
 
 ## Inactivity
 
-It is important for contributors to be and stay active to set an example and show committment to the project. Inactivity is harmful to the project as it may lead to unexpected delays, contributor attrition, and a lost of trust in the project.
+It is important for contributors to be and stay active to set an example and show commitment to the project. Inactivity is harmful to the project as it may lead to unexpected delays, contributor attrition, and a lost of trust in the project.
 
 * Inactivity is measured by:
     * Periods of no contributions for longer than 6 months
@@ -90,7 +88,7 @@ It is important for contributors to be and stay active to set an example and sho
 
 ## Involuntary Removal or Demotion
 
-Involuntary removal/demotion of a contributor happens when responsibilites and requirements aren't being met. This may include repeated pattern of inactivity, extended period of inactivity, a period of failing to meet the requirements of your role, and/or a violation of the [CNCF CoC](https://https://github.com/cncf/foundation/blob/master/code-of-conduct.md). This process is important because it protects the community and its deliverables while also opens up opportunities for new contributors to step in.
+Involuntary removal/demotion of a contributor happens when responsibilites and requirements aren't being met. This may include repeated pattern of inactivity, extended period of inactivity, a period of failing to meet the requirements of your role, and/or a violation of the [CNCF CoC](https://github.com/cncf/foundation/blob/master/code-of-conduct.md). This process is important because it protects the community and its deliverables while also opens up opportunities for new contributors to step in.
 
 
 Involuntary removal or demotion is handled through a vote by a majority of the current Maintainers.
