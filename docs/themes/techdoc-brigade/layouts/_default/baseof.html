@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="{{ .Page.Language | default "en" }}">
+<head>
+{{- partial "head.html" . -}}
+{{- partial "custom-head.html" . -}}
+</head>
+<body>
+<div class="container">
+{{- partial "notification.html" . -}}
+{{- partial "header.html" . -}}
+<div class="content-container">
+<main>
+  <article class="content-wrap">
+  {{- block "main" . -}}
+  {{- end -}}
+  </article>
+<footer>
+{{- partial "main-footer.html" . -}}
+{{- partial "powered.html" . -}}
+</footer>
+</main>
+
+{{- partial "sidebar.html" . -}}
+</div>
+{{- partial "footer.html" . -}}
+</div>
+</body>
+</html>
