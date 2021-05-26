@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	AnnotationTimeoutDuration = "brigade.sh/timeoutDuration"
+
 	LabelComponent = "brigade.sh/component"
 	LabelEvent     = "brigade.sh/event"
 	LabelJob       = "brigade.sh/job"
