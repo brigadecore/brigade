@@ -1,16 +1,26 @@
 ---
-title: Brigade Documentation
+title: Brigade 2.0 Documentation
 description: Homepage of the Brigade Documentation
 ---
 
 # Brigade Documentation
 
-Everything you need to know about Brigade.  
+Everything you need to know about Brigade.
+
+If you haven't used Brigade before, welcome! 🎉
+Brigade 2.0 has a new design that makes learning and interacting with Brigade easier than ever before.
+It is now a first-class experience that doesn't require familiarity with Kubernetes, so you can quickly be productive without a steep learning curve.
+
+For those who are migrating from Brigade 1.0, while there are some breaking changes, overall it should feel familiar.
+Migration instructions will be forthcoming in the coming weeks, so watch our [blog] or join us on the [#brigade channel][channel] on the [Kubernetes Slack][slack] for when that's available.
 
 ### First Steps
 
-Are you new to Brigade or to testing applications on Kubernetes? [This is the place to start!](intro/index.md)
+Try our [QuickStart] to install Brigade and walk through setting up your first project.
 
+<!-- Commenting out content that we have not migrated to v2 yet -->
+
+<!--
 ### Topic Guides
 
 Learn about alternative methods of installation, integration with other tools, and
@@ -45,3 +55,9 @@ Brigade-related projects and tools.
 - [bit-brigade](https://bitbucket.org/lukepatrick/bit-brigade) provides an example project using 
   BitBucket as a source repository
 - [minio-brigade](https://github.com/lukepatrick/minio-brigade) examples of storing artifacts in object storage (minio)
+-->
+
+[blog]: https://blog.brigade.sh/
+[channel]: https://kubernetes.slack.com/messages/C87MF1RFD
+[slack]: https://slack.k8s.io/ 
+[QuickStart]: /intro/quickstart/
