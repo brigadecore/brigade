@@ -146,6 +146,7 @@ func main() {
 
 	// Logs service
 	logsService := core.NewLogsService(
+		authorizer.Authorize,
 		projectAuthorizer.Authorize,
 		projectsStore,
 		eventsStore,

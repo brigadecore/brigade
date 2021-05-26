@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/stretchr/testify/require"
@@ -20,6 +21,7 @@ func TestLogsService(t *testing.T) {
 	warmLogsStore := &mockLogsStore{}
 	coolLogsStore := &mockLogsStore{}
 	svc := NewLogsService(
+		libAuthz.AlwaysAuthorize,
 		alwaysProjectAuthorize,
 		projectsStore,
 		eventsStore,
@@ -73,6 +75,7 @@ func TestLogsServiceStream(t *testing.T) {
 		{
 			name: "unauthorized",
 			service: &logsService{
+				authorize:        libAuthz.NeverAuthorize,
 				projectAuthorize: neverProjectAuthorize,
 				eventsStore: &mockEventsStore{
 					GetFn: func(context.Context, string) (Event, error) {
