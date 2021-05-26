@@ -39,7 +39,7 @@ export class Job extends BrigadierJob {
           spec: {
             primaryContainer: this.primaryContainer,
             sidecarContainers: this.sidecarContainers,
-            timeoutSeconds: this.timeout,
+            timeoutDuration: this.timeoutSeconds + "s",
             host: this.host
           }
         },

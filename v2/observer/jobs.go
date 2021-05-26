@@ -7,6 +7,7 @@ import (
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,6 +47,16 @@ func (o *observer) syncJobPods(ctx context.Context) {
 func (o *observer) syncJobPod(obj interface{}) {
 	pod := obj.(*corev1.Pod)
 
+	// Fetch the cancel func associated with a timed job pod
+	lookup := namespacedPodName(pod.Namespace, pod.Name)
+	cancelTimer, exists := o.timedPodsSet[lookup]
+	if !exists {
+		var timerCtx context.Context
+		timerCtx, cancelTimer = context.WithCancel(context.Background())
+		o.timedPodsSet[lookup] = cancelTimer
+		o.startJobPodTimerFn(timerCtx, pod)
+	}
+
 	// Job pods are only deleted after we're FULLY done with them. So if the
 	// DeletionTimestamp is set, there's nothing for us to do because the Job must
 	// already be in a terminal state.
@@ -76,10 +87,13 @@ func (o *observer) syncJobPod(obj interface{}) {
 		status.Phase = core.JobPhaseRunning
 	case corev1.PodSucceeded:
 		status.Phase = core.JobPhaseSucceeded
+		cancelTimer()
 	case corev1.PodFailed:
 		status.Phase = core.JobPhaseFailed
+		cancelTimer()
 	case corev1.PodUnknown:
 		status.Phase = core.JobPhaseUnknown
+		cancelTimer()
 	}
 
 	if pod.Status.StartTime != nil {
@@ -175,4 +189,52 @@ func (o *observer) deleteJobResources(
 			),
 		)
 	}
+}
+
+func (o *observer) startJobPodTimer(ctx context.Context, pod *corev1.Pod) {
+	defer delete(o.timedPodsSet, namespacedPodName(pod.Namespace, pod.Name))
+
+	if pod.Status.Phase != corev1.PodPending &&
+		pod.Status.Phase != corev1.PodRunning {
+		return
+	}
+	if pod.Annotations[myk8s.AnnotationTimeoutDuration] == "" {
+		return
+	}
+
+	duration := pod.Annotations[myk8s.AnnotationTimeoutDuration]
+	timeout, err := time.ParseDuration(duration)
+	if err != nil {
+		o.errFn(
+			errors.Wrapf(
+				err,
+				"unable to parse timeout duration %q for pod %q",
+				duration,
+				pod.Name,
+			),
+		)
+		return
+	}
+
+	go func() {
+		timer := time.NewTimer(timeout)
+		defer timer.Stop()
+
+		select {
+		case <-timer.C:
+			eventID := pod.Labels[myk8s.LabelEvent]
+			jobName := pod.Labels[myk8s.LabelJob]
+			if err := o.timeoutJobFn(ctx, eventID, jobName); err != nil {
+				o.errFn(
+					errors.Wrapf(
+						err,
+						"error timing out job %q for event %q",
+						jobName,
+						eventID,
+					),
+				)
+			}
+		case <-ctx.Done():
+		}
+	}()
 }

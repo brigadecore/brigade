@@ -1172,6 +1172,9 @@ func (s *substrate) createJobPod(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      myk8s.JobPodName(event.ID, jobName),
 			Namespace: project.Kubernetes.Namespace,
+			Annotations: map[string]string{
+				myk8s.AnnotationTimeoutDuration: fmt.Sprint(jobSpec.TimeoutDuration),
+			},
 			Labels: map[string]string{
 				myk8s.LabelComponent: myk8s.LabelKeyJob,
 				myk8s.LabelProject:   event.ProjectID,

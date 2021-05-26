@@ -114,9 +114,12 @@ type JobSpec struct {
 	// sidecar container), then logic within those containers must account for
 	// these constraints.
 	SidecarContainers map[string]JobContainerSpec `json:"sidecarContainers,omitempty" bson:"sidecarContainers,omitempty"` // nolint: lll
-	// TimeoutSeconds specifies the time, in seconds, that must elapse before a
-	// running Job should be considered to have timed out.
-	TimeoutSeconds int64 `json:"timeoutSeconds,omitempty" bson:"timeoutSeconds,omitempty"` // nolint: lll
+	// TimeoutDuration specifies the time duration that must elapse before a
+	// running Job should be considered to have timed out. This duration string
+	// is a sequence of decimal numbers, each with optional fraction and a unit
+	// suffix, such as "300ms", "3.14s" or "2h45m".
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	TimeoutDuration string `json:"timeoutDuration,omitempty" bson:"timeoutDuration,omitempty"` // nolint: lll
 	// Host specifies criteria for selecting a suitable host (substrate node) for
 	// the Job. This is useful in cases where a Job requires a specific,
 	// non-default operating system (i.e. Windows) or specific hardware (e.g. a
@@ -231,6 +234,9 @@ type JobsService interface {
 	// Cleanup removes Job-related resources from the substrate, presumably
 	// upon completion, without deleting the Job from the data store.
 	Cleanup(ctx context.Context, eventID, jobName string) error
+	// Timeout updates a Job's status to indicate it has timed out and proceeds
+	// to cleanup Job-related resources from the substrate.
+	Timeout(ctx context.Context, eventID, jobName string) error
 }
 
 type jobsService struct {
@@ -641,6 +647,42 @@ func (j *jobsService) Cleanup(
 		)
 	}
 	return nil
+}
+
+func (j *jobsService) Timeout(
+	ctx context.Context,
+	eventID string,
+	jobName string,
+) error {
+	if err := j.authorize(ctx, RoleObserver, ""); err != nil {
+		return err
+	}
+
+	status, err := j.GetStatus(ctx, eventID, jobName)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error retrieving status for event %q job %q",
+			eventID,
+			jobName,
+		)
+	}
+
+	// Update job status
+	now := time.Now()
+	status.Phase = JobPhaseTimedOut
+	status.Ended = &now
+
+	if err := j.UpdateStatus(ctx, eventID, jobName, status); err != nil {
+		return errors.Wrapf(
+			err,
+			"error updating status for event %q job %q",
+			eventID,
+			jobName,
+		)
+	}
+
+	return j.Cleanup(ctx, eventID, jobName)
 }
 
 // JobsStore is an interface for components that implement Job persistence

@@ -27,7 +27,7 @@ describe("jobs", () => {
         assert.equal(job.name, "my-name")
         assert.deepEqual(new Container("debian:latest"), job.primaryContainer)
         assert.deepEqual({}, job.sidecarContainers)
-        assert.equal(1000 * 60 * 15, job.timeout)
+        assert.equal(60 * 15, job.timeoutSeconds)
         assert.deepEqual(new JobHost(), job.host)
         assert.isDefined(job.logger)
       })
