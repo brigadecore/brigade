@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/brigadecore/brigade/v2/internal/retries"
 	"github.com/pkg/errors"
@@ -81,6 +83,7 @@ type LogsService interface {
 }
 
 type logsService struct {
+	authorize        libAuthz.AuthorizeFn
 	projectAuthorize ProjectAuthorizeFn
 	projectsStore    ProjectsStore
 	eventsStore      EventsStore
@@ -90,6 +93,7 @@ type logsService struct {
 
 // NewLogsService returns a specialized interface for accessing logs.
 func NewLogsService(
+	authorize libAuthz.AuthorizeFn,
 	projectAuthorize ProjectAuthorizeFn,
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
@@ -97,6 +101,7 @@ func NewLogsService(
 	coolLogsStore LogsStore,
 ) LogsService {
 	return &logsService{
+		authorize:        authorize,
 		projectAuthorize: projectAuthorize,
 		projectsStore:    projectsStore,
 		eventsStore:      eventsStore,
@@ -150,7 +155,13 @@ func (l *logsService) Stream(
 	// in order to stream logs.
 	if err =
 		l.projectAuthorize(ctx, event.ProjectID, RoleProjectUser); err != nil {
-		return nil, err
+		// The principal wasn't an authorized Project user, but we also allow log
+		// access for the creator of the event so that gateways can send logs
+		// upstream.
+		if err =
+			l.authorize(ctx, system.RoleEventCreator, event.Source); err != nil {
+			return nil, err
+		}
 	}
 
 	if selector.Job != "" {
