@@ -588,38 +588,8 @@ func (j *jobsService) UpdateStatus(
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
-	job, ok := event.Worker.Job(jobName)
-	if !ok {
-		return &meta.ErrNotFound{
-			Type: JobKind,
-			ID:   jobName,
-		}
-	}
 
-	// We have a conflict if the job's phase is already terminal
-	if job.Status.Phase.IsTerminal() {
-		return &meta.ErrConflict{
-			Type: JobKind,
-			ID:   job.Name,
-			Reason: fmt.Sprintf(
-				"Event %q job %q has already reached a terminal phase.",
-				eventID,
-				job.Name,
-			),
-		}
-	}
-
-	return errors.Wrapf(
-		j.jobsStore.UpdateStatus(
-			ctx,
-			eventID,
-			jobName,
-			status,
-		),
-		"error updating status of event %q worker job %q in store",
-		eventID,
-		jobName,
-	)
+	return j.updateStatus(ctx, event, jobName, status)
 }
 
 func (j *jobsService) Cleanup(
@@ -636,30 +606,7 @@ func (j *jobsService) Cleanup(
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
 
-	_, ok := event.Worker.Job(jobName)
-	if !ok {
-		return &meta.ErrNotFound{
-			Type: JobKind,
-			ID:   jobName,
-		}
-	}
-	project, err := j.projectsStore.Get(ctx, event.ProjectID)
-	if err != nil {
-		return errors.Wrapf(
-			err,
-			"error retrieving project %q from store",
-			event.ProjectID,
-		)
-	}
-	if err = j.substrate.DeleteJob(ctx, project, event, jobName); err != nil {
-		return errors.Wrapf(
-			err,
-			"error deleting event %q jobs %q from the substrate",
-			eventID,
-			jobName,
-		)
-	}
-	return nil
+	return j.cleanup(ctx, event, jobName)
 }
 
 func (j *jobsService) Timeout(
@@ -671,31 +618,111 @@ func (j *jobsService) Timeout(
 		return err
 	}
 
-	status, err := j.GetStatus(ctx, eventID, jobName)
+	event, err := j.eventsStore.Get(ctx, eventID)
 	if err != nil {
-		return errors.Wrapf(
-			err,
-			"error retrieving status for event %q job %q",
-			eventID,
-			jobName,
-		)
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+	job, ok := event.Worker.Job(jobName)
+	if !ok {
+		return &meta.ErrNotFound{
+			Type: JobKind,
+			ID:   jobName,
+		}
 	}
 
 	// Update job status
 	now := time.Now()
+	status := *job.Status
 	status.Phase = JobPhaseTimedOut
 	status.Ended = &now
 
-	if err := j.UpdateStatus(ctx, eventID, jobName, status); err != nil {
+	if err := j.updateStatus(ctx, event, jobName, status); err != nil {
 		return errors.Wrapf(
 			err,
 			"error updating status for event %q job %q",
-			eventID,
+			event.ID,
 			jobName,
 		)
 	}
 
-	return j.Cleanup(ctx, eventID, jobName)
+	return j.cleanup(ctx, event, jobName)
+}
+
+// updateStatus is an internal helper func created so that multiple exported
+// functions can share this logic after they've retrieved specified events.
+func (j *jobsService) updateStatus(
+	ctx context.Context,
+	event Event,
+	jobName string,
+	status JobStatus,
+) error {
+	job, ok := event.Worker.Job(jobName)
+	if !ok {
+		return &meta.ErrNotFound{
+			Type: JobKind,
+			ID:   jobName,
+		}
+	}
+
+	// We have a conflict if the job's phase is already terminal
+	if job.Status.Phase.IsTerminal() {
+		return &meta.ErrConflict{
+			Type: JobKind,
+			ID:   job.Name,
+			Reason: fmt.Sprintf(
+				"Event %q job %q has already reached a terminal phase.",
+				event.ID,
+				job.Name,
+			),
+		}
+	}
+
+	return errors.Wrapf(
+		j.jobsStore.UpdateStatus(
+			ctx,
+			event.ID,
+			jobName,
+			status,
+		),
+		"error updating status of event %q worker job %q in store",
+		event.ID,
+		jobName,
+	)
+}
+
+// cleanup is an internal helper func created so that multiple exported
+// functions can share this logic after they've retrieved specified events.
+func (j *jobsService) cleanup(
+	ctx context.Context,
+	event Event,
+	jobName string,
+) error {
+	job, ok := event.Worker.Job(jobName)
+	if !ok {
+		return &meta.ErrNotFound{
+			Type: JobKind,
+			ID:   jobName,
+		}
+	}
+
+	project, err := j.projectsStore.Get(ctx, event.ProjectID)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error retrieving project %q from store",
+			event.ProjectID,
+		)
+	}
+
+	if err = j.substrate.DeleteJob(ctx, project, event, job.Name); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting event %q jobs %q from the substrate",
+			event.ID,
+			jobName,
+		)
+	}
+	return nil
 }
 
 // JobsStore is an interface for components that implement Job persistence
