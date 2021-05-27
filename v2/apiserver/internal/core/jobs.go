@@ -714,15 +714,12 @@ func (j *jobsService) cleanup(
 		)
 	}
 
-	if err = j.substrate.DeleteJob(ctx, project, event, job.Name); err != nil {
-		return errors.Wrapf(
-			err,
-			"error deleting event %q jobs %q from the substrate",
-			event.ID,
-			jobName,
-		)
-	}
-	return nil
+	return errors.Wrapf(
+		j.substrate.DeleteJob(ctx, project, event, job.Name),
+		"error deleting event %q jobs %q from the substrate",
+		event.ID,
+		jobName,
+	)
 }
 
 // JobsStore is an interface for components that implement Job persistence

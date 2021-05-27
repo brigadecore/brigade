@@ -402,27 +402,7 @@ func (w *workersService) UpdateStatus(
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
 
-	// We have a conflict if the worker's phase is already terminal
-	if event.Worker.Status.Phase.IsTerminal() {
-		return &meta.ErrConflict{
-			Type: EventKind,
-			ID:   event.ID,
-			Reason: fmt.Sprintf(
-				"Event %q worker has already reached a terminal phase.",
-				event.ID,
-			),
-		}
-	}
-
-	return errors.Wrapf(
-		w.workersStore.UpdateStatus(
-			ctx,
-			eventID,
-			status,
-		),
-		"error updating status of event %q worker in store",
-		eventID,
-	)
+	return w.updateStatus(ctx, event, status)
 }
 
 func (w *workersService) Cleanup(
@@ -437,22 +417,8 @@ func (w *workersService) Cleanup(
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
-	project, err := w.projectsStore.Get(ctx, event.ProjectID)
-	if err != nil {
-		return errors.Wrapf(
-			err,
-			"error retrieving project %q from store",
-			event.ProjectID,
-		)
-	}
-	if err = w.substrate.DeleteWorkerAndJobs(ctx, project, event); err != nil {
-		return errors.Wrapf(
-			err,
-			"error deleting event %q worker and jobs from the substrate",
-			eventID,
-		)
-	}
-	return nil
+
+	return w.cleanup(ctx, event)
 }
 
 func (w *workersService) Timeout(
@@ -472,16 +438,18 @@ func (w *workersService) Timeout(
 	status := event.Worker.Status
 	status.Phase = WorkerPhaseTimedOut
 	status.Ended = &now
-	if err = w.UpdateStatus(ctx, eventID, status); err != nil {
+	if err = w.updateStatus(ctx, event, status); err != nil {
 		return errors.Wrapf(
 			err,
 			"error updating status for event %q worker",
-			eventID,
+			event.ID,
 		)
 	}
 
 	// Update all applicable worker job statuses with JobPhaseAborted
-	// TODO: go func here?  How about errors?
+	// TODO: go func here?
+	// TODO: How about errors?  Do we want to compile and report only
+	// after all have been processed?
 	for _, job := range event.Worker.Jobs {
 		if job.Status != nil && !job.Status.Phase.IsTerminal() {
 			status := *job.Status
@@ -489,7 +457,7 @@ func (w *workersService) Timeout(
 			status.Ended = &now
 			if err := w.jobsStore.UpdateStatus(
 				ctx,
-				eventID,
+				event.ID,
 				job.Name,
 				status,
 			); err != nil {
@@ -503,7 +471,56 @@ func (w *workersService) Timeout(
 		}
 	}
 
-	return w.Cleanup(ctx, eventID)
+	return w.cleanup(ctx, event)
+}
+
+// updateStatus is an internal helper func created so that multiple exported
+// functions can share this logic after they've retrieved specified events.
+func (w *workersService) updateStatus(
+	ctx context.Context,
+	event Event,
+	status WorkerStatus,
+) error {
+	// We have a conflict if the worker's phase is already terminal
+	if event.Worker.Status.Phase.IsTerminal() {
+		return &meta.ErrConflict{
+			Type: EventKind,
+			ID:   event.ID,
+			Reason: fmt.Sprintf(
+				"Event %q worker has already reached a terminal phase.",
+				event.ID,
+			),
+		}
+	}
+
+	return errors.Wrapf(
+		w.workersStore.UpdateStatus(
+			ctx,
+			event.ID,
+			status,
+		),
+		"error updating status of event %q worker in store",
+		event.ID,
+	)
+}
+
+// cleanup is an internal helper func created so that multiple exported
+// functions can share this logic after they've retrieved specified events.
+func (w *workersService) cleanup(ctx context.Context, event Event) error {
+	project, err := w.projectsStore.Get(ctx, event.ProjectID)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error retrieving project %q from store",
+			event.ProjectID,
+		)
+	}
+
+	return errors.Wrapf(
+		w.substrate.DeleteWorkerAndJobs(ctx, project, event),
+		"error deleting event %q worker and jobs from the substrate",
+		event.ID,
+	)
 }
 
 // WorkersStore is an interface for components that implement Worker persistence
