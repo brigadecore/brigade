@@ -279,7 +279,9 @@ func (j *jobsService) Create(
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
 	if originalJob, ok := event.Worker.Job(job.Name); ok {
-		// If this is not a retry event, return ErrConflict.
+		// If this is not a retry event or the original job hasn't been inherited
+		// (if it had, the LogsEventID field would be non-empty), return
+		// ErrConflict.
 		if event.Labels == nil || event.Labels[RetryLabelKey] == "" {
 			return &meta.ErrConflict{
 				Type: JobKind,
@@ -294,9 +296,22 @@ func (j *jobsService) Create(
 
 		// Else, check to see if the job configurations match.
 		// If they do, return and inherit the original's results.
-		// Otherwise, proceed with the creation of the newer job.
+		// Otherwise, proceed with the re-creation of the job *if* it has
+		// been inherited previously (LogsEventID field non-empty) -- return
+		// ErrConflict if it hasn't been inherited.
 		if reflect.DeepEqual(originalJob, job) {
 			return nil
+		} else if originalJob.Status == nil ||
+			originalJob.Status.LogsEventID == "" {
+			return &meta.ErrConflict{
+				Type: JobKind,
+				ID:   job.Name,
+				Reason: fmt.Sprintf(
+					"Event %q already has a non-inherited job named %q.",
+					eventID,
+					job.Name,
+				),
+			}
 		}
 	}
 
