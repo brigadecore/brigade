@@ -88,10 +88,6 @@ format: format-go format-js
 format-go:
 	$(GO_DOCKER_CMD) sh -c "go list -f '{{.Dir}}' ./... | xargs goimports -w -local github.com/brigadecore/brigade"
 
-.PHONY: yarn-install
-yarn-install:
-	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn install"
-
 .PHONY: format-js
 format-js:
 	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn format"
@@ -106,7 +102,7 @@ yarn-audit:
 
 # All non-functional tests
 .PHONY: test
-test: verify-vendored-code lint test-unit verify-vendored-code-js test-js
+test: verify-vendored-code lint test-unit test-js
 
 # Verifies there are no discrepancies between desired dependencies and the
 # tracked, vendored dependencies
@@ -123,16 +119,10 @@ lint:
 test-unit:
 	$(GO_DOCKER_CMD) go test -v ./...
 
-# Verifies there are no discrepancies between desired dependencies and the
-# tracked, vendored dependencies
-.PHONY: verify-vendored-code-js
-verify-vendored-code-js:
-	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn check --integrity && yarn check --verify-tree"
-
 # JS test is local only
 .PHONY: test-js
 test-js:
-	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn build && yarn test"
+	$(JS_DOCKER_CMD) sh -c "cd brigade-worker && yarn install && yarn test"
 
 ################################################################################
 # Build / Publish                                                              #
