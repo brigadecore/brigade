@@ -454,7 +454,60 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 		assertions         func(error)
 	}{
 		{
-			name: "job retry - not equivalent",
+			name: "not a retry; same name",
+			service: &jobsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Jobs: []Job{
+									{
+										Name: testJobName,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			workspaceMountPath: "",
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrConflict{}, err)
+				require.Contains(t, err.Error(), "already has a job")
+			},
+		},
+		{
+			name: "is a retry; same name; job not inherited",
+			service: &jobsService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Labels: map[string]string{
+								RetryLabelKey: testEventID,
+							},
+							Worker: Worker{
+								Jobs: []Job{
+									{
+										Name: testJobName,
+									},
+								},
+							},
+						}, nil
+					},
+				},
+			},
+			workspaceMountPath: "",
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrConflict{}, err)
+				require.Contains(t, err.Error(), "already has a non-inherited job")
+			},
+		},
+		{
+			name: "inherited job retry - not equivalent",
 			service: &jobsService{
 				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
@@ -479,7 +532,8 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 											},
 										},
 										Status: &JobStatus{
-											Phase: JobPhaseSucceeded,
+											LogsEventID: "abc123",
+											Phase:       JobPhaseSucceeded,
 										},
 									},
 								},
@@ -487,11 +541,34 @@ func TestJobsServiceCreateRetry(t *testing.T) {
 						}, nil
 					},
 				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				jobsStore: &mockJobsStore{
+					CreateFn: func(context.Context, string, Job) error {
+						return nil
+					},
+				},
+				substrate: &mockSubstrate{
+					StoreJobEnvironmentFn: func(
+						_ context.Context,
+						_ Project,
+						_ string,
+						_ string,
+						jobSpec JobSpec,
+					) error {
+						return nil
+					},
+					ScheduleJobFn: func(context.Context, Project, Event, string) error {
+						return nil
+					},
+				},
 			},
 			workspaceMountPath: "",
 			assertions: func(err error) {
-				require.Error(t, err)
-				require.IsType(t, &meta.ErrConflict{}, err)
+				require.NoError(t, err)
 			},
 		},
 		{
