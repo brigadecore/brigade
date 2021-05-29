@@ -142,12 +142,6 @@ To run the tests:
 $ make test-js
 ```
 
-To re-run JS dependency resolution:
-
-```console
-$ make yarn-install
-```
-
 (See `Running the Brigade-Worker Locally` below for live testing against a running instance.)
 
 ## Building Source
