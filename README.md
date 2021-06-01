@@ -35,8 +35,8 @@ To install Brigade 2 with _default_ configuration:
 
 ```console
 $ export HELM_EXPERIMENTAL_OCI=1
-$ helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-alpha.4
-$ helm chart export ghcr.io/brigadecore/brigade:v2.0.0-alpha.4 -d ~/charts
+$ helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-alpha.5
+$ helm chart export ghcr.io/brigadecore/brigade:v2.0.0-alpha.5 -d ~/charts
 $ kubectl create namespace brigade2
 $ helm install brigade2 ~/charts/brigade --namespace brigade2
 ```
