@@ -85,7 +85,7 @@ Log in as the "root" user, using the default root password `F00Bar!!!`. Be sure
 to use the `-k` option to disregard issues with the self-signed certificate.
 
 ```console
-$ brig -k login --server https://localhost:8443 --root
+$ brig login -k --server https://localhost:8443 --root
 ```
 
 For security reasons, root user sessions are invalidated one hour after they
@@ -115,7 +115,7 @@ With this file stored locally, at a location such as `~/simple-pipeline.yaml`, f
 instance, you can direct Brigade to create a new project from this file:
 
 ```console
-$ brig -k project create --file ~/simple-pipeline.yaml
+$ brig project create --file ~/simple-pipeline.yaml
 ```
 
 If you want to alter the example, note that with an appropriate editor or IDE
@@ -131,7 +131,7 @@ use the `--follow` flag to wait for event handling to begin and have the logs
 streamed straight to the CLI:
 
 ```console
-$ brig -k event create --project simple-pipeline --follow
+$ brig event create --project simple-pipeline --follow
 ```
 
 Be patient with your first event. Events are handled asynchronously, and after a
