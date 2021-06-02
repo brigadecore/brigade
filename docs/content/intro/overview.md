@@ -3,6 +3,7 @@ title: Brigade Overview
 description: High level view of the Brigade tool.
 section: intro
 aliases: /intro/
+weight: 21
 ---
 
 Brigade is a Kubernetes-native tool for doing event-driven scripting. Here's what that means:

@@ -2,6 +2,7 @@
 title: A Brigade Quickstart
 description: A Brigade Quickstart.
 section: intro
+weight: 22
 ---
 
 In this QuickStart, you will install Brigade, create a project and execute it.
@@ -17,6 +18,7 @@ In this QuickStart, you will install Brigade, create a project and execute it.
 * [A development Kubernetes cluster](#create-a-cluster).
 * [Brigade CLI](#install-the-brigade-cli) installed.
 * [Helm] CLI v3+ installed.
+* [kubectl] CLI installed.
 * Free disk space. The installation requires sufficient free disk space and will fail if your disk is nearly full.
 
 > Please take note that the default configuration is not secure and is not appropriate for any shared cluster.
@@ -138,10 +140,11 @@ Install Brigade on your local development cluster. See our [Installation] instru
     helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-alpha.5
     helm chart export ghcr.io/brigadecore/brigade:v2.0.0-alpha.5 -d ~/charts
     kubectl create namespace brigade2
-    helm install brigade2 ~/charts/brigade --namespace brigade2 --wait --timeout 5m
+    helm install brigade2 ~/charts/brigade --namespace brigade2
+    kubectl rollout status deployment brigade2-apiserver -n brigade2 --timeout 5m
     ```
     
-    Wait for the brigade2-apiserver deployment to be ready.
+    Wait for the Brigade deployment to be ready.
     If the deployment fails, proceed to the [installation troubleshooting](/intro/install/#troubleshooting) section.
 
 1. Make the Brigade API server available using port forwarding. This is necessary only for development clusters that do not have a public IP address.
@@ -241,8 +244,9 @@ Otherwise, you can remove ALL resources created in this QuickStart by either:
 
 ## Next Steps
 
-You now know how to install Brigade, define a project, and trigger an event for the project.
-Next learn how to [create a CI pipeline with Brigade](/intro/tutorial01/).
+You now know how to install Brigade on a local development cluster, define a project, and trigger an event for the project.
+Next learn how to [install and configure Brigade](/intro/install/) on a production cluster, or continue learning about
+Brigade with our [CI pipeline tutorial](/intro/tutorial01/).
 
 ## Troubleshooting
 

@@ -21,7 +21,8 @@ This App can then be used across one or more repositories, as opposed to the old
 Next, to enable this gateway for a Brigade installation, set the `brigade-github-app.enabled` to `true`:
 
 ```
-$ helm install -n brigade brigade/brigade -f brigade-values.yaml --set brigade-github-app.enabled=true
+helm upgrade brigade2 ~/charts/brigade --namespace brigade2 --set brigade-github-app.enabled=true
+kubectl rollout status deployment brigade2-apiserver -n brigade2 --timeout 1m
 ```
 
 The rest of the `brigade-github-app` chart values can either be placed under the key of the same
