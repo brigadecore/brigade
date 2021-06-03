@@ -789,7 +789,34 @@ describe("k8s", function () {
         });
       });
     });
+    describe("nodepool support", () => {
+      let j = new mock.MockJob("pequod", "whaler", ["echo hello"]);
+      let p = mock.mockProject();
+      let e = mock.mockEvent();
+      const nodePoolKey = "test-nodepool-key";
+      const nodePoolValue = "test-nodepool-value";
+      it("creates JobRunner with affinity", function () {
+          k8s.options.workerNodePoolKey = nodePoolKey
+          k8s.options.workerNodePoolValue = nodePoolValue
+          let jr = new k8s.JobRunner().init(j, e, p);
+          assert.isDefined(jr.runner.spec.affinity.nodeAffinity)
+          assert.equal(jr.runner.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key, nodePoolKey)
+          assert.equal(jr.runner.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0], nodePoolValue)
+      });
+      it("creates JobRunner without affinity workerNodePoolKey is empty", function () {
+          k8s.options.workerNodePoolKey = ""
+          k8s.options.workerNodePoolValue = nodePoolValue
+          let jr = new k8s.JobRunner().init(j, e, p);
+          assert.isUndefined(jr.runner.spec.affinity)
+      });
+      it("creates JobRunner without affinity workerNodePoolValue is empty", function () {
+          k8s.options.workerNodePoolKey = nodePoolKey
+          k8s.options.workerNodePoolValue = ""
+          let jr = new k8s.JobRunner().init(j, e, p);
+          assert.isUndefined(jr.runner.spec.affinity)
+      });
   });
+});
 
   describe("BuildStorage", () => {
     describe("buildPVC", () => {

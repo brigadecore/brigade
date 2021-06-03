@@ -188,3 +188,79 @@ func TestNewWorkerPod_WorkerEnv_ServiceAccount(t *testing.T) {
 		})
 	}
 }
+
+func TestNewWorkerPod_Affinity(t *testing.T) {
+	testcases := []struct {
+		name   string
+		data   map[string][]byte
+		config Config
+	}{
+		{"without affinity",
+			map[string][]byte{},
+			Config{
+				WorkerNodePoolKey:   "",
+				WorkerNodePoolValue: "",
+			},
+		},
+		{"working affinity",
+			map[string][]byte{},
+			Config{
+				WorkerNodePoolKey:   "nodepool-key",
+				WorkerNodePoolValue: "nodepool-value",
+			},
+		},
+		{"broken affinity - no nodepool-key",
+			map[string][]byte{},
+			Config{
+				WorkerNodePoolKey:   "",
+				WorkerNodePoolValue: "nodepool-value",
+			},
+		},
+		{"broken affinity - no nodepool-value",
+			map[string][]byte{},
+			Config{
+				WorkerNodePoolKey:   "nodepool-key",
+				WorkerNodePoolValue: "",
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Logf("Running %s", tc.name)
+			build := &v1.Secret{}
+			proj := &v1.Secret{
+				Data: tc.data,
+			}
+			config := &tc.config
+
+			pod := NewWorkerPod(build, proj, config)
+
+			spec := pod.Spec
+			for _, env := range spec.Containers[0].Env {
+
+				if env.Name == "BRIGADE_WORKER_NODEPOOL_KEY" && config.WorkerNodePoolKey == "" {
+					t.Error("Env variable BRIGADE_WORKER_NODEPOOL_KEY should not be present")
+				}
+
+				if env.Name == "BRIGADE_WORKER_NODEPOOL_VALUE" && config.WorkerNodePoolValue == "" {
+					t.Error("Env variable BRIGADE_WORKER_NODEPOOL_VALUE should not be present")
+				}
+			}
+			switch pod.Spec.Affinity {
+			case nil:
+				if config.WorkerNodePoolKey != "" && config.WorkerNodePoolValue != "" {
+					t.Error("Affinity is not defined, while WorkerNodePoolKey and WorkerNodePoolValue are present")
+				}
+			default:
+				if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0].Key != config.WorkerNodePoolKey {
+					t.Errorf("Broken affinity pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0].Key not equal to WorkerNodePoolKey")
+				}
+				if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0].Values[0] != config.WorkerNodePoolValue {
+					t.Errorf("Broken affinity no pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0].Values[0] not equal WorkerNodePoolValue")
+				}
+			}
+
+		})
+	}
+}

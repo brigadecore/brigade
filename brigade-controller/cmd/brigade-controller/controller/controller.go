@@ -32,6 +32,8 @@ type Config struct {
 	WorkerRequestsCPU          string
 	WorkerRequestsMemory       string
 	WorkerLimitsCPU            string
+	WorkerNodePoolKey          string
+	WorkerNodePoolValue        string
 	WorkerLimitsMemory         string
 	DefaultBuildStorageClass   string
 	DefaultCacheStorageClass   string
