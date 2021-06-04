@@ -112,7 +112,7 @@ Install Brigade on your local development cluster. See our [Installation] instru
 
 1. Enable Helm's experimental OCI support by setting the `HELM_EXPERIMENTAL_OCI` environment variable to 1.
 
-    **bash**
+    **posix**
     ```bash
     export HELM_EXPERIMENTAL_OCI=1
     ```
@@ -124,7 +124,7 @@ Install Brigade on your local development cluster. See our [Installation] instru
 
 1. Create a directory to store the Brigade Helm charts.
 
-    **bash**
+    **posix**
     ```bash
     mkdir -p ~/charts
     ```
@@ -139,8 +139,7 @@ Install Brigade on your local development cluster. See our [Installation] instru
     ```
     helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-alpha.5
     helm chart export ghcr.io/brigadecore/brigade:v2.0.0-alpha.5 -d ~/charts
-    kubectl create namespace brigade2
-    helm install brigade2 ~/charts/brigade --namespace brigade2
+    helm install brigade2 ~/charts/brigade --namespace brigade2 --create-namespace
     kubectl rollout status deployment brigade2-apiserver -n brigade2 --timeout 5m
     ```
     
@@ -149,7 +148,7 @@ Install Brigade on your local development cluster. See our [Installation] instru
 
 1. Make the Brigade API server available using port forwarding. This is necessary only for development clusters that do not have a public IP address.
 
-    **bash**
+    **posix**
     ```
     kubectl --namespace brigade2 port-forward service/brigade2-apiserver 8443:443 &>/dev/null &
     ```
@@ -166,7 +165,7 @@ Install Brigade on your local development cluster. See our [Installation] instru
 Authenticate to Brigade as the root user using demo password `F00Bar!!!`. The -k flag instructs Brigade to ignore the self-signed certificate used by our local installation of Brigade.
 
 ```
-brig -k login --server https://localhost:8443 --root
+brig login -k --server https://localhost:8443 --root
 ```
 
 If the address https://localhost:8443 does not resolve, double-check that the brigade2-apiserver service was successfully forwarded from the previous section.
@@ -178,7 +177,7 @@ In this example project, the handler prints a message using a string passed in t
 
 1. Download the example project to the current directory.
 
-    **bash**
+    **posix**
     ```bash
     curl -o project.yaml https://raw.githubusercontent.com/brigadecore/brigade/v2/examples/12-first-payload/project.yaml
     ```
@@ -196,13 +195,13 @@ In this example project, the handler prints a message using a string passed in t
 1. Create the project in Brigade with the following command.
 
     ```
-    brig -k project create --file payload.yaml
+    brig project create --file project.yaml
     ```
 
 1. List the defined projects to see our new project "first-payload":
 
     ```console
-    $ brig -k project list
+    $ brig project list
     ID           	DESCRIPTION                         	AGE
     first-payload	Demonstrates using the event payload	49m
     ```
@@ -214,7 +213,7 @@ In this example project, the handler prints a message using a string passed in t
 With our project defined, we are now ready to trigger an event and watch our handler execute.
 
 ```
-$ brig -k event create --project first-payload --payload Dolly --follow
+$ brig event create --project first-payload --payload Dolly --follow
 
 Created event "7a5234d6-e2aa-402f-acb9-c620dfc20003".
 
@@ -234,7 +233,7 @@ Hello, Dolly!
 If you want to keep your Brigade installation, run the following command to remove the example project created in this QuickStart:
 
 ```
-brig -k project delete first-payload
+brig project delete first-payload
 ```
 
 Otherwise, you can remove ALL resources created in this QuickStart by either:
@@ -251,13 +250,12 @@ Brigade with our [CI pipeline tutorial](/intro/tutorial01/).
 ## Troubleshooting
 
 * [Brigade Installation does not Finish Successfully](/intro/install/#troubleshooting)
-* [Brig Command Hangs](#brig-command-hangs)
+* [Login Command Hangs](#login-command-hangs)
 
-### Brig Command Hangs
+### Login Command Hangs
 
-If a brig command hangs, check that you included the -k flag.
-For example, `brig -k project list`.
-The -k flag is required because our local development installation of Brigade is using a self-signed certificate.
+If the brig login command hangs, check that you included the -k flag.
+This flag is required because our local development installation of Brigade is using a self-signed certificate.
 
 
 <!--

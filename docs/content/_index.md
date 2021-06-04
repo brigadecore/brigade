@@ -9,7 +9,8 @@ Everything you need to know about Brigade.
 
 If you haven't used Brigade before, welcome! 🎉
 Brigade 2.0 has a new design that makes learning and interacting with Brigade easier than ever before.
-It is now a first-class experience that doesn't require familiarity with Kubernetes, so you can quickly be productive without a steep learning curve.
+Brigade now has a first-class end-user experience that doesn't require familiarity with Kubernetes, so you can quickly be productive without a steep learning curve.
+Since it is still an application installed on Kubernetes, administrators, and those installing Brigade, will still need to know how to install and configure applications on Kubernetes.
 
 For those who are migrating from Brigade 1.0, while there are some breaking changes, overall it should feel familiar.
 Migration instructions will be forthcoming in the coming weeks, so watch our [blog] or join us on the [#brigade channel][channel] on the [Kubernetes Slack][slack] for when that's available.

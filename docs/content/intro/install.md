@@ -65,7 +65,7 @@ $env:PATH+=";$env:USERPROFILE\bin"
 
 1. Enable Helm's experimental OCI support by setting the HELM_EXPERIMENTAL_OCI environment variable to 1.
 
-    **bash**
+    **posix**
     ```bash
     export HELM_EXPERIMENTAL_OCI=1
     ```
@@ -77,7 +77,7 @@ $env:PATH+=";$env:USERPROFILE\bin"
 
 1. Create a directory to store the Brigade Helm charts.
 
-    **bash**
+    **posix**
     ```bash
     mkdir -p ~/charts
     ```
@@ -92,8 +92,7 @@ $env:PATH+=";$env:USERPROFILE\bin"
     ```
     helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-alpha.5
     helm chart export ghcr.io/brigadecore/brigade:v2.0.0-alpha.5 -d ~/charts
-    kubectl create namespace brigade2
-    helm install brigade2 ~/charts/brigade --namespace brigade2
+    helm install brigade2 ~/charts/brigade --namespace brigade2 --create-namespace
     kubectl rollout status deployment brigade2-apiserver -n brigade2 --timeout 5m
     ```
    
