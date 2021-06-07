@@ -24,6 +24,7 @@ type MockWorkersClient struct {
 	CleanupFn  func(ctx context.Context, eventID string) error
 	TimeoutFn  func(ctx context.Context, eventID string) error
 	JobsClient core.JobsClient
+	TimeoutFn  func(ctx context.Context, eventID string) error
 }
 
 func (m *MockWorkersClient) Start(ctx context.Context, eventID string) error {
@@ -62,4 +63,8 @@ func (m *MockWorkersClient) Timeout(ctx context.Context, eventID string) error {
 
 func (m *MockWorkersClient) Jobs() core.JobsClient {
 	return m.JobsClient
+}
+
+func (m *MockWorkersClient) Timeout(ctx context.Context, eventID string) error {
+	return m.TimeoutFn(ctx, eventID)
 }
