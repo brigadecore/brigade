@@ -24,8 +24,8 @@ Before you can install Brigade, ensure that you have the [prerequisites](#prereq
   If you are using Brigade in a local development environment, the [QuickStart] demonstrates how to access a local KinD or Minikube cluster.
 * [Helm] CLI v3+ installed.
 * [kubectl] CLI installed.
-* Free disk space.  
-  The installation requires sufficient free disk space and will fail if your disk is nearly full.
+* Free disk space on the cluster nodes.  
+  The installation requires sufficient free disk space and will fail if a cluster node disk is nearly full.
 
 [Kubernetes cluster]: https://kubernetes.io/docs/setup/
 [Helm]: https://helm.sh/docs/intro/install/
@@ -157,11 +157,11 @@ Note that this is just one way of configuring Brigade to receive inbound connect
 
 ## Troubleshooting
 
-### Brigade Installation does not Finish Successfully
+### Brigade installation does not finish successfully
 
-A common cause for failed Brigade deployments is either low disk space on your computer, or the amount of disk space allocated to Docker Desktop is nearly full.
+A common cause for failed Brigade deployments is either low disk space on the cluster node, or the amount of disk space allocated to Docker Desktop is nearly full.
 
-Check if that is the problem by looking at the logs for Brigade's monogdb and artemis pods.
+Check if that is the problem by looking at the logs for Brigade's mongodb and artemis pods.
 If the logs include "No space left on device" or "Disk Full!", then you need to free up disk space and retry the installation.
 Running `docker system prune` is one way to recover disk space for Docker.
 

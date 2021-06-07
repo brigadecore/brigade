@@ -146,29 +146,53 @@ Install Brigade on your local development cluster. See our [Installation] instru
     Wait for the Brigade deployment to be ready.
     If the deployment fails, proceed to the [installation troubleshooting](/intro/install/#troubleshooting) section.
 
-1. Make the Brigade API server available using port forwarding. This is necessary only for development clusters that do not have a public IP address.
+Now that Brigade is running, you need to determine the address of the Brigade API so that you can use it later in this QuickStart:
 
-    **posix**
-    ```
-    kubectl --namespace brigade2 port-forward service/brigade2-apiserver 8443:443 &>/dev/null &
-    ```
+### Port Forward a Local Cluster
 
-    **powershell**
-    ```
-    & kubectl --namespace brigade2 port-forward service/brigade2-apiserver 8443:443 *> $null  
-    ```
+If you are running a cluster locally, use port forwarding to make the Brigade API available via localhost:
+
+**posix**
+
+```
+kubectl --namespace brigade2 port-forward service/brigade2-apiserver 8443:443 &>/dev/null &
+```
+
+**powershell**
+
+```
+& kubectl --namespace brigade2 port-forward service/brigade2-apiserver 8443:443 *> $null  
+```
+
+### Get External IP of a Remote Cluster
+
+If you are running a cluster remotely, such as on a cloud provider, the Brigade API is available at the External IP of the brigade2-apiserver service:
+
+```
+kubectl get service --namespace brigade2 brigade2-apiserver -o=jsonpath='{.status.loadBalancer.ingress[0].ip}'
+```
 
 [Installation]: /intro/install/
 
 ## Log in to Brigade
 
-Authenticate to Brigade as the root user using demo password `F00Bar!!!`. The -k flag instructs Brigade to ignore the self-signed certificate used by our local installation of Brigade.
+Authenticate to Brigade as the root user using demo password `F00Bar!!!`. The \--insecure flag instructs Brigade to ignore the self-signed certificate used by our local installation of Brigade.
+
+**local clusters**
 
 ```
-brig login -k --server https://localhost:8443 --root
+brig login --insecure --server https://localhost:8443 --root
 ```
 
 If the address https://localhost:8443 does not resolve, double-check that the brigade2-apiserver service was successfully forwarded from the previous section.
+
+**remote clusters**
+
+Replace `IP_ADDRESS` with the External IP address of your cluster:
+
+```
+brig login --insecure --server https://IP_ADDRESS --root
+```
 
 ## Create a Project
 
@@ -190,7 +214,7 @@ In this example project, the handler prints a message using a string passed in t
 
     <script src="https://gist-it.appspot.com/https://raw.githubusercontent.com/brigadecore/brigade/v2/examples/12-first-payload/project.yaml"></script>
 
-    The project defines an handler for the "exec" event, that reads the event payload string and prints it out with "Hello, PAYLOAD!".
+    The project defines a handler for the "exec" event, that reads the event payload string and prints it out with "Hello, PAYLOAD!".
 
 1. Create the project in Brigade with the following command.
 
@@ -198,7 +222,7 @@ In this example project, the handler prints a message using a string passed in t
     brig project create --file project.yaml
     ```
 
-1. List the defined projects to see our new project "first-payload":
+1. List the defined projects with `brig project list` and verify that you see your new project:
 
     ```console
     $ brig project list
@@ -210,11 +234,14 @@ In this example project, the handler prints a message using a string passed in t
 
 ## Trigger an Event
 
-With our project defined, we are now ready to trigger an event and watch our handler execute.
+With our project defined, you are now ready to trigger an event and watch your handler execute.
 
 ```
-$ brig event create --project first-payload --payload Dolly --follow
+brig event create --project first-payload --payload Dolly --follow
+```
 
+Below is example output of a successful event handler:
+```
 Created event "7a5234d6-e2aa-402f-acb9-c620dfc20003".
 
 Waiting for event's worker to be RUNNING...
@@ -249,10 +276,10 @@ Brigade with our [CI pipeline tutorial](/intro/tutorial01/).
 
 ## Troubleshooting
 
-* [Brigade Installation does not Finish Successfully](/intro/install/#troubleshooting)
-* [Login Command Hangs](#login-command-hangs)
+* [Brigade installation does not finish successfully](/intro/install/#troubleshooting)
+* [Login command hangs](#login-command-hangs)
 
-### Login Command Hangs
+### Login command hangs
 
 If the brig login command hangs, check that you included the -k flag.
 This flag is required because our local development installation of Brigade is using a self-signed certificate.
