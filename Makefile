@@ -143,6 +143,20 @@ lint-js:
 		yarn lint \
 	'
 
+.PHONY: yarn-audit
+yarn-audit:
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		yarn install && \
+		yarn audit && \
+		cd ../brigadier-polyfill && \
+		yarn install && \
+		yarn audit && \
+		cd ../worker && \
+		yarn install && \
+		yarn audit \
+	'
+
 .PHONY: clean-js
 clean-js:
 	$(JS_DOCKER_CMD) sh -c ' \

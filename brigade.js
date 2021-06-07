@@ -242,6 +242,14 @@ const publishCLIJob = (e, p) => {
 }
 jobs[publishCLIJobName] = publishCLIJob;
 
+// yarn audit:
+
+const runYarnAuditJobName = "yarn-audit";
+const runYarnAuditJob = (e, p) => {
+  return new MakeTargetJob(runYarnAuditJobName, jsImg, e);
+}
+jobs[runYarnAuditJobName] = runYarnAuditJob
+
 // Run the entire suite of tests, builds, etc. concurrently WITHOUT publishing
 // anything initially. If EVERYTHING passes AND this was a push (merge,
 // presumably) to the v2 branch, then run jobs to publish "edge" images.
@@ -274,7 +282,9 @@ function runSuite(e, p) {
     // Helm chart:
     run(e, p, lintChartJob(e, p)).catch((err) => { return err }),
     // CLI:
-    run(e, p, buildCLIJob(e, p)).catch((err) => { return err })
+    run(e, p, buildCLIJob(e, p)).catch((err) => { return err }),
+    // yarn audit:
+    run(e, p, runYarnAuditJob(e, p)).catch((err) => { return err })
   ]).then((values) => {
     values.forEach((value) => {
       if (value instanceof Error) throw value;
