@@ -259,7 +259,6 @@ type workersService struct {
 	projectsStore ProjectsStore
 	eventsStore   EventsStore
 	workersStore  WorkersStore
-	jobsStore     JobsStore
 	substrate     Substrate
 }
 
@@ -269,7 +268,6 @@ func NewWorkersService(
 	projectsStore ProjectsStore,
 	eventsStore EventsStore,
 	workersStore WorkersStore,
-	jobsStore JobsStore,
 	substrate Substrate,
 ) WorkersService {
 	return &workersService{
@@ -277,7 +275,6 @@ func NewWorkersService(
 		projectsStore: projectsStore,
 		eventsStore:   eventsStore,
 		workersStore:  workersStore,
-		jobsStore:     jobsStore,
 		substrate:     substrate,
 	}
 }
@@ -434,41 +431,8 @@ func (w *workersService) Timeout(
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
 
-	now := time.Now()
-	status := event.Worker.Status
-	status.Phase = WorkerPhaseTimedOut
-	status.Ended = &now
-	if err = w.updateStatus(ctx, event, status); err != nil {
-		return errors.Wrapf(
-			err,
-			"error updating status for event %q worker",
-			event.ID,
-		)
-	}
-
-	// Update all applicable worker job statuses with JobPhaseAborted
-	// TODO: go func here?
-	// TODO: How about errors?  Do we want to compile and report only
-	// after all have been processed?
-	for _, job := range event.Worker.Jobs {
-		if job.Status != nil && !job.Status.Phase.IsTerminal() {
-			status := *job.Status
-			status.Phase = JobPhaseAborted
-			status.Ended = &now
-			if err := w.jobsStore.UpdateStatus(
-				ctx,
-				event.ID,
-				job.Name,
-				status,
-			); err != nil {
-				return errors.Wrapf(
-					err,
-					"error updating status for worker job %q for event %q",
-					job.Name,
-					eventID,
-				)
-			}
-		}
+	if err := w.workersStore.Timeout(ctx, eventID); err != nil {
+		return errors.Wrapf(err, "error timing out worker for event %q", eventID)
 	}
 
 	return w.cleanup(ctx, event)
@@ -531,4 +495,6 @@ type WorkersStore interface {
 		eventID string,
 		status WorkerStatus,
 	) error
+
+	Timeout(ctx context.Context, eventID string) error
 }

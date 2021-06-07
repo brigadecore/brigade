@@ -15,21 +15,18 @@ func TestNewWorkersService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}
 	workersStore := &mockWorkersStore{}
-	jobsStore := &mockJobsStore{}
 	substrate := &mockSubstrate{}
 	svc := NewWorkersService(
 		libAuthz.AlwaysAuthorize,
 		projectsStore,
 		eventsStore,
 		workersStore,
-		jobsStore,
 		substrate,
 	)
 	require.NotNil(t, svc.(*workersService).authorize)
 	require.Same(t, projectsStore, svc.(*workersService).projectsStore)
 	require.Same(t, eventsStore, svc.(*workersService).eventsStore)
 	require.Same(t, workersStore, svc.(*workersService).workersStore)
-	require.Same(t, jobsStore, svc.(*workersService).jobsStore)
 	require.Same(t, substrate, svc.(*workersService).substrate)
 }
 
@@ -603,19 +600,16 @@ func TestWorkersServiceCleanup(t *testing.T) {
 func TestWorkersServiceTimeout(t *testing.T) {
 	const testEventID = "123456789"
 	const testJobName = "italian"
-	var testStartedTime = time.Unix(1234, 56789)
 	var testEvent = Event{
 		Worker: Worker{
 			Status: WorkerStatus{
-				Started: &testStartedTime,
-				Phase:   WorkerPhasePending,
+				Phase: WorkerPhaseRunning,
 			},
 			Jobs: []Job{
 				{
 					Name: testJobName,
 					Status: &JobStatus{
-						Started: &testStartedTime,
-						Phase:   JobPhaseRunning,
+						Phase: JobPhaseRunning,
 					},
 				},
 			},
@@ -637,27 +631,6 @@ func TestWorkersServiceTimeout(t *testing.T) {
 			},
 		},
 		{
-			name: "error updating status",
-			service: &workersService{
-				authorize: libAuthz.AlwaysAuthorize,
-				eventsStore: &mockEventsStore{
-					GetFn: func(context.Context, string) (Event, error) {
-						return testEvent, nil
-					},
-				},
-				workersStore: &mockWorkersStore{
-					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
-						return errors.New("something went wrong")
-					},
-				},
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error updating status")
-			},
-		},
-		{
 			name: "error getting event from store",
 			service: &workersService{
 				authorize: libAuthz.AlwaysAuthorize,
@@ -674,7 +647,7 @@ func TestWorkersServiceTimeout(t *testing.T) {
 			},
 		},
 		{
-			name: "error updating job status",
+			name: "error timing out",
 			service: &workersService{
 				authorize: libAuthz.AlwaysAuthorize,
 				eventsStore: &mockEventsStore{
@@ -683,17 +656,7 @@ func TestWorkersServiceTimeout(t *testing.T) {
 					},
 				},
 				workersStore: &mockWorkersStore{
-					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
-						return nil
-					},
-				},
-				jobsStore: &mockJobsStore{
-					UpdateStatusFn: func(
-						context.Context,
-						string,
-						string,
-						JobStatus,
-					) error {
+					TimeoutFn: func(context.Context, string) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -701,61 +664,7 @@ func TestWorkersServiceTimeout(t *testing.T) {
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error updating status for worker job")
-			},
-		},
-		{
-			name: "job with terminal phase not updated",
-			service: &workersService{
-				authorize: libAuthz.AlwaysAuthorize,
-				eventsStore: &mockEventsStore{
-					GetFn: func(context.Context, string) (Event, error) {
-						return Event{
-							Worker: Worker{
-								Jobs: []Job{
-									{
-										Name: testJobName,
-										Status: &JobStatus{
-											Phase: JobPhaseSucceeded,
-										},
-									},
-								},
-							},
-						}, nil
-					},
-				},
-				workersStore: &mockWorkersStore{
-					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
-						return nil
-					},
-				},
-				projectsStore: &mockProjectsStore{
-					GetFn: func(context.Context, string) (Project, error) {
-						return Project{}, nil
-					},
-				},
-				jobsStore: &mockJobsStore{
-					UpdateStatusFn: func(
-						context.Context,
-						string,
-						string,
-						JobStatus,
-					) error {
-						require.Fail(
-							t,
-							"jobsStore.UpdateStatusFn should not have been called, but was",
-						)
-						return nil
-					},
-				},
-				substrate: &mockSubstrate{
-					DeleteWorkerAndJobsFn: func(context.Context, Project, Event) error {
-						return nil
-					},
-				},
-			},
-			assertions: func(err error) {
-				require.NoError(t, err)
+				require.Contains(t, err.Error(), "error timing out worker")
 			},
 		},
 		{
@@ -768,23 +677,13 @@ func TestWorkersServiceTimeout(t *testing.T) {
 					},
 				},
 				workersStore: &mockWorkersStore{
-					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
+					TimeoutFn: func(context.Context, string) error {
 						return nil
 					},
 				},
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
-					},
-				},
-				jobsStore: &mockJobsStore{
-					UpdateStatusFn: func(
-						context.Context,
-						string,
-						string,
-						JobStatus,
-					) error {
-						return nil
 					},
 				},
 				substrate: &mockSubstrate{
@@ -809,33 +708,13 @@ func TestWorkersServiceTimeout(t *testing.T) {
 					},
 				},
 				workersStore: &mockWorkersStore{
-					UpdateStatusFn: func(
-						_ context.Context,
-						_ string,
-						status WorkerStatus,
-					) error {
-						require.Equal(t, WorkerPhaseTimedOut, status.Phase)
-						require.Equal(t, &testStartedTime, status.Started)
-						require.NotNil(t, status.Ended)
+					TimeoutFn: func(context.Context, string) error {
 						return nil
 					},
 				},
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, nil
-					},
-				},
-				jobsStore: &mockJobsStore{
-					UpdateStatusFn: func(
-						_ context.Context,
-						_ string,
-						_ string,
-						status JobStatus,
-					) error {
-						require.Equal(t, JobPhaseAborted, status.Phase)
-						require.Equal(t, &testStartedTime, status.Started)
-						require.NotNil(t, status.Ended)
-						return nil
 					},
 				},
 				substrate: &mockSubstrate{
@@ -863,6 +742,8 @@ type mockWorkersStore struct {
 		eventID string,
 		status WorkerStatus,
 	) error
+
+	TimeoutFn func(ctx context.Context, eventID string) error
 }
 
 func (m *mockWorkersStore) UpdateStatus(
@@ -871,4 +752,8 @@ func (m *mockWorkersStore) UpdateStatus(
 	status WorkerStatus,
 ) error {
 	return m.UpdateStatusFn(ctx, eventID, status)
+}
+
+func (m *mockWorkersStore) Timeout(ctx context.Context, eventID string) error {
+	return m.TimeoutFn(ctx, eventID)
 }
