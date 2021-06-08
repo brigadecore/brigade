@@ -67,33 +67,6 @@ func (w *workersStore) Timeout(
 	res, err := w.collection.UpdateOne(
 		ctx,
 		bson.M{
-			"id":                  eventID,
-			"worker.status.phase": core.WorkerPhasePending,
-			"deleted": bson.M{
-				"$exists": false, // Don't grab logically deleted events
-			},
-		},
-		bson.M{
-			"$set": bson.M{
-				"canceled":            timedOutTime,
-				"worker.status.phase": core.WorkerPhaseTimedOut,
-			},
-		},
-	)
-	if err != nil {
-		return errors.Wrapf(
-			err,
-			"error updating status of event %q worker",
-			eventID,
-		)
-	}
-	if res.MatchedCount == 1 {
-		return nil
-	}
-
-	res, err = w.collection.UpdateOne(
-		ctx,
-		bson.M{
 			"id": eventID,
 			"worker.status.phase": bson.M{
 				"$in": []core.WorkerPhase{
@@ -104,6 +77,7 @@ func (w *workersStore) Timeout(
 		},
 		bson.M{
 			"$set": bson.M{
+				"worker.status.ended":                           timedOutTime,
 				"worker.status.phase":                           core.WorkerPhaseTimedOut, // nolint: lll
 				"worker.jobs.$[pending].status.phase":           core.JobPhaseCanceled,
 				"worker.jobs.$[startingOrRunning].status.phase": core.JobPhaseAborted,
@@ -141,7 +115,7 @@ func (w *workersStore) Timeout(
 			ID:   eventID,
 			Reason: fmt.Sprintf(
 				"Event %q was not timed out "+
-					"because it was already in a terminal state.",
+					"because it was not in a starting or running state.",
 				eventID,
 			),
 		}

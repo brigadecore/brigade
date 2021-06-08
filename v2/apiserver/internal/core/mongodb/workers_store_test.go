@@ -135,7 +135,7 @@ func TestWorkersStoreTimeout(t *testing.T) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrConflict{}, err)
 				require.Contains(t, err.Error(), "was not timed out")
-				require.Contains(t, err.Error(), "already in a terminal state")
+				require.Contains(t, err.Error(), "not in a starting or running state")
 			},
 		},
 
