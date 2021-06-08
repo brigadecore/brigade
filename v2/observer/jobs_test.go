@@ -519,7 +519,7 @@ func TestStartJobPodTimer(t *testing.T) {
 			},
 		},
 		{
-			name: "pod has no timeout annotation",
+			name: "pod has no timeout annotation; uses observer config",
 			pod: &corev1.Pod{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "nombre",
@@ -530,8 +530,21 @@ func TestStartJobPodTimer(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				config: observerConfig{
+					maxJobLifetime: time.Duration(1000000), // 1ms
+				},
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
+				},
+				jobsClient: &coreTesting.MockJobsClient{
+					TimeoutFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+					) error {
+						require.Equal(t, jobName, "italian")
+						return nil
+					},
 				},
 			},
 		},
@@ -659,7 +672,7 @@ func TestStartJobPodTimer(t *testing.T) {
 					) error {
 						require.Fail(
 							t,
-							"timeoutJobFn should not have been called, but was",
+							"jobsClient.TimeoutFn should not have been called, but was",
 						)
 						return nil
 					},

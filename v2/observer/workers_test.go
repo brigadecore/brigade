@@ -470,7 +470,7 @@ func TestStartWorkerPodTimer(t *testing.T) {
 			},
 		},
 		{
-			name: "pod has no timeout annotation",
+			name: "pod has no timeout annotation; uses observer config",
 			pod: &corev1.Pod{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "nombre",
@@ -481,8 +481,19 @@ func TestStartWorkerPodTimer(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				config: observerConfig{
+					maxWorkerLifetime: time.Duration(1000000), // 1ms
+				},
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
+				},
+				workersClient: &coreTesting.MockWorkersClient{
+					TimeoutFn: func(
+						ctx context.Context,
+						eventID string,
+					) error {
+						return nil
+					},
 				},
 			},
 		},

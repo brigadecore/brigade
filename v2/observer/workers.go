@@ -196,11 +196,11 @@ func (o *observer) startWorkerPodTimer(ctx context.Context, pod *corev1.Pod) {
 	}
 
 	go func() {
-		ticker := time.NewTimer(timeout)
-		defer ticker.Stop()
+		timer := time.NewTimer(timeout)
+		defer timer.Stop()
 
 		select {
-		case <-ticker.C:
+		case <-timer.C:
 			eventID := pod.Labels[myk8s.LabelEvent]
 			if err := o.workersClient.Timeout(ctx, eventID); err != nil {
 				o.errFn(
