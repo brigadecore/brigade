@@ -90,3 +90,81 @@ func TestWorkersStoreUpdateStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestWorkersStoreTimeout(t *testing.T) {
+	const testEvent = "123456789"
+	testCases := []struct {
+		name       string
+		collection mongodb.Collection
+		assertions func(err error)
+	}{
+		{
+			name: "unanticipated error",
+			collection: &mongoTesting.MockCollection{
+				UpdateOneFn: func(
+					context.Context,
+					interface{},
+					interface{},
+					...*options.UpdateOptions,
+				) (*mongo.UpdateResult, error) {
+					return nil, errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error updating status of event")
+			},
+		},
+
+		{
+			name: "worker already in a terminal state",
+			collection: &mongoTesting.MockCollection{
+				UpdateOneFn: func(
+					context.Context,
+					interface{},
+					interface{},
+					...*options.UpdateOptions,
+				) (*mongo.UpdateResult, error) {
+					return &mongo.UpdateResult{
+						MatchedCount: 0,
+					}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrConflict{}, err)
+				require.Contains(t, err.Error(), "was not timed out")
+				require.Contains(t, err.Error(), "not in a starting or running state")
+			},
+		},
+
+		{
+			name: "success",
+			collection: &mongoTesting.MockCollection{
+				UpdateOneFn: func(
+					context.Context,
+					interface{},
+					interface{},
+					...*options.UpdateOptions,
+				) (*mongo.UpdateResult, error) {
+					return &mongo.UpdateResult{
+						MatchedCount: 1,
+					}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &workersStore{
+				collection: testCase.collection,
+			}
+			err := store.Timeout(context.Background(), testEvent)
+			testCase.assertions(err)
+		})
+	}
+}

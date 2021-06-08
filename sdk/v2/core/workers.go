@@ -185,6 +185,12 @@ type WorkerSpec struct {
 	// source control system and would like to embed configuration (e.g.
 	// brigade.json) or scripts (e.g. brigade.js) directly within the WorkerSpec.
 	DefaultConfigFiles map[string]string `json:"defaultConfigFiles,omitempty"`
+	// TimeoutDuration specifies the time duration that must elapse before a
+	// running Job should be considered to have timed out. This duration string
+	// is a possibly signed sequence of decimal numbers, each with optional
+	// fraction and a unit suffix, such as "300ms", "-1.5h" or "2h45m".
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	TimeoutDuration string `json:"timeoutDuration,omitempty"`
 }
 
 // GitConfig represents git-specific Worker details.
@@ -278,6 +284,9 @@ type WorkersClient interface {
 		status WorkerStatus,
 	) error
 	Cleanup(ctx context.Context, eventID string) error
+	// Timeout executes timeout logic for an Event's Worker when it has exceeded
+	// its timeout limit.
+	Timeout(ctx context.Context, eventID string) error
 
 	Jobs() JobsClient
 }
@@ -375,6 +384,17 @@ func (w *workersClient) Cleanup(ctx context.Context, eventID string) error {
 		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/events/%s/worker/cleanup", eventID),
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (w *workersClient) Timeout(ctx context.Context, eventID string) error {
+	return w.ExecuteRequest(
+		ctx,
+		rm.OutboundRequest{
+			Method:      http.MethodPut,
+			Path:        fmt.Sprintf("v2/events/%s/worker/timeout", eventID),
 			SuccessCode: http.StatusOK,
 		},
 	)

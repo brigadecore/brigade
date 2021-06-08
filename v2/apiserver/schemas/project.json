@@ -269,6 +269,9 @@
 					"additionalProperties": {
 						"type": "string"
 					}
+				},
+				"timeoutDuration": {
+					"$ref": "common.json#/definitions/timeoutDuration"
 				}
 			}
 		}

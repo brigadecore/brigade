@@ -157,6 +157,12 @@ type WorkerSpec struct {
 	// source control system and would like to embed configuration (e.g.
 	// brigade.json) or scripts (e.g. brigade.js) directly within the WorkerSpec.
 	DefaultConfigFiles map[string]string `json:"defaultConfigFiles,omitempty" bson:"defaultConfigFiles,omitempty"` // nolint: lll
+	// TimeoutDuration specifies the time duration that must elapse before a
+	// running Job should be considered to have timed out. This duration string
+	// is a possibly signed sequence of decimal numbers, each with optional
+	// fraction and a unit suffix, such as "300ms", "-1.5h" or "2h45m".
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	TimeoutDuration string `json:"timeoutDuration,omitempty" bson:"timeoutDuration,omitempty"` // nolint: lll
 }
 
 // GitConfig represents git-specific Worker details.
@@ -243,6 +249,9 @@ type WorkersService interface {
 	// Cleanup removes Worker-related resources from the substrate, presumably
 	// upon completion, without deleting the Worker from the data store.
 	Cleanup(ctx context.Context, eventID string) error
+	// Timeout updates the status of an Event's Worker that has timed out and
+	// then proceeds to remove Worker-related resources from the substrate.
+	Timeout(ctx context.Context, eventID string) error
 }
 
 type workersService struct {
@@ -390,6 +399,52 @@ func (w *workersService) UpdateStatus(
 		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
 	}
 
+	return w.updateStatus(ctx, event, status)
+}
+
+func (w *workersService) Cleanup(
+	ctx context.Context,
+	eventID string,
+) error {
+	if err := w.authorize(ctx, RoleObserver, ""); err != nil {
+		return err
+	}
+
+	event, err := w.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+
+	return w.cleanup(ctx, event)
+}
+
+func (w *workersService) Timeout(
+	ctx context.Context,
+	eventID string,
+) error {
+	if err := w.authorize(ctx, RoleObserver, ""); err != nil {
+		return err
+	}
+
+	event, err := w.eventsStore.Get(ctx, eventID)
+	if err != nil {
+		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
+	}
+
+	if err := w.workersStore.Timeout(ctx, eventID); err != nil {
+		return errors.Wrapf(err, "error timing out worker for event %q", eventID)
+	}
+
+	return w.cleanup(ctx, event)
+}
+
+// updateStatus is an internal helper func created so that multiple exported
+// functions can share this logic after they've retrieved specified events.
+func (w *workersService) updateStatus(
+	ctx context.Context,
+	event Event,
+	status WorkerStatus,
+) error {
 	// We have a conflict if the worker's phase is already terminal
 	if event.Worker.Status.Phase.IsTerminal() {
 		return &meta.ErrConflict{
@@ -405,26 +460,17 @@ func (w *workersService) UpdateStatus(
 	return errors.Wrapf(
 		w.workersStore.UpdateStatus(
 			ctx,
-			eventID,
+			event.ID,
 			status,
 		),
 		"error updating status of event %q worker in store",
-		eventID,
+		event.ID,
 	)
 }
 
-func (w *workersService) Cleanup(
-	ctx context.Context,
-	eventID string,
-) error {
-	if err := w.authorize(ctx, RoleObserver, ""); err != nil {
-		return err
-	}
-
-	event, err := w.eventsStore.Get(ctx, eventID)
-	if err != nil {
-		return errors.Wrapf(err, "error retrieving event %q from store", eventID)
-	}
+// cleanup is an internal helper func created so that multiple exported
+// functions can share this logic after they've retrieved specified events.
+func (w *workersService) cleanup(ctx context.Context, event Event) error {
 	project, err := w.projectsStore.Get(ctx, event.ProjectID)
 	if err != nil {
 		return errors.Wrapf(
@@ -433,14 +479,12 @@ func (w *workersService) Cleanup(
 			event.ProjectID,
 		)
 	}
-	if err = w.substrate.DeleteWorkerAndJobs(ctx, project, event); err != nil {
-		return errors.Wrapf(
-			err,
-			"error deleting event %q worker and jobs from the substrate",
-			eventID,
-		)
-	}
-	return nil
+
+	return errors.Wrapf(
+		w.substrate.DeleteWorkerAndJobs(ctx, project, event),
+		"error deleting event %q worker and jobs from the substrate",
+		event.ID,
+	)
 }
 
 // WorkersStore is an interface for components that implement Worker persistence
@@ -451,4 +495,6 @@ type WorkersStore interface {
 		eventID string,
 		status WorkerStatus,
 	) error
+
+	Timeout(ctx context.Context, eventID string) error
 }

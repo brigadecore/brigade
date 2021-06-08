@@ -314,6 +314,42 @@ var testcases = []testcase{
 			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseTimedOut)
 		},
 	},
+	{
+		name: "Worker times out",
+		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "worker-times-out",
+			},
+			Spec: core.ProjectSpec{
+				WorkerTemplate: core.WorkerSpec{
+					// Timeout a bit "long" to allow for job to spin up
+					TimeoutDuration: "10s",
+				},
+			},
+		},
+		configFiles: map[string]string{
+			"brigade.ts": fmt.Sprintf(`
+				import { events, Job } from "@brigadecore/brigadier"
+
+				events.on("brigade.sh/cli", "exec", async event => {
+					let job = new Job("%s", "alpine", event)
+					job.primaryContainer.command = ["sleep"]
+					job.primaryContainer.arguments = ["60"]
+					await job.run()
+				})
+
+				events.process()
+			`, testJobName)},
+		assertions: func(
+			t *testing.T,
+			ctx context.Context,
+			client sdk.APIClient,
+			e core.Event,
+		) {
+			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseTimedOut)
+			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseAborted)
+		},
+	},
 }
 
 var defaultConfigFiles = map[string]string{

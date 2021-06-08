@@ -60,6 +60,13 @@
 			}
 		},
 
+		"timeoutDuration": {
+			"type": "string",
+			"description": "Job timeout string expressed as a sequence of decimal numbers, each with optional fraction and a unit suffix, such as '300ms', '3.14s' or '2h45m'",
+			"pattern": "^([0-9]+(\\.[0-9]*)?(ns|us|µs|ms|s|m|h))+$",
+			"minLength": 2
+		},
+
 		"url": {
 			"type": "string",
 			"pattern": "^[\\w:/\\-\\.\\?=@]*$",
