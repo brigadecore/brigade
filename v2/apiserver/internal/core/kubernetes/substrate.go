@@ -939,6 +939,9 @@ func (s *substrate) createWorkerPod(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      myk8s.WorkerPodName(event.ID),
 			Namespace: project.Kubernetes.Namespace,
+			Annotations: map[string]string{
+				myk8s.AnnotationTimeoutDuration: event.Worker.Spec.TimeoutDuration,
+			},
 			Labels: map[string]string{
 				myk8s.LabelComponent: myk8s.LabelKeyWorker,
 				myk8s.LabelProject:   event.ProjectID,
