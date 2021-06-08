@@ -21,7 +21,7 @@ func (o *observer) runHealthcheckLoop(ctx context.Context) {
 			// Check Observer -> API Server
 			// Not actually capturing response; just want to verify our API call
 			// is successful
-			if _, err := o.pingAPIServerFn(ctx); err != nil {
+			if _, err := o.systemClient.Ping(ctx); err != nil {
 				o.errCh <- errors.Wrap(
 					err,
 					"error checking Brigade API server connectivity",

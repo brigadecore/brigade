@@ -71,7 +71,7 @@ func TestNewObserver(t *testing.T) {
 		apiToken,
 		apiClientOpts,
 	)
-	workerClient := core.NewWorkersClient(
+	workersClient := core.NewWorkersClient(
 		apiAddress,
 		apiToken,
 		apiClientOpts,
@@ -80,8 +80,11 @@ func TestNewObserver(t *testing.T) {
 	config := observerConfig{
 		delayBeforeCleanup: time.Minute,
 	}
-	observer := newObserver(systemClient, workerClient, kubeClient, config)
+	observer := newObserver(systemClient, workersClient, kubeClient, config)
 	require.Same(t, kubeClient, observer.kubeClient)
+	require.NotNil(t, observer.systemClient)
+	require.NotNil(t, observer.workersClient)
+	require.NotNil(t, observer.jobsClient)
 	require.NotNil(t, observer.deletingPodsSet)
 	require.NotNil(t, observer.syncMu)
 	require.NotNil(t, observer.errCh)
@@ -90,10 +93,6 @@ func TestNewObserver(t *testing.T) {
 	require.NotNil(t, observer.syncJobPodsFn)
 	require.NotNil(t, observer.syncJobPodFn)
 	require.NotNil(t, observer.syncDeletedPodFn)
-	require.NotNil(t, observer.updateWorkerStatusFn)
-	require.NotNil(t, observer.cleanupWorkerFn)
-	require.NotNil(t, observer.updateJobStatusFn)
-	require.NotNil(t, observer.cleanupJobFn)
 }
 
 func TestObserverRun(t *testing.T) {
