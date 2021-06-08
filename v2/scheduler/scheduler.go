@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/brigadecore/brigade/v2/internal/os"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 )
@@ -39,6 +38,11 @@ func getSchedulerConfig() (schedulerConfig, error) {
 
 type scheduler struct {
 	queueReaderFactory   queue.ReaderFactory
+	projectsClient       core.ProjectsClient
+	substrateClient      core.SubstrateClient
+	eventsClient         core.EventsClient
+	workersClient        core.WorkersClient
+	jobsClient           core.JobsClient
 	config               schedulerConfig
 	workerAvailabilityCh chan struct{}
 	jobAvailabilityCh    chan struct{}
@@ -53,29 +57,6 @@ type scheduler struct {
 	runHealthcheckLoopFn   func(ctx context.Context)
 	runWorkerLoopFn        func(ctx context.Context, projectID string)
 	runJobLoopFn           func(ctx context.Context, projectID string)
-	// These normally point to API client functions, but can also be overridden
-	// for test purposes
-	listProjectsFn func(
-		context.Context,
-		*core.ProjectsSelector,
-		*meta.ListOptions,
-	) (core.ProjectList, error)
-	countRunningWorkersFn func(context.Context) (core.SubstrateWorkerCount, error)
-	countRunningJobsFn    func(context.Context) (core.SubstrateJobCount, error)
-	getEventFn            func(context.Context, string) (core.Event, error)
-	updateWorkerStatusFn  func(
-		ctx context.Context,
-		eventID string,
-		status core.WorkerStatus,
-	) error
-	startWorkerFn     func(ctx context.Context, eventID string) error
-	updateJobStatusFn func(
-		ctx context.Context,
-		eventID string,
-		jobName string,
-		status core.JobStatus,
-	) error
-	startJobFn func(ctx context.Context, eventID string, jobName string) error
 }
 
 func newScheduler(
@@ -86,18 +67,14 @@ func newScheduler(
 	s := &scheduler{
 		queueReaderFactory:   queueReaderFactory,
 		config:               config,
+		projectsClient:       coreClient.Projects(),
+		substrateClient:      coreClient.Substrate(),
+		eventsClient:         coreClient.Events(),
+		workersClient:        coreClient.Events().Workers(),
+		jobsClient:           coreClient.Events().Workers().Jobs(),
 		workerAvailabilityCh: make(chan struct{}),
 		jobAvailabilityCh:    make(chan struct{}),
 		errCh:                make(chan error),
-		// API functions
-		listProjectsFn:        coreClient.Projects().List,
-		countRunningWorkersFn: coreClient.Substrate().CountRunningWorkers,
-		countRunningJobsFn:    coreClient.Substrate().CountRunningJobs,
-		getEventFn:            coreClient.Events().Get,
-		updateWorkerStatusFn:  coreClient.Events().Workers().UpdateStatus,
-		startWorkerFn:         coreClient.Events().Workers().Start,
-		updateJobStatusFn:     coreClient.Events().Workers().Jobs().UpdateStatus,
-		startJobFn:            coreClient.Events().Workers().Jobs().Start,
 	}
 	s.manageWorkerCapacityFn = s.manageWorkerCapacity
 	s.workerLoopErrFn = log.Println

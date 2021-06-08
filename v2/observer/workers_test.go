@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
+	coreTesting "github.com/brigadecore/brigade/sdk/v2/testing/core"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -104,16 +105,18 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					require.Fail(
-						t,
-						"updateWorkerStatusFn should not have been called, but was",
-					)
-					return nil
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						require.Fail(
+							t,
+							"updateWorkerStatusFn should not have been called, but was",
+						)
+						return nil
+					},
 				},
 				deleteWorkerResourcesFn: func(_, _, _ string) {
 					require.Fail(
@@ -131,13 +134,15 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					require.Equal(t, core.WorkerPhaseRunning, status.Phase)
-					return nil
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						require.Equal(t, core.WorkerPhaseRunning, status.Phase)
+						return nil
+					},
 				},
 				deleteWorkerResourcesFn: func(_, _, _ string) {
 					require.Fail(
@@ -158,15 +163,17 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					require.Equal(t, core.WorkerPhaseRunning, status.Phase)
-					require.NotNil(t, now, status.Started)
-					require.Equal(t, now, *status.Started)
-					return nil
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						require.Equal(t, core.WorkerPhaseRunning, status.Phase)
+						require.NotNil(t, now, status.Started)
+						require.Equal(t, now, *status.Started)
+						return nil
+					},
 				},
 				deleteWorkerResourcesFn: func(_, _, _ string) {
 					require.Fail(
@@ -206,17 +213,19 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					require.Equal(t, core.WorkerPhaseSucceeded, status.Phase)
-					require.NotNil(t, now, status.Started)
-					require.Equal(t, now, *status.Started)
-					require.NotNil(t, now, status.Ended)
-					require.Equal(t, now, *status.Ended)
-					return nil
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						require.Equal(t, core.WorkerPhaseSucceeded, status.Phase)
+						require.NotNil(t, now, status.Started)
+						require.Equal(t, now, *status.Started)
+						require.NotNil(t, now, status.Ended)
+						require.Equal(t, now, *status.Ended)
+						return nil
+					},
 				},
 				deleteWorkerResourcesFn: func(_, _, _ string) {},
 			},
@@ -251,17 +260,19 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					require.Equal(t, core.WorkerPhaseFailed, status.Phase)
-					require.NotNil(t, now, status.Started)
-					require.Equal(t, now, *status.Started)
-					require.NotNil(t, now, status.Ended)
-					require.Equal(t, now, *status.Ended)
-					return nil
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						require.Equal(t, core.WorkerPhaseFailed, status.Phase)
+						require.NotNil(t, now, status.Started)
+						require.Equal(t, now, *status.Started)
+						require.NotNil(t, now, status.Ended)
+						require.Equal(t, now, *status.Ended)
+						return nil
+					},
 				},
 				deleteWorkerResourcesFn: func(_, _, _ string) {},
 			},
@@ -274,13 +285,15 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					require.Equal(t, core.WorkerPhaseUnknown, status.Phase)
-					return nil
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						require.Equal(t, core.WorkerPhaseUnknown, status.Phase)
+						return nil
+					},
 				},
 				deleteWorkerResourcesFn: func(_, _, _ string) {
 					require.Fail(
@@ -298,12 +311,14 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					return errors.New("something went wrong")
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						return errors.New("something went wrong")
+					},
 				},
 				errFn: func(i ...interface{}) {
 					require.Len(t, i, 1)
@@ -351,8 +366,10 @@ func TestDeleteWorkerResources(t *testing.T) {
 				},
 				deletingPodsSet: map[string]struct{}{},
 				syncMu:          &sync.Mutex{},
-				cleanupWorkerFn: func(context.Context, string) error {
-					return errors.New("something went wrong")
+				workersClient: &coreTesting.MockWorkersClient{
+					CleanupFn: func(context.Context, string) error {
+						return errors.New("something went wrong")
+					},
 				},
 				errFn: func(i ...interface{}) {
 					require.Len(t, i, 1)
@@ -371,8 +388,10 @@ func TestDeleteWorkerResources(t *testing.T) {
 				},
 				deletingPodsSet: map[string]struct{}{},
 				syncMu:          &sync.Mutex{},
-				cleanupWorkerFn: func(context.Context, string) error {
-					return nil
+				workersClient: &coreTesting.MockWorkersClient{
+					CleanupFn: func(context.Context, string) error {
+						return nil
+					},
 				},
 				errFn: func(i ...interface{}) {
 					require.Fail(

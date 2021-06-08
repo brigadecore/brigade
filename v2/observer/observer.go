@@ -30,6 +30,9 @@ func getObserverConfig() (observerConfig, error) {
 
 type observer struct {
 	kubeClient      kubernetes.Interface
+	systemClient    system.APIClient
+	workersClient   core.WorkersClient
+	jobsClient      core.JobsClient
 	config          observerConfig
 	deletingPodsSet map[string]struct{}
 	timedPodsSet    map[string]context.CancelFunc
@@ -47,28 +50,7 @@ type observer struct {
 	deleteJobResourcesFn    func(namespace, podName, eventID, jobName string)
 	syncDeletedPodFn        func(obj interface{})
 	errFn                   func(...interface{})
-	// These normally point to API client functions, but can also be overridden
-	// for test purposes
-	pingAPIServerFn      func(ctx context.Context) (system.PingResponse, error)
-	updateWorkerStatusFn func(
-		ctx context.Context,
-		eventID string,
-		status core.WorkerStatus,
-	) error
-	cleanupWorkerFn   func(ctx context.Context, eventID string) error
-	updateJobStatusFn func(
-		ctx context.Context,
-		eventID string,
-		jobName string,
-		status core.JobStatus,
-	) error
-	cleanupJobFn func(ctx context.Context, eventID, jobName string) error
-	timeoutJobFn func(
-		ctx context.Context,
-		eventID string,
-		jobName string,
-	) error
-	checkK8sAPIServer func(ctx context.Context) ([]byte, error)
+	checkK8sAPIServer       func(ctx context.Context) ([]byte, error)
 }
 
 func newObserver(
@@ -79,6 +61,9 @@ func newObserver(
 ) *observer {
 	o := &observer{
 		kubeClient:      kubeClient,
+		systemClient:    systemClient,
+		workersClient:   workersClient,
+		jobsClient:      workersClient.Jobs(),
 		config:          config,
 		deletingPodsSet: map[string]struct{}{},
 		timedPodsSet:    map[string]context.CancelFunc{},
@@ -87,7 +72,6 @@ func newObserver(
 	}
 	o.runHealthcheckLoopFn = o.runHealthcheckLoop
 	o.startJobPodTimerFn = o.startJobPodTimer
-	o.timeoutJobFn = workersClient.Jobs().Timeout
 	o.syncWorkerPodsFn = o.syncWorkerPods
 	o.syncWorkerPodFn = o.syncWorkerPod
 	o.deleteWorkerResourcesFn = o.deleteWorkerResources
@@ -96,11 +80,6 @@ func newObserver(
 	o.deleteJobResourcesFn = o.deleteJobResources
 	o.syncDeletedPodFn = o.syncDeletedPod
 	o.errFn = log.Println
-	o.pingAPIServerFn = systemClient.Ping
-	o.updateWorkerStatusFn = workersClient.UpdateStatus
-	o.cleanupWorkerFn = workersClient.Cleanup
-	o.updateJobStatusFn = workersClient.Jobs().UpdateStatus
-	o.cleanupJobFn = workersClient.Jobs().Cleanup
 
 	// TODO: remove this type assertion once we figure out how to fake/mock
 	// this k8s API Call

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
+	coreTesting "github.com/brigadecore/brigade/sdk/v2/testing/core"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/stretchr/testify/require"
 )
@@ -27,10 +28,13 @@ func TestManageWorkerCapacity(t *testing.T) {
 				config: schedulerConfig{
 					maxConcurrentWorkers: 2,
 				},
-				countRunningWorkersFn: func(
-					context.Context,
-				) (core.SubstrateWorkerCount, error) {
-					return core.SubstrateWorkerCount{}, errors.New("something went wrong")
+				substrateClient: &coreTesting.MockSubstrateClient{
+					CountRunningWorkersFn: func(
+						context.Context,
+					) (core.SubstrateWorkerCount, error) {
+						return core.SubstrateWorkerCount{},
+							errors.New("something went wrong")
+					},
 				},
 				workerAvailabilityCh: make(chan struct{}),
 				errCh:                make(chan error),
@@ -61,12 +65,14 @@ func TestManageWorkerCapacity(t *testing.T) {
 				config: schedulerConfig{
 					maxConcurrentWorkers: 2,
 				},
-				countRunningWorkersFn: func(
-					context.Context,
-				) (core.SubstrateWorkerCount, error) {
-					return core.SubstrateWorkerCount{
-						Count: 2,
-					}, nil
+				substrateClient: &coreTesting.MockSubstrateClient{
+					CountRunningWorkersFn: func(
+						context.Context,
+					) (core.SubstrateWorkerCount, error) {
+						return core.SubstrateWorkerCount{
+							Count: 2,
+						}, nil
+					},
 				},
 				workerAvailabilityCh: make(chan struct{}),
 				errCh:                make(chan error),
@@ -91,12 +97,14 @@ func TestManageWorkerCapacity(t *testing.T) {
 				config: schedulerConfig{
 					maxConcurrentWorkers: 2,
 				},
-				countRunningWorkersFn: func(
-					context.Context,
-				) (core.SubstrateWorkerCount, error) {
-					return core.SubstrateWorkerCount{
-						Count: 1,
-					}, nil
+				substrateClient: &coreTesting.MockSubstrateClient{
+					CountRunningWorkersFn: func(
+						context.Context,
+					) (core.SubstrateWorkerCount, error) {
+						return core.SubstrateWorkerCount{
+							Count: 1,
+						}, nil
+					},
 				},
 				workerAvailabilityCh: make(chan struct{}),
 				errCh:                make(chan error),
@@ -210,15 +218,19 @@ func TestRunWorkerLoop(t *testing.T) {
 							}, nil
 						},
 					},
-					getEventFn: func(context.Context, string) (core.Event, error) {
-						return core.Event{}, errors.New("something went wrong")
+					eventsClient: &coreTesting.MockEventsClient{
+						GetFn: func(context.Context, string) (core.Event, error) {
+							return core.Event{}, errors.New("something went wrong")
+						},
 					},
-					updateWorkerStatusFn: func(
-						context.Context,
-						string,
-						core.WorkerStatus,
-					) error {
-						return nil
+					workersClient: &coreTesting.MockWorkersClient{
+						UpdateStatusFn: func(
+							context.Context,
+							string,
+							core.WorkerStatus,
+						) error {
+							return nil
+						},
 					},
 					workerLoopErrFn: func(i ...interface{}) {
 						err := i[0].(error)
@@ -252,15 +264,17 @@ func TestRunWorkerLoop(t *testing.T) {
 							}, nil
 						},
 					},
-					getEventFn: func(context.Context, string) (core.Event, error) {
-						cancelFn()
-						return core.Event{
-							Worker: &core.Worker{
-								Status: core.WorkerStatus{
-									Phase: core.WorkerPhaseRunning,
+					eventsClient: &coreTesting.MockEventsClient{
+						GetFn: func(context.Context, string) (core.Event, error) {
+							cancelFn()
+							return core.Event{
+								Worker: &core.Worker{
+									Status: core.WorkerStatus{
+										Phase: core.WorkerPhaseRunning,
+									},
 								},
-							},
-						}, nil
+							}, nil
+						},
 					},
 					workerLoopErrFn: func(i ...interface{}) {
 						require.Fail(
@@ -307,18 +321,22 @@ func TestRunWorkerLoop(t *testing.T) {
 							}, nil
 						},
 					},
-					getEventFn: func(context.Context, string) (core.Event, error) {
-						return core.Event{
-							Worker: &core.Worker{
-								Status: core.WorkerStatus{
-									Phase: core.WorkerPhasePending,
+					eventsClient: &coreTesting.MockEventsClient{
+						GetFn: func(context.Context, string) (core.Event, error) {
+							return core.Event{
+								Worker: &core.Worker{
+									Status: core.WorkerStatus{
+										Phase: core.WorkerPhasePending,
+									},
 								},
-							},
-						}, nil
+							}, nil
+						},
 					},
 					workerAvailabilityCh: workerAvailabilityCh,
-					startWorkerFn: func(context.Context, string) error {
-						return errors.New("something went wrong")
+					workersClient: &coreTesting.MockWorkersClient{
+						StartFn: func(context.Context, string) error {
+							return errors.New("something went wrong")
+						},
 					},
 					workerLoopErrFn: func(i ...interface{}) {
 						err := i[0].(error)
@@ -363,19 +381,23 @@ func TestRunWorkerLoop(t *testing.T) {
 							}, nil
 						},
 					},
-					getEventFn: func(context.Context, string) (core.Event, error) {
-						return core.Event{
-							Worker: &core.Worker{
-								Status: core.WorkerStatus{
-									Phase: core.WorkerPhasePending,
+					eventsClient: &coreTesting.MockEventsClient{
+						GetFn: func(context.Context, string) (core.Event, error) {
+							return core.Event{
+								Worker: &core.Worker{
+									Status: core.WorkerStatus{
+										Phase: core.WorkerPhasePending,
+									},
 								},
-							},
-						}, nil
+							}, nil
+						},
 					},
 					workerAvailabilityCh: workerAvailabilityCh,
-					startWorkerFn: func(context.Context, string) error {
-						cancelFn()
-						return nil
+					workersClient: &coreTesting.MockWorkersClient{
+						StartFn: func(context.Context, string) error {
+							cancelFn()
+							return nil
+						},
 					},
 					workerLoopErrFn: func(i ...interface{}) {
 						require.Fail(

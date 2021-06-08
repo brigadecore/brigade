@@ -98,7 +98,7 @@ func (o *observer) syncWorkerPod(obj interface{}) {
 	eventID := pod.Labels[myk8s.LabelEvent]
 	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
 	defer cancel()
-	if err := o.updateWorkerStatusFn(
+	if err := o.workersClient.UpdateStatus(
 		ctx,
 		eventID,
 		status,
@@ -137,7 +137,7 @@ func (o *observer) deleteWorkerResources(namespace, podName, eventID string) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
 	defer cancel()
-	if err := o.cleanupWorkerFn(ctx, eventID); err != nil {
+	if err := o.workersClient.Cleanup(ctx, eventID); err != nil {
 		o.errFn(
 			fmt.Sprintf(
 				"error cleaning up after worker for event %q: %s",

@@ -30,7 +30,7 @@ func (s *scheduler) manageJobCapacity(ctx context.Context) {
 					return false, nil // Stop looking
 				default:
 				}
-				substrateJobCount, err := s.countRunningJobsFn(ctx)
+				substrateJobCount, err := s.substrateClient.CountRunningJobs(ctx)
 				if err != nil {
 					return false, err // Real error; stop retrying
 				}
@@ -133,11 +133,11 @@ outerLoop:
 			eventID := messageTokens[0]
 			jobName := messageTokens[1]
 
-			event, err := s.getEventFn(ctx, eventID)
+			event, err := s.eventsClient.Get(ctx, eventID)
 			if err != nil {
 				s.jobLoopErrFn(err)
 
-				if err := s.updateJobStatusFn(
+				if err := s.jobsClient.UpdateStatus(
 					ctx,
 					eventID,
 					jobName,
@@ -192,7 +192,7 @@ outerLoop:
 
 			// Now use the API to start the Job...
 
-			if err := s.startJobFn(ctx, event.ID, jobName); err != nil {
+			if err := s.jobsClient.Start(ctx, event.ID, jobName); err != nil {
 				s.jobLoopErrFn(err)
 			}
 
