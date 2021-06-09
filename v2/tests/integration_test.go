@@ -24,6 +24,32 @@ const (
 	testTimeout = time.Duration(120 * time.Second)
 )
 
+var (
+	defaultEventSubscriptions = []core.EventSubscription{
+		{
+			Source: "brigade.sh/cli",
+			Types: []string{
+				"exec",
+			},
+		},
+	}
+
+	defaultConfigFiles = map[string]string{
+		"brigade.ts": fmt.Sprintf(`
+		import { events, Job } from "@brigadecore/brigadier"
+
+		events.on("brigade.sh/cli", "exec", async event => {
+			let job = new Job("%s", "alpine", event)
+			job.primaryContainer.sourceMountPath = "/var/vcs"
+			job.primaryContainer.command = ["ls"]
+			job.primaryContainer.arguments = ["-haltr", "/var/vcs"]
+			await job.run()
+		})
+
+		events.process()
+	`, testJobName)}
+)
+
 type testcase struct {
 	name              string
 	postProjectCreate func(context.Context, sdk.APIClient) error
@@ -33,7 +59,7 @@ type testcase struct {
 		t *testing.T,
 		ctx context.Context,
 		client sdk.APIClient,
-		event core.Event,
+		createdEvents core.EventList,
 	)
 }
 
@@ -45,6 +71,7 @@ var testcases = []testcase{
 				ID: "github-no-ref",
 			},
 			Spec: core.ProjectSpec{
+				EventSubscriptions: defaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
@@ -56,8 +83,10 @@ var testcases = []testcase{
 			t *testing.T,
 			ctx context.Context,
 			client sdk.APIClient,
-			e core.Event,
+			events core.EventList,
 		) {
+			require.Len(t, events.Items, 1)
+			e := events.Items[0]
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
 			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseSucceeded)
@@ -71,6 +100,7 @@ var testcases = []testcase{
 				ID: "github-full-ref",
 			},
 			Spec: core.ProjectSpec{
+				EventSubscriptions: defaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
@@ -83,8 +113,10 @@ var testcases = []testcase{
 			t *testing.T,
 			ctx context.Context,
 			client sdk.APIClient,
-			e core.Event,
+			events core.EventList,
 		) {
+			require.Len(t, events.Items, 1)
+			e := events.Items[0]
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
 			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseSucceeded)
@@ -98,6 +130,7 @@ var testcases = []testcase{
 				ID: "github-casual-ref",
 			},
 			Spec: core.ProjectSpec{
+				EventSubscriptions: defaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
@@ -110,8 +143,10 @@ var testcases = []testcase{
 			t *testing.T,
 			ctx context.Context,
 			client sdk.APIClient,
-			e core.Event,
+			events core.EventList,
 		) {
+			require.Len(t, events.Items, 1)
+			e := events.Items[0]
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
 			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseSucceeded)
@@ -125,6 +160,7 @@ var testcases = []testcase{
 				ID: "github-sha",
 			},
 			Spec: core.ProjectSpec{
+				EventSubscriptions: defaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
@@ -137,8 +173,10 @@ var testcases = []testcase{
 			t *testing.T,
 			ctx context.Context,
 			client sdk.APIClient,
-			e core.Event,
+			events core.EventList,
 		) {
+			require.Len(t, events.Items, 1)
+			e := events.Items[0]
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
 			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseSucceeded)
@@ -152,6 +190,7 @@ var testcases = []testcase{
 				ID: "github-submodules",
 			},
 			Spec: core.ProjectSpec{
+				EventSubscriptions: defaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL:       "https://github.com/brigadecore/empty-testbed.git",
@@ -164,8 +203,10 @@ var testcases = []testcase{
 			t *testing.T,
 			ctx context.Context,
 			client sdk.APIClient,
-			e core.Event,
+			events core.EventList,
 		) {
+			require.Len(t, events.Items, 1)
+			e := events.Items[0]
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
 			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseSucceeded)
@@ -189,6 +230,7 @@ var testcases = []testcase{
 				ID: "github-private-ssh",
 			},
 			Spec: core.ProjectSpec{
+				EventSubscriptions: defaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "git@github.com:brigadecore/private-test-repo.git",
@@ -197,13 +239,14 @@ var testcases = []testcase{
 				},
 			},
 		},
-		configFiles: defaultConfigFiles,
 		assertions: func(
 			t *testing.T,
 			ctx context.Context,
 			client sdk.APIClient,
-			e core.Event,
+			events core.EventList,
 		) {
+			require.Len(t, events.Items, 1)
+			e := events.Items[0]
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseSucceeded)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
 			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseSucceeded)
@@ -217,6 +260,7 @@ var testcases = []testcase{
 				ID: "github-vcs-fail",
 			},
 			Spec: core.ProjectSpec{
+				EventSubscriptions: defaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
@@ -229,8 +273,10 @@ var testcases = []testcase{
 			t *testing.T,
 			ctx context.Context,
 			client sdk.APIClient,
-			e core.Event,
+			events core.EventList,
 		) {
+			require.Len(t, events.Items, 1)
+			e := events.Items[0]
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseFailed)
 			assertVCSLogs(
 				t,
@@ -249,6 +295,7 @@ var testcases = []testcase{
 				ID: "github-job-fail",
 			},
 			Spec: core.ProjectSpec{
+				EventSubscriptions: defaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
@@ -273,8 +320,10 @@ var testcases = []testcase{
 			t *testing.T,
 			ctx context.Context,
 			client sdk.APIClient,
-			e core.Event,
+			events core.EventList,
 		) {
+			require.Len(t, events.Items, 1)
+			e := events.Items[0]
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseFailed)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
 			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseFailed)
@@ -287,7 +336,9 @@ var testcases = []testcase{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "job-times-out",
 			},
-			Spec: core.ProjectSpec{},
+			Spec: core.ProjectSpec{
+				EventSubscriptions: defaultEventSubscriptions,
+			},
 		},
 		configFiles: map[string]string{
 			"brigade.ts": fmt.Sprintf(`
@@ -307,8 +358,10 @@ var testcases = []testcase{
 			t *testing.T,
 			ctx context.Context,
 			client sdk.APIClient,
-			e core.Event,
+			events core.EventList,
 		) {
+			require.Len(t, events.Items, 1)
+			e := events.Items[0]
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseFailed)
 			assertWorkerLogs(t, ctx, client, e, "brigade-worker version")
 			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseTimedOut)
@@ -321,6 +374,7 @@ var testcases = []testcase{
 				ID: "worker-times-out",
 			},
 			Spec: core.ProjectSpec{
+				EventSubscriptions: defaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					// Timeout a bit "long" to allow for job to spin up
 					TimeoutDuration: "10s",
@@ -344,28 +398,34 @@ var testcases = []testcase{
 			t *testing.T,
 			ctx context.Context,
 			client sdk.APIClient,
-			e core.Event,
+			events core.EventList,
 		) {
+			require.Len(t, events.Items, 1)
+			e := events.Items[0]
 			assertWorkerPhase(t, ctx, client, e, core.WorkerPhaseTimedOut)
 			assertJobPhase(t, ctx, client, e, testJobName, core.JobPhaseAborted)
 		},
 	},
+	{
+		name: "Project not subscribed",
+		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "project-not-subscribed",
+			},
+			Spec: core.ProjectSpec{
+				EventSubscriptions: []core.EventSubscription{},
+			},
+		},
+		assertions: func(
+			t *testing.T,
+			ctx context.Context,
+			client sdk.APIClient,
+			events core.EventList,
+		) {
+			require.Len(t, events.Items, 0)
+		},
+	},
 }
-
-var defaultConfigFiles = map[string]string{
-	"brigade.ts": fmt.Sprintf(`
-		import { events, Job } from "@brigadecore/brigadier"
-
-		events.on("brigade.sh/cli", "exec", async event => {
-			let job = new Job("%s", "alpine", event)
-			job.primaryContainer.sourceMountPath = "/var/vcs"
-			job.primaryContainer.command = ["ls"]
-			job.primaryContainer.arguments = ["-haltr", "/var/vcs"]
-			await job.run()
-		})
-
-		events.process()
-	`, testJobName)}
 
 func TestMain(t *testing.T) {
 	ctx := context.Background()
@@ -448,9 +508,8 @@ func TestMain(t *testing.T) {
 
 			eList, err = client.Core().Events().Create(ctx, event)
 			require.NoError(t, err, "error creating event")
-			require.Equal(t, 1, len(eList.Items), "event list items should be exactly one")
 
-			tc.assertions(t, ctx, client, eList.Items[0])
+			tc.assertions(t, ctx, client, eList)
 
 			// Delete the test project
 			err = client.Core().Projects().Delete(ctx, tc.project.ID)
