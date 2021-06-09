@@ -5,6 +5,10 @@ metadata:
   id: shared-workspace
 description: Demonstrates a workspace shared across jobs
 spec:
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
   workerTemplate:
     logLevel: DEBUG
     useWorkspace: true
