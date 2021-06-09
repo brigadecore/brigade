@@ -84,6 +84,21 @@ func (p ProjectList) MarshalJSON() ([]byte, error) {
 	)
 }
 
+// Contains returns a boolean value indicating whether the ProjectList contains
+// the provided Project
+func (p ProjectList) Contains(project Project) bool {
+	for _, proj := range p.Items {
+		if proj.ID == project.ID {
+			if proj.Kubernetes == nil && project.Kubernetes == nil ||
+				proj.Kubernetes != nil && project.Kubernetes != nil &&
+					proj.Kubernetes.Namespace == project.Kubernetes.Namespace {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // ProjectSpec is the technical component of a Project. It pairs
 // EventSubscriptions with a prototypical WorkerSpec that is used as a template
 // for creating new Workers.

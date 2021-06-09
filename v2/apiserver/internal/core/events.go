@@ -375,6 +375,14 @@ func (e *eventsService) Create(
 	now := time.Now().UTC()
 	event.Created = &now
 
+	subscribers, err := e.projectsStore.ListSubscribers(ctx, event)
+	if err != nil {
+		return events, errors.Wrap(
+			err,
+			"error retrieving subscribed projects from store",
+		)
+	}
+
 	if event.ProjectID != "" {
 		project, err := e.projectsStore.Get(ctx, event.ProjectID)
 		if err != nil {
@@ -384,23 +392,20 @@ func (e *eventsService) Create(
 				event.ProjectID,
 			)
 		}
+
+		if !subscribers.Contains(project) {
+			return events, nil
+		}
+
 		evt, err := e.createSingleEventFn(ctx, project, event)
 		events.Items = []Event{evt}
 		return events, err
 	}
 
-	// If we get to here, no project ID is specified, so we search for projects
-	// that are subscribed to this event. We iterate over all of those and create
-	// a discrete event for each of these.
-	projects, err := e.projectsStore.ListSubscribers(ctx, event)
-	if err != nil {
-		return events, errors.Wrap(
-			err,
-			"error retrieving subscribed projects from store",
-		)
-	}
-	events.Items = make([]Event, len(projects.Items))
-	for i, project := range projects.Items {
+	// If we get to here, no project ID is specified, so we iterate over all
+	// subscribed projects in the list and create a discrete event for each.
+	events.Items = make([]Event, len(subscribers.Items))
+	for i, project := range subscribers.Items {
 		event.ProjectID = project.ID
 		evt, err := e.createSingleEventFn(ctx, project, event)
 		if err != nil {
