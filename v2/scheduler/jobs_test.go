@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
+	coreTesting "github.com/brigadecore/brigade/sdk/v2/testing/core"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/stretchr/testify/require"
 )
@@ -27,10 +28,12 @@ func TestManageJobsCapacity(t *testing.T) {
 				config: schedulerConfig{
 					maxConcurrentJobs: 2,
 				},
-				countRunningJobsFn: func(
-					context.Context,
-				) (core.SubstrateJobCount, error) {
-					return core.SubstrateJobCount{}, errors.New("something went wrong")
+				substrateClient: &coreTesting.MockSubstrateClient{
+					CountRunningJobsFn: func(
+						context.Context,
+					) (core.SubstrateJobCount, error) {
+						return core.SubstrateJobCount{}, errors.New("something went wrong")
+					},
 				},
 				jobAvailabilityCh: make(chan struct{}),
 				errCh:             make(chan error),
@@ -61,12 +64,14 @@ func TestManageJobsCapacity(t *testing.T) {
 				config: schedulerConfig{
 					maxConcurrentJobs: 2,
 				},
-				countRunningJobsFn: func(
-					context.Context,
-				) (core.SubstrateJobCount, error) {
-					return core.SubstrateJobCount{
-						Count: 2,
-					}, nil
+				substrateClient: &coreTesting.MockSubstrateClient{
+					CountRunningJobsFn: func(
+						context.Context,
+					) (core.SubstrateJobCount, error) {
+						return core.SubstrateJobCount{
+							Count: 2,
+						}, nil
+					},
 				},
 				jobAvailabilityCh: make(chan struct{}),
 				errCh:             make(chan error),
@@ -91,12 +96,14 @@ func TestManageJobsCapacity(t *testing.T) {
 				config: schedulerConfig{
 					maxConcurrentJobs: 2,
 				},
-				countRunningJobsFn: func(
-					context.Context,
-				) (core.SubstrateJobCount, error) {
-					return core.SubstrateJobCount{
-						Count: 1,
-					}, nil
+				substrateClient: &coreTesting.MockSubstrateClient{
+					CountRunningJobsFn: func(
+						context.Context,
+					) (core.SubstrateJobCount, error) {
+						return core.SubstrateJobCount{
+							Count: 1,
+						}, nil
+					},
 				},
 				jobAvailabilityCh: make(chan struct{}),
 				errCh:             make(chan error),
@@ -244,16 +251,20 @@ func TestRunJobLoop(t *testing.T) {
 							}, nil
 						},
 					},
-					getEventFn: func(context.Context, string) (core.Event, error) {
-						return core.Event{}, errors.New("something went wrong")
+					eventsClient: &coreTesting.MockEventsClient{
+						GetFn: func(context.Context, string) (core.Event, error) {
+							return core.Event{}, errors.New("something went wrong")
+						},
 					},
-					updateJobStatusFn: func(
-						context.Context,
-						string,
-						string,
-						core.JobStatus,
-					) error {
-						return nil
+					jobsClient: &coreTesting.MockJobsClient{
+						UpdateStatusFn: func(
+							context.Context,
+							string,
+							string,
+							core.JobStatus,
+						) error {
+							return nil
+						},
 					},
 					jobLoopErrFn: func(i ...interface{}) {
 						err := i[0].(error)
@@ -288,10 +299,12 @@ func TestRunJobLoop(t *testing.T) {
 							}, nil
 						},
 					},
-					getEventFn: func(context.Context, string) (core.Event, error) {
-						return core.Event{
-							Worker: &core.Worker{},
-						}, nil
+					eventsClient: &coreTesting.MockEventsClient{
+						GetFn: func(context.Context, string) (core.Event, error) {
+							return core.Event{
+								Worker: &core.Worker{},
+							}, nil
+						},
 					},
 					jobLoopErrFn: func(i ...interface{}) {
 						err := i[0].(error)
@@ -327,20 +340,22 @@ func TestRunJobLoop(t *testing.T) {
 							}, nil
 						},
 					},
-					getEventFn: func(context.Context, string) (core.Event, error) {
-						cancelFn()
-						return core.Event{
-							Worker: &core.Worker{
-								Jobs: []core.Job{
-									{
-										Name: "bar",
-										Status: &core.JobStatus{
-											Phase: core.JobPhaseRunning,
+					eventsClient: &coreTesting.MockEventsClient{
+						GetFn: func(context.Context, string) (core.Event, error) {
+							cancelFn()
+							return core.Event{
+								Worker: &core.Worker{
+									Jobs: []core.Job{
+										{
+											Name: "bar",
+											Status: &core.JobStatus{
+												Phase: core.JobPhaseRunning,
+											},
 										},
 									},
 								},
-							},
-						}, nil
+							}, nil
+						},
 					},
 					jobLoopErrFn: func(i ...interface{}) {
 						require.Fail(
@@ -388,23 +403,27 @@ func TestRunJobLoop(t *testing.T) {
 							}, nil
 						},
 					},
-					getEventFn: func(context.Context, string) (core.Event, error) {
-						return core.Event{
-							Worker: &core.Worker{
-								Jobs: []core.Job{
-									{
-										Name: "bar",
-										Status: &core.JobStatus{
-											Phase: core.JobPhasePending,
+					eventsClient: &coreTesting.MockEventsClient{
+						GetFn: func(context.Context, string) (core.Event, error) {
+							return core.Event{
+								Worker: &core.Worker{
+									Jobs: []core.Job{
+										{
+											Name: "bar",
+											Status: &core.JobStatus{
+												Phase: core.JobPhasePending,
+											},
 										},
 									},
 								},
-							},
-						}, nil
+							}, nil
+						},
 					},
 					jobAvailabilityCh: jobAvailabilityCh,
-					startJobFn: func(context.Context, string, string) error {
-						return errors.New("something went wrong")
+					jobsClient: &coreTesting.MockJobsClient{
+						StartFn: func(context.Context, string, string) error {
+							return errors.New("something went wrong")
+						},
 					},
 					jobLoopErrFn: func(i ...interface{}) {
 						err := i[0].(error)
@@ -450,24 +469,28 @@ func TestRunJobLoop(t *testing.T) {
 							}, nil
 						},
 					},
-					getEventFn: func(context.Context, string) (core.Event, error) {
-						return core.Event{
-							Worker: &core.Worker{
-								Jobs: []core.Job{
-									{
-										Name: "bar",
-										Status: &core.JobStatus{
-											Phase: core.JobPhasePending,
+					eventsClient: &coreTesting.MockEventsClient{
+						GetFn: func(context.Context, string) (core.Event, error) {
+							return core.Event{
+								Worker: &core.Worker{
+									Jobs: []core.Job{
+										{
+											Name: "bar",
+											Status: &core.JobStatus{
+												Phase: core.JobPhasePending,
+											},
 										},
 									},
 								},
-							},
-						}, nil
+							}, nil
+						},
 					},
 					jobAvailabilityCh: jobAvailabilityCh,
-					startJobFn: func(context.Context, string, string) error {
-						cancelFn()
-						return nil
+					jobsClient: &coreTesting.MockJobsClient{
+						StartFn: func(context.Context, string, string) error {
+							cancelFn()
+							return nil
+						},
 					},
 					jobLoopErrFn: func(i ...interface{}) {
 						require.Fail(

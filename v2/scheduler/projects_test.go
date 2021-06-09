@@ -8,6 +8,7 @@ import (
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
+	coreTesting "github.com/brigadecore/brigade/sdk/v2/testing/core"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,12 +25,14 @@ func TestManageProjects(t *testing.T) {
 					config: schedulerConfig{
 						addAndRemoveProjectsInterval: time.Second,
 					},
-					listProjectsFn: func(
-						context.Context,
-						*core.ProjectsSelector,
-						*meta.ListOptions,
-					) (core.ProjectList, error) {
-						return core.ProjectList{}, errors.New("something went wrong")
+					projectsClient: &coreTesting.MockProjectsClient{
+						ListFn: func(
+							context.Context,
+							*core.ProjectsSelector,
+							*meta.ListOptions,
+						) (core.ProjectList, error) {
+							return core.ProjectList{}, errors.New("something went wrong")
+						},
 					},
 				}
 			},
@@ -46,20 +49,22 @@ func TestManageProjects(t *testing.T) {
 					config: schedulerConfig{
 						addAndRemoveProjectsInterval: time.Second,
 					},
-					listProjectsFn: func(
-						context.Context,
-						*core.ProjectsSelector,
-						*meta.ListOptions,
-					) (core.ProjectList, error) {
-						return core.ProjectList{
-							Items: []core.Project{
-								{
-									ObjectMeta: meta.ObjectMeta{
-										ID: "blue-book",
+					projectsClient: &coreTesting.MockProjectsClient{
+						ListFn: func(
+							context.Context,
+							*core.ProjectsSelector,
+							*meta.ListOptions,
+						) (core.ProjectList, error) {
+							return core.ProjectList{
+								Items: []core.Project{
+									{
+										ObjectMeta: meta.ObjectMeta{
+											ID: "blue-book",
+										},
 									},
 								},
-							},
-						}, nil
+							}, nil
+						},
 					},
 					runWorkerLoopFn: func(context.Context, string) {},
 					runJobLoopFn:    func(context.Context, string) {},

@@ -28,7 +28,7 @@ func (s *scheduler) manageWorkerCapacity(ctx context.Context) {
 					return false, nil // Stop looking
 				default:
 				}
-				substrateWorkerCount, err := s.countRunningWorkersFn(ctx)
+				substrateWorkerCount, err := s.substrateClient.CountRunningWorkers(ctx)
 				if err != nil {
 					return false, err // Real error; stop retrying
 				}
@@ -117,11 +117,11 @@ outerLoop:
 
 			eventID := msg.Message
 
-			event, err := s.getEventFn(ctx, eventID)
+			event, err := s.eventsClient.Get(ctx, eventID)
 			if err != nil {
 				s.workerLoopErrFn(err)
 
-				if err := s.updateWorkerStatusFn(
+				if err := s.workersClient.UpdateStatus(
 					ctx,
 					eventID,
 					core.WorkerStatus{
@@ -160,7 +160,7 @@ outerLoop:
 
 			// Now use the API to start the Worker...
 
-			if err := s.startWorkerFn(ctx, event.ID); err != nil {
+			if err := s.workersClient.Start(ctx, event.ID); err != nil {
 				s.workerLoopErrFn(err)
 			}
 

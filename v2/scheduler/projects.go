@@ -23,7 +23,7 @@ func (s *scheduler) manageProjects(ctx context.Context) {
 		currentProjects := map[string]struct{}{}
 		listOpts := &meta.ListOptions{Limit: 100}
 		for {
-			projects, err := s.listProjectsFn(ctx, nil, listOpts)
+			projects, err := s.projectsClient.List(ctx, nil, listOpts)
 			if err != nil {
 				select {
 				case s.errCh <- errors.Wrap(err, "error listing projects"):

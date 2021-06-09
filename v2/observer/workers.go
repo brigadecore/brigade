@@ -7,6 +7,7 @@ import (
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,6 +46,16 @@ func (o *observer) syncWorkerPods(ctx context.Context) {
 func (o *observer) syncWorkerPod(obj interface{}) {
 	pod := obj.(*corev1.Pod)
 
+	// Fetch the cancel func associated with a timed Worker pod
+	lookup := namespacedPodName(pod.Namespace, pod.Name)
+	cancelTimer, exists := o.timedPodsSet[lookup]
+	if !exists {
+		var timerCtx context.Context
+		timerCtx, cancelTimer = context.WithCancel(context.Background())
+		o.timedPodsSet[lookup] = cancelTimer
+		o.startWorkerPodTimerFn(timerCtx, pod)
+	}
+
 	// Worker pods are only deleted after we're FULLY done with them. So if the
 	// DeletionTimestamp is set, there's nothing for us to do because the Worker
 	// must already be in a terminal state.
@@ -73,10 +84,13 @@ func (o *observer) syncWorkerPod(obj interface{}) {
 		status.Phase = core.WorkerPhaseRunning
 	case corev1.PodSucceeded:
 		status.Phase = core.WorkerPhaseSucceeded
+		cancelTimer()
 	case corev1.PodFailed:
 		status.Phase = core.WorkerPhaseFailed
+		cancelTimer()
 	case corev1.PodUnknown:
 		status.Phase = core.WorkerPhaseUnknown
+		cancelTimer()
 	}
 
 	if pod.Status.StartTime != nil {
@@ -98,7 +112,7 @@ func (o *observer) syncWorkerPod(obj interface{}) {
 	eventID := pod.Labels[myk8s.LabelEvent]
 	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
 	defer cancel()
-	if err := o.updateWorkerStatusFn(
+	if err := o.workersClient.UpdateStatus(
 		ctx,
 		eventID,
 		status,
@@ -137,7 +151,7 @@ func (o *observer) deleteWorkerResources(namespace, podName, eventID string) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
 	defer cancel()
-	if err := o.cleanupWorkerFn(ctx, eventID); err != nil {
+	if err := o.workersClient.Cleanup(ctx, eventID); err != nil {
 		o.errFn(
 			fmt.Sprintf(
 				"error cleaning up after worker for event %q: %s",
@@ -146,4 +160,55 @@ func (o *observer) deleteWorkerResources(namespace, podName, eventID string) {
 			),
 		)
 	}
+}
+
+// startWorkerPodTimer inspects the provided Worker pod for a timeoutDuration
+// annotation value and if non-empty, starts a timer using the parsed value.
+// If the timeout is reached, we make an API call to execute the appropriate
+// logic. Alternatively, the context may be canceled in the meantime, which
+// will stop the timer.
+func (o *observer) startWorkerPodTimer(ctx context.Context, pod *corev1.Pod) {
+	defer delete(o.timedPodsSet, namespacedPodName(pod.Namespace, pod.Name))
+
+	if pod.Status.Phase != corev1.PodPending &&
+		pod.Status.Phase != corev1.PodRunning {
+		return
+	}
+	if pod.Annotations[myk8s.AnnotationTimeoutDuration] == "" {
+		return
+	}
+
+	duration := pod.Annotations[myk8s.AnnotationTimeoutDuration]
+	timeout, err := time.ParseDuration(duration)
+	if err != nil {
+		o.errFn(
+			errors.Wrapf(
+				err,
+				"unable to parse timeout duration %q for pod %q",
+				duration,
+				pod.Name,
+			),
+		)
+		return
+	}
+
+	go func() {
+		ticker := time.NewTimer(timeout)
+		defer ticker.Stop()
+
+		select {
+		case <-ticker.C:
+			eventID := pod.Labels[myk8s.LabelEvent]
+			if err := o.workersClient.Timeout(ctx, eventID); err != nil {
+				o.errFn(
+					errors.Wrapf(
+						err,
+						"error timing out worker for event %q",
+						eventID,
+					),
+				)
+			}
+		case <-ctx.Done():
+		}
+	}()
 }

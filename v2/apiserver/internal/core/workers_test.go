@@ -597,12 +597,153 @@ func TestWorkersServiceCleanup(t *testing.T) {
 	}
 }
 
+func TestWorkersServiceTimeout(t *testing.T) {
+	const testEventID = "123456789"
+	const testJobName = "italian"
+	var testEvent = Event{
+		Worker: Worker{
+			Status: WorkerStatus{
+				Phase: WorkerPhaseRunning,
+			},
+			Jobs: []Job{
+				{
+					Name: testJobName,
+					Status: &JobStatus{
+						Phase: JobPhaseRunning,
+					},
+				},
+			},
+		},
+	}
+	testCases := []struct {
+		name       string
+		service    WorkersService
+		assertions func(error)
+	}{
+		{
+			name: "unauthorized",
+			service: &workersService{
+				authorize: libAuthz.NeverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "error getting event from store",
+			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error retrieving event")
+			},
+		},
+		{
+			name: "error timing out",
+			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return testEvent, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					TimeoutFn: func(context.Context, string) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error timing out worker")
+			},
+		},
+		{
+			name: "error cleaning up",
+			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return testEvent, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					TimeoutFn: func(context.Context, string) error {
+						return nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				substrate: &mockSubstrate{
+					DeleteWorkerAndJobsFn: func(context.Context, Project, Event) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error deleting event")
+			},
+		},
+		{
+			name: "success",
+			service: &workersService{
+				authorize: libAuthz.AlwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return testEvent, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					TimeoutFn: func(context.Context, string) error {
+						return nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				substrate: &mockSubstrate{
+					DeleteWorkerAndJobsFn: func(context.Context, Project, Event) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.service.Timeout(context.Background(), testEventID)
+			testCase.assertions(err)
+		})
+	}
+}
+
 type mockWorkersStore struct {
 	UpdateStatusFn func(
 		ctx context.Context,
 		eventID string,
 		status WorkerStatus,
 	) error
+
+	TimeoutFn func(ctx context.Context, eventID string) error
 }
 
 func (m *mockWorkersStore) UpdateStatus(
@@ -611,4 +752,8 @@ func (m *mockWorkersStore) UpdateStatus(
 	status WorkerStatus,
 ) error {
 	return m.UpdateStatusFn(ctx, eventID, status)
+}
+
+func (m *mockWorkersStore) Timeout(ctx context.Context, eventID string) error {
+	return m.TimeoutFn(ctx, eventID)
 }

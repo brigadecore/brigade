@@ -133,7 +133,7 @@ func (o *observer) syncJobPod(obj interface{}) {
 	jobName := pod.Labels[myk8s.LabelJob]
 	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
 	defer cancel()
-	if err := o.updateJobStatusFn(
+	if err := o.jobsClient.UpdateStatus(
 		ctx,
 		eventID,
 		jobName,
@@ -179,7 +179,7 @@ func (o *observer) deleteJobResources(
 
 	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
 	defer cancel()
-	if err := o.cleanupJobFn(ctx, eventID, jobName); err != nil {
+	if err := o.jobsClient.Cleanup(ctx, eventID, jobName); err != nil {
 		o.errFn(
 			fmt.Sprintf(
 				"error cleaning up after event %q job %q: %s",
@@ -191,6 +191,11 @@ func (o *observer) deleteJobResources(
 	}
 }
 
+// startJobPodTimer inspects the provided Job pod for a timeoutDuration
+// annotation value and if non-empty, starts a timer using the parsed value.
+// If the timeout is reached, we make an API call to execute the appropriate
+// logic. Alternatively, the context may be canceled in the meantime, which
+// will stop the timer.
 func (o *observer) startJobPodTimer(ctx context.Context, pod *corev1.Pod) {
 	defer delete(o.timedPodsSet, namespacedPodName(pod.Namespace, pod.Name))
 
@@ -224,7 +229,7 @@ func (o *observer) startJobPodTimer(ctx context.Context, pod *corev1.Pod) {
 		case <-timer.C:
 			eventID := pod.Labels[myk8s.LabelEvent]
 			jobName := pod.Labels[myk8s.LabelJob]
-			if err := o.timeoutJobFn(ctx, eventID, jobName); err != nil {
+			if err := o.jobsClient.Timeout(ctx, eventID, jobName); err != nil {
 				o.errFn(
 					errors.Wrapf(
 						err,
