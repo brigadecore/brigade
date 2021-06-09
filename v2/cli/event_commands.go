@@ -425,7 +425,7 @@ func eventCreate(c *cli.Context) error {
 	}
 	if len(events.Items) == 0 {
 		fmt.Printf(
-			"Project %q not subscribed to events of this type. No event created.",
+			"Project %q is not subscribed to events of this type. No event created.",
 			projectID,
 		)
 		return nil
