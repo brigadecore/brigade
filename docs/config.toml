@@ -24,7 +24,7 @@ relativeURLs = "true"
     weight = 21
     parent = "intro"
     [[menu.index]]
-    name = "Quickstart"
+    name = "QuickStart"
     url = "/intro/quickstart/"
     weight = 22
     parent = "intro"
