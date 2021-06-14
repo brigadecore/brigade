@@ -19,6 +19,64 @@ func TestProjectListMarshalJSON(t *testing.T) {
 	metaTesting.RequireAPIVersionAndType(t, &ProjectList{}, "ProjectList")
 }
 
+func TestProjectListContains(t *testing.T) {
+	testProject := Project{
+		ObjectMeta: meta.ObjectMeta{
+			ID: "myproject",
+		},
+		Kubernetes: &KubernetesDetails{
+			Namespace: "mynamespace",
+		},
+	}
+
+	t.Run("empty list", func(t *testing.T) {
+		projectList := ProjectList{}
+		require.False(t, projectList.Contains(testProject))
+	})
+
+	t.Run("project not in list", func(t *testing.T) {
+		projectList := ProjectList{
+			Items: []Project{
+				{
+					ObjectMeta: meta.ObjectMeta{
+						ID: "diffproject",
+					},
+				},
+			},
+		}
+		require.False(t, projectList.Contains(testProject))
+	})
+
+	t.Run("name matches, namespace does not", func(t *testing.T) {
+		projectList := ProjectList{
+			Items: []Project{
+				{
+					ObjectMeta: meta.ObjectMeta{
+						ID: "myproject",
+					},
+				},
+			},
+		}
+		require.False(t, projectList.Contains(testProject))
+	})
+
+	t.Run("project matches", func(t *testing.T) {
+		projectList := ProjectList{
+			Items: []Project{
+				{
+					ObjectMeta: meta.ObjectMeta{
+						ID: "myproject",
+					},
+					Kubernetes: &KubernetesDetails{
+						Namespace: "mynamespace",
+					},
+				},
+			},
+		}
+		require.True(t, projectList.Contains(testProject))
+	})
+}
+
 func TestNewProjectsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}

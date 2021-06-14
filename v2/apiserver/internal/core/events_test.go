@@ -83,6 +83,9 @@ func TestEventsServiceCreate(t *testing.T) {
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, errors.New("projects store error")
 					},
+					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
+						return ProjectList{}, nil
+					},
 				},
 			},
 			assertions: func(_ EventList, err error) {
@@ -92,8 +95,7 @@ func TestEventsServiceCreate(t *testing.T) {
 			},
 		},
 		{
-			name: "create single event for specified project; create single " +
-				"event failure ",
+			name: "create single event for specified but not subscribed project",
 			event: Event{
 				ProjectID: "blue-book",
 			},
@@ -101,7 +103,63 @@ func TestEventsServiceCreate(t *testing.T) {
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
-						return Project{}, nil
+						return Project{
+							ObjectMeta: meta.ObjectMeta{
+								ID: "blue-book",
+							},
+						}, nil
+					},
+					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
+						return ProjectList{
+							Items: []Project{
+								{
+									ObjectMeta: meta.ObjectMeta{
+										ID: "orange-book",
+									},
+								},
+							},
+						}, nil
+					},
+				},
+				createSingleEventFn: func(
+					context.Context,
+					Project,
+					Event,
+				) (Event, error) {
+					return Event{}, nil
+				},
+			},
+			assertions: func(events EventList, err error) {
+				require.NoError(t, err)
+				require.Len(t, events.Items, 0)
+			},
+		},
+		{
+			name: "create single event for specified and subscribed project; " +
+				"failure",
+			event: Event{
+				ProjectID: "blue-book",
+			},
+			service: &eventsService{
+				projectAuthorize: alwaysProjectAuthorize,
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{
+							ObjectMeta: meta.ObjectMeta{
+								ID: "blue-book",
+							},
+						}, nil
+					},
+					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
+						return ProjectList{
+							Items: []Project{
+								{
+									ObjectMeta: meta.ObjectMeta{
+										ID: "blue-book",
+									},
+								},
+							},
+						}, nil
 					},
 				},
 				createSingleEventFn: func(
@@ -118,7 +176,8 @@ func TestEventsServiceCreate(t *testing.T) {
 			},
 		},
 		{
-			name: "create single event for specified project; success",
+			name: "create single event for specified and subscribed project" +
+				"success",
 			event: Event{
 				ProjectID: "blue-book",
 			},
@@ -126,7 +185,22 @@ func TestEventsServiceCreate(t *testing.T) {
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
-						return Project{}, nil
+						return Project{
+							ObjectMeta: meta.ObjectMeta{
+								ID: "blue-book",
+							},
+						}, nil
+					},
+					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
+						return ProjectList{
+							Items: []Project{
+								{
+									ObjectMeta: meta.ObjectMeta{
+										ID: "blue-book",
+									},
+								},
+							},
+						}, nil
 					},
 				},
 				createSingleEventFn: func(
