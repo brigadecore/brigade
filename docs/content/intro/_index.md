@@ -6,6 +6,7 @@ aliases:
   - /index.md
   - /intro/index.md
   - /intro/index/
+weight: 10
 ---
 
 # Getting Started
@@ -15,7 +16,8 @@ New to Brigade or to CI systems in general? Well, you came to the right place: r
 ## Table of Contents
 
 - [Brigade at a glance](overview)
-- [Quick Install Guide](install)
+- [QuickStart](quickstart)  
+- [Installation Guide](install)
 - [Writing your first CI pipeline, part 1](tutorial01)
 - [Writing your first CI pipeline, part 2](tutorial02)
 - [Writing your first CI pipeline, part 3](tutorial03)
