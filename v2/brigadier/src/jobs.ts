@@ -149,6 +149,25 @@ export class Job implements Runnable {
 }
 
 /**
+ * Represents a policy for whether container hosts already having a certain OCI
+ * image should attempt to re-pull that image prior to launching a new container
+ * based on that image.
+ */
+ export enum ImagePullPolicy {
+  /**
+   * Represents a policy wherein container hosts
+   * only attempt to pull an OCI image if that image does not already exist on
+   * the host
+   */
+  IfNotPresent = "IfNotPresent",
+  /**
+   * Represents a policy wherein container hosts will always attempt to re-pull
+   * an OCI image before launching a container based on that image
+   */
+  Always = "Always"
+}
+
+/**
  * A single OCI container in a Job.
  */
 export class Container {
@@ -159,7 +178,7 @@ export class Container {
    * that is already in its local cache. The permitted values are as IfNotPresent
    * (the default) and Always.
    */
-  public imagePullPolicy = "IfNotPresent"
+  public imagePullPolicy: ImagePullPolicy = ImagePullPolicy.IfNotPresent
   /** The working directory for the process running in the container. */
   public workingDirectory = ""
   /**
