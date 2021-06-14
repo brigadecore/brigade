@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	defaultEventSubscriptions = []core.EventSubscription{
+	DefaultEventSubscriptions = []core.EventSubscription{
 		{
 			Source: "brigade.sh/cli",
 			Types: []string{
@@ -28,7 +28,7 @@ var (
 		},
 	}
 
-	defaultConfigFiles = map[string]string{
+	DefaultConfigFiles = map[string]string{
 		"brigade.ts": fmt.Sprintf(`
 		import { events, Job } from "@brigadecore/brigadier"
 

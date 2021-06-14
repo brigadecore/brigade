@@ -33,7 +33,7 @@ var TestCases = []testcase{
 				ID: "github-no-ref",
 			},
 			Spec: core.ProjectSpec{
-				EventSubscriptions: defaultEventSubscriptions,
+				EventSubscriptions: DefaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
@@ -62,7 +62,7 @@ var TestCases = []testcase{
 				ID: "github-full-ref",
 			},
 			Spec: core.ProjectSpec{
-				EventSubscriptions: defaultEventSubscriptions,
+				EventSubscriptions: DefaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
@@ -92,7 +92,7 @@ var TestCases = []testcase{
 				ID: "github-casual-ref",
 			},
 			Spec: core.ProjectSpec{
-				EventSubscriptions: defaultEventSubscriptions,
+				EventSubscriptions: DefaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
@@ -122,7 +122,7 @@ var TestCases = []testcase{
 				ID: "github-sha",
 			},
 			Spec: core.ProjectSpec{
-				EventSubscriptions: defaultEventSubscriptions,
+				EventSubscriptions: DefaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
@@ -152,7 +152,7 @@ var TestCases = []testcase{
 				ID: "github-submodules",
 			},
 			Spec: core.ProjectSpec{
-				EventSubscriptions: defaultEventSubscriptions,
+				EventSubscriptions: DefaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL:       "https://github.com/brigadecore/empty-testbed.git",
@@ -192,7 +192,7 @@ var TestCases = []testcase{
 				ID: "github-private-ssh",
 			},
 			Spec: core.ProjectSpec{
-				EventSubscriptions: defaultEventSubscriptions,
+				EventSubscriptions: DefaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "git@github.com:brigadecore/private-test-repo.git",
@@ -222,7 +222,7 @@ var TestCases = []testcase{
 				ID: "github-vcs-fail",
 			},
 			Spec: core.ProjectSpec{
-				EventSubscriptions: defaultEventSubscriptions,
+				EventSubscriptions: DefaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
@@ -257,7 +257,7 @@ var TestCases = []testcase{
 				ID: "github-job-fail",
 			},
 			Spec: core.ProjectSpec{
-				EventSubscriptions: defaultEventSubscriptions,
+				EventSubscriptions: DefaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
@@ -272,7 +272,10 @@ var TestCases = []testcase{
 			events.on("brigade.sh/cli", "exec", async event => {
 				let job = new Job("%s", "alpine", event)
 				job.primaryContainer.command = ["sh"]
-				job.primaryContainer.arguments = ["-c", "'echo Goodbye World && exit 1'"]
+				job.primaryContainer.arguments = [
+					"-c",
+					"'echo Goodbye World && exit 1'"
+				]
 				await job.run()
 			})
 
@@ -299,7 +302,7 @@ var TestCases = []testcase{
 				ID: "job-times-out",
 			},
 			Spec: core.ProjectSpec{
-				EventSubscriptions: defaultEventSubscriptions,
+				EventSubscriptions: DefaultEventSubscriptions,
 			},
 		},
 		configFiles: map[string]string{
@@ -336,7 +339,7 @@ var TestCases = []testcase{
 				ID: "worker-times-out",
 			},
 			Spec: core.ProjectSpec{
-				EventSubscriptions: defaultEventSubscriptions,
+				EventSubscriptions: DefaultEventSubscriptions,
 				WorkerTemplate: core.WorkerSpec{
 					// Timeout a bit "long" to allow for job to spin up
 					TimeoutDuration: "10s",

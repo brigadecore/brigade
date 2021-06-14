@@ -68,7 +68,7 @@ func TestMain(t *testing.T) {
 			if len(tc.configFiles) > 0 {
 				tc.project.Spec.WorkerTemplate.DefaultConfigFiles = tc.configFiles
 			} else {
-				tc.project.Spec.WorkerTemplate.DefaultConfigFiles = defaultConfigFiles
+				tc.project.Spec.WorkerTemplate.DefaultConfigFiles = DefaultConfigFiles
 			}
 
 			// Create the test project
