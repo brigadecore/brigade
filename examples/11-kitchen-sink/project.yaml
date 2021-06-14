@@ -5,6 +5,10 @@ metadata:
   id: kitchen-sink
 description: A project that demonstrates the kitchen sink!
 spec:
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
   workerTemplate:
     logLevel: DEBUG
     configFilesDirectory: examples/11-kitchen-sink/.brigade

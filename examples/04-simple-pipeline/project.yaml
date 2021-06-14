@@ -5,6 +5,10 @@ metadata:
   id: simple-pipeline
 description: Demonstrates a simple pipeline with brigadier
 spec:
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
   workerTemplate:
     logLevel: DEBUG
     defaultConfigFiles:
