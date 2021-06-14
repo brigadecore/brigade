@@ -498,6 +498,35 @@ func TestStartWorkerPodTimer(t *testing.T) {
 			},
 		},
 		{
+			name: "pod has timeout annotation exceeding the configured max",
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+					Annotations: map[string]string{
+						myk8s.AnnotationTimeoutDuration: "2ms",
+					},
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+				},
+			},
+			observer: &observer{
+				config: observerConfig{
+					maxWorkerLifetime: time.Duration(1000000), // 1ms
+				},
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+				errFn: func(i ...interface{}) {
+					require.Len(t, i, 1)
+					err, ok := i[0].(error)
+					require.True(t, ok)
+					require.Contains(t, err.Error(), "exceeds the configured maximum")
+				},
+			},
+		},
+		{
 			name: "pod has invalid timeout annotation",
 			pod: &corev1.Pod{
 				ObjectMeta: v1.ObjectMeta{
@@ -538,6 +567,9 @@ func TestStartWorkerPodTimer(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				config: observerConfig{
+					maxWorkerLifetime: time.Duration(2000000), // 2ms
+				},
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
 				},
@@ -573,6 +605,9 @@ func TestStartWorkerPodTimer(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				config: observerConfig{
+					maxWorkerLifetime: time.Duration(2000000), // 2ms
+				},
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
 				},

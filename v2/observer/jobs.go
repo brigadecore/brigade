@@ -222,6 +222,17 @@ func (o *observer) startJobPodTimer(ctx context.Context, pod *corev1.Pod) {
 			)
 			return
 		}
+		if timeout > o.config.maxJobLifetime {
+			o.errFn(
+				fmt.Errorf(
+					"timeout %q for pod %q exceeds the configured maximum %q",
+					duration,
+					pod.Name,
+					o.config.maxJobLifetime,
+				),
+			)
+			return
+		}
 	}
 
 	go func() {
