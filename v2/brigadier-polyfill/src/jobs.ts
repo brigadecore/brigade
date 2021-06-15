@@ -26,7 +26,7 @@ export class Job extends BrigadierJob {
         {allowInsecureConnections: true},
       )
 
-      let sdkJob: core.Job = {
+      const sdkJob: core.Job = {
         name: this.name,
         spec: {
           primaryContainer: this.primaryContainer,

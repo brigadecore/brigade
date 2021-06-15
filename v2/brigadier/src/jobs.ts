@@ -153,7 +153,7 @@ export class Job implements Runnable {
  * image should attempt to re-pull that image prior to launching a new container
  * based on that image.
  */
- export enum ImagePullPolicy {
+export enum ImagePullPolicy {
   /**
    * Represents a policy wherein container hosts
    * only attempt to pull an OCI image if that image does not already exist on
