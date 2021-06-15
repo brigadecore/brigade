@@ -1,12 +1,11 @@
-import * as https from "https"
-
 // For some reason, EventSource NEEDS to be required this way.
 const EventSource = require("eventsource") // eslint-disable-line @typescript-eslint/no-var-requires
 
-import axios from "axios"
 import { Logger } from "winston" 
 
 import { Event, Job as BrigadierJob } from "@brigadecore/brigadier"
+
+import { core } from "@brigadecore/brigade-sdk"
 
 import { logger } from "./logger"
 
@@ -21,32 +20,22 @@ export class Job extends BrigadierJob {
   async run(): Promise<void> {
     this.logger.info(`Creating job ${this.name}`)
     try {
-      const response = await axios({
-        httpsAgent: new https.Agent(
-          {
-            rejectUnauthorized: false
-          }
-        ),
-        method: "post",
-        url: `${this.event.worker.apiAddress}/v2/events/${this.event.id}/worker/jobs`,
-        headers: {
-          Authorization: `Bearer ${this.event.worker.apiToken}`
-        },
-        data: {
-          apiVersion: "brigade.sh/v2-alpha.5",
-          kind: "Job",
-          name: this.name,
-          spec: {
-            primaryContainer: this.primaryContainer,
-            sidecarContainers: this.sidecarContainers,
-            timeoutDuration: this.timeoutSeconds + "s",
-            host: this.host
-          }
-        },
-      })
-      if (response.status != 201) {
-        throw new Error(`Received ${response.status} from the API server`)
+      const jobsClient = new core.JobsClient(
+        this.event.worker.apiAddress,
+        this.event.worker.apiToken,
+        {allowInsecureConnections: true},
+      )
+
+      const sdkJob: core.Job = {
+        name: this.name,
+        spec: {
+          primaryContainer: this.primaryContainer,
+          sidecarContainers: this.sidecarContainers,
+          timeoutDuration: this.timeoutSeconds + "s",
+          host: this.host
+        }
       }
+      await jobsClient.create(this.event.id, sdkJob)
     }
     catch(e) {
       throw new Error(`Error creating job "${this.name}": ${e.message}`)

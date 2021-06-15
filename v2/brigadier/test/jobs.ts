@@ -2,7 +2,7 @@ import "mocha"
 import { assert } from "chai"
 
 import { Event } from "../src/events"
-import { Job, Container, JobHost } from "../src/jobs"
+import { Job, Container, JobHost, ImagePullPolicy } from "../src/jobs"
 
 describe("jobs", () => {
 
@@ -26,10 +26,11 @@ describe("jobs", () => {
       const job = new Job("my-name", "debian:latest", event)
       it("initializes fields properly", () => {
         assert.equal(job.name, "my-name")
-        assert.deepEqual(new Container("debian:latest"), job.primaryContainer)
-        assert.deepEqual({}, job.sidecarContainers)
-        assert.equal(60 * 15, job.timeoutSeconds)
-        assert.deepEqual(new JobHost(), job.host)
+        assert.deepEqual(job.primaryContainer, new Container("debian:latest"))
+        assert.deepEqual(job.primaryContainer.imagePullPolicy, ImagePullPolicy.IfNotPresent)
+        assert.deepEqual(job.sidecarContainers, {})
+        assert.equal(job.timeoutSeconds, 60 * 15)
+        assert.deepEqual(job.host, new JobHost())
       })
     })
   })
@@ -38,11 +39,11 @@ describe("jobs", () => {
     describe("#constructor", () => {
       const container = new Container("debian:latest")
       it("initializes fields properly", () => {
-        assert.equal("debian:latest", container.image)
-        assert.equal("IfNotPresent", container.imagePullPolicy)
-        assert.deepEqual([], container.command)
-        assert.deepEqual([], container.arguments)
-        assert.deepEqual({}, container.environment)
+        assert.equal(container.image, "debian:latest")
+        assert.equal(container.imagePullPolicy, ImagePullPolicy.IfNotPresent)
+        assert.deepEqual(container.command, [])
+        assert.deepEqual(container.arguments, [])
+        assert.deepEqual(container.environment, {})
         assert.isEmpty(container.workspaceMountPath)
         assert.isEmpty(container.sourceMountPath)
         assert.isFalse(container.privileged)
@@ -57,7 +58,7 @@ describe("jobs", () => {
       it("initializes fields properly", () => {
         assert.isUndefined(jobHost.os)
         assert.isDefined(jobHost.nodeSelector)
-        assert.equal(0, Object.keys(jobHost.nodeSelector).length)
+        assert.equal(Object.keys(jobHost.nodeSelector).length, 0)
       })
     })
   })
