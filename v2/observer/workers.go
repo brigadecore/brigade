@@ -175,26 +175,10 @@ func (o *observer) startWorkerPodTimer(ctx context.Context, pod *corev1.Pod) {
 		return
 	}
 
-	// Attempt to set the timeout per the annotation on the pod itself
-	duration := pod.Annotations[myk8s.AnnotationTimeoutDuration]
-	timeout, err := time.ParseDuration(duration)
-	// Fallback to the max if we are unable to parse timeout value or if it
-	// exceeds the max.
-	if err != nil || timeout > o.config.maxWorkerLifetime {
-		o.errFn(
-			fmt.Errorf(
-				"unable to parse timeout duration %q for pod %q; "+
-					"using configured maximum of %q",
-				duration,
-				pod.Name,
-				o.config.maxWorkerLifetime,
-			),
-		)
-		timeout = o.config.maxWorkerLifetime
-	}
-
 	go func() {
-		timer := time.NewTimer(timeout)
+		timer := time.NewTimer(
+			o.getPodTimeoutDuration(pod, o.config.maxWorkerLifetime),
+		)
 		defer timer.Stop()
 
 		select {

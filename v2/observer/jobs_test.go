@@ -519,83 +519,6 @@ func TestStartJobPodTimer(t *testing.T) {
 			},
 		},
 		{
-			name: "pod has timeout annotation exceeding the configured max",
-			pod: &corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      "nombre",
-					Namespace: "ns",
-					Annotations: map[string]string{
-						myk8s.AnnotationTimeoutDuration: "2ms",
-					},
-				},
-				Status: corev1.PodStatus{
-					Phase: corev1.PodPending,
-				},
-			},
-			observer: &observer{
-				config: observerConfig{
-					maxJobLifetime: time.Duration(1000000), // 1ms
-				},
-				timedPodsSet: map[string]context.CancelFunc{
-					"ns:nombre": func() {},
-				},
-				jobsClient: &coreTesting.MockJobsClient{
-					TimeoutFn: func(
-						ctx context.Context,
-						eventID string,
-						jobName string,
-					) error {
-						require.Equal(t, jobName, "italian")
-						return nil
-					},
-				},
-				errFn: func(i ...interface{}) {
-					require.Len(t, i, 1)
-					err, ok := i[0].(error)
-					require.True(t, ok)
-					require.Contains(t, err.Error(), "unable to parse timeout duration")
-					require.Contains(t, err.Error(), "using configured maximum")
-				},
-			},
-		},
-		{
-			name: "pod has invalid timeout annotation",
-			pod: &corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      "nombre",
-					Namespace: "ns",
-					Annotations: map[string]string{
-						myk8s.AnnotationTimeoutDuration: "1",
-					},
-				},
-				Status: corev1.PodStatus{
-					Phase: corev1.PodPending,
-				},
-			},
-			observer: &observer{
-				timedPodsSet: map[string]context.CancelFunc{
-					"ns:nombre": func() {},
-				},
-				jobsClient: &coreTesting.MockJobsClient{
-					TimeoutFn: func(
-						ctx context.Context,
-						eventID string,
-						jobName string,
-					) error {
-						require.Equal(t, jobName, "italian")
-						return nil
-					},
-				},
-				errFn: func(i ...interface{}) {
-					require.Len(t, i, 1)
-					err, ok := i[0].(error)
-					require.True(t, ok)
-					require.Contains(t, err.Error(), "unable to parse timeout duration")
-					require.Contains(t, err.Error(), "using configured maximum")
-				},
-			},
-		},
-		{
 			name: "timed pod times out; api call fails",
 			pod: &corev1.Pod{
 				ObjectMeta: v1.ObjectMeta{
@@ -682,9 +605,6 @@ func TestStartJobPodTimer(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "nombre",
 					Namespace: "ns",
-					Annotations: map[string]string{
-						myk8s.AnnotationTimeoutDuration: "5ms",
-					},
 				},
 				Status: corev1.PodStatus{
 					Phase: corev1.PodPending,
