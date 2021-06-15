@@ -204,35 +204,22 @@ func (o *observer) startJobPodTimer(ctx context.Context, pod *corev1.Pod) {
 		return
 	}
 
-	// Default the timeout value based on the Observer's config
-	timeout := o.config.maxJobLifetime
-	// Else, use the value set on the pod itself
-	if pod.Annotations[myk8s.AnnotationTimeoutDuration] != "" {
-		var err error
-		duration := pod.Annotations[myk8s.AnnotationTimeoutDuration]
-		timeout, err = time.ParseDuration(duration)
-		if err != nil {
-			o.errFn(
-				errors.Wrapf(
-					err,
-					"unable to parse timeout duration %q for pod %q",
-					duration,
-					pod.Name,
-				),
-			)
-			return
-		}
-		if timeout > o.config.maxJobLifetime {
-			o.errFn(
-				fmt.Errorf(
-					"timeout %q for pod %q exceeds the configured maximum %q",
-					duration,
-					pod.Name,
-					o.config.maxJobLifetime,
-				),
-			)
-			return
-		}
+	// Attempt to set the timeout per the annotation on the pod itself
+	duration := pod.Annotations[myk8s.AnnotationTimeoutDuration]
+	timeout, err := time.ParseDuration(duration)
+	// Fallback to the max if we are unable to parse timeout value or if it
+	// exceeds the max.
+	if err != nil || timeout > o.config.maxJobLifetime {
+		o.errFn(
+			fmt.Errorf(
+				"unable to parse timeout duration %q for pod %q; "+
+					"using configured maximum of %q",
+				duration,
+				pod.Name,
+				o.config.maxJobLifetime,
+			),
+		)
+		timeout = o.config.maxJobLifetime
 	}
 
 	go func() {

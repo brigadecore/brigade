@@ -470,34 +470,6 @@ func TestStartWorkerPodTimer(t *testing.T) {
 			},
 		},
 		{
-			name: "pod has no timeout annotation; uses observer config",
-			pod: &corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      "nombre",
-					Namespace: "ns",
-				},
-				Status: corev1.PodStatus{
-					Phase: corev1.PodPending,
-				},
-			},
-			observer: &observer{
-				config: observerConfig{
-					maxWorkerLifetime: time.Duration(1000000), // 1ms
-				},
-				timedPodsSet: map[string]context.CancelFunc{
-					"ns:nombre": func() {},
-				},
-				workersClient: &coreTesting.MockWorkersClient{
-					TimeoutFn: func(
-						ctx context.Context,
-						eventID string,
-					) error {
-						return nil
-					},
-				},
-			},
-		},
-		{
 			name: "pod has timeout annotation exceeding the configured max",
 			pod: &corev1.Pod{
 				ObjectMeta: v1.ObjectMeta{
@@ -518,11 +490,20 @@ func TestStartWorkerPodTimer(t *testing.T) {
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
 				},
+				workersClient: &coreTesting.MockWorkersClient{
+					TimeoutFn: func(
+						ctx context.Context,
+						eventID string,
+					) error {
+						return errors.New("something went wrong")
+					},
+				},
 				errFn: func(i ...interface{}) {
 					require.Len(t, i, 1)
 					err, ok := i[0].(error)
 					require.True(t, ok)
-					require.Contains(t, err.Error(), "exceeds the configured maximum")
+					require.Contains(t, err.Error(), "unable to parse timeout duration")
+					require.Contains(t, err.Error(), "using configured maximum")
 				},
 			},
 		},
@@ -544,11 +525,20 @@ func TestStartWorkerPodTimer(t *testing.T) {
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
 				},
+				workersClient: &coreTesting.MockWorkersClient{
+					TimeoutFn: func(
+						ctx context.Context,
+						eventID string,
+					) error {
+						return errors.New("something went wrong")
+					},
+				},
 				errFn: func(i ...interface{}) {
 					require.Len(t, i, 1)
 					err, ok := i[0].(error)
 					require.True(t, ok)
 					require.Contains(t, err.Error(), "unable to parse timeout duration")
+					require.Contains(t, err.Error(), "using configured maximum")
 				},
 			},
 		},
@@ -633,6 +623,9 @@ func TestStartWorkerPodTimer(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "nombre",
 					Namespace: "ns",
+					Annotations: map[string]string{
+						myk8s.AnnotationTimeoutDuration: "5ms",
+					},
 				},
 				Status: corev1.PodStatus{
 					Phase: corev1.PodPending,
@@ -641,6 +634,9 @@ func TestStartWorkerPodTimer(t *testing.T) {
 			observer: &observer{
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
+				},
+				config: observerConfig{
+					maxWorkerLifetime: time.Duration(10000000), // 10ms
 				},
 				workersClient: &coreTesting.MockWorkersClient{
 					TimeoutFn: func(
