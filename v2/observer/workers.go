@@ -174,30 +174,15 @@ func (o *observer) startWorkerPodTimer(ctx context.Context, pod *corev1.Pod) {
 		pod.Status.Phase != corev1.PodRunning {
 		return
 	}
-	if pod.Annotations[myk8s.AnnotationTimeoutDuration] == "" {
-		return
-	}
-
-	duration := pod.Annotations[myk8s.AnnotationTimeoutDuration]
-	timeout, err := time.ParseDuration(duration)
-	if err != nil {
-		o.errFn(
-			errors.Wrapf(
-				err,
-				"unable to parse timeout duration %q for pod %q",
-				duration,
-				pod.Name,
-			),
-		)
-		return
-	}
 
 	go func() {
-		ticker := time.NewTimer(timeout)
-		defer ticker.Stop()
+		timer := time.NewTimer(
+			o.getPodTimeoutDuration(pod, o.config.maxWorkerLifetime),
+		)
+		defer timer.Stop()
 
 		select {
-		case <-ticker.C:
+		case <-timer.C:
 			eventID := pod.Labels[myk8s.LabelEvent]
 			if err := o.workersClient.Timeout(ctx, eventID); err != nil {
 				o.errFn(

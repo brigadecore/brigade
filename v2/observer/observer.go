@@ -17,14 +17,24 @@ import (
 type observerConfig struct {
 	delayBeforeCleanup  time.Duration
 	healthcheckInterval time.Duration
+	maxWorkerLifetime   time.Duration
+	maxJobLifetime      time.Duration
 }
 
 func getObserverConfig() (observerConfig, error) {
 	config := observerConfig{}
 	var err error
 	config.healthcheckInterval = 30 * time.Second
-	config.delayBeforeCleanup, err =
-		os.GetDurationFromEnvVar("DELAY_BEFORE_CLEANUP", time.Minute)
+	if config.delayBeforeCleanup, err =
+		os.GetDurationFromEnvVar("DELAY_BEFORE_CLEANUP", time.Minute); err != nil {
+		return config, err
+	}
+	if config.maxWorkerLifetime, err =
+		os.GetDurationFromEnvVar("MAX_WORKER_LIFETIME", time.Hour*24); err != nil {
+		return config, err
+	}
+	config.maxJobLifetime, err =
+		os.GetDurationFromEnvVar("MAX_JOB_LIFETIME", time.Hour*24)
 	return config, err
 }
 

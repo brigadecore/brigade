@@ -210,6 +210,20 @@ observer:
   tls:
     ignoreCertWarnings: true
 
+  config:
+    ## maxWorkerLifetime dictates the maximum amount of time that a worker
+    ## is permitted to run, assuming no timeout has been set on the worker itself.
+    ## (Default is 24 hours)
+    ## Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+    ## For example, "60s", "2h45m", "168h" (1 week)
+    # maxWorkerLifetime:
+    ## maxJobLifetime dictates the maximum amount of time that a job
+    ## is permitted to run, assuming no timeout has been set on the job itself.
+    ## (Default is 24 hours)
+    ## Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+    ## For example, "60s", "2h45m", "168h" (1 week)
+    # maxJobLifetime:
+
 gitInitializer:
 
   image:

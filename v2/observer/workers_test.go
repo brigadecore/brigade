@@ -470,49 +470,6 @@ func TestStartWorkerPodTimer(t *testing.T) {
 			},
 		},
 		{
-			name: "pod has no timeout annotation",
-			pod: &corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      "nombre",
-					Namespace: "ns",
-				},
-				Status: corev1.PodStatus{
-					Phase: corev1.PodPending,
-				},
-			},
-			observer: &observer{
-				timedPodsSet: map[string]context.CancelFunc{
-					"ns:nombre": func() {},
-				},
-			},
-		},
-		{
-			name: "pod has invalid timeout annotation",
-			pod: &corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      "nombre",
-					Namespace: "ns",
-					Annotations: map[string]string{
-						myk8s.AnnotationTimeoutDuration: "1",
-					},
-				},
-				Status: corev1.PodStatus{
-					Phase: corev1.PodPending,
-				},
-			},
-			observer: &observer{
-				timedPodsSet: map[string]context.CancelFunc{
-					"ns:nombre": func() {},
-				},
-				errFn: func(i ...interface{}) {
-					require.Len(t, i, 1)
-					err, ok := i[0].(error)
-					require.True(t, ok)
-					require.Contains(t, err.Error(), "unable to parse timeout duration")
-				},
-			},
-		},
-		{
 			name: "timed pod times out; api call fails",
 			pod: &corev1.Pod{
 				ObjectMeta: v1.ObjectMeta{
@@ -527,6 +484,9 @@ func TestStartWorkerPodTimer(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				config: observerConfig{
+					maxWorkerLifetime: time.Duration(2000000), // 2ms
+				},
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
 				},
@@ -562,6 +522,9 @@ func TestStartWorkerPodTimer(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				config: observerConfig{
+					maxWorkerLifetime: time.Duration(2000000), // 2ms
+				},
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
 				},
@@ -595,6 +558,9 @@ func TestStartWorkerPodTimer(t *testing.T) {
 			observer: &observer{
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
+				},
+				config: observerConfig{
+					maxWorkerLifetime: time.Duration(10000000), // 10ms
 				},
 				workersClient: &coreTesting.MockWorkersClient{
 					TimeoutFn: func(
