@@ -30,7 +30,6 @@
     "@brigadecore/brigade-sdk": "^v2.0.0-alpha.5",
     "@brigadecore/brigadier": "../brigadier",
     "@types/node": "^14.14.11",
-    "axios": "^0.21.0",
     "eventsource": "^1.0.7",
     "winston": "^3.3.3"
   }
