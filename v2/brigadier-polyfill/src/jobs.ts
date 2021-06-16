@@ -55,10 +55,9 @@ export class Job extends BrigadierJob {
         case core.JobPhase.Aborted:
           reject(new Error(`Job "${this.name}" was aborted`))
           break
-        // TODO: uncomment once SDK has core.JobPhase.Canceled
-        // case core.JobPhase.Canceled:
-        //   reject(new Error(`Job "${this.name}" was canceled before starting`))
-        //   break
+        case core.JobPhase.Canceled:
+          reject(new Error(`Job "${this.name}" was canceled before starting`))
+          break
         case core.JobPhase.Failed:
           reject(new Error(`Job "${this.name}" failed`))
           break
@@ -96,15 +95,11 @@ export class Job extends BrigadierJob {
         {allowInsecureConnections: true},
       )
 
-      const logsSelector: core.LogsSelector = {
-        job: this.name
-        // TODO: specify container? if unspecified, do we get all containers?
-        // container: ?
-      }
-      const logStreamOpts: core.LogStreamOptions = {
-        follow: false
-      }
-      const logsStream = logsClient.stream(this.event.id, logsSelector, logStreamOpts)
+      const logsStream = logsClient.stream(
+        this.event.id,
+        {job: this.name},
+        {follow: false},
+      )
       let logs = ""
       logsStream.onData((logEntry: core.LogEntry) => {
         if (logs != "") {
