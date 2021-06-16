@@ -2,6 +2,7 @@ import "mocha"
 import { assert } from "chai"
 
 import { Container, Event, Job, JobHost } from "../src"
+import { ImagePullPolicy } from "../../brigadier/dist/jobs"
 
 describe("jobs", () => {
 
@@ -25,10 +26,11 @@ describe("jobs", () => {
       const job = new Job("my-name", "debian:latest", event)
       it("initializes fields properly", () => {
         assert.equal(job.name, "my-name")
-        assert.deepEqual(new Container("debian:latest"), job.primaryContainer)
-        assert.deepEqual({}, job.sidecarContainers)
-        assert.equal(60 * 15, job.timeoutSeconds)
-        assert.deepEqual(new JobHost(), job.host)
+        assert.deepEqual(job.primaryContainer, new Container("debian:latest"))
+        assert.deepEqual(job.primaryContainer.imagePullPolicy, ImagePullPolicy.IfNotPresent)
+        assert.deepEqual(job.sidecarContainers, {})
+        assert.equal(job.timeoutSeconds, 60 * 15)
+        assert.deepEqual(job.host, new JobHost())
         assert.isDefined(job.logger)
       })
     })

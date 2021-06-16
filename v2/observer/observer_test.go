@@ -43,9 +43,33 @@ func TestGetObserverConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "success with overrides",
+			name: "MAX_WORKER_LIFETIME not parsable as duration",
 			setup: func() {
 				os.Setenv("DELAY_BEFORE_CLEANUP", "2m")
+				os.Setenv("MAX_WORKER_LIFETIME", "foo")
+			},
+			assertions: func(config observerConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "was not parsable as a duration")
+				require.Contains(t, err.Error(), "MAX_WORKER_LIFETIME")
+			},
+		},
+		{
+			name: "MAX_JOB_LIFETIME not parsable as duration",
+			setup: func() {
+				os.Setenv("MAX_WORKER_LIFETIME", "2m")
+				os.Setenv("MAX_JOB_LIFETIME", "foo")
+			},
+			assertions: func(config observerConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "was not parsable as a duration")
+				require.Contains(t, err.Error(), "MAX_JOB_LIFETIME")
+			},
+		},
+		{
+			name: "success with overrides",
+			setup: func() {
+				os.Setenv("MAX_JOB_LIFETIME", "2m")
 			},
 			assertions: func(config observerConfig, err error) {
 				require.Equal(t, 2*time.Minute, config.delayBeforeCleanup)
