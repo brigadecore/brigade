@@ -189,9 +189,14 @@ lint-chart:
 		helm lint . \
 	'
 
+APISERVER_ADDRESS ?= "https://localhost:7000"
+APISERVER_ROOT_PASSWORD ?= "F00Bar!!!"
+
 .PHONY: test-integration
 test-integration: hack-expose-apiserver
-	@export VERSION=${VERSION} && \
+	@export VERSION="$(VERSION)" \
+          APISERVER_ADDRESS="$(APISERVER_ADDRESS)" \
+          APISERVER_ROOT_PASSWORD="$(APISERVER_ROOT_PASSWORD)" && \
 		cd v2 && \
 		go test \
 			-v \
