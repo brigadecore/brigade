@@ -23,10 +23,10 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@brigadecore/brigade-sdk@^v2.0.0-alpha.5":
-  version "2.0.0-alpha.5"
-  resolved "https://registry.yarnpkg.com/@brigadecore/brigade-sdk/-/brigade-sdk-2.0.0-alpha.5.tgz#1e7c6fb6fc64312f1aa67ecb193aaac1fe9a10c5"
-  integrity sha512-+g0CMmHrVbSuOlxPBKo3a4bRkXbq8TYqTsmNg9ts8HSSuAScTk5O/bnRi5Qvj/vdl7ZJhvlTAXD1m7HpRuyyAA==
+"@brigadecore/brigade-sdk@^v2.0.0-alpha.6":
+  version "2.0.0-alpha.6"
+  resolved "https://registry.yarnpkg.com/@brigadecore/brigade-sdk/-/brigade-sdk-2.0.0-alpha.6.tgz#10a693bb4433badd5239aace3505c7b95f1554f0"
+  integrity sha512-5hR1p1EhRJjJWeRwdBAcPGxhlwn2bdnN+5QRIusVytjMoKzm+NTaOzVav1hwHoP7VKCK+rpxbEBmfRa/VTJQfw==
   dependencies:
     axios "^0.21.0"
     event-source-polyfill "^1.0.22"
@@ -37,10 +37,9 @@
 "@brigadecore/brigadier-polyfill@../brigadier-polyfill":
   version "0.0.1-placeholder"
   dependencies:
-    "@brigadecore/brigade-sdk" "^v2.0.0-alpha.5"
+    "@brigadecore/brigade-sdk" "^v2.0.0-alpha.6"
     "@brigadecore/brigadier" "../brigadier"
     "@types/node" "^14.14.11"
-    eventsource "^1.0.7"
     winston "^3.3.3"
 
 "@brigadecore/brigadier@../brigadier":
