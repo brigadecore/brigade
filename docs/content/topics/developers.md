@@ -40,7 +40,7 @@ This document covers environment setup, how to run functional tests and developm
 
 ## Prerequisites
 
-- Minikube or [kind](https://github.com/kubernetes-sigs/kind)
+- Minikube or [kind](https://github.com/kubernetes-sigs/kind) (running k8s versions 1.16.0+)
 - Docker
 - make
 

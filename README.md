@@ -24,7 +24,7 @@ release. In the meantime, here is a little to get you started.
 
 ### Installing Brigade 2 on a _Private_ Kubernetes Cluster
 
-__Note: Brigade 2 is compatible only with Kubernetes versions 1.16.0+__
+__Note: Brigade 2 is compatible with Kubernetes versions 1.16.0+__
 
 For now, we're using the [GitHub Container Registry](https://ghcr.io) (which is
 an [OCI registry](https://helm.sh/docs/topics/registries/)) to host our Helm
