@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/brigadecore/brigade/v2/v2/apiserver/schemas/project.json
+apiVersion: brigade.sh/v2-alpha.5
+kind: Project
+metadata:
+  id: first-payload
+description: Demonstrates using the event payload
+spec:
+  workerTemplate:
+    logLevel: DEBUG
+    defaultConfigFiles:
+      brigade.js: | 
+        const { events } = require("@brigadecore/brigadier");
+
+        events.on("brigade.sh/cli", "exec", async event => {
+          console.log("Hello, " + event.payload + "!");
+        });
+
+        events.process();

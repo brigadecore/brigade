@@ -98,6 +98,11 @@ func TestNewScheduler(t *testing.T) {
 	}
 	scheduler := newScheduler(coreClient, queueReaderFactory, config)
 	require.Same(t, queueReaderFactory, scheduler.queueReaderFactory)
+	require.NotNil(t, scheduler.projectsClient)
+	require.NotNil(t, scheduler.substrateClient)
+	require.NotNil(t, scheduler.eventsClient)
+	require.NotNil(t, scheduler.workersClient)
+	require.NotNil(t, scheduler.jobsClient)
 	require.Equal(t, config, scheduler.config)
 	require.NotNil(t, scheduler.workerAvailabilityCh)
 	require.NotNil(t, scheduler.jobAvailabilityCh)

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
+	coreTesting "github.com/brigadecore/brigade/sdk/v2/testing/core"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -107,17 +108,19 @@ func TestSyncJobPod(t *testing.T) {
 			observer: &observer{
 				timedPodsSet:       map[string]context.CancelFunc{},
 				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
-				updateJobStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					jobName string,
-					status core.JobStatus,
-				) error {
-					require.Fail(
-						t,
-						"updateJobStatusFn should not have been called, but was",
-					)
-					return nil
+				jobsClient: &coreTesting.MockJobsClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+						status core.JobStatus,
+					) error {
+						require.Fail(
+							t,
+							"updateJobStatusFn should not have been called, but was",
+						)
+						return nil
+					},
 				},
 				deleteJobResourcesFn: func(_, _, _, _ string) {
 					require.Fail(
@@ -137,14 +140,16 @@ func TestSyncJobPod(t *testing.T) {
 			observer: &observer{
 				timedPodsSet:       map[string]context.CancelFunc{},
 				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
-				updateJobStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					jobName string,
-					status core.JobStatus,
-				) error {
-					require.Equal(t, core.JobPhaseRunning, status.Phase)
-					return nil
+				jobsClient: &coreTesting.MockJobsClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+						status core.JobStatus,
+					) error {
+						require.Equal(t, core.JobPhaseRunning, status.Phase)
+						return nil
+					},
 				},
 				deleteJobResourcesFn: func(_, _, _, _ string) {
 					require.Fail(
@@ -164,15 +169,17 @@ func TestSyncJobPod(t *testing.T) {
 			observer: &observer{
 				timedPodsSet:       map[string]context.CancelFunc{},
 				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
-				updateJobStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					jobName string,
-					status core.JobStatus,
-				) error {
-					require.Equal(t, core.JobPhaseRunning, status.Phase)
-					require.Nil(t, status.Ended)
-					return nil
+				jobsClient: &coreTesting.MockJobsClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+						status core.JobStatus,
+					) error {
+						require.Equal(t, core.JobPhaseRunning, status.Phase)
+						require.Nil(t, status.Ended)
+						return nil
+					},
 				},
 				deleteJobResourcesFn: func(_, _, _, _ string) {
 					require.Fail(
@@ -214,16 +221,18 @@ func TestSyncJobPod(t *testing.T) {
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
 				},
-				updateJobStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					jobName string,
-					status core.JobStatus,
-				) error {
-					require.Equal(t, core.JobPhaseSucceeded, status.Phase)
-					require.NotNil(t, status.Ended)
-					require.Equal(t, now, *status.Ended)
-					return nil
+				jobsClient: &coreTesting.MockJobsClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+						status core.JobStatus,
+					) error {
+						require.Equal(t, core.JobPhaseSucceeded, status.Phase)
+						require.NotNil(t, status.Ended)
+						require.Equal(t, now, *status.Ended)
+						return nil
+					},
 				},
 				deleteJobResourcesFn: func(_, _, _, _ string) {},
 			},
@@ -238,13 +247,15 @@ func TestSyncJobPod(t *testing.T) {
 			observer: &observer{
 				timedPodsSet:       map[string]context.CancelFunc{},
 				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
-				updateJobStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					jobName string,
-					status core.JobStatus,
-				) error {
-					return errors.New("something went wrong")
+				jobsClient: &coreTesting.MockJobsClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+						status core.JobStatus,
+					) error {
+						return errors.New("something went wrong")
+					},
 				},
 				errFn: func(i ...interface{}) {
 					require.Len(t, i, 1)
@@ -285,16 +296,18 @@ func TestSyncJobPod(t *testing.T) {
 					"ns:nombre": func() {},
 				},
 				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
-				updateJobStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					jobName string,
-					status core.JobStatus,
-				) error {
-					require.Equal(t, core.JobPhaseFailed, status.Phase)
-					require.NotNil(t, status.Ended)
-					require.Equal(t, now, *status.Ended)
-					return nil
+				jobsClient: &coreTesting.MockJobsClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+						status core.JobStatus,
+					) error {
+						require.Equal(t, core.JobPhaseFailed, status.Phase)
+						require.NotNil(t, status.Ended)
+						require.Equal(t, now, *status.Ended)
+						return nil
+					},
 				},
 				deleteJobResourcesFn: func(_, _, _, _ string) {},
 			},
@@ -315,14 +328,16 @@ func TestSyncJobPod(t *testing.T) {
 					"ns:nombre": func() {},
 				},
 				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
-				updateJobStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					jobName string,
-					status core.JobStatus,
-				) error {
-					require.Equal(t, core.JobPhaseSucceeded, status.Phase)
-					return nil
+				jobsClient: &coreTesting.MockJobsClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+						status core.JobStatus,
+					) error {
+						require.Equal(t, core.JobPhaseSucceeded, status.Phase)
+						return nil
+					},
 				},
 				deleteJobResourcesFn: func(_, _, _, _ string) {},
 			},
@@ -343,14 +358,16 @@ func TestSyncJobPod(t *testing.T) {
 					"ns:nombre": func() {},
 				},
 				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
-				updateJobStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					jobName string,
-					status core.JobStatus,
-				) error {
-					require.Equal(t, core.JobPhaseFailed, status.Phase)
-					return nil
+				jobsClient: &coreTesting.MockJobsClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+						status core.JobStatus,
+					) error {
+						require.Equal(t, core.JobPhaseFailed, status.Phase)
+						return nil
+					},
 				},
 				deleteJobResourcesFn: func(_, _, _, _ string) {},
 			},
@@ -371,14 +388,16 @@ func TestSyncJobPod(t *testing.T) {
 					"ns:nombre": func() {},
 				},
 				startJobPodTimerFn: func(context.Context, *corev1.Pod) {},
-				updateJobStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					jobName string,
-					status core.JobStatus,
-				) error {
-					require.Equal(t, core.JobPhaseUnknown, status.Phase)
-					return nil
+				jobsClient: &coreTesting.MockJobsClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+						status core.JobStatus,
+					) error {
+						require.Equal(t, core.JobPhaseUnknown, status.Phase)
+						return nil
+					},
 				},
 				deleteJobResourcesFn: func(_, _, _, _ string) {
 					require.Fail(
@@ -428,8 +447,10 @@ func TestDeleteJobResources(t *testing.T) {
 				},
 				deletingPodsSet: map[string]struct{}{},
 				syncMu:          &sync.Mutex{},
-				cleanupJobFn: func(context.Context, string, string) error {
-					return errors.New("something went wrong")
+				jobsClient: &coreTesting.MockJobsClient{
+					CleanupFn: func(context.Context, string, string) error {
+						return errors.New("something went wrong")
+					},
 				},
 				errFn: func(i ...interface{}) {
 					require.Len(t, i, 1)
@@ -448,8 +469,10 @@ func TestDeleteJobResources(t *testing.T) {
 				},
 				deletingPodsSet: map[string]struct{}{},
 				syncMu:          &sync.Mutex{},
-				cleanupJobFn: func(context.Context, string, string) error {
-					return nil
+				jobsClient: &coreTesting.MockJobsClient{
+					CleanupFn: func(context.Context, string, string) error {
+						return nil
+					},
 				},
 				errFn: func(i ...interface{}) {
 					require.Fail(
@@ -496,49 +519,6 @@ func TestStartJobPodTimer(t *testing.T) {
 			},
 		},
 		{
-			name: "pod has no timeout annotation",
-			pod: &corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      "nombre",
-					Namespace: "ns",
-				},
-				Status: corev1.PodStatus{
-					Phase: corev1.PodPending,
-				},
-			},
-			observer: &observer{
-				timedPodsSet: map[string]context.CancelFunc{
-					"ns:nombre": func() {},
-				},
-			},
-		},
-		{
-			name: "pod has invalid timeout annotation",
-			pod: &corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      "nombre",
-					Namespace: "ns",
-					Annotations: map[string]string{
-						myk8s.AnnotationTimeoutDuration: "1",
-					},
-				},
-				Status: corev1.PodStatus{
-					Phase: corev1.PodPending,
-				},
-			},
-			observer: &observer{
-				timedPodsSet: map[string]context.CancelFunc{
-					"ns:nombre": func() {},
-				},
-				errFn: func(i ...interface{}) {
-					require.Len(t, i, 1)
-					err, ok := i[0].(error)
-					require.True(t, ok)
-					require.Contains(t, err.Error(), "unable to parse timeout duration")
-				},
-			},
-		},
-		{
 			name: "timed pod times out; api call fails",
 			pod: &corev1.Pod{
 				ObjectMeta: v1.ObjectMeta{
@@ -553,15 +533,20 @@ func TestStartJobPodTimer(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				config: observerConfig{
+					maxJobLifetime: time.Duration(2000000), // 2ms
+				},
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
 				},
-				timeoutJobFn: func(
-					ctx context.Context,
-					eventID string,
-					jobName string,
-				) error {
-					return errors.New("something went wrong")
+				jobsClient: &coreTesting.MockJobsClient{
+					TimeoutFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+					) error {
+						return errors.New("something went wrong")
+					},
 				},
 				errFn: func(i ...interface{}) {
 					require.Len(t, i, 1)
@@ -590,16 +575,21 @@ func TestStartJobPodTimer(t *testing.T) {
 				},
 			},
 			observer: &observer{
+				config: observerConfig{
+					maxJobLifetime: time.Duration(2000000), // 2ms
+				},
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
 				},
-				timeoutJobFn: func(
-					ctx context.Context,
-					eventID string,
-					jobName string,
-				) error {
-					require.Equal(t, jobName, "italian")
-					return nil
+				jobsClient: &coreTesting.MockJobsClient{
+					TimeoutFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+					) error {
+						require.Equal(t, jobName, "italian")
+						return nil
+					},
 				},
 				errFn: func(i ...interface{}) {
 					require.Fail(
@@ -624,16 +614,21 @@ func TestStartJobPodTimer(t *testing.T) {
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
 				},
-				timeoutJobFn: func(
-					ctx context.Context,
-					eventID string,
-					jobName string,
-				) error {
-					require.Fail(
-						t,
-						"timeoutJobFn should not have been called, but was",
-					)
-					return nil
+				config: observerConfig{
+					maxJobLifetime: time.Duration(10000000), // 10ms
+				},
+				jobsClient: &coreTesting.MockJobsClient{
+					TimeoutFn: func(
+						ctx context.Context,
+						eventID string,
+						jobName string,
+					) error {
+						require.Fail(
+							t,
+							"jobsClient.TimeoutFn should not have been called, but was",
+						)
+						return nil
+					},
 				},
 				errFn: func(i ...interface{}) {
 					require.Fail(

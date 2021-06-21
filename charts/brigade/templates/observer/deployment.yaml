@@ -40,6 +40,12 @@ spec:
               key: api-token
         - name: API_IGNORE_CERT_WARNINGS
           value: {{ quote (and .Values.apiserver.tls.enabled .Values.observer.tls.ignoreCertWarnings) }}
+        {{- if .Values.observer.config }}
+        - name: MAX_WORKER_LIFETIME
+          value: {{ .Values.observer.config.maxWorkerLifetime }}
+        - name: MAX_JOB_LIFETIME
+          value: {{ .Values.observer.config.maxJobLifetime }}
+        {{- end }}
       {{- with .Values.observer.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -143,6 +143,20 @@ lint-js:
 		yarn lint \
 	'
 
+.PHONY: yarn-audit
+yarn-audit:
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		yarn install && \
+		yarn audit && \
+		cd ../brigadier-polyfill && \
+		yarn install && \
+		yarn audit && \
+		cd ../worker && \
+		yarn install && \
+		yarn audit \
+	'
+
 .PHONY: clean-js
 clean-js:
 	$(JS_DOCKER_CMD) sh -c ' \
@@ -175,9 +189,14 @@ lint-chart:
 		helm lint . \
 	'
 
+APISERVER_ADDRESS ?= "https://localhost:7000"
+APISERVER_ROOT_PASSWORD ?= "F00Bar!!!"
+
 .PHONY: test-integration
 test-integration: hack-expose-apiserver
-	@export VERSION=${VERSION} && \
+	@export VERSION="$(VERSION)" \
+          APISERVER_ADDRESS="$(APISERVER_ADDRESS)" \
+          APISERVER_ROOT_PASSWORD="$(APISERVER_ROOT_PASSWORD)" && \
 		cd v2 && \
 		go test \
 			-v \

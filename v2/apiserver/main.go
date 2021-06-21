@@ -4,6 +4,7 @@ package main
 import (
 	"log"
 
+	"github.com/brigadecore/brigade/v2/apiserver/internal/assets"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	authnMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/authn/mongodb"
 	authnREST "github.com/brigadecore/brigade/v2/apiserver/internal/authn/rest"
@@ -336,6 +337,7 @@ func main() {
 					DatabaseClient:   database.Client(),
 					WriterFactory:    queueWriterFactory,
 				},
+				&assets.Endpoints{},
 			},
 			&apiServerConfig,
 		)

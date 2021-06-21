@@ -43,9 +43,33 @@ func TestGetObserverConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "success with overrides",
+			name: "MAX_WORKER_LIFETIME not parsable as duration",
 			setup: func() {
 				os.Setenv("DELAY_BEFORE_CLEANUP", "2m")
+				os.Setenv("MAX_WORKER_LIFETIME", "foo")
+			},
+			assertions: func(config observerConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "was not parsable as a duration")
+				require.Contains(t, err.Error(), "MAX_WORKER_LIFETIME")
+			},
+		},
+		{
+			name: "MAX_JOB_LIFETIME not parsable as duration",
+			setup: func() {
+				os.Setenv("MAX_WORKER_LIFETIME", "2m")
+				os.Setenv("MAX_JOB_LIFETIME", "foo")
+			},
+			assertions: func(config observerConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "was not parsable as a duration")
+				require.Contains(t, err.Error(), "MAX_JOB_LIFETIME")
+			},
+		},
+		{
+			name: "success with overrides",
+			setup: func() {
+				os.Setenv("MAX_JOB_LIFETIME", "2m")
 			},
 			assertions: func(config observerConfig, err error) {
 				require.Equal(t, 2*time.Minute, config.delayBeforeCleanup)
@@ -71,7 +95,7 @@ func TestNewObserver(t *testing.T) {
 		apiToken,
 		apiClientOpts,
 	)
-	workerClient := core.NewWorkersClient(
+	workersClient := core.NewWorkersClient(
 		apiAddress,
 		apiToken,
 		apiClientOpts,
@@ -80,8 +104,11 @@ func TestNewObserver(t *testing.T) {
 	config := observerConfig{
 		delayBeforeCleanup: time.Minute,
 	}
-	observer := newObserver(systemClient, workerClient, kubeClient, config)
+	observer := newObserver(systemClient, workersClient, kubeClient, config)
 	require.Same(t, kubeClient, observer.kubeClient)
+	require.NotNil(t, observer.systemClient)
+	require.NotNil(t, observer.workersClient)
+	require.NotNil(t, observer.jobsClient)
 	require.NotNil(t, observer.deletingPodsSet)
 	require.NotNil(t, observer.syncMu)
 	require.NotNil(t, observer.errCh)
@@ -90,10 +117,6 @@ func TestNewObserver(t *testing.T) {
 	require.NotNil(t, observer.syncJobPodsFn)
 	require.NotNil(t, observer.syncJobPodFn)
 	require.NotNil(t, observer.syncDeletedPodFn)
-	require.NotNil(t, observer.updateWorkerStatusFn)
-	require.NotNil(t, observer.cleanupWorkerFn)
-	require.NotNil(t, observer.updateJobStatusFn)
-	require.NotNil(t, observer.cleanupJobFn)
 }
 
 func TestObserverRun(t *testing.T) {

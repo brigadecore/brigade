@@ -1,0 +1,23 @@
+@font-face {
+  font-family: edmondsans;
+  src: url(edmondsans-medium.otf);
+}
+html {
+  height: 100%;
+}
+body {
+  height: 100%;
+  background-color: #EBE9F3;
+}
+.splash {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+}
+.splash p {
+  font-family: edmondsans;
+  font-size: 14pt;
+  color: #191051;
+}

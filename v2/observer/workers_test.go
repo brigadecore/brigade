@@ -8,10 +8,12 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
+	coreTesting "github.com/brigadecore/brigade/sdk/v2/testing/core"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -104,16 +106,20 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					require.Fail(
-						t,
-						"updateWorkerStatusFn should not have been called, but was",
-					)
-					return nil
+				timedPodsSet:          map[string]context.CancelFunc{},
+				startWorkerPodTimerFn: func(context.Context, *corev1.Pod) {},
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						require.Fail(
+							t,
+							"updateWorkerStatusFn should not have been called, but was",
+						)
+						return nil
+					},
 				},
 				deleteWorkerResourcesFn: func(_, _, _ string) {
 					require.Fail(
@@ -131,13 +137,17 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					require.Equal(t, core.WorkerPhaseRunning, status.Phase)
-					return nil
+				timedPodsSet:          map[string]context.CancelFunc{},
+				startWorkerPodTimerFn: func(context.Context, *corev1.Pod) {},
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						require.Equal(t, core.WorkerPhaseRunning, status.Phase)
+						return nil
+					},
 				},
 				deleteWorkerResourcesFn: func(_, _, _ string) {
 					require.Fail(
@@ -158,15 +168,19 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					require.Equal(t, core.WorkerPhaseRunning, status.Phase)
-					require.NotNil(t, now, status.Started)
-					require.Equal(t, now, *status.Started)
-					return nil
+				timedPodsSet:          map[string]context.CancelFunc{},
+				startWorkerPodTimerFn: func(context.Context, *corev1.Pod) {},
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						require.Equal(t, core.WorkerPhaseRunning, status.Phase)
+						require.NotNil(t, now, status.Started)
+						require.Equal(t, now, *status.Started)
+						return nil
+					},
 				},
 				deleteWorkerResourcesFn: func(_, _, _ string) {
 					require.Fail(
@@ -179,6 +193,10 @@ func TestSyncWorkerPod(t *testing.T) {
 		{
 			name: "pod phase is succeeded",
 			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -206,17 +224,23 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					require.Equal(t, core.WorkerPhaseSucceeded, status.Phase)
-					require.NotNil(t, now, status.Started)
-					require.Equal(t, now, *status.Started)
-					require.NotNil(t, now, status.Ended)
-					require.Equal(t, now, *status.Ended)
-					return nil
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns/nombre": func() {},
+				},
+				startWorkerPodTimerFn: func(context.Context, *corev1.Pod) {},
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						require.Equal(t, core.WorkerPhaseSucceeded, status.Phase)
+						require.NotNil(t, now, status.Started)
+						require.Equal(t, now, *status.Started)
+						require.NotNil(t, now, status.Ended)
+						require.Equal(t, now, *status.Ended)
+						return nil
+					},
 				},
 				deleteWorkerResourcesFn: func(_, _, _ string) {},
 			},
@@ -224,6 +248,10 @@ func TestSyncWorkerPod(t *testing.T) {
 		{
 			name: "pod phase is failed",
 			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -251,17 +279,23 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					require.Equal(t, core.WorkerPhaseFailed, status.Phase)
-					require.NotNil(t, now, status.Started)
-					require.Equal(t, now, *status.Started)
-					require.NotNil(t, now, status.Ended)
-					require.Equal(t, now, *status.Ended)
-					return nil
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns/nombre": func() {},
+				},
+				startWorkerPodTimerFn: func(context.Context, *corev1.Pod) {},
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						require.Equal(t, core.WorkerPhaseFailed, status.Phase)
+						require.NotNil(t, now, status.Started)
+						require.Equal(t, now, *status.Started)
+						require.NotNil(t, now, status.Ended)
+						require.Equal(t, now, *status.Ended)
+						return nil
+					},
 				},
 				deleteWorkerResourcesFn: func(_, _, _ string) {},
 			},
@@ -269,18 +303,28 @@ func TestSyncWorkerPod(t *testing.T) {
 		{
 			name: "pod phase is unknown",
 			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
 				Status: corev1.PodStatus{
 					Phase: corev1.PodUnknown,
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					require.Equal(t, core.WorkerPhaseUnknown, status.Phase)
-					return nil
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns/nombre": func() {},
+				},
+				startWorkerPodTimerFn: func(context.Context, *corev1.Pod) {},
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						require.Equal(t, core.WorkerPhaseUnknown, status.Phase)
+						return nil
+					},
 				},
 				deleteWorkerResourcesFn: func(_, _, _ string) {
 					require.Fail(
@@ -298,12 +342,16 @@ func TestSyncWorkerPod(t *testing.T) {
 				},
 			},
 			observer: &observer{
-				updateWorkerStatusFn: func(
-					ctx context.Context,
-					eventID string,
-					status core.WorkerStatus,
-				) error {
-					return errors.New("something went wrong")
+				timedPodsSet:          map[string]context.CancelFunc{},
+				startWorkerPodTimerFn: func(context.Context, *corev1.Pod) {},
+				workersClient: &coreTesting.MockWorkersClient{
+					UpdateStatusFn: func(
+						ctx context.Context,
+						eventID string,
+						status core.WorkerStatus,
+					) error {
+						return errors.New("something went wrong")
+					},
 				},
 				errFn: func(i ...interface{}) {
 					require.Len(t, i, 1)
@@ -351,8 +399,10 @@ func TestDeleteWorkerResources(t *testing.T) {
 				},
 				deletingPodsSet: map[string]struct{}{},
 				syncMu:          &sync.Mutex{},
-				cleanupWorkerFn: func(context.Context, string) error {
-					return errors.New("something went wrong")
+				workersClient: &coreTesting.MockWorkersClient{
+					CleanupFn: func(context.Context, string) error {
+						return errors.New("something went wrong")
+					},
 				},
 				errFn: func(i ...interface{}) {
 					require.Len(t, i, 1)
@@ -371,8 +421,10 @@ func TestDeleteWorkerResources(t *testing.T) {
 				},
 				deletingPodsSet: map[string]struct{}{},
 				syncMu:          &sync.Mutex{},
-				cleanupWorkerFn: func(context.Context, string) error {
-					return nil
+				workersClient: &coreTesting.MockWorkersClient{
+					CleanupFn: func(context.Context, string) error {
+						return nil
+					},
 				},
 				errFn: func(i ...interface{}) {
 					require.Fail(
@@ -390,6 +442,156 @@ func TestDeleteWorkerResources(t *testing.T) {
 				testPodName,
 				testEventID,
 			)
+		})
+	}
+}
+
+func TestStartWorkerPodTimer(t *testing.T) {
+	testCases := []struct {
+		name     string
+		pod      *corev1.Pod
+		observer *observer
+	}{
+		{
+			name: "pod already in terminal state",
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodSucceeded,
+				},
+			},
+			observer: &observer{
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+			},
+		},
+		{
+			name: "timed pod times out; api call fails",
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+					Annotations: map[string]string{
+						myk8s.AnnotationTimeoutDuration: "1ms",
+					},
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+				},
+			},
+			observer: &observer{
+				config: observerConfig{
+					maxWorkerLifetime: time.Duration(2000000), // 2ms
+				},
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+				workersClient: &coreTesting.MockWorkersClient{
+					TimeoutFn: func(
+						ctx context.Context,
+						eventID string,
+					) error {
+						return errors.New("something went wrong")
+					},
+				},
+				errFn: func(i ...interface{}) {
+					require.Len(t, i, 1)
+					err, ok := i[0].(error)
+					require.True(t, ok)
+					require.Contains(t, err.Error(), "something went wrong")
+					require.Contains(t, err.Error(), "error updating status")
+				},
+			},
+		},
+		{
+			name: "timed pod times out; success",
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+					Annotations: map[string]string{
+						myk8s.AnnotationTimeoutDuration: "1ms",
+					},
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+				},
+			},
+			observer: &observer{
+				config: observerConfig{
+					maxWorkerLifetime: time.Duration(2000000), // 2ms
+				},
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+				workersClient: &coreTesting.MockWorkersClient{
+					TimeoutFn: func(
+						ctx context.Context,
+						eventID string,
+					) error {
+						return nil
+					},
+				},
+				errFn: func(i ...interface{}) {
+					require.Fail(
+						t,
+						"errFn should not have been called, but was",
+					)
+				},
+			},
+		},
+		{
+			name: "timed pod context canceled",
+			pod: &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "nombre",
+					Namespace: "ns",
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+				},
+			},
+			observer: &observer{
+				timedPodsSet: map[string]context.CancelFunc{
+					"ns:nombre": func() {},
+				},
+				config: observerConfig{
+					maxWorkerLifetime: time.Duration(10000000), // 10ms
+				},
+				workersClient: &coreTesting.MockWorkersClient{
+					TimeoutFn: func(
+						ctx context.Context,
+						eventID string,
+					) error {
+						require.Fail(
+							t,
+							"workersClient.TimeoutFn should not have been called, but was",
+						)
+						return nil
+					},
+				},
+				errFn: func(i ...interface{}) {
+					require.Fail(
+						t,
+						"errFn should not have been called, but was",
+					)
+				},
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer func() {
+				cancel()
+				require.Empty(t, testCase.observer.timedPodsSet)
+			}()
+
+			testCase.observer.startWorkerPodTimer(ctx, testCase.pod)
 		})
 	}
 }
