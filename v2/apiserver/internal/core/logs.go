@@ -153,15 +153,18 @@ func (l *logsService) Stream(
 	// misstep. So, out of an abundance of caution, we raise the bar a little on
 	// this one read-only operation and require the principal to be a project user
 	// in order to stream logs.
-	if err =
-		l.projectAuthorize(ctx, event.ProjectID, RoleProjectUser); err != nil {
-		// The principal wasn't an authorized Project user, but we also allow log
-		// access for the creator of the event so that gateways can send logs
-		// upstream.
-		if err =
-			l.authorize(ctx, system.RoleEventCreator, event.Source); err != nil {
-			return nil, err
-		}
+	err = l.projectAuthorize(ctx, event.ProjectID, RoleProjectUser)
+	if err != nil {
+		// We also permit access by the event's worker
+		err = l.authorize(ctx, RoleWorker, event.ID)
+	}
+	if err != nil {
+		// We also permit access by the creator of the event. This enables smarter
+		// gateways to send logs "upstream" if appropriate.
+		err = l.authorize(ctx, system.RoleEventCreator, event.Source)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	if selector.Job != "" {
