@@ -187,6 +187,8 @@ func thirdPartyAuthHelper(
 			os.GetRequiredEnvVar("GITHUB_CLIENT_SECRET"); err != nil {
 			return nil, err
 		}
+		config.AllowedOrganizations =
+			os.GetStringSliceFromEnvVar("GITHUB_ALLOWED_ORGANIZATIONS", []string{})
 		return github.NewThirdPartyAuthHelper(config), nil
 	case thirdPartyAuthStrategyDisabled:
 		return nil, nil
