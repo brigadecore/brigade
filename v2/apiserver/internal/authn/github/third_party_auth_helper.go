@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/google/go-github/v33/github"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
@@ -22,6 +23,11 @@ type ThirdPartyAuthHelperConfig struct {
 	ClientID string
 	// ClientSecret is the client secret for a GitHub OAuth App.
 	ClientSecret string
+	// AllowedOrganizations enumerates GitHub organizations for which members may
+	// authenticate to Brigade. If this list is non-empty, principals who are not
+	// members of any of the enumerated organizations will be unable to
+	// authenticate successfully.
+	AllowedOrganizations []string
 }
 
 type thirdPartyAuthHelper struct {
@@ -117,12 +123,40 @@ func (t *thirdPartyAuthHelper) getUserIdentity(
 			),
 		),
 	)
-	gitHubUser, _, err := githubClient.Users.Get(ctx, "")
+	githubUser, _, err := githubClient.Users.Get(ctx, "")
 	if err != nil {
 		return authn.ThirdPartyIdentity{}, err
 	}
+
+	if len(t.config.AllowedOrganizations) > 0 {
+		var allowed bool
+		for _, allowedOrgName := range t.config.AllowedOrganizations {
+			allowed, _, err = githubClient.Organizations.IsMember(
+				ctx,
+				allowedOrgName,
+				githubUser.GetLogin(),
+			)
+			if err != nil {
+				return authn.ThirdPartyIdentity{}, errors.Wrapf(
+					err,
+					"error determining if %q is a member of the github organization %q",
+					githubUser.GetLogin(),
+					allowedOrgName,
+				)
+			}
+			if allowed {
+				break // No need to keep looking
+			}
+		}
+		if !allowed {
+			return authn.ThirdPartyIdentity{}, &meta.ErrAuthentication{
+				Reason: "User is not a member of any allowed GitHub organizations",
+			}
+		}
+	}
+
 	return authn.ThirdPartyIdentity{
-		ID:   gitHubUser.GetLogin(),
-		Name: gitHubUser.GetName(),
+		ID:   githubUser.GetLogin(),
+		Name: githubUser.GetName(),
 	}, nil
 }

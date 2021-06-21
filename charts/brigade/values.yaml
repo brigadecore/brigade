@@ -59,6 +59,14 @@ apiserver:
       ## itself to GitHub.
       # clientID: ""
       # clientSecret: ""
+      ## GitHub lacks the sophisticated access controls available in identity
+      ## platforms like Google Identity Platform and Azure Active Directory--
+      ## controls that could be used to limit who can successfully authenticate
+      ## to Brigade. Given this, allowedOrganizations below can be used to
+      ## enumerate the GitHub organizations whose members are permitted to
+      ## authenticate to Brigade. If this list is left commented or empty,
+      ## access will not be restricted by organization.
+      # allowedOrganizations: []
     ## User Session TTL dictates the default time-to-live for user sessions.
     ## Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
     ## For example, "60s", "2h45m", "168h" (1 week)
