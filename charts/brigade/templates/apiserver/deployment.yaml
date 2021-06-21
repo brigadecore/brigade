@@ -80,6 +80,8 @@ spec:
             secretKeyRef:
               name: {{ include "brigade.apiserver.fullname" . }}
               key: github-client-secret
+        - name: GITHUB_ALLOWED_ORGANIZATIONS
+          value: {{ join "," .Values.apiserver.thirdPartyAuth.github.allowedOrganizations }}
         {{- end }}
         - name: SCHEDULER_TOKEN
           valueFrom:
