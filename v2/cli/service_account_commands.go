@@ -25,6 +25,16 @@ var serviceAccountCommand = &cli.Command{
 			Name:  "create",
 			Usage: "Create a new service account",
 			Flags: []cli.Flag{
+				// Using custom flagOutput here, to support plaintext output
+				// as opposed to table.  Perhaps we can consider adding plaintext
+				// support to the common flag definition at a later date.
+				&cli.StringFlag{
+					Name:    flagOutput,
+					Aliases: []string{"o"},
+					Usage: "Return output in the specified format; supported formats: " +
+						"plaintext, yaml, json",
+					Value: flagOutputPlaintext,
+				},
 				&cli.StringFlag{
 					Name:    flagID,
 					Aliases: []string{"i"},
@@ -102,6 +112,7 @@ var serviceAccountCommand = &cli.Command{
 }
 
 func serviceAccountCreate(c *cli.Context) error {
+	output := c.String(flagOutput)
 	description := c.String(flagDescription)
 	id := c.String(flagID)
 
@@ -123,12 +134,35 @@ func serviceAccountCreate(c *cli.Context) error {
 		return err
 	}
 
-	fmt.Printf("\nService account %q created with token:\n", id)
-	fmt.Printf("\n\t%s\n", token.Value)
-	fmt.Println(
-		"\nStore this token someplace secure NOW. It cannot be retrieved " +
-			"later through any other means.",
-	)
+	switch strings.ToLower(output) {
+	case flagOutputPlaintext:
+		fmt.Printf("\nService account %q created with token:\n", id)
+		fmt.Printf("\n\t%s\n", token.Value)
+		fmt.Println(
+			"\nStore this token someplace secure NOW. It cannot be retrieved " +
+				"later through any other means.",
+		)
+
+	case flagOutputYAML:
+		yamlBytes, err := yaml.Marshal(token)
+		if err != nil {
+			return errors.Wrap(
+				err,
+				"error formatting output from create service account operation",
+			)
+		}
+		fmt.Println(string(yamlBytes))
+
+	case flagOutputJSON:
+		prettyJSON, err := json.MarshalIndent(token, "", "  ")
+		if err != nil {
+			return errors.Wrap(
+				err,
+				"error formatting output from create service account operation",
+			)
+		}
+		fmt.Println(string(prettyJSON))
+	}
 
 	return nil
 }
