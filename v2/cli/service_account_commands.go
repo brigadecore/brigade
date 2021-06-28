@@ -116,6 +116,17 @@ func serviceAccountCreate(c *cli.Context) error {
 	description := c.String(flagDescription)
 	id := c.String(flagID)
 
+	// Validate output format
+	// Note: currently not using validateOutputFormat as this command supports
+	// plaintext as opposed to table output.
+	switch strings.ToLower(output) {
+	case flagOutputPlaintext:
+	case flagOutputYAML:
+	case flagOutputJSON:
+	default:
+		return errors.Errorf("unknown output format %q", output)
+	}
+
 	client, err := getClient()
 	if err != nil {
 		return err
