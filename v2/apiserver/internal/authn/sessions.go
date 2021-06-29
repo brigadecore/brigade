@@ -383,7 +383,7 @@ func (s *sessionsService) Authenticate(
 		ctx,
 		session.ID,
 		user.ID,
-		time.Now().UTC().Add(time.Hour),
+		time.Now().UTC().Add(s.config.UserSessionTTL),
 	); err != nil {
 		return "", errors.Wrapf(
 			err,
