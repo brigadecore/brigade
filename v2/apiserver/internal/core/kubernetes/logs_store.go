@@ -117,6 +117,9 @@ func (l *logsStore) StreamLogs(
 			if err == io.EOF {
 				break
 			}
+			if len(logLine) == 0 {
+				continue
+			}
 			// The last character should be a newline that we don't want, so let's
 			// remove that
 			logLine = logLine[:len(logLine)-1]
