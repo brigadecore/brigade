@@ -46,9 +46,10 @@ const (
 )
 
 const (
-	flagOutputJSON  = "json"
-	flagOutputTable = "table"
-	flagOutputYAML  = "yaml"
+	flagOutputJSON      = "json"
+	flagOutputTable     = "table"
+	flagOutputYAML      = "yaml"
+	flagOutputPlaintext = "plaintext"
 )
 
 var (
