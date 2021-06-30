@@ -15,7 +15,6 @@
 <link href="{{ .Site.BaseURL }}index.xml" rel="alternate" type="application/rss+xml">
 <link rel="canonical" href="{{ .Permalink }}">
 
-{{ $fonts := resources.Get "fonts/" | absURL }}  
 {{ $style := resources.Get "scss/theme.scss" | toCSS | minify | fingerprint }} 
 <link rel="stylesheet" href="{{ $style.RelPermalink }}" emotion="🤩">
 
