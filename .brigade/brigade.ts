@@ -233,7 +233,7 @@ async function runSuite(event: Event): Promise<void> {
       buildCLIJob(event)
     )
   ).run()
-  if (event.worker?.git?.ref == "/refs/heads/v2") {
+  if (event.worker?.git?.ref == "v2") {
     // Push "edge" images.
     //
     // npm packages MUST be semantically versioned, so we DON'T publish an
