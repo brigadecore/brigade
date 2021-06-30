@@ -1,6 +1,0 @@
-{
-  "plugins": {
-    "lint-code-block-style": "fenced",
-    "lint-ordered-list-marker-value": "one"
-  }
-}

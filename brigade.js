@@ -43,7 +43,7 @@ function jsTest() {
   };
   job.tasks = [
     "cd /src",
-    "make verify-vendored-code-js test-js yarn-audit"
+    "make test-js yarn-audit"
   ];
   return job;
 }
