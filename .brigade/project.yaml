@@ -13,6 +13,7 @@ spec:
     - check_run:rerequested
     - check_suite:requested
     - check_suite:rerequested
+    - push
   workerTemplate:
     git:
       cloneURL: https://github.com/brigadecore/brigade.git
