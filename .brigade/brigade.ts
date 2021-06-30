@@ -86,6 +86,12 @@ const validateSchemasJob = (event: Event) => {
 }
 jobs[validateSchemasJobName] = validateSchemasJob
 
+const validateExamplesJobName = "validate-examples";
+const validateExamplesJob = (event: Event) => {
+  return new MakeTargetJob(validateExamplesJobName, jsImg, event)
+}
+jobs[validateExamplesJobName] = validateExamplesJob;
+
 // Build / publish stuff:
 
 const buildAPIServerJobName = "build-apiserver"
@@ -213,7 +219,8 @@ async function runSuite(event: Event): Promise<void> {
       lintJSJob(event),
       yarnAuditJob(event),
       lintChartJob(event),
-      validateSchemasJob(event)
+      validateSchemasJob(event),
+      validateExamplesJob(event)
     ),
     new ConcurrentGroup( // Build everything
       buildAPIServerJob(event),
