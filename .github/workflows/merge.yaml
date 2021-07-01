@@ -4,15 +4,20 @@ on:
   push:
     branches:
       - v2
+    tags:
+      - 'v2.*.*'
 
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v2
-
-      # TODO: We should also publish the image
       - name: Build Windows logger agent
-        run: |
-          docker build -f v2/logger/Dockerfile.winserv-2019 v2/logger
+        run: make build-logger-windows
+      - name: Login to Dockerhub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Push Windows logger agent
+        run: make push-logger-windows
