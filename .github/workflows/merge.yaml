@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      DOCKER_ORG: brigadecore
     steps:
       - uses: actions/checkout@v2
       - name: Build Windows logger agent
@@ -20,4 +22,4 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push Windows logger agent
-        run: DOCKER_ORG=brigadecore make push-logger-windows
+        run: make push-logger-windows
