@@ -262,6 +262,17 @@ build-logger-linux:
 		--context dir:///workspaces/brigade/logger \
 		--no-push
 
+# Using docker directly here (kaniko doesn't support Windows container builds)
+# and this does require a Windows build machine, but we're placing this here
+# to make use of the image prefix and tag logic.
+# See the GitHub action(s) yaml in .github/ for use in CI.
+.PHONY: build-logger-windows
+build-logger-windows:
+	docker build \
+		-f v2/logger/Dockerfile.winserv-2019 \
+		-t $(DOCKER_IMAGE_PREFIX)logger-windows:$(IMMUTABLE_DOCKER_TAG) \
+		-t $(DOCKER_IMAGE_PREFIX)logger-windows:$(MUTABLE_DOCKER_TAG) v2/logger
+
 .PHONY: build-%
 build-%:
 	$(KANIKO_DOCKER_CMD) kaniko \
@@ -311,6 +322,11 @@ push-logger-linux:
 			--destination $(DOCKER_IMAGE_PREFIX)logger-linux:$(IMMUTABLE_DOCKER_TAG) \
 			--destination $(DOCKER_IMAGE_PREFIX)logger-linux:$(MUTABLE_DOCKER_TAG) \
 	'
+
+.PHONY: push-logger-windows
+push-logger-windows:
+	docker push $(DOCKER_IMAGE_PREFIX)logger-windows:$(IMMUTABLE_DOCKER_TAG)
+	docker push $(DOCKER_IMAGE_PREFIX)logger-windows:$(MUTABLE_DOCKER_TAG)
 
 .PHONY: push-%
 push-%:
