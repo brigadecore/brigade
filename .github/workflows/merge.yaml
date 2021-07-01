@@ -20,4 +20,4 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push Windows logger agent
-        run: make push-logger-windows
+        run: DOCKER_REGISTRY=brigadecore make push-logger-windows
