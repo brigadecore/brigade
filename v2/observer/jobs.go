@@ -104,8 +104,7 @@ func (o *observer) syncJobPod(obj interface{}) {
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		if containerStatus.Name == pod.Spec.Containers[0].Name {
 			if containerStatus.State.Terminated != nil {
-				status.Ended =
-					&pod.Status.ContainerStatuses[0].State.Terminated.FinishedAt.Time
+				status.Ended = &containerStatus.State.Terminated.FinishedAt.Time
 			}
 			break
 		}
