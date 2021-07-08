@@ -96,7 +96,14 @@ func (p *projectPage) fill(project core.Project, events core.EventList) {
 func (p *projectPage) fillProjectInformation(project core.Project) {
 	// Fill the project information.
 	p.projectInfo.Clear()
-	p.projectInfo.SetText(fmt.Sprintf("[yellow]Project: [white]%s", project.ID))
+	p.projectInfo.SetText(
+		fmt.Sprintf(
+			"[yellow]Project: [white]%s\n"+
+				"[yellow]Description: [white]%s",
+			project.ID,
+			project.Description,
+		),
+	)
 }
 
 func (p *projectPage) fillUsage() {
