@@ -27,6 +27,7 @@ func main() {
 		rolesCommands,
 		serviceAccountCommand,
 		userCommand,
+		termCommand,
 	}
 	fmt.Println()
 	if err := app.RunContext(signals.Context(), os.Args); err != nil {
