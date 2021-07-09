@@ -145,6 +145,7 @@ func TestListenAndServe(t *testing.T) {
 				keyFile, err := ioutil.TempFile("", "tls-*.key")
 				require.NoError(t, err)
 				return &ServerConfig{
+					Port:        8082,
 					TLSEnabled:  true,
 					TLSCertPath: certFile.Name(),
 					TLSKeyPath:  keyFile.Name(),
@@ -177,6 +178,7 @@ func TestListenAndServe(t *testing.T) {
 				require.NoError(t, err)
 
 				return &ServerConfig{
+					Port:        8081,
 					TLSEnabled:  true,
 					TLSCertPath: certFile.Name(),
 					TLSKeyPath:  keyFile.Name(),
@@ -187,19 +189,16 @@ func TestListenAndServe(t *testing.T) {
 				require.Equal(t, ctx.Err(), err)
 			},
 		},
-		// TODO: re-enable if/when we can fix its tendency for intermittent failure
-		// https://github.com/brigadecore/brigade/issues/1137
-		//
-		// {
-		// 	name: "TLS not enabled",
-		// 	setup: func() *ServerConfig {
-		// 		return nil
-		// 	},
-		// 	assertions: func(ctx context.Context, err error) {
-		// 		require.Error(t, err)
-		// 		require.Equal(t, ctx.Err(), err)
-		// 	},
-		// },
+		{
+			name: "TLS not enabled",
+			setup: func() *ServerConfig {
+				return nil
+			},
+			assertions: func(ctx context.Context, err error) {
+				require.Error(t, err)
+				require.Equal(t, ctx.Err(), err)
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
