@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -58,6 +59,11 @@ func initialize(c *cli.Context) error {
 	}
 
 	err := core.ValidateProjectID(fields.ProjectID)
+	if err != nil {
+		return err
+	}
+
+	err = validateGitCloneURL(fields.GitCloneURL)
 	if err != nil {
 		return err
 	}
@@ -309,4 +315,18 @@ func checkFileOverwrite(
 		return response, true, nil
 	}
 	return true, false, nil
+}
+
+func validateGitCloneURL(url string) error {
+	gitCloneURLRegex :=
+		regexp.MustCompile(
+			`((git|ssh|http(s)?)|(git@[\w\.]+))` +
+				`(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?`)
+	urlMatch := gitCloneURLRegex.MatchString(url)
+	if !urlMatch {
+		return fmt.Errorf("invalid value %q for git clone URL"+
+			" (must start with http://, https://, or git@"+
+			" and must end with .git)", url)
+	}
+	return nil
 }
