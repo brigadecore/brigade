@@ -7,6 +7,9 @@ replace github.com/brigadecore/brigade/sdk/v2 => ../sdk/v2
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
 	github.com/Azure/go-amqp v0.13.1
+	github.com/Masterminds/goutils v1.1.1 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/bacongobbler/browser v1.1.0
 	github.com/brigadecore/brigade/sdk/v2 v2.0.0-20200923171232-9f56c474d8bf
 	github.com/coreos/go-oidc v2.2.1+incompatible
@@ -17,8 +20,10 @@ require (
 	github.com/google/go-github/v33 v33.0.0
 	github.com/gorilla/mux v1.7.4
 	github.com/gosuri/uitable v0.0.4
+	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
+	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/cachecontrol v0.0.0-20200921180117-858c6e7e6b7e // indirect

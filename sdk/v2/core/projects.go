@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	rm "github.com/brigadecore/brigade/sdk/v2/internal/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
@@ -13,6 +14,8 @@ import (
 
 // ProjectKind represents the canonical Project kind string
 const ProjectKind = "Project"
+
+var projectIDRegex = regexp.MustCompile(`^[a-z][a-z\d-]*[a-z\d]$`)
 
 // Project is Brigade's fundamental configuration, management, and isolation
 // construct.
@@ -339,4 +342,15 @@ func (p *projectsClient) Authz() AuthzClient {
 
 func (p *projectsClient) Secrets() SecretsClient {
 	return p.secretsClient
+}
+
+// ValidateProjectID checks if a given id is valid.
+func ValidateProjectID(id string) error {
+	idMatch := projectIDRegex.MatchString(id)
+	if !idMatch || len(id) < 3 || len(id) > 63 {
+		return fmt.Errorf("invalid value %q for project id"+
+			" (3-63 characters, first char must be"+
+			" a letter, lowercase letters only)", id)
+	}
+	return nil
 }
