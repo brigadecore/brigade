@@ -34,14 +34,14 @@ KinD runs a Kubernetes cluster locally using [Docker].
 
     **linux**
     ```bash
-    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.0/kind-linux-amd64
+    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
     chmod +x ./kind
     mv ./kind /usr/local/bin
     ```
 
     **macos with Homebrew**
     ```bash
-    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.0/kind-darwin-amd64
+    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-darwin-amd64
     chmod +x ./kind
     mv ./kind /usr/local/bin
     ```
@@ -49,7 +49,7 @@ KinD runs a Kubernetes cluster locally using [Docker].
     **windows**
     ```powershell
     mkdir -force $env:USERPROFILE\bin
-    (New-Object Net.WebClient).DownloadFile("https://kind.sigs.k8s.io/dl/v0.11.0/kind-windows-amd64", "$ENV:USERPROFILE\bin\kind.exe")
+    (New-Object Net.WebClient).DownloadFile("https://kind.sigs.k8s.io/dl/v0.11.1/kind-windows-amd64", "$ENV:USERPROFILE\bin\kind.exe")
     $env:PATH+=";$env:USERPROFILE\bin"
     ```
 

@@ -34,39 +34,9 @@ relativeURLs = "true"
     weight = 23
     parent = "intro"
     [[menu.index]]
-    name = "Tutorial 1: Writing a CI pipeline"
-    url = "/intro/tutorial01/"
-    weight = 24
-    parent = "intro"
-    [[menu.index]]
-    name = "Tutorial 2: Setup GitHub"
-    url = "/intro/tutorial02/"
-    weight = 25
-    parent = "intro"
-    [[menu.index]]
-    name = "Tutorial 3: Projects & Events"
-    url = "/intro/tutorial03/"
-    weight = 26
-    parent = "intro"
-    [[menu.index]]
-    name = "Tutorial 4: Writing a Test"
-    url = "/intro/tutorial04/"
-    weight = 27
-    parent = "intro"
-    [[menu.index]]
-    name = "Tutorial 5: Writing Efficient Pipelines"
-    url = "/intro/writing-efficient-pipelines/"
-    weight = 28
-    parent = "intro"
-    [[menu.index]]
     name = "What to Read Next"
     url = "/intro/readnext/"
     weight = 29
-    parent = "intro"
-    [[menu.index]]
-    name = "Tutorial: Preview Environments"
-    url = "/intro/tutorial-preview-environments/"
-    weight = 30
     parent = "intro"
 
 [[menu.index]]
@@ -105,21 +75,6 @@ relativeURLs = "true"
     weight = 45
     parent = "topics"
     [[menu.index]]
-    name = "GitHub Integration"
-    url = "/topics/github/"
-    weight = 46
-    parent = "topics"
-    [[menu.index]]
-    name = "Container Registry Integration"
-    url = "/topics/dockerhub/"
-    weight = 47
-    parent = "topics"
-    [[menu.index]]
-    name = "Generic Gateway"
-    url = "/topics/genericgateway/"
-    weight = 48
-    parent = "topics"
-    [[menu.index]]
     name = "Secret Management"
     url = "/topics/secrets/"
     weight = 49
@@ -130,11 +85,6 @@ relativeURLs = "true"
     weight = 50
     parent = "topics"
     [[menu.index]]
-    name = "Ingress"
-    url = "/topics/ingress/"
-    weight = 51
-    parent = "topics"
-    [[menu.index]]
     name = "Projects"
     url = "/topics/projects/"
     weight = 52
@@ -143,11 +93,6 @@ relativeURLs = "true"
     name = "Securing Brigade"
     url = "/topics/security/"
     weight = 53
-    parent = "topics"
-    [[menu.index]]
-    name = "Storage"
-    url = "/topics/storage/"
-    weight = 54
     parent = "topics"
     [[menu.index]]
     name = "Workers"
@@ -164,12 +109,11 @@ relativeURLs = "true"
     url = "/topics/developers/"
     weight = 57
     parent = "topics"
-    [[menu.index]]
-    name = "Releasing Brigade"
-    url = "/topics/releasing/"
-    weight = 58
-    parent = "topics"
 [[menu.index]]
+    name = "Releasing Brigade"
+    url = "/releasing/"
+    weight = 59
+    [[menu.index]]
     name = "Contributing"
     url = "/contributing/"
     weight = 60
@@ -183,7 +127,7 @@ relativeURLs = "true"
 
 [[menu.main]]
     name = "Examples"
-    url = "https://github.com/brigadecore/brigade/tree/master/docs/content/examples"
+    url = "https://github.com/brigadecore/brigade/tree/v2/examples"
     weight = 2
 
 [[menu.main]]

@@ -11,16 +11,12 @@ weight: 10
 
 # Getting Started
 
-New to Brigade or to CI systems in general? Well, you came to the right place: read this material to quickly get up and running.
+New to Brigade or looking to quickly get up to speed with v2? Well, you came to the right place: read this material to quickly get up and running.
 
 ## Table of Contents
 
-- [Brigade at a glance](overview)
-- [QuickStart](quickstart)  
+- What's new in v2 (TODO)
+- [Brigade at a glance](overview) (TODO: update)
+- [QuickStart](quickstart)
 - [Installation Guide](install)
-- [Writing your first CI pipeline, part 1](tutorial01)
-- [Writing your first CI pipeline, part 2](tutorial02)
-- [Writing your first CI pipeline, part 3](tutorial03)
-- [Writing your first CI pipeline, part 4](tutorial04)
-- [Advanced tutorial: Writing efficient pipelines](writing-efficient-pipelines)
-- [What to read next](readnext)
+- [What to read next](readnext) (TODO: update)
