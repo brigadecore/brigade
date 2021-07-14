@@ -2,14 +2,12 @@
 title: The Brigade.js API
 description: Describing the public APIs typically used for writing Brigade.js
 aliases:
-  - /javascript.md
-  - /topics/javascript.md
-  - /intro/javascript.md
-  - /topics/scripting/javascript.md
-  - /topics/scripting_advanced/javascript.md
-  - /topics/javascript/javascript.md
-  - /topics/storage/javascript.md
+  - /brigadier.md
+  - /topics/brigadier.md
+  - /topics/scripting/brigadier.md
 ---
+
+TODO: update per v2
 
 # The Brigade.js API
 

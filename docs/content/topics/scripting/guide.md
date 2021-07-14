@@ -2,13 +2,12 @@
 title: Scripting Guide
 description: 'How to create and structure `brigade.js` files.'
 aliases:
-  - /scripting.md
-  - /topics/scripting.md
-  - /topics/scripting/scripting.md
-  - /topics/scripting_advanced/scripting.md
-  - /topics/javascript/scripting.md
-  - /topics/storage/scripting.md
+  - /guide.md
+  - /topics/guide.md
+  - /topics/scripting/guide.md
 ---
+
+TODO: update per v2
 
 # Scripting Guide
 

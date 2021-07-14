@@ -1,11 +1,13 @@
 ---
 title: Secret Management
-description: 'How Brigade utilizes Kubernetes secrets.'
+description: How to use and manage secrets in Brigade
 aliases:
   - /secrets.md
   - /topics/secrets.md
-  - /topics/scripting/secrets.md
+  - /topics/project-developers/secrets.md
 ---
+
+TODO: update per v2
 
 # Secret Management
 

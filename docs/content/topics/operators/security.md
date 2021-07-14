@@ -7,6 +7,8 @@ aliases:
   - /topics/security.md
 ---
 
+TODO: update per v2
+
 # Securing Brigade
 
 The execution of Brigade scripts involves dynamically creating (and destroying) a

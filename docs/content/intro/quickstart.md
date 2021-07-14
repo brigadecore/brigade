@@ -2,7 +2,9 @@
 title: A Brigade Quickstart
 description: A Brigade Quickstart.
 section: intro
-weight: 22
+aliases:
+  - /quickstart.md
+  - /intro/quickstart.md
 ---
 
 In this QuickStart, you will install Brigade, create a project and execute it.

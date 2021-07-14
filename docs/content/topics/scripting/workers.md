@@ -3,11 +3,11 @@ title: 'Workers'
 description: 'How to add custom libraries to a Brigade worker'
 aliases:
   - /workers.md
-  - /intro/workers.md
   - /topics/workers.md
-  - /topics/dependencies/workers.md
   - /topics/scripting/workers.md
 ---
+
+TODO: update per v2
 
 # What is a Brigade Worker?
 

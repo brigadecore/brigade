@@ -1,14 +1,13 @@
 ---
 title: Projects
-description: How to manage Brigade Projects using either the Brig CLI or Helm Charts
+description: How to manage Brigade Projects
 aliases:
   - /projects.md
   - /topics/projects.md
-  - /intro/projects.md
-  - /developers/projects.md
-  - /topics/developers/projects.md
-  - /topics/scripting/projects.md
+  - /topics/project-developers/projects.md
 ---
+
+TODO: update per v2
 
 # Managing Projects in Brigade
 

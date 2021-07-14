@@ -2,11 +2,9 @@
 title: Advanced Scripting Guide
 description: 'This guide provides some tips and ideas for advanced scripting.'
 aliases:
-  - /scripting_advanced.md
-  - /topics/scripting_advanced.md
-  - /topics/scripting_advanced/scripting_advanced.md
-  - /topics/scripting/scripting_advanced.md
-  - /topics/javascript/scripting_advanced.md
+  - /advanced.md
+  - /topics/advanced.md
+  - /topics/scripting/advanced.md
 ---
 
 # Advanced Scripting Guide

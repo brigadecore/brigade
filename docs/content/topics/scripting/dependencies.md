@@ -4,10 +4,10 @@ description: How dependencies work in Brigade
 aliases:
   - /dependencies.md
   - /topics/dependencies.md
-  - /topics/workers/dependencies.md
-  - /topics/brig/dependencies.md
-  - /intro/dependencies.md
+  - /topics/scripting/dependencies.md
 ---
+
+TODO: update per v2
 
 # Import dependencies in your `brigade.js` file
 

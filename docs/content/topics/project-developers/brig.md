@@ -4,11 +4,10 @@ description: Using the Brigade CLI
 aliases:
   - /brig.md
   - /topics/brig.md
-  - /topics/cli/brig.md
-  - /topics/dependencies/brig.md
-  - /intro/brig.md
-  - /intro/topics/brig.md
+  - /topics/project-developers/brig.md
 ---
+
+TODO: update per v2
 
 # Brig: The Brigade CLI
 

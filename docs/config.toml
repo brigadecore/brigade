@@ -50,73 +50,134 @@ relativeURLs = "true"
     weight = 41
     parent = "topics"
     [[menu.index]]
-    name = "Scripting Guide"
-    url = "/topics/scripting/"
+    name = "Brigade Roles"
+    url = "/topics/roles/"
     weight = 42
     parent = "topics"
+
     [[menu.index]]
-    name = "The Brig CLI"
-    url = "/topics/brig/"
-    weight = 42
-    parent = "topics"
-    [[menu.index]]
-    name = "The Brigade.js API"
-    url = "/topics/javascript/"
-    weight = 43
-    parent = "topics"
-    [[menu.index]]
-    name = "Advanced Scripting Guide"
-    url = "/topics/scripting_advanced/"
-    weight = 44
-    parent = "topics"
-    [[menu.index]]
-    name = "Dependencies"
-    url = "/topics/dependencies/"
+    name = "Operators"
+    url = "/topics/operators/"
     weight = 45
+    identifier = "operators"
     parent = "topics"
     [[menu.index]]
-    name = "Secret Management"
-    url = "/topics/secrets/"
-    weight = 49
-    parent = "topics"
+    name = "Deployment"
+    url = "/topics/operators/deploy/"
+    weight = 46
+    parent = "operators"
+    [[menu.index]]
+    name = "Securing Brigade"
+    url = "/topics/operators/security/"
+    weight = 47
+    parent = "operators"
     [[menu.index]]
     name = "Gateways"
-    url = "/topics/gateways/"
+    url = "/topics/operators/gateways/"
+    weight = 48
+    parent = "operators"
+
+    [[menu.index]]
+    name = "Administrators"
+    url = "/topics/administrators/"
     weight = 50
+    identifier = "administrators"
+    parent = "topics"
+    [[menu.index]]
+    name = "Authentication"
+    url = "/topics/administrators/authentication/"
+    weight = 51
+    parent = "administrators"
+    [[menu.index]]
+    name = "Authorization"
+    url = "/topics/administrators/authorization/"
+    weight = 52
+    parent = "administrators"
+
+    [[menu.index]]
+    name = "Project Developers"
+    url = "/topics/project-developers/"
+    weight = 55
+    identifier = "project-developers"
     parent = "topics"
     [[menu.index]]
     name = "Projects"
-    url = "/topics/projects/"
-    weight = 52
+    url = "/topics/project-developers/projects/"
+    weight = 56
+    parent = "project-developers"
+    [[menu.index]]
+    name = "Events"
+    url = "/topics/project-developers/events/"
+    weight = 57
+    parent = "project-developers"
+    [[menu.index]]
+    name = "Secrets"
+    url = "/topics/project-developers/secrets/"
+    weight = 58
+    parent = "project-developers"
+    [[menu.index]]
+    name = "Using the brig CLI"
+    url = "/topics/project-developers/brig/"
+    weight = 59
+    parent = "project-developers"
+    [[menu.index]]
+    name = "Brigterm"
+    url = "/topics/project-developers/brigterm/"
+    weight = 60
+    parent = "project-developers"
+
+    [[menu.index]]
+    name = "Scripting"
+    url = "/topics/scripting/"
+    weight = 65
+    identifier = "scripting"
     parent = "topics"
     [[menu.index]]
-    name = "Securing Brigade"
-    url = "/topics/security/"
-    weight = 53
-    parent = "topics"
+    name = "Scripting Guide"
+    url = "/topics/scripting/guide/"
+    weight = 66
+    parent = "scripting"
+    [[menu.index]]
+    name = "The Brigadier Library"
+    url = "/topics/scripting/brigadier/"
+    weight = 67
+    parent = "scripting"
+    [[menu.index]]
+    name = "Advanced Scripting Guide"
+    url = "/topics/scripting/advanced/"
+    weight = 68
+    parent = "scripting"
+    [[menu.index]]
+    name = "Dependencies"
+    url = "/topics/scripting/dependencies/"
+    weight = 69
+    parent = "scripting"
     [[menu.index]]
     name = "Workers"
-    url = "/topics/workers/"
-    weight = 55
-    parent = "topics"
-    [[menu.index]]
-    name = "Testing"
-    url = "/topics/testing/"
-    weight = 56
-    parent = "topics"
+    url = "/topics/scripting/workers/"
+    weight = 70
+    parent = "scripting"
+
     [[menu.index]]
     name = "Developer Guide"
     url = "/topics/developers/"
-    weight = 57
+    weight = 75
     parent = "topics"
+
+    [[menu.index]]
+    name = "Examples"
+    url = "/topics/examples/"
+    weight = 76
+    parent = "topics"
+
 [[menu.index]]
     name = "Releasing Brigade"
     url = "/releasing/"
-    weight = 59
+    weight = 80
     [[menu.index]]
     name = "Contributing"
     url = "/contributing/"
-    weight = 60
+    weight = 81
 
 
 # top navigation - project links
