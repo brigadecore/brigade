@@ -1,7 +1,7 @@
 # Brigade Docs
 
 * Browse the [docs on GitHub](https://github.com/brigadecore/brigade/tree/v2/docs/content)
-* Browse the [v2 staging docs website](https://v1--brigade-docs.netlify.app)
+* Browse the [v2 staging docs website](https://v2--brigade-docs.netlify.app)
 
 ---
 

@@ -3,10 +3,10 @@ title: Design
 description: How Brigade is designed
 aliases:
   - /design.md
-  - /gateways/design
-  - /gateways/design.md
-  - /topics/gateways/design.md
+  - /topics/design.md
 ---
+
+TODO: update per v2
 
 # Brigade Design
 

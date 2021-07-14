@@ -6,7 +6,6 @@ aliases:
   - /install.md
   - /intro/install.md
   - /topics/intro/install.md
-weight: 23
 ---
 
 Brigade is composed of a server, and a command-line tool, brig.
