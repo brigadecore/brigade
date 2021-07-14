@@ -37,20 +37,20 @@ Install the Brigade CLI, brig, by copying the appropriate binary from our releas
 
 **linux**
 ```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-alpha.5/brig-linux-amd64
+curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.1/brig-linux-amd64
 chmod +x /usr/local/bin/brig
 ```
 
 **macos**
 ```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-alpha.5/brig-darwin-amd64
+curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.1/brig-darwin-amd64
 chmod +x /usr/local/bin/brig
 ```
 
 **windows**
 ```powershell
 mkdir -force $env:USERPROFILE\bin
-(New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-alpha.5/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+(New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.1/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
 $env:PATH+=";$env:USERPROFILE\bin"
 ```
 
@@ -90,8 +90,8 @@ $env:PATH+=";$env:USERPROFILE\bin"
 1. Run the following commands to install Brigade and wait for it to finish installing.
 
     ```
-    helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-alpha.5
-    helm chart export ghcr.io/brigadecore/brigade:v2.0.0-alpha.5 -d ~/charts
+    helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-beta.1
+    helm chart export ghcr.io/brigadecore/brigade:v2.0.0-beta.1 -d ~/charts
     helm install brigade2 ~/charts/brigade --namespace brigade2 --create-namespace
     kubectl rollout status deployment brigade2-apiserver -n brigade2 --timeout 5m
     ```
