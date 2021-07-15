@@ -75,10 +75,8 @@
 		},
 
 		"gitCloneURL": {
-			"oneOf": [
-				{ "$ref": "#/definitions/empty" },
-				{ "$ref": "#/definitions/url" }
-			],
+			"type": "string",
+			"pattern": "^(?:(?:(?:https?://)|(?:git@))[\\w:/\\-\\.\\?=@&]+\\.git)?$",
 			"description": "The URL for cloning a git project"
 		},
 
