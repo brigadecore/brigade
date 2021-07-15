@@ -27,7 +27,8 @@ If you'd like to add links to this list, open a pull request on
 
 ### Articles and Videos
 
-TODO: add/update/edit -- maybe add link to blog? 
+TODO: add/update/edit -- maybe add link to blog?
+
 <!--
 v1 listings:
 
@@ -36,13 +37,14 @@ v1 listings:
 - [Microsoft Launches Brigade](https://thenewstack.io/microsoft-launches-brigade-event-driven-scripting-tool-kubernetes) - The New Stack
 - [Video: Building Event-Driven Pipelines with Brigade (KubeCon Europe 2018)](https://www.youtube.com/watch?v=yhfc0FKdFc8)
 - [Video: Brigade Basics](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG)
-!-->
+-->
 
 ### Technical
 
 TODO: add/update/edit
 
 Brigade-related projects and tools.
+
 <!--
 v1 listings:
 
@@ -54,4 +56,4 @@ v1 listings:
 - [bit-brigade](https://bitbucket.org/lukepatrick/bit-brigade) provides an example project using 
   BitBucket as a source repository
 - [minio-brigade](https://github.com/lukepatrick/minio-brigade) examples of storing artifacts in object storage (minio)
-!-->
+-->

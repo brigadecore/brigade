@@ -38,7 +38,6 @@ relativeURLs = "true"
     url = "/intro/readnext/"
     weight = 29
     parent = "intro"
-
 [[menu.index]]
     name = "Topic Guides"
     url = "/topics/"
@@ -54,7 +53,6 @@ relativeURLs = "true"
     url = "/topics/roles/"
     weight = 42
     parent = "topics"
-
     [[menu.index]]
     name = "Operators"
     url = "/topics/operators/"
@@ -76,7 +74,6 @@ relativeURLs = "true"
     url = "/topics/operators/gateways/"
     weight = 48
     parent = "operators"
-
     [[menu.index]]
     name = "Administrators"
     url = "/topics/administrators/"
@@ -93,7 +90,6 @@ relativeURLs = "true"
     url = "/topics/administrators/authorization/"
     weight = 52
     parent = "administrators"
-
     [[menu.index]]
     name = "Project Developers"
     url = "/topics/project-developers/"
@@ -125,7 +121,6 @@ relativeURLs = "true"
     url = "/topics/project-developers/brigterm/"
     weight = 60
     parent = "project-developers"
-
     [[menu.index]]
     name = "Scripting"
     url = "/topics/scripting/"
@@ -157,19 +152,16 @@ relativeURLs = "true"
     url = "/topics/scripting/workers/"
     weight = 70
     parent = "scripting"
-
     [[menu.index]]
     name = "Developer Guide"
     url = "/topics/developers/"
     weight = 75
     parent = "topics"
-
     [[menu.index]]
     name = "Examples"
     url = "/topics/examples/"
     weight = 76
     parent = "topics"
-
 [[menu.index]]
     name = "Releasing Brigade"
     url = "/releasing/"

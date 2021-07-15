@@ -20,20 +20,24 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
 
 - Architecture
   - [Brigade Design](design): A high-level explanation of how Brigade is designed.
-- [Operators](operators/_index): An overview of the Operator role in Brigade
+- Operators 
+  - [Overview](operators/index): An overview of the Operator role in Brigade
   - [Deployment](operators/deploy): How to deploy and manage Brigade
   - [Securing Brigade](operators/security): Securing Brigade via TLS, Ingress and Third-Party Auth
   - [Gateways](operators/gateways): Using and developing Brigade gateways
-- [Administrators](administrators/_index): An overview of the Administrator role in Brigade
+- Administrators
+  - [Overview](administrators/index): An overview of the Administrator role in Brigade
   - [Authentication](administrators/authentication): Authentication strategies in Brigade
   - [Authorization](administrators/authorization): Authorization setup in Brigade
-- [Project Developers](project-developers/_index): An overview of the Project Developer role in Brigade
+- Project Developers
+  - [Overview](project-developers/index): An overview of the Project Developer role in Brigade
   - [Projects](project-developers/projects): Creating and managing Brigade Projects
   - [Events](project-developers/events): Understanding and handling Brigade Events
   - [Using Secrets](project-developers/secrets): Using secrets in Brigade Projects
   - [Using the Brigade CLI](project-developers/brig): Using the brig CLI to interact with Brigade
   - [Brigterm](project-developers/brigterm): Using the Brigterm visualization utility
-- [Scripting](scripting/_index): Scripting in Brigade
+- Scripting
+  - [Overview](scripting/index): Scripting in Brigade
   - [Scripting Guide](scripting/guide): A guide to writing `brigade.js`/`brigade.ts` scripts in Brigade
   - [Brigadier](scripting/brigadier): Brigadier: the JS/TS library for Brigade scripts
   - [Scripting Guide - Advanced](scripting/advanced): Advanced examples for Brigade scripts.
