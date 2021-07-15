@@ -3,11 +3,10 @@ title: Developer Guide
 description: How to get started developing Brigade
 aliases:
   - /developers.md
-  - /topics/developers
   - /topics/developers.md
-  - /topics/gateways/developers.md
-  - /intro/developers.md
 ---
+
+TODO: update per v2
 
 # Developer Guide
 
