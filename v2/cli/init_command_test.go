@@ -57,42 +57,6 @@ func TestAddLinesToFile(t *testing.T) {
 	verifyFileContents(t, editFilePath, "f00bar")
 }
 
-func TestValidateGitCloneURL(t *testing.T) {
-	testCases := []struct {
-		name     string
-		url      string
-		expected bool
-	}{
-		{
-			name:     "valid git clone url",
-			url:      "https://github.com/brigadecore/brigade.git",
-			expected: true,
-		},
-		{
-			name:     "does not start with https://, http://, or git@",
-			url:      "github.com/brigadecore/brigade.git",
-			expected: false,
-		},
-		{
-			name:     "does not end in .git",
-			url:      "https://github.com/brigadecore/brigade",
-			expected: false,
-		},
-		{
-			name:     "not a link",
-			url:      "foobar",
-			expected: false,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.url, func(t *testing.T) {
-			err := validateGitCloneURL(testCase.url)
-			require.Equal(t, testCase.expected, err == nil)
-		})
-	}
-}
-
 func verifyFileContents(t *testing.T, filePath string, content string) {
 	b, err := ioutil.ReadFile(filePath)
 	require.NoError(t, err)
