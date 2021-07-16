@@ -1,6 +1,8 @@
 # Brigade 2: Event-based Scripting for Kubernetes
 
-Brigade 2 is currently in an _alpha_ state and remains under heavy development.
+Brigade 2 is currently in a _beta_ state and remains under heavy development,
+but that development is primarily oriented around improving the platform's
+stability. Breaking changes to APIs are not anticipated.
 
 ## Introducing Brigade 2
 
@@ -37,8 +39,8 @@ To install Brigade 2 with _default_ configuration:
 
 ```console
 $ export HELM_EXPERIMENTAL_OCI=1
-$ helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-alpha.5
-$ helm chart export ghcr.io/brigadecore/brigade:v2.0.0-alpha.5 -d ~/charts
+$ helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-beta.1
+$ helm chart export ghcr.io/brigadecore/brigade:v2.0.0-beta.1 -d ~/charts
 $ kubectl create namespace brigade2
 $ helm install brigade2 ~/charts/brigade --namespace brigade2
 ```

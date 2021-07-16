@@ -2,7 +2,9 @@
 title: A Brigade Quickstart
 description: A Brigade Quickstart.
 section: intro
-weight: 22
+aliases:
+  - /quickstart.md
+  - /intro/quickstart.md
 ---
 
 In this QuickStart, you will install Brigade, create a project and execute it.
@@ -34,14 +36,14 @@ KinD runs a Kubernetes cluster locally using [Docker].
 
     **linux**
     ```bash
-    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.0/kind-linux-amd64
+    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
     chmod +x ./kind
     mv ./kind /usr/local/bin
     ```
 
     **macos with Homebrew**
     ```bash
-    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.0/kind-darwin-amd64
+    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-darwin-amd64
     chmod +x ./kind
     mv ./kind /usr/local/bin
     ```
@@ -49,7 +51,7 @@ KinD runs a Kubernetes cluster locally using [Docker].
     **windows**
     ```powershell
     mkdir -force $env:USERPROFILE\bin
-    (New-Object Net.WebClient).DownloadFile("https://kind.sigs.k8s.io/dl/v0.11.0/kind-windows-amd64", "$ENV:USERPROFILE\bin\kind.exe")
+    (New-Object Net.WebClient).DownloadFile("https://kind.sigs.k8s.io/dl/v0.11.1/kind-windows-amd64", "$ENV:USERPROFILE\bin\kind.exe")
     $env:PATH+=";$env:USERPROFILE\bin"
     ```
 
@@ -82,20 +84,20 @@ Install the Brigade CLI, brig, by copying the appropriate binary from our releas
 
 **linux**
 ```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-alpha.5/brig-linux-amd64
+curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.1/brig-linux-amd64
 chmod +x /usr/local/bin/brig
 ```
 
 **macos**
 ```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-alpha.5/brig-darwin-amd64
+curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.1/brig-darwin-amd64
 chmod +x /usr/local/bin/brig
 ```
 
 **windows**
 ```powershell
 mkdir -force $env:USERPROFILE\bin
-(New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-alpha.5/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+(New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.1/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
 $env:PATH+=";$env:USERPROFILE\bin"
 ```
 
@@ -137,8 +139,8 @@ Install Brigade on your local development cluster. See our [Installation] instru
 1. Run the following commands to install Brigade.
 
     ```
-    helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-alpha.5
-    helm chart export ghcr.io/brigadecore/brigade:v2.0.0-alpha.5 -d ~/charts
+    helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-beta.1
+    helm chart export ghcr.io/brigadecore/brigade:v2.0.0-beta.1 -d ~/charts
     helm install brigade2 ~/charts/brigade --namespace brigade2 --create-namespace
     kubectl rollout status deployment brigade2-apiserver -n brigade2 --timeout 5m
     ```
@@ -245,7 +247,7 @@ Below is example output of a successful event handler:
 Created event "7a5234d6-e2aa-402f-acb9-c620dfc20003".
 
 Waiting for event's worker to be RUNNING...
-2021-05-26T18:12:34.604Z INFO: brigade-worker version: v2.0.0-alpha.5
+2021-05-26T18:12:34.604Z INFO: brigade-worker version: v2.0.0-beta.1
 2021-05-26T18:12:34.609Z DEBUG: writing default brigade.js to /var/vcs/.brigade/brigade.js
 2021-05-26T18:12:34.609Z DEBUG: using npm as the package manager
 2021-05-26T18:12:34.610Z DEBUG: path /var/vcs/.brigade/node_modules/@brigadecore does not exist; creating it

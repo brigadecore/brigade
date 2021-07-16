@@ -1,8 +1,12 @@
 ---
 title: What to Read Next
 description: Additional steps and tips for learning Brigade
+aliases:
+  - /readnext.md
+  - /intro/readnext.md
 ---
 
+TODO: update per v2
 # What to Read Next
 
 So you’ve read all the introductory material and have decided you’d like to keep using Brigade to test your applications. We’ve only just scratched the surface.
