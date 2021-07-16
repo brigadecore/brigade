@@ -63,8 +63,7 @@ func initialize(c *cli.Context) error {
 	}
 
 	if fields.GitCloneURL != "" {
-		err = core.ValidateGitCloneURL(fields.GitCloneURL)
-		if err != nil {
+		if err = core.ValidateGitCloneURL(fields.GitCloneURL); err != nil {
 			return err
 		}
 	}

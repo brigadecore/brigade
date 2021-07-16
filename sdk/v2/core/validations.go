@@ -14,9 +14,12 @@ var gitCloneURLRegex = regexp.MustCompile(`^(?:(?:https?://)|(?:git@))[\w:/\-\.\
 func ValidateProjectID(id string) error {
 	idMatch := projectIDRegex.MatchString(id)
 	if !idMatch || len(id) < 3 || len(id) > 63 {
-		return fmt.Errorf("invalid value %q for project id"+
-			" (3-63 characters, first char must be"+
-			" a letter, lowercase letters only)", id)
+		return fmt.Errorf(
+			"invalid value %q for project id"+
+				" (3-63 characters, first char must be"+
+				" a letter, lowercase letters only)",
+			id,
+		)
 	}
 	return nil
 }
@@ -27,9 +30,12 @@ func ValidateGitCloneURL(url string) error {
 
 	urlMatch := gitCloneURLRegex.MatchString(url)
 	if !urlMatch {
-		return fmt.Errorf("invalid value %q for git clone URL"+
-			" (must start with http://, https://, or git@"+
-			" and must end with .git)", url)
+		return fmt.Errorf(
+			"invalid value %q for git clone URL"+
+				" (must start with http://, https://, or git@"+
+				" and must end with .git)",
+			url,
+		)
 	}
 	return nil
 }
