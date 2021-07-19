@@ -337,9 +337,11 @@ func (s *sessionsService) Authenticate(
 	if err != nil {
 		if _, ok := errors.Cause(err).(*meta.ErrNotFound); ok {
 			// User wasn't found. That's ok. We'll create one.
+			now := time.Now().UTC()
 			user = User{
 				ObjectMeta: meta.ObjectMeta{
-					ID: thirdPartyUserIdentity.ID,
+					ID:      thirdPartyUserIdentity.ID,
+					Created: &now,
 				},
 				Name: thirdPartyUserIdentity.Name,
 			}
