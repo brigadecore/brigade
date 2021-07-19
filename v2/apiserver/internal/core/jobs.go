@@ -79,6 +79,8 @@ func (j JobPhase) IsTerminal() bool {
 type Job struct {
 	// Name is the Job's name. It should be unique among a given Worker's Jobs.
 	Name string `json:"name" bson:"name"`
+	// Created indicates the time at which a Job was created.
+	Created *time.Time `json:"created,omitempty"`
 	// Spec is the technical blueprint for the Job.
 	Spec JobSpec `json:"spec" bson:"spec"`
 	// Status contains details of the Job's current state.
@@ -361,6 +363,9 @@ func (j *jobsService) Create(
 				"configuration has not enabled this feature.",
 		}
 	}
+
+	now := time.Now().UTC()
+	job.Created = &now
 
 	// Set the initial status
 	job.Status = &JobStatus{

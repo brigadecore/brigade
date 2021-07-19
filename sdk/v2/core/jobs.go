@@ -79,6 +79,10 @@ func (j JobPhase) IsTerminal() bool {
 type Job struct {
 	// Name is the Job's name. It should be unique among a given Worker's Jobs.
 	Name string `json:"name"`
+	// Created indicates the time at which a Job was created. This is recorded by
+	// the system. Clients must leave the value of this field set to nil when
+	// using the API to create a Job.
+	Created *time.Time `json:"created,omitempty"`
 	// Spec is the technical blueprint for the Job.
 	Spec JobSpec `json:"spec"`
 	// Status contains details of the Job's current state.
