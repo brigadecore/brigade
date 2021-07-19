@@ -62,6 +62,12 @@ func initialize(c *cli.Context) error {
 		return err
 	}
 
+	if fields.GitCloneURL != "" {
+		if err = core.ValidateGitCloneURL(fields.GitCloneURL); err != nil {
+			return err
+		}
+	}
+
 	// Check if input language is valid
 	fields.Language, err = fileExtensionForLanguage(fields.Language)
 	if err != nil {
