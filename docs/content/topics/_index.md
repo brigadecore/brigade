@@ -20,10 +20,12 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
 
 - Architecture
   - [Brigade Design](design): A high-level explanation of how Brigade is designed.
+  - [Brigade Roles](roles): The main roles of interaction within Brigade
 - Operators 
   - [Overview](operators/index): An overview of the Operator role in Brigade
   - [Deployment](operators/deploy): How to deploy and manage Brigade
   - [Securing Brigade](operators/security): Securing Brigade via TLS, Ingress and Third-Party Auth
+  - [Storage](operators/storage): Storage options and configuration for Brigade
   - [Gateways](operators/gateways): Using and developing Brigade gateways
 - Administrators
   - [Overview](administrators/index): An overview of the Administrator role in Brigade
