@@ -70,9 +70,14 @@ relativeURLs = "true"
     weight = 47
     parent = "operators"
     [[menu.index]]
+    name = "Storage"
+    url = "/topics/operators/storage/"
+    weight = 48
+    parent = "operators"
+    [[menu.index]]
     name = "Gateways"
     url = "/topics/operators/gateways/"
-    weight = 48
+    weight = 49
     parent = "operators"
     [[menu.index]]
     name = "Administrators"

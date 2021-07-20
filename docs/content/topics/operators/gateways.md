@@ -9,6 +9,9 @@ aliases:
 
 TODO: update per v2
 
+# Github Gateway
+TODO: Add [GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway) mention/link.
+
 # Brigade Gateways
 
 This guide explains how gateways work, and provides guidance for creating your own
