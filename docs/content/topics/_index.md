@@ -45,9 +45,11 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
   - [Scripting Guide - Advanced](scripting/advanced): Advanced examples for Brigade scripts.
   - [Adding dependencies](scripting/dependencies): How to add local dependencies and NPM packages to your Brigade scripts.
   - [Workers](scripting/workers): More information regarding the Brigade Worker.
+- Metrics
+  - [Metrics and Observability](metrics): How to monitor Brigade
 - Contributing to Brigade Development
   - [Brigade Developers Guide](developers): A guide for people who want to modify Brigade's code.
 - Examples
   - [Example Projects](examples): Example Brigade projects
 
-[write]: https://github.com/brigadecore/brigade/new/master/content/docs/topics
+[write]: https://github.com/brigadecore/brigade/new/v2/content/docs/topics

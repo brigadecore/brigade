@@ -4,7 +4,7 @@ description: How to use and manage secrets in Brigade
 section: project-developers
 weight: 3
 aliases:
-  - /secrets.md
+  - /secrets
   - /topics/secrets.md
   - /topics/project-developers/secrets.md
 ---
