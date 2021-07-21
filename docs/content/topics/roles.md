@@ -22,20 +22,20 @@ nicely as categories of context for documentation, so without further ado,
 let's dive in.
 
   * [Operators] - Users who install and manage the deployment of Brigade and gateways
-    - [Deployment](operators/deploy): How to deploy and manage Brigade
-    - [Securing Brigade](operators/security): Securing Brigade via TLS, Ingress and Third-Party Auth
-    - [Storage](operators/storage): Storage options and configuration for Brigade
-    - [Gateways](operators/gateways): Using and developing Brigade gateways
+    - [Deployment](/topics/operators/deploy): How to deploy and manage Brigade
+    - [Securing Brigade](/topics/operators/security): Securing Brigade via TLS, Ingress and Third-Party Auth
+    - [Storage](/topics/operators/storage): Storage options and configuration for Brigade
+    - [Gateways](/topics/operators/gateways): Using and developing Brigade gateways
   * [Administrators] - Users who manage authentication and authorization concerns in Brigade
-    - [Authentication](administrators/authentication): Authentication strategies in Brigade
-    - [Authorization](administrators/authorization): Authorization setup in Brigade
+    - [Authentication](/topics/administrators/authentication): Authentication strategies in Brigade
+    - [Authorization](/topics/administrators/authorization): Authorization setup in Brigade
   * [Project Developers] - Users who create projects and write Brigade scripts for handling events
-    - [Projects](project-developers/projects): Creating and managing Brigade Projects
-    - [Events](project-developers/events): Understanding and handling Brigade Events
-    - [Using Secrets](project-developers/secrets): Using secrets in Brigade Projects
-    - [Using the Brigade CLI](project-developers/brig): Using the brig CLI to interact with Brigade
-    - [Brigterm](project-developers/brigterm): Using the Brigterm visualization utility
+    - [Projects](/topics/project-developers/projects): Creating and managing Brigade Projects
+    - [Events](/topics/project-developers/events): Understanding and handling Brigade Events
+    - [Using Secrets](/topics/project-developers/secrets): Using secrets in Brigade Projects
+    - [Using the Brigade CLI](/topics/project-developers/brig): Using the brig CLI to interact with Brigade
+    - [Brigterm](/topics/project-developers/brigterm): Using the Brigterm visualization utility
 
-[Operators]: /operators
-[Administrators]: /administrators
-[Project Developers]: /project-developers
+[Operators]: /topics/operators
+[Administrators]: /topics/administrators
+[Project Developers]: /topics/project-developers
