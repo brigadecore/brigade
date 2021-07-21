@@ -1,6 +1,8 @@
 ---
 title: Releasing Brigade 2
 description: How to cut a new release of Brigade 2
+section: topics
+weight: 9
 aliases:
   - /releasing.md
   - /intro/releasing.md

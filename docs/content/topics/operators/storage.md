@@ -1,6 +1,8 @@
 ---
 title: Storage
 description: 'How Brigade uses Kubernetes Persistent Storage.'
+section: operators
+weight: 3
 aliases:
   - /storage.md
   - /intro/storage.md

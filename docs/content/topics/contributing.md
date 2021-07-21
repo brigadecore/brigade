@@ -1,6 +1,8 @@
 ---
 title: Contributing
 description: 'Contributing Guide'
+section: topics
+weight: 10
 ---
 # Contributing Guide
 

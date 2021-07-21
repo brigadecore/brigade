@@ -1,6 +1,8 @@
 ---
 title: Design
 description: How Brigade is designed
+section: topics
+weight: 1
 aliases:
   - /design.md
   - /topics/design.md

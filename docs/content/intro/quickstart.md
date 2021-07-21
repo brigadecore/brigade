@@ -2,6 +2,7 @@
 title: A Brigade Quickstart
 description: A Brigade Quickstart.
 section: intro
+weight: 2
 aliases:
   - /quickstart.md
   - /intro/quickstart.md

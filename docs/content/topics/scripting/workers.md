@@ -1,6 +1,8 @@
 ---
 title: 'Workers'
 description: 'How to add custom libraries to a Brigade worker'
+section: scripting
+weight: 5
 aliases:
   - /workers.md
   - /topics/workers.md

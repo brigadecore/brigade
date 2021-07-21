@@ -1,6 +1,8 @@
 ---
 title: The Brigade.js API
 description: Describing the public APIs typically used for writing Brigade.js
+section: scripting
+weight: 2
 aliases:
   - /brigadier.md
   - /topics/brigadier.md

@@ -53,6 +53,8 @@ relativeURLs = "true"
     url = "/topics/roles/"
     weight = 42
     parent = "topics"
+
+    # Operators
     [[menu.index]]
     name = "Operators"
     url = "/topics/operators/"
@@ -79,6 +81,8 @@ relativeURLs = "true"
     url = "/topics/operators/gateways/"
     weight = 49
     parent = "operators"
+
+    # Administrators
     [[menu.index]]
     name = "Administrators"
     url = "/topics/administrators/"
@@ -95,6 +99,8 @@ relativeURLs = "true"
     url = "/topics/administrators/authorization/"
     weight = 52
     parent = "administrators"
+
+    # Project Developers
     [[menu.index]]
     name = "Project Developers"
     url = "/topics/project-developers/"
@@ -126,6 +132,8 @@ relativeURLs = "true"
     url = "/topics/project-developers/brigterm/"
     weight = 60
     parent = "project-developers"
+
+    # Scripting
     [[menu.index]]
     name = "Scripting"
     url = "/topics/scripting/"
@@ -157,6 +165,8 @@ relativeURLs = "true"
     url = "/topics/scripting/workers/"
     weight = 70
     parent = "scripting"
+
+    # Other Topics
     [[menu.index]]
     name = "Developer Guide"
     url = "/topics/developers/"
@@ -167,15 +177,16 @@ relativeURLs = "true"
     url = "/topics/examples/"
     weight = 76
     parent = "topics"
-[[menu.index]]
+    [[menu.index]]
     name = "Releasing Brigade"
-    url = "/releasing/"
+    url = "/topics/releasing/"
     weight = 80
+    parent = "topics"
     [[menu.index]]
     name = "Contributing"
-    url = "/contributing/"
+    url = "/topics/contributing/"
     weight = 81
-
+    parent = "topics"
 
 # top navigation - project links
 [[menu.main]]

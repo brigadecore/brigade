@@ -18,7 +18,7 @@ writing advanced Brigade scripts. [Dive deep into what makes Brigade, Brigade](t
 
 ### Releasing Brigade
 
-For maintainers of this project, steps on cutting a new release of Brigade can be found [here](releasing).
+For maintainers of this project, steps on cutting a new release of Brigade can be found [here](topics/releasing).
 
 ### Related Resources
 
