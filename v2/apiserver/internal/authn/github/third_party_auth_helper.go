@@ -53,9 +53,10 @@ func NewThirdPartyAuthHelper(
 
 func (t *thirdPartyAuthHelper) AuthURL(oauth2State string) string {
 	return fmt.Sprintf(
-		"https://github.com/login/oauth/authorize?client_id=%s&state=%s",
+		"https://github.com/login/oauth/authorize?client_id=%s&state=%s&scope=%s",
 		url.QueryEscape(t.config.ClientID),
 		url.QueryEscape(oauth2State),
+		url.QueryEscape("read:org"), // To list user's PRIVATE org memberships
 	)
 }
 
@@ -128,24 +129,32 @@ func (t *thirdPartyAuthHelper) getUserIdentity(
 		return authn.ThirdPartyIdentity{}, err
 	}
 
+	// If applicable, determine if user has membership in an allowed GitHub org
 	if len(t.config.AllowedOrganizations) > 0 {
-		var allowed bool
-		for _, allowedOrgName := range t.config.AllowedOrganizations {
-			allowed, _, err = githubClient.Organizations.IsMember(
-				ctx,
-				allowedOrgName,
+		req, err := githubClient.NewRequest(http.MethodGet, "user/orgs", nil)
+		if err != nil {
+			return authn.ThirdPartyIdentity{}, errors.Wrapf(
+				err,
+				"error getting github org memberships for github user %q",
 				githubUser.GetLogin(),
 			)
-			if err != nil {
-				return authn.ThirdPartyIdentity{}, errors.Wrapf(
-					err,
-					"error determining if %q is a member of the github organization %q",
-					githubUser.GetLogin(),
-					allowedOrgName,
-				)
-			}
-			if allowed {
-				break // No need to keep looking
+		}
+		userOrgs := []github.Organization{}
+		if _, err = githubClient.Do(ctx, req, &userOrgs); err != nil {
+			return authn.ThirdPartyIdentity{}, errors.Wrapf(
+				err,
+				"error getting github org memberships for github user %q",
+				githubUser.GetLogin(),
+			)
+		}
+		var allowed bool
+	loop:
+		for _, userOrg := range userOrgs {
+			for _, allowedOrgName := range t.config.AllowedOrganizations {
+				if userOrg.GetLogin() == allowedOrgName {
+					allowed = true
+					break loop
+				}
 			}
 		}
 		if !allowed {

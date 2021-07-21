@@ -21,7 +21,7 @@ func TestAuthURL(t *testing.T) {
 	const testClientID = "foo"
 	const testState = "foo"
 	testAuthURL := fmt.Sprintf(
-		"https://github.com/login/oauth/authorize?client_id=%s&state=%s",
+		"https://github.com/login/oauth/authorize?client_id=%s&state=%s&scope=read%%3Aorg", // nolint: lll
 		testClientID,
 		testState,
 	)
