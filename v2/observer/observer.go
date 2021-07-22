@@ -55,11 +55,12 @@ type observer struct {
 	startWorkerPodTimerFn   func(ctx context.Context, pod *corev1.Pod)
 	syncWorkerPodsFn        func(ctx context.Context)
 	syncWorkerPodFn         func(obj interface{})
+	syncDeletedWorkerPodFn  func(obj interface{})
 	deleteWorkerResourcesFn func(namespace, podName, eventID string)
 	syncJobPodsFn           func(ctx context.Context)
 	syncJobPodFn            func(obj interface{})
+	syncDeletedJobPodFn     func(obj interface{})
 	deleteJobResourcesFn    func(namespace, podName, eventID, jobName string)
-	syncDeletedPodFn        func(obj interface{})
 	errFn                   func(...interface{})
 	checkK8sAPIServer       func(ctx context.Context) ([]byte, error)
 }
@@ -86,11 +87,12 @@ func newObserver(
 	o.startWorkerPodTimerFn = o.startWorkerPodTimer
 	o.syncWorkerPodsFn = o.syncWorkerPods
 	o.syncWorkerPodFn = o.syncWorkerPod
+	o.syncDeletedWorkerPodFn = o.syncDeletedWorkerPod
 	o.deleteWorkerResourcesFn = o.deleteWorkerResources
 	o.syncJobPodsFn = o.syncJobPods
 	o.syncJobPodFn = o.syncJobPod
+	o.syncDeletedJobPodFn = o.syncDeletedJobPod
 	o.deleteJobResourcesFn = o.deleteJobResources
-	o.syncDeletedPodFn = o.syncDeletedPod
 	o.errFn = log.Println
 
 	// TODO: remove this type assertion once we figure out how to fake/mock

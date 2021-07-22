@@ -34,7 +34,7 @@ func TestSyncJobPods(t *testing.T) {
 			defer mu.Unlock()
 			syncJobPodFnCallCount++
 		},
-		syncDeletedPodFn: func(_ interface{}) {
+		syncDeletedJobPodFn: func(_ interface{}) {
 			mu.Lock()
 			defer mu.Unlock()
 			syncDeletedPodFnCalled = true
@@ -493,6 +493,40 @@ func TestDeleteJobResources(t *testing.T) {
 			)
 		})
 	}
+}
+
+func TestSyncDeletedJobPod(t *testing.T) {
+	const testNamespace = "foo"
+	const testPodName = "bar"
+	observer := &observer{
+		deletingPodsSet: map[string]struct{}{
+			namespacedPodName(testNamespace, testPodName): {},
+		},
+		syncMu: &sync.Mutex{},
+		jobsClient: &coreTesting.MockJobsClient{
+			UpdateStatusFn: func(
+				_ context.Context,
+				_ string,
+				_ string,
+				status core.JobStatus,
+			) error {
+				require.Equal(t, core.JobPhaseAborted, status.Phase)
+				return nil
+			},
+			CleanupFn: func(context.Context, string, string) error {
+				return nil
+			},
+		},
+	}
+	observer.syncDeletedJobPod(
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testPodName,
+			},
+		},
+	)
+	require.Empty(t, observer.deletingPodsSet)
 }
 
 func TestStartJobPodTimer(t *testing.T) {
