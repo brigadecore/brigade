@@ -1,8 +1,8 @@
 # Brigade 2: Event-based Scripting for Kubernetes
 
-Brigade 2 is currently in a _beta_ state and remains under heavy development,
-but that development is primarily oriented around improving the platform's
-stability. Breaking changes to APIs are not anticipated.
+Brigade 2 is currently in a _beta_ state and remains under active development,
+but that effort is primarily oriented around improving the platform's stability.
+Breaking changes to APIs are not anticipated.
 
 ## Introducing Brigade 2
 
@@ -21,8 +21,8 @@ We hope you'll enjoy this product refresh as much as we are.
 
 ## Getting Started
 
-Comprehensive documentation will become available in conjunction with a beta
-release. In the meantime, here is a little to get you started.
+Comprehensive documentation is currently a work in progress. In the meantime,
+here is a little to get you started.
 
 ### Installing Brigade 2 on a _Private_ Kubernetes Cluster
 
@@ -152,20 +152,32 @@ Congratulations! You're using Brigade 2!
 ## The Brigade 2 Ecosystem
 
 Brigade 2's all new API lowers the bar to creating all manner of peripherals--
-tooling, event gateways, and more. To facilitate this, we have three
-complementary SDKs in varying states of development and maturity that should
-make it a snap to create interesting things that interact with Brigade 2.
+tooling, event gateways, and more. Even though we're still in beta, some great
+integrations already exist!
 
-Be sure to check out:
+### Gateways
+
+Gateways receive events from upstream systems (the "outside world") and convert
+them to Brigade events that are emitted into Brigade's event bus.
+
+[Brigade GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway)
+is our first Brigade 2 compatible gateway-- and the Brigade team is already
+utilizing it in combination with Brigade 2 to implement the project's own CI/CD.
+
+Expect more gateways in the near future.
+
+### Monitoring
+
+[Brigade Metrics](https://github.com/brigadecore/brigade-metrics) is a great way
+to obtain operational insights into a Brigade 2 installation.
+
+### SDKs
+
+Use any of these to develop your own integrations!
 
 * [Brigade SDK for Go](https://github.com/brigadecore/brigade/tree/v2/sdk) (used by Brigade itself)
 * [Brigade SDK for JavaScript](https://github.com/krancour/brigade-sdk-for-js) (and TypeScript)]
 * [Brigade SDK for Rust](https://github.com/brigadecore/brigade-sdk-for-rust) (still a work-in-progress)
-
-## More Docs to Come
-
-Stay tuned for complete and comprehensive developer and operator documentation
-in a future release.
 
 ## Contributing
 
