@@ -114,9 +114,10 @@ func TestNewObserver(t *testing.T) {
 	require.NotNil(t, observer.errCh)
 	require.NotNil(t, observer.syncWorkerPodsFn)
 	require.NotNil(t, observer.syncWorkerPodFn)
+	require.NotNil(t, observer.syncDeletedWorkerPodFn)
 	require.NotNil(t, observer.syncJobPodsFn)
 	require.NotNil(t, observer.syncJobPodFn)
-	require.NotNil(t, observer.syncDeletedPodFn)
+	require.NotNil(t, observer.syncDeletedJobPodFn)
 }
 
 func TestObserverRun(t *testing.T) {

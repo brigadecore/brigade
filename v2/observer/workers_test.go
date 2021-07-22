@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -34,7 +33,7 @@ func TestSyncWorkerPods(t *testing.T) {
 			defer mu.Unlock()
 			syncWorkerPodFnCallCount++
 		},
-		syncDeletedPodFn: func(_ interface{}) {
+		syncDeletedWorkerPodFn: func(_ interface{}) {
 			mu.Lock()
 			defer mu.Unlock()
 			syncDeletedPodFnCalled = true
@@ -446,6 +445,39 @@ func TestDeleteWorkerResources(t *testing.T) {
 	}
 }
 
+func TestSyncDeletedWorkerPod(t *testing.T) {
+	const testNamespace = "foo"
+	const testPodName = "bar"
+	observer := &observer{
+		deletingPodsSet: map[string]struct{}{
+			namespacedPodName(testNamespace, testPodName): {},
+		},
+		syncMu: &sync.Mutex{},
+		workersClient: &coreTesting.MockWorkersClient{
+			UpdateStatusFn: func(
+				_ context.Context,
+				_ string,
+				status core.WorkerStatus,
+			) error {
+				require.Equal(t, core.WorkerPhaseAborted, status.Phase)
+				return nil
+			},
+			CleanupFn: func(context.Context, string) error {
+				return nil
+			},
+		},
+	}
+	observer.syncDeletedWorkerPod(
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testPodName,
+			},
+		},
+	)
+	require.Empty(t, observer.deletingPodsSet)
+}
+
 func TestStartWorkerPodTimer(t *testing.T) {
 	testCases := []struct {
 		name     string
@@ -455,7 +487,7 @@ func TestStartWorkerPodTimer(t *testing.T) {
 		{
 			name: "pod already in terminal state",
 			pod: &corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "nombre",
 					Namespace: "ns",
 				},
@@ -472,7 +504,7 @@ func TestStartWorkerPodTimer(t *testing.T) {
 		{
 			name: "timed pod times out; api call fails",
 			pod: &corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "nombre",
 					Namespace: "ns",
 					Annotations: map[string]string{
@@ -510,7 +542,7 @@ func TestStartWorkerPodTimer(t *testing.T) {
 		{
 			name: "timed pod times out; success",
 			pod: &corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "nombre",
 					Namespace: "ns",
 					Annotations: map[string]string{
@@ -547,7 +579,7 @@ func TestStartWorkerPodTimer(t *testing.T) {
 		{
 			name: "timed pod context canceled",
 			pod: &corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "nombre",
 					Namespace: "ns",
 				},

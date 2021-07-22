@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v2/meta"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -37,7 +38,7 @@ func (o *observer) syncJobPods(ctx context.Context) {
 			UpdateFunc: func(_, newObj interface{}) {
 				o.syncJobPodFn(newObj)
 			},
-			DeleteFunc: o.syncDeletedPodFn,
+			DeleteFunc: o.syncDeletedJobPodFn,
 		},
 	)
 	jobPodsInformer.Run(ctx.Done())
@@ -226,4 +227,73 @@ func (o *observer) startJobPodTimer(ctx context.Context, pod *corev1.Pod) {
 		case <-ctx.Done():
 		}
 	}()
+}
+
+// syncDeletedJobPod only fires when a Job pod deletion is COMPLETE. i.e. The
+// pod is completely gone.
+func (o *observer) syncDeletedJobPod(obj interface{}) {
+	o.syncMu.Lock()
+	defer o.syncMu.Unlock()
+	pod := obj.(*corev1.Pod)
+	// Remove this pod from the set of pods we were tracking for deletion.
+	// Managing this set is essential to not leaking memory.
+	delete(o.deletingPodsSet, namespacedPodName(pod.Namespace, pod.Name))
+
+	// If the Job pod ran to completion, that state was observed, and the
+	// pre-cleanup grace period has elapsed, then cleanup has already occurred.
+	// HOWEVER, the possibility always exists that some operator has gone behind
+	// Brigade's back and manually deleted a Job pod. In this case, deletion
+	// has been observed, but no final state change was ever observed, and cleanup
+	// wouldn't have occurred yet. So... for good measure, we update the Job's
+	// status to ABORTED here-- ignoring any resulting conflict that arises from
+	// the Job already being in a terminal state and then we initiate (possibly
+	// re-initiate) cleanup to make sure we got any resources associated with the
+	// Job pod-- such as secrets.
+	status := core.JobStatus{
+		Phase: core.JobPhaseAborted,
+	}
+	if pod.Status.StartTime != nil {
+		status.Started = &pod.Status.StartTime.Time
+	}
+	// Pods don't really have an end time. We grab the end time of container[0]
+	// because that's what we really care about.
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if containerStatus.Name == pod.Spec.Containers[0].Name {
+			if containerStatus.State.Terminated != nil {
+				status.Ended = &containerStatus.State.Terminated.FinishedAt.Time
+			}
+			break
+		}
+	}
+	eventID := pod.Labels[myk8s.LabelEvent]
+	jobName := pod.Labels[myk8s.LabelJob]
+	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
+	defer cancel()
+	if err := o.jobsClient.UpdateStatus(
+		ctx,
+		eventID,
+		jobName,
+		status,
+	); err != nil {
+		if _, ok := err.(*meta.ErrConflict); !ok {
+			o.errFn(
+				fmt.Sprintf(
+					"error updating status for event %q worker job %q: %s",
+					eventID,
+					jobName,
+					err,
+				),
+			)
+		}
+	}
+	if err := o.jobsClient.Cleanup(ctx, eventID, jobName); err != nil {
+		o.errFn(
+			fmt.Sprintf(
+				"error cleaning up after event %q job %q: %s",
+				eventID,
+				jobName,
+				err,
+			),
+		)
+	}
 }
