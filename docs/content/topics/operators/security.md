@@ -1,6 +1,6 @@
 ---
 title: Securing Brigade
-description: 'How to configure security for Brigade.'
+description: How to configure security for Brigade.
 section: operators
 weight: 2
 aliases:
@@ -8,8 +8,6 @@ aliases:
   - /intro/security.md
   - /topics/security.md
 ---
-
-TODO: update per v2
 
 # Securing Brigade
 
@@ -29,12 +27,16 @@ For that reason, it is prudent to configure security.
   Brigade supports multiple projects per Brigade server instance, but those projects
   should be owned by the same tenant.
 
+## API Server Security
+
+TODO: update
+
 ## How RBAC Is Configured
 
-The Helm [chart](https://github.com/brigadecore/charts/tree/master/charts/brigade) for Brigade
+The Helm [chart](https://github.com/brigadecore/brigade/tree/v2/charts/brigade) for Brigade
 includes an RBAC configuration that is designed to run in an isolated namespace.
 
-The RBAC defines a Service Account for every Deployment (API, Controller, Gateway),
+The RBAC defines a Service Account for every Deployment (API, Observer, Scheduler, etc.),
 as well as a Service Account for the Brigade worker.
 
 Each deployment also has a Role, which describes the permissions that the particular
@@ -43,9 +45,9 @@ service needs.
 The resulting Role Bindings, then, are a simple one-to-one match between the
 Service Account and the Role.
 
-Workers are an exception. The Service Account for a worker is hard-coded to `brigade-worker`,
-and all workers are bound to a Role that allows operations on pods, secrets, and
-persistent volume claims.
+Workers are an exception. The Service Account for a worker is hard-coded to
+`workers` and all workers are bound to a Role that allows operations on pods,
+secrets, and persistent volume claims.
 
 ## Project Security
 
@@ -85,10 +87,3 @@ suggest the following features of a gateway:
   - The exception is alternative VCS implementations, where the git-sidecar may
     be replaced by another sidecar.
 
-## API Server Security
-
-Brigade includes an API server which allows external tools to discover state about
-Brigade projects, builds, and jobs.
-
-This service should only be exposed to the outside network when necessary. And
-when exposed, it should use transport layer security (aka SSL) whenever possible.
