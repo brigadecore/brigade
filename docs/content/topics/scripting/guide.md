@@ -1,6 +1,8 @@
 ---
 title: Scripting Guide
 description: 'How to create and structure `brigade.js` files.'
+section: scripting
+weight: 1
 aliases:
   - /guide.md
   - /topics/guide.md

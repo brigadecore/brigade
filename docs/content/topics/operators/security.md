@@ -1,6 +1,8 @@
 ---
 title: Securing Brigade
 description: 'How to configure security for Brigade.'
+section: operators
+weight: 2
 aliases:
   - /security.md
   - /intro/security.md

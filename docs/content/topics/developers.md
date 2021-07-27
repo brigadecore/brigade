@@ -1,6 +1,8 @@
 ---
 title: Developer Guide
 description: How to get started developing Brigade
+section: topics
+weight: 7
 aliases:
   - /developers.md
   - /topics/developers.md

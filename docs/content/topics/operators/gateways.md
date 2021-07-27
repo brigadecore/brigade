@@ -1,6 +1,8 @@
 ---
 title: Gateways
 description: How gateways work and how to create your own.
+section: operators
+weight: 4
 aliases:
   - /gateways.md
   - /topics/gateways.md
