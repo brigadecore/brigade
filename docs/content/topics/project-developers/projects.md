@@ -1,6 +1,8 @@
 ---
 title: Projects
 description: How to manage Brigade Projects
+section: project-developers
+weight: 1
 aliases:
   - /projects.md
   - /topics/projects.md

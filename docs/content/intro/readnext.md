@@ -1,6 +1,8 @@
 ---
 title: What to Read Next
 description: Additional steps and tips for learning Brigade
+section: intro
+weight: 4
 aliases:
   - /readnext.md
   - /intro/readnext.md

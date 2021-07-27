@@ -1,6 +1,8 @@
 ---
 title: Secret Management
 description: How to use and manage secrets in Brigade
+section: project-developers
+weight: 3
 aliases:
   - /secrets.md
   - /topics/secrets.md

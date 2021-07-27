@@ -2,6 +2,7 @@
 title: Installing Brigade
 description: 'Quick install guide for Brigade'
 section: intro
+weight: 3
 aliases:
   - /install.md
   - /intro/install.md

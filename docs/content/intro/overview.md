@@ -2,6 +2,7 @@
 title: Brigade Overview
 description: High-level view of Brigade.
 section: intro
+weight: 1
 aliases: 
   - /overview.md
   - /intro/overview.md

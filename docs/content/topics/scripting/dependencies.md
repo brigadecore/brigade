@@ -1,6 +1,8 @@
 ---
 title: Dependencies
 description: How dependencies work in Brigade
+section: scripting
+weight: 4
 aliases:
   - /dependencies.md
   - /topics/dependencies.md
