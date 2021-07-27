@@ -19,6 +19,9 @@ They'll select a supported third-party authentication strategy that an
 configuring Service Account, User and Role authorization strategies within
 Brigade.
 
+On account of this overlap of responsibilities between an Administrator and
+Operator, a common scenario is that both roles are filled by the same user.
+
   * [Authentication]: Here we discuss the supported authentication strategies
     and configuration in Brigade
 
