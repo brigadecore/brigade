@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/brigadecore/brigade-foundations/os"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
-	"github.com/brigadecore/brigade/v2/internal/os"
 )
 
 func apiClientConfig() (string, string, restmachinery.APIClientOptions, error) {

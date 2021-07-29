@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/brigadecore/brigade/v2/internal/rand"
+	"github.com/brigadecore/brigade-foundations/rand"
 	uuid "github.com/satori/go.uuid"
 )
 

@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/retries"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
-	"github.com/brigadecore/brigade/v2/internal/retries"
 	"github.com/pkg/errors"
 )
 

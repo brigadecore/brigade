@@ -11,6 +11,7 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/bacongobbler/browser v1.1.0
+	github.com/brigadecore/brigade-foundations v0.2.0
 	github.com/brigadecore/brigade/sdk/v2 v2.0.0-20200923171232-9f56c474d8bf
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/fatih/color v1.9.0 // indirect
@@ -29,7 +30,7 @@ require (
 	github.com/pquerna/cachecontrol v0.0.0-20200921180117-858c6e7e6b7e // indirect
 	github.com/rs/cors v1.7.0
 	github.com/satori/go.uuid v1.2.0
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.mongodb.org/mongo-driver v1.4.1

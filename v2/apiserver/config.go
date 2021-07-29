@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/os"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn/github"
 	myOIDC "github.com/brigadecore/brigade/v2/apiserver/internal/authn/oidc"
@@ -15,7 +16,6 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	sysAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/system/authn"
-	"github.com/brigadecore/brigade/v2/internal/os"
 	"github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"

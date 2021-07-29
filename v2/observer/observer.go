@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/os"
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	"github.com/brigadecore/brigade/sdk/v2/system"
-	"github.com/brigadecore/brigade/v2/internal/os"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
