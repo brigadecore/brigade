@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/brigadecore/brigade/v2/internal/file"
+	"github.com/brigadecore/brigade-foundations/file"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/rs/cors"

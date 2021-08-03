@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/retries"
 	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/v2/internal/retries"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/pkg/errors"
 )

@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/brigadecore/brigade-foundations/file"
 	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/v2/internal/file"
 	"github.com/urfave/cli/v2"
 )
 

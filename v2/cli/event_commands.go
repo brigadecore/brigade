@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/file"
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
-	"github.com/brigadecore/brigade/v2/internal/file"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
