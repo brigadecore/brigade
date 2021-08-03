@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/brigadecore/brigade/v2/internal/file"
+	"github.com/brigadecore/brigade-foundations/file"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 )

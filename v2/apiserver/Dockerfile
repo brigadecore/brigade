@@ -12,7 +12,7 @@ COPY v2/go.sum go.sum
 
 RUN go build \
   -o ../bin/apiserver \
-  -ldflags "-w -X github.com/brigadecore/brigade/v2/internal/version.version=$VERSION -X github.com/brigadecore/brigade/v2/internal/version.commit=$COMMIT" \
+  -ldflags "-w -X github.com/brigadecore/brigade-foundations/version.version=$VERSION -X github.com/brigadecore/brigade-foundations/version.commit=$COMMIT" \
   ./apiserver
 
 FROM scratch

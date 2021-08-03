@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/retries"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
-	"github.com/brigadecore/brigade/v2/internal/retries"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"

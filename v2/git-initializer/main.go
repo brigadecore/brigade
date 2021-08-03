@@ -20,8 +20,8 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 
+	"github.com/brigadecore/brigade-foundations/retries"
 	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/v2/internal/retries"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/brigadecore/brigade/v2/internal/file"
+	"github.com/brigadecore/brigade-foundations/file"
 	"github.com/stretchr/testify/require"
 )
 

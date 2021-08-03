@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
+	"github.com/brigadecore/brigade-foundations/signals"
+	"github.com/brigadecore/brigade-foundations/version"
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	"github.com/brigadecore/brigade/sdk/v2/system"
 	"github.com/brigadecore/brigade/v2/internal/kubernetes"
-	"github.com/brigadecore/brigade/v2/internal/signals"
-	"github.com/brigadecore/brigade/v2/internal/version"
 )
 
 // TODO: Observer needs functionality for timing out workers and jobs.

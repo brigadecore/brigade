@@ -1,7 +1,7 @@
 package kubernetes
 
 import (
-	"github.com/brigadecore/brigade/v2/internal/os"
+	"github.com/brigadecore/brigade-foundations/os"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

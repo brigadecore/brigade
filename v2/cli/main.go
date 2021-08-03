@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/brigadecore/brigade/v2/internal/signals"
-	"github.com/brigadecore/brigade/v2/internal/version"
+	"github.com/brigadecore/brigade-foundations/signals"
+	"github.com/brigadecore/brigade-foundations/version"
 	"github.com/urfave/cli/v2"
 )
 

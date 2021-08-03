@@ -4,6 +4,8 @@ package main
 import (
 	"log"
 
+	"github.com/brigadecore/brigade-foundations/signals"
+	"github.com/brigadecore/brigade-foundations/version"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/assets"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	authnMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/authn/mongodb"
@@ -22,8 +24,6 @@ import (
 	sysAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/system/authz"
 	systemREST "github.com/brigadecore/brigade/v2/apiserver/internal/system/rest"
 	"github.com/brigadecore/brigade/v2/internal/kubernetes"
-	"github.com/brigadecore/brigade/v2/internal/signals"
-	"github.com/brigadecore/brigade/v2/internal/version"
 	"github.com/xeipuuv/gojsonschema"
 )
 

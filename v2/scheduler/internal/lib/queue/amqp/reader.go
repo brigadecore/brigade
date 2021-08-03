@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/Azure/go-amqp"
+	"github.com/brigadecore/brigade-foundations/retries"
 	myamqp "github.com/brigadecore/brigade/v2/internal/amqp"
-	"github.com/brigadecore/brigade/v2/internal/retries"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/pkg/errors"
 )
