@@ -8,47 +8,49 @@ aliases:
   - /topics/developers.md
 ---
 
-TODO: update per v2
-
 # Developer Guide
 
 This document explains how to get started developing Brigade.
 
-Brigade is composed of numerous parts.  The following represent the core components:
+Brigade is composed of numerous parts.  The following represent the core
+components:
 
-- brigade-controller: The Kubernetes controller for delegating Brigade events
-- brigade-worker: The JavaScript runtime for executing `brigade.js` files. The
-  controller spawns these, though you can run one directly as well.
-- brigade-api: The REST API server for user interfaces
-- brigade-project: The Helm [chart][brigade-project-chart] for installing Brigade projects
-- brigade-vacuum: The stale build cleaner-upper (optional; enabled by default)
+- apiserver: Brigade's API server, where the majority of core Brigade
+  logic lives
+- scheduler: Schedules event workers and jobs on the underlying substrate
+- observer: Observes (and records) state changes in workers and jobs and
+  ultimately cleans them up from the underlying substrate
+- worker: The default runtime for executing `brigade.js/.ts` files.
+- logger: Event log aggregator, with Linux and Windows variants
 - brig: The Brigade CLI
-- git-sidecar: The code that runs as a sidecar in cluster to fetch Git repositories (optional; enabled by default)
+- git-initializer: The code that runs as a sidecar to fetch Git repositories
+  for vcs-enabled projects
 
-Additionally, there are several opt-in gateways that can be enabled via Helm chart values.  These are:
+Additionally, there are several opt-in gateways that can be deployed alongside
+Brigade.  These are:
 
- - Brigade GitHub App Gateway: The implementation of the GitHub App web hooks. It requires
-  the controller.
- - Generic Gateway: A generic gateway offering flexibility to create Brigade events from webhooks
-  originating from an arbitrary service/platform.
-- Container Registry Gateway: A gateway supporting container registry webhooks such as the ones emitted by
-DockerHub and ACR.
+ - Brigade GitHub Gateway: The implementation of GitHub App-based web hooks.
 
-Read up on all the gateways above, as well as others, in the [Gateways doc](./gateways.md).
+For more information around available gateways and developing your own,
+see the [Gateways doc](./gateways.md).
 
-This document covers environment setup, how to run functional tests and development of
-`brigade-controller` and `brigade-worker` components.
+This document covers environment setup, how to run tests and development of
+core components.
 
 ## Prerequisites
 
-- Minikube or [kind](https://github.com/kubernetes-sigs/kind) (running k8s versions 1.16.0+)
-- Docker
+- A local Kubernetes cluster, 1.16.0+.  We recommend [kind] or [minikube].
+- [Docker]
 - make
+
+[kind]: https://github.com/kubernetes-sigs/kind
+[minikube]: https://github.com/kubernetes/minikube
+[Docker]: https://www.docker.com/
 
 ## Clone the Repository In GOPATH
 
 Building from source does not _require_ code to be on your `GOPATH` since all
-builds are containerized by default, however, if you do have Go installed
+builds are containerized by default; however, if you do have Go installed
 locally and wish (for instance) for your text editor or IDE's Go support to work
 properly with this project, then follow these optional steps for cloning the
 Brigade repository into your `GOPATH`:
@@ -61,12 +63,16 @@ $ git clone https://github.com/brigadecore/brigade $GOPATH/src/github.com/brigad
 $ cd $GOPATH/src/github.com/brigadecore/brigade
 ```
 
-**Note**: this leaves you at the tip of **master** in the repository where active development
-is happening. You might prefer to checkout the most recent stable tag:
+**Note**: this leaves you at the tip of **master** in the repository where
+active development is happening. You might prefer to checkout the most recent
+stable tag:
 
-- `$ git checkout v1.2.1`
+```console
+$ git checkout v1.2.1
+```
 
-After cloning the project locally, you should run this command to [configure the remote](https://help.github.com/articles/configuring-a-remote-for-a-fork/): 
+After cloning the project locally, you should run this command to
+[configure the remote](https://help.github.com/articles/configuring-a-remote-for-a-fork/): 
 
 ```console
 $ git remote add fork https://github.com/<your GitHub username>/brigade
@@ -108,297 +114,232 @@ seamlessly with Docker Desktop (Docker for Windows).
 To run lint checks:
 
 ```console
-$ make lint
-```
-
-To format the Go files:
-
-```console
-$ make format-go
+$ make lint-go
 ```
 
 To run the unit tests:
 
 ```console
-$ make test-unit
+$ make test-unit-go
 ```
-
-To re-run Go dependency resolution:
-
-```console
-$ make dep
-```
-
 ## Working with JS Code (for the Brigade Worker)
 
-To format the Javascript files:
+To lint the Javascript files:
 
 ```console
-$ make format-js
+$ make lint-js
 ```
 
 To run the tests:
 
 ```console
-$ make test-js
+$ make test-unit-js
 ```
 
-To re-run JS dependency resolution:
+To clear the JS dependency cache:
 
 ```console
-$ make yarn-install
+$ make clean-js
 ```
-
-(See `Running the Brigade-Worker Locally` below for live testing against a running instance.)
 
 ## Building Source
 
-To build all of the source, run this:
+To build all of the source, run:
 
 ```console
-$ make build-all-images build-brig
+$ make build
 ```
 
 To build just the Docker images, run:
 
 ```console
-$ make build-all-images
+$ make build-images
 ```
 
-To build just the client binary for your OS, run this:
+To build all of the supported client binaries (for Mac, Linux, and Windows on
+amd64), run:
 
 ```console
-$ make build-brig
-```
-
-To build all the supported client binaries (for Mac, Linux, and Windows on amd64), run
-this:
-
-```console
-$ make xbuild-brig
+$ make build-cli
 ```
 
 ## Pushing Images
 
 By default, built images are named using the following scheme:
-`<component>:<version>`. If you wish to push customized or experimental images
-you have built from source to a particular org on a particular Docker registry,
-this can be controlled with environment variables.
+`brigade-<component>:<version>`. If you wish to push customized or experimental
+images you have built from source to a particular org on a particular Docker
+registry, this can be controlled with environment variables.
 
 The following, for instance, will build images that can be pushed to the
 `krancour` org on Dockerhub (the registry that is implied when none is
 specified).
 
 ```console
-$ DOCKER_ORG=krancour make build-all-images
+$ DOCKER_ORG=krancour make build-images
 ```
 
 To build for the `krancour` org on a different registry, such as `quay.io`:
 
 ```console
-$ DOCKER_REGISTRY=quay.io DOCKER_ORG=krancour make build-all-images
+$ DOCKER_REGISTRY=quay.io DOCKER_ORG=krancour make build-images
 ```
 
 Images built with names that specify registries and orgs for which you have
-write access can be pushed using `make push-all-images`. Note that the
-`build-all-images` target is a dependency for the `push-all-images` target, so
-the build _and_ push processes can be accomplished together like so:
-
-Note also that you _must_ be logged into the registry in question _before_
-attempting this.
+write access can be pushed using `make push-images`.  Note also that you _must_
+be logged into the registry in question _before_ attempting this.
 
 ```console
-$ DOCKER_REGISTRY=quay.io DOCKER_ORG=krancour make push-all-images
+$ DOCKER_REGISTRY=quay.io DOCKER_ORG=krancour make push-images
 ```
 
 ## Minikube configuration
 
-Start Minikube. Your addons should look like this:
+Start Minikube with the following required addons enabled:
+
+  - default-storageclass
+  - storage-provisioner
+
+To view all Minikube addons:
 
 ```console
-$  minikube addons list
-- addon-manager: enabled
-- dashboard: disabled
-- default-storageclass: enabled
-- heapster: disabled
-- ingress: enabled
-- kube-dns: enabled
-- registry: disabled
-- registry-creds: disabled
+$ minikube addons list
 ```
 
-Feel free to enable other addons, but the ones above are expected to be present
-for Brigade to operate.
-
-For local development, you will want to point your Docker client to the Minikube
-Docker daemon:
+Additionally, for local development, it will be efficient to enable the
+`registry` addon to set up a local registry to push images to.  See full
+details in the [registry addon docs].  Here is an example on how to enable
+the addon and redirect port 5000 on the Docker VM over to the Minikube machine:
 
 ```console
-$ eval $(minikube docker-env)
+$ minikube addons enable registry
+$ docker run -d --rm --network=host alpine ash \
+  -c "apk add socat && socat TCP-LISTEN:5000,reuseaddr,fork TCP:$(minikube ip):5000"
 ```
 
-Running `make build-all-images` will build the Brigade images using the Minikube
-Docker daemon. The image tag will be derived from the git sha.  You can verify
-this by running `docker images` and affirming these tagged images are listed.
-
-Brigade charts are hosted in the separate [brigadecore/charts][charts]
-repo, so we'll need to add the corresponding Helm repo locally:
+Now to build and push images to the local registry and deploy Brigade, simply
+run:
 
 ```console
-$ helm repo add brigade https://brigadecore.github.io/charts
-"brigade" has been added to your repositories
-```
-
-If you just want to roll with the default chart values and let the Makefile set
-the image tags appropriately, simply run:
-
-```console
-$ make helm-install
-```
-
-This will issue the appropriate command to create a new Brigade chart release on this cluster.
-
-Note: `helm init` may be needed to get tiller up and running on the cluster, if not already started.
-
-Note also: If you were specific about `DOCKER_ORG` and/or `DOCKER_REGISTRY` when
-building images, you should also be specific when running `make helm-install`.
-For instance:
-
-```console
-$ DOCKER_ORG=krancour make build-all-images helm-install
+$ export DOCKER_REGISTRY=localhost:5000
+$ make hack
 ```
 
 During active development, the overall flow might then look like this:
 
 ```console
 $ # make code changes, commit
-$ make build-all-images helm-upgrade
+$ make hack
 $ # (repeat)
 $ # push to fork and create pull request
 ```
 
-For finer-grained control over installation, do not use `make helm-upgrade`.
-Instead, you may opt to create a custom `values.yaml` file for the chart and set
-various values in addition to the latest image tags:
+For finer-grained control over installation, you may opt to create a custom
+`values.yaml` file for the chart and set various values in addition to the
+latest image tags:
 
 ```console
-$ helm inspect values brigade/brigade > myvalues.yaml
+$ helm inspect values charts/brigade > myvalues.yaml
 $ open myvalues.yaml    # Change all `registry:` and `tag:` fields as appropriate
 ```
 
-From here, you can install Brigade into Minikube using the Helm chart:
+From here, you can install or upgrade Brigade into Minikube using the Helm
+directly:
 
 ```console
-$ helm install -n brigade brigade/brigade -f myvalues.yaml
+$ helm upgrade --install -n brigade brigade charts/brigade -f myvalues.yaml
 ```
 
-Don't forget to also create a project.  Check out [projects](./projects.md) to see how it's done.
+To expose the apiserver port, run the following command:
 
-## Developing brigade with kind
-
-You can also use [kind](https://github.com/kubernetes-sigs/kind) for your day to day Brigade development workflow. Kind has a great quickstart that can be found [here](https://kind.sigs.k8s.io/docs/user/quick-start/).
-
-- Run `kind create cluster` to create the cluster 
-- Run `export KUBECONFIG="$(kind get kubeconfig-path --name="kind")"` to set KUBECONFIG to the file that was created by kind
-- Install helm on the `kind` cluster by running `helm init`. The latest [Helm 3](https://github.com/helm/helm) version is recommended. However, if you're running Helm 2, check [here](https://helm.sh/docs/using_helm/#role-based-access-control) for proper Helm/Tiller installation instructions or use
+```console
+$ make hack-expose-apiserver
 ```
-# Only if you are using Helm 2
-kubectl --namespace kube-system create serviceaccount tiller
-kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller 
-kubectl --namespace kube-system patch deploy tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}' 
+
+You can then log in to the apiserver with the following `brig` command:
+
+```console
+$ brig login -s https://localhost:7000 -r -p 'F00Bar!!!' -k
 ```
-- Run `DOCKER_ORG=brigadecore make build-all-images load-all-images` to build all images locally for the kind cluster
-- Run `make helm-install` to install/upgrade Brigade onto the kind cluster. This is the command you should re-run to test your changes during your Brigade development workflow. If this command does not work, you probably need to run `helm repo add brigade https://brigadecore.github.io/charts`
 
-When you're done, feel free to `kind delete cluster` to tear down the kind cluster resources.
+To create your first Brigade project, check out [projects](./projects.md) to
+see how it's done.
 
-## Running Brigade inside remote Kubernetes
+[registry addon docs]: https://minikube.sigs.k8s.io/docs/handbook/registry
 
-Some developers use a remote Kubernetes instead of minikube.
+## Kind configuration
 
-To run a development version of Brigade inside of a remote Kubernetes,
+You can also use [kind] for your day-to-day Brigade development workflow.
+Kind has a great quickstart that can be found
+[here](https://kind.sigs.k8s.io/docs/user/quick-start/).
+
+As the Brigade maintainers use kind heavily, there currently exists a helper
+script that will create a new kind cluster with a local private registry
+enabled, as well as setting up nfs as the local storage provisioner. To use
+this script, run:
+
+```console
+$ ./hack/kind/new-cluster.sh
+```
+
+Now you're ready to build and push images to the local registry and deploy
+Brigade:
+
+```console
+$ export DOCKER_REGISTRY=localhost:5000
+$ make hack
+```
+
+To expose the apiserver port, run the following command:
+
+```console
+$ make hack-expose-apiserver
+```
+
+You can then log in to the apiserver with the following `brig` command:
+
+```console
+$ brig login -s https://localhost:7000 -r -p 'F00Bar!!!' -k
+```
+
+To create your first Brigade project, check out [projects](./projects.md) to
+see how it's done.
+
+When you're done, if you'd like to clean up the kind cluster and registry
+resources, run the following commands:
+
+```console
+$ kind delete cluster
+$ docker rm -f kind-registry
+```
+
+## Running Brigade inside a remote Kubernetes cluster
+
+Some developers use a remote Kubernetes cluster instead of Minikube or kind.
+
+To run a development version of Brigade inside of a remote Kubernetes cluster,
 you will need to do two things:
 
-- Make sure you push your `brigade` docker images to a registry the cluster can access
-- Set the image when you do a `helm install brigade/<chart>` on the Brigade chart.
+- Make sure you push the Brigade Docker images to a registry the cluster can
+  access
+- Export the correct values for `DOCKER_REGISTRY` and/or `DOCKER_ORG` prior
+  to running `make hack`
 
-## Running Brigade (brigade-controller) Locally (against Minikube or kind)
+## Running the Integration Tests
 
-Assuming you have Brigade installed (either on minikube or another cluster) and
-your `$KUBECONFIG` is pointing to that cluster, you can run `brigade-controller`
-locally.
+Once you have Brigade running in a Kubernetes cluster, you should be able to
+run the integration tests, which will verifies basic Brigade functionality via
+the following checks:
 
-```console
-$ ./bin/brigade-controller --kubeconfig $KUBECONFIG
-```
+  - Logs into the apiserver
+  - Creates projects of varying types
+  - Creates an event for each project
+  - Asserts worker and job logs and statuses for each event
 
-(The default location for `$KUBECONFIG` on UNIX-like systems is `$HOME/.kube`.)
-
-For the remainder of this document, we will assume that your local `$KUBECONFIG`
-is pointing to the correct cluster.
-
-### Running the Functional Tests
-
-Once you have Brigade running in Minikube or a comparable alternative, you should be
-able to run the functional tests.
-
-First, create a project that points to the `brigadecore/empty-testbed` project. The most
-flexible way of doing this is via the `brig` cli.  Here we supply `-x` to forgo
-interactive prompts.  All the defaults will therefore be set to the
-[brigadecore/empty-testbed](https://github.com/brigadecore/empty-testbed) project.
+To run the tests, issue the following command:
 
 ```console
- $ brig project create -x
-Project ID: brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
+$ make test-integration
 ```
 
-You can check this project configuration out via `brig project get brigadecore/empty-testbed`.
-
-With this setup, you should be able to run `make test-functional` and see the
-tests run against your local Brigade binary.
-
-## Running the Brigade-Worker Locally
-
-You can run the Brigade worker locally by `cd`ing into `brigade-worker` and running
-`k brigade`. Note that this will require you to set a number of environment
-variables. See `brigade-worker/index.ts` for the list of variables you will need
-to set.
-
-Here is an example script for running a quick test against a locally running brigade worker.
-
-```bash
-#!/bin/bash
-
-export BRIGADE_EVENT_TYPE=quicktest
-export BRIGADE_EVENT_PROVIDER=script
-export BRIGADE_COMMIT_REF=master
-export BRIGADE_PAYLOAD='{}'
-export BRIGADE_PROJECT_ID=brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
-export BRIGADE_PROJECT_NAMESPACE=default
-export BRIGADE_SCRIPT="$(pwd)/brigade.js"
-export BRIGADE_CONFIG="$(pwd)/brigade.json"
-
-cd ./brigade-worker
-echo "running $BRIGADE_EVENT_TYPE on $BRIGADE_SCRIPT with $BRIGADE_CONFIG config for $BRIGADE_PROJECT_ID"
-yarn start
-```
-
-You may change the variables above to point to the desired project.
-
-[charts]: https://github.com/brigadecore/charts
-[brigade-project-chart]: https://github.com/brigadecore/charts/tree/master/charts/brigade-project
-
-> Note: an Node dependency audit is part of the build process. To execute it manually, before pushing, you can run `make yarn-audit`.
-
-## End to end testing
-
-We've written an end to end test scenario for Brigade that that you can run using `make e2e`. Currently, what the test in the `run.sh` does is
-
-* installs kubectl, kind, helm 3 if not already installed
-* builds docker images of Brigade components
-* loads them into kind
-* installs them onto the kind cluster
-* confirm that all components are successfully deployed
-* installs a test Brigade project (brig project create -x -f) and confirms that the corresponding k8s Secret is created
-* runs a custom brigade.js and verifies some output from worker Pod
-* on completion (or on error) it tears down the kind cluster
+See the [tests](./tests) directory to view all of the current integration
+tests.
