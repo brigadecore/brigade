@@ -26,14 +26,6 @@ components:
 - git-initializer: The code that runs as a sidecar to fetch Git repositories
   for vcs-enabled projects
 
-Additionally, there are several opt-in gateways that can be deployed alongside
-Brigade.  These are:
-
- - Brigade GitHub Gateway: The implementation of GitHub App-based web hooks.
-
-For more information around available gateways and developing your own,
-see the [Gateways doc](./gateways.md).
-
 This document covers environment setup, how to run tests and development of
 core components.
 
@@ -63,12 +55,18 @@ $ git clone https://github.com/brigadecore/brigade $GOPATH/src/github.com/brigad
 $ cd $GOPATH/src/github.com/brigadecore/brigade
 ```
 
-**Note**: this leaves you at the tip of **master** in the repository where
-active development is happening. You might prefer to checkout the most recent
-stable tag:
+**Note**: this leaves you at the tip of **master** in the repository. As of
+writing, active development on Brigade v2 is happening on the `v2` branch. To
+switch branches, run the following command:
 
 ```console
-$ git checkout v1.2.1
+$ git checkout v2
+```
+
+You might prefer to checkout the most recent stable tag:
+
+```console
+$ git checkout v2.0.0-beta.1
 ```
 
 After cloning the project locally, you should run this command to
@@ -144,6 +142,14 @@ $ make clean-js
 
 ## Building Source
 
+Note that we use [kaniko]-based images to build Brigade component Docker
+images. This is a convenient approach for running the same targets in CI
+where configuring access to a Docker daemon is either unwieldy or rife with
+security concerns. This also means that images built in this manner are not
+preserved in the local Docker image cache. For the image push targets discussed
+further down, the images are re-built with the same kaniko image, albeit with
+the corresponding publishing flags added.
+
 To build all of the source, run:
 
 ```console
@@ -156,12 +162,27 @@ To build just the Docker images, run:
 $ make build-images
 ```
 
+To build images via Docker directly and preserve images in the Docker cache,
+run:
+
+```console
+$ make hack-build-images
+```
+
 To build all of the supported client binaries (for Mac, Linux, and Windows on
 amd64), run:
 
 ```console
 $ make build-cli
 ```
+
+To build only the client binary for your current environment, run:
+
+```console
+$ make hack-build-cli
+```
+
+[kaniko]: https://github.com/GoogleContainerTools/kaniko
 
 ## Pushing Images
 
@@ -172,21 +193,28 @@ registry, this can be controlled with environment variables.
 
 The following, for instance, will build images that can be pushed to the
 `krancour` org on Dockerhub (the registry that is implied when none is
-specified).
+specified). Here we use the targets that utilize Docker directly, so that the
+images exist in the local cache: 
 
 ```console
-$ DOCKER_ORG=krancour make build-images
+$ DOCKER_ORG=krancour make hack-build-images
 ```
 
 To build for the `krancour` org on a different registry, such as `quay.io`:
 
 ```console
-$ DOCKER_REGISTRY=quay.io DOCKER_ORG=krancour make build-images
+$ DOCKER_REGISTRY=quay.io DOCKER_ORG=krancour make hack-build-images
 ```
 
-Images built with names that specify registries and orgs for which you have
-write access can be pushed using `make push-images`.  Note also that you _must_
-be logged into the registry in question _before_ attempting this.
+Now you can push these images.  Note also that you _must_ be logged into the
+registry in question _before_ attempting this.
+
+```console
+$ make hack-push-images
+```
+
+Otherwise, when using the kaniko-based targets, the images will be built and
+pushed in one go.  Be sure to export the same registry/org values as above:
 
 ```console
 $ DOCKER_REGISTRY=quay.io DOCKER_ORG=krancour make push-images
@@ -272,13 +300,13 @@ You can also use [kind] for your day-to-day Brigade development workflow.
 Kind has a great quickstart that can be found
 [here](https://kind.sigs.k8s.io/docs/user/quick-start/).
 
-As the Brigade maintainers use kind heavily, there currently exists a helper
+The Brigade maintainers use kind heavily and there currently exists a helper
 script that will create a new kind cluster with a local private registry
-enabled, as well as setting up nfs as the local storage provisioner. To use
-this script, run:
+enabled. It also configures nfs as the local storage provisioner and maps
+`localhost:31600` to the API server port. To use this script, run:
 
 ```console
-$ ./hack/kind/new-cluster.sh
+$ make hack-new-kind-cluster
 ```
 
 Now you're ready to build and push images to the local registry and deploy
@@ -289,16 +317,10 @@ $ export DOCKER_REGISTRY=localhost:5000
 $ make hack
 ```
 
-To expose the apiserver port, run the following command:
-
-```console
-$ make hack-expose-apiserver
-```
-
 You can then log in to the apiserver with the following `brig` command:
 
 ```console
-$ brig login -s https://localhost:7000 -r -p 'F00Bar!!!' -k
+$ brig login -s https://localhost:31600 -r -p 'F00Bar!!!' -k
 ```
 
 To create your first Brigade project, check out [projects](./projects.md) to
