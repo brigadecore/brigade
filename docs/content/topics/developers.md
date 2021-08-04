@@ -101,11 +101,8 @@ same results in CI.
 
 All development-related tasks should "just work" on Linux and Mac OS systems.
 When developing on Windows, the maintainers strongly recommend utilizing the
-Windows Subsystem for Linux.
-
-[This blog post](https://nickjanetakis.com/blog/setting-up-docker-for-windows-and-wsl-to-work-flawlessly)
-provides excellent guidance on making the Windows Subsystem for Linux work
-seamlessly with Docker Desktop (Docker for Windows).
+Windows Subsystem for Linux 2.  See more details
+[here](https://docs.docker.com/docker-for-windows/install/).
 
 ## Working with Go Code
 
