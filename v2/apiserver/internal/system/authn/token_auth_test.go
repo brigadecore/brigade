@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
 	libAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authn"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

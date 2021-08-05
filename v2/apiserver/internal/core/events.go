@@ -7,8 +7,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/crypto"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
+	libCrypto "github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
@@ -474,7 +475,7 @@ func (e *eventsService) createSingleEvent(
 	// This is a token unique to the Event so that the Event's Worker can use when
 	// communicating with the API server to do things like spawn a new Job. i.e.
 	// Only THIS event's worker can create new Jobs for THIS event.
-	token := crypto.NewToken(256)
+	token := libCrypto.NewToken(256)
 
 	event.Worker = Worker{
 		Jobs: jobs,
