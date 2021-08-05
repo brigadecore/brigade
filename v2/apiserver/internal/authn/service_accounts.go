@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/crypto"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
+	libCrypto "github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
@@ -130,7 +131,7 @@ func (s *serviceAccountsService) Create(
 		return token, err
 	}
 
-	token.Value = crypto.NewToken(256)
+	token.Value = libCrypto.NewToken(256)
 	now := time.Now().UTC()
 	serviceAccount.Created = &now
 	serviceAccount.HashedToken = crypto.Hash("", token.Value)
@@ -226,7 +227,7 @@ func (s *serviceAccountsService) Unlock(
 	}
 
 	newToken := Token{
-		Value: crypto.NewToken(256),
+		Value: libCrypto.NewToken(256),
 	}
 	if err := s.store.Unlock(
 		ctx,

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
+	"github.com/brigadecore/brigade-foundations/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/pkg/errors"

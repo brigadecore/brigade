@@ -1,7 +1,6 @@
 package crypto
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"strings"
 
@@ -10,16 +9,6 @@ import (
 )
 
 var seededRand = rand.NewSeeded()
-
-// Hash returns a secure hash of the provided input. If a salt is provided, the
-// input is prepended with the salt prior to hashing.
-func Hash(salt, input string) string {
-	if salt != "" {
-		input = fmt.Sprintf("%s:%s", salt, input)
-	}
-	sum := sha256.Sum256([]byte(input))
-	return fmt.Sprintf("%x", sum)
-}
 
 // NewToken returns a new, unique, hard-to-guess token consisting of
 // alphanumeric characters only. The token's length is the greater of 64 or the
