@@ -32,27 +32,25 @@ core components.
 ## Prerequisites
 
 - A local Kubernetes cluster, 1.16.0+.  We recommend [kind] or [minikube].
-- [Docker]
+- [Docker] _or_ [Go 1.16+] and JS dependencies
 - make
 
 [kind]: https://github.com/kubernetes-sigs/kind
 [minikube]: https://github.com/kubernetes/minikube
 [Docker]: https://www.docker.com/
 
-## Clone the Repository In GOPATH
+## Clone the Repository
 
-Building from source does not _require_ code to be on your `GOPATH` since all
-builds are containerized by default; however, if you do have Go installed
-locally and wish (for instance) for your text editor or IDE's Go support to work
-properly with this project, then follow these optional steps for cloning the
-Brigade repository into your `GOPATH`:
+The first step to begin developing on Brigade is to clone the repo locally,
+if you haven't already done so.  First navigate to your preferred work
+directory and then issue the clone command:
 
 ```console
-$ export GOPATH=$(go env GOPATH) # GOPATH is set to $HOME/go by default
-$ export PATH=$GOPATH/bin:$PATH
-$ mkdir -p $GOPATH/src/github.com/brigadecore
-$ git clone https://github.com/brigadecore/brigade $GOPATH/src/github.com/brigadecore/brigade
-$ cd $GOPATH/src/github.com/brigadecore/brigade
+# Clone via ssh:
+$ git clone git@github.com:brigadecore/brigade.git
+
+# Or, via https:
+$ git clone https://github.com/brigadecore/brigade.git
 ```
 
 **Note**: this leaves you at the tip of **master** in the repository. As of
@@ -95,7 +93,14 @@ If, for whatever reason, you must opt-out of executing development tasks within
 containers, set the `SKIP_DOCKER` environment variable to `true`, but be aware
 that by doing so, the success or failure of development-related tasks, tests,
 etc. will be dependent on the state of your system, with no guarantee of the
-same results in CI.
+same results in CI.  For running the full array of targets in this mode, you'll
+need [Go 1.16+] and JavaScript ecosystem utilities ([yarn], [npm], [node],
+etc.)
+
+[Go 1.16+]: https://golang.org/doc/go1.16
+[yarn]: https://yarnpkg.com/
+[npm]: https://docs.npmjs.com/cli/v7/commands/npm
+[node]: https://nodejs.org/en/
 
 ## Developing on Windows
 
