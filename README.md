@@ -160,16 +160,28 @@ integrations already exist!
 Gateways receive events from upstream systems (the "outside world") and convert
 them to Brigade events that are emitted into Brigade's event bus.
 
-[Brigade GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway)
-is our first Brigade 2 compatible gateway-- and the Brigade team is already
-utilizing it in combination with Brigade 2 to implement the project's own CI/CD.
+* [Brigade Bitbucket Gateway](https://github.com/brigadecore/brigade-bitbucket-gateway)
+* [Brigade CloudEvents Gateway](https://github.com/brigadecore/brigade-cloudevents-gateway)
+* [Brigade GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway)
 
-Expect more gateways in the near future.
+The [Brigade GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway),
+in particular, is already utilized extensively by the Brigade team in
+combination with Brigade 2 to implement the project's own CI/CD. This is our
+favorite gateway at the moment because it also reports event statuses upstream
+to GitHub, making it a true showcase for what can be done with gateways.
 
 ### Monitoring
 
 [Brigade Metrics](https://github.com/brigadecore/brigade-metrics) is a great way
 to obtain operational insights into a Brigade 2 installation.
+
+### Chaos Engineering
+
+The Brigade team is utilizing
+[Brigade Noisy Neighbor](https://github.com/brigadecore/brigade-noisy-neighbor)
+to keep our own internal Brigade 2 installation under a steady load. We hope the
+larger event volumes than what we generate on our own will help us to identify
+and resolve bugs sooner.
 
 ### SDKs
 
