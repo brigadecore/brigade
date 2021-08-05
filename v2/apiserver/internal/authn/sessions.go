@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/crypto"
 	libAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/lib/authz"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
+	libCrypto "github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/system"
 	"github.com/pkg/errors"
@@ -229,7 +230,7 @@ func (s *sessionsService) CreateRootSession(
 	password string,
 ) (Token, error) {
 	token := Token{
-		Value: crypto.NewToken(256),
+		Value: libCrypto.NewToken(256),
 	}
 	if !s.config.RootUserEnabled {
 		return token, &meta.ErrNotSupported{
@@ -277,8 +278,8 @@ func (s *sessionsService) CreateUserSession(
 				"supported by this server.",
 		}
 	}
-	oauth2State := crypto.NewToken(30)
-	token := crypto.NewToken(256)
+	oauth2State := libCrypto.NewToken(30)
+	token := libCrypto.NewToken(256)
 	now := time.Now().UTC()
 	expiryTime := now.Add(s.config.UserSessionTTL)
 	session := Session{
