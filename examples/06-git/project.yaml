@@ -5,6 +5,10 @@ metadata:
   id: git
 description: A project with whose script is stored in a git repository
 spec:
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
   workerTemplate:
     logLevel: DEBUG
     configFilesDirectory: examples/06-git/.brigade

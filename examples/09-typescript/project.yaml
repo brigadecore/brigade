@@ -5,6 +5,10 @@ metadata:
   id: hello-typescript
 description: You can use TypeScript!
 spec:
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
   workerTemplate:
     logLevel: DEBUG
     defaultConfigFiles:
