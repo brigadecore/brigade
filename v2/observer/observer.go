@@ -39,30 +39,28 @@ func getObserverConfig() (observerConfig, error) {
 }
 
 type observer struct {
-	kubeClient      kubernetes.Interface
-	systemClient    system.APIClient
-	workersClient   core.WorkersClient
-	jobsClient      core.JobsClient
-	config          observerConfig
-	deletingPodsSet map[string]struct{}
-	timedPodsSet    map[string]context.CancelFunc
-	syncMu          *sync.Mutex
+	kubeClient    kubernetes.Interface
+	systemClient  system.APIClient
+	workersClient core.WorkersClient
+	jobsClient    core.JobsClient
+	config        observerConfig
+	timedPodsSet  map[string]context.CancelFunc
 	// All of the scheduler's goroutines will send fatal errors here
 	errCh chan error
 	// All of these internal functions are overridable for testing purposes
-	runHealthcheckLoopFn    func(ctx context.Context)
-	startJobPodTimerFn      func(ctx context.Context, pod *corev1.Pod)
-	startWorkerPodTimerFn   func(ctx context.Context, pod *corev1.Pod)
-	syncWorkerPodsFn        func(ctx context.Context)
-	syncWorkerPodFn         func(obj interface{})
-	syncDeletedWorkerPodFn  func(obj interface{})
-	deleteWorkerResourcesFn func(namespace, podName, eventID string)
-	syncJobPodsFn           func(ctx context.Context)
-	syncJobPodFn            func(obj interface{})
-	syncDeletedJobPodFn     func(obj interface{})
-	deleteJobResourcesFn    func(namespace, podName, eventID, jobName string)
-	errFn                   func(...interface{})
-	checkK8sAPIServer       func(ctx context.Context) ([]byte, error)
+	runHealthcheckLoopFn  func(context.Context)
+	syncWorkerPodsFn      func(context.Context)
+	syncWorkerPodFn       func(obj interface{})
+	manageWorkerTimeoutFn func(context.Context, *corev1.Pod, core.WorkerPhase)
+	runWorkerTimerFn      func(context.Context, *corev1.Pod)
+	cleanupWorkerFn       func(eventID string)
+	syncJobPodsFn         func(context.Context)
+	syncJobPodFn          func(obj interface{})
+	manageJobTimeoutFn    func(context.Context, *corev1.Pod, core.JobPhase)
+	runJobTimerFn         func(context.Context, *corev1.Pod)
+	cleanupJobFn          func(eventID, jobName string)
+	errFn                 func(...interface{})
+	checkK8sAPIServer     func(context.Context) ([]byte, error)
 }
 
 func newObserver(
@@ -72,27 +70,25 @@ func newObserver(
 	config observerConfig,
 ) *observer {
 	o := &observer{
-		kubeClient:      kubeClient,
-		systemClient:    systemClient,
-		workersClient:   workersClient,
-		jobsClient:      workersClient.Jobs(),
-		config:          config,
-		deletingPodsSet: map[string]struct{}{},
-		timedPodsSet:    map[string]context.CancelFunc{},
-		syncMu:          &sync.Mutex{},
-		errCh:           make(chan error),
+		kubeClient:    kubeClient,
+		systemClient:  systemClient,
+		workersClient: workersClient,
+		jobsClient:    workersClient.Jobs(),
+		config:        config,
+		timedPodsSet:  map[string]context.CancelFunc{},
+		errCh:         make(chan error),
 	}
 	o.runHealthcheckLoopFn = o.runHealthcheckLoop
-	o.startJobPodTimerFn = o.startJobPodTimer
-	o.startWorkerPodTimerFn = o.startWorkerPodTimer
 	o.syncWorkerPodsFn = o.syncWorkerPods
 	o.syncWorkerPodFn = o.syncWorkerPod
-	o.syncDeletedWorkerPodFn = o.syncDeletedWorkerPod
-	o.deleteWorkerResourcesFn = o.deleteWorkerResources
+	o.manageWorkerTimeoutFn = o.manageWorkerTimeout
+	o.runWorkerTimerFn = o.runWorkerTimer
+	o.cleanupWorkerFn = o.cleanupWorker
 	o.syncJobPodsFn = o.syncJobPods
 	o.syncJobPodFn = o.syncJobPod
-	o.syncDeletedJobPodFn = o.syncDeletedJobPod
-	o.deleteJobResourcesFn = o.deleteJobResources
+	o.manageJobTimeoutFn = o.manageJobTimeout
+	o.runJobTimerFn = o.runJobTimer
+	o.cleanupJobFn = o.cleanupJob
 	o.errFn = log.Println
 
 	// TODO: remove this type assertion once we figure out how to fake/mock

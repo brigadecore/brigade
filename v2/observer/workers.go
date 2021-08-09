@@ -38,209 +38,32 @@ func (o *observer) syncWorkerPods(ctx context.Context) {
 			UpdateFunc: func(_, newObj interface{}) {
 				o.syncWorkerPodFn(newObj)
 			},
-			DeleteFunc: o.syncDeletedWorkerPodFn,
 		},
 	)
 	workerPodsInformer.Run(ctx.Done())
 }
 
 func (o *observer) syncWorkerPod(obj interface{}) {
+	ctx := context.Background()
 	pod := obj.(*corev1.Pod)
-
-	// Fetch the cancel func associated with a timed Worker pod
-	lookup := namespacedPodName(pod.Namespace, pod.Name)
-	cancelTimer, exists := o.timedPodsSet[lookup]
-	if !exists {
-		var timerCtx context.Context
-		timerCtx, cancelTimer = context.WithCancel(context.Background())
-		o.timedPodsSet[lookup] = cancelTimer
-		o.startWorkerPodTimerFn(timerCtx, pod)
-	}
-
-	// Worker pods are only deleted after we're FULLY done with them. So if the
-	// DeletionTimestamp is set, there's nothing for us to do because the Worker
-	// must already be in a terminal state.
-	if pod.DeletionTimestamp != nil {
-		return
-	}
-
-	status := core.WorkerStatus{}
-	switch pod.Status.Phase {
-	case corev1.PodPending:
-		// For Brigade's purposes, this counts as running
-		status.Phase = core.WorkerPhaseRunning
-		// Unless... when an image pull backoff occurs, the pod still shows as
-		// pending. We account for that here and treat it as a failure.
-		//
-		// TODO: Are there other conditions we need to watch out for?
-		for _, containerStatus := range pod.Status.ContainerStatuses {
-			if containerStatus.State.Waiting != nil &&
-				(containerStatus.State.Waiting.Reason == "ImagePullBackOff" ||
-					containerStatus.State.Waiting.Reason == "ErrImagePull") {
-				status.Phase = core.WorkerPhaseFailed
-				break
-			}
-		}
-	case corev1.PodRunning:
-		status.Phase = core.WorkerPhaseRunning
-	case corev1.PodSucceeded:
-		status.Phase = core.WorkerPhaseSucceeded
-		cancelTimer()
-	case corev1.PodFailed:
-		status.Phase = core.WorkerPhaseFailed
-		cancelTimer()
-	case corev1.PodUnknown:
-		status.Phase = core.WorkerPhaseUnknown
-		cancelTimer()
-	}
-
-	if pod.Status.StartTime != nil {
-		status.Started = &pod.Status.StartTime.Time
-	}
-	// Pods don't really have an end time. We grab the end time of container[0]
-	// because that's what we really care about.
-	for _, containerStatus := range pod.Status.ContainerStatuses {
-		if containerStatus.Name == pod.Spec.Containers[0].Name {
-			if containerStatus.State.Terminated != nil {
-				status.Ended =
-					&pod.Status.ContainerStatuses[0].State.Terminated.FinishedAt.Time
-			}
-			break
-		}
-	}
-
+	// Map pod status to worker status
+	status := o.getWorkerStatusFromPod(pod)
+	// Manage the timeout clock
+	o.manageWorkerTimeoutFn(ctx, pod, status.Phase)
 	// Use the API to update Worker status
 	eventID := pod.Labels[myk8s.LabelEvent]
-	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
+	ctx, cancel := context.WithTimeout(ctx, apiRequestTimeout)
 	defer cancel()
 	if err := o.workersClient.UpdateStatus(
 		ctx,
 		eventID,
 		status,
 	); err != nil {
-		o.errFn(
-			fmt.Sprintf(
-				"error updating status for event %q worker: %s",
-				eventID,
-				err,
-			),
-		)
-	}
-
-	if status.Phase == core.WorkerPhaseSucceeded ||
-		status.Phase == core.WorkerPhaseFailed {
-		go o.deleteWorkerResourcesFn(pod.Namespace, pod.Name, eventID)
-	}
-}
-
-// deleteWorkerResources deletes a Worker pod after a 60 second delay. The delay
-// is to ensure any log aggregators have a chance to get all logs from the
-// completed pod before it is torpedoed.
-func (o *observer) deleteWorkerResources(namespace, podName, eventID string) {
-	namespacedWorkerPodName := namespacedPodName(namespace, podName)
-
-	o.syncMu.Lock()
-	if _, alreadyDeleting :=
-		o.deletingPodsSet[namespacedWorkerPodName]; alreadyDeleting {
-		o.syncMu.Unlock()
-		return
-	}
-	o.deletingPodsSet[namespacedWorkerPodName] = struct{}{}
-	o.syncMu.Unlock()
-
-	<-time.After(o.config.delayBeforeCleanup)
-
-	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
-	defer cancel()
-	if err := o.workersClient.Cleanup(ctx, eventID); err != nil {
-		o.errFn(
-			fmt.Sprintf(
-				"error cleaning up after worker for event %q: %s",
-				eventID,
-				err,
-			),
-		)
-	}
-}
-
-// startWorkerPodTimer inspects the provided Worker pod for a timeoutDuration
-// annotation value and if non-empty, starts a timer using the parsed value.
-// If the timeout is reached, we make an API call to execute the appropriate
-// logic. Alternatively, the context may be canceled in the meantime, which
-// will stop the timer.
-func (o *observer) startWorkerPodTimer(ctx context.Context, pod *corev1.Pod) {
-	defer delete(o.timedPodsSet, namespacedPodName(pod.Namespace, pod.Name))
-
-	if pod.Status.Phase != corev1.PodPending &&
-		pod.Status.Phase != corev1.PodRunning {
-		return
-	}
-
-	go func() {
-		timer := time.NewTimer(
-			o.getPodTimeoutDuration(pod, o.config.maxWorkerLifetime),
-		)
-		defer timer.Stop()
-
-		select {
-		case <-timer.C:
-			eventID := pod.Labels[myk8s.LabelEvent]
-			if err := o.workersClient.Timeout(ctx, eventID); err != nil {
-				o.errFn(
-					errors.Wrapf(
-						err,
-						"error timing out worker for event %q",
-						eventID,
-					),
-				)
-			}
-		case <-ctx.Done():
-		}
-	}()
-}
-
-// syncDeletedWorkerPod only fires when a Worker pod deletion is COMPLETE. i.e.
-// The pod is completely gone.
-func (o *observer) syncDeletedWorkerPod(obj interface{}) {
-	o.syncMu.Lock()
-	defer o.syncMu.Unlock()
-	pod := obj.(*corev1.Pod)
-	// Remove this pod from the set of pods we were tracking for deletion.
-	// Managing this set is essential to not leaking memory.
-	delete(o.deletingPodsSet, namespacedPodName(pod.Namespace, pod.Name))
-
-	// If the Worker pod ran to completion, that state was observed, and the
-	// pre-cleanup grace period has elapsed, then cleanup has already occurred.
-	// HOWEVER, the possibility always exists that some operator has gone behind
-	// Brigade's back and manually deleted a Worker pod. In this case, deletion
-	// has been observed, but no final state change was ever observed, and cleanup
-	// wouldn't have occurred yet. So... for good measure, we update the Worker's
-	// status to ABORTED here-- ignoring any resulting conflict that arises from
-	// the Worker already being in a terminal state and then we initiate (possibly
-	// re-initiate) cleanup to make sure we got any resources associated with the
-	// Worker pod-- such as Job pods or PVCs.
-	status := core.WorkerStatus{
-		Phase: core.WorkerPhaseAborted,
-	}
-	if pod.Status.StartTime != nil {
-		status.Started = &pod.Status.StartTime.Time
-	}
-	// Pods don't really have an end time. We grab the end time of container[0]
-	// because that's what we really care about.
-	for _, containerStatus := range pod.Status.ContainerStatuses {
-		if containerStatus.Name == pod.Spec.Containers[0].Name {
-			if containerStatus.State.Terminated != nil {
-				status.Ended =
-					&pod.Status.ContainerStatuses[0].State.Terminated.FinishedAt.Time
-			}
-			break
-		}
-	}
-	eventID := pod.Labels[myk8s.LabelEvent]
-	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
-	defer cancel()
-	if err := o.workersClient.UpdateStatus(ctx, eventID, status); err != nil {
-		if _, ok := err.(*meta.ErrConflict); !ok {
+		if _, conflict :=
+			err.(*meta.ErrConflict); !conflict || pod.DeletionTimestamp == nil {
+			// Only log the error if it's NOT a conflict, or it is, but we're not
+			// processing a delete. We expect conflicts that we can safely ignore
+			// occur frequently for status updates on a delete.
 			o.errFn(
 				fmt.Sprintf(
 					"error updating status for event %q worker: %s",
@@ -250,6 +73,136 @@ func (o *observer) syncDeletedWorkerPod(obj interface{}) {
 			)
 		}
 	}
+	if pod.DeletionTimestamp != nil {
+		// If the pod was deleted, immediately complete cleanup of other resources
+		// associated with the worker
+		o.cleanupWorkerFn(eventID)
+	} else if status.Phase.IsTerminal() {
+		// Otherwise, if the worker is in a terminal phase, defer cleanup so the log
+		// agent has a chance to catch up if necessary.
+		go func() {
+			<-time.After(o.config.delayBeforeCleanup)
+			o.cleanupWorkerFn(eventID)
+		}()
+	}
+}
+
+func (o *observer) getWorkerStatusFromPod(pod *corev1.Pod) core.WorkerStatus {
+	// Determine the worker's phase based on pod phase
+	status := core.WorkerStatus{
+		Phase: core.WorkerPhaseRunning,
+	}
+	if pod.DeletionTimestamp != nil {
+		// This pod has been deleted. Pods usually hang around for a while after
+		// they complete before they are deleted (to ensure the log agent has enough
+		// time to capture all logs), so the worker's final transition to a terminal
+		// phase has PROBABLY been recorded already, BUT given the possibility that
+		// the worker's pod was manually deleted by an operator, we'll attempt a
+		// final phase change to ABORTED here, knowing that it will simply fail if
+		// the worker has already reached a terminal state.
+		status.Phase = core.WorkerPhaseAborted
+	} else {
+		switch pod.Status.Phase {
+		case corev1.PodPending:
+			// For Brigade's purposes, this counts as running
+			status.Phase = core.WorkerPhaseRunning
+			// Unless... when an image pull backoff occurs, the pod still shows as
+			// pending. We account for that here and treat it as a failure.
+			//
+			// TODO: Are there other conditions we need to watch out for?
+			for _, containerStatus := range pod.Status.ContainerStatuses {
+				if containerStatus.State.Waiting != nil &&
+					(containerStatus.State.Waiting.Reason == "ImagePullBackOff" ||
+						containerStatus.State.Waiting.Reason == "ErrImagePull") {
+					status.Phase = core.WorkerPhaseFailed
+					break
+				}
+			}
+		case corev1.PodRunning:
+			status.Phase = core.WorkerPhaseRunning
+		case corev1.PodSucceeded:
+			status.Phase = core.WorkerPhaseSucceeded
+		case corev1.PodFailed:
+			status.Phase = core.WorkerPhaseFailed
+		case corev1.PodUnknown:
+			status.Phase = core.WorkerPhaseUnknown
+		}
+	}
+	// Determine the worker's start time based on pod start time
+	if pod.Status.StartTime != nil {
+		status.Started = &pod.Status.StartTime.Time
+	}
+	// Determine the worker's end time based on container[0] end time
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if containerStatus.Name == pod.Spec.Containers[0].Name {
+			if containerStatus.State.Terminated != nil {
+				status.Ended =
+					&pod.Status.ContainerStatuses[0].State.Terminated.FinishedAt.Time
+			}
+			break
+		}
+	}
+	return status
+}
+
+// manageWorkerTimeout takes a pod and worker phase as input. If the phase is
+// terminal and the timeout clock is already running for the pod, the clock is
+// stopped. If the phase is NOT terminal and the timeout clock is NOT already
+// running for the pod, the clock is started.
+func (o *observer) manageWorkerTimeout(
+	ctx context.Context,
+	pod *corev1.Pod,
+	phase core.WorkerPhase,
+) {
+	namespacedPodName := namespacedPodName(pod.Namespace, pod.Name)
+	cancelFn, timed := o.timedPodsSet[namespacedPodName]
+	if phase.IsTerminal() && timed {
+		cancelFn() // Stop the clock
+		return
+	}
+	if !phase.IsTerminal() && !timed {
+		// Start the clock
+		ctx, o.timedPodsSet[namespacedPodName] = context.WithCancel(ctx)
+		go o.runWorkerTimerFn(ctx, pod)
+	}
+}
+
+func (o *observer) runWorkerTimer(ctx context.Context, pod *corev1.Pod) {
+	namespacedPodName := namespacedPodName(pod.Namespace, pod.Name)
+	defer delete(o.timedPodsSet, namespacedPodName)
+	timer := time.NewTimer(
+		o.getPodTimeoutDuration(pod, o.config.maxWorkerLifetime),
+	)
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		eventID := pod.Labels[myk8s.LabelEvent]
+		// Create a new context for the timeout op. If we don't do this, the
+		// possibility exists that the call to o.workersClient.Timeout() succeeds in
+		// timing out the worker, but the worker is observed in its terminal,
+		// timed-out state, resulting in cancelation of the current context before
+		// the call to o.workersClient.Timeout() RETURNS, in which case we can end
+		// up with an error telling us the context timed out during the
+		// o.workersClient.Timeout(), when in fact, it has succeeded.
+		timeoutCtx, cancel :=
+			context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := o.workersClient.Timeout(timeoutCtx, eventID); err != nil {
+			o.errFn(
+				errors.Wrapf(
+					err,
+					"error timing out worker for event %q",
+					eventID,
+				),
+			)
+		}
+	case <-ctx.Done():
+	}
+}
+
+func (o *observer) cleanupWorker(eventID string) {
+	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
+	defer cancel()
 	if err := o.workersClient.Cleanup(ctx, eventID); err != nil {
 		o.errFn(
 			fmt.Sprintf(
