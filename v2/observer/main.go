@@ -10,8 +10,6 @@ import (
 	"github.com/brigadecore/brigade/v2/internal/kubernetes"
 )
 
-// TODO: Observer needs functionality for timing out workers and jobs.
-
 func main() {
 	log.Printf(
 		"Starting Brigade Observer -- version %s -- commit %s",
