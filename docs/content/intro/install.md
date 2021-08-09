@@ -18,7 +18,7 @@ Before you can install Brigade, ensure that you have the [prerequisites](#prereq
 
 ## Prerequisites
 
-* A [Kubernetes cluster].  
+* A [Kubernetes cluster], 1.16.0+.
   Your cluster should be accessible to the source of your event triggers.
   For example, if you want to trigger events from GitHub, the cluster should have a public ip address, and a domain name that resolves to the cluster.
   If you are using Brigade in a local development environment, the [QuickStart] demonstrates how to access a local KinD or Minikube cluster.
@@ -99,7 +99,12 @@ $env:PATH+=";$env:USERPROFILE\bin"
    
     If the deployment fails, proceed to the [troubleshooting](#troubleshooting) section.
 
-Now that you have the Brigade server installed, the next step is to install a Brigade [Gateway].
+Now that you have the Brigade server installed, an optional next step is to
+install a Brigade [Gateway]. All of the current gateways rely on remote access
+to Brigade's API server, so a Kubernetes cluster that can provision public
+IP addresses will be necessary for gateway functionality. (Alternatively,
+another means for forwarding traffic to the API server may be used, such as
+[ngrok](https://ngrok.com/).)
 
 ## Install Brigade Gateways
 
