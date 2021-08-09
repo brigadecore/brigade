@@ -3,7 +3,7 @@
 set -euo pipefail
 
 : ${OSES="linux darwin windows"}
-: ${ARCHS="amd64"}
+: ${ARCHS="amd64 arm64"}
 
 for os in $OSES; do
   for arch in $ARCHS; do 
