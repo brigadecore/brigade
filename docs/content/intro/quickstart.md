@@ -202,27 +202,22 @@ brig login --insecure --server https://IP_ADDRESS --root
 A Brigade [project] defines event handlers, such as the definition of a CI pipeline.
 In this example project, the handler prints a message using a string passed in the event payload.
 
-1. Download the example project to the current directory.
+1. Initialize a new Brigade project with the `brig init` CLI command.
 
-    **posix**
-    ```bash
-    curl -o project.yaml https://raw.githubusercontent.com/brigadecore/brigade/v2/examples/12-first-payload/project.yaml
+    ```
+    brig init --id first-project
     ```
 
-    **powershell**
-    ```bash
-    (New-Object Net.WebClient).DownloadFile("https://raw.githubusercontent.com/brigadecore/brigade/v2/examples/12-first-payload/project.yaml", "$pwd\project.yaml")
-    ```
-1. Open project.yaml
+1. Open project.yaml from within the newly-generated `.brigade/` directory.
 
     <script src="https://gist-it.appspot.com/https://raw.githubusercontent.com/brigadecore/brigade/v2/examples/12-first-payload/project.yaml"></script>
 
-    The project defines a handler for the "exec" event, that reads the event payload string and prints it out with "Hello, PAYLOAD!".
+    The project defines a handler for the "exec" event, that reads the event payload string and prints it out with "Hello, World!".
 
 1. Create the project in Brigade with the following command.
 
     ```
-    brig project create --file project.yaml
+    brig project create --file .brigade/project.yaml
     ```
 
 1. List the defined projects with `brig project list` and verify that you see your new project:
@@ -240,7 +235,7 @@ In this example project, the handler prints a message using a string passed in t
 With our project defined, you are now ready to trigger an event and watch your handler execute.
 
 ```
-brig event create --project first-payload --payload Dolly --follow
+brig event create --project first-project --payload Dolly --follow
 ```
 
 Below is example output of a successful event handler:
@@ -263,7 +258,7 @@ Hello, Dolly!
 If you want to keep your Brigade installation, run the following command to remove the example project created in this QuickStart:
 
 ```
-brig project delete --id first-payload
+brig project delete --id first-project
 ```
 
 Otherwise, you can remove ALL resources created in this QuickStart by either:
