@@ -5,6 +5,10 @@ metadata:
   id: npm
 description: A project with third-party dependencies managed using npm
 spec:
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
   workerTemplate:
     logLevel: DEBUG
     configFilesDirectory: examples/07-npm/.brigade
