@@ -28,6 +28,6 @@ if you work your way through these guides you should come out knowing pretty muc
 ## Table of Contents
 
 - [Brigade at a glance](overview)
-- [QuickStart](quickstart)
 - [Installation Guide](install)
+- [QuickStart](quickstart)
 - [What to read next](readnext)
