@@ -19,12 +19,12 @@ spec:
   ## Subscribe below to any events that should trigger your script.
   ## The commented example depicts a subscription to "exec"
   ## events originating from the Brigade CLI. 
-  # eventSubscriptions:
-  # - source: brigade.sh/cli
-  #   types:
-  #   - exec
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
   workerTemplate:
-    # logLevel: DEBUG
+    logLevel: DEBUG
     {{- if eq .GitCloneURL "" }}
     defaultConfigFiles:
       brigade.{{ .Language }}: |
@@ -49,12 +49,12 @@ var typeScriptTemplate = []byte(`import { events, Job } from "@brigadecore/briga
 // The commented example below depicts handling of "exec" events originating 
 // from the Brigade CLI.
 
-// events.on("brigade.sh/cli", "exec", async event => {
-// 	let job = new Job("hello", "debian:latest", event)
-// 	job.primaryContainer.command = ["echo"]
-// 	job.primaryContainer.arguments = ["Hello, World!"]
-// 	await job.run()
-// })
+events.on("brigade.sh/cli", "exec", async event => {
+	let job = new Job("hello", "debian:latest", event)
+ 	job.primaryContainer.command = ["echo"]
+ 	job.primaryContainer.arguments = ["Hello, World!"]
+ 	await job.run()
+})
 
 events.process()
 `)
@@ -66,12 +66,12 @@ var javaScriptTemplate = []byte(`const { events } = require("@brigadecore/brigad
 // The commented example below depicts handling of "exec" events originating 
 // from the Brigade CLI.
 
-// events.on("brigade.sh/cli", "exec", async event => {
-// 	let job = new Job("hello", "debian:latest", event);
-// 	job.primaryContainer.command = ["echo"];
-// 	job.primaryContainer.arguments = ["Hello, World!"];
-// 	await job.run();
-// });
+events.on("brigade.sh/cli", "exec", async event => {
+ 	let job = new Job("hello", "debian:latest", event);
+ 	job.primaryContainer.command = ["echo"];
+ 	job.primaryContainer.arguments = ["Hello, World!"];
+ 	await job.run();
+});
 
 events.process();
 `)
