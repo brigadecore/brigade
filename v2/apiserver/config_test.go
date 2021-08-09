@@ -10,12 +10,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/core/kubernetes"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/api"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/api/kubernetes"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/api/rest"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
-	sysAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/system/authn"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -162,9 +161,9 @@ func TestWriterFactoryConfig(t *testing.T) {
 func TestSubstrateConfig(t *testing.T) {
 	const testAPIAddress = "http://localhost"
 	const testGitInitializerImage = "brigadecore/brigade2-git-initializer:2.0.0"
-	const testGitInitializerImagePullPolicy = core.ImagePullPolicy("IfNotPresent")
+	const testGitInitializerImagePullPolicy = api.ImagePullPolicy("IfNotPresent")
 	const testDefaultWorkerImage = "brigadecore/brigade2-worker:2.0.0"
-	const testDefaultWorkerImagePullPolicy = core.ImagePullPolicy("IfNotPresent")
+	const testDefaultWorkerImagePullPolicy = api.ImagePullPolicy("IfNotPresent")
 	const testWorkspaceStorageClass = "nfs"
 	testCases := []struct {
 		name       string
@@ -304,14 +303,14 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 	testCases := []struct {
 		name       string
 		setup      func()
-		assertions func(authn.ThirdPartyAuthHelper, error)
+		assertions func(api.ThirdPartyAuthHelper, error)
 	}{
 		{
 			name: "THIRD_PARTY_AUTH_STRATEGY has invalid value",
 			setup: func() {
 				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", "bogus")
 			},
-			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
 				require.Contains(
 					t,
@@ -325,7 +324,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 			setup: func() {
 				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", "oidc")
 			},
-			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "OIDC_PROVIDER_URL")
@@ -336,7 +335,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 			setup: func() {
 				os.Setenv("OIDC_PROVIDER_URL", server.URL)
 			},
-			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "OIDC_CLIENT_ID")
@@ -347,7 +346,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 			setup: func() {
 				os.Setenv("OIDC_CLIENT_ID", "hal9000")
 			},
-			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "OIDC_CLIENT_SECRET")
@@ -358,7 +357,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 			setup: func() {
 				os.Setenv("OIDC_CLIENT_SECRET", "hello, dave")
 			},
-			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "OIDC_REDIRECT_URL_BASE")
@@ -369,7 +368,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 			setup: func() {
 				os.Setenv("OIDC_REDIRECT_URL_BASE", "https://brigade.example.com")
 			},
-			assertions: func(helper authn.ThirdPartyAuthHelper, err error) {
+			assertions: func(helper api.ThirdPartyAuthHelper, err error) {
 				require.NoError(t, err)
 				require.Equal(
 					t,
@@ -384,7 +383,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyGitHub)
 				os.Setenv("GITHUB_AUTH_ENABLED", "true")
 			},
-			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "GITHUB_CLIENT_ID")
@@ -395,7 +394,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 			setup: func() {
 				os.Setenv("GITHUB_CLIENT_ID", "foo")
 			},
-			assertions: func(_ authn.ThirdPartyAuthHelper, err error) {
+			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "GITHUB_CLIENT_SECRET")
@@ -406,7 +405,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 			setup: func() {
 				os.Setenv("GITHUB_CLIENT_SECRET", "bar")
 			},
-			assertions: func(helper authn.ThirdPartyAuthHelper, err error) {
+			assertions: func(helper api.ThirdPartyAuthHelper, err error) {
 				require.NoError(t, err)
 				require.Equal(
 					t,
@@ -500,14 +499,14 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 	testCases := []struct {
 		name       string
 		setup      func()
-		assertions func(sysAuthn.TokenAuthFilterConfig, error)
+		assertions func(rest.TokenAuthFilterConfig, error)
 	}{
 		{
 			name: "ROOT_USER_ENABLED not parsable as bool",
 			setup: func() {
 				os.Setenv("ROOT_USER_ENABLED", "yuppers")
 			},
-			assertions: func(_ sysAuthn.TokenAuthFilterConfig, err error) {
+			assertions: func(_ rest.TokenAuthFilterConfig, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "was not parsable as a bool")
 				require.Contains(t, err.Error(), "ROOT_USER_ENABLED")
@@ -518,7 +517,7 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 			setup: func() {
 				os.Setenv("ROOT_USER_ENABLED", "true")
 			},
-			assertions: func(_ sysAuthn.TokenAuthFilterConfig, err error) {
+			assertions: func(_ rest.TokenAuthFilterConfig, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "SCHEDULER_TOKEN")
@@ -529,7 +528,7 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 			setup: func() {
 				os.Setenv("SCHEDULER_TOKEN", "foo")
 			},
-			assertions: func(_ sysAuthn.TokenAuthFilterConfig, err error) {
+			assertions: func(_ rest.TokenAuthFilterConfig, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
 				require.Contains(t, err.Error(), "OBSERVER_TOKEN")
@@ -541,7 +540,7 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 				os.Setenv("OBSERVER_TOKEN", "bar")
 				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", "github")
 			},
-			assertions: func(config sysAuthn.TokenAuthFilterConfig, err error) {
+			assertions: func(config rest.TokenAuthFilterConfig, err error) {
 				require.NoError(t, err)
 				require.NotNil(t, config.FindUserFn)
 				require.True(t, config.RootUserEnabled)
@@ -553,8 +552,8 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			testCase.setup()
 			config, err := tokenAuthFilterConfig(
-				func(context.Context, string) (authn.User, error) {
-					return authn.User{}, nil
+				func(context.Context, string) (api.User, error) {
+					return api.User{}, nil
 				},
 			)
 			testCase.assertions(config, err)

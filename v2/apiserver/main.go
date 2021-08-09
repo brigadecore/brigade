@@ -6,23 +6,14 @@ import (
 
 	"github.com/brigadecore/brigade-foundations/signals"
 	"github.com/brigadecore/brigade-foundations/version"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/api"
+	apiKubernetes "github.com/brigadecore/brigade/v2/apiserver/internal/api/kubernetes"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/api/mongodb"
+	"github.com/brigadecore/brigade/v2/apiserver/internal/api/rest"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/assets"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authn"
-	authnMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/authn/mongodb"
-	authnREST "github.com/brigadecore/brigade/v2/apiserver/internal/authn/rest"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/authz"
-	authzMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/authz/mongodb"
-	authzREST "github.com/brigadecore/brigade/v2/apiserver/internal/authz/rest"
-	"github.com/brigadecore/brigade/v2/apiserver/internal/core"
-	coreKubernetes "github.com/brigadecore/brigade/v2/apiserver/internal/core/kubernetes"
-	coreMongodb "github.com/brigadecore/brigade/v2/apiserver/internal/core/mongodb"
-	coreREST "github.com/brigadecore/brigade/v2/apiserver/internal/core/rest"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue/amqp"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
-	sysAuthn "github.com/brigadecore/brigade/v2/apiserver/internal/system/authn"
-	sysAuthz "github.com/brigadecore/brigade/v2/apiserver/internal/system/authz"
-	systemREST "github.com/brigadecore/brigade/v2/apiserver/internal/system/rest"
 	"github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -49,50 +40,50 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var coolLogsStore core.CoolLogsStore
-	var eventsStore core.EventsStore
-	var jobsStore core.JobsStore
-	var projectsStore core.ProjectsStore
-	var projectRoleAssignmentsStore core.ProjectRoleAssignmentsStore
-	var roleAssignmentsStore authz.RoleAssignmentsStore
-	var secretsStore core.SecretsStore
-	var serviceAccountsStore authn.ServiceAccountsStore
-	var sessionsStore authn.SessionsStore
-	var usersStore authn.UsersStore
-	var warmLogsStore core.LogsStore
-	var workersStore core.WorkersStore
+	var coolLogsStore api.CoolLogsStore
+	var eventsStore api.EventsStore
+	var jobsStore api.JobsStore
+	var projectsStore api.ProjectsStore
+	var projectRoleAssignmentsStore api.ProjectRoleAssignmentsStore
+	var roleAssignmentsStore api.RoleAssignmentsStore
+	var secretsStore api.SecretsStore
+	var serviceAccountsStore api.ServiceAccountsStore
+	var sessionsStore api.SessionsStore
+	var usersStore api.UsersStore
+	var warmLogsStore api.LogsStore
+	var workersStore api.WorkersStore
 	{
-		coolLogsStore = coreMongodb.NewLogsStore(database)
-		eventsStore, err = coreMongodb.NewEventsStore(database)
+		coolLogsStore = mongodb.NewLogsStore(database)
+		eventsStore, err = mongodb.NewEventsStore(database)
 		if err != nil {
 			log.Fatal(err)
 		}
-		jobsStore, err = coreMongodb.NewJobsStore(database)
+		jobsStore, err = mongodb.NewJobsStore(database)
 		if err != nil {
 			log.Fatal(err)
 		}
-		projectsStore, err = coreMongodb.NewProjectsStore(database)
+		projectsStore, err = mongodb.NewProjectsStore(database)
 		if err != nil {
 			log.Fatal(err)
 		}
 		projectRoleAssignmentsStore =
-			coreMongodb.NewProjectRoleAssignmentsStore(database)
-		roleAssignmentsStore = authzMongodb.NewRoleAssignmentsStore(database)
-		secretsStore = coreKubernetes.NewSecretsStore(kubeClient)
-		serviceAccountsStore, err = authnMongodb.NewServiceAccountsStore(database)
+			mongodb.NewProjectRoleAssignmentsStore(database)
+		roleAssignmentsStore = mongodb.NewRoleAssignmentsStore(database)
+		secretsStore = apiKubernetes.NewSecretsStore(kubeClient)
+		serviceAccountsStore, err = mongodb.NewServiceAccountsStore(database)
 		if err != nil {
 			log.Fatal(err)
 		}
-		sessionsStore, err = authnMongodb.NewSessionsStore(database)
+		sessionsStore, err = mongodb.NewSessionsStore(database)
 		if err != nil {
 			log.Fatal(err)
 		}
-		usersStore, err = authnMongodb.NewUsersStore(database)
+		usersStore, err = mongodb.NewUsersStore(database)
 		if err != nil {
 			log.Fatal(err)
 		}
-		warmLogsStore = coreKubernetes.NewLogsStore(kubeClient)
-		workersStore, err = coreMongodb.NewWorkersStore(database)
+		warmLogsStore = apiKubernetes.NewLogsStore(kubeClient)
+		workersStore, err = mongodb.NewWorkersStore(database)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -109,13 +100,13 @@ func main() {
 	}
 
 	// Substrate
-	var substrate core.Substrate
+	var substrate api.Substrate
 	{
 		config, err := substrateConfig()
 		if err != nil {
 			log.Fatal(err)
 		}
-		substrate = coreKubernetes.NewSubstrate(
+		substrate = apiKubernetes.NewSubstrate(
 			kubeClient,
 			queueWriterFactory,
 			config,
@@ -123,11 +114,11 @@ func main() {
 	}
 
 	// Authorizers
-	authorizer := sysAuthz.NewAuthorizer(roleAssignmentsStore)
-	projectAuthorizer := core.NewProjectAuthorizer(projectRoleAssignmentsStore)
+	authorizer := api.NewAuthorizer(roleAssignmentsStore)
+	projectAuthorizer := api.NewProjectAuthorizer(projectRoleAssignmentsStore)
 
 	// Events service
-	eventsService := core.NewEventsService(
+	eventsService := api.NewEventsService(
 		authorizer.Authorize,
 		projectAuthorizer.Authorize,
 		projectsStore,
@@ -137,7 +128,7 @@ func main() {
 	)
 
 	// Jobs service
-	jobsService := core.NewJobsService(
+	jobsService := api.NewJobsService(
 		authorizer.Authorize,
 		projectsStore,
 		eventsStore,
@@ -146,7 +137,7 @@ func main() {
 	)
 
 	// Logs service
-	logsService := core.NewLogsService(
+	logsService := api.NewLogsService(
 		authorizer.Authorize,
 		projectAuthorizer.Authorize,
 		projectsStore,
@@ -156,7 +147,7 @@ func main() {
 	)
 
 	// Projects service
-	projectsService := core.NewProjectsService(
+	projectsService := api.NewProjectsService(
 		authorizer.Authorize,
 		projectAuthorizer.Authorize,
 		projectsStore,
@@ -167,7 +158,7 @@ func main() {
 	)
 
 	// ProjectRoleAssignments service
-	projectRoleAssignmentsService := core.NewProjectRoleAssignmentsService(
+	projectRoleAssignmentsService := api.NewProjectRoleAssignmentsService(
 		authorizer.Authorize,
 		projectAuthorizer.Authorize,
 		projectsStore,
@@ -177,7 +168,7 @@ func main() {
 	)
 
 	// Roles service
-	roleAssignmentsService := authz.NewRoleAssignmentsService(
+	roleAssignmentsService := api.NewRoleAssignmentsService(
 		authorizer.Authorize,
 		usersStore,
 		serviceAccountsStore,
@@ -186,10 +177,10 @@ func main() {
 
 	// ServiceAccounts service
 	serviceAccountsService :=
-		authn.NewServiceAccountsService(authorizer.Authorize, serviceAccountsStore)
+		api.NewServiceAccountsService(authorizer.Authorize, serviceAccountsStore)
 
 	// Secrets service
-	secretsService := core.NewSecretsService(
+	secretsService := api.NewSecretsService(
 		authorizer.Authorize,
 		projectAuthorizer.Authorize,
 		projectsStore,
@@ -197,7 +188,7 @@ func main() {
 	)
 
 	// Session service
-	var sessionsService authn.SessionsService
+	var sessionsService api.SessionsService
 	{
 		thirdPartyAuthHelper, err := thirdPartyAuthHelper(ctx)
 		if err != nil {
@@ -207,27 +198,27 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		sessionsService = authn.NewSessionsService(
+		sessionsService = api.NewSessionsService(
 			sessionsStore,
 			usersStore,
-			roleAssignmentsStore.Grant,
+			roleAssignmentsStore,
 			thirdPartyAuthHelper,
 			&config,
 		)
 	}
 
 	// Substrate service
-	substrateService := core.NewSubstrateService(authorizer.Authorize, substrate)
+	substrateService := api.NewSubstrateService(authorizer.Authorize, substrate)
 
 	// Users service
-	usersService := authn.NewUsersService(
+	usersService := api.NewUsersService(
 		authorizer.Authorize,
 		usersStore,
 		sessionsStore,
 	)
 
 	// Workers service
-	workersService := core.NewWorkersService(
+	workersService := api.NewWorkersService(
 		authorizer.Authorize,
 		projectsStore,
 		eventsStore,
@@ -242,7 +233,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		authFilter := sysAuthn.NewTokenAuthFilter(
+		authFilter := rest.NewTokenAuthFilter(
 			serviceAccountsService.GetByToken,
 			sessionsService.GetByToken,
 			eventsService.GetByWorkerToken,
@@ -254,7 +245,7 @@ func main() {
 		}
 		apiServer = restmachinery.NewServer(
 			[]restmachinery.Endpoints{
-				&coreREST.EventsEndpoints{
+				&rest.EventsEndpoints{
 					AuthFilter: authFilter,
 					EventSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/event.json",
@@ -264,7 +255,7 @@ func main() {
 					),
 					Service: eventsService,
 				},
-				&coreREST.JobsEndpoints{
+				&rest.JobsEndpoints{
 					AuthFilter: authFilter,
 					JobSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/job.json",
@@ -274,65 +265,65 @@ func main() {
 					),
 					Service: jobsService,
 				},
-				&coreREST.LogsEndpoints{
+				&rest.LogsEndpoints{
 					AuthFilter: authFilter,
 					Service:    logsService,
 				},
-				&coreREST.ProjectsEndpoints{
+				&rest.ProjectsEndpoints{
 					AuthFilter: authFilter,
 					ProjectSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/project.json",
 					),
 					Service: projectsService,
 				},
-				&coreREST.ProjectRoleAssignmentsEndpoints{
+				&rest.ProjectRoleAssignmentsEndpoints{
 					AuthFilter: authFilter,
 					ProjectRoleAssignmentSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/project-role-assignment.json",
 					),
 					Service: projectRoleAssignmentsService,
 				},
-				&authzREST.RoleAssignmentsEndpoints{
+				&rest.RoleAssignmentsEndpoints{
 					AuthFilter: authFilter,
 					RoleAssignmentSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/role-assignment.json",
 					),
 					Service: roleAssignmentsService,
 				},
-				&coreREST.SecretsEndpoints{
+				&rest.SecretsEndpoints{
 					AuthFilter: authFilter,
 					SecretSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/secret.json",
 					),
 					Service: secretsService,
 				},
-				&authnREST.ServiceAccountEndpoints{
+				&rest.ServiceAccountEndpoints{
 					AuthFilter: authFilter,
 					ServiceAccountSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/service-account.json",
 					),
 					Service: serviceAccountsService,
 				},
-				&authnREST.SessionsEndpoints{
+				&rest.SessionsEndpoints{
 					AuthFilter: authFilter,
 					Service:    sessionsService,
 				},
-				&coreREST.SubstrateEndpoints{
+				&rest.SubstrateEndpoints{
 					AuthFilter: authFilter,
 					Service:    substrateService,
 				},
-				&authnREST.UsersEndpoints{
+				&rest.UsersEndpoints{
 					AuthFilter: authFilter,
 					Service:    usersService,
 				},
-				&coreREST.WorkersEndpoints{
+				&rest.WorkersEndpoints{
 					AuthFilter: authFilter,
 					WorkerStatusSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/worker-status.json",
 					),
 					Service: workersService,
 				},
-				&systemREST.SystemEndpoints{
+				&rest.SystemEndpoints{
 					APIServerVersion: version.Version(),
 					DatabaseClient:   database.Client(),
 					WriterFactory:    queueWriterFactory,
