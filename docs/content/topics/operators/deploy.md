@@ -163,10 +163,11 @@ The default mode of authentication into Brigade, that of a root user and
 password, is not suitable for a setup involving multiple users.
 
 For production-grade user authentication, Brigade ships with support for
-OIDC-compatible providers (such as [Google Identity Platform] and
+[OpenID Connect]-compatible providers (such as [Google Identity Platform] and
 [Azure Active Directory]) or [GitHub].  In this doc, we'll demonstrate
 configuring GitHub to be the auth provider.
 
+[OpenID Connect]: https://openid.net/connect/
 [Google Identity Platform]: https://cloud.google.com/identity-platform
 [Azure Active Directory]: https://azure.microsoft.com/en-us/services/active-directory/
 [GitHub]: https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps
@@ -176,8 +177,9 @@ configuring GitHub to be the auth provider.
 To set up GitHub authentication with Brigade, you'll create a [GitHub OAuth
 App] with the authorization callback URL set to point to the
 `/v2/session/auth` endpoint on Brigade's API server address, e.g. the hostname
-reserved when setting up ingress.  You'll then use the GitHub OAuth Apps's
-client ID and a generated client secret in the `brigade2-values.yaml` file.
+reserved when setting up ingress or the external IP address if no ingress is
+used.  You'll then use the GitHub OAuth Apps's client ID and a generated client
+secret in the `brigade2-values.yaml` file.
 
   1. Follow the [GitHub OAuth App] creation instructions, supplying your choice
     of values for `Application Name`, `Homepage URL` and `Application description`.
@@ -233,10 +235,12 @@ apiserver:
 ```
 
 Don't forget to add your GitHub username under the `admins` list, so that you
-as the operator have full admin privileges upon first login to Brigade.  Note:
-since these privileges are granted on first login, adding/revoking these
-permissions must be done via the brig CLI directly rather than re-deploying
-with differing configuration.
+as the operator have full admin privileges upon first login to Brigade.
+
+Note: since these privileges are granted on first login, adding/revoking these
+permissions for users who have already logged in for the first time must be
+done via the brig CLI directly rather than re-deploying with differing
+configuration.
 
 Save the updated file and proceed to the next section.
 
