@@ -263,7 +263,7 @@ Hello, Dolly!
 If you want to keep your Brigade installation, run the following command to remove the example project created in this QuickStart:
 
 ```
-brig project delete first-payload
+brig project delete --id first-payload
 ```
 
 Otherwise, you can remove ALL resources created in this QuickStart by either:
