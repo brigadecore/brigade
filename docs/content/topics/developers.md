@@ -61,12 +61,6 @@ switch branches, run the following command:
 $ git checkout v2
 ```
 
-You might prefer to checkout the most recent stable tag:
-
-```console
-$ git checkout v2.0.0-beta.1
-```
-
 After cloning the project locally, you should run this command to
 [configure the remote](https://help.github.com/articles/configuring-a-remote-for-a-fork/): 
 
