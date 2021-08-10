@@ -2,7 +2,7 @@
 title: A Brigade Quickstart
 description: A Brigade Quickstart.
 section: intro
-weight: 2
+weight: 3
 aliases:
   - /quickstart.md
   - /intro/quickstart.md
@@ -298,10 +298,9 @@ Otherwise, you can remove ALL resources created in this QuickStart by either:
 ## Next Steps
 
 You now know how to install Brigade on a local development cluster, define a project, and trigger an event for the project.
-Next learn how to [install and configure Brigade](/intro/install/) on a production cluster, or continue on to the [Read Next]
-document where we review the more advanced topics to delve into.
+Continue on to the [Read Next] document where we review more advanced topics to delve into.
 
-[Read Next]: /readnext
+[Read Next]: /intro/readnext
 
 ## Troubleshooting
 
