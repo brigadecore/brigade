@@ -203,7 +203,7 @@ A Brigade [project] defines event handlers, such as the definition of a CI pipel
 
 1. Initialize a new Brigade project with the `brig init` CLI command.
 
-    ```
+    ```console
     brig init --id first-project
     ```
     This will create a project definition like the following in `.brigade/project.yaml`, which defines a handler for the "exec" event and echoes "Hello, World!".
@@ -244,14 +244,14 @@ A Brigade [project] defines event handlers, such as the definition of a CI pipel
 
 1. Create the project in Brigade with the following command.
 
-    ```
+    ```console
     brig project create --file .brigade/project.yaml
     ```
 
 1. List the defined projects with `brig project list` and verify that you see your new project:
 
     ```console
-    $ brig project list
+    brig project list
     ID           	DESCRIPTION                         	AGE
     first-project	My new Brigade project               	49m
     ```
