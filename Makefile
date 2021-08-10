@@ -288,6 +288,13 @@ build-cli:
 		cd v2 && \
 		VERSION=$(VERSION) \
 		COMMIT=$(GIT_VERSION) \
+		OSES="linux darwin windows" \
+		ARCHS=amd64 \
+		../scripts/build-cli.sh && \
+		VERSION=$(VERSION) \
+		COMMIT=$(GIT_VERSION) \
+		OSES="linux darwin" \
+		ARCHS=arm64 \
 		../scripts/build-cli.sh \
 	'
 
