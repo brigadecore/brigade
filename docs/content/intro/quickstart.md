@@ -212,33 +212,30 @@ A Brigade [project] defines event handlers, such as the definition of a CI pipel
     apiVersion: brigade.sh/v2-beta
     kind: Project
     metadata:
-    id: first-project
+      id: first-project
     description: My new Brigade project
     spec:
-    ## Subscribe below to any events that should trigger your script.
-    ## The commented example depicts a subscription to "exec"
-    ## events originating from the Brigade CLI. 
-    eventSubscriptions:
-    - source: brigade.sh/cli
-        types:
-        - exec
+      eventSubscriptions:
+        - source: brigade.sh/cli
+          types:
+            - exec
     workerTemplate:
-        logLevel: DEBUG
-        defaultConfigFiles:
-        brigade.ts: |
-            import { events, Job } from "@brigadecore/brigadier"
-            
-            // Use events.on() to define how your script responds to different events. 
-            // The commented example below depicts handling of "exec" events originating 
-            // from the Brigade CLI.
-            
-            events.on("brigade.sh/cli", "exec", async event => {
-                let job = new Job("hello", "debian:latest", event)
-                job.primaryContainer.command = ["echo"]
-                job.primaryContainer.arguments = ["Hello, World!"]
-                await job.run()
-            })
+      logLevel: DEBUG
+      defaultConfigFiles:
+      brigade.ts: |
+        import { events, Job } from "@brigadecore/brigadier"
         
+        // Use events.on() to define how your script responds to different events. 
+        // The example below depicts handling of "exec" events originating from
+        // the Brigade CLI.
+        
+        events.on("brigade.sh/cli", "exec", async event => {
+            let job = new Job("hello", "debian:latest", event)
+            job.primaryContainer.command = ["echo"]
+            job.primaryContainer.arguments = ["Hello, World!"]
+            await job.run()
+        })
+
         events.process()
     ```
 
