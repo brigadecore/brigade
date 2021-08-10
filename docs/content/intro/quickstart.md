@@ -200,37 +200,57 @@ brig login --insecure --server https://IP_ADDRESS --root
 ## Create a Project
 
 A Brigade [project] defines event handlers, such as the definition of a CI pipeline.
-In this example project, the handler prints a message using a string passed in the event payload.
 
-1. Download the example project to the current directory.
+1. Initialize a new Brigade project with the `brig init` CLI command.
 
-    **posix**
-    ```bash
-    curl -o project.yaml https://raw.githubusercontent.com/brigadecore/brigade/v2/examples/12-first-payload/project.yaml
+    ```console
+    brig init --id first-project
     ```
+    This will create a project definition like the following in `.brigade/project.yaml`, which defines a handler for the "exec" event and echoes "Hello, World!".
 
-    **powershell**
-    ```bash
-    (New-Object Net.WebClient).DownloadFile("https://raw.githubusercontent.com/brigadecore/brigade/v2/examples/12-first-payload/project.yaml", "$pwd\project.yaml")
+    ```yaml
+    apiVersion: brigade.sh/v2-beta
+    kind: Project
+    metadata:
+      id: first-project
+    description: My new Brigade project
+    spec:
+      eventSubscriptions:
+        - source: brigade.sh/cli
+          types:
+            - exec
+    workerTemplate:
+      logLevel: DEBUG
+      defaultConfigFiles:
+      brigade.ts: |
+        import { events, Job } from "@brigadecore/brigadier"
+        
+        // Use events.on() to define how your script responds to different events. 
+        // The example below depicts handling of "exec" events originating from
+        // the Brigade CLI.
+        
+        events.on("brigade.sh/cli", "exec", async event => {
+            let job = new Job("hello", "debian:latest", event)
+            job.primaryContainer.command = ["echo"]
+            job.primaryContainer.arguments = ["Hello, World!"]
+            await job.run()
+        })
+
+        events.process()
     ```
-1. Open project.yaml
-
-    <script src="https://gist-it.appspot.com/https://raw.githubusercontent.com/brigadecore/brigade/v2/examples/12-first-payload/project.yaml"></script>
-
-    The project defines a handler for the "exec" event, that reads the event payload string and prints it out with "Hello, PAYLOAD!".
 
 1. Create the project in Brigade with the following command.
 
-    ```
-    brig project create --file project.yaml
+    ```console
+    brig project create --file .brigade/project.yaml
     ```
 
 1. List the defined projects with `brig project list` and verify that you see your new project:
 
     ```console
-    $ brig project list
+    brig project list
     ID           	DESCRIPTION                         	AGE
-    first-payload	Demonstrates using the event payload	49m
+    first-project	My new Brigade project               	49m
     ```
 
 [project]: /topics/projects/#an-introduction-to-projects
@@ -240,22 +260,23 @@ In this example project, the handler prints a message using a string passed in t
 With our project defined, you are now ready to trigger an event and watch your handler execute.
 
 ```
-brig event create --project first-payload --payload Dolly --follow
+brig event create --project first-project --follow
 ```
 
 Below is example output of a successful event handler:
 ```
-Created event "7a5234d6-e2aa-402f-acb9-c620dfc20003".
+Created event "2cb85062-f964-454d-ac5c-526cdbdd2679".
 
 Waiting for event's worker to be RUNNING...
-2021-05-26T18:12:34.604Z INFO: brigade-worker version: v2.0.0-beta.1
-2021-05-26T18:12:34.609Z DEBUG: writing default brigade.js to /var/vcs/.brigade/brigade.js
-2021-05-26T18:12:34.609Z DEBUG: using npm as the package manager
-2021-05-26T18:12:34.610Z DEBUG: path /var/vcs/.brigade/node_modules/@brigadecore does not exist; creating it
-2021-05-26T18:12:34.610Z DEBUG: polyfilling @brigadecore/brigadier with /var/brigade-worker/brigadier-polyfill
-2021-05-26T18:12:34.610Z DEBUG: found nothing to compile
-2021-05-26T18:12:34.611Z DEBUG: running node brigade.js
-Hello, Dolly!
+2021-08-10T16:52:01.699Z INFO: brigade-worker version: v2.0.0-beta.1
+2021-08-10T16:52:01.701Z DEBUG: writing default brigade.ts to /var/vcs/.brigade/brigade.ts
+2021-08-10T16:52:01.702Z DEBUG: using npm as the package manager
+2021-08-10T16:52:01.702Z DEBUG: path /var/vcs/.brigade/node_modules/@brigadecore does not exist; creating it
+2021-08-10T16:52:01.702Z DEBUG: polyfilling @brigadecore/brigadier with /var/brigade-worker/brigadier-polyfill
+2021-08-10T16:52:01.703Z DEBUG: compiling brigade.ts with flags --target ES6 --module commonjs --esModuleInterop
+2021-08-10T16:52:04.210Z DEBUG: running node brigade.js
+2021-08-10T16:52:04.360Z [job: hello] INFO: Creating job hello
+2021-08-10T16:52:06.921Z [job: hello] DEBUG: Current job phase is SUCCEEDED
 ```
 
 ## Cleanup
@@ -263,7 +284,7 @@ Hello, Dolly!
 If you want to keep your Brigade installation, run the following command to remove the example project created in this QuickStart:
 
 ```
-brig project delete --id first-payload
+brig project delete --id first-project
 ```
 
 Otherwise, you can remove ALL resources created in this QuickStart by either:
