@@ -13,7 +13,7 @@ if [ "${running}" != 'true' ]; then
 fi
 
 # Create a kind cluster with the local Docker image registry enabled
-cat <<EOF | kind create cluster --config=-
+kind get clusters | grep brigade || cat <<EOF | kind create cluster --name brigade --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
@@ -33,11 +33,10 @@ EOF
 docker network connect "kind" "${reg_name}" || true
 
 # Tell each node to use the local Docker image registry
-for node in $(kind get nodes); do
-  kubectl annotate node "${node}" "kind.x-k8s.io/registry=localhost:${reg_port}";
+for node in $(kind --name brigade get nodes); do
+  kubectl annotate node --overwrite "${node}" "kind.x-k8s.io/registry=localhost:${reg_port}"
 done
 
 # Set up NFS
 helm repo ls | grep https://charts.helm.sh/stable || helm repo add stable https://charts.helm.sh/stable
-kubectl create namespace nfs
-helm install nfs stable/nfs-server-provisioner -n nfs
+helm upgrade nfs stable/nfs-server-provisioner --install --create-namespace --namespace nfs
