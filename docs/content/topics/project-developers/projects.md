@@ -12,7 +12,7 @@ aliases:
 # Managing Projects in Brigade
 
 In Brigade, a project is a conceptual grouping of event subscriptions paired
-with logic expressing how to handle inbound events.
+with logic expressing how to handle those events.
 
 This document explains how to create and manage projects in Brigade.
 
@@ -58,7 +58,6 @@ As an example, let's look at a project definition expressed in YAML and break
 it down into its main sections:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/brigadecore/brigade/v2/v2/apiserver/schemas/project.json
 apiVersion: brigade.sh/v2-beta
 kind: Project
 metadata:
@@ -82,9 +81,7 @@ spec:
         events.process();
 ```
 
-In addition to the first commented line, which serves to help IDEs provide
-auto-completion according to the project schema, there are three high-level
-sections in the definition above.  They are:
+There are three high-level sections in the definition above.  They are:
 
   1. Project metadata, including:
     i. The `apiVersion` of the schema for this project
@@ -141,16 +138,17 @@ $ brig init --id myproject --git https://github.com/<org>/<repo>.git
 ```
 
 A few assets will be created in the directory in which the command is run.
-The bulk of the generated files can be found in the `.brigade` directory,
+The bulk of the generated files can be found in the `.brigade/` directory,
 including the project definition file (`project.yaml`), a secrets file
 (`secrets.yaml`) and a `NOTES.txt` file with next steps.  Additionally, a
-`.gitignore` file is created to ensure that the secrets file and script
-dependencies are not tracked in version control.
+`.gitignore` file is created (or amended, if it already exists) to ensure that
+the secrets file and script dependencies are not tracked in version control.
 
 ### The `brig project create` Command
 
 With a project definition file in hand, you're now ready to create the project
-with brig:
+with brig. For purposes of demonstration, let's say the `project.yaml` file
+exists in the same directory as the command being run:
 
 ```console
 $ brig project create --file project.yaml
@@ -161,9 +159,9 @@ validating that the definition adheres to the project schema, Brigade will
 persist the project on the substrate (in the form of a unique namespace) and in
 the backing database.
 
-### Upgrade a project
+### Update a project
 
-You can upgrade a project at any time with the following command:
+You can update a project at any time with the following command:
 
 ```console
 $ brig project update --file project.yaml
@@ -185,10 +183,11 @@ You can list all projects via:
 $ brig project list
 ```
 
-You can also directly inspect your project with `brig project get`:
+You can also directly inspect your project with `brig project get`. To see the
+full project definition, add `--output [yaml|json]`:
 
 ```console
-$ brig project get --id myproject
+$ brig project get --id myproject --output yaml
 ```
 
 ### Additional project management commands
@@ -214,13 +213,31 @@ authorization in general, see the [Authorization] doc.
 Brigade creates a unique namespace on the underlying substrate (Kubernetes)
 corresponding to each project. Although most users shouldn't have a need to
 inspect resources under a project namespace on the substrate, to see which
-unique namespace corresponds to which project, run the following `kubectl`
-command:
+unique namespace a project is assigned, run the `brig project get` command and
+note the `kubernetes.namespace` value.  For example:
 
 ```console
-$ kubectl get namespaces --show-labels
-NAME                                           STATUS   AGE     LABELS
-brigade-9f88dd8d-b804-4558-a26f-5e9ec32f1628   Active   8m13s   brigade.sh/project=myproject
+$ brig project get --id hello-world --output yaml
+
+apiVersion: brigade.sh/v2-beta
+description: The simplest possible example
+kind: Project
+kubernetes:
+  namespace: brigade-97cd352f-90e1-48d0-8797-4f7867a72bd3
+metadata:
+  created: "2021-08-11T17:47:07.555Z"
+  id: hello-world
+spec:
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
+  workerTemplate:
+    defaultConfigFiles:
+      brigade.js: |
+        console.log("Hello, World!");
+    logLevel: DEBUG
+    useWorkspace: false
 ```
 
 ## Git-based projects
@@ -253,23 +270,17 @@ $ brig project secrets set --file secrets.yaml
 
 ### Using other Git providers
 
-Brigade currently has gateway support for [GitHub] and [BitBucket]. Other
-providers should work fine for Brigade projects, though gateways to handle
-webhooks might not yet exist. See the [Gateways] doc for further info.
+Brigade ships with generalized Git support, so use of repositories from any Git
+provider should be possible on a Brigade project.
 
 You must ensure, however, that the Kubernetes cluster hosting Brigade can
 access the Git repository over the network via the URL provided in `cloneURL`.
 
+To subscribe a Git-based project to events from a corresponding provider, a
+[Gateway] is necessary. Brigade currently has gateway support for [GitHub] and
+[BitBucket]. See the [Gateways] doc for further info.
+
+[Gateway]: /topics/operators/gateways
 [GitHub]: https://github.com/brigadecore/brigade-github-gateway
 [BitBucket]: https://github.com/brigadecore/brigade-bitbucket-gateway/tree/v2
 [Gateways]: /topics/operators/gateways
-
-### Using other VCS systems
-
-It is possible to write a VCS sidecar that uses other VCS systems such as
-Mercurial, Bazaar, or Subversion. Essentially, a VCS sidecar need only be able
-to take the given information from the project and use it to create a local
-snapshot of the project in an appointed location. See the default
-[Git initializer] code for an example.
-
-[Git initializer]: https://github.com/brigadecore/brigade/tree/v2/v2/git-initializer
