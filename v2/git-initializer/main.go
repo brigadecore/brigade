@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/brigadecore/brigade-foundations/retries"
+	"github.com/brigadecore/brigade-foundations/version"
 	"github.com/brigadecore/brigade/sdk/v2/core"
 )
 
@@ -30,6 +32,12 @@ const (
 )
 
 func main() {
+	log.Printf(
+		"Starting Brigade Git Initializer -- version %s -- commit %s",
+		version.Version(),
+		version.Commit(),
+	)
+
 	if err := gitCheckout(); err != nil {
 		fmt.Printf("\n%s\n\n", err)
 		os.Exit(1)
