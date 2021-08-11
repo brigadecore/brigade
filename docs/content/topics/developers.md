@@ -319,14 +319,14 @@ You can then log in to the apiserver with the following `brig` command:
 $ brig login -s https://localhost:31600 -r -p 'F00Bar!!!' -k
 ```
 
-To create your first Brigade project, check out [projects](./projects.md) to
+To create your first Brigade project, check out [projects](/topics/project-developers/projects.md) to
 see how it's done.
 
 When you're done, if you'd like to clean up the kind cluster and registry
 resources, run the following commands:
 
 ```console
-$ kind delete cluster
+$ kind delete cluster --name brigade
 $ docker rm -f kind-registry
 ```
 
