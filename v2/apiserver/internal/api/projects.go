@@ -377,10 +377,7 @@ func (p *projectsService) Delete(ctx context.Context, id string) error {
 	}
 
 	// Delete all events associated with this project
-	if _, _, err := p.eventsStore.DeleteMany(
-		ctx,
-		EventsSelector{ProjectID: id, WorkerPhases: WorkerPhasesAll()},
-	); err != nil {
+	if err := p.eventsStore.DeleteByProjectID(ctx, id); err != nil {
 		return errors.Wrapf(
 			err,
 			"error deleting all events associated with project %q",
