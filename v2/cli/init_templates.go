@@ -17,8 +17,8 @@ metadata:
 description: My new Brigade project
 spec:
   ## Subscribe below to any events that should trigger your script.
-  ## The commented example depicts a subscription to "exec"
-  ## events originating from the Brigade CLI. 
+  ## The example depicts a subscription to "exec" events 
+  ## originating from the Brigade CLI. 
   eventSubscriptions:
   - source: brigade.sh/cli
     types:
@@ -46,8 +46,8 @@ spec:
 var typeScriptTemplate = []byte(`import { events, Job } from "@brigadecore/brigadier"
 
 // Use events.on() to define how your script responds to different events. 
-// The commented example below depicts handling of "exec" events originating 
-// from the Brigade CLI.
+// The example below depicts handling of "exec" events originating from
+// the Brigade CLI.
 
 events.on("brigade.sh/cli", "exec", async event => {
 	let job = new Job("hello", "debian:latest", event)
@@ -63,8 +63,8 @@ events.process()
 var javaScriptTemplate = []byte(`const { events } = require("@brigadecore/brigadier");
 
 // Use events.on() to define how your script responds to different events. 
-// The commented example below depicts handling of "exec" events originating 
-// from the Brigade CLI.
+// The example below depicts handling of "exec" events originating from
+// the Brigade CLI.
 
 events.on("brigade.sh/cli", "exec", async event => {
  	let job = new Job("hello", "debian:latest", event);
