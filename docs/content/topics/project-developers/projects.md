@@ -9,296 +9,278 @@ aliases:
   - /topics/project-developers/projects.md
 ---
 
-TODO: update per v2
-
 # Managing Projects in Brigade
 
-In Brigade, a project is just a special Kubernetes secret. The Brigade project currently offers
-two methods to create a project: via the `brig` cli and via the [brigade-project][brigade-project-chart]
-Helm chart.  The latter is managed in the [brigadecore/charts][charts] repo
-and an in-depth overview of its configuration can be seen in the chart
-[README](https://github.com/brigadecore/charts/blob/master/chart/brigade-project/README.md).
+In Brigade, a project is a conceptual grouping of event subscriptions paired
+with logic expressing how to handle those events.
 
-This document explains how to use both methods for managing your Brigade projects.
+This document explains how to create and manage projects in Brigade.
 
 ## An Introduction to Projects
 
 Brigade projects provide the necessary context for executing Brigade scripts.
-They provide _permission_ to run scripts, _authentication_ for some operations,
-_configuration_ for VCS, and _secret management_ for Brigade scripts.
+In addition to event subscriptions, they also specify the configuration of the
+worker in charge of running the event handler logic.
 
-Often times, a Brigade Project will point to an external VCS repository. The
-purpose of this feature is to make it easy to inject arbitrary files into a
-Brigade pipeline, and do so in a way that meets standard expectations about
-file versioning and storage.
+Often times, a Brigade Project will point to an external VCS repository, in
+which case this configuration will also be a part of the project definition.
+The purpose of this feature is to make it easy to inject source code from a
+repository into a Brigade pipeline, and do so in a way that meets standard
+expectations about file versioning and storage.
 
-Because GitHub is massively popular with open source developers, we chose to focus
-on GitHub as a first experience. However, this document explains how to work with
-other Git services, and how to extend Brigade to work with other VCS systems.
-
-## A Few Recommendations
-
-- Name your project with the GitHub convention `userOrGroup/project`.
-- When installing the Helm chart, use the `-n NAME` flag to name your Helm release.
-  We suggest `userOrGroup-project` as the release name just to make it easy.
-- When you use a GitHub repo, don't put secrets in it, even if you make your
-  repo private. Put them in your `values.yaml` file for your project (and don't
-  put that in GitHub).
+Because GitHub is massively popular with open source developers, we chose to
+focus on GitHub as a first experience. However, this document explains how to
+work with other Git services, and how to extend Brigade to work with other VCS
+systems.
 
 ## Creating and Managing a Project
 
-### The `brig project create` Command
+Before we can create a Brigade project, we need to define the project itself.
+We will discuss the project definition file and then explore how to create and
+manage a project from on a given definition file.  If you'd like to skip ahead
+and learn how to streamline project creation via the `brig init` command,
+proceed to the [brig init section] below.
 
-The preferred default for project creation and maintenance is via `brig`.  To create a
-new Brigade project, simply run `brig project create` and you will be prompted to answer a few questions:
+[brig init section]: #brig-init
 
-```console
-$ brig project create
-? VCS or no-VCS project? VCS
-? Project name brigadecore/empty-testbed
-? Full repository name github.com/brigadecore/empty-testbed
-? Clone URL (https://github.com/your/repo.git) https://github.com/brigadecore/empty-testbed.git
-? Add secrets? No
-Auto-generated a Shared Secret: "FweBxcwJvcbTTuW5CquyPtHM"
-? Configure GitHub Access? No
-? Configure advanced options No
-```
+### Project definition files
 
-You can use `--dry-run --verbose` to see the answers to the question without creating
-a new release. For more, see `brig project create --help`.
+Brigade project definition files are represented in YAML or JSON and follow a
+schema that will look familiar to users who have dealt with Kubernetes
+manifests - however, they are their own entities and are only understood by
+Brigade and the brig CLI.
 
-You can optionally customize a bunch of advanced options during `brig project create`:
+This approach allows users of Brigade to persist project configuration in a VCS
+of their choice.  Updating a pre-existing project is as easy as supplying the
+updated configuration to the corresponding brig command.
 
-- *Custom VCS sidecar*: The default sidecar uses Git to fetch your repository
-- *Build storage size*: By default, 50Mi of shared temp space is allocated per build. Larger values slow down build startup. Units are Ki, Mi, or Gi
-- *Build storage class*: Kubernetes provides named storage classes. If you want to use a custom storage class for Builds, set the class name here
-- *Job cache storage class*: Same as before, the custom storage class that will be used for job caches
-- *SecretKeyRef usage*: Allow or disallow usage of secretKeyRef in job environments
-- *Worker image registry or DockerHub org*: For non-DockerHub, this is the root URL. For DockerHub, it is the org
-- *Worker image name*: The name of the worker image, e.g. workerImage
-- *Custom worker image tag*: The worker image tag to pull, e.g. 1.2.3 or latest
-- *Worker image pull policy*: The image pull policy determines how often Kubernetes will try to refresh this image
-- *Worker command*: Override the worker's default command (yarn -s start)
-- *Initialize Git submodules*: For repos that have submodules, initialize them on each clone. Not recommended on public repos
-- *Allow host mounts*: Allow host-mounted volumes for worker and jobs. Not recommended in multi-tenant clusters
-- *Allow privileged jobs*: Allow jobs to mount the Docker socket or perform other privileged operations. Not recommended for multi-tenant clusters
-- *Image pull secrets*: Comma-separated list of image pull secret names that will be supplied to workers and jobs
-- *Default script ConfigMap name*: It is possible to store a default script in a ConfigMap. Supply the name of that ConfigMap to use the script
-- *brigade.js file path relative to the repository root*: brigade.js file path relative to the repository root, e.g. 'mypath/brigade.js'. Absolute paths will not be accepted
-- *Upload a default brigade.js script*: The local path to a default brigade.js file that will be run if none exists in the repo. Overrides the ConfigMap script
-- *Default config ConfigMap name*: It is possible to store a default brigade.json config in a ConfigMap. Supply the name of that ConfigMap to use the config
-- *brigade.json file path relative to the repository root*: brigade.json file path relative to the repository root, e.g. 'mypath/brigade.json'. Absolute paths will not be accepted
-- *Upload a default brigade.json config*: The local path to a default brigade.json config file that will be used if none exists in the repo. Overrides the ConfigMap config
-
-#### Storing a Script in a ConfigMap
-
-It is possible to store a `brigade.js` script in a dedicated ConfigMap, and then share that ConfigMap with multiple projects.
-
-For example, if you have a local file named `examples/brigade.js`, you can use the `kubectl` command to turn it into a ConfigMap for Brigade to consume:
-
-```console
-$ kubectl create configmap default-brigade-script --from-file=brigade.js=examples/brigade.js
-```
-
-The command above stores the `examples/brigade.js` script in a ConfigMap named `default-brigade-script`. When creating a new project, you can answer the *Default script ConfigMap name* question by providing the name of this ConfigMap: `default-brigade-script`.
-
-If this value is supplied, the `brigade.js` in the ConfigMap will be used if and only if neither the project nor the repository provides an alternative `brigade.js` file. In other words, this is the _last location_ checked for a Brigade script.
-
-This same pattern can be used to store a default `brigade.json` configuration file in a ConfigMap for use by multiple projects. The associated prompt is *Default brigade.json config ConfigMap name*
-
-#### Storing a Default Script in the Project
-
-It is also possible to store a default Brigade script within the project definition. When `brig project create` prompts for *Upload a default brigade.js script* you can enter the local path to a `brigade.js` file (e.g. `examples/brigade.js`) and that file will be copied into the project. Note that if you edit the `brigade.js` you will need to edit the project's Kubernetes Secret and update the script accordingly.
-
-If a script is set here, it will override a ConfigMap based script. However, if a repository holds a `brigade.js` file, that will take precedence over this.
-
-This same pattern can be used to store a default `brigade.json` configuration file for a project.  The associated prompt is *Upload a default brigade.json config*.
-
-### Managing Your Projects
-
-With `brig project create`, your projects are stored in Kubernetes secrets. You
-can save a local copy of that secret using `brigade project create --out=myproject.json`.
-
-If you have already created the secret, you can fetch it from Kubernetes by running
-`brig project get my/project` where `my/project` is the project name you assigned.
-
-## Creating and Managing a Project (The Old Way)
-
-Note: Managing Brigade projects via Helm chart is being deprecated in favor of using `brig`.
-
-### The Brigade Project Chart
-
-The Brigade Project chart is located in the [brigadecore/charts][charts] source tree at
-`charts/brigade-project`. You can also install it out of the Brigade chart repository.
-
-```console
-$ helm repo add brigade https://brigadecore.github.io/charts
-$ helm search brigade/brigade-project
-NAME                   	CHART VERSION	APP VERSION	DESCRIPTION
-brigade/brigade-project	1.0.0       	v1.0.0    	Create a Brigade project
-```
-
-We recommend using the following pattern to create your project:
-
-#### 1. Create a place to store project configs
-
-Store your project configuration in a safe place (probably locally or in a storage
-system like Keybase).
-
-```console
-$ mkdir -p brigade-projects/myproject
-$ cd brigade-projects/myproject
-```
-
-> You can store project configs in Git repos, but we don't recommend GitHub for
-> this. Keybase has [free encrypted private Git repos](https://keybase.io/blog/encrypted-git-for-everyone),
-> which are great for this sort of thing.
-
-#### 2. Create a `values.yaml` file for your project
-
-```
-$ helm inspect values brigade/brigade-project > values.yaml
-```
-
-#### 3. Edit the values for your project
-
-Read through the generated `values.yaml` file and modify it accordingly.
-
-Our suggestions are as follows, replacing `brigadecore/empty-testbed` with your own project's name:
+As an example, let's look at a project definition expressed in YAML and break
+it down into its main sections:
 
 ```yaml
-# Definitely do these:
-project: "brigadecore/empty-testbed"
-secrets: {}
+apiVersion: brigade.sh/v2-beta
+kind: Project
+metadata:
+  id: hello-world
+description: Demonstrates responding to an event with brigadier
+spec:
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
+  workerTemplate:
+    logLevel: DEBUG
+    defaultConfigFiles:
+      brigade.js: |
+        const { events } = require("@brigadecore/brigadier");
 
-# Probably do these so you can load a GitHub project which has useful stuff
-# in it, and if you want to use GitHub webhooks.
-repository: "github.com/brigadecore/empty-testbed"
-cloneURL: "https://github.com/brigadecore/empty-testbed.git"
-github:
-   token: "github oauth token"
+        events.on("brigade.sh/cli", "exec", async event => {
+          console.log("Hello, World!");
+        });
 
-# If you want GitHub webhooks.
-sharedSecret: "IBrakeForSeaBeasts"
-
-# As for the rest, use them if you know you need them.
+        events.process();
 ```
 
-For information on configuring for GitHub, see the [GitHub configuration guide](github.md).
+There are three high-level sections in the definition above.  They are:
 
-#### 4. Install your project
+  1. Project metadata, including:
+    i. The `apiVersion` of the schema for this project
+    ii. The schema `kind`, which will always be `Project`
+    iii. The `id`, or name, of the Project
+    iv. A `description` of the project
+  2. The `eventSubscriptions` configuration, which contains one event source
+    (`brigade.sh/cli`) and one type under that source (`exec`). This particular
+    configuration corresponds to events that arise from `brig event create`
+    commands.
+  3. The `workerTemplate`, which represents the configuration for the worker in
+    charge of running the script associated with this project. This particular
+    configuration has `logLevel` set to `DEBUG` and the `brigade.js` script for
+    this project defined in-line under `defaultConfigFiles`. We'll discuss
+    similar scripts in more detail in the [Scripting Guide], but for now we see
+    that this script imports the `events` object from the brigadier library and
+    declares an event handler for the event source/type combination mentioned
+    above.  In response to such events, it prints "Hello, World!" to the
+    console.
 
-Use Helm to install your chart, with its override values.
+For further examples of project definition files to help you get started, see
+the [examples directory].  Each example sub-directory will have a
+`project.yaml` file - this is the project definition file with configuration to
+that specific project.
+
+[examples directory]: ./examples
+[Scripting Guide]: /topics/scripting
+
+### Brig init
+
+To quickly bootstrap a new project, Brigade offers the `brig init` command. It
+will generate a new project definition file based on the options provided,
+which can then be used to create the project in Brigade.
+
+For example, to initialize a project named `myproject` with default settings,
+which includes TypeScript as the scripting language and no git configuration,
+run the following:
 
 ```console
-$ helm install brigade/brigade-project -n $MY_NAME -f values.yaml
+$ brig init --id myproject
 ```
 
-Replace `$MY_NAME` with the name of your project (something like `brigadecore-empty-testbed`).
-
-Once the project is created, you can use `brig` or another gateway to begin
-writing and running `brigade` scripts.
-
-#### 5. Fetch values later
-
-To get just the values later, you can run `helm get values $MY_NAME`
-
-#### 6. Upgrade a project
-
-You can upgrade a project at any time with the command
+Or, if the alternate scripting language option of JavaScript is preferred, run:
 
 ```console
-$ helm upgrade $MY_PROJECT brigade/brigade-project -f values.yaml
+$ brig init --id myproject --language js
 ```
 
-We suggest not using the `--reuse-values` flag on `helm upgrade` because it can
-cause confusing results unless you really know what you are doing.
+If the project is git-based, supply the git repository name where the Brigade
+script for this project will reside:
 
-#### 7. Deleting a project
-
-Use `helm delete $MY_PROJECT` to delete a project. Note that once you have done
-this, Brigade will no longer execute brigade scripts for this project.
-
-
-## Listing and inspecting projects with `brig`
-
-If you have the `brig` client installed, you can use it to list and interact with
-your projects:
-
+```console
+$ brig init --id myproject --git https://github.com/<org>/<repo>.git
 ```
+
+A few assets will be created in the directory in which the command is run.
+The bulk of the generated files can be found in the `.brigade/` directory,
+including the project definition file (`project.yaml`), a secrets file
+(`secrets.yaml`) and a `NOTES.txt` file with next steps.  Additionally, a
+`.gitignore` file is created (or amended, if it already exists) to ensure that
+the secrets file and script dependencies are not tracked in version control.
+
+### The `brig project create` Command
+
+With a project definition file in hand, you're now ready to create the project
+with brig. For purposes of demonstration, let's say the `project.yaml` file
+exists in the same directory as the command being run:
+
+```console
+$ brig project create --file project.yaml
+```
+
+This command will submit the project definition to Brigade's API server. After
+validating that the definition adheres to the project schema, Brigade will
+persist the project on the substrate (in the form of a unique namespace) and in
+the backing database.
+
+### Update a project
+
+You can update a project at any time with the following command:
+
+```console
+$ brig project update --file project.yaml
+```
+
+### Delete a project
+
+To delete a project, run:
+
+```console
+$ brig project delete --id myproject
+```
+
+### Listing and inspecting projects with `brig`
+
+You can list all projects via:
+
+```console
 $ brig project list
-NAME                       	ID                                                            	REPO
-technosophos/brigade-trello	brigade-635e505c74ad679bb9144d19950504fbe86b136ac3770bcff51ac6	github.com/technosophos/brigade-trello
-brigadecore/empty-testbed         	brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac	github.com/brigadecore/empty-testbed
-technosophos/hello-helm    	brigade-b140dc50d4eb9136dccab7225e8fbc9c0f5e17e19aede9d3566c0f	github.com/technosophos/hello-helm
-technosophos/twitter-t     	brigade-cf0858d449971e79083aacddc565450b8bf65a2b9f5d66ea76fdb4	github.com/technosophos/twitter-t
 ```
 
-You can also directly inspect your project with `brig`:
+You can also directly inspect your project with `brig project get`. To see the
+full project definition, add `--output [yaml|json]`:
 
 ```console
-$ brig project get brigadecore/empty-testbed
-id: brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac
-name: brigadecore/empty-testbed
-repo:
-  name: github.com/brigadecore/empty-testbed
-  owner: ""
-  cloneurl: https://github.com/brigadecore/empty-testbed.git
-  sshkey: ""
+$ brig project get --id myproject --output yaml
+```
+
+### Additional project management commands
+
+To manage project secrets, the `brig project secret` suite of commands can be
+used. For example, to set secrets for a project via a secrets file, run:
+
+```console
+$ brig project secret set --file secrets.yaml
+```
+
+To explore different ways to manage secrets in Brigade, see the [Secrets] doc.
+
+To manage roles for a project, see the `brig project roles` suite of commands.
+Roles can be created, listed and revoked. For an overview on roles and
+authorization in general, see the [Authorization] doc.
+
+[Secrets]: /topics/project-developers/secrets
+[Authorization]: /topics/administrators/authorization
+
+## Project namespaces
+
+Brigade creates a unique namespace on the underlying substrate (Kubernetes)
+corresponding to each project. Although most users shouldn't have a need to
+inspect resources under a project namespace on the substrate, to see which
+unique namespace a project is assigned, run the `brig project get` command and
+note the `kubernetes.namespace` value.  For example:
+
+```console
+$ brig project get --id hello-world --output yaml
+
+apiVersion: brigade.sh/v2-beta
+description: The simplest possible example
+kind: Project
 kubernetes:
-  namespace: default
-  vcssidecar: brigadecore/git-sidecar:latest
-  buildStorageSize: "50Mi"
-sharedsecret: FakeSharedSecret
-github:
-  token: 76faketoken789
-secrets:
-  dbPassword: supersecret
+  namespace: brigade-97cd352f-90e1-48d0-8797-4f7867a72bd3
+metadata:
+  created: "2021-08-11T17:47:07.555Z"
+  id: hello-world
+spec:
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
+  workerTemplate:
+    defaultConfigFiles:
+      brigade.js: |
+        console.log("Hello, World!");
+    logLevel: DEBUG
+    useWorkspace: false
 ```
 
+## Git-based projects
 
-## Internal Brigade Project Names
-
-Brigade creates an "internal name" for each project. It looks something like
-this:
-
-```
-brigade-635e505c74ad679bb9144d19950504fbe86b136ac3770bcff51ac6
-```
-
-There is nothing fancy about this name. In fact, it is just a prefixed hash of
-the project name. Its purpose is merely to ensure that we can meet the naming
-requirements of Kubernetes without imposing undue restrictions on how you name
-your project.
-
-_These names are intentionally repeatable._ Two projects with the same name should
-also have the same internal name.
-
-## Using SSH Keys
+### Using SSH Keys
 
 You can use SSH keys and a `git+ssh` URL to secure a private repository.
 
-In this case, your project's `cloneURL` should be of the form `git@github.com:brigadecore/brigade.git`
-and you will need to add the SSH _private key_ to the `values.yaml` file.
+In this case, your project's `cloneURL` should be of the form
+`git@github.com:<org>/<repo>.git` and you will need to add the SSH
+_private key_ as a secret to the project with the key `gitSSHKey`.
 
-When doing `brig project create`, URLs that do not use HTTP or HTTPS will prompt
-for (optionally) adding an SSH key.
+For example, if project secrets are contained in a `secrets.yaml` file, the
+private key would be added like so:
 
-## Using other Git providers
+```yaml
+gitSSHKey: |-
+  -----BEGIN RSA PRIVATE KEY-----
+  IIEpAIBAAKCAg1wyZD164xNLrANjRrcsbieLwHJ6fKD3LC19E...
+  ...
+  ...
+  -----END RSA PRIVATE KEY-----
+```
 
-Git providers like BitBucket or GitLab should work fine as Brigade _projects_. However,
-the [Brigade GitHub Gateway](./github.md) does not necessarily support them (yet).
+The project secrets can then be updated via the usual brig command:
 
-You must ensure, however, that your Kubernetes cluster can access the Git repository
-over the network via the URL provided in `cloneURL`.
+```console
+$ brig project secrets set --file secrets.yaml
+```
 
-## Using other VCS systems
+### Using other Git providers
 
-It is possible to write a simple VCS sidecar that uses other VCS systems such as
-Mercurial, Bazaar, or Subversion. Essentially, a VCS sidecar need only be able
-to take the given information from the project and use it to create a local snapshot
-of the project in an appointed location. See the [Git sidecar](https://github.com/brigadecore/brigade/tree/master/git-sidecar)
-for an example.
+Brigade ships with generalized Git support, so use of repositories from any Git
+provider should be possible on a Brigade project.
 
-[charts]: https://github.com/brigadecore/charts
-[brigade-project-chart]: https://github.com/brigadecore/charts/tree/master/charts/brigade-project
+You must ensure, however, that the Kubernetes cluster hosting Brigade can
+access the Git repository over the network via the URL provided in `cloneURL`.
+
+To subscribe a Git-based project to events from a corresponding provider, a
+[Gateway] is necessary. Brigade currently has gateway support for [GitHub] and
+[BitBucket]. See the [Gateways] doc for further info.
+
+[Gateway]: /topics/operators/gateways
+[GitHub]: https://github.com/brigadecore/brigade-github-gateway
+[BitBucket]: https://github.com/brigadecore/brigade-bitbucket-gateway/tree/v2
+[Gateways]: /topics/operators/gateways
