@@ -405,13 +405,8 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				eventsStore: &mockEventsStore{
-					DeleteManyFn: func(
-						context.Context,
-						EventsSelector,
-					) (<-chan Event, int64, error) {
-						return nil,
-							0,
-							errors.New("error deleting events associated with project")
+					DeleteByProjectIDFn: func(context.Context, string) error {
+						return errors.New("error deleting events associated with project")
 					},
 				},
 			},
@@ -437,11 +432,8 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				eventsStore: &mockEventsStore{
-					DeleteManyFn: func(
-						context.Context,
-						EventsSelector,
-					) (<-chan Event, int64, error) {
-						return nil, 0, nil
+					DeleteByProjectIDFn: func(context.Context, string) error {
+						return nil
 					},
 				},
 				logsStore: &mockLogsStore{
@@ -481,11 +473,8 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				eventsStore: &mockEventsStore{
-					DeleteManyFn: func(
-						context.Context,
-						EventsSelector,
-					) (<-chan Event, int64, error) {
-						return nil, 0, nil
+					DeleteByProjectIDFn: func(context.Context, string) error {
+						return nil
 					},
 				},
 				logsStore: &mockLogsStore{
@@ -525,11 +514,8 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				eventsStore: &mockEventsStore{
-					DeleteManyFn: func(
-						context.Context,
-						EventsSelector,
-					) (<-chan Event, int64, error) {
-						return nil, 0, nil
+					DeleteByProjectIDFn: func(context.Context, string) error {
+						return nil
 					},
 				},
 				logsStore: &mockLogsStore{
@@ -565,11 +551,8 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				eventsStore: &mockEventsStore{
-					DeleteManyFn: func(
-						context.Context,
-						EventsSelector,
-					) (<-chan Event, int64, error) {
-						return nil, 0, nil
+					DeleteByProjectIDFn: func(context.Context, string) error {
+						return nil
 					},
 				},
 				logsStore: &mockLogsStore{
@@ -610,11 +593,8 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				eventsStore: &mockEventsStore{
-					DeleteManyFn: func(
-						context.Context,
-						EventsSelector,
-					) (<-chan Event, int64, error) {
-						return nil, 0, nil
+					DeleteByProjectIDFn: func(context.Context, string) error {
+						return nil
 					},
 				},
 				logsStore: &mockLogsStore{

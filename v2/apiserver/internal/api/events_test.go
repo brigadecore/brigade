@@ -1792,6 +1792,7 @@ type mockEventsStore struct {
 		context.Context,
 		EventsSelector,
 	) (<-chan Event, int64, error)
+	DeleteByProjectIDFn func(context.Context, string) error
 }
 
 func (m *mockEventsStore) Create(ctx context.Context, event Event) error {
@@ -1845,4 +1846,11 @@ func (m *mockEventsStore) DeleteMany(
 	selector EventsSelector,
 ) (<-chan Event, int64, error) {
 	return m.DeleteManyFn(ctx, selector)
+}
+
+func (m *mockEventsStore) DeleteByProjectID(
+	ctx context.Context,
+	projectID string,
+) error {
+	return m.DeleteByProjectIDFn(ctx, projectID)
 }

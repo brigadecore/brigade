@@ -972,3 +972,54 @@ func TestEventsStoreDeleteMany(t *testing.T) {
 		})
 	}
 }
+
+func TestEventsStoreDeleteByProjectID(t *testing.T) {
+	const testProjectID = "manhattan"
+	testCases := []struct {
+		name       string
+		collection mongodb.Collection
+		assertions func(err error)
+	}{
+		{
+			name: "error deleting events",
+			collection: &mongoTesting.MockCollection{
+				DeleteManyFn: func(
+					context.Context,
+					interface{},
+					...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return nil, errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "error deleting events for project")
+				require.Contains(t, err.Error(), "something went wrong")
+			},
+		},
+		{
+			name: "success",
+			collection: &mongoTesting.MockCollection{
+				DeleteManyFn: func(
+					context.Context,
+					interface{},
+					...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return &mongo.DeleteResult{}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &eventsStore{
+				collection: testCase.collection,
+			}
+			err := store.DeleteByProjectID(context.Background(), testProjectID)
+			testCase.assertions(err)
+		})
+	}
+}

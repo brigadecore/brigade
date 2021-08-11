@@ -579,3 +579,16 @@ func (e *eventsStore) DeleteMany(
 
 	return eventCh, result.ModifiedCount, nil
 }
+
+func (e *eventsStore) DeleteByProjectID(
+	ctx context.Context,
+	projectID string,
+) error {
+	_, err := e.collection.DeleteMany(
+		ctx,
+		bson.M{
+			"projectID": projectID,
+		},
+	)
+	return errors.Wrapf(err, "error deleting events for project %q", projectID)
+}
