@@ -1,4 +1,4 @@
-FROM brigadecore/go-tools:v0.1.0
+FROM brigadecore/go-tools:v0.2.0
 ENV CGO_ENABLED=0
 WORKDIR /src
 COPY sdk/ sdk/

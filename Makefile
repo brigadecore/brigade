@@ -16,7 +16,7 @@ GIT_VERSION = $(shell git describe --always --abbrev=7 --dirty --match=NeVeRmAtC
 
 ifneq ($(SKIP_DOCKER),true)
 	PROJECT_ROOT := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
-	GO_DEV_IMAGE := brigadecore/go-tools:v0.1.0
+	GO_DEV_IMAGE := brigadecore/go-tools:v0.2.0
 
 	GO_DOCKER_CMD := docker run \
 		-it \
@@ -288,6 +288,13 @@ build-cli:
 		cd v2 && \
 		VERSION=$(VERSION) \
 		COMMIT=$(GIT_VERSION) \
+		OSES="linux darwin windows" \
+		ARCHS=amd64 \
+		../scripts/build-cli.sh && \
+		VERSION=$(VERSION) \
+		COMMIT=$(GIT_VERSION) \
+		OSES="linux darwin" \
+		ARCHS=arm64 \
 		../scripts/build-cli.sh \
 	'
 
