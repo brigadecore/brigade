@@ -24,9 +24,9 @@ worker in charge of running the event handler logic.
 
 Often times, a Brigade Project will point to an external VCS repository, in
 which case this configuration will also be a part of the project definition.
-The purpose of this feature is to make it easy to inject arbitrary files into
-a Brigade pipeline, and do so in a way that meets standard expectations about
-file versioning and storage.
+The purpose of this feature is to make it easy to inject source code from a
+repository into a Brigade pipeline, and do so in a way that meets standard
+expectations about file versioning and storage.
 
 Because GitHub is massively popular with open source developers, we chose to
 focus on GitHub as a first experience. However, this document explains how to
