@@ -949,7 +949,10 @@ type EventsStore interface {
 	// return a *meta.ErrNotFound error.
 	Delete(context.Context, string) error
 	// DeleteMany unconditionally deletes multiple Events specified by the
-	// EventsSelector parameter from the underlying data store.  Implementations
+	// EventsSelector parameter from the underlying data store. Implementations
 	// MUST return the total number of deleted events.
 	DeleteMany(context.Context, EventsSelector) (<-chan Event, int64, error)
+	// DeleteByProjectID unconditionally deletes all Events associated with the
+	// specified project.
+	DeleteByProjectID(context.Context, string) error
 }
