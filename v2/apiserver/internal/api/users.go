@@ -65,6 +65,14 @@ func (u UserList) MarshalJSON() ([]byte, error) {
 	)
 }
 
+// UsersServiceConfig encapsulates several configuration options for the
+// UsersService.
+type UsersServiceConfig struct {
+	// ThirdPartyAuthEnabled indicates whether authentication using a third-party
+	// identity provider is supported by the Sessions service.
+	ThirdPartyAuthEnabled bool
+}
+
 // UsersService is the specialized interface for managing Users. It's decoupled
 // from underlying technology choices (e.g. data store) to keep business logic
 // reusable and consistent while the underlying tech stack remains free to
@@ -88,6 +96,7 @@ type usersService struct {
 	authorize     AuthorizeFn
 	usersStore    UsersStore
 	sessionsStore SessionsStore
+	config        UsersServiceConfig
 }
 
 // NewUsersService returns a specialized interface for managing Users.
@@ -95,11 +104,13 @@ func NewUsersService(
 	authorizeFn AuthorizeFn,
 	usersStore UsersStore,
 	sessionsStore SessionsStore,
+	config UsersServiceConfig,
 ) UsersService {
 	return &usersService{
 		authorize:     authorizeFn,
 		usersStore:    usersStore,
 		sessionsStore: sessionsStore,
+		config:        config,
 	}
 }
 
@@ -109,6 +120,10 @@ func (u *usersService) List(
 ) (UserList, error) {
 	if err := u.authorize(ctx, RoleReader, ""); err != nil {
 		return UserList{}, err
+	}
+
+	if !u.config.ThirdPartyAuthEnabled {
+		return UserList{}, errUserManagementDisabled()
 	}
 
 	if opts.Limit == 0 {
@@ -124,6 +139,10 @@ func (u *usersService) List(
 func (u *usersService) Get(ctx context.Context, id string) (User, error) {
 	if err := u.authorize(ctx, RoleReader, ""); err != nil {
 		return User{}, err
+	}
+
+	if !u.config.ThirdPartyAuthEnabled {
+		return User{}, errUserManagementDisabled()
 	}
 
 	user, err := u.usersStore.Get(ctx, id)
@@ -142,6 +161,10 @@ func (u *usersService) Lock(ctx context.Context, id string) error {
 		return err
 	}
 
+	if !u.config.ThirdPartyAuthEnabled {
+		return errUserManagementDisabled()
+	}
+
 	if err := u.usersStore.Lock(ctx, id); err != nil {
 		return errors.Wrapf(err, "error locking user %q in store", id)
 	}
@@ -154,6 +177,10 @@ func (u *usersService) Lock(ctx context.Context, id string) error {
 func (u *usersService) Unlock(ctx context.Context, id string) error {
 	if err := u.authorize(ctx, RoleAdmin, ""); err != nil {
 		return err
+	}
+
+	if !u.config.ThirdPartyAuthEnabled {
+		return errUserManagementDisabled()
 	}
 
 	if err := u.usersStore.Unlock(ctx, id); err != nil {
@@ -187,4 +214,12 @@ type UsersStore interface {
 	// this operation. If the specified User does not exist, implementations MUST
 	// return a *meta.ErrNotFound error.
 	Unlock(ctx context.Context, id string) error
+}
+
+func errUserManagementDisabled() *meta.ErrNotSupported {
+	return &meta.ErrNotSupported{
+		Details: "Authentication using a third party identity provider is not " +
+			"supported by this server. User management functions are unavailable " +
+			"when authentication via a third party identity provider is not enabled.",
+	}
 }

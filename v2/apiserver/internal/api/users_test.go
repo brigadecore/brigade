@@ -21,7 +21,12 @@ func TestUserListMarshalJSON(t *testing.T) {
 func TestNewUsersService(t *testing.T) {
 	usersStore := &mockUsersStore{}
 	sessionsStore := &mockSessionsStore{}
-	svc := NewUsersService(alwaysAuthorize, usersStore, sessionsStore)
+	svc := NewUsersService(
+		alwaysAuthorize,
+		usersStore,
+		sessionsStore,
+		UsersServiceConfig{},
+	)
 	require.NotNil(t, svc.(*usersService).authorize)
 	require.Same(t, usersStore, svc.(*usersService).usersStore)
 	require.Same(t, sessionsStore, svc.(*usersService).sessionsStore)
@@ -44,6 +49,19 @@ func TestUserServiceList(t *testing.T) {
 			},
 		},
 		{
+			name: "user management functions unavailable",
+			service: &usersService{
+				authorize: alwaysAuthorize,
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: false,
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotSupported{}, err)
+			},
+		},
+		{
 			name: "error getting users from store",
 			service: &usersService{
 				authorize: alwaysAuthorize,
@@ -51,6 +69,9 @@ func TestUserServiceList(t *testing.T) {
 					ListFn: func(context.Context, meta.ListOptions) (UserList, error) {
 						return UserList{}, errors.New("error listing users")
 					},
+				},
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(err error) {
@@ -67,6 +88,9 @@ func TestUserServiceList(t *testing.T) {
 					ListFn: func(context.Context, meta.ListOptions) (UserList, error) {
 						return UserList{}, nil
 					},
+				},
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(err error) {
@@ -105,6 +129,19 @@ func TestUsersServiceGet(t *testing.T) {
 			},
 		},
 		{
+			name: "user management functions unavailable",
+			service: &usersService{
+				authorize: alwaysAuthorize,
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: false,
+				},
+			},
+			assertions: func(_ User, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotSupported{}, err)
+			},
+		},
+		{
 			name: "with error from store",
 			service: &usersService{
 				authorize: alwaysAuthorize,
@@ -112,6 +149,9 @@ func TestUsersServiceGet(t *testing.T) {
 					GetFn: func(context.Context, string) (User, error) {
 						return User{}, &meta.ErrNotFound{}
 					},
+				},
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(user User, err error) {
@@ -127,6 +167,9 @@ func TestUsersServiceGet(t *testing.T) {
 					GetFn: func(context.Context, string) (User, error) {
 						return testUser, nil
 					},
+				},
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(user User, err error) {
@@ -160,6 +203,19 @@ func TestUsersServiceLock(t *testing.T) {
 			},
 		},
 		{
+			name: "user management functions unavailable",
+			service: &usersService{
+				authorize: alwaysAuthorize,
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: false,
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotSupported{}, err)
+			},
+		},
+		{
 			name: "error updating user in store",
 			service: &usersService{
 				authorize: alwaysAuthorize,
@@ -167,6 +223,9 @@ func TestUsersServiceLock(t *testing.T) {
 					LockFn: func(context.Context, string) error {
 						return errors.New("store error")
 					},
+				},
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(err error) {
@@ -189,6 +248,9 @@ func TestUsersServiceLock(t *testing.T) {
 						return errors.New("store error")
 					},
 				},
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: true,
+				},
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -210,6 +272,9 @@ func TestUsersServiceLock(t *testing.T) {
 					DeleteByUserFn: func(c context.Context, s string) error {
 						return nil
 					},
+				},
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(err error) {
@@ -243,6 +308,19 @@ func TestUsersServiceUnlock(t *testing.T) {
 			},
 		},
 		{
+			name: "user management functions unavailable",
+			service: &usersService{
+				authorize: alwaysAuthorize,
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: false,
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotSupported{}, err)
+			},
+		},
+		{
 			name: "error updating user in store",
 			service: &usersService{
 				authorize: alwaysAuthorize,
@@ -250,6 +328,9 @@ func TestUsersServiceUnlock(t *testing.T) {
 					UnlockFn: func(context.Context, string) error {
 						return errors.New("store error")
 					},
+				},
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(err error) {
@@ -266,6 +347,9 @@ func TestUsersServiceUnlock(t *testing.T) {
 					UnlockFn: func(context.Context, string) error {
 						return nil
 					},
+				},
+				config: UsersServiceConfig{
+					ThirdPartyAuthEnabled: true,
 				},
 			},
 			assertions: func(err error) {

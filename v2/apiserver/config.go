@@ -223,7 +223,8 @@ func sessionsServiceConfig() (api.SessionsServiceConfig, error) {
 	}
 	thirdPartyAuthStrategy :=
 		os.GetEnvVar("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyDisabled)
-	config.ThirdPartyAuthEnabled = thirdPartyAuthStrategy != "disabled"
+	config.ThirdPartyAuthEnabled =
+		thirdPartyAuthStrategy != thirdPartyAuthStrategyDisabled
 	config.UserSessionTTL, err = os.GetDurationFromEnvVar(
 		"USER_SESSION_TTL",
 		time.Hour,
@@ -231,6 +232,17 @@ func sessionsServiceConfig() (api.SessionsServiceConfig, error) {
 	config.AdminUserIDs =
 		os.GetStringSliceFromEnvVar("ADMIN_USER_IDS", []string{})
 	return config, err
+}
+
+// usersServiceConfig returns an api.UsersServiceConfig based on configuration
+// obtained from environment variables. nolint: gocyclo
+func usersServiceConfig() api.UsersServiceConfig {
+	return api.UsersServiceConfig{
+		ThirdPartyAuthEnabled: os.GetEnvVar(
+			"THIRD_PARTY_AUTH_STRATEGY",
+			thirdPartyAuthStrategyDisabled,
+		) != thirdPartyAuthStrategyDisabled,
+	}
 }
 
 // tokenAuthFilterConfig returns an api.TokenAuthFilterConfig based on
