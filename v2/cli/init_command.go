@@ -241,6 +241,8 @@ func initialize(c *cli.Context) error {
 	fmt.Printf("Adding %s to .gitignore...\n", secretsPath)
 	fmt.Printf("Adding .brigade/node_modules/ to .gitignore...\n")
 
+	fmt.Printf("\nPlease refer to %s for next steps.\n", notesPath)
+
 	return nil
 }
 
