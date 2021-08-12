@@ -91,6 +91,9 @@ type UsersClient interface {
 	// Unlock restores system access for a single User (after presumably having
 	// been revoked) specified by their identifier.
 	Unlock(context.Context, string) error
+
+	// Delete deletes a single User specified by their identifier.
+	Delete(context.Context, string) error
 }
 
 type usersClient struct {
@@ -156,6 +159,17 @@ func (u *usersClient) Unlock(ctx context.Context, id string) error {
 		rm.OutboundRequest{
 			Method:      http.MethodDelete,
 			Path:        fmt.Sprintf("v2/users/%s/lock", id),
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (u *usersClient) Delete(ctx context.Context, id string) error {
+	return u.ExecuteRequest(
+		ctx,
+		rm.OutboundRequest{
+			Method:      http.MethodDelete,
+			Path:        fmt.Sprintf("v2/users/%s", id),
 			SuccessCode: http.StatusOK,
 		},
 	)
