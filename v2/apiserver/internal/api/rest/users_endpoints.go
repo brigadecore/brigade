@@ -40,6 +40,12 @@ func (u *UsersEndpoints) Register(router *mux.Router) {
 		"/v2/users/{id}/lock",
 		u.AuthFilter.Decorate(u.unlock),
 	).Methods(http.MethodDelete)
+
+	// Delete user
+	router.HandleFunc(
+		"/v2/users/{id}",
+		u.AuthFilter.Decorate(u.delete),
+	).Methods(http.MethodDelete)
 }
 
 func (u *UsersEndpoints) list(w http.ResponseWriter, r *http.Request) {
@@ -111,6 +117,19 @@ func (u *UsersEndpoints) unlock(w http.ResponseWriter, r *http.Request) {
 			R: r,
 			EndpointLogic: func() (interface{}, error) {
 				return nil, u.Service.Unlock(r.Context(), mux.Vars(r)["id"])
+			},
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (u *UsersEndpoints) delete(w http.ResponseWriter, r *http.Request) {
+	restmachinery.ServeRequest(
+		restmachinery.InboundRequest{
+			W: w,
+			R: r,
+			EndpointLogic: func() (interface{}, error) {
+				return nil, u.Service.Delete(r.Context(), mux.Vars(r)["id"])
 			},
 			SuccessCode: http.StatusOK,
 		},

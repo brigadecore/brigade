@@ -529,9 +529,13 @@ type mockProjectRoleAssignmentsStore struct {
 		ProjectRoleAssignmentsSelector,
 		meta.ListOptions,
 	) (ProjectRoleAssignmentList, error)
-	RevokeFn     func(context.Context, ProjectRoleAssignment) error
-	RevokeManyFn func(ctx context.Context, projectID string) error
-	ExistsFn     func(context.Context, ProjectRoleAssignment) (bool, error)
+	RevokeFn            func(context.Context, ProjectRoleAssignment) error
+	RevokeByProjectIDFn func(ctx context.Context, projectID string) error
+	RevokeByPrincipalFn func(context.Context, PrincipalReference) error
+	ExistsFn            func(
+		context.Context,
+		ProjectRoleAssignment,
+	) (bool, error)
 }
 
 func (m *mockProjectRoleAssignmentsStore) Grant(
@@ -560,7 +564,14 @@ func (m *mockProjectRoleAssignmentsStore) RevokeByProjectID(
 	ctx context.Context,
 	projectID string,
 ) error {
-	return m.RevokeManyFn(ctx, projectID)
+	return m.RevokeByProjectIDFn(ctx, projectID)
+}
+
+func (m *mockProjectRoleAssignmentsStore) RevokeByPrincipal(
+	ctx context.Context,
+	principalReference PrincipalReference,
+) error {
+	return m.RevokeByPrincipalFn(ctx, principalReference)
 }
 
 func (m *mockProjectRoleAssignmentsStore) Exists(

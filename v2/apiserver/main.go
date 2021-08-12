@@ -215,6 +215,8 @@ func main() {
 		authorizer.Authorize,
 		usersStore,
 		sessionsStore,
+		roleAssignmentsStore,
+		projectRoleAssignmentsStore,
 		usersServiceConfig(),
 	)
 

@@ -445,7 +445,7 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, string) error {
+					RevokeByProjectIDFn: func(context.Context, string) error {
 						return nil
 					},
 				},
@@ -486,7 +486,7 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, string) error {
+					RevokeByProjectIDFn: func(context.Context, string) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -527,7 +527,7 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, string) error {
+					RevokeByProjectIDFn: func(context.Context, string) error {
 						return nil
 					},
 				},
@@ -564,7 +564,7 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, string) error {
+					RevokeByProjectIDFn: func(context.Context, string) error {
 						return nil
 					},
 				},
@@ -606,7 +606,7 @@ func TestProjectServiceDelete(t *testing.T) {
 					},
 				},
 				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
-					RevokeManyFn: func(context.Context, string) error {
+					RevokeByProjectIDFn: func(context.Context, string) error {
 						return nil
 					},
 				},

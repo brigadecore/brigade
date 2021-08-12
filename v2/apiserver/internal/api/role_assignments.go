@@ -282,6 +282,9 @@ type RoleAssignmentsStore interface {
 	// Revoke the role specified by the RoleAssignment for the principal specified
 	// by the RoleAssignment.
 	Revoke(context.Context, RoleAssignment) error
+	// RevokeByPrincipal revokes all roles for the principal specified by the
+	// PrincipalReference.
+	RevokeByPrincipal(context.Context, PrincipalReference) error
 	// Exists returns a bool indicating whether the specified RoleAssignment
 	// exists within the store. Implementations MUST also return true if a
 	// RoleAssignment exists in the store that logically "overlaps" the specified
