@@ -215,6 +215,7 @@ func main() {
 		authorizer.Authorize,
 		usersStore,
 		sessionsStore,
+		usersServiceConfig(),
 	)
 
 	// Workers service

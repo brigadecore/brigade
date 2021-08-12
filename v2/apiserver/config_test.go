@@ -322,7 +322,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 		{
 			name: "OIDC_PROVIDER_URL required but not set",
 			setup: func() {
-				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", "oidc")
+				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyOIDC)
 			},
 			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
@@ -495,6 +495,39 @@ func TestSessionsServiceConfig(t *testing.T) {
 	}
 }
 
+func TestUsersServiceConfig(t *testing.T) {
+	testCases := []struct {
+		name       string
+		setup      func()
+		assertions func(api.UsersServiceConfig)
+	}{
+		{
+			name: "third party auth disabled",
+			setup: func() {
+				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyDisabled)
+			},
+			assertions: func(config api.UsersServiceConfig) {
+				require.False(t, config.ThirdPartyAuthEnabled)
+			},
+		},
+		{
+			name: "third party auth enabled",
+			setup: func() {
+				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyGitHub)
+			},
+			assertions: func(config api.UsersServiceConfig) {
+				require.True(t, config.ThirdPartyAuthEnabled)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.setup()
+			testCase.assertions(usersServiceConfig())
+		})
+	}
+}
+
 func TestTokenAuthFilterConfig(t *testing.T) {
 	testCases := []struct {
 		name       string
@@ -538,7 +571,7 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 			name: "success",
 			setup: func() {
 				os.Setenv("OBSERVER_TOKEN", "bar")
-				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", "github")
+				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyGitHub)
 			},
 			assertions: func(config rest.TokenAuthFilterConfig, err error) {
 				require.NoError(t, err)
