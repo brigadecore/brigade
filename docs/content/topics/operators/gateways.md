@@ -140,7 +140,7 @@ this writing, a [Javascript/Typescript SDK] and a [Rust SDK] (WIP) also exist.
 [Javascript/Typescript SDK]: https://github.com/brigadecore/brigade-sdk-for-js
 [Rust SDK]: https://github.com/brigadecore/brigade-sdk-for-rust
 
-### Example Gateway
+## Example Gateway
 
 The following example assumes a running Brigade instance deployed with the
 default root user enabled. If you'd like to follow along and haven't yet
@@ -148,7 +148,7 @@ deployed Brigade, check out the [QuickStart].
 
 [QuickStart]: /intro/quickstart
 
-#### Authentication
+### Authentication
 
 As a first course of action for our example gateway written in Go, we'll need
 to authenticate with Brigade. Here is what the Go code looks like, with in-line
@@ -206,12 +206,12 @@ func main() {
 We now have the code needed for the example gateway to communicate with the
 Brigade API Server and acquire an authentication token via a root user session.
 
-#### Event Creation
+### Event Creation
 
 Let's add logic to the gateway so that it can create an event for a provided
 Brigade project. We'll focus first on the additions needed for creating an
-event in a new function, `createEvent`, that we'll tie together with the `main`
-function afterwards.
+event in a new function, `createEvent`, that we'll link together with the
+`main` function afterwards.
 
 ```go
 // createEvent creates a Brigade Event for the provided project, using the
@@ -259,9 +259,48 @@ func createEvent(client sdk.APIClient, projectID string) error {
 }
 ```
 
-#### Final version
+Let's briefly look at the Brigade Event object from above.
 
-Now that we have our `createEvent` function, we can tie it all together by
+```go
+	// Construct a Brigade Event
+	event := core.Event{
+    // This is the ID/name of the project that the event will be intended for
+		ProjectID: projectID,
+    // This is the source value for this event
+		Source:    "brigade.sh/example-gateway",
+    // This is the event's type
+		Type:      "create-event",
+    // This is the event's payload
+		Payload:   "Dolly",
+	}
+```
+
+We've filled in the core fields needed for any Brigade event, `ProjectID`,
+`Source` and `Type`. As a bonus, we're also adding a `Payload`. That's just the
+start of what a Brigade Event can contain, however. Other notable fields worth
+researching are:
+
+- `Qualifiers`: A list of qualifier values. For a project to receive events
+  from a gateway, the qualifiers on an event must exactly match the qualifiers
+  set on the project's event subscription, when provided.
+
+- `Labels`: A list of labels. Projects can choose to utilize these for
+  filtering purposes. In contrast to qualifiers, project event subscription
+  labels don't need to exactly match event labels in order to receive them, as
+  long as the event does have any/all labels that the project might use for
+  filtering.
+
+- `ShortTitle`: A short title for the event.
+
+- `LongTitle`: A longer, more descriptive title for the event.
+
+- `SourceState`: A key/value map representing event state that can be persisted
+  by the Brigade API server so that gateways can track event handling progress
+  and perform other actions, such as updating upstream services.
+
+### Linking it all together
+
+Now that we have our `createEvent` function, we can link it all together by
 adding a bit of logic into `main` to acquire the two values needed by
 `createEvent`: the project ID value will be parsed from the command line and
 the `sdk.APIClient` object will be constructed using the auth token received
@@ -383,7 +422,7 @@ func createEvent(client sdk.APIClient, projectID string) error {
 }
 ```
 
-#### Subscribing a project to events from the example gateway
+### Subscribing a project to events from the example gateway
 
 In order to utilize events from the example gateway, we'll need a Brigade
 project that subscribes to the corresponding event source
@@ -426,7 +465,7 @@ command:
 $ brig project create --file project.yaml
 ```
 
-#### Running the gateway
+### Running the gateway
 
 Now that we have a project subscribing to events from this gateway, we're ready
 to build and run the example gateway!
@@ -478,7 +517,7 @@ $ brig event logs --id 46a40cff-0689-466a-9cab-05f4bb9ef9f1
 Hello, Dolly!
 ```
 
-#### Wrapping up
+### Wrapping up
 
 Hopefully this brief guide showing a sample gateway written using Brigade's Go
 SDK was helpful. All of the sample code can be found in the
