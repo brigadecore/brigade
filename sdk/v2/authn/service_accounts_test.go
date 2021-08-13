@@ -187,3 +187,24 @@ func TestServiceAccountsClientUnlock(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, testServiceAccountToken, token)
 }
+
+func TestServiceAccountsClientDelete(t *testing.T) {
+	const testServiceAccountID = "jarvis"
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodDelete, r.Method)
+				require.Equal(
+					t,
+					fmt.Sprintf("/v2/service-accounts/%s", testServiceAccountID),
+					r.URL.Path,
+				)
+				w.WriteHeader(http.StatusOK)
+			},
+		),
+	)
+	defer server.Close()
+	client := NewServiceAccountsClient(server.URL, rmTesting.TestAPIToken, nil)
+	err := client.Delete(context.Background(), testServiceAccountID)
+	require.NoError(t, err)
+}
