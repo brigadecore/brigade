@@ -192,6 +192,24 @@ func (r *roleAssignmentsStore) Revoke(
 	return nil
 }
 
+func (r *roleAssignmentsStore) RevokeByPrincipal(
+	ctx context.Context,
+	principalReference api.PrincipalReference,
+) error {
+	if _, err := r.collection.DeleteMany(
+		ctx,
+		bson.M{"principal": principalReference},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting role assignments for %s %q",
+			principalReference.Type,
+			principalReference.ID,
+		)
+	}
+	return nil
+}
+
 func (r *roleAssignmentsStore) Exists(
 	ctx context.Context,
 	roleAssignment api.RoleAssignment,

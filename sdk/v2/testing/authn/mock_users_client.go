@@ -16,6 +16,7 @@ type MockUsersClient struct {
 	GetFn    func(context.Context, string) (authn.User, error)
 	LockFn   func(context.Context, string) error
 	UnlockFn func(context.Context, string) error
+	DeleteFn func(context.Context, string) error
 }
 
 func (m *MockUsersClient) List(
@@ -39,4 +40,8 @@ func (m *MockUsersClient) Lock(ctx context.Context, id string) error {
 
 func (m *MockUsersClient) Unlock(ctx context.Context, id string) error {
 	return m.UnlockFn(ctx, id)
+}
+
+func (m *MockUsersClient) Delete(ctx context.Context, id string) error {
+	return m.DeleteFn(ctx, id)
 }

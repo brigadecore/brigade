@@ -21,15 +21,29 @@ func TestUserListMarshalJSON(t *testing.T) {
 func TestNewUsersService(t *testing.T) {
 	usersStore := &mockUsersStore{}
 	sessionsStore := &mockSessionsStore{}
+	roleAssignmentsStore := &mockRoleAssignmentsStore{}
+	projectRoleAssignmentsStore := &mockProjectRoleAssignmentsStore{}
 	svc := NewUsersService(
 		alwaysAuthorize,
 		usersStore,
 		sessionsStore,
+		roleAssignmentsStore,
+		projectRoleAssignmentsStore,
 		UsersServiceConfig{},
 	)
 	require.NotNil(t, svc.(*usersService).authorize)
 	require.Same(t, usersStore, svc.(*usersService).usersStore)
 	require.Same(t, sessionsStore, svc.(*usersService).sessionsStore)
+	require.Same(
+		t,
+		roleAssignmentsStore,
+		svc.(*usersService).roleAssignmentsStore,
+	)
+	require.Same(
+		t,
+		projectRoleAssignmentsStore,
+		svc.(*usersService).projectRoleAssignmentsStore,
+	)
 }
 
 func TestUserServiceList(t *testing.T) {
@@ -368,12 +382,175 @@ func TestUsersServiceUnlock(t *testing.T) {
 	}
 }
 
+func TestUsersServiceDelete(t *testing.T) {
+	testCases := []struct {
+		name       string
+		service    UsersService
+		assertions func(error)
+	}{
+		{
+			name: "unauthorized",
+			service: &usersService{
+				authorize: neverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "error deleting role assignments",
+			service: &usersService{
+				authorize: alwaysAuthorize,
+				roleAssignmentsStore: &mockRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return errors.New("store error")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "store error")
+				require.Contains(t, err.Error(), "error deleting user")
+				require.Contains(t, err.Error(), "role assignments")
+			},
+		},
+		{
+			name: "error deleting project role assignments",
+			service: &usersService{
+				authorize: alwaysAuthorize,
+				roleAssignmentsStore: &mockRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return nil
+					},
+				},
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return errors.New("store error")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "store error")
+				require.Contains(t, err.Error(), "error deleting user")
+				require.Contains(t, err.Error(), "project role assignments")
+			},
+		},
+		{
+			name: "error deleting user",
+			service: &usersService{
+				authorize: alwaysAuthorize,
+				roleAssignmentsStore: &mockRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return nil
+					},
+				},
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return nil
+					},
+				},
+				usersStore: &mockUsersStore{
+					DeleteFn: func(context.Context, string) error {
+						return errors.New("store error")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "store error")
+				require.Contains(
+					t,
+					err.Error(),
+					"error deleting user",
+				)
+			},
+		},
+		{
+			name: "error deleting user sessions",
+			service: &usersService{
+				authorize: alwaysAuthorize,
+				roleAssignmentsStore: &mockRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return nil
+					},
+				},
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return nil
+					},
+				},
+				usersStore: &mockUsersStore{
+					DeleteFn: func(context.Context, string) error {
+						return nil
+					},
+				},
+				sessionsStore: &mockSessionsStore{
+					DeleteByUserFn: func(context.Context, string) error {
+						return errors.New("store error")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "store error")
+				require.Contains(
+					t,
+					err.Error(),
+					"error deleting user",
+				)
+			},
+		},
+		{
+			name: "success",
+			service: &usersService{
+				authorize: alwaysAuthorize,
+				roleAssignmentsStore: &mockRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return nil
+					},
+				},
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return nil
+					},
+				},
+				usersStore: &mockUsersStore{
+					DeleteFn: func(context.Context, string) error {
+						return nil
+					},
+				},
+				sessionsStore: &mockSessionsStore{
+					DeleteByUserFn: func(context.Context, string) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.assertions(
+				testCase.service.Delete(
+					context.Background(),
+					"tony@starkindustries.com",
+				),
+			)
+		})
+	}
+}
+
 type mockUsersStore struct {
 	CreateFn func(context.Context, User) error
 	ListFn   func(context.Context, meta.ListOptions) (UserList, error)
 	GetFn    func(context.Context, string) (User, error)
 	LockFn   func(context.Context, string) error
 	UnlockFn func(context.Context, string) error
+	DeleteFn func(context.Context, string) error
 }
 
 func (m *mockUsersStore) Create(ctx context.Context, user User) error {
@@ -397,4 +574,8 @@ func (m *mockUsersStore) Lock(ctx context.Context, id string) error {
 
 func (m *mockUsersStore) Unlock(ctx context.Context, id string) error {
 	return m.UnlockFn(ctx, id)
+}
+
+func (m *mockUsersStore) Delete(ctx context.Context, id string) error {
+	return m.DeleteFn(ctx, id)
 }

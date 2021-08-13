@@ -18,6 +18,25 @@ var userCommand = &cli.Command{
 	Aliases: []string{"users"},
 	Subcommands: []*cli.Command{
 		{
+			Name:  "delete",
+			Usage: "Delete a single user",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     flagID,
+					Aliases:  []string{"i"},
+					Usage:    "Delete the specified user (required)",
+					Required: true,
+				},
+				nonInteractiveFlag,
+				&cli.BoolFlag{
+					Name:    flagYes,
+					Aliases: []string{"y"},
+					Usage:   "Non-interactively confirm deletion",
+				},
+			},
+			Action: userDelete,
+		},
+		{
 			Name:  "get",
 			Usage: "Retrieve a user",
 			Flags: []cli.Flag{
@@ -240,6 +259,31 @@ func userUnlock(c *cli.Context) error {
 	}
 
 	fmt.Printf("User %q unlocked.\n", id)
+
+	return nil
+}
+
+func userDelete(c *cli.Context) error {
+	id := c.String(flagID)
+
+	confirmed, err := confirmed(c)
+	if err != nil {
+		return err
+	}
+	if !confirmed {
+		return nil
+	}
+
+	client, err := getClient()
+	if err != nil {
+		return err
+	}
+
+	if err := client.Authn().Users().Delete(c.Context, id); err != nil {
+		return err
+	}
+
+	fmt.Printf("User %q deleted.\n", id)
 
 	return nil
 }

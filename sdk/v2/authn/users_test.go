@@ -136,3 +136,24 @@ func TestUsersClientUnlock(t *testing.T) {
 	err := client.Unlock(context.Background(), testUserID)
 	require.NoError(t, err)
 }
+
+func TestUsersClientDelete(t *testing.T) {
+	const testUserID = "tony@starkindustries.com"
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodDelete, r.Method)
+				require.Equal(
+					t,
+					fmt.Sprintf("/v2/users/%s", testUserID),
+					r.URL.Path,
+				)
+				w.WriteHeader(http.StatusOK)
+			},
+		),
+	)
+	defer server.Close()
+	client := NewUsersClient(server.URL, rmTesting.TestAPIToken, nil)
+	err := client.Delete(context.Background(), testUserID)
+	require.NoError(t, err)
+}

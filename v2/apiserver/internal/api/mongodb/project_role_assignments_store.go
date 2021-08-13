@@ -227,6 +227,24 @@ func (p *projectRoleAssignmentsStore) RevokeByProjectID(
 	return nil
 }
 
+func (p *projectRoleAssignmentsStore) RevokeByPrincipal(
+	ctx context.Context,
+	principalReference api.PrincipalReference,
+) error {
+	if _, err := p.collection.DeleteMany(
+		ctx,
+		bson.M{"principal": principalReference},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting project role assignments for %s %q",
+			principalReference.Type,
+			principalReference.ID,
+		)
+	}
+	return nil
+}
+
 func (p *projectRoleAssignmentsStore) Exists(
 	ctx context.Context,
 	projectRoleAssignment api.ProjectRoleAssignment,

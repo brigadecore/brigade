@@ -330,6 +330,9 @@ type ProjectRoleAssignmentsStore interface {
 	// RevokeByProjectID revokes all ProjectRoleAssignments for the specified
 	// Project.
 	RevokeByProjectID(ctx context.Context, projectID string) error
+	// RevokeByPrincipal revokes all project roles for the principal specified by
+	// the PrincipalReference.
+	RevokeByPrincipal(context.Context, PrincipalReference) error
 	// Exists returns a bool indicating whether the specified
 	// ProjectRoleAssignment exists within the store. Implementations MUST also
 	// return true if a ProjectRoleAssignment exists in the store that logically

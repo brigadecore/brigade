@@ -185,3 +185,17 @@ func (u *usersStore) Unlock(ctx context.Context, id string) error {
 	}
 	return nil
 }
+
+func (u *usersStore) Delete(ctx context.Context, id string) error {
+	res, err := u.collection.DeleteOne(ctx, bson.M{"id": id})
+	if err != nil {
+		return errors.Wrapf(err, "error deleting user %q", id)
+	}
+	if res.DeletedCount == 0 {
+		return &meta.ErrNotFound{
+			Type: api.UserKind,
+			ID:   id,
+		}
+	}
+	return nil
+}
