@@ -48,6 +48,12 @@ func (s *ServiceAccountEndpoints) Register(router *mux.Router) {
 		"/v2/service-accounts/{id}/lock",
 		s.AuthFilter.Decorate(s.unlock),
 	).Methods(http.MethodDelete)
+
+	// Delete service account
+	router.HandleFunc(
+		"/v2/service-accounts/{id}",
+		s.AuthFilter.Decorate(s.delete),
+	).Methods(http.MethodDelete)
 }
 
 func (s *ServiceAccountEndpoints) create(
@@ -137,6 +143,22 @@ func (s *ServiceAccountEndpoints) unlock(
 			R: r,
 			EndpointLogic: func() (interface{}, error) {
 				return s.Service.Unlock(r.Context(), mux.Vars(r)["id"])
+			},
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (s *ServiceAccountEndpoints) delete(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	restmachinery.ServeRequest(
+		restmachinery.InboundRequest{
+			W: w,
+			R: r,
+			EndpointLogic: func() (interface{}, error) {
+				return nil, s.Service.Delete(r.Context(), mux.Vars(r)["id"])
 			},
 			SuccessCode: http.StatusOK,
 		},

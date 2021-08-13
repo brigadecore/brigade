@@ -100,11 +100,16 @@ type ServiceAccountsService interface {
 	// If the specified ServiceAccount does not exist, implementations MUST return
 	// a *meta.ErrNotFound error.
 	Unlock(context.Context, string) (Token, error)
+
+	// Delete removes a single ServiceAccount specified by its identifier.
+	Delete(context.Context, string) error
 }
 
 type serviceAccountsService struct {
-	authorize AuthorizeFn
-	store     ServiceAccountsStore
+	authorize                   AuthorizeFn
+	serviceAccountsStore        ServiceAccountsStore
+	roleAssignmentsStore        RoleAssignmentsStore
+	projectRoleAssignmentsStore ProjectRoleAssignmentsStore
 }
 
 // NewServiceAccountsService returns a specialized interface for managing
@@ -112,10 +117,14 @@ type serviceAccountsService struct {
 func NewServiceAccountsService(
 	authorizeFn AuthorizeFn,
 	store ServiceAccountsStore,
+	roleAssignmentsStore RoleAssignmentsStore,
+	projectRoleAssignmentsStore ProjectRoleAssignmentsStore,
 ) ServiceAccountsService {
 	return &serviceAccountsService{
-		authorize: authorizeFn,
-		store:     store,
+		authorize:                   authorizeFn,
+		serviceAccountsStore:        store,
+		roleAssignmentsStore:        roleAssignmentsStore,
+		projectRoleAssignmentsStore: projectRoleAssignmentsStore,
 	}
 }
 
@@ -133,7 +142,7 @@ func (s *serviceAccountsService) Create(
 	now := time.Now().UTC()
 	serviceAccount.Created = &now
 	serviceAccount.HashedToken = crypto.Hash("", token.Value)
-	if err := s.store.Create(ctx, serviceAccount); err != nil {
+	if err := s.serviceAccountsStore.Create(ctx, serviceAccount); err != nil {
 		return token, errors.Wrapf(
 			err,
 			"error storing new service account %q",
@@ -154,7 +163,7 @@ func (s *serviceAccountsService) List(
 	if opts.Limit == 0 {
 		opts.Limit = 20
 	}
-	serviceAccounts, err := s.store.List(ctx, opts)
+	serviceAccounts, err := s.serviceAccountsStore.List(ctx, opts)
 	if err != nil {
 		return serviceAccounts,
 			errors.Wrap(err, "error retrieving service accounts from store")
@@ -170,7 +179,7 @@ func (s *serviceAccountsService) Get(
 		return ServiceAccount{}, err
 	}
 
-	serviceAccount, err := s.store.Get(ctx, id)
+	serviceAccount, err := s.serviceAccountsStore.Get(ctx, id)
 	if err != nil {
 		return serviceAccount, errors.Wrapf(
 			err,
@@ -188,7 +197,7 @@ func (s *serviceAccountsService) GetByToken(
 	// No authz requirements here because this is is never invoked at the explicit
 	// request of an end user; rather it is invoked only by the system itself.
 
-	serviceAccount, err := s.store.GetByHashedToken(
+	serviceAccount, err := s.serviceAccountsStore.GetByHashedToken(
 		ctx,
 		crypto.Hash("", token),
 	)
@@ -206,7 +215,7 @@ func (s *serviceAccountsService) Lock(ctx context.Context, id string) error {
 		return err
 	}
 
-	if err := s.store.Lock(ctx, id); err != nil {
+	if err := s.serviceAccountsStore.Lock(ctx, id); err != nil {
 		return errors.Wrapf(
 			err,
 			"error locking service account %q in the store",
@@ -227,7 +236,7 @@ func (s *serviceAccountsService) Unlock(
 	newToken := Token{
 		Value: libCrypto.NewToken(256),
 	}
-	if err := s.store.Unlock(
+	if err := s.serviceAccountsStore.Unlock(
 		ctx,
 		id,
 		crypto.Hash("", newToken.Value),
@@ -239,6 +248,41 @@ func (s *serviceAccountsService) Unlock(
 		)
 	}
 	return newToken, nil
+}
+
+func (s *serviceAccountsService) Delete(ctx context.Context, id string) error {
+	if err := s.authorize(ctx, RoleAdmin, ""); err != nil {
+		return err
+	}
+
+	principalReference := PrincipalReference{
+		Type: PrincipalTypeServiceAccount,
+		ID:   id,
+	}
+	if err := s.roleAssignmentsStore.RevokeByPrincipal(
+		ctx,
+		principalReference,
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting service account %q role assignments from store",
+			id,
+		)
+	}
+	if err := s.projectRoleAssignmentsStore.RevokeByPrincipal(
+		ctx,
+		principalReference,
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting service account %q project role assignments from store",
+			id,
+		)
+	}
+	if err := s.serviceAccountsStore.Delete(ctx, id); err != nil {
+		return errors.Wrapf(err, "error deleting service account %q from store", id)
+	}
+	return nil
 }
 
 // ServiceAccountsStore is an interface for components that implement
@@ -271,4 +315,9 @@ type ServiceAccountsStore interface {
 	// existing token. If the specified ServiceAccount does not exist,
 	// implementations MUST return a *meta.ErrNotFound error.
 	Unlock(ctx context.Context, id string, newHashedToken string) error
+
+	// Delete deletes the specified ServiceAccount. If no ServiceAccount having
+	// the given identifier is found, implementations MUST return a
+	// *meta.ErrNotFound error.
+	Delete(context.Context, string) error
 }

@@ -176,8 +176,12 @@ func main() {
 	)
 
 	// ServiceAccounts service
-	serviceAccountsService :=
-		api.NewServiceAccountsService(authorizer.Authorize, serviceAccountsStore)
+	serviceAccountsService := api.NewServiceAccountsService(
+		authorizer.Authorize,
+		serviceAccountsStore,
+		roleAssignmentsStore,
+		projectRoleAssignmentsStore,
+	)
 
 	// Secrets service
 	secretsService := api.NewSecretsService(
