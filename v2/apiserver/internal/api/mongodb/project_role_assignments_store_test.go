@@ -311,6 +311,69 @@ func TestProjectRoleAssignmentStoreRevokeByProjectID(t *testing.T) {
 	}
 }
 
+func TestProjectRoleAssignmentStoreRevokeByPrincipal(t *testing.T) {
+	testPrincipalReference := api.PrincipalReference{
+		Type: api.PrincipalTypeUser,
+		ID:   "tony@starkindustries.com",
+	}
+	testCases := []struct {
+		name       string
+		collection mongodb.Collection
+		assertions func(error)
+	}{
+		{
+			name: "error",
+			collection: &mongoTesting.MockCollection{
+				DeleteManyFn: func(
+					context.Context,
+					interface{},
+					...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return nil, errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(
+					t,
+					err.Error(),
+					"error deleting project role assignments",
+				)
+			},
+		},
+		{
+			name: "success",
+			collection: &mongoTesting.MockCollection{
+				DeleteManyFn: func(
+					context.Context,
+					interface{},
+					...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return &mongo.DeleteResult{
+						DeletedCount: 1,
+					}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &projectRoleAssignmentsStore{
+				collection: testCase.collection,
+			}
+			err := store.RevokeByPrincipal(
+				context.Background(),
+				testPrincipalReference,
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
 func TestProjectRoleAssignmentStoreExists(t *testing.T) {
 	testProjectRoleAssignment := api.ProjectRoleAssignment{}
 	testCases := []struct {

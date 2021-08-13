@@ -428,8 +428,9 @@ type mockRoleAssignmentsStore struct {
 		RoleAssignmentsSelector,
 		meta.ListOptions,
 	) (RoleAssignmentList, error)
-	RevokeFn func(context.Context, RoleAssignment) error
-	ExistsFn func(context.Context, RoleAssignment) (bool, error)
+	RevokeFn            func(context.Context, RoleAssignment) error
+	RevokeByPrincipalFn func(context.Context, PrincipalReference) error
+	ExistsFn            func(context.Context, RoleAssignment) (bool, error)
 }
 
 func (m *mockRoleAssignmentsStore) Grant(
@@ -452,6 +453,13 @@ func (m *mockRoleAssignmentsStore) Revoke(
 	roleAssignment RoleAssignment,
 ) error {
 	return m.RevokeFn(ctx, roleAssignment)
+}
+
+func (m *mockRoleAssignmentsStore) RevokeByPrincipal(
+	ctx context.Context,
+	principalReference PrincipalReference,
+) error {
+	return m.RevokeByPrincipalFn(ctx, principalReference)
 }
 
 func (m *mockRoleAssignmentsStore) Exists(

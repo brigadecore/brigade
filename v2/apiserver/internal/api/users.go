@@ -89,14 +89,19 @@ type UsersService interface {
 	// Unlock restores access to the API for a single User specified by their
 	// identifier.
 	Unlock(context.Context, string) error
+
+	// Delete removes a single User specified by their identifier.
+	Delete(context.Context, string) error
 }
 
 // usersService is an implementation of the UsersService interface.
 type usersService struct {
-	authorize     AuthorizeFn
-	usersStore    UsersStore
-	sessionsStore SessionsStore
-	config        UsersServiceConfig
+	authorize                   AuthorizeFn
+	usersStore                  UsersStore
+	sessionsStore               SessionsStore
+	roleAssignmentsStore        RoleAssignmentsStore
+	projectRoleAssignmentsStore ProjectRoleAssignmentsStore
+	config                      UsersServiceConfig
 }
 
 // NewUsersService returns a specialized interface for managing Users.
@@ -104,13 +109,17 @@ func NewUsersService(
 	authorizeFn AuthorizeFn,
 	usersStore UsersStore,
 	sessionsStore SessionsStore,
+	roleAssignmentsStore RoleAssignmentsStore,
+	projectRoleAssignmentsStore ProjectRoleAssignmentsStore,
 	config UsersServiceConfig,
 ) UsersService {
 	return &usersService{
-		authorize:     authorizeFn,
-		usersStore:    usersStore,
-		sessionsStore: sessionsStore,
-		config:        config,
+		authorize:                   authorizeFn,
+		usersStore:                  usersStore,
+		sessionsStore:               sessionsStore,
+		roleAssignmentsStore:        roleAssignmentsStore,
+		projectRoleAssignmentsStore: projectRoleAssignmentsStore,
+		config:                      config,
 	}
 }
 
@@ -189,6 +198,44 @@ func (u *usersService) Unlock(ctx context.Context, id string) error {
 	return nil
 }
 
+func (u *usersService) Delete(ctx context.Context, id string) error {
+	if err := u.authorize(ctx, RoleAdmin, ""); err != nil {
+		return err
+	}
+
+	principalReference := PrincipalReference{
+		Type: PrincipalTypeUser,
+		ID:   id,
+	}
+	if err := u.roleAssignmentsStore.RevokeByPrincipal(
+		ctx,
+		principalReference,
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting user %q role assignments from store",
+			id,
+		)
+	}
+	if err := u.projectRoleAssignmentsStore.RevokeByPrincipal(
+		ctx,
+		principalReference,
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error deleting user %q project role assignments from store",
+			id,
+		)
+	}
+	if err := u.usersStore.Delete(ctx, id); err != nil {
+		return errors.Wrapf(err, "error deleting user %q from store", id)
+	}
+	if err := u.sessionsStore.DeleteByUser(ctx, id); err != nil {
+		return errors.Wrapf(err, "error deleting user %q sessions from store", id)
+	}
+	return nil
+}
+
 // UsersStore is an interface for User persistence operations.
 type UsersStore interface {
 	// Create persists a new User in the underlying data store. If a User having
@@ -214,6 +261,10 @@ type UsersStore interface {
 	// this operation. If the specified User does not exist, implementations MUST
 	// return a *meta.ErrNotFound error.
 	Unlock(ctx context.Context, id string) error
+
+	// Delete deletes the specified User. If no User having the given identifier
+	// is found, implementations MUST return a *meta.ErrNotFound error.
+	Delete(context.Context, string) error
 }
 
 func errUserManagementDisabled() *meta.ErrNotSupported {
