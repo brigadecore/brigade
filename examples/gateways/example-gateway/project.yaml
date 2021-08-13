@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/brigadecore/brigade/v2/v2/apiserver/schemas/project.json
+apiVersion: brigade.sh/v2-beta
+kind: Project
+metadata:
+  id: example-gateway-project
+description: |-
+  An example project that subscribes to events from an example gateway
+spec:
+  eventSubscriptions:
+  - source: brigade.sh/example-gateway
+    types:
+      - create-event
+  workerTemplate:
+    logLevel: DEBUG
+    defaultConfigFiles:
+      brigade.ts: |
+        import { events } from "@brigadecore/brigadier"
+
+        events.on("brigade.sh/example-gateway", "create-event", async event => {
+          console.log("Hello, " + event.payload + "!")
+        })
+
+        events.process()
