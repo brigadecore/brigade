@@ -53,6 +53,25 @@ var serviceAccountCommand = &cli.Command{
 			Action: serviceAccountCreate,
 		},
 		{
+			Name:  "delete",
+			Usage: "Delete a single service account",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     flagID,
+					Aliases:  []string{"i"},
+					Usage:    "Delete the specified service account (required)",
+					Required: true,
+				},
+				nonInteractiveFlag,
+				&cli.BoolFlag{
+					Name:    flagYes,
+					Aliases: []string{"y"},
+					Usage:   "Non-interactively confirm deletion",
+				},
+			},
+			Action: serviceAccountDelete,
+		},
+		{
 			Name:  "get",
 			Usage: "Retrieve a service account",
 			Flags: []cli.Flag{
@@ -358,6 +377,31 @@ func serviceAccountUnlock(c *cli.Context) error {
 		"\nStore this token someplace secure NOW. It cannot be retrieved " +
 			"later through any other means.",
 	)
+
+	return nil
+}
+
+func serviceAccountDelete(c *cli.Context) error {
+	id := c.String(flagID)
+
+	confirmed, err := confirmed(c)
+	if err != nil {
+		return err
+	}
+	if !confirmed {
+		return nil
+	}
+
+	client, err := getClient()
+	if err != nil {
+		return err
+	}
+
+	if err := client.Authn().ServiceAccounts().Delete(c.Context, id); err != nil {
+		return err
+	}
+
+	fmt.Printf("Service account %q deleted.\n", id)
 
 	return nil
 }
