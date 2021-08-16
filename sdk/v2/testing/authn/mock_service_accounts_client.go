@@ -17,6 +17,7 @@ type MockServiceAccountsClient struct {
 	GetFn    func(context.Context, string) (authn.ServiceAccount, error)
 	LockFn   func(context.Context, string) error
 	UnlockFn func(context.Context, string) (authn.Token, error)
+	DeleteFn func(context.Context, string) error
 }
 
 func (m *MockServiceAccountsClient) Create(
@@ -50,4 +51,11 @@ func (m *MockServiceAccountsClient) Unlock(
 	id string,
 ) (authn.Token, error) {
 	return m.UnlockFn(ctx, id)
+}
+
+func (m *MockServiceAccountsClient) Delete(
+	ctx context.Context,
+	id string,
+) error {
+	return m.DeleteFn(ctx, id)
 }
