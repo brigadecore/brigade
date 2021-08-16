@@ -23,10 +23,21 @@ func TestServiceAccountListMarshalJSON(t *testing.T) {
 }
 
 func TestNewServiceAccountService(t *testing.T) {
-	store := &mockServiceAccountStore{}
-	svc := NewServiceAccountsService(alwaysAuthorize, store)
+	serviceAccountsStore := &mockServiceAccountStore{}
+	roleAssignmentsStore := &mockRoleAssignmentsStore{}
+	projectRoleAssignmentsStore := &mockProjectRoleAssignmentsStore{}
+	svc := NewServiceAccountsService(
+		alwaysAuthorize,
+		serviceAccountsStore,
+		roleAssignmentsStore,
+		projectRoleAssignmentsStore,
+	)
 	require.NotNil(t, svc.(*serviceAccountsService).authorize)
-	require.Same(t, store, svc.(*serviceAccountsService).store)
+	require.Same(
+		t,
+		serviceAccountsStore,
+		svc.(*serviceAccountsService).serviceAccountsStore,
+	)
 }
 
 func TestServiceAccountsServiceCreate(t *testing.T) {
@@ -49,7 +60,7 @@ func TestServiceAccountsServiceCreate(t *testing.T) {
 			name: "error creating service account in store",
 			service: &serviceAccountsService{
 				authorize: alwaysAuthorize,
-				store: &mockServiceAccountStore{
+				serviceAccountsStore: &mockServiceAccountStore{
 					CreateFn: func(context.Context, ServiceAccount) error {
 						return errors.New("store error")
 					},
@@ -65,7 +76,7 @@ func TestServiceAccountsServiceCreate(t *testing.T) {
 			name: "success",
 			service: &serviceAccountsService{
 				authorize: alwaysAuthorize,
-				store: &mockServiceAccountStore{
+				serviceAccountsStore: &mockServiceAccountStore{
 					CreateFn: func(context.Context, ServiceAccount) error {
 						return nil
 					},
@@ -104,7 +115,7 @@ func TestServiceAccountsServiceList(t *testing.T) {
 			name: "error getting service accounts from store",
 			service: &serviceAccountsService{
 				authorize: alwaysAuthorize,
-				store: &mockServiceAccountStore{
+				serviceAccountsStore: &mockServiceAccountStore{
 					ListFn: func(
 						context.Context,
 						meta.ListOptions,
@@ -128,7 +139,7 @@ func TestServiceAccountsServiceList(t *testing.T) {
 			name: "success",
 			service: &serviceAccountsService{
 				authorize: alwaysAuthorize,
-				store: &mockServiceAccountStore{
+				serviceAccountsStore: &mockServiceAccountStore{
 					ListFn: func(
 						context.Context,
 						meta.ListOptions,
@@ -171,7 +182,7 @@ func TestServiceAccountsServiceGet(t *testing.T) {
 			name: "error getting service account from store",
 			service: &serviceAccountsService{
 				authorize: alwaysAuthorize,
-				store: &mockServiceAccountStore{
+				serviceAccountsStore: &mockServiceAccountStore{
 					GetFn: func(context.Context, string) (ServiceAccount, error) {
 						return ServiceAccount{}, errors.New("error getting service account")
 					},
@@ -187,7 +198,7 @@ func TestServiceAccountsServiceGet(t *testing.T) {
 			name: "success",
 			service: &serviceAccountsService{
 				authorize: alwaysAuthorize,
-				store: &mockServiceAccountStore{
+				serviceAccountsStore: &mockServiceAccountStore{
 					GetFn: func(context.Context, string) (ServiceAccount, error) {
 						return ServiceAccount{}, nil
 					},
@@ -217,7 +228,7 @@ func TestServiceAccountsServiceGetByToken(t *testing.T) {
 		{
 			name: "error getting service account from store",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				serviceAccountsStore: &mockServiceAccountStore{
 					GetByHashedTokenFn: func(
 						context.Context,
 						string,
@@ -238,7 +249,7 @@ func TestServiceAccountsServiceGetByToken(t *testing.T) {
 		{
 			name: "success",
 			service: &serviceAccountsService{
-				store: &mockServiceAccountStore{
+				serviceAccountsStore: &mockServiceAccountStore{
 					GetByHashedTokenFn: func(
 						context.Context,
 						string,
@@ -281,7 +292,7 @@ func TestServiceAccountsLock(t *testing.T) {
 			name: "error updating service account in store",
 			service: &serviceAccountsService{
 				authorize: alwaysAuthorize,
-				store: &mockServiceAccountStore{
+				serviceAccountsStore: &mockServiceAccountStore{
 					LockFn: func(context.Context, string) error {
 						return errors.New("store error")
 					},
@@ -297,7 +308,7 @@ func TestServiceAccountsLock(t *testing.T) {
 			name: "success",
 			service: &serviceAccountsService{
 				authorize: alwaysAuthorize,
-				store: &mockServiceAccountStore{
+				serviceAccountsStore: &mockServiceAccountStore{
 					LockFn: func(context.Context, string) error {
 						return nil
 					},
@@ -336,7 +347,7 @@ func TestServiceAccountsUnlock(t *testing.T) {
 			name: "error updating service account in store",
 			service: &serviceAccountsService{
 				authorize: alwaysAuthorize,
-				store: &mockServiceAccountStore{
+				serviceAccountsStore: &mockServiceAccountStore{
 					UnlockFn: func(context.Context, string, string) error {
 						return errors.New("store error")
 					},
@@ -352,7 +363,7 @@ func TestServiceAccountsUnlock(t *testing.T) {
 			name: "success",
 			service: &serviceAccountsService{
 				authorize: alwaysAuthorize,
-				store: &mockServiceAccountStore{
+				serviceAccountsStore: &mockServiceAccountStore{
 					UnlockFn: func(context.Context, string, string) error {
 						return nil
 					},
@@ -372,6 +383,125 @@ func TestServiceAccountsUnlock(t *testing.T) {
 	}
 }
 
+func TestServiceAccountsDelete(t *testing.T) {
+	testCases := []struct {
+		name       string
+		service    ServiceAccountsService
+		assertions func(error)
+	}{
+		{
+			name: "unauthorized",
+			service: &serviceAccountsService{
+				authorize: neverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "error deleting role assignments",
+			service: &serviceAccountsService{
+				authorize: alwaysAuthorize,
+				roleAssignmentsStore: &mockRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return errors.New("store error")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "store error")
+				require.Contains(t, err.Error(), "error deleting service account")
+				require.Contains(t, err.Error(), "role assignments")
+			},
+		},
+		{
+			name: "error deleting project role assignments",
+			service: &serviceAccountsService{
+				authorize: alwaysAuthorize,
+				roleAssignmentsStore: &mockRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return nil
+					},
+				},
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return errors.New("store error")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "store error")
+				require.Contains(t, err.Error(), "error deleting service account")
+				require.Contains(t, err.Error(), "project role assignments")
+			},
+		},
+		{
+			name: "error deleting service account",
+			service: &serviceAccountsService{
+				authorize: alwaysAuthorize,
+				roleAssignmentsStore: &mockRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return nil
+					},
+				},
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return nil
+					},
+				},
+				serviceAccountsStore: &mockServiceAccountStore{
+					DeleteFn: func(context.Context, string) error {
+						return errors.New("store error")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "store error")
+				require.Contains(
+					t,
+					err.Error(),
+					"error deleting service account",
+				)
+			},
+		},
+		{
+			name: "success",
+			service: &serviceAccountsService{
+				authorize: alwaysAuthorize,
+				roleAssignmentsStore: &mockRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return nil
+					},
+				},
+				projectRoleAssignmentsStore: &mockProjectRoleAssignmentsStore{
+					RevokeByPrincipalFn: func(context.Context, PrincipalReference) error {
+						return nil
+					},
+				},
+				serviceAccountsStore: &mockServiceAccountStore{
+					DeleteFn: func(context.Context, string) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			testCase.assertions(
+				testCase.service.Delete(context.Background(), "jarvis"),
+			)
+		})
+	}
+}
+
 type mockServiceAccountStore struct {
 	CreateFn func(context.Context, ServiceAccount) error
 	ListFn   func(
@@ -386,6 +516,7 @@ type mockServiceAccountStore struct {
 		id string,
 		newHashedToken string,
 	) error
+	DeleteFn func(context.Context, string) error
 }
 
 func (m *mockServiceAccountStore) Create(
@@ -426,4 +557,8 @@ func (m *mockServiceAccountStore) Unlock(
 	newHashedToken string,
 ) error {
 	return m.UnlockFn(ctx, id, newHashedToken)
+}
+
+func (m *mockServiceAccountStore) Delete(ctx context.Context, id string) error {
+	return m.DeleteFn(ctx, id)
 }

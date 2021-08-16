@@ -96,6 +96,9 @@ type ServiceAccountsClient interface {
 	// Unlock restores system access for a single ServiceAccount (after presumably
 	// having been revoked) specified by its identifier. It returns a new Token.
 	Unlock(context.Context, string) (Token, error)
+
+	// Delete deletes a single ServiceAccount specified by its identifier.
+	Delete(context.Context, string) error
 }
 
 type serviceAccountsClient struct {
@@ -188,6 +191,17 @@ func (s *serviceAccountsClient) Unlock(
 			Path:        fmt.Sprintf("v2/service-accounts/%s/lock", id),
 			SuccessCode: http.StatusOK,
 			RespObj:     &token,
+		},
+	)
+}
+
+func (s *serviceAccountsClient) Delete(ctx context.Context, id string) error {
+	return s.ExecuteRequest(
+		ctx,
+		rm.OutboundRequest{
+			Method:      http.MethodDelete,
+			Path:        fmt.Sprintf("v2/service-accounts/%s", id),
+			SuccessCode: http.StatusOK,
 		},
 	)
 }

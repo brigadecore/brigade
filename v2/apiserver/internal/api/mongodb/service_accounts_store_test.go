@@ -537,3 +537,81 @@ func TestServiceAccountsUnLock(t *testing.T) {
 		})
 	}
 }
+
+func TestServiceAccountsStoreDelete(t *testing.T) {
+	const testServiceAccountID = "jarvis"
+
+	testCases := []struct {
+		name       string
+		collection mongodb.Collection
+		assertions func(err error)
+	}{
+
+		{
+			name: "service account not found",
+			collection: &mongoTesting.MockCollection{
+				DeleteOneFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return &mongo.DeleteResult{
+						DeletedCount: 0,
+					}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotFound{}, err)
+				require.Equal(t, api.ServiceAccountKind, err.(*meta.ErrNotFound).Type)
+				require.Equal(t, testServiceAccountID, err.(*meta.ErrNotFound).ID)
+			},
+		},
+
+		{
+			name: "unanticipated error",
+			collection: &mongoTesting.MockCollection{
+				DeleteOneFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return nil, errors.New("something went wrong")
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error deleting service account")
+			},
+		},
+
+		{
+			name: "service account found",
+			collection: &mongoTesting.MockCollection{
+				DeleteOneFn: func(
+					ctx context.Context,
+					filter interface{},
+					opts ...*options.DeleteOptions,
+				) (*mongo.DeleteResult, error) {
+					return &mongo.DeleteResult{
+						DeletedCount: 1,
+					}, nil
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &serviceAccountsStore{
+				collection: testCase.collection,
+			}
+			err := store.Delete(context.Background(), testServiceAccountID)
+			testCase.assertions(err)
+		})
+	}
+}

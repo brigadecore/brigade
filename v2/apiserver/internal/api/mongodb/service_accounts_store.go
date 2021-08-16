@@ -223,3 +223,17 @@ func (s *serviceAccountsStore) Unlock(
 	}
 	return nil
 }
+
+func (s *serviceAccountsStore) Delete(ctx context.Context, id string) error {
+	res, err := s.collection.DeleteOne(ctx, bson.M{"id": id})
+	if err != nil {
+		return errors.Wrapf(err, "error deleting service account %q", id)
+	}
+	if res.DeletedCount == 0 {
+		return &meta.ErrNotFound{
+			Type: api.ServiceAccountKind,
+			ID:   id,
+		}
+	}
+	return nil
+}
