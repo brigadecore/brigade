@@ -9,14 +9,14 @@ spec:
   eventSubscriptions:
   - source: brigade.sh/example-gateway
     types:
-      - create-event
+      - hello
   workerTemplate:
     logLevel: DEBUG
     defaultConfigFiles:
       brigade.ts: |
         import { events } from "@brigadecore/brigadier"
 
-        events.on("brigade.sh/example-gateway", "create-event", async event => {
+        events.on("brigade.sh/example-gateway", "hello", async event => {
           console.log("Hello, " + event.payload + "!")
         })
 

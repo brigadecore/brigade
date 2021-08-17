@@ -142,250 +142,127 @@ this writing, a [Javascript/Typescript SDK] and a [Rust SDK] (WIP) also exist.
 
 ## Example Gateway
 
-The following example assumes a running Brigade instance deployed with the
-default root user enabled. If you'd like to follow along and haven't yet
-deployed Brigade, check out the [QuickStart].
+The following example assumes a running Brigade instance has been deployed and
+the ability to create a service account is in place (e.g. you have the role of
+'ADMIN' or you are logged in as the root user). If you'd like to follow along
+and haven't yet deployed Brigade, check out the [QuickStart].
 
 [QuickStart]: /intro/quickstart
 
-### Authentication
+### Preparation
 
-As a first course of action for our example gateway written in Go, we'll need
-to authenticate with Brigade. Here is what the Go code looks like, with in-line
-comments describing each section:
+#### Service Account creation
+
+All Brigade gateways require a service account token for authenticating with
+Brigade when submitting an event into the system. As preparation then, we'll
+create a service account for this gateway and save the generated token for use
+in our program.
+
+```console
+$ brig service-account create \
+	--id example-gateway \
+	--description example-gateway
+```
+
+Make note of the token returned. This value will be used in another step. It is
+your only opportunity to access this value, as Brigade does not save it.
+
+Authorize this service account to create new events:
+
+```console
+$ brig role grant EVENT_CREATOR \
+    --service-account example-gateway \
+    --source brigade.sh/example-gateway
+```
+
+Note: The `--source brigade.sh/example-gateway` option specifies that this
+service account can be used only to create events having a value of
+`brigade.sh/example-gateway` in the event's `source` field. This is a security
+measure that prevents the gateway from using this token for impersonating other
+gateways.
+
+#### Go setup
+
+We'll be using the [Go SDK] for our example gateway program and we'll need to
+do a bit of prep. We're assuming your system has Go installed and configured
+properly. (If not, please visit the [Go installation docs] to do so.)
+
+Let's create a directory where our program's `main.go` file can reside:
+
+```console
+$ mkdir example-gateway
+
+$ cd example-gateway
+
+$ touch main.go
+```
+
+[Go installation docs]: https://golang.org/doc/install
+
+### Example Gateway code
+
+Now we're ready to code! Open `main.go` in the editor of your choice and add in
+the following Go code.
+
+The program consists of a `main` function which procures the Brigade API server
+address and the gateway token (generated above) via environment variables. It
+then constructs an API client from these values and passes this to the
+`createEvent` helper function. This function builds a Brigade Event with the
+pertinent fields populated and then calls the SDK's event create function.
+
+See the in-line comments for further description around each section.
 
 ```go
 package main
 
 import (
-  "context"
-  "log"
+	"context"
+	"fmt"
+	"log"
+	"os"
 
-  brigadeOS "github.com/brigadecore/brigade-foundations/os"
-  "github.com/brigadecore/brigade/sdk/v2/authn"
-  "github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v2"
+	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
 func main() {
-  ctx := context.Background()
+	// Get the Brigade API server address and gateway token from the environment
+	apiServerAddress := os.Getenv("APISERVER_ADDRESS")
+	if apiServerAddress == "" {
+		log.Fatalf("Required environment variable APISERVER_ADDRESS not found.\n")
+	}
+	gatewayToken := os.Getenv("GATEWAY_TOKEN")
+	if gatewayToken == "" {
+		log.Fatalf("Required environment variable GATEWAY_TOKEN not found.\n")
+	}
 
-  // Get the Brigade API server address and root user password from env
-  apiServerAddress, err := brigadeOS.GetRequiredEnvVar("APISERVER_ADDRESS")
-  if err != nil {
-    log.Fatal(err)
-  }
-  rootPassword, err := brigadeOS.GetRequiredEnvVar("APISERVER_ROOT_PASSWORD")
-  if err != nil {
-    log.Fatal(err)
-  }
+	// The default Brigade deployment mode uses self-signed certs
+	// Hence, we allow insecure connections in our APIClientOptions
+	// This can be changed to false if insecure connections should not be allowed
+	apiClientOpts := &restmachinery.APIClientOptions{
+		AllowInsecureConnections: true,
+	}
 
-  // Create a root session to acquire an auth token
+	// Create an API client with the gateway token value
+	client := sdk.NewAPIClient(
+		apiServerAddress,
+		gatewayToken,
+		apiClientOpts,
+	)
 
-  // The default Brigade deployment mode uses self-signed certs
-  // Hence, we allow insecure connections in our APIClientOptions
-  apiClientOpts := &restmachinery.APIClientOptions{
-    AllowInsecureConnections: true,
-  }
-
-  // Create a new auth client
-  authClient := authn.NewSessionsClient(
-    apiServerAddress,
-    "",
-    apiClientOpts,
-  )
-
-  // Create a root session, which returns an auth token
-  token, err := authClient.CreateRootSession(ctx, rootPassword)
-  if err != nil {
-    log.Fatal(err)
-  }
-  tokenStr := token.Value
-}
-```
-
-We now have the code needed for the example gateway to communicate with the
-Brigade API Server and acquire an authentication token via a root user session.
-
-### Event Creation
-
-Let's add logic to the gateway so that it can create an event for a provided
-Brigade project. We'll focus first on the additions needed for creating an
-event in a new function, `createEvent`, that we'll link together with the
-`main` function afterwards.
-
-```go
-// createEvent creates a Brigade Event for the provided project, using the
-// provided sdk.Client
-func createEvent(client sdk.APIClient, projectID string) error {
-  ctx := context.Background()
-
-  // Construct a Brigade Event
-  event := core.Event{
-    // This is the ID/name of the project that the event will be intended for
-    ProjectID: projectID,
-    // This is the source value for this event
-    Source:    "brigade.sh/example-gateway",
-    // This is the event's type
-		Type:      "hello",
-    // This is the event's payload
-    Payload:   "Dolly",
-  }
-
-  // Create the Brigade Event
-  events, err := client.Core().Events().Create(ctx, event)
-  if err != nil {
-    return err
-  }
-  
-  // If the returned events list has no items, no event was created
-  if len(events.Items) != 1 {
-    fmt.Printf(
-      "No event was created. "+
-        "Does project %s subscribe to events of source %s and type %s?\n",
-      projectID,
-      event.Source,
-      event.Type,
-    )
-    return nil
-  }
-
-  // The Brigade event was successfully created!
-  fmt.Printf(
-    "Event created with ID %s for project %s\n",
-    events.Items[0].ID,
-    projectID,
-  )
-  return nil
-}
-```
-
-Let's briefly look at the Brigade Event object from above.
-
-```go
-  // Construct a Brigade Event
-  event := core.Event{
-    // This is the ID/name of the project that the event will be intended for
-    ProjectID: projectID,
-    // This is the source value for this event
-    Source:    "brigade.sh/example-gateway",
-    // This is the event's type
-    Type:      "create-event",
-    // This is the event's payload
-    Payload:   "Dolly",
-  }
-```
-
-We've filled in the core fields needed for any Brigade event, `ProjectID`,
-`Source` and `Type`. As a bonus, we're also adding a `Payload`. That's just the
-start of what a Brigade Event can contain, however. Other notable fields worth
-researching are:
-
-- `Qualifiers`: A list of qualifier values. For a project to receive events
-  from a gateway, the qualifiers on an event must exactly match the qualifiers
-  set on the project's event subscription, when provided.
-
-- `Labels`: A list of labels. Projects can choose to utilize these for
-  filtering purposes. In contrast to qualifiers, project event subscription
-  labels don't need to exactly match event labels in order to receive them, as
-  long as the event does have any/all labels that the project might use for
-  filtering.
-
-- `ShortTitle`: A short title for the event.
-
-- `LongTitle`: A longer, more descriptive title for the event.
-
-- `SourceState`: A key/value map representing event state that can be persisted
-  by the Brigade API server so that gateways can track event handling progress
-  and perform other actions, such as updating upstream services.
-
-### Linking it all together
-
-Now that we have our `createEvent` function, we can link it all together by
-adding a bit of logic into `main` to acquire the two values needed by
-`createEvent`: the project ID value will be parsed from the command line and
-the `sdk.APIClient` object will be constructed using the auth token received
-from the API server.
-
-```go
-package main
-
-import (
-  "context"
-  "fmt"
-  "log"
-  "os"
-
-  brigadeOS "github.com/brigadecore/brigade-foundations/os"
-  "github.com/brigadecore/brigade/sdk/v2"
-  "github.com/brigadecore/brigade/sdk/v2/authn"
-  "github.com/brigadecore/brigade/sdk/v2/core"
-  "github.com/brigadecore/brigade/sdk/v2/restmachinery"
-)
-
-func main() {
-  ctx := context.Background()
-
-  // Get the Brigade API server address and root user password from env
-  apiServerAddress, err := brigadeOS.GetRequiredEnvVar("APISERVER_ADDRESS")
-  if err != nil {
-    log.Fatal(err)
-  }
-  rootPassword, err := brigadeOS.GetRequiredEnvVar("APISERVER_ROOT_PASSWORD")
-  if err != nil {
-    log.Fatal(err)
-  }
-
-	// Get the project ID that the event is destined for from the command line argument
-  args := os.Args[1:]
-  if len(args) != 1 {
-    log.Fatalf("Expected one argument, the project ID.")
-  }
-  projectID := args[0]
-
-  // Create a root session to acquire an auth token
-
-  // The default Brigade deployment mode uses self-signed certs
-  // Hence, we allow insecure connections in our APIClientOptions
-  apiClientOpts := &restmachinery.APIClientOptions{
-    AllowInsecureConnections: true,
-  }
-
-  // Create a new auth client
-  authClient := authn.NewSessionsClient(
-    apiServerAddress,
-    "",
-    apiClientOpts,
-  )
-
-  // Create a root session, which returns an auth token
-  token, err := authClient.CreateRootSession(ctx, rootPassword)
-  if err != nil {
-    log.Fatal(err)
-  }
-  tokenStr := token.Value
-
-  // Create an API client with the auth token value
-  client := sdk.NewAPIClient(
-    apiServerAddress,
-    tokenStr,
-    apiClientOpts,
-  )
-
-  // Call the createEvent function with the sdk.APIClient and projectID
-  if err := createEvent(client, projectID); err != nil {
-    log.Fatal(err)
-  }
+	// Call the createEvent function with the sdk.APIClient provided
+	if err := createEvent(client); err != nil {
+		log.Fatal(err)
+	}
 }
 
-// createEvent creates a Brigade Event for the provided project, using the
-// provided sdk.Client
-func createEvent(client sdk.APIClient, projectID string) error {
+// createEvent creates a Brigade Event using the provided sdk.Client
+func createEvent(client sdk.APIClient) error {
 	ctx := context.Background()
 
 	// Construct a Brigade Event
 	event := core.Event{
-		// This is the ID/name of the project that the event will be intended for
-		ProjectID: projectID,
 		// This is the source value for this event
 		Source: "brigade.sh/example-gateway",
 		// This is the event's type
@@ -402,31 +279,61 @@ func createEvent(client sdk.APIClient, projectID string) error {
 
 	// If the returned events list has no items, no event was created
 	if len(events.Items) != 1 {
-		fmt.Printf(
-			"No event was created. "+
-				"Does project %s subscribe to events of source %s and type %s?\n",
-			projectID,
-			event.Source,
-			event.Type,
-		)
+		fmt.Println("No event was created.")
 		return nil
 	}
 
 	// The Brigade event was successfully created!
-	fmt.Printf(
-		"Event created with ID %s for project %s\n",
-		events.Items[0].ID,
-		projectID,
-	)
+	fmt.Printf("Event created with ID %s\n", events.Items[0].ID)
 	return nil
 }
 ```
+
+Let's briefly look at the Brigade Event object from above.
+
+```go
+  // Construct a Brigade Event
+  event := core.Event{
+    // This is the source value for this event
+    Source:    "brigade.sh/example-gateway",
+    // This is the event's type
+    Type:      "create-event",
+    // This is the event's payload
+    Payload:   "Dolly",
+  }
+```
+
+We've filled in the core fields needed for any Brigade event, `Source` and
+`Type`. As a bonus, we're also adding a `Payload`. However, that's just the
+start of what a Brigade Event can contain. Other notable fields worth
+researching are:
+
+- `ProjectID`: When supplied, the event will _only_ be eligible for receipt by
+	a specific project.
+
+- `Qualifiers`: A list of qualifier values. For a project to receive an event,
+	the qualifiers on an event's subscription must exactly match the qualifiers
+	on the event (in addition to matching source and type).
+
+- `Labels`: A list of labels. Projects can choose to utilize these for
+  filtering purposes. In contrast to qualifiers, a project's event
+	subscription does not need to match an event's labels in order to receive it.
+	Labels, however, can be used to narrow an event subscription by optionally
+	selecting only events that are labeled in a particular way.
+
+- `ShortTitle`: A short title for the event.
+
+- `LongTitle`: A longer, more descriptive title for the event.
+
+- `SourceState`: A key/value map representing event state that can be persisted
+  by the Brigade API server so that gateways can track event handling progress
+  and perform other actions, such as updating upstream services.
 
 ### Subscribing a project to events from the example gateway
 
 In order to utilize events from the example gateway, we'll need a Brigade
 project that subscribes to the corresponding event source
-(`brigade.sh/example-gateway`) and event type (`create-event`). We'll also
+(`brigade.sh/example-gateway`) and event type (`hello`). We'll also
 define an event handler that handles these events and utilizes the attached
 payload.
 
@@ -444,14 +351,14 @@ spec:
   eventSubscriptions:
   - source: brigade.sh/example-gateway
     types:
-      - create-event
+      - hello
   workerTemplate:
     logLevel: DEBUG
     defaultConfigFiles:
       brigade.ts: |
         import { events } from "@brigadecore/brigadier"
 
-        events.on("brigade.sh/example-gateway", "create-event", async event => {
+        events.on("brigade.sh/example-gateway", "hello", async event => {
           console.log("Hello, " + event.payload + "!")
         })
 
@@ -472,33 +379,28 @@ to build and run the example gateway!
 
 First, we'll need to take care of a few bootstrapping items needed for our Go
 program. Here we initialize this program's Go modules file needed for tracking
-dependencies. Then, we fetch the needed deps.
+dependencies. Then, we fetch the needed Brigade SDK dependency.
 
 ```console
-$ go mod init
-go: creating new go.mod: module github.com/brigadecore/brigade/examples/gateways/example-gateway
+$ go mod init example-gateway
+go: creating new go.mod: module example-gateway
 go: to add module requirements and sums:
 	go mod tidy
 
-$ go mod tidy
-go: finding module for package github.com/brigadecore/brigade/sdk/v2/restmachinery
-go: finding module for package github.com/brigadecore/brigade/sdk/v2
-go: finding module for package github.com/brigadecore/brigade-foundations/os
-go: finding module for package github.com/brigadecore/brigade/sdk/v2/authn
-go: finding module for package github.com/brigadecore/brigade/sdk/v2/core
-go: found github.com/brigadecore/brigade-foundations/os in github.com/brigadecore/brigade-foundations v0.3.0
-go: found github.com/brigadecore/brigade/sdk/v2 in github.com/brigadecore/brigade/sdk/v2 v2.0.0-beta.1
-go: found github.com/brigadecore/brigade/sdk/v2/authn in github.com/brigadecore/brigade/sdk/v2 v2.0.0-beta.1
-go: found github.com/brigadecore/brigade/sdk/v2/core in github.com/brigadecore/brigade/sdk/v2 v2.0.0-beta.1
-go: found github.com/brigadecore/brigade/sdk/v2/restmachinery in github.com/brigadecore/brigade/sdk/v2 v2.0.0-beta.1
+$ go get github.com/brigadecore/brigade/sdk/v2
+go get: added github.com/brigadecore/brigade/sdk/v2 v2.0.0-beta.1
 ```
 
-Then, we're ready to run our program, providing the project name as the
-argument:
+Now we're ready to run our program. We export the values required by the
+gateway and then run the gateway:
 
 ```console
- $ go run main.go example-gateway-project
-Event created with ID 46a40cff-0689-466a-9cab-05f4bb9ef9f1 for project example-gateway-project
+$ export APISERVER_ADDRESS=<Brigade API server address>
+
+$ export GATEWAY_TOKEN=<Brigade service account token from above>
+
+$ go run main.go
+Event created with ID 46a40cff-0689-466a-9cab-05f4bb9ef9f1
 ```
 
 Finally, we can inspect the logs to verify the event was processed by the
