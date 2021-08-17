@@ -38,9 +38,10 @@ integrations already exist!
 Gateways receive events from upstream systems (the "outside world") and convert
 them to Brigade events that are emitted into Brigade's event bus.
 
-* [Brigade Bitbucket Gateway](https://github.com/brigadecore/brigade-bitbucket-gateway/tree/v2)
-* [Brigade CloudEvents Gateway](https://github.com/brigadecore/brigade-cloudevents-gateway)
-* [Brigade GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway)
+* [Bitbucket Gateway](https://github.com/brigadecore/brigade-bitbucket-gateway/tree/v2)
+* [CloudEvents Gateway](https://github.com/brigadecore/brigade-cloudevents-gateway)
+* [Docker Hub Gateway](https://github.com/brigadecore/brigade-dockerhub-gateway)
+* [GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway)
 
 The [Brigade GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway),
 in particular, is already utilized extensively by the Brigade team in
