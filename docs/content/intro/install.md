@@ -114,6 +114,7 @@ such as `brigade.sh/cli:exec` (the event source and type generated from the `bri
 
 Currently, the list of official Brigade v2 gateways that process external events is as follows:
 
+* [ACR (Azure Container Registry) Gateway](https://github.com/brigadecore/brigade-acr-gateway)
 * [BitBucket Gateway](https://github.com/brigadecore/brigade-bitbucket-gateway/tree/v2)
 * [CloudEvents Gateway](https://github.com/brigadecore/brigade-cloudevents-gateway)
 * [Docker Hub Gateway](https://github.com/brigadecore/brigade-dockerhub-gateway)
