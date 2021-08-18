@@ -12,6 +12,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	// Get the Brigade API server address and gateway token from the environment
 	apiServerAddress := os.Getenv("APISERVER_ADDRESS")
 	if apiServerAddress == "" {
@@ -36,20 +38,10 @@ func main() {
 		apiClientOpts,
 	)
 
-	// Call the createEvent function with the sdk.APIClient provided
-	if err := createEvent(client); err != nil {
-		log.Fatal(err)
-	}
-}
-
-// createEvent creates a Brigade Event using the provided sdk.Client
-func createEvent(client sdk.APIClient) error {
-	ctx := context.Background()
-
 	// Construct a Brigade Event
 	event := core.Event{
 		// This is the source value for this event
-		Source: "brigade.sh/example-gateway",
+		Source: "example.org/example-gateway",
 		// This is the event's type
 		Type: "hello",
 		// This is the event's payload
@@ -59,16 +51,16 @@ func createEvent(client sdk.APIClient) error {
 	// Create the Brigade Event
 	events, err := client.Core().Events().Create(ctx, event)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
-	// If the returned events list has no items, no event was created
+	// If the returned events list has no items, no event was created, most
+	// likely because there is no project subscribing to an event of this type
 	if len(events.Items) != 1 {
 		fmt.Println("No event was created.")
-		return nil
+		return
 	}
 
 	// The Brigade event was successfully created!
 	fmt.Printf("Event created with ID %s\n", events.Items[0].ID)
-	return nil
 }

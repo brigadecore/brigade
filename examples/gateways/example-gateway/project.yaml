@@ -7,7 +7,7 @@ description: |-
   An example project that subscribes to events from an example gateway
 spec:
   eventSubscriptions:
-  - source: brigade.sh/example-gateway
+  - source: example.org/example-gateway
     types:
       - hello
   workerTemplate:
@@ -16,7 +16,7 @@ spec:
       brigade.ts: |
         import { events } from "@brigadecore/brigadier"
 
-        events.on("brigade.sh/example-gateway", "hello", async event => {
+        events.on("example.org/example-gateway", "hello", async event => {
           console.log("Hello, " + event.payload + "!")
         })
 

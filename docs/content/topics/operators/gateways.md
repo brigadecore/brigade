@@ -18,45 +18,29 @@ own.
 
 The [Brigade architecture](/topics/design) is oriented around the concept that
 Brigade scripts run as a response to one or more events. In Brigade, a gateway
-is an entity that generates events. Often times, it translates some external
-trigger into a Brigade event.
+is an entity that generates events from external sources.
 
-While there is no default gateway that ships with Brigade, installing one
-alongside Brigade is as simple as a [Helm] chart install, along with any
-additional setup particular to a given gateway. See
-[below](#available-gateways) for a current listing of v2-compatible gateways.
+Currently, all of our officially supported gateways are triggered by webhooks
+delivered from external systems over HTTP(S), but there are no rules about what
+can be used as a trigger for an event. A gateway could hypothetically listen on
+a message queue, run as a chat bot, or watch files on a file system.
 
-All of these provide HTTP(S)-based listeners that receive incoming requests
-(from Github or other platforms and systems) and generate Brigade events as a
-result.
-
-However, Brigade's gateway system works with more than just webhooks.
-
-For example, the `brig` client behaves similarly to a gateway. When you execute
-a `brig event create` command, `brig` creates a Brigade event of source
-`brigade.sh/cli` and of type `exec`. Brigade itself processes this event no
-differently than it processes events from gateways tracking external activity.
-
-There are no rules about what can be used as a trigger for an event. One could
-write a gateway that listens on a message queue, or runs as a chat bot, or
-watches files on a filesystem... any of these could be used to trigger a new
-Brigade event.
-
-The remainder of this guide explains how gateways work and how you can create
-custom gateways.
+While Brigade ships without any gateways included, installing one alongside
+Brigade is as simple as a [Helm] chart install, along with any additional setup
+particular to a given gateway. See [below](#available-gateways) for a current
+listing of v2-compatible gateways.
 
 [Helm]: https://helm.sh
 
 ## Available Gateways
 
-Currently, the list of official Brigade v2 gateways that process external
-events is as follows:
+Currently, the list of official Brigade v2 gateways is as follows:
 
-* [Github Gateway](https://github.com/brigadecore/brigade-github-gateway)
+* [ACR (Azure Container Registry) Gateway](https://github.com/brigadecore/brigade-acr-gateway)
 * [BitBucket Gateway](https://github.com/brigadecore/brigade-bitbucket-gateway/tree/v2)
 * [CloudEvents Gateway](https://github.com/brigadecore/brigade-cloudevents-gateway)
 * [Docker Hub Gateway](https://github.com/brigadecore/brigade-dockerhub-gateway)
-* [Azure Container Registry Gateway](https://github.com/brigadecore/brigade-acr-gateway)
+* [Github Gateway](https://github.com/brigadecore/brigade-github-gateway)
 
 Follow the installation instructions provided in each gateway's repository to
 learn how to get started.
@@ -71,7 +55,10 @@ A Brigade Event is defined primarily by its source and type values, worker
 configuration and worker status.
 
 Here is a YAML representation of an event created via the `brig event create`
-command for the [01-hello-world sample project].
+command for the [01-hello-world sample project]. Note that many of the fields
+shown are populated with system-generated values, such as timestamps, IDs and
+worker status. The primary fields that can be set by a client (a gateway in
+this case) are `projectID`, `source` and `type`.
 
 ```yaml
 apiVersion: brigade.sh/v2-beta
@@ -128,12 +115,13 @@ To explore the SDK definitions of an Event object, see the [Go SDK Event] and
 Given the above description of how gateways work, we can walk through how a
 minimal example gateway can be built. We'll focus on the event creation side
 of a Brigade gateway, rather than going over other common attributes, such as
-an http(s) server that awaits external webhook events.
+an HTTP(S) server that awaits external webhook events.
 
 Since the Brigade API server is the point of contact for gateway
 authentication/authorization and event submission, gateway developers will need
 to pick an [SDK] to use. For this example, we'll be using the [Go SDK]. As of
-this writing, a [Javascript/Typescript SDK] and a [Rust SDK] (WIP) also exist.
+this writing, a [Javascript/Typescript SDK] and a [Rust SDK] (work in
+progress) also exist.
 
 [SDK]: https://github.com/brigadecore/brigade/tree/v2#sdks
 [Go SDK]: https://github.com/brigadecore/brigade/tree/v2/sdk
@@ -154,9 +142,9 @@ and haven't yet deployed Brigade, check out the [QuickStart].
 #### Service Account creation
 
 All Brigade gateways require a service account token for authenticating with
-Brigade when submitting an event into the system. As preparation then, we'll
-create a service account for this gateway and save the generated token for use
-in our program.
+Brigade when submitting an event into the system. As preparation, we'll create
+a service account for this gateway and save the generated token for use in our
+program.
 
 ```console
 $ brig service-account create \
@@ -167,19 +155,23 @@ $ brig service-account create \
 Make note of the token returned. This value will be used in another step. It is
 your only opportunity to access this value, as Brigade does not save it.
 
-Authorize this service account to create new events:
+Authorize this service account to create new events of a given source:
 
 ```console
 $ brig role grant EVENT_CREATOR \
     --service-account example-gateway \
-    --source brigade.sh/example-gateway
+    --source example.org/example-gateway
 ```
 
-Note: The `--source brigade.sh/example-gateway` option specifies that this
+Note: The `--source example.org/example-gateway` option specifies that this
 service account can be used only to create events having a value of
-`brigade.sh/example-gateway` in the event's `source` field. This is a security
+`example.org/example-gateway` in the event's `source` field. This is a security
 measure that prevents the gateway from using this token for impersonating other
 gateways.
+
+The rule of thumb to avoid `source` clashes is to use a URI you control. This
+means leading with one's own domain or the URL for something else one owns,
+like the URL for a GitHub repo, for instance.
 
 #### Go setup
 
@@ -187,13 +179,15 @@ We'll be using the [Go SDK] for our example gateway program and we'll need to
 do a bit of prep. We're assuming your system has Go installed and configured
 properly. (If not, please visit the [Go installation docs] to do so.)
 
-Let's create a directory where our program's `main.go` file can reside:
+Let's create a directory where our program's `main.go` file can reside and
+perform bootstrapping for our Go program, including initializing its Go module
+and fetching the Brigade SDK dependency:
 
 ```console
 $ mkdir example-gateway
-
 $ cd example-gateway
-
+$ go mod init example-gateway
+$ go get github.com/brigadecore/brigade/sdk/v2
 $ touch main.go
 ```
 
@@ -227,6 +221,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	// Get the Brigade API server address and gateway token from the environment
 	apiServerAddress := os.Getenv("APISERVER_ADDRESS")
 	if apiServerAddress == "" {
@@ -251,20 +247,10 @@ func main() {
 		apiClientOpts,
 	)
 
-	// Call the createEvent function with the sdk.APIClient provided
-	if err := createEvent(client); err != nil {
-		log.Fatal(err)
-	}
-}
-
-// createEvent creates a Brigade Event using the provided sdk.Client
-func createEvent(client sdk.APIClient) error {
-	ctx := context.Background()
-
 	// Construct a Brigade Event
 	event := core.Event{
 		// This is the source value for this event
-		Source: "brigade.sh/example-gateway",
+		Source: "example.org/example-gateway",
 		// This is the event's type
 		Type: "hello",
 		// This is the event's payload
@@ -274,18 +260,17 @@ func createEvent(client sdk.APIClient) error {
 	// Create the Brigade Event
 	events, err := client.Core().Events().Create(ctx, event)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
 	// If the returned events list has no items, no event was created
 	if len(events.Items) != 1 {
 		fmt.Println("No event was created.")
-		return nil
+		return
 	}
 
 	// The Brigade event was successfully created!
 	fmt.Printf("Event created with ID %s\n", events.Items[0].ID)
-	return nil
 }
 ```
 
@@ -295,7 +280,7 @@ Let's briefly look at the Brigade Event object from above.
   // Construct a Brigade Event
   event := core.Event{
     // This is the source value for this event
-    Source:    "brigade.sh/example-gateway",
+    Source:    "example.org/example-gateway",
     // This is the event's type
     Type:      "create-event",
     // This is the event's payload
@@ -333,7 +318,7 @@ researching are:
 
 In order to utilize events from the example gateway, we'll need a Brigade
 project that subscribes to the corresponding event source
-(`brigade.sh/example-gateway`) and event type (`hello`). We'll also
+(`example.org/example-gateway`) and event type (`hello`). We'll also
 define an event handler that handles these events and utilizes the attached
 payload.
 
@@ -349,7 +334,7 @@ description: |-
   An example project that subscribes to events from an example gateway
 spec:
   eventSubscriptions:
-  - source: brigade.sh/example-gateway
+  - source: example.org/example-gateway
     types:
       - hello
   workerTemplate:
@@ -358,7 +343,7 @@ spec:
       brigade.ts: |
         import { events } from "@brigadecore/brigadier"
 
-        events.on("brigade.sh/example-gateway", "hello", async event => {
+        events.on("example.org/example-gateway", "hello", async event => {
           console.log("Hello, " + event.payload + "!")
         })
 
@@ -375,24 +360,8 @@ $ brig project create --file project.yaml
 ### Running the gateway
 
 Now that we have a project subscribing to events from this gateway, we're ready
-to build and run the example gateway!
-
-First, we'll need to take care of a few bootstrapping items needed for our Go
-program. Here we initialize this program's Go modules file needed for tracking
-dependencies. Then, we fetch the needed Brigade SDK dependency.
-
-```console
-$ go mod init example-gateway
-go: creating new go.mod: module example-gateway
-go: to add module requirements and sums:
-	go mod tidy
-
-$ go get github.com/brigadecore/brigade/sdk/v2
-go get: added github.com/brigadecore/brigade/sdk/v2 v2.0.0-beta.1
-```
-
-Now we're ready to run our program. We export the values required by the
-gateway and then run the gateway:
+to run our program! We export the values required by the gateway and then run
+it:
 
 ```console
 $ export APISERVER_ADDRESS=<Brigade API server address>
