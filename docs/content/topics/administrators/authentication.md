@@ -22,9 +22,9 @@ The motivation behind this design stems from one of the core guiding principles
 in Brigade 2: Provide an abstraction between users and the underlying substrate
 (Kubernetes), such that users of Brigade do not need to interact with (or have
 any presence on) the substrate itself. Therefore, the need to source user
-identity from another authority became apparent. Rather than implementing such
-a system in Brigade itself, we've decided to utilize well-known external
-services to fulfill this need.
+identity from another authority became apparent. Rather than implement such a
+system in Brigade itself, we decided to utilize well-known external services
+to fulfill this need.
 
 ## Third-Party Authentication Options
 
@@ -103,13 +103,14 @@ App] with the authorization callback URL set to point to the
 `/v2/session/auth` endpoint on Brigade's API server address, e.g. the hostname
 reserved when setting up ingress or the external IP address if no ingress is
 used.  You'll then use the GitHub OAuth Apps's client ID and a generated client
-secret in the `brigade2-values.yaml` file.
+secret in the [values.yaml] file for the Brigade Helm chart.
 
   1. Follow the [GitHub OAuth App] creation instructions, supplying your choice
     of values for `Application Name`, `Homepage URL` and `Application description`.
   1. For the `Authorization callback URL`, you'll supply the a value based
     on the DNS hostname and path mentioned above.  For example, if the DNS
-    hostname is `mybrigade.example.com`, the value would be:
+    hostname for the Brigade API server is `mybrigade.example.com`, the value
+    would be:
       ```
       https://mybrigade.example.com/v2/session/auth
       ```
@@ -135,8 +136,8 @@ apiserver:
     strategy: github
     ## Here we inject the values from the GitHub OAuth App
     github:
-      clientID: foo
-      clientSecret: foo
+      clientID: <client ID>
+      clientSecret: <client secret>
       ## If only users from specific GitHub organizations should be allowed
       ## to authenticate, list them here.  Otherwise, users from any GitHub
       ## organization may attempt to authenticate.
@@ -153,12 +154,9 @@ apiserver:
     ## Otherwise, permissions will need to be manually configured for each
     ## authenticated user.
     admins:
-      - <enter your name here>
+      - <GitHub username>
 ```
 
-To use [GitHub's Oauth Provider], please see the
-[Configuring GitHub Authentication] section of the [Deploy] doc for
-setup and configuration.
 
 [GitHub OAuth App]: https://docs.github.com/en/developers/apps/creating-an-oauth-app
 [Configuring Github Authentication]: /topics/operators/deploy#configuring-github-authentication
