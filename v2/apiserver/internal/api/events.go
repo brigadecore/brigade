@@ -140,10 +140,14 @@ type GitDetails struct {
 	// CloneURL specifies the location from where a source code repository may
 	// be cloned.
 	CloneURL string `json:"cloneURL,omitempty" bson:"cloneURL,omitempty"`
-	// Commit specifies a commit (by sha) to be checked out.
+	// Commit specifies a revision (by SHA) to be checked out. If non-empty, this
+	// field takes precedence over any value in the Ref field.
 	Commit string `json:"commit,omitempty" bson:"commit,omitempty"`
-	// Ref specifies a tag or branch to be checked out. If left blank, this will
-	// default to "master" at runtime.
+	// Ref is a symbolic reference to a revision to be checked out. If non-empty,
+	// the value of the Commit field supercedes any value in this field. Example
+	// uses of this field include referencing a branch (refs/heads/<branch name>)
+	// or a tag (refs/tags/<tag name>). If left blank, this field is interpreted
+	// as a reference to the repository's default branch.
 	Ref string `json:"ref,omitempty" bson:"ref,omitempty"`
 }
 
@@ -450,14 +454,6 @@ func (e *eventsService) createSingleEvent(
 		}
 		if event.Git.Ref != "" {
 			workerSpec.Git.Ref = event.Git.Ref
-		}
-	}
-
-	// If no commit (sha) or ref (branch or tag) is specified, default to the
-	// master branch
-	if workerSpec.Git != nil {
-		if workerSpec.Git.Commit == "" && workerSpec.Git.Ref == "" {
-			workerSpec.Git.Ref = "refs/heads/master"
 		}
 	}
 

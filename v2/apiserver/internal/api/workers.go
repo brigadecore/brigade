@@ -174,8 +174,8 @@ type GitConfig struct {
 	// Ref is a symbolic reference to a revision to be checked out. If non-empty,
 	// the value of the Commit field supercedes any value in this field. Example
 	// uses of this field include referencing a branch (refs/heads/<branch name>)
-	// or a tag (refs/tags/<tag name>). If left blank, the default value
-	// refs/heads/master will be assumed at runtime.
+	// or a tag (refs/tags/<tag name>). If left blank, this field is interpreted
+	// as a reference to the repository's default branch.
 	Ref string `json:"ref,omitempty" bson:"ref,omitempty"`
 	// InitSubmodules indicates whether to clone the repository's submodules.
 	InitSubmodules bool `json:"initSubmodules" bson:"initSubmodules"`
