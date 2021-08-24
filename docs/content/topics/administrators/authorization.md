@@ -27,10 +27,11 @@ Users are generated in the system after successful authentication with the
 selected third-party auth provider and the creation of service accounts and
 role assignments is the responsibility of the administrator of Brigade.
 
-Note: There is one method of auto-creation of role assignments for a given set
-of users upon the first deployment of Brigade. The role assignment is
-specifically for granting system-level admin privileges to each designated
-user. Details on setting this up can be seen in the [Authentication] doc.
+> Note: There is one method to have role assignments be automatically granted
+for a given set of users upon their first login to Brigade. The role
+specifically grants system-level admin privileges to each designated user.
+Details on configuring this deployment option can be seen in the
+[Authentication] doc.
 
 [Authentication]: /topics/administrators/authentication
 
@@ -42,10 +43,10 @@ mechanism to create users outside of this authentication system. Users are
 assigned [roles](#roles) granting scoped permissions around their interactions
 with resources in Brigade.
 
-Administrators may list users, get a particular user's details, lock a user out
-of Brigade, unlock a user and delete a user. All of these management functions
-exist under the `brig users` suite of commands. To see the full suite, issue
-the following help command:
+In addition to viewing a particular user's details, administrators can list,
+lock, unlock and delete users. All of these management functions exist under
+the `brig users` suite of commands. To see the full suite, issue the following
+help command:
 
 ```console
 $ brig users --help
@@ -56,7 +57,7 @@ $ brig users --help
 A Service Account in Brigade represents a non-human actor that can be assigned
 a [role](#roles) granting scoped permissions for interacting with resources in
 Brigade. A common pattern is to create a service account for a gateway and
-assign it an EVENT_CREATOR role such that it may submit events into Brigade.
+assign it an `EVENT_CREATOR` role such that it may submit events into Brigade.
 
 Administrators may create, list, get, lock, unlock and delete service accounts.
 All of these management functions exist under the `brig service-accounts` suite
@@ -89,8 +90,11 @@ System-level roles in Brigade are as follows:
 
   * `ADMIN` - Enables system management including system-level permissions for
     other users and service accounts.
-  * `EVENT_CREATOR`- Enables creation of events for all projects.
-  * `PROJECT_CREATOR` - Enables creation of new projects.
+  * `EVENT_CREATOR`- Enables creation of events for all projects. An event
+    `source` must be provided for each assignment of this role.
+  * `PROJECT_CREATOR` - Enables creation of new projects. When a user with this
+    role assignment creates a new project, they are automatically granted all
+    [project-level roles](#project-level-roles) for that project.
   * `READER`- Enables global read-only access to Brigade.
 
 Each role is itself a sub-command under `brig role grant` or
