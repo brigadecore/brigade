@@ -223,14 +223,14 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// Get the Brigade API server address and gateway token from the environment
+	// Get the Brigade API server address and token from the environment
 	apiServerAddress := os.Getenv("APISERVER_ADDRESS")
 	if apiServerAddress == "" {
 		log.Fatalf("Required environment variable APISERVER_ADDRESS not found.\n")
 	}
-	gatewayToken := os.Getenv("GATEWAY_TOKEN")
+	gatewayToken := os.Getenv("API_TOKEN")
 	if gatewayToken == "" {
-		log.Fatalf("Required environment variable GATEWAY_TOKEN not found.\n")
+		log.Fatalf("Required environment variable API_TOKEN not found.\n")
 	}
 
 	// The default Brigade deployment mode uses self-signed certs
@@ -366,7 +366,7 @@ it:
 ```console
 $ export APISERVER_ADDRESS=<Brigade API server address>
 
-$ export GATEWAY_TOKEN=<Brigade service account token from above>
+$ export API_TOKEN=<Brigade service account token from above>
 
 $ go run main.go
 Event created with ID 46a40cff-0689-466a-9cab-05f4bb9ef9f1
