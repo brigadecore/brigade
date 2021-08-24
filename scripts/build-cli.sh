@@ -7,7 +7,7 @@ for os in $OSES; do
     echo "building $os-$arch"
     GOOS=$os GOARCH=$arch CGO_ENABLED=0 \
       go build \
-      -ldflags "-w -X github.com/brigadecore/brigade/v2/internal/version.version=$VERSION -X github.com/brigadecore/brigade/v2/internal/version.commit=$COMMIT" \
+      -ldflags "-w -X github.com/brigadecore/brigade-foundations/version.version=$VERSION -X github.com/brigadecore/brigade-foundations/version.commit=$COMMIT" \
       -o ../bin/brig-$os-$arch \
       ./cli
   done
