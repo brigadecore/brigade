@@ -38,7 +38,6 @@ spec:
     ## requests, etc.
     git:
       cloneURL: {{ .GitCloneURL }}
-      ref: refs/heads/master
     {{- end }}
 `)
 
