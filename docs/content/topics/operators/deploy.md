@@ -55,8 +55,8 @@ support and pull the Brigade chart to a local directory:
 
 ```console
 $ export HELM_EXPERIMENTAL_OCI=1
-$ helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-beta.1
-$ helm chart export ghcr.io/brigadecore/brigade:v2.0.0-beta.1 -d ~/charts
+$ helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-beta.2
+$ helm chart export ghcr.io/brigadecore/brigade:v2.0.0-beta.2 -d ~/charts
 ```
 
 You're now ready to view and edit configuration options:
