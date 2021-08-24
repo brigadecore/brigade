@@ -11,340 +11,390 @@ aliases:
 
 # Brigade Gateways
 
-This guide explains how gateways work, and provides guidance for creating your own
-gateway.
+This guide explains how gateways work, and provides guidance for creating your
+own.
 
 ## What Is A Brigade Gateway?
 
-The [Brigade architecture](design.md) is oriented around the concept that Brigade
-scripts run as a response to one or more events. In Brigade, a _gateway_ is an
-entity that generates events. Often times, it translates some external trigger
-into a Brigade event.
+The [Brigade architecture](/topics/design) is oriented around the concept that
+Brigade scripts run as a response to one or more events. In Brigade, a gateway
+is an entity that generates events from external sources.
 
-Brigade ships with the ability to enable various gateways that are ready to go.
+Currently, all of our officially supported gateways are triggered by webhooks
+delivered from external systems over HTTP(S), but there are no rules about what
+can be used as a trigger for an event. A gateway could hypothetically listen on
+a message queue, run as a chat bot, or watch files on a file system.
 
-These include the [Container Registry Gateway](dockerhub.md), the [Github Gateway](./github.md)
-and the [Generic Gateway](./genericgateway.md).  They can all be enabled via top-level
-Helm [chart flags](https://github.com/brigadecore/charts/blob/master/charts/brigade/values.yaml).
+While Brigade ships without any gateways included, installing one alongside
+Brigade is as simple as a [Helm] chart install, along with any additional setup
+particular to a given gateway. See [below](#available-gateways) for a current
+listing of v2-compatible gateways.
 
-All of these provide HTTP-based listeners that receive incoming requests
-(from a container registry, Github or other platforms and systems) and generate
-Brigade events as a result.
+[Helm]: https://helm.sh
 
-However, Brigade's gateway system works with more than just webhooks.
+## Available Gateways
 
-For example, the `brig` client also acts as a gateway. When you execute a `brig run`
-command, `brig` creates a Brigade event. By default, it emits an `exec` event. And
-Brigade itself processes this event no differently than it processes the GitHub
-or container registry events.
+Currently, the list of official Brigade v2 gateways is as follows:
 
-There are no rules about what can be used as a trigger for an event. One could
-write a gateway that listens on a message queue, or runs as a chat bot, or watches
-files on a filesystem... any of these could be used to trigger a new Brigade event.
+* [ACR (Azure Container Registry) Gateway](https://github.com/brigadecore/brigade-acr-gateway)
+* [BitBucket Gateway](https://github.com/brigadecore/brigade-bitbucket-gateway/tree/v2)
+* [CloudEvents Gateway](https://github.com/brigadecore/brigade-cloudevents-gateway)
+* [Docker Hub Gateway](https://github.com/brigadecore/brigade-dockerhub-gateway)
+* [Github Gateway](https://github.com/brigadecore/brigade-github-gateway)
 
-The remainder of this guide explains how gateways work and how you can create custom
-gateways.
+Follow the installation instructions provided in each gateway's repository to
+learn how to get started.
 
-## An Event Is A Secret
+### The Anatomy of a Brigade Event
 
-The most important thing to understand about a Brigade event is that it is simply
-a [Kubernetes Secret](https://kubernetes.io/docs/concepts/configuration/secret/)
-with special labels and data.
+All gateways perform the same job, that is, to translate activity and context
+from some source into a Brigade event. Let's now look at the structure of a
+Brigade event.
 
-When a new and appropriately labeled secret is created in Kubernetes, the Brigade
-controller will read that secret and start a new Brigade worker to handle the event.
-Secrets have several characteristics that make them a great fit for this role:
+A Brigade Event is defined primarily by its source and type values, worker
+configuration and worker status.
 
-- They are designed to protect data (and we expect them to mature in this capacity)
-- They can be mounted as volumes and environment variables.
-- The payload of a secret is flexible
-- Secrets have been a stable part of the Kubernetes ecosystem since Kubernetes 1.2
-
-Because of these features, the Brigade system uses secrets for bearing event information.
-
-### The Anatomy of a Brigade Event Secret
-
-Here is the structure of a Brigade event secret. It is annotated to explain what
-data belongs in what fields.
+Here is a YAML representation of an event created via the `brig event create`
+command for the [01-hello-world sample project]. Note that many of the fields
+shown are populated with system-generated values, such as timestamps, IDs and
+worker status. The primary fields that can be set by a client (a gateway in
+this case) are `projectID`, `source` and `type`.
 
 ```yaml
-# The main structure is a normal Kubernetes secret
-apiVersion: v1
-kind: Secret
+apiVersion: brigade.sh/v2-beta
+kind: Event
 metadata:
-  # Every event has an automatically generated name. The main requirement of
-  # this is that it MUST BE UNIQUE.
-  name: example
-  # Brigade uses several labels to determine whether a secret carries a
-  # Brigade event.
-  labels:
-    # 'heritage: brigade' is mandatory, and signals that this is a Brigade event.
-    heritage: brigade
-
-    # This should point to the Brigade project ID in which this event is to be
-    # executed
-    project: brigade-1234567890
-
-    # This MUST be a unique ID. Where possible, it SHOULD be a ULID
-    # Substituting a UUID is fine, though some sorting functions won't be as
-    # expected. (A UUID v1 will be sortable like ULIDs, but longer).
-    build: 01C1R2SYTYAR2WQ2DKNTW8SH08
-
-    # 'component: build' is REQUIRED and tells brigade to create a new build
-    # record (and trigger a new worker run).
-    component: build
-
-    # Any other labels you add will be ignored by Brigade.
-type: brigade.sh/build
-data:
-  # IMPORTANT: We show these fields as clear text, but they MUST be base-64
-  # encoded.
-
-  # The name of the thing that caused this event.
-  event_provider: github
-
-  # The type of event. This field is freeform. Brigade does not have a list of
-  # pre-approved event names. Thus, you can define your own event_type
-  event_type: push
-
-  # Revision describes a vcs revision.
-  revision:
-
-    # Commit is the commitish/reference for any associated VCS repository. By
-    # default, this should be `master` for Git.
-    commit: 6913b2703df943fed7a135b671f3efdafd92dbf3
-
-    # Ref is the symbolic ref name. (refs/heads/master, refs/pull/12/head, refs/tags/v0.1.0)
-    ref: master
-
-  # This should be the same as the `name` field on the secret
-  build_name: example
-
-  # This should be the same as the 'project' label
-  project_id: brigade-1234567890
-
-  # This should be the same as the 'build' label
-  build_id: 01C1R2SYTYAR2WQ2DKNTW8SH08
-
-  # The payload can contain arbitrary data that will be passed to the worker
-  # JavaScript. It is passed to the script unparsed, and the script can parse
-  # it as desired.
-  payload: "{ 'foo': 'bar' }"
-
-  # An event can supply a script to execute. If it does not supply a script,
-  # Brigade will try to locate a 'brigade.js' file in the project's source
-  # code repository using the commit provided above.
-  script: "console.log('hello');"
+  created: "2021-08-11T22:22:41.366Z"
+  id: 48c960eb-5823-46d0-8390-ec6a2a966b98
+projectID: hello-world
+source: brigade.sh/cli
+type: exec
+worker:
+  spec:
+    configFilesDirectory: .brigade
+    defaultConfigFiles:
+      brigade.js: |
+        console.log("Hello, World!");
+    logLevel: DEBUG
+    useWorkspace: false
+    workspaceSize: 10Gi
+  status:
+    apiVersion: brigade.sh/v2-beta
+    ended: "2021-08-11T22:22:49Z"
+    kind: WorkerStatus
+    phase: SUCCEEDED
+    started: "2021-08-11T22:22:41Z"
 ```
 
-Again, note that any fields in the `data:` section above are shown cleartext,
-though in reality you _must_ base-64 encode them.
+Let's look at the high-level sections in the event definition above.  They are:
 
-The easiest way to create a secret like the above is to do so with the `kubectl`
-command, though there are a host of language-specific libraries now for creating
-secrets in code.
+  1. Event metadata, including:
+    i. The `apiVersion` of the schema for this event
+    ii. The schema `kind`, which will always be `Event`
+    iii. The `id` of the Event
+    iv. A `created` timestamp for the Event
+    v. The `projectID` that the Event is associated with
+    vi. The event `source`
+    vii. The event `type`
+  2. The `worker.spec` section, which contains worker configuration inherited
+    from the project definition associated with the event in combination with
+    system-level defaults.
+  3. The `worker.status` section, which contains the `started` and `ended`
+    timestamps and current `phase` of the worker handling the event. In the
+    example above, it has already reached the terminal phase of `SUCCEEDED`.
+
+To explore the SDK definitions of an Event object, see the [Go SDK Event] and
+[JavaScript/TypeScript SDK Event].
+
+[01-hello-world sample project]: https://github.com/brigadecore/brigade/tree/v2/examples/01-hello-world
+[Go SDK Event]: https://github.com/brigadecore/brigade/blob/v2/sdk/v2/core/events.go
+[JavaScript/TypeScript SDK Event]: https://github.com/brigadecore/brigade-sdk-for-js/blob/master/src/core/events.ts
 
 ## Creating Custom Gateways
 
-Given the above description of how gateways work, we can now talk about a gateway
-as anything that generates a secret following the format above.
+Given the above description of how gateways work, we can walk through how a
+minimal example gateway can be built. We'll focus on the event creation side
+of a Brigade gateway, rather than going over other common attributes, such as
+an HTTP(S) server that awaits external webhook events.
 
-In this final section, we will create a simple shell script that triggers a new
-event every 60 seconds. In the payload, it sends the system time of the host
-that is running the script.
+Since the Brigade API server is the point of contact for gateway
+authentication/authorization and event submission, gateway developers will need
+to pick an [SDK] to use. For this example, we'll be using the [Go SDK]. As of
+this writing, a [Javascript/Typescript SDK] and a [Rust SDK] (work in
+progress) also exist.
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
+[SDK]: https://github.com/brigadecore/brigade/tree/v2#sdks
+[Go SDK]: https://github.com/brigadecore/brigade/tree/v2/sdk
+[Javascript/Typescript SDK]: https://github.com/brigadecore/brigade-sdk-for-js
+[Rust SDK]: https://github.com/brigadecore/brigade-sdk-for-rust
 
-# The Kubernetes namespace in which Brigade is running.
-namespace="default"
+## Example Gateway
 
-event_provider="simple-event"
-event_type="my_event"
+The following example assumes a running Brigade instance has been deployed and
+the ability to create a service account is in place (e.g. you have the role of
+'ADMIN' or you are logged in as the root user). If you'd like to follow along
+and haven't yet deployed Brigade, check out the [QuickStart].
 
-# This is github.com/brigadecore/empty-testbed
-project_id="brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac"
-commit_ref="master"
-commit_id="589e15029e1e44dee48de4800daf1f78e64287c0"
+[QuickStart]: /intro/quickstart
 
-base64=(base64)
-uuidgen=(uuidgen)
-if [[ "$(uname)" != "Darwin" ]]; then
-  base64+=(-w 0)
-  uuidgen+=(-t) # generate UUID v1 for sortability
-fi
+### Preparation
 
-# This is the brigade script to execute
-script=$(cat <<EOF
-const { events } = require("brigadier");
-events.on("my_event", (e) => {
-  console.log("The system time is " + e.payload);
-});
-EOF
+#### Service Account creation
+
+All Brigade gateways require a service account token for authenticating with
+Brigade when submitting an event into the system. As preparation, we'll create
+a service account for this gateway and save the generated token for use in our
+program.
+
+```console
+$ brig service-account create \
+	--id example-gateway \
+	--description example-gateway
+```
+
+Make note of the token returned. This value will be used in another step. It is
+your only opportunity to access this value, as Brigade does not save it.
+
+Authorize this service account to create new events of a given source:
+
+```console
+$ brig role grant EVENT_CREATOR \
+    --service-account example-gateway \
+    --source example.org/example-gateway
+```
+
+Note: The `--source example.org/example-gateway` option specifies that this
+service account can be used only to create events having a value of
+`example.org/example-gateway` in the event's `source` field. This is a security
+measure that prevents the gateway from using this token for impersonating other
+gateways.
+
+The rule of thumb to avoid `source` clashes is to use a URI you control. This
+means leading with one's own domain or the URL for something else one owns,
+like the URL for a GitHub repo, for instance.
+
+#### Go setup
+
+We'll be using the [Go SDK] for our example gateway program and we'll need to
+do a bit of prep. We're assuming your system has Go installed and configured
+properly. (If not, please visit the [Go installation docs] to do so.)
+
+Let's create a directory where our program's `main.go` file can reside and
+perform bootstrapping for our Go program, including initializing its Go module
+and fetching the Brigade SDK dependency:
+
+```console
+$ mkdir example-gateway
+$ cd example-gateway
+$ go mod init example-gateway
+$ go get github.com/brigadecore/brigade/sdk/v2
+$ touch main.go
+```
+
+[Go installation docs]: https://golang.org/doc/install
+
+### Example Gateway code
+
+Now we're ready to code! Open `main.go` in the editor of your choice and add in
+the following Go code.
+
+The program consists of a `main` function which procures the Brigade API server
+address and the gateway token (generated above) via environment variables. It
+then constructs an API client from these values and passes this to the
+`createEvent` helper function. This function builds a Brigade Event with the
+pertinent fields populated and then calls the SDK's event create function.
+
+See the in-line comments for further description around each section.
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/brigadecore/brigade/sdk/v2"
+	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
-# Now we will generate a new event every 60 seconds.
-while :; do
-  # We'll use a UUID instead of a ULID. But if you want a ULID generator, you
-  # can grab one here: https://github.com/technosophos/ulid
-  uuid="$("${uuidgen[@]}" | tr '[:upper:]' '[:lower:]')"
+func main() {
+	ctx := context.Background()
 
-  # We can use the UUID to make sure we get a unique name
-  name="simple-event-$uuid"
+	// Get the Brigade API server address and token from the environment
+	apiServerAddress := os.Getenv("APISERVER_ADDRESS")
+	if apiServerAddress == "" {
+		log.Fatalf("Required environment variable APISERVER_ADDRESS not found.\n")
+	}
+	gatewayToken := os.Getenv("API_TOKEN")
+	if gatewayToken == "" {
+		log.Fatalf("Required environment variable API_TOKEN not found.\n")
+	}
 
-  # This will just print the system time for the system running the script.
-  payload=$(date)
+	// The default Brigade deployment mode uses self-signed certs
+	// Hence, we allow insecure connections in our APIClientOptions
+	// This can be changed to false if insecure connections should not be allowed
+	apiClientOpts := &restmachinery.APIClientOptions{
+		AllowInsecureConnections: true,
+	}
 
-  cat <<EOF | kubectl --namespace ${namespace} create -f -
-  apiVersion: v1
-  kind: Secret
-  metadata:
-    name: ${name}
-    labels:
-      heritage: brigade
-      project: ${project_id}
-      build: ${uuid}
-      component: build
-  type: "brigade.sh/build"
-  data:
-    revision:
-      commit: $("${base64[@]}" <<<"${commit_id}")
-      ref: $("${base64[@]}" <<<"${commit_ref}")
-    event_provider: $("${base64[@]}" <<<"${event_provider}")
-    event_type: $("${base64[@]}" <<<"${event_type}")
-    project_id: $("${base64[@]}" <<<"${project_id}")
-    build_id: $("${base64[@]}" <<<"${uuid}")
-    payload: $("${base64[@]}" <<<"${payload}")
-    script: $("${base64[@]}" <<<"${script}")
-EOF
-  sleep 60
-done
+	// Create an API client with the gateway token value
+	client := sdk.NewAPIClient(
+		apiServerAddress,
+		gatewayToken,
+		apiClientOpts,
+	)
+
+	// Construct a Brigade Event
+	event := core.Event{
+		// This is the source value for this event
+		Source: "example.org/example-gateway",
+		// This is the event's type
+		Type: "hello",
+		// This is the event's payload
+		Payload: "Dolly",
+	}
+
+	// Create the Brigade Event
+	events, err := client.Core().Events().Create(ctx, event)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// If the returned events list has no items, no event was created
+	if len(events.Items) != 1 {
+		fmt.Println("No event was created.")
+		return
+	}
+
+	// The Brigade event was successfully created!
+	fmt.Printf("Event created with ID %s\n", events.Items[0].ID)
+}
 ```
 
-While the main point of the script above is just to show how to create a basic
-event, it should also demonstrate how flexible the system is. A script can take
-input from just about anything and use it to trigger a new event.
+Let's briefly look at the Brigade Event object from above.
 
-## Creating A Cron Job Gateway
-
-Beginning with the code above, we can build a gateway that runs as a scheduled
-job in Kubernetes. In this example, we use a Kubernetes
-[CronJob](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) object
-to create the secret.
-
-First we can begin with a simplified version of the script above. This one does not
-run in a loop. It just runs once to completion.
-
-Here is `cron-event.sh`:
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-# The Kubernetes namespace in which Brigade is running.
-namespace=${NAMESPACE:-default}
-
-event_provider="simple-event"
-event_type="my_event"
-project_id="brigade-830c16d4aaf6f5490937ad719afd8490a5bcbef064d397411043ac"
-commit_ref="master"
-commit_id="589e15029e1e44dee48de4800daf1f78e64287c0"
-uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
-name="simple-event-$uuid"
-
-payload=$(date)
-script=$(cat <<EOF
-const { events } = require("brigadier");
-events.on("my_event", (e) => {
-  console.log("The system time is " + e.payload);
-});
-EOF
-)
-
-cat <<EOF | kubectl --namespace ${namespace} create -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ${name}
-  labels:
-    heritage: brigade
-    project: ${project_id}
-    build: ${uuid}
-    component: build
-type: "brigade.sh/build"
-data:
-  revision:
-    commit: $(base64 -w 0 <<<"${commit_id}")
-    ref: $(base64 -w 0 <<<"${commit_ref}")
-  event_provider: $(base64 -w 0 <<<"${event_provider}")
-  event_type: $(base64 -w 0 <<<"${event_type}")
-  project_id: $(base64 -w 0 <<<"${project_id}")
-  build_id: $(base64 -w 0 <<<"${uuid}")
-  payload: $(base64 -w 0 <<<"${payload}")
-  script: $(base64 -w 0 <<<"${script}")
-EOF
+```go
+  // Construct a Brigade Event
+  event := core.Event{
+    // This is the source value for this event
+    Source:    "example.org/example-gateway",
+    // This is the event's type
+    Type:      "create-event",
+    // This is the event's payload
+    Payload:   "Dolly",
+  }
 ```
 
-Next, we will package the above as a Docker image. To do that, we create a `Dockerfile`
-in the same directory as the `cron-event.sh` script above.
+We've filled in the core fields needed for any Brigade event, `Source` and
+`Type`. As a bonus, we're also adding a `Payload`. However, that's just the
+start of what a Brigade Event can contain. Other notable fields worth
+researching are:
 
-The `Dockerfile` just sets up the commands we need, and then copies the script into
-the image:
+- `ProjectID`: When supplied, the event will _only_ be eligible for receipt by
+	a specific project.
 
-```Dockerfile
-FROM debian:jessie-slim
-RUN apt-get update && apt-get install -y uuid-runtime curl
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
-  && mv kubectl /usr/local/bin/kubectl && chmod 755 /usr/local/bin/kubectl
-COPY ./cron-event.sh /usr/local/bin/cron-event.sh
-CMD /usr/local/bin/cron-event.sh
-```
+- `Qualifiers`: A list of qualifier values. For a project to receive an event,
+	the qualifiers on an event's subscription must exactly match the qualifiers
+	on the event (in addition to matching source and type).
 
-(The really long line just installs `kubectl`)
+- `Labels`: A list of labels. Projects can choose to utilize these for
+  filtering purposes. In contrast to qualifiers, a project's event
+	subscription does not need to match an event's labels in order to receive it.
+	Labels, however, can be used to narrow an event subscription by optionally
+	selecting only events that are labeled in a particular way.
 
-And we can pack that into a Docker image by running `docker build -t technosophos/example-cron:latest .`.
-You should replace `technosophos` with your Dockerhub username (or modify the
-above to store in your Docker registry of choice).
+- `ShortTitle`: A short title for the event.
 
-Then push the image to a repository that your Kubernetes cluster can reach:
+- `LongTitle`: A longer, more descriptive title for the event.
 
-```
-$ docker push technosophos/example-cron
-```
+- `SourceState`: A key/value map representing event state that can be persisted
+  by the Brigade API server so that gateways can track event handling progress
+  and perform other actions, such as updating upstream services.
 
-Now we create our third (and last) file: a CronJob definition. Our `cron.yaml`
-should look something like this:
+### Subscribing a project to events from the example gateway
+
+In order to utilize events from the example gateway, we'll need a Brigade
+project that subscribes to the corresponding event source
+(`example.org/example-gateway`) and event type (`hello`). We'll also
+define an event handler that handles these events and utilizes the attached
+payload.
+
+Here's the project definition file.  Note the `spec.eventSubscriptions` section
+and the default `brigade.ts` script which contains our event handler:
 
 ```yaml
-apiVersion: batch/v1beta1
-kind: CronJob
+apiVersion: brigade.sh/v2-beta
+kind: Project
 metadata:
-  name: example-cron-gateway
-  labels:
-    heritage: brigade
-    component: gateway
+  id: example-gateway-project
+description: |-
+  An example project that subscribes to events from an example gateway
 spec:
-  schedule: "*/1 * * * *"
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          restartPolicy: OnFailure
-          containers:
-            - name: cron-example
-              image: technosophos/example-cron:latest
-              imagePullPolicy: IfNotPresent
+  eventSubscriptions:
+  - source: example.org/example-gateway
+    types:
+      - hello
+  workerTemplate:
+    logLevel: DEBUG
+    defaultConfigFiles:
+      brigade.ts: |
+        import { events } from "@brigadecore/brigadier"
+
+        events.on("example.org/example-gateway", "hello", async event => {
+          console.log("Hello, " + event.payload + "!")
+        })
+
+        events.process()
 ```
 
-We can install it with `kubectl create -f cron.yaml`. Now, every minute our
-new gateway will create an event.
+We can save this to `project.yaml` and create it in Brigade via the following
+command:
 
-Whenever you are done with this example, you can delete it with
-`kubectl delete cronjob example-cron-gateway`.
+```console
+$ brig project create --file project.yaml
+```
 
-That's it! We have create both a local shell script gateway and an in-cluster
-cron gateway.
+### Running the gateway
 
-Again, there are other programming libraries and platforms that interoperate with
-Kubernetes. Many of them are hosted on GitHub in the [kubernetes-client org](https://github.com/kubernetes-client).
+Now that we have a project subscribing to events from this gateway, we're ready
+to run our program! We export the values required by the gateway and then run
+it:
+
+```console
+$ export APISERVER_ADDRESS=<Brigade API server address>
+
+$ export API_TOKEN=<Brigade service account token from above>
+
+$ go run main.go
+Event created with ID 46a40cff-0689-466a-9cab-05f4bb9ef9f1
+```
+
+Finally, we can inspect the logs to verify the event was processed by the
+worker successfully and that the event payload came through:
+
+```console
+$ brig event logs --id 46a40cff-0689-466a-9cab-05f4bb9ef9f1
+
+2021-08-13T22:10:12.726Z INFO: brigade-worker version: 0d7546a
+2021-08-13T22:10:12.732Z DEBUG: writing default brigade.ts to /var/vcs/.brigade/brigade.ts
+2021-08-13T22:10:12.733Z DEBUG: using npm as the package manager
+2021-08-13T22:10:12.733Z DEBUG: path /var/vcs/.brigade/node_modules/@brigadecore does not exist; creating it
+2021-08-13T22:10:12.734Z DEBUG: polyfilling @brigadecore/brigadier with /var/brigade-worker/brigadier-polyfill
+2021-08-13T22:10:12.734Z DEBUG: compiling brigade.ts with flags --target ES6 --module commonjs --esModuleInterop
+2021-08-13T22:10:16.433Z DEBUG: running node brigade.js
+Hello, Dolly!
+```
+
+### Wrapping up
+
+Hopefully this brief guide showing a sample gateway written using Brigade's Go
+SDK was helpful. All of the sample code can be found in the
+[examples/gateways/example-gateway] directory.
+
+We look forward to seeing the Brigade Gateway ecosystem expand with
+contributions from readers like you!
+
+[examples/gateways]: https://github.com/brigadecore/brigade/tree/v2/examples/gateways/example-gateway
