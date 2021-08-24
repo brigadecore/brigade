@@ -85,20 +85,20 @@ Install the Brigade CLI, brig, by copying the appropriate binary from our releas
 
 **linux**
 ```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.1/brig-linux-amd64
+curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.2/brig-linux-amd64
 chmod +x /usr/local/bin/brig
 ```
 
 **macos**
 ```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.1/brig-darwin-amd64
+curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.2/brig-darwin-amd64
 chmod +x /usr/local/bin/brig
 ```
 
 **windows**
 ```powershell
 mkdir -force $env:USERPROFILE\bin
-(New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.1/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+(New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.2/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
 $env:PATH+=";$env:USERPROFILE\bin"
 ```
 
@@ -140,8 +140,8 @@ Install Brigade on your local development cluster. See our [Installation] instru
 1. Run the following commands to install Brigade.
 
     ```
-    helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-beta.1
-    helm chart export ghcr.io/brigadecore/brigade:v2.0.0-beta.1 -d ~/charts
+    helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-beta.2
+    helm chart export ghcr.io/brigadecore/brigade:v2.0.0-beta.2 -d ~/charts
     helm install brigade2 ~/charts/brigade --namespace brigade2 --create-namespace
     kubectl rollout status deployment brigade2-apiserver -n brigade2 --timeout 5m
     ```
@@ -268,7 +268,7 @@ Below is example output of a successful event handler:
 Created event "2cb85062-f964-454d-ac5c-526cdbdd2679".
 
 Waiting for event's worker to be RUNNING...
-2021-08-10T16:52:01.699Z INFO: brigade-worker version: v2.0.0-beta.1
+2021-08-10T16:52:01.699Z INFO: brigade-worker version: v2.0.0-beta.2
 2021-08-10T16:52:01.701Z DEBUG: writing default brigade.ts to /var/vcs/.brigade/brigade.ts
 2021-08-10T16:52:01.702Z DEBUG: using npm as the package manager
 2021-08-10T16:52:01.702Z DEBUG: path /var/vcs/.brigade/node_modules/@brigadecore does not exist; creating it
