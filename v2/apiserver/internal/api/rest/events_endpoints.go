@@ -15,10 +15,11 @@ import (
 )
 
 type EventsEndpoints struct {
-	AuthFilter              restmachinery.Filter
-	EventSchemaLoader       gojsonschema.JSONLoader
-	SourceStateSchemaLoader gojsonschema.JSONLoader
-	Service                 api.EventsService
+	AuthFilter               restmachinery.Filter
+	EventSchemaLoader        gojsonschema.JSONLoader
+	SourceStateSchemaLoader  gojsonschema.JSONLoader
+	EventSummarySchemaLoader gojsonschema.JSONLoader
+	Service                  api.EventsService
 }
 
 func (e *EventsEndpoints) Register(router *mux.Router) {
@@ -50,6 +51,12 @@ func (e *EventsEndpoints) Register(router *mux.Router) {
 	router.HandleFunc(
 		"/v2/events/{id}/source-state",
 		e.AuthFilter.Decorate(e.updateSourceState),
+	).Methods(http.MethodPut)
+
+	// Update summary
+	router.HandleFunc(
+		"/v2/events/{id}/summary",
+		e.AuthFilter.Decorate(e.updateSummary),
 	).Methods(http.MethodPut)
 
 	// Cancel event
@@ -189,6 +196,30 @@ func (e *EventsEndpoints) updateSourceState(
 						r.Context(),
 						mux.Vars(r)["id"],
 						sourceState,
+					)
+			},
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (e *EventsEndpoints) updateSummary(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	summary := api.EventSummary{}
+	restmachinery.ServeRequest(
+		restmachinery.InboundRequest{
+			W:                   w,
+			R:                   r,
+			ReqBodySchemaLoader: e.EventSummarySchemaLoader,
+			ReqBodyObj:          &summary,
+			EndpointLogic: func() (interface{}, error) {
+				return nil,
+					e.Service.UpdateSummary(
+						r.Context(),
+						mux.Vars(r)["id"],
+						summary,
 					)
 			},
 			SuccessCode: http.StatusOK,
