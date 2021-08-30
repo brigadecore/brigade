@@ -3,7 +3,7 @@ import { events, Event, Job, ConcurrentGroup, SerialGroup } from "@brigadecore/b
 const releaseTagRegex = /^refs\/tags\/(v[0-9]+(?:\.[0-9]+)*(?:\-.+)?)$/
 
 const goImg = "brigadecore/go-tools:v0.2.0"
-const jsImg = "node:12.3.1-stretch"
+const jsImg = "node:16.8.0-bullseye"
 const kanikoImg = "brigadecore/kaniko:v0.2.0"
 const helmImg = "brigadecore/helm-tools:v0.1.0"
 const localPath = "/workspaces/brigade"
