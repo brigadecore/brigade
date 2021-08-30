@@ -2,7 +2,7 @@ FROM node:14.16.0-alpine3.11
 ARG VERSION
 ENV WORKER_VERSION=${VERSION}
 
-RUN apk add bash && npm install -g typescript
+RUN apk add bash
 
 WORKDIR /var/brigade-worker/brigadier
 COPY v2/brigadier/ .
