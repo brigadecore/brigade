@@ -84,34 +84,29 @@ spec:
 Each Worker Job requiring access to this workspace must then be configured with
 a filepath value designating where the workspace should be mounted within the
 Job's container. (Note that this may be the Job's `primaryContainer` and/or one
-or more of a Job's `sidecarContainer`(s), if applicable). This filepath value
-is assigned to the `workspaceMountPath` field on each applicable Job container.
+or more of a Job's `sidecarContainer`(s)). This filepath value is assigned to
+the `workspaceMountPath` field on each applicable Job container.
 
-In the example `brigade.js` script below, the Job named "first-job" is
-configured with the `workspaceMountPath` value set to `/share` on both its
-primary container and its sidecar container, "sidecar". The sidecar container
-is able to read (and display) the message that the primary container prints,
-via the shared workspace mount:
+In the example `brigade.js` script below, the both Jobs are configured with the
+`workspaceMountPath` value set to `/share`. Thus, `second-job` is able to read
+(and display) the message that `first-job` emits, via the shared workspace
+mount:
 
 ```javascript
 const { events, Job } = require("@brigadecore/brigadier");
 
 events.on("brigade.sh/cli", "exec", async event => {
-  let job = new Job("first-job", "debian:latest", event);
-  job.primaryContainer.command = ["bash"];
-  job.primaryContainer.arguments = ["-c", "echo 'Hello!' > /share/message"];
-  job.primaryContainer.workspaceMountPath = "/share";
+  let job1 = new Job("first-job", "debian:latest", event);
+  job1.primaryContainer.workspaceMountPath = "/share";
+  job1.primaryContainer.command = ["bash"];
+  job1.primaryContainer.arguments = ["-c", "echo 'Hello!' > /share/message"];
+  await job1.run();
 
-  job.sidecarContainers = {
-    sidecar: {
-      image: "debian:latest",
-      command: ["cat"],
-      arguments: ["/share/message"],
-      workspaceMountPath: "/share"
-    }
-  };
-
-  await job.run();
+  let job2 = new Job("second-job", "debian:latest", event);
+  job2.primaryContainer.workspaceMountPath = "/share";
+  job2.primaryContainer.command = ["cat"];
+  job2.primaryContainer.arguments = ["/share/message"];
+  await job2.run();
 });
 
 events.process();
