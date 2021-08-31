@@ -14,7 +14,7 @@ aliases:
 Brigade utilizes storage in the following ways:
 
   * [Shared Worker storage](#shared-worker-storage) wherein a Brigade Worker's
-    workspace may be shared among its Job(s). Optional; not enabled by default.
+    workspace may be shared with and among its Jobs
   * [Artemis storage](#artemis-storage) for Brigade's Messaging/Queue component
   * [MongoDB storage](#mongodb-storage) for Brigade's backing data store
 
@@ -44,9 +44,9 @@ $ helm install nfs stable/nfs-server-provisioner \
   --create-namespace --namespace nfs
 ```
 
-By default, the chart installs with persistance disabled. For various methods
-on enabling, as well as configuring other aspects of the installation, see the
-[README][NFS].
+By default, the NFS chart installs with persistance disabled. For various
+methods on enabling, as well as configuring other aspects of the installation,
+see the [README][NFS].
 
 This chart installs a [StorageClass][storage class] named `nfs`. As mentioned,
 Brigade already has `worker.storageClass` set to `nfs` in its
