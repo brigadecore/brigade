@@ -104,10 +104,10 @@ export class EventRegistry {
     this.fire(event)
   }
 
-  protected fire(event: Event): void {
+  protected fire(event: Event): string | void {
     const handlerFn = this.handlers[`${event.source}:${event.type}`]
     if (handlerFn) {
-      handlerFn(event) 
+      return handlerFn(event) 
     }
   }
 

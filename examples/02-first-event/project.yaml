@@ -17,6 +17,10 @@ spec:
 
         events.on("brigade.sh/cli", "exec", async event => {
           console.log("Hello, World!");
+
+          // Optionally return a string and it will automatically be persisted
+          // in the event's summary field.
+          return "All done."
         });
 
         events.process();
