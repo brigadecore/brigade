@@ -242,6 +242,41 @@ func (e *eventsStore) UpdateSourceState(
 	return nil
 }
 
+func (e *eventsStore) UpdateSummary(
+	ctx context.Context,
+	id string,
+	summary api.EventSummary,
+) error {
+	res, err := e.collection.UpdateOne(
+		ctx,
+		bson.M{
+			"id": id,
+			"deleted": bson.M{
+				"$exists": false, // Don't grab logically deleted events
+			},
+		},
+		bson.M{
+			"$set": bson.M{
+				"summary": summary.Text,
+			},
+		},
+	)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error updating summary of event %q",
+			id,
+		)
+	}
+	if res.MatchedCount == 0 {
+		return &meta.ErrNotFound{
+			Type: "Event",
+			ID:   id,
+		}
+	}
+	return nil
+}
+
 func (e *eventsStore) Cancel(ctx context.Context, id string) error {
 	cancellationTime := time.Now().UTC()
 

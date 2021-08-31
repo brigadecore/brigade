@@ -1,0 +1,32 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "event-summary.json",
+
+	"definitions": {
+
+		"kind": {
+			"type": "string",
+			"description": "The type of object represented by the document",
+			"enum": ["EventSummary"]
+		}
+
+	},
+
+	"title": "EventSummary",
+	"type": "object",
+	"required": ["apiVersion", "kind"],
+	"additionalProperties": false,
+	"properties": {
+		"apiVersion": {
+			"$ref": "common.json#/definitions/apiVersion"
+		},
+		"kind": {
+			"$ref": "#/definitions/kind"
+		},
+		"text": {
+			"type": "string",
+			"description": "A summary of work performed by the worker and its jobs",
+			"maxLength": 4096
+		}
+	}
+}

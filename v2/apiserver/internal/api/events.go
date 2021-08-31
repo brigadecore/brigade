@@ -104,6 +104,11 @@ type Event struct {
 	// to begin with) is that event payloads may contain REFERENCES to sensitive
 	// details that are useful only to properly configured Workers.
 	Payload string `json:"payload,omitempty" bson:"payload,omitempty"`
+	// Summary is a counterpart to Payload. If Payload is free-form Worker input,
+	// then Summary is free-form Worker output. It can optionally be set by a
+	// Worker to provide a summary of the work completed by the Worker and its
+	// Jobs.
+	Summary string `json:"summary,omitempty" bson:"summary,omitempty"`
 	// Worker contains details of the Worker assigned to handle the Event.
 	Worker Worker `json:"worker" bson:"worker"`
 }
@@ -132,6 +137,12 @@ type SourceState struct {
 	// an Event (e.g. the gateway that created it) can use to store
 	// source-specific state.
 	State map[string]string `json:"state,omitempty" bson:"state,omitempty"`
+}
+
+// EventSummary encapsulates an opaque, Worker-specific summary of an Event.
+type EventSummary struct {
+	// Text is the Event summary as (optionally) provided by a Worker.
+	Text string `json:"text,omitempty"`
 }
 
 // GitDetails represents git-specific Event details. These may override
@@ -281,6 +292,9 @@ type EventsService interface {
 	// UpdateSourceState updates source-specific (e.g. gateway-specific) Event
 	// state.
 	UpdateSourceState(context.Context, string, SourceState) error
+	// UpdateSummary updates the opaque, Worker-specific summary of work performed
+	// by the Worker and its Jobs.
+	UpdateSummary(context.Context, string, EventSummary) error
 	// Cancel cancels a single Event specified by its identifier. If no such event
 	// is found, implementations MUST return a *meta.ErrNotFound error.
 	// Implementations MUST only cancel events whose Workers have not already
@@ -617,6 +631,22 @@ func (e *eventsService) UpdateSourceState(
 	)
 }
 
+func (e *eventsService) UpdateSummary(
+	ctx context.Context,
+	id string,
+	summary EventSummary,
+) error {
+	if err := e.authorize(ctx, RoleWorker, id); err != nil {
+		return err
+	}
+	err := e.eventsStore.UpdateSummary(ctx, id, summary)
+	return errors.Wrapf(
+		err,
+		"error updating summary of event %q in store",
+		id,
+	)
+}
+
 func (e *eventsService) Cancel(ctx context.Context, id string) error {
 	event, err := e.eventsStore.Get(ctx, id)
 	if err != nil {
@@ -927,6 +957,8 @@ type EventsStore interface {
 	// state. Implementations MAY assume the Event's existence has been
 	// pre-confirmed by the caller.
 	UpdateSourceState(context.Context, string, SourceState) error
+	// UpdateSummary updates the opaque, Worker-specific Event summary.
+	UpdateSummary(context.Context, string, EventSummary) error
 	// Cancel updates the specified Event in the underlying data store to reflect
 	// that it has been canceled. Implementations MAY assume the Event's existence
 	// has been pre-confirmed by the caller. Implementations MUST only cancel

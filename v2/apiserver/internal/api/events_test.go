@@ -847,6 +847,80 @@ func TestEventsServiceUpdateSourceState(t *testing.T) {
 	}
 }
 
+func TestEventsServiceUpdateSummary(t *testing.T) {
+	testEventID := "123456789"
+	testCases := []struct {
+		name       string
+		service    EventsService
+		assertions func(error)
+	}{
+		{
+			name: "unauthorized",
+			service: &eventsService{
+				authorize: neverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "error updating summary in store",
+			service: &eventsService{
+				authorize: alwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+					UpdateSummaryFn: func(
+						context.Context,
+						string,
+						EventSummary,
+					) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error updating summary of event")
+			},
+		},
+		{
+			name: "success",
+			service: &eventsService{
+				authorize: alwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+					UpdateSummaryFn: func(
+						context.Context,
+						string,
+						EventSummary,
+					) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.service.UpdateSummary(
+				context.Background(),
+				testEventID,
+				EventSummary{},
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
 func TestEventsServiceCancel(t *testing.T) {
 	const testEventID = "123456789"
 	testCases := []struct {
@@ -1782,6 +1856,7 @@ type mockEventsStore struct {
 	GetFn                    func(context.Context, string) (Event, error)
 	GetByHashedWorkerTokenFn func(context.Context, string) (Event, error)
 	UpdateSourceStateFn      func(context.Context, string, SourceState) error
+	UpdateSummaryFn          func(context.Context, string, EventSummary) error
 	CancelFn                 func(context.Context, string) error
 	CancelManyFn             func(
 		context.Context,
@@ -1824,6 +1899,14 @@ func (m *mockEventsStore) UpdateSourceState(
 	sourceState SourceState,
 ) error {
 	return m.UpdateSourceStateFn(ctx, id, sourceState)
+}
+
+func (m *mockEventsStore) UpdateSummary(
+	ctx context.Context,
+	id string,
+	summary EventSummary,
+) error {
+	return m.UpdateSummaryFn(ctx, id, summary)
 }
 
 func (m *mockEventsStore) Cancel(ctx context.Context, id string) error {

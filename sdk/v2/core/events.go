@@ -90,6 +90,11 @@ type Event struct {
 	// to begin with) is that event payloads may contain REFERENCES to sensitive
 	// details that are useful only to properly configured Workers.
 	Payload string `json:"payload,omitempty"`
+	// Summary is a counterpart to Payload. If Payload is free-form Worker input,
+	// then Summary is free-form Worker output. It can optionally be set by a
+	// Worker to provide a summary of the work completed by the Worker and its
+	// Jobs.
+	Summary string `json:"summary,omitempty" bson:"summary,omitempty"`
 	// Worker contains details of the Worker assigned to handle the Event.
 	Worker *Worker `json:"worker,omitempty"`
 }
@@ -161,6 +166,30 @@ func (s SourceState) MarshalJSON() ([]byte, error) {
 				Kind:       "SourceState",
 			},
 			Alias: (Alias)(s),
+		},
+	)
+}
+
+// EventSummary encapsulates an opaque, Worker-specific summary of an Event.
+type EventSummary struct {
+	// Text is the Event summary as (optionally) provided by a Worker.
+	Text string `json:"text,omitempty"`
+}
+
+// MarshalJSON amends EventSummary instances with type metadata so that clients
+// do not need to be concerned with the tedium of doing so.
+func (e EventSummary) MarshalJSON() ([]byte, error) {
+	type Alias EventSummary
+	return json.Marshal(
+		struct {
+			meta.TypeMeta `json:",inline"`
+			Alias         `json:",inline"`
+		}{
+			TypeMeta: meta.TypeMeta{
+				APIVersion: meta.APIVersion,
+				Kind:       "EventSummary",
+			},
+			Alias: (Alias)(e),
 		},
 	)
 }
@@ -243,6 +272,8 @@ type EventsClient interface {
 	// UpdateSourceState updates source-specific (e.g. gateway-specific) Event
 	// state.
 	UpdateSourceState(context.Context, string, SourceState) error
+	// UpdateSummary updates the Worker-specific Event summary.
+	UpdateSummary(context.Context, string, EventSummary) error
 	// Cancel cancels a single Event specified by its identifier.
 	Cancel(context.Context, string) error
 	// CancelMany cancels multiple Events specified by the EventListOptions
@@ -364,6 +395,22 @@ func (e *eventsClient) UpdateSourceState(
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/events/%s/source-state", id),
 			ReqBodyObj:  sourceState,
+			SuccessCode: http.StatusOK,
+		},
+	)
+}
+
+func (e *eventsClient) UpdateSummary(
+	ctx context.Context,
+	id string,
+	summary EventSummary,
+) error {
+	return e.ExecuteRequest(
+		ctx,
+		rm.OutboundRequest{
+			Method:      http.MethodPut,
+			Path:        fmt.Sprintf("v2/events/%s/summary", id),
+			ReqBodyObj:  summary,
 			SuccessCode: http.StatusOK,
 		},
 	)

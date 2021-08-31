@@ -260,6 +260,9 @@ func main() {
 					SourceStateSchemaLoader: gojsonschema.NewReferenceLoader(
 						"file:///brigade/schemas/source-state.json",
 					),
+					EventSummarySchemaLoader: gojsonschema.NewReferenceLoader(
+						"file:///brigade/schemas/event-summary.json",
+					),
 					Service: eventsService,
 				},
 				&rest.JobsEndpoints{
