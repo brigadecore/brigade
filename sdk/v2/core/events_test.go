@@ -275,6 +275,42 @@ func TestEventsClientUpdateSourceState(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestEventsClientUpdateSummary(t *testing.T) {
+	const testEventID = "12345"
+	testSummary := EventSummary{
+		Text: "foobar",
+	}
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				defer r.Body.Close()
+				require.Equal(t, http.MethodPut, r.Method)
+				require.Equal(
+					t,
+					fmt.Sprintf("/v2/events/%s/summary", testEventID),
+					r.URL.Path,
+				)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
+				require.NoError(t, err)
+				summary := EventSummary{}
+				err = json.Unmarshal(bodyBytes, &summary)
+				require.NoError(t, err)
+				require.Equal(t, testSummary, summary)
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintln(w, "{}")
+			},
+		),
+	)
+	defer server.Close()
+	client := NewEventsClient(server.URL, rmTesting.TestAPIToken, nil)
+	err := client.UpdateSummary(
+		context.Background(),
+		testEventID,
+		testSummary,
+	)
+	require.NoError(t, err)
+}
+
 func TestEventsClientCancel(t *testing.T) {
 	const testEventID = "12345"
 	server := httptest.NewServer(

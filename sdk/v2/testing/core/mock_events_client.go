@@ -17,6 +17,7 @@ type MockEventsClient struct {
 	GetFn               func(context.Context, string) (core.Event, error)
 	CloneFn             func(context.Context, string) (core.Event, error)
 	UpdateSourceStateFn func(context.Context, string, core.SourceState) error
+	UpdateSummaryFn     func(context.Context, string, core.EventSummary) error
 	CancelFn            func(context.Context, string) error
 	CancelManyFn        func(
 		context.Context,
@@ -67,6 +68,14 @@ func (m *MockEventsClient) UpdateSourceState(
 	state core.SourceState,
 ) error {
 	return m.UpdateSourceStateFn(ctx, id, state)
+}
+
+func (m *MockEventsClient) UpdateSummary(
+	ctx context.Context,
+	id string,
+	summary core.EventSummary,
+) error {
+	return m.UpdateSummaryFn(ctx, id, summary)
 }
 
 func (m *MockEventsClient) Cancel(ctx context.Context, id string) error {
