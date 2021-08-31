@@ -11,36 +11,52 @@ aliases:
 
 # Storage in Brigade
 
-Brigade utilizes storage for its in the following ways:
+Brigade utilizes storage in the following ways:
 
   * [Shared Worker storage](#shared-worker-storage) wherein a Brigade Worker's
-    workspace may be shared with its Job(s). Optional; not enabled by default.
+    workspace may be shared among its Job(s). Optional; not enabled by default.
   * [Artemis storage](#artemis-storage) for Brigade's Messaging/Queue component
   * [MongoDB storage](#mongodb-storage) for Brigade's backing data store
 
 ## Shared Worker storage
 
-The workspace for a Brigade Worker can be shared with all Worker Jobs. This is
+The workspace for a Brigade Worker can be shared among all Worker Jobs. This is
 an opt-in feature and isn't enabled by default. When enabled, Brigade will
-create a [PersistentVolume] on the underlying Kubernetes substrate and
+create a [PersistentVolume] on the underlying Kubernetes cluster and
 automatically add the corresponding volume mount to each Worker Job created.
 
 > Note: As this volume may be accessed by more than one pod, and each pod may
 need both read and write access to the shared volume, its access mode is
 [ReadWriteMany][Access Modes], which may not be supported by the default
-[storage class] configured on your Kubernetes substrate. See the [Access Modes]
+[storage class] configured on your Kubernetes cluster. See the [Access Modes]
 matrix for compatibility. Brigade is well-tested using [NFS] and [Azure File]
 on [AKS]. ([Azure Disk] does *not* support this required access mode.)
 
-To configure the storage class that should be used for shared Worker storage,
-set the `worker.workspaceStorageClass` field in Brigade's [Helm chart values]
-file to the name of the storage class. For example, if NFS is set up on the
-Kubernetes cluster and its storage class is named `nfs`, this would be the
-appropriate configuration:
+For Brigade Worker storage, it is often convenient to use storage backends that
+are optimized for short-term ephemeral storage. To that end, Brigade ships with
+its default configured as NFS (Network File System). Therefore, NFS will need
+to be deployed on the same Kubernetes cluster as Brigade. You can use the
+[NFS Server Provisioner][NFS] chart for this purpose:
+
+```console
+$ helm repo add stable ttps://charts.helm.sh/stable
+$ helm install nfs stable/nfs-server-provisioner \
+  --create-namespace --namespace nfs
+```
+
+By default, the chart installs with persistance disabled. For various methods
+on enabling, as well as configuring other aspects of the installation, see the
+[README][NFS].
+
+This chart installs a [StorageClass][storage class] named `nfs`. As mentioned,
+Brigade already has `worker.storageClass` set to `nfs` in its
+[Helm chart values file][Helm chart values]. To configure an alternate storage
+class, set this field's value to the preferred storage class name. For example,
+to use the Azure File storage class, the appropriate configuration would be:
 
 ```yaml
 worker:
-  workspaceStorageClass: nfs
+  workspaceStorageClass: azurefile
 ```
 
 [PersistentVolume]: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
@@ -109,21 +125,23 @@ events.process();
 Brigade uses [ActiveMQ Artemis] as its messaging queue component. For more
 details on its function in Brigade, see the [Design] doc.
 
-Messages (i.e. work to be scheduled on the substrate) should be persisted even
-when/if Artemis itself goes down or is restarted. Therefore, by default,
+Messages (i.e. work to be scheduled on Kubernetes) should be persisted even
+if/when Artemis itself goes down or is restarted. Therefore, by default,
 persistence is enabled via the appropriate configuration on the
 [Brigade Helm Chart][Helm chart values]. The default access mode for the
 backing PersistentVolume is `ReadWriteOnce`. This mode, although configurable,
 should not need changing.
 
 There are, however, other persistence options that may be useful to customize,
-such as volume size and storage class type. All configuration options can be
+such as volume size and storage class type. Regarding volume size, the default
+is a fairly small `8Gi`, which is not considered adequate for a production
+deployment and should be updated accordingly. All configuration options can be
 seen under the `artemis.persistence` section of the Brigade chart.
 
 As the access mode is `ReadWriteOnce`, nearly all storage class types should
 function correctly for this PersistentVolume. By default, no storage class is
-specified in the chart, which means the default storage class on the substrate
-will be employed.
+specified in the chart, which means the default storage class on the Kubernetes
+cluster will be employed.
 
 [Design]: /topics/design
 [ActiveMQ Artemis]: https://activemq.apache.org/components/artemis/
@@ -140,38 +158,14 @@ backing PersistentVolume is `ReadWriteOnce`. This mode, although configurable,
 should not need changing.
 
 There are, however, other persistence options that may be useful to customize,
-such as volume size and storage class type. All configuration options can be
-seen under the `mongodb.persistence` section of the Brigade chart.
+such as volume size and storage class type. Regarding volume size, the default
+is a fairly small `8Gi`, which is not considered adequate for a production
+deployment and should be updated accordingly. All configuration options can be
+seen under the `artemis.persistence` section of the Brigade chart.
 
 As the access mode is `ReadWriteOnce`, nearly all storage class types should
 function correctly for this PersistentVolume. By default, no storage class is
-specified in the chart, which means the default storage class on the substrate
-will be employed.
+specified in the chart, which means the default storage class on the Kubernetes
+cluster will be employed.
 
 [MongoDB]: https://www.mongodb.com/
-
-## Examples
-
-### Using an NFS Server
-
-For Brigade Worker storage, it is often convenient to use storage backends that
-are optimized for short-term ephemeral storage.
-
-NFS (Network File System) is one protocol that works well for Brigade. You can
-use the [NFS Server Provisioner][NFS] chart to easily install an NFS server.
-
-```console
-$ helm repo add stable ttps://charts.helm.sh/stable
-$ helm install nfs stable/nfs-server-provisioner \
-  --create-namespace --namespace nfs
-```
-
-By default, the chart installs with persistance disabled. For various methods
-on enabling, as well as configuring other aspects of the installation, see the
-[README][NFS].
-
-This chart installs a [StorageClass][storage class] named `nfs`. To configure
-Brigade to use this storage class for shared Worker storage, set
-`worker.storageClass` to `nfs` in the
-[Brigade Helm chart values file][Helm chart values] and supply this file on
-install/upgrade.
