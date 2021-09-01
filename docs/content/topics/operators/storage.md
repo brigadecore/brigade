@@ -1,6 +1,6 @@
 ---
 title: Storage
-description: 'How Brigade uses Kubernetes Persistent Storage.'
+description: Storage and configuration in Brigade
 section: operators
 weight: 3
 aliases:
@@ -9,189 +9,158 @@ aliases:
   - /topics/storage.md
 ---
 
-TODO: update per v2 (no longer any job cache)
+# Storage in Brigade
 
-# How Brigade uses Kubernetes Persistent Storage
+Brigade utilizes storage in the following ways:
 
-Brigade allows script authors to declare two kinds of storage:
+  * [Shared Worker storage](#shared-worker-storage) wherein a Brigade Worker's
+    workspace may be shared with and among its Jobs
+  * [Artemis storage](#artemis-storage) for Brigade's Messaging/Queue component
+  * [MongoDB storage](#mongodb-storage) for Brigade's backing data store
 
-- per-job caches, which persist across builds
-- per-build shared storage, which exists as long as the build is running
+## Shared Worker storage
 
-Usage of these is described within the [JavaScript docs](javascript.md) and the
-[scripting guide](scripting.md).
+The workspace for a Brigade Worker can be shared among all Worker Jobs. This is
+an opt-in feature and isn't enabled by default. When enabled, Brigade will
+create a [PersistentVolume] on the underlying Kubernetes cluster and
+automatically add the corresponding volume mount to each Worker Job created.
 
-This document describes the underlying Kubernetes architecture of these two
-storage types.
+> Note: As this volume may be accessed by more than one pod, and each pod may
+need both read and write access to the shared volume, its access mode is
+[ReadWriteMany][Access Modes], which may not be supported by the default
+[storage class] configured on your Kubernetes cluster. See the [Access Modes]
+matrix for compatibility. Brigade is well-tested using [NFS] and [Azure File]
+on [AKS]. ([Azure Disk] does *not* support this required access mode.)
 
-## Brigade and PersistentVolumeClaims
-
-Brigade provisions storage using Kubernetes PVCs. Both caches and shared storage
-are PVC-backed.
-
-### Caches
-
-For a Cache, the Brigade worker will check to see if a Job asks for a cache. If it
-does, the worker will create a PVC (if it doesn't already exist) and then mount
-it to the cache.
-
-> A Job, in this case, gains its identity from its name, and the project that
-> it belongs to. So two hooks in the same brigade.js can redeclare a job name and
-> thus share the cache.
-
-That PVC is never removed by Brigade. Each subsequent run of the same Job will
-then mount that same PVC.
-
-### Shared Storage
-
-Shared storage provisioning is markedly different than caches.
-
-- The worker will _always_ provision a shared storage PVC _per build_.
-- Each job _may_ mount this shared storage by setting its `storage.enabled` flag
-  to `true`.
-- At the end of a build, the storage will be destroyed.
-
-In the current implementation, both the `after` and `error` hooks may attach to
-the shared storage volume.
-
-## Supporting Brigade Storage
-
-Only certain volume plugins _can_ support Brigade. Specifically, **a volume driver
-must be readWriteMany** in order for Brigade to use it. At the time of writing
-very few VolumePlugins support the `readWriteMany` access mode. Ensure that your
-volume plugin can support `readWriteMany`
-([table](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes))
-or that you're able to use [NFS](#using-an-nfs-server).
-
-Only the following volume drivers are tested:
-
-- Minikube's 9P implementation
-- Azure's AzureFile storage
-- NFS
-
-We believe Gluster will work, but it's untested.
-
-## Examples
-
-### Using an NFS Server
-
-As Brigade uses storage for caching and short-term file sharing, it is often convenient
-to use storage backends that are optimized for short-term ephemeral storage.
-
-NFS (Network File System) is one protocol that works well for Brigade. You can
-use the [NFS Server Provisioner](https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner)
-chart to easily install an NFS server.
+For Brigade Worker storage, it is often convenient to use storage backends that
+are optimized for short-term ephemeral storage. To that end, Brigade ships with
+its default configured as NFS (Network File System). Therefore, NFS will need
+to be deployed on the same Kubernetes cluster as Brigade. You can use the
+[NFS Server Provisioner][NFS] chart for this purpose:
 
 ```console
-$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
-$ helm install --name nfs stable/nfs-server-provisioner
+$ helm repo add stable ttps://charts.helm.sh/stable
+$ helm install nfs stable/nfs-server-provisioner \
+  --create-namespace --namespace nfs
 ```
 
-By default, the chart installs with persistance disabled. For various methods on enabling, as well as
-configuring other aspects of the installation, see the
-[README](https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner).
+By default, the NFS chart installs with persistance disabled. For various
+methods on enabling, as well as configuring other aspects of the installation,
+see the [README][NFS].
 
-This chart installs a `StorageClass` named `nfs`. There are two options to configure Brigade
-to use this storage class: at the server-level (for all Brigade projects) or at the project level.
-Note that project-level settings will override the server-level settings.
+This chart installs a [StorageClass][storage class] named `nfs`. As mentioned,
+Brigade already has `worker.storageClass` set to `nfs` in its
+[Helm chart values file][Helm chart values]. To configure an alternate storage
+class, set this field's value to the preferred storage class name. For example,
+to use the Azure File storage class, the appropriate configuration would be:
 
-In either case, there are two storage class settings:
-
-- `cacheStorageClass`: This is used for the Job cache.
-- `buildStorageClass`: This is used for the shared per-build storage.
-
-To set these at the Brigade server level, set the values below accordingly in the Brigade
-chart's `values.yaml` file:
-
-values.yaml
 ```yaml
 worker:
-  defaultBuildStorageClass: nfs
-  defaultCacheStorageClass: nfs
+  workspaceStorageClass: azurefile
 ```
 
-Then:
+[PersistentVolume]: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+[Access Modes]: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes
+[storage class]: https://kubernetes.io/docs/concepts/storage/storage-classes/
+[NFS]: https://github.com/kubernetes-sigs/nfs-ganesha-server-and-external-provisioner/tree/master/deploy/helm
+[Azure File]: https://azure.microsoft.com/en-us/services/storage/files/
+[AKS]: https://azure.microsoft.com/en-us/services/kubernetes-service/
+[Azure Disk]: https://azure.microsoft.com/en-us/services/storage/disks/
+[Helm chart values]: https://github.com/brigadecore/brigade/blob/v2/charts/brigade/values.yaml
 
-```console
-$ helm upgrade brigade brigade/brigade -f values.yaml
-```
+### Enabling Worker storage
 
-To set these at the Brigade project level, set the values below accordingly in the Brigade
-Project chart's `values.yaml` file:
+To enable shared Worker storage, set `useWorkspace` to `true` under the
+`workerTemplate` section on the [project configuration file][project file]
+(usually `project.yaml`) for a Project. For example, here is the relevant bit
+of configuration from the [10-shared-workspace example project]:
 
-values.yaml
 ```yaml
-kubernetes:
-  buildStorageClass: nfs
-  cacheStorageClass: nfs
+spec:
+  workerTemplate:
+    useWorkspace: true
 ```
 
-Then:
+Each Worker Job requiring access to this workspace must then be configured with
+a filepath value designating where the workspace should be mounted within the
+Job's container. (Note that this may be the Job's `primaryContainer` and/or one
+or more of a Job's `sidecarContainer`(s)). This filepath value is assigned to
+the `workspaceMountPath` field on each applicable Job container.
 
-```console
-$ helm upgrade my-project brigade/brigade-broject -f values.yaml
+In the example `brigade.js` script below, the both Jobs are configured with the
+`workspaceMountPath` value set to `/share`. Thus, `second-job` is able to read
+(and display) the message that `first-job` emits, via the shared workspace
+mount:
+
+```javascript
+const { events, Job } = require("@brigadecore/brigadier");
+
+events.on("brigade.sh/cli", "exec", async event => {
+  let job1 = new Job("first-job", "debian:latest", event);
+  job1.primaryContainer.workspaceMountPath = "/share";
+  job1.primaryContainer.command = ["bash"];
+  job1.primaryContainer.arguments = ["-c", "echo 'Hello!' > /share/message"];
+  await job1.run();
+
+  let job2 = new Job("second-job", "debian:latest", event);
+  job2.primaryContainer.workspaceMountPath = "/share";
+  job2.primaryContainer.command = ["cat"];
+  job2.primaryContainer.arguments = ["/share/message"];
+  await job2.run();
+});
+
+events.process();
 ```
 
-Note: The project-level settings can also be configured during the "Advanced" set up if creating via the `brig` CLI:
+[project file]: /topics/project-developers/projects#project-definition-files
+[10-shared-workspace example project]: https://github.com/brigadecore/brigade/blob/v2/examples/10-shared-workspace/project.yaml
 
-```console
- $ brig project create
-...
+## Artemis storage
 
-? Build storage class nfs
-? Job cache storage class  [Use arrows to move, type to filter, ? for more help]
-  azurefile
-  default
-  managed-premium
-❯ nfs
-  Leave undefined
-```
+Brigade uses [ActiveMQ Artemis] as its messaging queue component. For more
+details on its function in Brigade, see the [Design] doc.
 
-If you would prefer to use the NFS provisioner as a cluster-wide default volume provider
-(and have Brigade automatically use it), you can do so by making it the default
-storage class:
+Messages (i.e. work to be scheduled on Kubernetes) should be persisted even
+if/when Artemis itself goes down or is restarted. Therefore, by default,
+persistence is enabled via the appropriate configuration on the
+[Brigade Helm Chart][Helm chart values]. The default access mode for the
+backing PersistentVolume is `ReadWriteOnce`. This mode, although configurable,
+should not need changing.
 
-```console
-$ helm install --name nfs stable/nfs-server-provisioner --set storageClass.defaultClass=true
-```
+There are, however, other persistence options that may be useful to customize,
+such as volume size and storage class type. Regarding volume size, the default
+is a fairly small `8Gi`, which is not considered adequate for a production
+deployment and should be updated accordingly. All configuration options can be
+seen under the `artemis.persistence` section of the Brigade chart.
 
-Because Brigade pipelines can set up and tear down an NFS PVC very fast, the easiest
-way to check that the above works is to run a `brig run` and then check the
-log files for the NFS provisioner:
+As the access mode is `ReadWriteOnce`, nearly all storage class types should
+function correctly for this PersistentVolume. By default, no storage class is
+specified in the chart, which means the default storage class on the Kubernetes
+cluster will be employed.
 
-```console
-$ kubectl logs -f nfs-nfs-server-provisioner-0
-...
+[Design]: /topics/design
+[ActiveMQ Artemis]: https://activemq.apache.org/components/artemis/
 
-I1220 20:22:36.699672       1 controller.go:926] provision "default/brigade-worker-01dwjfkm36xf5539dh41fw9qsd" class "nfs": started
-I1220 20:22:36.714277       1 event.go:221] Event(v1.ObjectReference{Kind:"PersistentVolumeClaim", Namespace:"default", Name:"brigade-worker-01dwjfkm36xf5539dh41fw9qsd", UID:"7535d094-2366-11ea-a145-72982b3e8f81", APIVersion:"v1", ResourceVersion:"8941502", FieldPath:""}): type: 'Normal' reason: 'Provisioning' External provisioner is provisioning volume for claim "default/brigade-worker-01dwjfkm36xf5539dh41fw9qsd"
-I1220 20:22:36.727753       1 provision.go:439] using service SERVICE_NAME=nfs-nfs-server-provisioner cluster IP 10.0.241.101 as NFS server IP
-I1220 20:22:36.739746       1 controller.go:1026] provision "default/brigade-worker-01dwjfkm36xf5539dh41fw9qsd" class "nfs": volume "pvc-7535d094-2366-11ea-a145-72982b3e8f81" provisioned
-I1220 20:22:36.739785       1 controller.go:1040] provision "default/brigade-worker-01dwjfkm36xf5539dh41fw9qsd" class "nfs": trying to save persistentvolume "pvc-7535d094-2366-11ea-a145-72982b3e8f81"
-I1220 20:22:36.749077       1 controller.go:1047] provision "default/brigade-worker-01dwjfkm36xf5539dh41fw9qsd" class "nfs": persistentvolume "pvc-7535d094-2366-11ea-a145-72982b3e8f81" saved
-I1220 20:22:36.749113       1 controller.go:1088] provision "default/brigade-worker-01dwjfkm36xf5539dh41fw9qsd" class "nfs": succeeded
-I1220 20:22:36.749196       1 event.go:221] Event(v1.ObjectReference{Kind:"PersistentVolumeClaim", Namespace:"default", Name:"brigade-worker-01dwjfkm36xf5539dh41fw9qsd", UID:"7535d094-2366-11ea-a145-72982b3e8f81", APIVersion:"v1", ResourceVersion:"8941502", FieldPath:""}): type: 'Normal' reason: 'ProvisioningSucceeded' Successfully provisioned volume pvc-7535d094-2366-11ea-a145-72982b3e8f81
-I1220 20:22:43.083639       1 controller.go:1097] delete "pvc-7535d094-2366-11ea-a145-72982b3e8f81": started
-I1220 20:22:43.089786       1 controller.go:1125] delete "pvc-7535d094-2366-11ea-a145-72982b3e8f81": volume deleted
-I1220 20:22:43.116980       1 controller.go:1135] delete "pvc-7535d094-2366-11ea-a145-72982b3e8f81": persistentvolume deleted
-I1220 20:22:43.117003       1 controller.go:1137] delete "pvc-7535d094-2366-11ea-a145-72982b3e8f81": succeeded
-```
+## MongoDB storage
 
-Implementation details of note:
+Brigade uses [MongoDB] as its backing data store. For more details on its
+function in Brigade, see the [Design] doc.
 
-- The Kubernetes nfs-provisioner is part of [kubernetes-incubator/external-storage](https://github.com/kubernetes-incubator/external-storage/tree/master/nfs)
-- If you have a pre-existing NFS Server, use the [NFS Client Provisioner](https://github.com/helm/charts/tree/master/stable/nfs-client-provisioner) chart and provisioner instead.
+Data should be persisted even when/if MongoDB itself goes down or is restarted.
+Therefore, by default, persistence is enabled via the appropriate configuration
+on the [Brigade Helm Chart][Helm chart values]. The default access mode for the
+backing PersistentVolume is `ReadWriteOnce`. This mode, although configurable,
+should not need changing.
 
-### Azure File Setup
+There are, however, other persistence options that may be useful to customize,
+such as volume size and storage class type. Regarding volume size, the default
+is a fairly small `8Gi`, which is not considered adequate for a production
+deployment and should be updated accordingly. All configuration options can be
+seen under the `artemis.persistence` section of the Brigade chart.
 
-If one has a Kubernetes cluster on [Azure](https://azure.microsoft.com/en-us/services/kubernetes-service/),
-and the `default` storageclass is of the non-`readWriteMany`-compatible `kubernetes.io/azure-disk` variety, one can create
-an Azure File storageclass and then configure the Brigade project to use this instead of `default`.
+As the access mode is `ReadWriteOnce`, nearly all storage class types should
+function correctly for this PersistentVolume. By default, no storage class is
+specified in the chart, which means the default storage class on the Kubernetes
+cluster will be employed.
 
-See the official [Azure File storageclass example](https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-file)
-for the yaml to use.  _(Hint: The parameters section can be omitted altogether and Azure will use the defaults associated
-with the existing Kubernetes cluster.)_
-
-Create the resource via `kubectl create -f azure-file-storage-class.yaml`.
-
-Finally, be sure to set the `buildStorageClass` and/or `cacheStorageCass` values to `azurefile` as above in the `nfs` example.
+[MongoDB]: https://www.mongodb.com/
