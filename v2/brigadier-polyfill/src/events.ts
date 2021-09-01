@@ -1,10 +1,12 @@
 import { Event, EventRegistry as BrigadierEventRegistry } from "@brigadecore/brigadier"
 
+import { core } from "@brigadecore/brigade-sdk"
+
 import { logger } from "./logger"
 
 class EventRegistry extends BrigadierEventRegistry {
 
-  public process(): void {
+  public async process(): Promise<void> {
     const event: Event = require("/var/event/event.json") // eslint-disable-line @typescript-eslint/no-var-requires
 
     logger.level = (event.worker.logLevel || "info").toLowerCase()
@@ -25,7 +27,15 @@ class EventRegistry extends BrigadierEventRegistry {
       }
     })
 
-    this.fire(event)
+    const summary = await this.fire(event)
+    if (summary) {
+      const eventsClient = new core.EventsClient(
+        event.worker.apiAddress,
+        event.worker.apiToken,
+        {allowInsecureConnections: true},
+      )
+      eventsClient.updateSummary(event.id, {text: summary})
+    }
   }
 
 }
