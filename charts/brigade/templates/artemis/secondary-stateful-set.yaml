@@ -69,8 +69,6 @@ spec:
             secretKeyRef:
               name: {{ include "brigade.artemis.fullname" . }}
               key: password
-        - name: ARTEMIS_PERF_JOURNAL
-          value: {{ .Values.artemis.persistence.testJournalPerformance }}
         ports:
         - name: http
           containerPort: 8161

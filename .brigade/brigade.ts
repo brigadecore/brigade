@@ -94,6 +94,18 @@ jobs[validateExamplesJobName] = validateExamplesJob;
 
 // Build / publish stuff:
 
+const buildArtemisJobName = "build-artemis"
+const buildArtemisJob = (event: Event) => {
+  return new MakeTargetJob(buildArtemisJobName, kanikoImg, event)
+}
+jobs[buildArtemisJobName] = buildArtemisJob
+
+const pushArtemisJobName = "push-artemis"
+const pushArtemisJob = (event: Event) => {
+  return new MakeTargetJob(pushArtemisJobName, kanikoImg, event)
+}
+jobs[pushArtemisJobName] = pushArtemisJob
+
 const buildAPIServerJobName = "build-apiserver"
 const buildAPIServerJob = (event: Event) => {
   return new MakeTargetJob(buildAPIServerJobName, kanikoImg, event)
@@ -223,6 +235,7 @@ async function runSuite(event: Event): Promise<void> {
       validateExamplesJob(event)
     ),
     new ConcurrentGroup( // Build everything
+      buildArtemisJob(event),
       buildAPIServerJob(event),
       buildGitInitializerJob(event),
       buildLoggerLinuxJob(event),
@@ -242,6 +255,7 @@ async function runSuite(event: Event): Promise<void> {
     // To keep our github released page tidy, we're also not publishing "edge"
     // CLI binaries.
     await new ConcurrentGroup(
+      pushArtemisJob(event),
       pushAPIServerJob(event),
       pushGitInitializerJob(event),
       pushLoggerLinuxJob(event),
@@ -281,6 +295,7 @@ events.on("brigade.sh/github", "push", async event => {
     // This is an official release with a semantically versioned tag
     await new SerialGroup(
       new ConcurrentGroup(
+        pushArtemisJob(event),
         pushAPIServerJob(event),
         pushGitInitializerJob(event),
         pushLoggerLinuxJob(event),
