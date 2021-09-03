@@ -158,6 +158,9 @@ func WriteAPIResponse(
 	statusCode int,
 	response interface{},
 ) {
+	if statusCode == 0 {
+		statusCode = http.StatusOK
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	responseBody, ok := response.([]byte)
@@ -211,7 +214,11 @@ func ServeWebUIRequest(req InboundWebUIRequest) {
 	}
 	req.W.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	if respBodyObj != nil {
-		req.W.WriteHeader(req.SuccessCode)
+		statusCode := req.SuccessCode
+		if statusCode == 0 {
+			statusCode = http.StatusOK
+		}
+		req.W.WriteHeader(statusCode)
 		var responseBody []byte
 		switch r := respBodyObj.(type) {
 		case []byte:
