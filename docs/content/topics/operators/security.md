@@ -19,28 +19,35 @@ For that reason, it is prudent to configure security.
   in a Helm install, do `helm install --namespace brigade ...`.
 - *RBAC Enabled*: When installing with Helm, role-based access control is enabled by default.
   To disable,`--set rbac.enabled=false` will turn off role-based access control.
-- *Do not run more than one brigade per namespace*: Running multiple installs of Brigade
+- *Do not run more than one Brigade per namespace*: Running multiple installs of Brigade
   in the same namespace can cause naming collisions which could result in
   unauthorized access to pods.
-- *Do not run multiple tenants against the same brigade*: Brigade does not implement
-  security controls that allow multiple tenants to share the same Brigade instance.
-  Brigade supports multiple projects per Brigade server instance, but those projects
-  should be owned by the same tenant.
 
 ## API Server Security
 
-TODO: update
+If Brigade's API server will be exposed to the internet, e.g. via an external
+IP (recall that Brigade's default service type in the [Brigade chart] is
+`LoadBalancer` and so a public-facing IP will be provisioned), care should be
+taken to secure inbound communication. Minimally, TLS should be enabled and 
+SSL certificates should not be self-signed. You may also consider using an
+[Ingress Controller] for an extra layer of traffic filtering and/or protection.
+
+For more details on deploying Brigade securely, see the [Deployment] doc.
+
+[Brigade chart]: https://github.com/brigadecore/brigade/tree/v2/charts/brigade
+[Ingress Controller]: https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/
+[Deployment]: /topics/operators/deploy
 
 ## How RBAC Is Configured
 
-The Helm [chart](https://github.com/brigadecore/brigade/tree/v2/charts/brigade) for Brigade
-includes an RBAC configuration that is designed to run in an isolated namespace.
+The Helm [chart][Brigade chart] for Brigade includes an RBAC configuration that
+is designed to run in an isolated namespace.
 
-The RBAC defines a Service Account for every Deployment (API, Observer, Scheduler, etc.),
-as well as a Service Account for the Brigade worker.
+The RBAC defines a Service Account for every Deployment (API, Observer,
+Scheduler, etc.), as well as a Service Account for the Brigade worker.
 
-Each deployment also has a Role, which describes the permissions that the particular
-service needs.
+Each deployment also has a Role, which describes the permissions that the
+particular service needs.
 
 The resulting Role Bindings, then, are a simple one-to-one match between the
 Service Account and the Role.
@@ -51,30 +58,31 @@ secrets, and persistent volume claims.
 
 ## Project Security
 
-Brigade is opinionated about configuring projects and storing data like credentials.
-Because sensitive information is stored in a project's secret, care should be
-taken in preventing unauthorized access to that secret.
+Brigade is opinionated about configuring projects and storing data like
+credentials. Sensitive information relevant to a project should be set as
+[Secrets] on that project. In turn, project secrets are stored in a Kubernetes
+secret, so care should be taken in preventing unauthorized access to these
+resources.
 
-- Out-of-the-box, the project is the location where credentials should be stored
+- Out-of-the-box, credentials should be stored as project secrets
 - A project's credentials are accessible to any script running in that project,
   regardless of event.
-- For SSH-based Git clones, the SSH key should be stored on the project.
+- For SSH-based Git clones, the SSH key should be stored as a project secret.
 
-Note that if Helm is used to create a project, the project's secrets will be cached
-within Helm's release object. Read the [Helm docs](http://helm.sh) to learn how
-to secure Helm.
+[Secrets]: /topics/project-developers/secrets
 
 ## Script Security
 
-Brigade scripts can create pods, secrets, and persistent volume claims. Brigade does not
-evaluate the security of the containers that a pod runs. Consequently, it is best
-to avoid using untrusted containers in Brigade scripts. Likewise, it is not recommended
-to inject secrets into a container without first auditing the container.
+Brigade scripts can create pods, secrets, and persistent volume claims. Brigade
+does not evaluate the security of the containers that a pod runs. Consequently,
+it is best to avoid using untrusted containers in Brigade scripts. Likewise, it
+is not recommended to inject secrets into a container without first auditing
+the container.
 
 ## Gateway Security
 
-In Brigade, a gateway is any service that translates some external prompt (webhook,
-3rd party API, cron trigger, etc.) into a Brigade event.
+In Brigade, a gateway is any service that translates some external prompt
+(webhook, 3rd party API, cron trigger, etc.) into a Brigade event.
 
 Gateways are the most likely service to have an external network connection. We
 suggest the following features of a gateway:
@@ -86,4 +94,9 @@ suggest the following features of a gateway:
     Brigade.
   - The exception is alternative VCS implementations, where the git-sidecar may
     be replaced by another sidecar.
+
+See more info in the [Gateways] doc. Their you'll find links to official
+Brigade gateways and guidance for writing your own.
+
+[Gateways]: /topics/operators/gateways
 
