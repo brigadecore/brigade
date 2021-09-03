@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"testing"
 
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
@@ -42,7 +41,7 @@ func TestAPIClientConfig(t *testing.T) {
 		{
 			name: "API_TOKEN not set",
 			setup: func() {
-				os.Setenv("API_ADDRESS", "foo")
+				t.Setenv("API_ADDRESS", "foo")
 			},
 			assertions: func(
 				_ string,
@@ -58,8 +57,8 @@ func TestAPIClientConfig(t *testing.T) {
 		{
 			name: "SUCCESS not set",
 			setup: func() {
-				os.Setenv("API_TOKEN", "bar")
-				os.Setenv("API_IGNORE_CERT_WARNINGS", "true")
+				t.Setenv("API_TOKEN", "bar")
+				t.Setenv("API_IGNORE_CERT_WARNINGS", "true")
 			},
 			assertions: func(
 				address string,
@@ -101,7 +100,7 @@ func TestReaderFactoryConfig(t *testing.T) {
 		{
 			name: "AMQP_USERNAME not set",
 			setup: func() {
-				os.Setenv("AMQP_ADDRESS", "foo")
+				t.Setenv("AMQP_ADDRESS", "foo")
 			},
 			assertions: func(_ amqp.ReaderFactoryConfig, err error) {
 				require.Error(t, err)
@@ -112,7 +111,7 @@ func TestReaderFactoryConfig(t *testing.T) {
 		{
 			name: "AMQP_PASSWORD not set",
 			setup: func() {
-				os.Setenv("AMQP_USERNAME", "bar")
+				t.Setenv("AMQP_USERNAME", "bar")
 			},
 			assertions: func(_ amqp.ReaderFactoryConfig, err error) {
 				require.Error(t, err)
@@ -123,7 +122,7 @@ func TestReaderFactoryConfig(t *testing.T) {
 		{
 			name: "success",
 			setup: func() {
-				os.Setenv("AMQP_PASSWORD", "bat")
+				t.Setenv("AMQP_PASSWORD", "bat")
 			},
 			assertions: func(config amqp.ReaderFactoryConfig, err error) {
 				require.NoError(t, err)

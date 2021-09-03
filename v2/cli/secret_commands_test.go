@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -27,7 +26,7 @@ func TestResolveEnvVars(t *testing.T) {
 		{
 			name: "one substitution",
 			setup: func() {
-				os.Setenv("SUB", "foo")
+				t.Setenv("SUB", "foo")
 			},
 			input:          "${SUB}bar",
 			expectedResult: "foobar",
@@ -35,8 +34,8 @@ func TestResolveEnvVars(t *testing.T) {
 		{
 			name: "multiple substitutions",
 			setup: func() {
-				os.Setenv("SUB1", "foo")
-				os.Setenv("SUB2", "bar")
+				t.Setenv("SUB1", "foo")
+				t.Setenv("SUB2", "bar")
 			},
 			input:          "${SUB1}${SUB2}",
 			expectedResult: "foobar",

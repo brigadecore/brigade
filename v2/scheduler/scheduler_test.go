@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"os"
 	"testing"
 	"time"
 
@@ -34,7 +33,7 @@ func TestGetSchedulerConfig(t *testing.T) {
 		{
 			name: "ADD_REMOVE_PROJECT_INTERVAL not parsable as duration",
 			setup: func() {
-				os.Setenv("ADD_REMOVE_PROJECT_INTERVAL", "foo")
+				t.Setenv("ADD_REMOVE_PROJECT_INTERVAL", "foo")
 			},
 			assertions: func(config schedulerConfig, err error) {
 				require.Error(t, err)
@@ -45,8 +44,8 @@ func TestGetSchedulerConfig(t *testing.T) {
 		{
 			name: "MAX_CONCURRENT_WORKERS not parsable as int",
 			setup: func() {
-				os.Setenv("ADD_REMOVE_PROJECT_INTERVAL", "1m")
-				os.Setenv("MAX_CONCURRENT_WORKERS", "foo")
+				t.Setenv("ADD_REMOVE_PROJECT_INTERVAL", "1m")
+				t.Setenv("MAX_CONCURRENT_WORKERS", "foo")
 			},
 			assertions: func(config schedulerConfig, err error) {
 				require.Error(t, err)
@@ -57,9 +56,9 @@ func TestGetSchedulerConfig(t *testing.T) {
 		{
 			name: "MAX_CONCURRENT_JOBS not parsable as int",
 			setup: func() {
-				os.Setenv("ADD_REMOVE_PROJECT_INTERVAL", "1m")
-				os.Setenv("MAX_CONCURRENT_WORKERS", "5")
-				os.Setenv("MAX_CONCURRENT_JOBS", "foo")
+				t.Setenv("ADD_REMOVE_PROJECT_INTERVAL", "1m")
+				t.Setenv("MAX_CONCURRENT_WORKERS", "5")
+				t.Setenv("MAX_CONCURRENT_JOBS", "foo")
 			},
 			assertions: func(config schedulerConfig, err error) {
 				require.Error(t, err)
@@ -70,9 +69,9 @@ func TestGetSchedulerConfig(t *testing.T) {
 		{
 			name: "success with overrides",
 			setup: func() {
-				os.Setenv("ADD_REMOVE_PROJECT_INTERVAL", "1m")
-				os.Setenv("MAX_CONCURRENT_WORKERS", "5")
-				os.Setenv("MAX_CONCURRENT_JOBS", "10")
+				t.Setenv("ADD_REMOVE_PROJECT_INTERVAL", "1m")
+				t.Setenv("MAX_CONCURRENT_WORKERS", "5")
+				t.Setenv("MAX_CONCURRENT_JOBS", "10")
 			},
 			assertions: func(config schedulerConfig, err error) {
 				require.Equal(t, time.Minute, config.addAndRemoveProjectsInterval)
