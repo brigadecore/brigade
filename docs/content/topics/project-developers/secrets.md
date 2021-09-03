@@ -15,8 +15,9 @@ Brigade provides tools for storing sensitive data outside of your Brigade
 scripts, and then passing that information into the jobs that need them.
 
 This is accomplished by associating secrets with a given project, which the
-project's script can then access as needed. Secrets are persisted on the
-substrate in the project namespace.
+project's script can then access as needed. Secrets are persisted only on the
+substrate in the project namespace and are not stored in Brigade's backing
+database.
 
 ## Adding a Secret to Your Project
 
@@ -50,10 +51,10 @@ This first example demonstrates direct access of a secret defined on a project
 in the event handler code outside of any Job:
 
 ```javascript
-// THIS IS NOT SAFE! IT LEAKS YOUR SECRET INTO THE LOGS.
 const { events } = require("@brigadecore/brigadier");
 
 events.on("brigade.sh/cli", "exec", async event => {
+  // THIS IS NOT SAFE! IT LEAKS YOUR SECRET INTO THE LOGS.
   console.log("Project secret foo = " + event.project.secrets.foo);
 });
 
@@ -61,9 +62,8 @@ events.process();
 ```
 
 For passing project secrets into a Job, the best practice is to do so via the
-Job's environment. Brigade inherently treats all Job environment variables as
-sensitive by default, so any instance where their values would otherwise be
-logged will be redacted.
+Job's environment. Brigade stores this data in the form of a secret on the
+substrate.
 
 Project secrets that are accessed directly in a Job, i.e. outside of its
 environment, *will* be leaked, both in the Job Pod resource on the substrate
@@ -77,9 +77,15 @@ const { Job, events } = require("@brigadecore/brigadier");
 
 events.on("brigade.sh/cli", "exec", async event => {
   let job = new Job("second-job", "debian:latest", event);
-  job.primaryContainer.environment = {"FOO_SECRET": event.project.secrets.foo};
+  job.primaryContainer.environment = {
+    "DOCKER_USER": event.project.secrets.dockerUser,
+    "DOCKER_PASSWORD": event.project.secrets.dockerPassword
+  };
   job.primaryContainer.command = ["bash"];
-  job.primaryContainer.arguments = ["-c", "echo $FOO_SECRET | wc -c"];
+  job.primaryContainer.arguments = [
+    "-c",
+    "docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"
+  ];
 
   await job.run();
 });
@@ -87,10 +93,10 @@ events.on("brigade.sh/cli", "exec", async event => {
 events.process();
 ```
 
-In this case, we retrieve the secret from the project, and we pass it into the
-new Job as an environment variable. When the job executes, it can access the
-`foo` secret value as `$FOO_SECRET`. In this trivial example, we echo the
-secret value and confirm the expected character count via `wc`.
+In this case, we retrieve the secrets from the project, and we pass them into
+the Job as environment variables. When the job executes, it can access the
+`dockerUser` and `dockerPassword` secret values via their corresponding
+environment variables.
 
 ## Image pull secrets for Worker and Jobs
 
@@ -154,12 +160,10 @@ encrypt these resources should reference the [Kubernetes documentation]. Note
 that support for this feature will depend on the distribution used (e.g. the
 cloud provider offering or other self-hosted option.)
 
-Another option for Brigade developers to access secret values is via a trusted
-key store external to Kubernetes, such as HashiCorp's [Vault] or [Azure Key
-Vault]. The scripting logic can then use the appropriate CLI or API calls to
-fetch secrets in the event handler(s) that require them.
+Bottom line: You can trust Brigade secrets as much as you trust your Kubernetes
+secrets. If you trust how Kubernetes stores your secrets, you're all set. If
+you don't, then you need to solve that problem before you can trust Brigade's
+secret handling.
 
 [Kubernetes Secrets]: https://kubernetes.io/docs/concepts/configuration/secret/
 [Kubernetes documentation]: https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/
-[Vault]: https://www.vaultproject.io/
-[Azure Key Vault]: https://azure.microsoft.com/en-us/services/key-vault/
