@@ -92,7 +92,7 @@ include:
   * `login`: Log in to Brigade
   * `logout`: Log out of Brigade
   * `project`: Create and manage Brigade [Projects]
-  * `role`: Create and manage system roles for [users] or [service accounts]
+  * `role`: Grant, revoke and list system roles for [users] or [service accounts]
   * `service-account`: Create and manage [service accounts]
   * `users`: Manage authenticated [users]
 
