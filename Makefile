@@ -253,7 +253,7 @@ build-brigadier:
 	'
 
 .PHONY: build-images
-build-images: build-apiserver build-scheduler build-observer build-logger-linux build-git-initializer build-worker
+build-images: build-artemis build-apiserver build-scheduler build-observer build-logger-linux build-git-initializer build-worker
 
 .PHONY: build-logger-linux
 build-logger-linux:
@@ -317,7 +317,7 @@ publish-brigadier: build-brigadier
 	'
 
 .PHONY: push-images
-push-images: push-apiserver push-scheduler push-observer push-logger-linux push-git-initializer push-worker
+push-images: push-artemis push-apiserver push-scheduler push-observer push-logger-linux push-git-initializer push-worker
 
 .PHONY: push-logger-linux
 push-logger-linux:
@@ -382,7 +382,7 @@ hack-new-kind-cluster:
 	hack/kind/new-cluster.sh
 
 .PHONY: hack-build-images
-hack-build-images: hack-build-apiserver hack-build-scheduler hack-build-observer hack-build-logger-linux hack-build-git-initializer hack-build-worker
+hack-build-images: hack-build-artemis hack-build-apiserver hack-build-scheduler hack-build-observer hack-build-logger-linux hack-build-git-initializer hack-build-worker
 
 .PHONY: hack-build-logger-linux
 hack-build-logger-linux:
@@ -414,7 +414,7 @@ hack-build-cli:
 	'
 
 .PHONY: hack-push-images
-hack-push-images: hack-push-apiserver hack-push-scheduler hack-push-observer hack-push-logger-linux hack-push-git-initializer hack-push-worker
+hack-push-images: hack-push-artemis hack-push-apiserver hack-push-scheduler hack-push-observer hack-push-logger-linux hack-push-git-initializer hack-push-worker
 
 .PHONY: hack-push-%
 hack-push-%: hack-build-%
@@ -431,6 +431,9 @@ hack-deploy:
 		--namespace brigade \
 		--wait \
 		--timeout 600s \
+		--set artemis.image.repository=$(DOCKER_IMAGE_PREFIX)artemis \
+		--set artemis.image.tag=$(IMMUTABLE_DOCKER_TAG) \
+		--set artemis.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set apiserver.image.repository=$(DOCKER_IMAGE_PREFIX)apiserver \
 		--set apiserver.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set apiserver.image.pullPolicy=$(IMAGE_PULL_POLICY) \
@@ -466,7 +469,7 @@ hack-unexpose-apiserver:
 
 # Convenience targets for loading images into a KinD cluster
 .PHONY: hack-load-images
-hack-load-images: load-apiserver load-scheduler load-observer load-logger-linux load-git-initializer load-worker
+hack-load-images: load-artemis load-apiserver load-scheduler load-observer load-logger-linux load-git-initializer load-worker
 
 load-%:
 	@echo "Loading $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
