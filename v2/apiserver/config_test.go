@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"testing"
 
@@ -42,7 +41,7 @@ func TestDatabaseConnection(t *testing.T) {
 		{
 			name: "DATABASE_USERNAME not set",
 			setup: func() {
-				os.Setenv("DATABASE_HOSTS", "localhost")
+				t.Setenv("DATABASE_HOSTS", "localhost")
 			},
 			assertions: func(_ *mongo.Database, err error) {
 				require.Error(t, err)
@@ -53,7 +52,7 @@ func TestDatabaseConnection(t *testing.T) {
 		{
 			name: "DATABASE_PASSWORD not set",
 			setup: func() {
-				os.Setenv("DATABASE_USERNAME", "jarvis")
+				t.Setenv("DATABASE_USERNAME", "jarvis")
 			},
 			assertions: func(_ *mongo.Database, err error) {
 				require.Error(t, err)
@@ -64,7 +63,7 @@ func TestDatabaseConnection(t *testing.T) {
 		{
 			name: "DATABASE_NAME not set",
 			setup: func() {
-				os.Setenv("DATABASE_PASSWORD", "yourenotironmaniam")
+				t.Setenv("DATABASE_PASSWORD", "yourenotironmaniam")
 			},
 			assertions: func(_ *mongo.Database, err error) {
 				require.Error(t, err)
@@ -75,8 +74,8 @@ func TestDatabaseConnection(t *testing.T) {
 		{
 			name: "success",
 			setup: func() {
-				os.Setenv("DATABASE_NAME", "brigade")
-				os.Setenv("DATABASE_REPLICA_SET", "rs0")
+				t.Setenv("DATABASE_NAME", "brigade")
+				t.Setenv("DATABASE_REPLICA_SET", "rs0")
 			},
 			assertions: func(database *mongo.Database, err error) {
 				require.NoError(t, err)
@@ -111,7 +110,7 @@ func TestWriterFactoryConfig(t *testing.T) {
 		{
 			name: "AMQP_USERNAME not set",
 			setup: func() {
-				os.Setenv("AMQP_ADDRESS", "foo")
+				t.Setenv("AMQP_ADDRESS", "foo")
 			},
 			assertions: func(_ amqp.WriterFactoryConfig, err error) {
 				require.Error(t, err)
@@ -122,7 +121,7 @@ func TestWriterFactoryConfig(t *testing.T) {
 		{
 			name: "AMQP_PASSWORD not set",
 			setup: func() {
-				os.Setenv("AMQP_USERNAME", "bar")
+				t.Setenv("AMQP_USERNAME", "bar")
 			},
 			assertions: func(_ amqp.WriterFactoryConfig, err error) {
 				require.Error(t, err)
@@ -133,7 +132,7 @@ func TestWriterFactoryConfig(t *testing.T) {
 		{
 			name: "success",
 			setup: func() {
-				os.Setenv("AMQP_PASSWORD", "bat")
+				t.Setenv("AMQP_PASSWORD", "bat")
 			},
 			assertions: func(config amqp.WriterFactoryConfig, err error) {
 				require.NoError(t, err)
@@ -182,7 +181,7 @@ func TestSubstrateConfig(t *testing.T) {
 		{
 			name: "GIT_INITIALIZER_IMAGE not set",
 			setup: func() {
-				os.Setenv("API_ADDRESS", testAPIAddress)
+				t.Setenv("API_ADDRESS", testAPIAddress)
 			},
 			assertions: func(_ kubernetes.SubstrateConfig, err error) {
 				require.Error(t, err)
@@ -193,7 +192,7 @@ func TestSubstrateConfig(t *testing.T) {
 		{
 			name: "GIT_INITIALIZER_IMAGE_PULL_POLICY not set",
 			setup: func() {
-				os.Setenv("GIT_INITIALIZER_IMAGE", testGitInitializerImage)
+				t.Setenv("GIT_INITIALIZER_IMAGE", testGitInitializerImage)
 			},
 			assertions: func(_ kubernetes.SubstrateConfig, err error) {
 				require.Error(t, err)
@@ -204,7 +203,7 @@ func TestSubstrateConfig(t *testing.T) {
 		{
 			name: "DEFAULT_WORKER_IMAGE not set",
 			setup: func() {
-				os.Setenv(
+				t.Setenv(
 					"GIT_INITIALIZER_IMAGE_PULL_POLICY",
 					string(testGitInitializerImagePullPolicy),
 				)
@@ -218,7 +217,7 @@ func TestSubstrateConfig(t *testing.T) {
 		{
 			name: "DEFAULT_WORKER_IMAGE_PULL_POLICY not set",
 			setup: func() {
-				os.Setenv("DEFAULT_WORKER_IMAGE", testDefaultWorkerImage)
+				t.Setenv("DEFAULT_WORKER_IMAGE", testDefaultWorkerImage)
 			},
 			assertions: func(_ kubernetes.SubstrateConfig, err error) {
 				require.Error(t, err)
@@ -229,7 +228,7 @@ func TestSubstrateConfig(t *testing.T) {
 		{
 			name: "WORKSPACE_STORAGE_CLASS not set",
 			setup: func() {
-				os.Setenv(
+				t.Setenv(
 					"DEFAULT_WORKER_IMAGE_PULL_POLICY",
 					string(testDefaultWorkerImagePullPolicy),
 				)
@@ -243,7 +242,7 @@ func TestSubstrateConfig(t *testing.T) {
 		{
 			name: "success",
 			setup: func() {
-				os.Setenv("WORKSPACE_STORAGE_CLASS", testWorkspaceStorageClass)
+				t.Setenv("WORKSPACE_STORAGE_CLASS", testWorkspaceStorageClass)
 			},
 			assertions: func(config kubernetes.SubstrateConfig, err error) {
 				require.NoError(t, err)
@@ -308,7 +307,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 		{
 			name: "THIRD_PARTY_AUTH_STRATEGY has invalid value",
 			setup: func() {
-				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", "bogus")
+				t.Setenv("THIRD_PARTY_AUTH_STRATEGY", "bogus")
 			},
 			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
@@ -322,7 +321,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 		{
 			name: "OIDC_PROVIDER_URL required but not set",
 			setup: func() {
-				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyOIDC)
+				t.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyOIDC)
 			},
 			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
@@ -333,7 +332,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 		{
 			name: "OIDC_CLIENT_ID required but not set",
 			setup: func() {
-				os.Setenv("OIDC_PROVIDER_URL", server.URL)
+				t.Setenv("OIDC_PROVIDER_URL", server.URL)
 			},
 			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
@@ -344,7 +343,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 		{
 			name: "OIDC_CLIENT_SECRET required but not set",
 			setup: func() {
-				os.Setenv("OIDC_CLIENT_ID", "hal9000")
+				t.Setenv("OIDC_CLIENT_ID", "hal9000")
 			},
 			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
@@ -355,7 +354,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 		{
 			name: "OIDC_REDIRECT_URL_BASE required but not set",
 			setup: func() {
-				os.Setenv("OIDC_CLIENT_SECRET", "hello, dave")
+				t.Setenv("OIDC_CLIENT_SECRET", "hello, dave")
 			},
 			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
@@ -366,7 +365,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 		{
 			name: "success getting OIDC-based ThirdPartyAuthHelper",
 			setup: func() {
-				os.Setenv("OIDC_REDIRECT_URL_BASE", "https://brigade.example.com")
+				t.Setenv("OIDC_REDIRECT_URL_BASE", "https://brigade.example.com")
 			},
 			assertions: func(helper api.ThirdPartyAuthHelper, err error) {
 				require.NoError(t, err)
@@ -380,8 +379,8 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 		{
 			name: "GITHUB_CLIENT_ID required but not set",
 			setup: func() {
-				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyGitHub)
-				os.Setenv("GITHUB_AUTH_ENABLED", "true")
+				t.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyGitHub)
+				t.Setenv("GITHUB_AUTH_ENABLED", "true")
 			},
 			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
@@ -392,7 +391,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 		{
 			name: "GITHUB_CLIENT_SECRET required but not set",
 			setup: func() {
-				os.Setenv("GITHUB_CLIENT_ID", "foo")
+				t.Setenv("GITHUB_CLIENT_ID", "foo")
 			},
 			assertions: func(_ api.ThirdPartyAuthHelper, err error) {
 				require.Error(t, err)
@@ -403,7 +402,7 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 		{
 			name: "success getting github-based ThirdPartyAuthHelper",
 			setup: func() {
-				os.Setenv("GITHUB_CLIENT_SECRET", "bar")
+				t.Setenv("GITHUB_CLIENT_SECRET", "bar")
 			},
 			assertions: func(helper api.ThirdPartyAuthHelper, err error) {
 				require.NoError(t, err)
@@ -433,7 +432,7 @@ func TestSessionsServiceConfig(t *testing.T) {
 		{
 			name: "ROOT_USER_ENABLED not parsable as bool",
 			setup: func() {
-				os.Setenv("ROOT_USER_ENABLED", "aw hell no")
+				t.Setenv("ROOT_USER_ENABLED", "aw hell no")
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -444,8 +443,8 @@ func TestSessionsServiceConfig(t *testing.T) {
 		{
 			name: "ROOT_USER_SESSION_TTL not parsable as duration",
 			setup: func() {
-				os.Setenv("ROOT_USER_ENABLED", "true")
-				os.Setenv("ROOT_USER_SESSION_TTL", "in like an hour")
+				t.Setenv("ROOT_USER_ENABLED", "true")
+				t.Setenv("ROOT_USER_SESSION_TTL", "in like an hour")
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -456,7 +455,7 @@ func TestSessionsServiceConfig(t *testing.T) {
 		{
 			name: "ROOT_USER_PASSWORD required but not set",
 			setup: func() {
-				os.Setenv("ROOT_USER_SESSION_TTL", "1h")
+				t.Setenv("ROOT_USER_SESSION_TTL", "1h")
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -467,8 +466,8 @@ func TestSessionsServiceConfig(t *testing.T) {
 		{
 			name: "USER_SESSION_TTL not parsable as duration",
 			setup: func() {
-				os.Setenv("ROOT_USER_PASSWORD", "12345")
-				os.Setenv("USER_SESSION_TTL", "in like a day")
+				t.Setenv("ROOT_USER_PASSWORD", "12345")
+				t.Setenv("USER_SESSION_TTL", "in like a day")
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -479,7 +478,7 @@ func TestSessionsServiceConfig(t *testing.T) {
 		{
 			name: "success",
 			setup: func() {
-				os.Setenv("USER_SESSION_TTL", "1h")
+				t.Setenv("USER_SESSION_TTL", "1h")
 			},
 			assertions: func(err error) {
 				require.NoError(t, err)
@@ -504,7 +503,7 @@ func TestUsersServiceConfig(t *testing.T) {
 		{
 			name: "third party auth disabled",
 			setup: func() {
-				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyDisabled)
+				t.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyDisabled)
 			},
 			assertions: func(config api.UsersServiceConfig) {
 				require.False(t, config.ThirdPartyAuthEnabled)
@@ -513,7 +512,7 @@ func TestUsersServiceConfig(t *testing.T) {
 		{
 			name: "third party auth enabled",
 			setup: func() {
-				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyGitHub)
+				t.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyGitHub)
 			},
 			assertions: func(config api.UsersServiceConfig) {
 				require.True(t, config.ThirdPartyAuthEnabled)
@@ -537,7 +536,7 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 		{
 			name: "ROOT_USER_ENABLED not parsable as bool",
 			setup: func() {
-				os.Setenv("ROOT_USER_ENABLED", "yuppers")
+				t.Setenv("ROOT_USER_ENABLED", "yuppers")
 			},
 			assertions: func(_ rest.TokenAuthFilterConfig, err error) {
 				require.Error(t, err)
@@ -548,7 +547,7 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 		{
 			name: "SCHEDULER_TOKEN not set",
 			setup: func() {
-				os.Setenv("ROOT_USER_ENABLED", "true")
+				t.Setenv("ROOT_USER_ENABLED", "true")
 			},
 			assertions: func(_ rest.TokenAuthFilterConfig, err error) {
 				require.Error(t, err)
@@ -559,7 +558,7 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 		{
 			name: "OBSERVER_TOKEN not set",
 			setup: func() {
-				os.Setenv("SCHEDULER_TOKEN", "foo")
+				t.Setenv("SCHEDULER_TOKEN", "foo")
 			},
 			assertions: func(_ rest.TokenAuthFilterConfig, err error) {
 				require.Error(t, err)
@@ -570,8 +569,8 @@ func TestTokenAuthFilterConfig(t *testing.T) {
 		{
 			name: "success",
 			setup: func() {
-				os.Setenv("OBSERVER_TOKEN", "bar")
-				os.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyGitHub)
+				t.Setenv("OBSERVER_TOKEN", "bar")
+				t.Setenv("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyGitHub)
 			},
 			assertions: func(config rest.TokenAuthFilterConfig, err error) {
 				require.NoError(t, err)
@@ -603,7 +602,7 @@ func TestServerConfig(t *testing.T) {
 		{
 			name: "API_SERVER_PORT not parsable as int",
 			setup: func() {
-				os.Setenv("API_SERVER_PORT", "foo")
+				t.Setenv("API_SERVER_PORT", "foo")
 			},
 			assertions: func(_ restmachinery.ServerConfig, err error) {
 				require.Error(t, err)
@@ -614,8 +613,8 @@ func TestServerConfig(t *testing.T) {
 		{
 			name: "TLS_ENABLED not parsable as bool",
 			setup: func() {
-				os.Setenv("API_SERVER_PORT", "8080")
-				os.Setenv("TLS_ENABLED", "nope")
+				t.Setenv("API_SERVER_PORT", "8080")
+				t.Setenv("TLS_ENABLED", "nope")
 			},
 			assertions: func(_ restmachinery.ServerConfig, err error) {
 				require.Error(t, err)
@@ -626,7 +625,7 @@ func TestServerConfig(t *testing.T) {
 		{
 			name: "TLS_CERT_PATH required but not set",
 			setup: func() {
-				os.Setenv("TLS_ENABLED", "true")
+				t.Setenv("TLS_ENABLED", "true")
 			},
 			assertions: func(_ restmachinery.ServerConfig, err error) {
 				require.Error(t, err)
@@ -637,7 +636,7 @@ func TestServerConfig(t *testing.T) {
 		{
 			name: "TLS_KEY_PATH required but not set",
 			setup: func() {
-				os.Setenv("TLS_CERT_PATH", "/var/ssl/cert")
+				t.Setenv("TLS_CERT_PATH", "/var/ssl/cert")
 			},
 			assertions: func(_ restmachinery.ServerConfig, err error) {
 				require.Error(t, err)
@@ -648,7 +647,7 @@ func TestServerConfig(t *testing.T) {
 		{
 			name: "success",
 			setup: func() {
-				os.Setenv("TLS_KEY_PATH", "/var/ssl/key")
+				t.Setenv("TLS_KEY_PATH", "/var/ssl/key")
 			},
 			assertions: func(config restmachinery.ServerConfig, err error) {
 				require.NoError(t, err)
