@@ -26,7 +26,7 @@ spec:
     spec:
       initContainers:
       - name: config
-        image: {{ .Values.artemis.image.repository }}:{{ .Values.artemis.image.tag }}
+        image: {{ .Values.artemis.image.repository }}:{{ default .Chart.AppVersion .Values.artemis.image.tag }}
         imagePullPolicy: {{ .Values.artemis.image.pullPolicy }}
         command: ["/bin/sh", "/opt/config/configure-node.sh"]
         volumeMounts:
@@ -38,7 +38,7 @@ spec:
             mountPath: /var/lib/artemis/etc-override
       containers:
       - name: artemis
-        image: {{ .Values.artemis.image.repository }}:{{ .Values.artemis.image.tag }}
+        image: {{ .Values.artemis.image.repository }}:{{ default .Chart.AppVersion .Values.artemis.image.tag }}
         imagePullPolicy: {{ .Values.artemis.image.pullPolicy }}
         resources:
           {{- toYaml .Values.artemis.resources | indent 10 }}
@@ -50,8 +50,6 @@ spec:
             secretKeyRef:
               name: {{ include "brigade.artemis.fullname" . }}
               key: password
-        - name: ARTEMIS_PERF_JOURNAL
-          value: {{ .Values.artemis.persistence.testJournalPerformance }}
         ports:
         - name: http
           containerPort: 8161
