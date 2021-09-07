@@ -40,8 +40,18 @@ func newProjectsPage(
 	// Create the layout
 	p.page.Flex = tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(p.projectsTable, 0, 1, true).
-		AddItem(p.usage, 1, 1, false)
+		AddItem(
+			p.projectsTable,
+			0,
+			1,    // Proportionate height-- 1 unit
+			true, // Bring into focus
+		).
+		AddItem(
+			p.usage, // Menu
+			1,       // Fixed height
+			0,
+			false, // Don't bring into focus
+		)
 	return p
 }
 

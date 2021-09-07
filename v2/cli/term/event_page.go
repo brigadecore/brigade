@@ -48,14 +48,34 @@ func newEventPage(
 		SetDirection(tview.FlexRow).
 		AddItem(
 			tview.NewFlex().
-				AddItem(e.eventInfo, 0, 1, false).
-				AddItem(e.workerInfo, 0, 1, false),
+				AddItem(
+					e.eventInfo, // Event details
+					0,
+					1,     // Proportionate width-- 50%
+					false, // Don't bring into focus
+				).
+				AddItem(
+					e.workerInfo, // Worker details
+					0,
+					1,     // Proportionate width-- 50%
+					false, // Don't bring into focus
+				),
 			0,
-			1,
-			false,
+			1,     // Proportionate height-- 1 unit
+			false, // Don't bring into focus
 		).
-		AddItem(e.jobsTable, 0, 3, true).
-		AddItem(e.usage, 1, 1, false)
+		AddItem(
+			e.jobsTable, // Jobs table
+			0,
+			3,    // Proportionate height-- 3 units
+			true, // Bring into focus
+		).
+		AddItem(
+			e.usage, // Menu
+			1,       // Fixed height
+			0,
+			false, // Don't bring into focus
+		)
 	return e
 }
 
@@ -70,7 +90,12 @@ func (e *eventPage) refresh(ctx context.Context, eventID string) {
 		// TODO: This return is a bandaid fix to stop nil pointer dereference!
 		return
 	}
-	e.fillEventInfo(event)
+	project, err := e.apiClient.Projects().Get(ctx, event.ProjectID)
+	if err != nil {
+		// TODO: This return is a bandaid fix to stop nil pointer dereference!
+		return
+	}
+	e.fillEventInfo(project, event)
 	e.fillWorkerInfo(event)
 	e.fillJobsTable(event)
 	// Set key handlers
@@ -101,7 +126,7 @@ func (e *eventPage) refresh(ctx context.Context, eventID string) {
 
 }
 
-func (e *eventPage) fillEventInfo(event core.Event) {
+func (e *eventPage) fillEventInfo(project core.Project, event core.Event) {
 	e.eventInfo.Clear()
 	e.eventInfo.SetTitle(fmt.Sprintf(" %s ", event.ID))
 	infoText := fmt.Sprintf(
@@ -131,6 +156,13 @@ func (e *eventPage) fillEventInfo(event core.Event) {
 				"%s\n  [grey]Clone URL: [white]%s",
 				infoText,
 				event.Git.CloneURL,
+			)
+		} else if project.Spec.WorkerTemplate.Git != nil &&
+			project.Spec.WorkerTemplate.Git.CloneURL != "" {
+			infoText = fmt.Sprintf(
+				"%s\n  [grey]Clone URL: [white]%s",
+				infoText,
+				project.Spec.WorkerTemplate.Git.CloneURL,
 			)
 		}
 		if event.Git.Commit != "" {
@@ -296,7 +328,6 @@ func (e *eventPage) fillJobsTable(event core.Event) {
 				Color: color,
 			},
 		)
-		// TODO: Add age-- needs Job to track create time
 		if job.Status.Started != nil {
 			started := time.Since(*job.Status.Started).Truncate(time.Second)
 			e.jobsTable.SetCell(

@@ -37,13 +37,43 @@ func newLogPage(
 	// Returns a new primitive which puts the provided primitive in the center and
 	// sets its size to the given width and height.
 	l.page.Flex = tview.NewFlex().
-		AddItem(nil, 0, 1, false).
-		AddItem(tview.NewFlex().
-			SetDirection(tview.FlexRow).
-			AddItem(nil, 0, 1, false).
-			AddItem(l.logText, 25, 1, false).
-			AddItem(nil, 0, 1, false), 85, 1, false).
-		AddItem(nil, 0, 1, false)
+		AddItem(
+			nil, // Spacer to help create the illusion of a floating window
+			0,
+			1,     // Proportionate height-- 1 unit
+			false, // Don't bring into focus
+		).
+		AddItem(
+			tview.NewFlex().
+				SetDirection(tview.FlexRow).
+				AddItem(
+					nil, // Spacer to help create the illusion of a floating window
+					0,
+					1,     // Proportionate width-- 1 unit
+					false, // Don't bring into focus
+				).
+				AddItem(
+					l.logText,
+					25, //  Fixed width
+					0,
+					false,
+				).
+				AddItem(
+					nil, // Spacer to help create the illusion of a floating window
+					0,
+					1,     // Proportionate width-- 1 unit
+					false, // Don't bring into focus
+				),
+			85, // Fixed height
+			0,
+			false, // Don't bring into focus
+		).
+		AddItem(
+			nil, // Spacer to help create the illusion of a floating window
+			0,
+			1,     // Proportionate height-- 1 unit
+			false, // Don't bring into focus
+		)
 
 	return l
 }

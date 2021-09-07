@@ -23,7 +23,7 @@ func term(c *cli.Context) error {
 		tview.NewFlex().SetDirection(tview.FlexRow).AddItem(
 			terminal.NewPageRouter(client.Core(), app),
 			0,
-			1,
+			1, // Proportionate width-- 100%
 			true,
 		),
 		true,

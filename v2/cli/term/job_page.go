@@ -40,9 +40,24 @@ func newJobPage(
 	// Create the layout
 	j.page.Flex = tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(j.jobInfo, 0, 1, false).
-		AddItem(j.containersTable, 0, 5, true).
-		AddItem(j.usage, 1, 1, false)
+		AddItem(
+			j.jobInfo, // Job details
+			0,
+			1,     // Proportionate height-- 1 units
+			false, // Don't bring into focus
+		).
+		AddItem(
+			j.containersTable, // Containers table
+			0,
+			5,    // Proportionate height-- 5 units
+			true, // Bring into focus
+		).
+		AddItem(
+			j.usage, // Menu
+			1,       // Fixed height
+			0,
+			false, // Don't bring into focus
+		)
 	return j
 }
 

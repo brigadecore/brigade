@@ -44,9 +44,24 @@ func newProjectPage(
 	// Create the layout
 	p.page.Flex = tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(p.projectInfo, 0, 2, false).
-		AddItem(p.eventsTable, 0, 9, true).
-		AddItem(p.usage, 1, 1, false)
+		AddItem(
+			p.projectInfo, // Project details
+			0,
+			2,     // Relative height-- 2 units
+			false, // Don't bring into focus
+		).
+		AddItem(
+			p.eventsTable, // Events table
+			0,
+			9,    // Relative height-- 9 units
+			true, // Bring into focus
+		).
+		AddItem(
+			p.usage, // Menu
+			1,       // Fixed height
+			0,
+			false,
+		)
 	return p
 }
 
@@ -136,6 +151,25 @@ func (p *projectPage) fillProjectInfo(project core.Project) {
 				project.Spec.WorkerTemplate.Git.CloneURL,
 			)
 		}
+		if project.Spec.WorkerTemplate.Git.Commit != "" {
+			infoText = fmt.Sprintf(
+				"%s\n  [grey]Commit: [white]%s",
+				infoText,
+				project.Spec.WorkerTemplate.Git.Commit,
+			)
+		}
+		if project.Spec.WorkerTemplate.Git.Ref != "" {
+			infoText = fmt.Sprintf(
+				"%s\n  [grey]Ref: [white]%s",
+				infoText,
+				project.Spec.WorkerTemplate.Git.Ref,
+			)
+		}
+		infoText = fmt.Sprintf(
+			"%s\n  [grey]Initialize Submodules: [white]%t",
+			infoText,
+			project.Spec.WorkerTemplate.Git.InitSubmodules,
+		)
 	}
 	infoText = fmt.Sprintf(
 		"%s\n[grey]Created: %s",
