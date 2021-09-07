@@ -1358,8 +1358,10 @@ artemis:
   replicas: 1
 
   image:
-    repository: vromero/activemq-artemis
-    tag: 2.15.0
+    repository: brigadecore/brigade2-artemis
+    ## tag should only be specified if you want to override Chart.appVersion
+    ## The default tag is the value of .Chart.AppVersion
+    # tag:
     pullPolicy: IfNotPresent
 
   username: brigade
@@ -1371,7 +1373,6 @@ artemis:
   ## Persist data to a volume
   persistence:
     enabled: true
-    testJournalPerformance: AUTO
     ## If defined, volume.beta.kubernetes.io/storage-class: <storageClass>
     ## Default: volume.alpha.kubernetes.io/storage-class: default
     ##
