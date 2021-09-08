@@ -231,10 +231,11 @@ const publishBrigadierDocsJob = (event: Event) => {
     "make build-brigadier",
     "npm install -g gh-pages@3.0.0",
     "cd v2/brigadier",
-    `gh-pages --add -d docs \
-      -r https://brigadeci:${event.project.secrets.ghToken}@github.com/brigadecore/brigade.git \
-      -u "Brigade CI <brigade@ci>" \
-      -m "Publish Brigadier documentation"`
+    `gh-pages \
+      --dist docs \
+      --repo https://brigadeci:${event.project.secrets.ghToken}@github.com/brigadecore/brigade.git \
+      --user "Brigade CI <brigade@ci>" \
+      --message "Publish Brigadier documentation"`
   ]
   return publisher
 }

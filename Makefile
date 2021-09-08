@@ -250,6 +250,7 @@ build-brigadier:
 		cd v2/brigadier && \
 		yarn install && \
 		yarn build && \
+		mkdir -p docs && \
 		npx jsdoc dist/ --destination ./docs/js && \
 		npx typedoc src/ --out ./docs/ts \
 	'
