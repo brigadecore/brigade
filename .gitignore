@@ -6,6 +6,7 @@ dist/
 charts/brigade/charts
 .npmrc
 .DS_Store
+v2/brigadier/docs
 
 # IDEs
 .vscode/
