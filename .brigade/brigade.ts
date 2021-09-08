@@ -219,6 +219,27 @@ const publishChartJob = (event: Event) => {
 }
 jobs[publishChartJobName] = publishChartJob
 
+const publishBrigadierDocsJobName = "publish-brigadier-docs"
+const publishBrigadierDocsJob = (event: Event) => {
+  let publisher = new Job(publishBrigadierDocsJobName, jsImg, event)
+  publisher.primaryContainer.sourceMountPath = localPath
+  publisher.primaryContainer.workingDirectory = localPath
+  publisher.primaryContainer.environment["SKIP_DOCKER"] = "true"
+  publisher.primaryContainer.command = ["bash"]
+  publisher.primaryContainer.arguments = [
+    "-c",
+    "make build-brigadier",
+    "npm install -g gh-pages@3.0.0",
+    "cd v2/brigadier",
+    `gh-pages --add -d docs \
+      -r https://brigadeci:${event.project.secrets.ghToken}@github.com/brigadecore/brigade.git \
+      -u "Brigade CI <brigade@ci>" \
+      -m "Publish Brigadier documentation"`
+  ]
+  return publisher
+}
+jobs[publishBrigadierDocsJobName] = publishBrigadierDocsJob
+
 // Run the entire suite of tests WITHOUT publishing anything initially. If
 // EVERYTHING passes AND this was a push (merge, presumably) to the v2 branch,
 // then run jobs to publish "edge" images.
@@ -305,6 +326,7 @@ events.on("brigade.sh/github", "push", async event => {
       ),
       new ConcurrentGroup(
         publishBrigadierJob(event),
+        publishBrigadierDocsJob(event),
         publishChartJob(event),
         publishCLIJob(event)
       )
