@@ -2,7 +2,7 @@
 title: Advanced Scripting Guide
 description: This guide provides some tips and ideas for advanced scripting
 section: scripting
-weight: 3
+weight: 5
 aliases:
   - /advanced.md
   - /topics/advanced.md
