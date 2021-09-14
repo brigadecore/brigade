@@ -47,41 +47,92 @@ command:
 Within a Brigade script (`brigade.js` or `brigade.ts` file), we can access any
 of the secrets defined on our project.
 
+### What NOT to do
+
 This first example demonstrates direct access of a secret defined on a project
-in the event handler code outside of any Job:
+in the event handler code outside of any Job. We only show this method to
+demonstrate how/where the secret value will be leaked.
+
+⚠️ **THIS IS UNSAFE AND WILL LEAK THE SECRET**
 
 ```javascript
 const { events } = require("@brigadecore/brigadier");
 
 events.on("brigade.sh/cli", "exec", async event => {
-  // THIS IS NOT SAFE! IT LEAKS YOUR SECRET INTO THE LOGS.
   console.log("Project secret foo = " + event.project.secrets.foo);
 });
 
 events.process();
 ```
 
-For passing project secrets into a Job, the best practice is to do so via the
-Job's environment. Brigade stores this data in the form of a secret on the
-substrate.
+Here is the output when this event is handled:
 
-Project secrets that are accessed directly in a Job, i.e. outside of its
-environment, *will* be leaked, both in the Job Pod resource on the substrate
-and via `brig` commands that consume this information, e.g.
-`brig event get --id <event id>`.
+```console
+$ brig event create --project my-project --follow
 
-Here is an example of passing a project secret into a Job:
+Created event "8b44098e-cd4a-416c-9d4e-b361ff300409".
+
+Waiting for event's worker to be RUNNING...
+2021-09-14T22:52:50.444Z INFO: brigade-worker version: dc2481f-dirty
+Project secret foo = top$ecret
+```
+
+Direct access of a project secret in the context of a Job's container is also
+unsafe, even if the job isn't logging the secret itself. Consider the following
+example:
 
 ```javascript
 const { Job, events } = require("@brigadecore/brigadier");
 
 events.on("brigade.sh/cli", "exec", async event => {
-  let job = new Job("second-job", "debian:latest", event);
+  let job = new Job("my-job", "docker:latest", event);
+  job.primaryContainer.command = ["sh"];
+  job.primaryContainer.arguments = [
+    "-c",
+    "docker login" +
+      " -u " + event.project.secrets.dockerUser +
+      " -p " + event.project.secrets.dockerPassword
+  ];
+
+  await job.run();
+});
+
+events.process();
+```
+
+Even if the `dockerUser` and `dockerPassword` secrets aren't leaked in the job
+logs, they will be leaked on the job Pod manifest. In example above, the
+following snippet would be seen under the Pod's `spec`:
+
+```yaml
+spec:
+  containers:
+  - args:
+    - -c
+    - docker login -u me -p top$ecret
+    command:
+    - sh
+    image: docker:latest
+```
+
+### Accessing secrets safely
+
+For passing project secrets into a Job, the best practice is to do so via the
+Job's environment. Brigade stores this data in the form of a secret on the
+substrate.
+
+Here is an example of passing a project secret safely into a Job:
+
+```javascript
+const { Job, events } = require("@brigadecore/brigadier");
+
+events.on("brigade.sh/cli", "exec", async event => {
+  let job = new Job("my-job", "docker:latest", event);
   job.primaryContainer.environment = {
     "DOCKER_USER": event.project.secrets.dockerUser,
     "DOCKER_PASSWORD": event.project.secrets.dockerPassword
   };
-  job.primaryContainer.command = ["bash"];
+  job.primaryContainer.command = ["sh"];
   job.primaryContainer.arguments = [
     "-c",
     "docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"
@@ -97,6 +148,31 @@ In this case, we retrieve the secrets from the project, and we pass them into
 the Job as environment variables. When the job executes, it can access the
 `dockerUser` and `dockerPassword` secret values via their corresponding
 environment variables.
+
+Additionally, these secrets aren't leaked in the job Pod manifest. Here is how
+the Pod manifest looks using this method:
+
+```yaml
+spec:
+  containers:
+  - args:
+    - -c
+    - docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+    command:
+    - sh
+    env:
+    - name: DOCKER_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: my-job.DOCKER_PASSWORD
+          name: c943d42b-aad7-4093-90b4-e9caa4f2fae3-my-job
+    - name: DOCKER_USER
+      valueFrom:
+        secretKeyRef:
+          key: my-job.DOCKER_USER
+          name: c943d42b-aad7-4093-90b4-e9caa4f2fae3-my-job
+    image: docker:latest
+```
 
 ## Image pull secrets for Worker and Jobs
 
