@@ -31,7 +31,7 @@ environment, take a look at the [QuickStart].)
   event triggers (gateways) and to browsers for authentication callbacks.
   As long as the cluster is able to provision a public ip address, as any
   cloud provider's Kubernetes offering will support, you should be good to go.
-* [Helm] CLI v3 installed.
+* [Helm] v3.7.0+ installed.
 * [kubectl] CLI installed.
 * Free disk space on the cluster nodes.
   The installation requires sufficient free disk space and will fail if a
@@ -45,24 +45,23 @@ environment, take a look at the [QuickStart].)
 
 For now, we're using the [GitHub Container Registry](https://ghcr.io) (which is
 an [OCI registry](https://helm.sh/docs/topics/registries/)) to host our Helm
-chart. Helm 3 has _experimental_ support for OCI registries. In the event that
-the Helm 3 dependency proves troublesome for Brigade users, or in the event that
-this experimental feature goes away, or isn't working like we'd hope, we will
-revisit this choice before going GA.
+chart. Helm 3.7 has _experimental_ support for OCI registries. In the event that
+the Helm 3.7 dependency proves troublesome for Brigade users, or in the event
+that this experimental feature goes away, or isn't working like we'd hope, we
+will revisit this choice before going GA.
 
 First, let's set the necessary environment variable to enable this experimental
 support and pull the Brigade chart to a local directory:
 
 ```console
 $ export HELM_EXPERIMENTAL_OCI=1
-$ helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-beta.2
-$ helm chart export ghcr.io/brigadecore/brigade:v2.0.0-beta.2 -d ~/charts
 ```
 
 You're now ready to view and edit configuration options:
 
 ```console
-$ helm inspect values ~/charts/brigade > ~/brigade2-values.yaml
+$ helm inspect values oci://ghcr.io/brigadecore/brigade-acr-gateway \
+    --version v2.0.0-beta.3 > ~/brigade-values.yaml
 ```
 
 In the next steps, we'll go through the configuration needed for a
@@ -70,7 +69,7 @@ production-grade deployment.
 
 ## Configuring passwords
 
-In the Brigade chart values file (`brigade2-values.yaml`) there are a few spots
+In the Brigade chart values file (`brigade-values.yaml`) there are a few spots
 where default passwords are used. It is recommended to supply your own values
 for these fields. Here are the values to update and their locations in the
 file:
@@ -200,23 +199,25 @@ These values can be updated via the following two locations:
 
 ## Deployment time!
 
-Now that you have your `brigade2-values.yaml` updated with your desired
+Now that you have your `brigade-values.yaml` updated with your desired
 configuration, you're ready to deploy!  Issue the following command, supplying
 a dedicated Kubernetes namespace where all resources will be created and the
 filepath to the chart values file you've updated and saved:
 
 ```console
-$ helm install brigade2 ~/charts/brigade \
-  --create-namespace
-  --namespace brigade2 \
-  --values ~/brigade2-values.yaml
+$ helm install brigade \
+    oci://ghcr.io/brigadecore/brigade \
+    --version v2.0.0-beta.3 \
+    --create-namespace \
+    --namespace brigade \
+    --values ~/brigade-values.yaml
 ```
 
 You can issue the following `kubectl` command to monitor the status of the
 deployments:
 
 ```console
-$ kubectl rollout status deployment brigade2-apiserver -n brigade2 --timeout 5m
+$ kubectl rollout status deployment brigade-apiserver -n brigade --timeout 5m
 ```
 
 ### DNS hostname
@@ -230,7 +231,7 @@ pointing to this IP instead.
 To locate the IP, execute the following command:
 
 ```console
-$ kubectl -n brigade2 get svc \
+$ kubectl -n brigade get svc \
   -l app.kubernetes.io/name=brigade,app.kubernetes.io/component=apiserver \
   -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}'
 ```

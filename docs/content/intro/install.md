@@ -22,7 +22,7 @@ Before you can install Brigade, ensure that you have the [prerequisites](#prereq
   Your cluster should be accessible to the source of your event triggers.
   For example, if you want to trigger events from GitHub, the cluster should have a public ip address, and a domain name that resolves to the cluster.
   If you are using Brigade in a local development environment, the [QuickStart] demonstrates how to access a local KinD or Minikube cluster.
-* [Helm] CLI v3+ installed.
+* [Helm] v3.7.0+ installed.
 * [kubectl] CLI installed.
 * Free disk space on the cluster nodes.  
   The installation requires sufficient free disk space and will fail if a cluster node disk is nearly full.
@@ -38,20 +38,20 @@ Install the Brigade CLI, brig, by copying the appropriate binary from our releas
 
 **linux**
 ```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.2/brig-linux-amd64
+curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-linux-amd64
 chmod +x /usr/local/bin/brig
 ```
 
 **macos**
 ```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.2/brig-darwin-amd64
+curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-darwin-amd64
 chmod +x /usr/local/bin/brig
 ```
 
 **windows**
 ```powershell
 mkdir -force $env:USERPROFILE\bin
-(New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.2/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+(New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
 $env:PATH+=";$env:USERPROFILE\bin"
 ```
 
@@ -76,25 +76,15 @@ $env:PATH+=";$env:USERPROFILE\bin"
     $env:HELM_EXPERIMENTAL_OCI=1
     ```
 
-1. Create a directory to store the Brigade Helm charts.
-
-    **posix**
-    ```bash
-    mkdir -p ~/charts
-    ```
-
-    **powershell**
-    ```powershell
-    mkdir -force $env:USERPROFILE/charts
-    ```
-
 1. Run the following commands to install Brigade and wait for it to finish installing.
 
     ```
-    helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-beta.2
-    helm chart export ghcr.io/brigadecore/brigade:v2.0.0-beta.2 -d ~/charts
-    helm install brigade2 ~/charts/brigade --namespace brigade2 --create-namespace
-    kubectl rollout status deployment brigade2-apiserver -n brigade2 --timeout 5m
+    helm install brigade \
+      oci://ghcr.io/brigadecore/brigade \
+      --version v2.0.0-beta.3 \
+      --create-namespace \
+      --namespace brigade
+    kubectl rollout status deployment brigade-apiserver -n brigade --timeout 5m
     ```
    
     If the deployment fails, proceed to the [troubleshooting](#troubleshooting) section.
@@ -132,13 +122,13 @@ If the logs include "No space left on device" or "Disk Full!", then you need to 
 Running `docker system prune` is one way to recover disk space for Docker.
 
 ```console
-$ kubectl logs brigade2-mongodb-0
+$ kubectl logs brigade-mongodb-0
 ...
 mkdir: cannot create directory '/bitnami/mongodb/data': No space left on device
 ```
 
 ```console
-$ kubectl logs brigade2-artemis-0
+$ kubectl logs brigade-artemis-0
 ...
 2021-05-26 17:20:17,865 WARN  [org.apache.activemq.artemis.core.server] AMQ222212: Disk Full! Blocking message production on address 'healthz'. Clients will report blocked.
 ```
@@ -146,6 +136,9 @@ $ kubectl logs brigade2-artemis-0
 After you have freed up disk space, remove the bad installation, and then retry the installation using the following commands:
 
 ```
-helm uninstall brigade2 -n brigade2
-helm install brigade2 ~/charts/brigade --namespace brigade2
+helm uninstall brigade -n brigade
+helm install brigade \
+  oci://ghcr.io/brigadecore/brigade \
+  --version v2.0.0-beta.3 \
+  --namespace brigade
 ```
