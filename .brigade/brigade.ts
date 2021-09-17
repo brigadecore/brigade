@@ -102,7 +102,7 @@ jobs[buildArtemisJobName] = buildArtemisJob
 
 const pushArtemisJobName = "push-artemis"
 const pushArtemisJob = (event: Event) => {
-  return new MakeTargetJob(pushArtemisJobName, kanikoImg, event)
+  return new PushImageJob(pushArtemisJobName, event)
 }
 jobs[pushArtemisJobName] = pushArtemisJob
 
