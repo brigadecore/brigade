@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"reflect"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
@@ -127,6 +126,30 @@ type JobSpec struct {
 	Host *JobHost `json:"host,omitempty" bson:"host,omitempty"`
 }
 
+func (js JobSpec) EqualTo(js2 JobSpec) bool {
+	// Compare SidecarContainers maps
+	if len(js.SidecarContainers) != len(js2.SidecarContainers) {
+		return false
+	}
+	for name, sidecarContainer := range js.SidecarContainers {
+		if !sidecarContainer.EqualTo(js2.SidecarContainers[name]) {
+			return false
+		}
+	}
+	// Need to check if Host values are nil
+	if js.Host == nil || js2.Host == nil {
+		if js.Host == nil && js2.Host == nil {
+			return js.PrimaryContainer.EqualTo(js2.PrimaryContainer) &&
+				js.TimeoutDuration == js2.TimeoutDuration
+		}
+		return false
+	}
+	// Return remaining field equivalence
+	return js.PrimaryContainer.EqualTo(js2.PrimaryContainer) &&
+		js.TimeoutDuration == js2.TimeoutDuration &&
+		js.Host.EqualTo(js2.Host)
+}
+
 // JobContainerSpec amends the ContainerSpec type with additional Job-specific
 // fields.
 type JobContainerSpec struct {
@@ -160,6 +183,15 @@ type JobContainerSpec struct {
 	UseHostDockerSocket bool `json:"useHostDockerSocket" bson:"useHostDockerSocket"` // nolint: lll
 }
 
+func (jcs JobContainerSpec) EqualTo(jcs2 JobContainerSpec) bool {
+	return jcs.ContainerSpec.EqualTo(jcs2.ContainerSpec) &&
+		jcs.WorkingDirectory == jcs2.WorkingDirectory &&
+		jcs.WorkspaceMountPath == jcs2.WorkspaceMountPath &&
+		jcs.SourceMountPath == jcs2.SourceMountPath &&
+		jcs.Privileged == jcs2.Privileged &&
+		jcs.UseHostDockerSocket == jcs2.UseHostDockerSocket
+}
+
 // JobHost represents criteria for selecting a suitable host (substrate node)
 // for a Job.
 type JobHost struct {
@@ -171,6 +203,18 @@ type JobHost struct {
 	// host a Job. This provides an opaque mechanism for communicating Job needs
 	// such as specific hardware like an SSD or GPU.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty" bson:"nodeSelector,omitempty"` // nolint: lll
+}
+
+func (jh *JobHost) EqualTo(jh2 *JobHost) bool {
+	if len(jh.NodeSelector) != len(jh2.NodeSelector) {
+		return false
+	}
+	for k, v := range jh.NodeSelector {
+		if v != jh2.NodeSelector[k] {
+			return false
+		}
+	}
+	return jh.OS == jh2.OS
 }
 
 // JobStatus represents the status of a Job.
@@ -297,7 +341,7 @@ func (j *jobsService) Create(
 		// Otherwise, proceed with the re-creation of the job *if* it has
 		// been inherited previously (LogsEventID field non-empty) -- return
 		// ErrConflict if it hasn't been inherited.
-		if reflect.DeepEqual(originalJob.Spec, job.Spec) {
+		if originalJob.Spec.EqualTo(job.Spec) {
 			return nil
 		} else if originalJob.Status == nil ||
 			originalJob.Status.LogsEventID == "" {

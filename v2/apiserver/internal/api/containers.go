@@ -23,3 +23,39 @@ type ContainerSpec struct {
 	// to be set within the OCI container.
 	Environment map[string]string `json:"environment,omitempty" bson:"environment,omitempty"` // nolint: lll
 }
+
+func (cs ContainerSpec) EqualTo(cs2 ContainerSpec) bool {
+	// Compare Command slices
+	if len(cs.Command) != len(cs2.Command) {
+		return false
+	}
+	for i, command := range cs.Command {
+		if command != cs2.Command[i] {
+			return false
+		}
+	}
+
+	// Compare Arguments slices
+	if len(cs.Arguments) != len(cs2.Arguments) {
+		return false
+	}
+	for i, argument := range cs.Arguments {
+		if argument != cs2.Arguments[i] {
+			return false
+		}
+	}
+
+	// Compare Environment maps
+	if len(cs.Environment) != len(cs2.Environment) {
+		return false
+	}
+	for name, value := range cs.Environment {
+		if value != cs2.Environment[name] {
+			return false
+		}
+	}
+
+	// Return remaining field equivalence
+	return cs.Image == cs2.Image &&
+		cs.ImagePullPolicy == cs2.ImagePullPolicy
+}

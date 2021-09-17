@@ -8,6 +8,7 @@ import (
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestNewjobsService(t *testing.T) {
@@ -1555,6 +1556,110 @@ func TestJobsServiceTimeout(t *testing.T) {
 				testJobName,
 			)
 			testCase.assertions(err)
+		})
+	}
+}
+
+func TestJobSpecEqualTo(t *testing.T) {
+	var testJobHost = JobHost{
+		OS: "brigOS",
+		NodeSelector: map[string]string{
+			"node": "js",
+		},
+	}
+	var testContainerSpec = ContainerSpec{
+		Image:           "imagine",
+		ImagePullPolicy: ImagePullPolicy("Always"),
+		Command:         []string{"echo"},
+		Arguments:       []string{"hola el mundo"},
+		Environment: map[string]string{
+			"partly": "cloudy",
+		},
+	}
+	var testJobContainerSpec = JobContainerSpec{
+		ContainerSpec:       testContainerSpec,
+		WorkingDirectory:    "be",
+		WorkspaceMountPath:  "here",
+		SourceMountPath:     "now",
+		Privileged:          true,
+		UseHostDockerSocket: true,
+	}
+	var testJobSpec = JobSpec{
+		PrimaryContainer: testJobContainerSpec,
+		SidecarContainers: map[string]JobContainerSpec{
+			"sidecar": testJobContainerSpec,
+		},
+		TimeoutDuration: "1ms",
+		Host:            &testJobHost,
+	}
+	testCases := []struct {
+		name       string
+		specs      []JobSpec
+		assertions func(equal bool)
+	}{
+		{
+			name: "not equal",
+			specs: []JobSpec{
+				{
+					PrimaryContainer: testJobContainerSpec,
+					// No sidecar containers
+					TimeoutDuration: "1ms",
+					Host:            &testJobHost,
+				},
+				testJobSpec,
+			},
+			assertions: func(equal bool) {
+				require.False(t, equal)
+			},
+		},
+		{
+			name: "some fields nil; not equal",
+			specs: []JobSpec{
+				{
+					PrimaryContainer: testJobContainerSpec,
+					SidecarContainers: map[string]JobContainerSpec{
+						"sidecar": testJobContainerSpec,
+					},
+					TimeoutDuration: "1ms",
+					Host:            nil,
+				},
+				testJobSpec,
+			},
+			assertions: func(equal bool) {
+				require.False(t, equal)
+			},
+		},
+		{
+			name:  "all fields empty; equal",
+			specs: []JobSpec{{}, {}},
+			assertions: func(equal bool) {
+				require.True(t, equal)
+			},
+		},
+		{
+			name: "equal",
+			specs: []JobSpec{
+				testJobSpec,
+				testJobSpec,
+			},
+			assertions: func(equal bool) {
+				require.True(t, equal)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			// We run one spec through a round of bson.Marshal and Unmarshal to
+			// simulate roundtrip storage in the backing data store
+			_, bsonBytes, err := bson.MarshalValue(testCase.specs[0])
+			require.NoError(t, err)
+
+			jobSpec := JobSpec{}
+			err = bson.Unmarshal(bsonBytes, &jobSpec)
+			require.NoError(t, err)
+
+			equal := jobSpec.EqualTo(testCase.specs[1])
+			testCase.assertions(equal)
 		})
 	}
 }
