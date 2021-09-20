@@ -354,10 +354,8 @@ publish-chart:
 		helm registry login $(HELM_REGISTRY) -u $(HELM_USERNAME) -p $${HELM_PASSWORD} && \
 		cd charts/brigade && \
 		helm dep up && \
-		sed -i "s/^version:.*/version: $(VERSION)/" Chart.yaml && \
-		sed -i "s/^appVersion:.*/appVersion: $(VERSION)/" Chart.yaml && \
-		helm chart save . $(HELM_CHART_PREFIX)brigade:$(VERSION) && \
-		helm chart push $(HELM_CHART_PREFIX)brigade:$(VERSION) \
+		helm package . --version $(VERSION) --app-version $(VERSION) && \
+		helm push brigade-$(VERSION).tgz oci://$(HELM_REGISTRY)$(HELM_ORG) \
 	'
 
 .PHONY: publish-cli
