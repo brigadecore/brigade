@@ -20,7 +20,7 @@ In this QuickStart, you will install Brigade, create a project and execute it.
 
 * [A development Kubernetes cluster](#create-a-cluster).
 * [Brigade CLI](#install-the-brigade-cli) installed.
-* [Helm] CLI v3+ installed.
+* [Helm] v3.7.0+ installed.
 * [kubectl] CLI installed.
 * Free disk space. The installation requires sufficient free disk space and will fail if your disk is nearly full.
 
@@ -85,20 +85,20 @@ Install the Brigade CLI, brig, by copying the appropriate binary from our releas
 
 **linux**
 ```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.2/brig-linux-amd64
+curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-linux-amd64
 chmod +x /usr/local/bin/brig
 ```
 
 **macos**
 ```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.2/brig-darwin-amd64
+curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-darwin-amd64
 chmod +x /usr/local/bin/brig
 ```
 
 **windows**
 ```powershell
 mkdir -force $env:USERPROFILE\bin
-(New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.2/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+(New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
 $env:PATH+=";$env:USERPROFILE\bin"
 ```
 
@@ -125,25 +125,15 @@ Install Brigade on your local development cluster. See our [Installation] instru
     $env:HELM_EXPERIMENTAL_OCI=1
     ```
 
-1. Create a directory to store the Brigade Helm charts.
-
-    **posix**
-    ```bash
-    mkdir -p ~/charts
-    ```
-
-    **powershell**
-    ```powershell
-    mkdir -force $env:USERPROFILE/charts
-    ```
-
 1. Run the following commands to install Brigade.
 
     ```
-    helm chart pull ghcr.io/brigadecore/brigade:v2.0.0-beta.2
-    helm chart export ghcr.io/brigadecore/brigade:v2.0.0-beta.2 -d ~/charts
-    helm install brigade2 ~/charts/brigade --namespace brigade2 --create-namespace
-    kubectl rollout status deployment brigade2-apiserver -n brigade2 --timeout 5m
+    helm install brigade \
+      oci://ghcr.io/brigadecore/brigade \
+      --version v2.0.0-beta.3 \
+      --create-namespace \
+      --namespace brigade
+    kubectl rollout status deployment brigade-apiserver -n brigade --timeout 5m
     ```
     
     Wait for the Brigade deployment to be ready.
@@ -158,21 +148,21 @@ If you are running a cluster locally, use port forwarding to make the Brigade AP
 **posix**
 
 ```
-kubectl --namespace brigade2 port-forward service/brigade2-apiserver 8443:443 &>/dev/null &
+kubectl --namespace brigade port-forward service/brigade-apiserver 8443:443 &>/dev/null &
 ```
 
 **powershell**
 
 ```
-& kubectl --namespace brigade2 port-forward service/brigade2-apiserver 8443:443 *> $null  
+& kubectl --namespace brigade port-forward service/brigade-apiserver 8443:443 *> $null  
 ```
 
 ### Get External IP of a Remote Cluster
 
-If you are running a cluster remotely, such as on a cloud provider, the Brigade API is available at the External IP of the brigade2-apiserver service:
+If you are running a cluster remotely, such as on a cloud provider, the Brigade API is available at the External IP of the brigade-apiserver service:
 
 ```
-kubectl get service --namespace brigade2 brigade2-apiserver -o=jsonpath='{.status.loadBalancer.ingress[0].ip}'
+kubectl get service --namespace brigade brigade-apiserver -o=jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
 [Installation]: /intro/install/
@@ -187,7 +177,7 @@ Authenticate to Brigade as the root user using demo password `F00Bar!!!`. The \-
 brig login --insecure --server https://localhost:8443 --root
 ```
 
-If the address https://localhost:8443 does not resolve, double-check that the brigade2-apiserver service was successfully forwarded from the previous section.
+If the address https://localhost:8443 does not resolve, double-check that the brigade-apiserver service was successfully forwarded from the previous section.
 
 **remote clusters**
 
@@ -268,7 +258,7 @@ Below is example output of a successful event handler:
 Created event "2cb85062-f964-454d-ac5c-526cdbdd2679".
 
 Waiting for event's worker to be RUNNING...
-2021-08-10T16:52:01.699Z INFO: brigade-worker version: v2.0.0-beta.2
+2021-08-10T16:52:01.699Z INFO: brigade-worker version: v2.0.0-beta.3
 2021-08-10T16:52:01.701Z DEBUG: writing default brigade.ts to /var/vcs/.brigade/brigade.ts
 2021-08-10T16:52:01.702Z DEBUG: using npm as the package manager
 2021-08-10T16:52:01.702Z DEBUG: path /var/vcs/.brigade/node_modules/@brigadecore does not exist; creating it
@@ -290,7 +280,7 @@ brig project delete --id first-project
 Otherwise, you can remove ALL resources created in this QuickStart by either:
 
 * Deleting the KinD cluster that you created at the beginning with `kind delete cluster --name kind-kind` OR
-* Preserving the cluster and uninstalling Brigade with `helm delete brigade2 -n brigade2`
+* Preserving the cluster and uninstalling Brigade with `helm delete brigade -n brigade`
 
 ## Next Steps
 
