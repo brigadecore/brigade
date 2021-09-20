@@ -1,5 +1,7 @@
 # Brigade 2: Event-based Scripting for Kubernetes
 
+![build](https://badgr.brigade2.io/v1/github/checks/brigadecore/brigade/badge.svg?appID=99005&branch=v2)
+
 Brigade 2 is currently in a _beta_ state and remains under active development,
 but that effort is primarily oriented around improving the platform's stability.
 Breaking changes to APIs are not anticipated.
