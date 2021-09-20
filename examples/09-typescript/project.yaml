@@ -10,7 +10,7 @@ spec:
     types:
     - exec
   workerTemplate:
-    logLevel: DEBUG
+    # logLevel: DEBUG
     defaultConfigFiles:
       brigade.ts: |
         console.log("Hello, TypeScript!")

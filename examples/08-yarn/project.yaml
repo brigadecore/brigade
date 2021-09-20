@@ -10,7 +10,7 @@ spec:
     types:
     - exec
   workerTemplate:
-    logLevel: DEBUG
+    # logLevel: DEBUG
     configFilesDirectory: examples/08-yarn/.brigade
     git:
       cloneURL: https://github.com/brigadecore/brigade.git

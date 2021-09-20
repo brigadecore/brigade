@@ -10,7 +10,7 @@ spec:
     types:
     - exec
   workerTemplate:
-    logLevel: DEBUG
+    # logLevel: DEBUG
     defaultConfigFiles:
       brigade.js: |
         console.log("Hello, World!");
