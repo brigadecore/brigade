@@ -45,7 +45,7 @@ spec:
           {{- end }}
       initContainers:
       - name: config
-        image: {{ .Values.artemis.image.repository }}:{{ .Values.artemis.image.tag }}
+        image: {{ .Values.artemis.image.repository }}:{{ default .Chart.AppVersion .Values.artemis.image.tag }}
         imagePullPolicy: {{ .Values.artemis.image.pullPolicy }}
         command: ["/bin/sh", "/opt/primary-config/configure-primary-node.sh"]
         volumeMounts:
@@ -57,7 +57,7 @@ spec:
             mountPath: /var/lib/artemis/etc-override
       containers:
       - name: artemis
-        image: {{ .Values.artemis.image.repository }}:{{ .Values.artemis.image.tag }}
+        image: {{ .Values.artemis.image.repository }}:{{ default .Chart.AppVersion .Values.artemis.image.tag }}
         imagePullPolicy: {{ .Values.artemis.image.pullPolicy }}
         resources:
           {{- toYaml .Values.artemis.resources | indent 10 }}
