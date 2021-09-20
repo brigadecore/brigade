@@ -2,8 +2,8 @@
 apiVersion: brigade.sh/v2-beta
 kind: Project
 metadata:
-  id: npm
-description: A project with third-party dependencies managed using npm
+  id: yarn
+description: A project with third-party dependencies managed using yarn
 spec:
   eventSubscriptions:
   - source: brigade.sh/cli
@@ -11,7 +11,7 @@ spec:
     - exec
   workerTemplate:
     # logLevel: DEBUG
-    configFilesDirectory: examples/07-npm/.brigade
+    configFilesDirectory: examples/10-yarn/.brigade
     git:
       cloneURL: https://github.com/brigadecore/brigade.git
       ref: refs/heads/v2

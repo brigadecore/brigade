@@ -16,6 +16,7 @@ spec:
         const { events } = require("@brigadecore/brigadier");
 
         events.on("brigade.sh/cli", "exec", async event => {
+          console.log("Project: " + event.project.id);
           console.log("Hello, " + event.payload + "!");
         });
 

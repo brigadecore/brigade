@@ -2,8 +2,8 @@
 apiVersion: brigade.sh/v2-beta
 kind: Project
 metadata:
-  id: kitchen-sink
-description: A project that demonstrates the kitchen sink!
+  id: npm
+description: A project with third-party dependencies managed using npm
 spec:
   eventSubscriptions:
   - source: brigade.sh/cli
@@ -11,7 +11,7 @@ spec:
     - exec
   workerTemplate:
     # logLevel: DEBUG
-    configFilesDirectory: examples/11-kitchen-sink/.brigade
+    configFilesDirectory: examples/09-npm/.brigade
     git:
       cloneURL: https://github.com/brigadecore/brigade.git
       ref: refs/heads/v2
