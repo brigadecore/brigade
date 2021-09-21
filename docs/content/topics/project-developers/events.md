@@ -11,7 +11,7 @@ aliases:
 
 # Brigade Events
 
-Events are the lingua franca in Brigade: [Gateways] emit events and [Project]
+Events are the _lingua franca_ in Brigade: [Gateways] emit events and [Project]
 developers write logic to handle them.
 
 In this document, we'll look at:
@@ -39,8 +39,8 @@ The full list of fields on an Event is:
   * [Type](#type)
   * [Payload](#payload)
   * [ProjectID](#project-id)
-  * [Qualifiers](#qualifiers)
   * [Labels](#labels)
+  * [Qualifiers](#qualifiers)
   * [Short Title](#short-title)
   * [Long Title](#long-title)
   * [Source State](#source-state)
@@ -50,11 +50,11 @@ Each field is reviewed in depth below.
 
 ### Source
 
-An event's Source can be thought of as its domain. In fact, the rule of thumb
-to avoid clashes is to use a URI you control. This means leading with one's own
-domain or the URL for something else one owns, like the URL for a GitHub repo.
-As an example, events emitted from Brigade's [GitHub Gateway] use a source
-value of `brigade.sh/github`.
+An event's Source can be thought of as its domain. For developers writing their
+own gateway, the rule of thumb to avoid clashes is to use a URI one controls.
+This means leading with one's own domain or the URL for something else one
+owns, like the URL for a GitHub repo. As an example, events emitted from
+Brigade's [GitHub Gateway] use a source value of `brigade.sh/github`.
 
 ### Type
 
@@ -65,36 +65,39 @@ on a particular GitHub repo.
 
 ### Payload
 
-An event Payload can be used to send free-form input that may be utilized when
-handling the event. One example would be sending the original GitHub push event
-payload on the corresponding GitHub gateway event, so that these additional
-details may be parsed in the Brigade script.
+An event Payload can be used to send input that may be utilized when handling
+the event, but otherwise opaque to Brigade itself. One example would be sending
+the original GitHub push event payload on the corresponding GitHub gateway
+event, so that these additional details may be parsed in a project's Brigade
+script.
 
 ### Project ID
 
 Although not normally used by general-purpose gateways, a Project ID value may
 be set on an event. In such cases, the event will _only_ be eligible for
-receipt by the project indicated by this fields' value.
-
-### Qualifiers
-
-For a project to receive a particular Eeent, the qualifiers on the project's
-Eeent subscription must exactly match the qualifiers on the event itself (in
-addition to matching Source and Type). For example, a project might supplement
-its `brigade.sh/github` event subscription with a qualifier of
-`repo: brigadecore/brigade`. Only events exactly matching this qualifier would
-be received by the project, i.e., only GitHub events on the brigadecore/brigade
-repository.
+receipt by the project indicated by this fields' value. As an example, the
+`brig project create --project <id>` command emits an event with this field
+set to the supplied project ID value.
 
 ### Labels
 
-Projects can choose to utilize Labels for filtering purposes. In contrast to
-qualifiers, the labels on a project's event subscription does not need to
-exactly match the labels on an Event in order to receive it. Labels, however,
-can be used to narrow an event subscription by optionally selecting only events
-that are labeled in a particular way. For example, a label of `branch: main`
-might be used on an event subscription to limit inbound GitHub events to only
-those that occur on the `main` branch of a given repo.
+Projects can choose to utilize Labels for filtering purposes. The labels on a
+project's event subscription do not need to exactly match the labels on an
+Event in order for the project to receive it. Labels can optionally be used to
+narrow an event subscription's scope by selecting only events that are labeled
+in a particular way. For example, a label of `branch: main` might be used on an
+event subscription to limit inbound GitHub events to only those that occur on
+the `main` branch of a given repo.
+
+### Qualifiers
+
+Qualifiers are like labels; albeit _required_ rather than optional. When an
+event contains qualifiers, a project's event subscription must declare the same
+qualifiers in order for the project to receive it. For example, no one wants to
+subscribe to events from _all_ GitHub repositories (or even just all the
+repositories in one's org), so the GitHub gateway _qualifies_ events,
+specifying the repository of origin. Projects must match this qualifier in
+their event subscription in order to receive an event.
 
 ### Short Title
 
@@ -103,8 +106,9 @@ logging, categorization or visual representation purposes, etc.
 
 ### Long Title
 
-A longer, more descriptive title may be provided for an event. This may be
-helpful for providing additional context for users consuming event details.
+_Reserved for future use._ A longer, more descriptive title may be provided
+for an event. This may be helpful for providing additional context for users
+consuming event details.
 
 ### Source State
 
@@ -168,7 +172,7 @@ Here's a look at an event subscription configuration using all of the above:
 eventSubscriptions:
 - source: brigade.sh/github
   qualifiers:
-    repo: brigadecore/brigade
+    repo: example-org/example-repo
   labels:
     branch: main
   types:
@@ -228,9 +232,12 @@ events.on("event source", "event type", async event => {
 
 Inside the handler, you'll have full access to the `event` object, including
 many of the same fields mentioned in the [Event Structure] section above, e.g.
-`event.payload`, `event.type`, `event.shortTitle`, etc. For more scripting
-examples, check out the [Scripting Guide] or peruse the [Example
-Projects].
+`event.payload`, `event.type`, `event.shortTitle`, etc.
+
+Note that the project script does not need to be embedded in the project
+definition as we've done above. It can exist separately, such as in a
+git repository. For more scripting techniques and examples, check out the
+[Scripting Guide] or peruse the [Example Projects].
 
 [Event Structure]: #event-structure
 [Scripting Guide]: /topics/scripting/index.md
