@@ -363,6 +363,7 @@ export class JobRunner implements jobs.JobRunner {
         e,
         "/src",
         project.kubernetes.vcsSidecar,
+        job.imageForcePull,
         project
       );
       this.runner.spec.initContainers = [sidecar];
@@ -836,6 +837,7 @@ function sidecarSpec(
   e: BrigadeEvent,
   local: string,
   image: string,
+  imageForcePull: boolean,
   project: Project
 ): kubernetes.V1Container {
   var imageTag = image;
@@ -871,8 +873,8 @@ function sidecarSpec(
       envVar("BRIGADE_LOG_LEVEL", LogLevel[e.logLevel])
     ]);
   spec.image = imageTag;
-  (spec.imagePullPolicy = "IfNotPresent"),
-    (spec.volumeMounts = [volumeMount("vcs-sidecar", local)]);
+  spec.imagePullPolicy = imageForcePull ? "Always" : "IfNotPresent";
+  spec.volumeMounts = [volumeMount("vcs-sidecar", local)];
 
   if (project.repo.sshKey) {
     spec.env.push({
