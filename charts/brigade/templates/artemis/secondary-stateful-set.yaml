@@ -120,7 +120,9 @@ spec:
   - metadata:
       name: data
     spec:
+      {{- if .Values.artemis.persistence.storageClass }}
       storageClassName: {{ .Values.artemis.persistence.storageClass }}
+      {{- end }}
       accessModes: [ {{ .Values.artemis.persistence.accessMode }} ]
       resources:
         requests:
