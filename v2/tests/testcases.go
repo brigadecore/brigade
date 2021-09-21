@@ -66,7 +66,7 @@ var TestCases = []testcase{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
-						Ref:      "refs/heads/master",
+						Ref:      "refs/heads/main",
 					},
 				},
 			},
@@ -96,7 +96,7 @@ var TestCases = []testcase{
 				WorkerTemplate: core.WorkerSpec{
 					Git: &core.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
-						Ref:      "master",
+						Ref:      "main",
 					},
 				},
 			},
