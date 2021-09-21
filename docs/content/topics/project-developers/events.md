@@ -66,10 +66,10 @@ on a particular GitHub repo.
 ### Payload
 
 An event Payload can be used to send input that may be utilized when handling
-the event, but otherwise opaque to Brigade itself. One example would be sending
-the original GitHub push event payload on the corresponding GitHub gateway
-event, so that these additional details may be parsed in a project's Brigade
-script.
+the event, but is otherwise opaque to Brigade itself. One example would be
+sending the original GitHub push event payload on the corresponding GitHub
+gateway event, so that these additional details may be parsed in a project's
+Brigade script.
 
 ### Project ID
 
@@ -85,9 +85,10 @@ Projects can choose to utilize Labels for filtering purposes. The labels on a
 project's event subscription do not need to exactly match the labels on an
 Event in order for the project to receive it. Labels can optionally be used to
 narrow an event subscription's scope by selecting only events that are labeled
-in a particular way. For example, a label of `branch: main` might be used on an
-event subscription to limit inbound GitHub events to only those that occur on
-the `main` branch of a given repo.
+in a particular way. For example, the Slack gateway labels all events with the
+channel of origin. A project's subscription can optionally ignore the label and
+get all events for the workspace or specify the label and get events only from
+a specific channel.
 
 ### Qualifiers
 
@@ -101,8 +102,9 @@ their event subscription in order to receive an event.
 
 ### Short Title
 
-A short title may be provided for an event. This can then be utilized for
-logging, categorization or visual representation purposes, etc.
+_Reserved for future use._ A short title may be provided for an event. This can
+then be utilized for logging, categorization or visual representation purposes,
+etc.
 
 ### Long Title
 
