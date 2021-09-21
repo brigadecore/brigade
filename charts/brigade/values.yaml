@@ -1373,9 +1373,7 @@ artemis:
   ## Persist data to a volume
   persistence:
     enabled: true
-    ## If defined, volume.beta.kubernetes.io/storage-class: <storageClass>
-    ## Default: volume.alpha.kubernetes.io/storage-class: default
-    ##
+    ## If undefined, the cluster's default storage class is used
     # storageClass:
     accessMode: ReadWriteOnce
     size: 8Gi
