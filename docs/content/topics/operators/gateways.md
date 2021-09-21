@@ -294,17 +294,17 @@ start of what a Brigade Event can contain. Other notable fields worth
 researching are:
 
 - `ProjectID`: When supplied, the event will _only_ be eligible for receipt by
-	a specific project.
+  a specific project.
 
 - `Qualifiers`: A list of qualifier values. For a project to receive an event,
-	the qualifiers on an event's subscription must exactly match the qualifiers
-	on the event (in addition to matching source and type).
+  the qualifiers on a project's event subscription must exactly match the
+  qualifiers on the event (in addition to matching source and type).
 
 - `Labels`: A list of labels. Projects can choose to utilize these for
   filtering purposes. In contrast to qualifiers, a project's event
-	subscription does not need to match an event's labels in order to receive it.
-	Labels, however, can be used to narrow an event subscription by optionally
-	selecting only events that are labeled in a particular way.
+  subscription does not need to match an event's labels in order to receive it.
+  Labels, however, can be used to narrow an event subscription by optionally
+  selecting only events that are labeled in a particular way.
 
 - `ShortTitle`: A short title for the event.
 
@@ -313,6 +313,10 @@ researching are:
 - `SourceState`: A key/value map representing event state that can be persisted
   by the Brigade API server so that gateways can track event handling progress
   and perform other actions, such as updating upstream services.
+
+- `Summary`: A free-form string field that may be populated by the Worker that
+  handles the event. For example, specific details around the processing of an
+  event can provide further context to end consumers after the Worker finishes.
 
 ### Subscribing a project to events from the example gateway
 
