@@ -86,3 +86,8 @@ We have a slack channel!
 to join for any support questions or feedback, we are happy to help. To report
 an issue or to request a feature open an issue
 [here](https://github.com/brigadecore/brigade/issues)
+
+## Code of Conduct
+
+Participation in the Brigade project is governed by the
+[CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
