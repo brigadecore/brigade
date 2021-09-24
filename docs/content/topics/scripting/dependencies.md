@@ -9,102 +9,123 @@ aliases:
   - /topics/scripting/dependencies.md
 ---
 
-TODO: update per v2
+# Import dependencies in your Brigade script
 
-# Import dependencies in your `brigade.js` file
+A Brigade worker is responsible for executing your Brigade script. By default,
+Brigade comes with a general purpose worker which does not have any external
+dependency that is not critical to executing event handlers in Brigade.
 
-A Brigade worker is responsible for executing your `brigade.js` file. By default, Brigade comes with a general purpose worker which does not have any external dependency that is not critical to controlling the flow of your pipeline.
+If you want to have other dependencies available in your worker execution
+environment (and available in the script itself), there are multiple
+approaches:
 
-If you want to have other dependencies available in your worker execution environment (and available in `brigade.js`), there are multiple approaches:
+- Create a custom worker container image, which has your dependencies. This
+  approach is described in detail in the [Workers] document. In a nutshell,
+  use this approach if you have the same dependency for multiple projects, or
+  if your dependencies take a long time to pull.
 
-- by creating a custom worker container image, which has your dependencies. This approach is [described in detail in this document](workers.md). In a nutshell, use this approach if you have the same dependency for multiple projects, or if your dependencies take a long time to pull.
+- Using the default Brigade Worker image:
+  - Supply a [package.json] file containing the dependencies specific to a
+    Brigade project.
+  - Directly use the local dependencies located in your project's git
+    repository.
 
-- without creating a custom container image:
-    - by supplying a `brigade.json` file (similar to a `package.json` file) 
-that contains the dependencies and that are specific on every Brigade project.
-    - by directly using local dependencies located in your project repository.
+This document describes the latter two approaches.
 
-This document describes the last two approaches.
+[Workers]: /topics/scripting/workers
 
-> Here you can find a [repository that exemplifies both approaches here](https://github.com/radu-matei/brigade-javascript-deps).
+## Add custom dependencies using a `package.json` file
 
-## Add custom dependencies using a `brigade.json` file
+If you need different dependencies for every Brigade project, this can be
+easily achieved using a [package.json] file.  This can be placed alongside the
+Brigade script in the project repository or embedded in the project definition.
 
-If you need different dependencies for every Brigade project, this can be easily achieved 
-using a `brigade.json` file.  This can be placed side-by-side the `brigade.js` file in the project
-repository and/or supplied at runtime via a `brig run` command.  See the [brig](brig.md) doc for
-details on the latter method.  Note that if a `brigade.json` is supplied at runtime, this takes
-precedence over the file found in version control.
+We'll leave describing the full usage of this file to the
+[official documentation][package.json], but here we'll look at the specific
+case of listing dependency names and versions. These can be added under the
+`dependencies` section, like so:
 
-This file is intended to hold general configuration details for Brigade.  The list of dependency
-names and versions can be added under the `dependencies` section, like so:
-
-```
+```json
 {
     "dependencies": {
         "is-thirteen": "2.0.0"
     }
 }
 ```
-Before starting to execute the `brigade.js` script, the worker will install the  
-dependencies using `yarn`, adding them to the `node_modules` folder.
 
-Then, in the `brigade.js` file, the new dependency can be used just like any 
+Before starting to execute the `brigade.js` script, the worker will install the  
+dependencies using `npm` (or `yarn` if a `yarn.lock` file is present), adding
+them to the `node_modules` folder.
+
+Then, in the Brigade script, the new dependency can be used just like any 
 other NodeJS dependency:
 
-```
-const { events } = require("brigadier")
+```javascript
+const { events } = require("@brigadecore/brigadier");
 const is = require("is-thirteen");
 
-events.on("exec", function (e, p) {
-    console.log("is 13 thirteen? " + is(13).thirteen());
-})
+events.on("brigade.sh/cli", "exec", async event => {
+  console.log("is 13 thirteen? " + is(13).thirteen());
+});
+
+events.process();
 ```
 
-Now if we run a build for this project, we see the `is-thirteen` dependency added, 
-as well as the console log resulted from using it:
+Now if we create an event for a project that uses this script (we've also set
+`logLevel` to `DEBUG`), we will see npm being used to install dependencies, as
+well as the console log that uses `is-thirteen`:
 
 ```
-$ brig run brigade-86959b08a89af5b6b83f0ace6d9030f1fdca7ed8ea0a296e27d72e
-Event created. Waiting for worker pod named "brigade-worker-01cexrvrs08shcev26961cwd6n".
-Started build 01cexrvrs08shcev26961cwd6n as "brigade-worker-01cexrvrs08shcev26961cwd6n"
-installing is-thirteen@2.0.0
-prestart: src/brigade.js written
-[brigade] brigade-worker version: 0.14.0
-[brigade:k8s] Creating PVC named brigade-worker-01cexrvrs08shcev26961cwd6n
+$ brig event create --project dependencies --follow
+
+Created event "7987e2bb-5ca9-4f67-8d32-9f5dd667c0c5".
+
+Waiting for event's worker to be RUNNING...
+2021-09-27T22:35:23.234Z INFO: brigade-worker version: 9b52569-dirty
+2021-09-27T22:35:23.239Z DEBUG: using npm as the package manager
+2021-09-27T22:35:23.239Z DEBUG: found a package.json at /var/vcs/examples/13-dependencies/.brigade/package.json
+2021-09-27T22:35:23.240Z DEBUG: installing dependencies using npm
+
+added 2 packages, and audited 3 packages in 1s
+
+found 0 vulnerabilities
+2021-09-27T22:35:24.742Z DEBUG: path /var/vcs/examples/13-dependencies/.brigade/node_modules/@brigadecore does not exist; creating it
+2021-09-27T22:35:24.743Z DEBUG: polyfilling @brigadecore/brigadier with /var/brigade-worker/brigadier-polyfill
+2021-09-27T22:35:24.745Z DEBUG: found nothing to compile
+2021-09-27T22:35:24.747Z DEBUG: running node brigade.js
 is 13 thirteen? true
-[brigade:app] after: default event handler fired
-[brigade:app] beforeExit(2): destroying storage
-[brigade:k8s] Destroying PVC named brigade-worker-01cexrvrs08shcev26961cwd6n
 ```
 
 Notes:
 
-- when adding a custom dependency using `brigade.json`, `yarn` will add it side-by-side with [the worker's 
-dependencies](../../brigade-worker/package.json) - this means that the process will fail if a dependency that conflicts with one of the 
-worker's dependencies is added. However, already existing dependencies (such as `@kubernetes/client-node`, `ulid` or `chai`) 
-can be used from `brigade.js` without adding them to `brigade.json`. 
+- All custom dependencies declared in the `package.json` file will be added in
+  the node process dedicated to the script environment itself, separate from
+  the worker's node process and dependencies.
 
-However, the only issue is trying to add a different version of an already existing dependency of the worker.
+- Dependencies are dynamically installed on every Brigade script execution -
+  this means if the dependencies added are large, and the event frequency is
+  high for a particular project, it might make sense to make a pre-built Docker
+  image that already contains the dependencies. See the [Workers] document for
+  further details on how to do so.
 
-- as the Brigade worker is capable of modifying the state of the cluster, be mindful 
-of any external dependencies added through `brigade.json`
-
-- for now, the only part of `brigade.json` used is the `dependencies` object - it means the rest of the file 
-can be used to pass additional information to `brigade.js`, such as environment data - however, as the `brigade.json` 
-file is passed in the source control repository, information passed there will be available to anyone with access to the repository.
-
-- all dependencies added in `brigade.json` are dynamically installed on every Brigade build - this means if the dependencies added 
-are large, and the build frequency is high for a particular project, it might make sense to make a pre-built Docker image that 
-already contains the dependencies, [as described in this document](workers.md).
+[package.json]: https://docs.npmjs.com/cli/v7/configuring-npm/package-json
+[Workers]: /topics/scripting/workers
 
 ## Using local dependencies from the project repository
 
-Local dependencies are resolved using standard Node [module resolution](https://nodejs.org/api/modules.html#modules_all_together),
-with one change: the worker's `node_modules` directory is added as a fallback, so `brigade.js`—and any local dependencies—can resolve modules installed via `brigade.json`.
-This approach works great for using dependencies that are not intended to be external packages, and which are located in the project repository. 
+Local dependencies are resolved using standard Node [module resolution], with
+one change: the worker's `node_modules` directory is added as a fallback, so
+`brigade.js` - and any local dependencies - can resolve modules installed via
+`package.json`.
 
-Let's consider the following scenario: we have a JavaScript file located in `/local-deps/circle.js`, where `local-deps` is a directory at the root of our git repository. In our `brigade.js` file, we can use any exported method or variable from that package by simply using a `require` statement, just like in any other JavaScript project.
+This approach works great for using dependencies that are not intended to be
+external packages, and which are located in the project repository. 
+
+Let's consider the following scenario: we have a JavaScript file located in
+`/local-deps/circle.js`, where `local-deps` is a directory at the root of our
+git repository. In our Brigade script, we can use any exported method or
+variable from that package by simply using a `require` statement, just like in
+any other JavaScript project.
 
 ```javascript
 // file /local-deps/circle.js
@@ -120,14 +141,43 @@ exports.circumference = function (r) {
 Then, in our `brigade.js` we can import that file and use it:
 
 ```javascript
-const { events } = require("@brigadecore/brigadier")
-const circle = require("./local-deps/circle");
+const { events } = require("@brigadecore/brigadier");
+const circle = require("../local-deps/circle");
 
-events.on("exec", function (e, p) {
-    console.log("area of a circle with radius 3 " + circle.area(3));
+events.on("brigade.sh/cli", "exec", async event => {
+  console.log("area of a circle with radius 3: " + circle.area(3));
 });
+
+events.process();
 ```
 
+Here is the output when we create an event via `brig` for a project using this
+script (plus `logLevel: DEBUG`):
+
+```console
+$ brig event create --project dependencies --follow
+
+Created event "8aa3c5dd-a685-493a-a366-a6183a9e2650".
+
+Waiting for event's worker to be RUNNING...
+2021-09-28T13:43:49.143Z INFO: brigade-worker version: 9b52569-dirty
+2021-09-28T13:43:49.148Z DEBUG: using npm as the package manager
+2021-09-28T13:43:49.148Z DEBUG: path /var/vcs/examples/13-dependencies/.brigade/node_modules/@brigadecore does not exist; creating it
+2021-09-28T13:43:49.149Z DEBUG: polyfilling @brigadecore/brigadier with /var/brigade-worker/brigadier-polyfill
+2021-09-28T13:43:49.149Z DEBUG: found nothing to compile
+2021-09-28T13:43:49.150Z DEBUG: running node brigade.js
+area of a circle with radius 3: 28.259999999999998
+```
+
+[module resolution]: https://nodejs.org/api/modules.html#modules_all_together
+
+## Both approaches in one example
+
+Check out the [13-dependencies] example project to see both approaches
+incorporated into one project. Feel free to create the project, create events
+for the project, etc., to get a feel for how both methods work.
+
+[13-dependencies]: https://github.com/brigadecore/brigade/tree/v2/examples/13-dependencies
 ## Best Practices
 
 As we have seen, it is easy to add new functionality to the Brigade worker. But
