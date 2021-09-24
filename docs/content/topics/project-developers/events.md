@@ -134,7 +134,7 @@ To explore the SDK definitions of an Event object, see the [Go SDK Event] and
 
 [GitHub Gateway]: https://github.com/brigadecore/brigade-github-gateway
 [Go SDK Event]: https://github.com/brigadecore/brigade/blob/v2/sdk/v2/core/events.go
-[JavaScript/TypeScript SDK Event]: https://github.com/brigadecore/brigade-sdk-for-js/blob/master/src/core/events.ts
+[JavaScript/TypeScript SDK Event]: https://github.com/brigadecore/brigade-sdk-for-js/blob/main/src/core/events.ts
 
 ## Event Subscriptions
 

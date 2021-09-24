@@ -108,7 +108,7 @@ To explore the SDK definitions of an Event object, see the [Go SDK Event] and
 
 [01-hello-world sample project]: https://github.com/brigadecore/brigade/tree/v2/examples/01-hello-world
 [Go SDK Event]: https://github.com/brigadecore/brigade/blob/v2/sdk/v2/core/events.go
-[JavaScript/TypeScript SDK Event]: https://github.com/brigadecore/brigade-sdk-for-js/blob/master/src/core/events.ts
+[JavaScript/TypeScript SDK Event]: https://github.com/brigadecore/brigade-sdk-for-js/blob/main/src/core/events.ts
 
 ## Creating Custom Gateways
 

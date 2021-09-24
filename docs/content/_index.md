@@ -9,12 +9,21 @@ Everything you need to know about Brigade.
 
 ### First Steps
 
-Are you new to Brigade or looking to quickly get up to speed with v2? [This is the place to start!](intro/index)
+Are you new to Brigade or looking to quickly get up to speed? [This is the place to start!](intro/index)
 
 ### Topic Guides
 
-Learn about alternative methods of installation, integration with other tools, and
+Learn about the different roles in Brigade, integration with other tools, and
 writing advanced Brigade scripts. [Dive deep into what makes Brigade, Brigade](topics/index).
+
+### Design/Architecture
+
+An overview of Brigade's design and architecture can be found in the [Design doc](topics/design).
+
+### Developers Guide
+
+To start developing on the Brigade project, check out the [Developer's guide](topics/developers)
+and the [Contributing guide](https://github.com/brigadecore/community/blob/main/contributing.md).
 
 ### Releasing Brigade
 
@@ -22,38 +31,20 @@ For maintainers of this project, steps on cutting a new release of Brigade can b
 
 ### Related Resources
 
-If you'd like to add links to this list, open a pull request on 
-[Brigade's GitHub project](https://github.com/brigadecore/brigade)
+- [The Brigade Blog](https://blog.brigade.sh/): Read the latest posts from Brigade maintainers and contributors.
+- [Brigade's Community Repo](https://github.com/brigadecore/community): Find community resources for the Brigade project,
+  including community meeting details, communication channels, contributing guides and more.
 
 ### Articles and Videos
 
-TODO: add/update/edit -- maybe add link to blog?
-
-<!--
-v1 listings:
-
-- [Video: Intro to Brigade on Azure Friday](https://www.youtube.com/watch?v=aZMna3VuoAg)
-- [Announcing Brigade](https://open.microsoft.com/2017/10/23/announcing-brigade-event-driven-scripting-kubernetes/) - Microsoft
-- [Microsoft Launches Brigade](https://thenewstack.io/microsoft-launches-brigade-event-driven-scripting-tool-kubernetes) - The New Stack
-- [Video: Building Event-Driven Pipelines with Brigade (KubeCon Europe 2018)](https://www.youtube.com/watch?v=yhfc0FKdFc8)
-- [Video: Brigade Basics](https://asciinema.org/a/JBsjOpah4nTBvjqDT5dAWvefG)
--->
+Coming soon!
 
 ### Technical
 
-TODO: add/update/edit
-
 Brigade-related projects and tools.
 
-<!--
-v1 listings:
+- [Brigadier](https://github.com/brigadecore/brigade/tree/v2/v2/brigadier): The JavaScript/TypeScript library for your Brigade scripts
+- [Brigade Metrics](https://github.com/brigadecore/brigade-metrics): Collect and visualize metrics for Brigade
 
-- [Hello Helm](https://github.com/technosophos/hello-helm) provides an example
-  project for testing Brigade.
-- The [Trello Brigade Gateway](https://github.com/technosophos/brigade-trello) links
-  Trello webhooks to Brigade.
-- The [Twitter-T](https://hub.docker.com/r/technosophos/twitter-t/), [Slack Notify](https://hub.docker.com/r/technosophos/slack-notify/) and [Office 365 Notify](https://hub.docker.com/r/dgkanatsios/o365-notify) Docker images provide easy tools for sending messages from Brigade scripts.
-- [bit-brigade](https://bitbucket.org/lukepatrick/bit-brigade) provides an example project using 
-  BitBucket as a source repository
-- [minio-brigade](https://github.com/lukepatrick/minio-brigade) examples of storing artifacts in object storage (minio)
--->
+If you'd like to add links to this list, open a pull request on
+[Brigade's GitHub project](https://github.com/brigadecore/brigade)
