@@ -21,14 +21,16 @@ claims. For that reason, it is prudent to configure security.
 - *RBAC Enabled*: Role-based access control is enabled by default. While it is
   possible to disable via a corresponding chart value, we won't vouch for the
   security of anything Brigade-related in a non-RBAC-enabled cluster.
-- *One instance of Brigade per cluster*: Currently, Brigade only supports being
-  deployed once to a given cluster.
 - *Multiple tenants in Brigade*: Brigade supports multiple projects per Brigade
   server instance, but it must be mentioned that users within Brigade can
   usually see (read) all projects on that instance, though they might not
   necessarily have the role necessary to write to them. If this presents a
   concern, each tenant should have its own Brigade instance. For more info,
   see the [Authentication] document.
+- *Events should hold no sensitive data*: Because Brigade routes events to
+  interested parties (projects) based on a subscription model, events should
+  never contain secrets/sensitive information. Always assume that anyone in
+  your cluster could be subscribed to any event that a gateway creates.
 
 [Authentication]: /topics/administrators/authentication
   
