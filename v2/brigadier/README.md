@@ -12,15 +12,15 @@ Brigadier supports writing scripts in either JavaScript or TypeScript.
 
 [![NPM](https://nodei.co/npm/@brigadecore/brigadier.png)](https://www.npmjs.com/package/@brigadecore/brigadier)
 
-Normally, the brigadier dependency is declared at the top of a Brigade script
-and will be installed when the Brigade Worker starts up before script
-execution, like so:
+Normally, the brigadier dependency is declared at the top of a Brigade script.
+The library itself is pre-loaded in the Brigade Worker:
 
 ```javascript
 const { events, Job } = require("@brigadecore/brigadier");
 ```
 
-You may also install brigadier to your environment with Yarn, NPM, etc.:
+To facilitate script development, you may also install brigadier to your
+environment with Yarn, NPM, etc.:
 
 ```console
 $ yarn add @brigadecore/brigadier
@@ -35,6 +35,8 @@ The 2.x brigadier npm releases are compatible with
 [Brigade v2.x](https://github.com/brigadecore/brigade/tree/v2).
 
 ## Usage
+
+> Note: the following examples are using brigadier 2.x, compatible with Brigade v2.
 
 Here is an example `brigade.js` script which declares an event handler for
 GitHub push events, running tests for the project it is associated with:
