@@ -231,6 +231,15 @@ observer:
     ## Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
     ## For example, "60s", "2h45m", "168h" (1 week)
     # maxJobLifetime:
+    ## delayBeforeCleanup dictates the length of the grace period between when
+    ## a worker or job pod completes and when it is permanently cleaned up.
+    ## This can be increased in a busy cluster to give log agents a better
+    ## chance of capturing all logs before pods are deleted forever. Its also a
+    ## useful value to adjust when troubleshooting.
+    ## (Default is 1 minute)
+    ## Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+    ## For example, "60s", "2h45m", "168h" (1 week)
+    # delayBeforeCleanup: 
 
 gitInitializer:
 
