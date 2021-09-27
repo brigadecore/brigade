@@ -5,6 +5,7 @@ description: |
 type: application
 version: 0.1.0
 appVersion: v0.1.0
+icon: https://raw.githubusercontent.com/brigadecore/brigade/v2/logo.png
 sources:
 - https://github.com/brigadecore/brigade
 maintainers:

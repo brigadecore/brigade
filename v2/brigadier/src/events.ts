@@ -105,7 +105,10 @@ export class EventRegistry {
   }
 
   protected fire(event: Event): string | void {
-    const handlerFn = this.handlers[`${event.source}:${event.type}`]
+    let handlerFn = this.handlers[`${event.source}:${event.type}`]
+    if (!handlerFn) {
+      handlerFn = this.handlers[`${event.source}:*`]
+    }
     if (handlerFn) {
       return handlerFn(event) 
     }
