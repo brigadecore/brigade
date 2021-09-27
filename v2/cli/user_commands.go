@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
+	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 var userCommand = &cli.Command{
@@ -131,7 +133,7 @@ func userList(c *cli.Context) error {
 				table.AddRow(
 					user.ID,
 					user.Name,
-					user.Created,
+					duration.ShortHumanDuration(time.Since(*user.Created)),
 					user.Locked != nil,
 				)
 			}
@@ -200,7 +202,7 @@ func userGet(c *cli.Context) error {
 		table.AddRow(
 			user.ID,
 			user.Name,
-			user.Created,
+			duration.ShortHumanDuration(time.Since(*user.Created)),
 			user.Locked != nil,
 		)
 		fmt.Println(table)
