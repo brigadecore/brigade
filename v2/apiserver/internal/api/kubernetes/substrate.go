@@ -41,6 +41,11 @@ var unknownPhasePodsSelector = fields.Set(
 // SubstrateConfig encapsulates several configuration options for the
 // Kubernetes-based Substrate.
 type SubstrateConfig struct {
+	// BrigadeID is a unique-within-the-cluster identifier for an instance of
+	// Brigade. This helps the substrate constrain any operation it performs on
+	// the cluster to only k8s resources that are created and managed by THIS
+	// instance of Brigade.
+	BrigadeID string
 	// APIAddress is the address of the Brigade API server. The substrate will use
 	// this information whenever it needs to tell another component where to find
 	// the API server.

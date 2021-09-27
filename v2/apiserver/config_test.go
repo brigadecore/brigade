@@ -158,6 +158,7 @@ func TestWriterFactoryConfig(t *testing.T) {
 }
 
 func TestSubstrateConfig(t *testing.T) {
+	const testBrigadeID = "4077th"
 	const testAPIAddress = "http://localhost"
 	const testGitInitializerImage = "brigadecore/brigade2-git-initializer:2.0.0"
 	const testGitInitializerImagePullPolicy = api.ImagePullPolicy("IfNotPresent")
@@ -170,8 +171,19 @@ func TestSubstrateConfig(t *testing.T) {
 		assertions func(kubernetes.SubstrateConfig, error)
 	}{
 		{
-			name:  "API_ADDRESS not set",
+			name:  "BRIGADE_ID not set",
 			setup: func() {},
+			assertions: func(_ kubernetes.SubstrateConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "BRIGADE_ID")
+			},
+		},
+		{
+			name: "API_ADDRESS not set",
+			setup: func() {
+				t.Setenv("BRIGADE_ID", testBrigadeID)
+			},
 			assertions: func(_ kubernetes.SubstrateConfig, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
@@ -246,6 +258,7 @@ func TestSubstrateConfig(t *testing.T) {
 			},
 			assertions: func(config kubernetes.SubstrateConfig, err error) {
 				require.NoError(t, err)
+				require.Equal(t, testBrigadeID, config.BrigadeID)
 				require.Equal(t, testAPIAddress, config.APIAddress)
 				require.Equal(t, testGitInitializerImage, config.GitInitializerImage)
 				require.Equal(
