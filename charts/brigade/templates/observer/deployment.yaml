@@ -45,6 +45,8 @@ spec:
           value: {{ .Values.observer.config.maxWorkerLifetime }}
         - name: MAX_JOB_LIFETIME
           value: {{ .Values.observer.config.maxJobLifetime }}
+        - name: DELAY_BEFORE_CLEANUP
+          value: {{ .Values.observer.config.delayBeforeCleanup }}
         {{- end }}
       {{- with .Values.observer.nodeSelector }}
       nodeSelector:
