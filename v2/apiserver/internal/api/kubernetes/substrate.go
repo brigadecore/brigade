@@ -121,7 +121,10 @@ func (s *substrate) CountRunningWorkers(
 ) (api.SubstrateWorkerCount, error) {
 	count := api.SubstrateWorkerCount{}
 	var err error
-	count.Count, err = s.countRunningPods(ctx, myk8s.WorkerPodsSelector())
+	count.Count, err = s.countRunningPods(
+		ctx,
+		myk8s.WorkerPodsSelector(s.config.BrigadeID),
+	)
 	return count, err
 }
 
@@ -130,7 +133,10 @@ func (s *substrate) CountRunningJobs(
 ) (api.SubstrateJobCount, error) {
 	count := api.SubstrateJobCount{}
 	var err error
-	count.Count, err = s.countRunningPods(ctx, myk8s.JobPodsSelector())
+	count.Count, err = s.countRunningPods(
+		ctx,
+		myk8s.JobPodsSelector(s.config.BrigadeID),
+	)
 	return count, err
 }
 
@@ -151,7 +157,8 @@ func (s *substrate) CreateProject(
 			ObjectMeta: metav1.ObjectMeta{
 				Name: project.Kubernetes.Namespace,
 				Labels: map[string]string{
-					myk8s.LabelProject: project.ID,
+					myk8s.LabelBrigadeID: s.config.BrigadeID,
+					myk8s.LabelProject:   project.ID,
 				},
 			},
 		},
@@ -312,6 +319,7 @@ func (s *substrate) CreateProject(
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "project-secrets",
 				Labels: map[string]string{
+					myk8s.LabelBrigadeID: s.config.BrigadeID,
 					myk8s.LabelComponent: myk8s.LabelKeyProjectSecrets,
 					myk8s.LabelProject:   project.ID,
 				},
@@ -444,6 +452,7 @@ func (s *substrate) ScheduleWorker(
 			ObjectMeta: metav1.ObjectMeta{
 				Name: myk8s.EventSecretName(event.ID),
 				Labels: map[string]string{
+					myk8s.LabelBrigadeID: s.config.BrigadeID,
 					myk8s.LabelComponent: myk8s.LabelKeyEvent,
 					myk8s.LabelProject:   event.ProjectID,
 					myk8s.LabelEvent:     event.ID,
@@ -607,8 +616,9 @@ func (s *substrate) DeleteJob(
 ) error {
 	labelSelector := labels.Set(
 		map[string]string{
-			myk8s.LabelEvent: event.ID,
-			myk8s.LabelJob:   jobName,
+			myk8s.LabelBrigadeID: s.config.BrigadeID,
+			myk8s.LabelEvent:     event.ID,
+			myk8s.LabelJob:       jobName,
 		},
 	).AsSelector().String()
 
@@ -660,7 +670,8 @@ func (s *substrate) DeleteWorkerAndJobs(
 ) error {
 	labelSelector := labels.Set(
 		map[string]string{
-			myk8s.LabelEvent: event.ID,
+			myk8s.LabelBrigadeID: s.config.BrigadeID,
+			myk8s.LabelEvent:     event.ID,
 		},
 	).AsSelector().String()
 
@@ -792,6 +803,7 @@ func (s *substrate) createWorkspacePVC(
 			Name:      myk8s.WorkspacePVCName(event.ID),
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
+				myk8s.LabelBrigadeID: s.config.BrigadeID,
 				myk8s.LabelComponent: "workspace",
 				myk8s.LabelProject:   event.ProjectID,
 				myk8s.LabelEvent:     event.ID,
@@ -948,6 +960,7 @@ func (s *substrate) createWorkerPod(
 				myk8s.AnnotationTimeoutDuration: event.Worker.Spec.TimeoutDuration,
 			},
 			Labels: map[string]string{
+				myk8s.LabelBrigadeID: s.config.BrigadeID,
 				myk8s.LabelComponent: myk8s.LabelKeyWorker,
 				myk8s.LabelProject:   event.ProjectID,
 				myk8s.LabelEvent:     event.ID,
@@ -1002,6 +1015,7 @@ func (s *substrate) createJobSecret(
 			Name:      myk8s.JobSecretName(eventID, jobName),
 			Namespace: project.Kubernetes.Namespace,
 			Labels: map[string]string{
+				myk8s.LabelBrigadeID: s.config.BrigadeID,
 				myk8s.LabelComponent: myk8s.LabelKeyJob,
 				myk8s.LabelProject:   project.ID,
 				myk8s.LabelEvent:     eventID,
@@ -1184,6 +1198,7 @@ func (s *substrate) createJobPod(
 				myk8s.AnnotationTimeoutDuration: fmt.Sprint(jobSpec.TimeoutDuration),
 			},
 			Labels: map[string]string{
+				myk8s.LabelBrigadeID: s.config.BrigadeID,
 				myk8s.LabelComponent: myk8s.LabelKeyJob,
 				myk8s.LabelProject:   event.ProjectID,
 				myk8s.LabelEvent:     event.ID,

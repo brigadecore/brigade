@@ -32,6 +32,7 @@ func TestNewSubstrate(t *testing.T) {
 }
 
 func TestSubstrateCountRunningWorkers(t *testing.T) {
+	const testBrigadeID = "4077th"
 	const testNamespace = "foo"
 	kubeClient := fake.NewSimpleClientset()
 	podsClient := kubeClient.CoreV1().Pods(testNamespace)
@@ -42,6 +43,7 @@ func TestSubstrateCountRunningWorkers(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name: "bar",
 				Labels: map[string]string{
+					myk8s.LabelBrigadeID: testBrigadeID,
 					myk8s.LabelComponent: myk8s.LabelKeyJob,
 				},
 			},
@@ -59,6 +61,7 @@ func TestSubstrateCountRunningWorkers(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name: "bat",
 				Labels: map[string]string{
+					myk8s.LabelBrigadeID: testBrigadeID,
 					myk8s.LabelComponent: myk8s.LabelKeyWorker,
 				},
 			},
@@ -70,6 +73,9 @@ func TestSubstrateCountRunningWorkers(t *testing.T) {
 	)
 	require.NoError(t, err)
 	s := &substrate{
+		config: SubstrateConfig{
+			BrigadeID: testBrigadeID,
+		},
 		kubeClient: kubeClient,
 	}
 	count, err := s.CountRunningWorkers(context.Background())
@@ -78,6 +84,7 @@ func TestSubstrateCountRunningWorkers(t *testing.T) {
 }
 
 func TestSubstrateCountRunningJobs(t *testing.T) {
+	const testBrigadeID = "4077th"
 	const testNamespace = "foo"
 	kubeClient := fake.NewSimpleClientset()
 	podsClient := kubeClient.CoreV1().Pods(testNamespace)
@@ -88,6 +95,7 @@ func TestSubstrateCountRunningJobs(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name: "bar",
 				Labels: map[string]string{
+					myk8s.LabelBrigadeID: testBrigadeID,
 					myk8s.LabelComponent: myk8s.LabelKeyWorker,
 				},
 			},
@@ -105,6 +113,7 @@ func TestSubstrateCountRunningJobs(t *testing.T) {
 			ObjectMeta: v1.ObjectMeta{
 				Name: "bat",
 				Labels: map[string]string{
+					myk8s.LabelBrigadeID: testBrigadeID,
 					myk8s.LabelComponent: myk8s.LabelKeyJob,
 				},
 			},
@@ -116,6 +125,9 @@ func TestSubstrateCountRunningJobs(t *testing.T) {
 	)
 	require.NoError(t, err)
 	s := &substrate{
+		config: SubstrateConfig{
+			BrigadeID: testBrigadeID,
+		},
 		kubeClient: kubeClient,
 	}
 	count, err := s.CountRunningJobs(context.Background())
