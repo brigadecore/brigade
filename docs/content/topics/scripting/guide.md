@@ -31,7 +31,7 @@ composed of the following things:
 - A [project] in which the script will run
 - (Optionally) A source code repository (e.g. git) that contains data our
   script may utilize
-- (Optionally) A [`brigade.json`] file that contains additional dependencies
+- (Optionally) A [`package.json`] file that contains additional dependencies
   that can be used in the script
 - (Optionally) Other configuration data, like [secrets]
 
@@ -54,7 +54,7 @@ Let's begin!
 
 [quickstart]: /topics/intro/quickstart
 [project]: /topics/project-developers/projects
-[`brigade.json`]: /topics/scripting/dependencies
+[`package.json`]: /topics/scripting/dependencies
 [secrets]: /topics/project-developers/secrets
 [project definition]: /topics/project-developers/projects#project-definition-files
 [example projects]: https://github.com/brigadecore/brigade/tree/v2/examples
