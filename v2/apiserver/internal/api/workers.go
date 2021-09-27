@@ -147,13 +147,13 @@ type WorkerSpec struct {
 	// LogLevel specifies the desired granularity of Worker log output.
 	LogLevel LogLevel `json:"logLevel,omitempty" bson:"logLevel,omitempty"`
 	// ConfigFilesDirectory specifies a directory within the Worker's workspace
-	// where any relevant configuration files (e.g. brigade.json, brigade.js,
+	// where any relevant configuration files (e.g. brigade.js, package.json,
 	// etc.) can be located.
 	ConfigFilesDirectory string `json:"configFilesDirectory,omitempty" bson:"configFilesDirectory,omitempty"` // nolint: lll
 	// DefaultConfigFiles is a map of configuration file names to configuration
 	// file content. This is useful for Workers that do not integrate with any
 	// source control system and would like to embed configuration (e.g.
-	// brigade.json) or scripts (e.g. brigade.js) directly within the WorkerSpec.
+	// package.json) or scripts (e.g. brigade.js) directly within the WorkerSpec.
 	DefaultConfigFiles map[string]string `json:"defaultConfigFiles,omitempty" bson:"defaultConfigFiles,omitempty"` // nolint: lll
 	// TimeoutDuration specifies the time duration that must elapse before a
 	// running Job should be considered to have timed out. This duration string
