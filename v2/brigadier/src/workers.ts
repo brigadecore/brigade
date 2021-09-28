@@ -12,7 +12,7 @@ export interface Worker {
   apiToken: string
   /**
    * The directory where the worker stores configuration files,
-   * including event handler code files such as brigade.js and brigade.json.
+   * including event handler code files such as brigade.js and package.json.
    */
   configFilesDirectory: string
   /**
