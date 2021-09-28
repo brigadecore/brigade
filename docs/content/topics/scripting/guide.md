@@ -127,13 +127,15 @@ There are a few things to note about this script:
 
 - It imports the `events` object from `@brigadecore/brigadier`. Almost all
   Brigade scripts do this.
-  (TODO: mention that this isn't strictly necessary?)
 - It declares a single event handler that says "on an 'exec' event, run this
   function".
 - We're not actually utilizing the `event` object in this script, but we will
   in a later example
-- (TODO: explain `events.process();`)
-- (TODO: explain return summary)
+- The event handler returns a string, which is the [event summary]. This is can
+  be utilized by gateways interested in the results or other context related
+  to the handling of the event.
+- All scripts must call `events.process()` in order to start up the node
+  process that the script will run in.
 
 Similarly to our first script, this event handler function displays a message
 to a log, producing the following output:
@@ -185,6 +187,7 @@ by `brig`, i.e. an event from source `brigade.sh/cli` and of type `exec`.
 See the [Events] doc for more info on how events are structured in Brigade.
 
 [Events]: /topics/project-developers/events
+[event summary]: /topics/project-developers/events#summary
 
 ## Jobs and Containers
 
