@@ -104,7 +104,7 @@ events.on("exec", () => {
 
 When the `exec` event is triggered, Brigade will create a Build based on this brigade.js file. This Build will create a single job that will start an image based on `alpine:3.8` which will simply do a couple of echoes. The Kubernetes Pod that will be created to run this Build job will have a name starting with 'do-nothing'. As you can probably guess, a new Kubernetes Secret will also be created to store information about this Build.
 
-Moreover, you can check out [this tutorial](https://docs.brigade.sh/intro/) for more on creating scripts.
+Moreover, you can check out [our scripting guide](https://docs.brigade.sh/topics/scripting/) for more on creating scripts.
 
 ### Running a Build
 

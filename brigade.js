@@ -43,7 +43,21 @@ function jsTest() {
   };
   job.tasks = [
     "cd /src",
-    "make test-js yarn-audit"
+    "make test-js"
+  ];
+  return job;
+}
+
+function yarnAudit() {
+  // Create a new job to run yarn audit
+  var job = new Job("yarn-audit", jsImg);
+  // Set a few environment variables.
+  job.env = {
+    "SKIP_DOCKER": "true"
+  };
+  job.tasks = [
+    "cd /src",
+    "make yarn-audit"
   ];
   return job;
 }
@@ -94,6 +108,7 @@ function runSuite(e, p) {
   return Promise.all([
     runTests(e, p, goTest).catch((err) => { return err }),
     runTests(e, p, jsTest).catch((err) => { return err }),
+    runTests(e, p, yarnAudit).catch((err) => { return err }),
     runTests(e, p, e2e).catch((err) => { return err }),
   ])
     .then((values) => {
@@ -126,6 +141,8 @@ function runCheck(e, p) {
       return runTests(e, p, goTest);
     case "test-javascript":
       return runTests(e, p, jsTest);
+    case "yarn-audit":
+      return runTests(e, p, yarnAudit);
     case "test-e2e":
       return runTests(e, p, e2e);
     default:
@@ -179,6 +196,7 @@ events.on("exec", (e, p) => {
   return Group.runAll([
     goTest(),
     jsTest(),
+    yarnAudit(),
     e2e()
   ]);
 });
@@ -192,6 +210,7 @@ events.on("push", (e, p) => {
     return Group.runAll([
       goTest(),
       jsTest(),
+      yarnAudit(),
       e2e()
     ])
     .then(() => {
