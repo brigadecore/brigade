@@ -17,14 +17,15 @@ import (
 )
 
 func (o *observer) syncJobPods(ctx context.Context) {
+	jobsSelector := myk8s.JobPodsSelector(o.config.brigadeID)
 	jobPodsInformer := cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				options.LabelSelector = myk8s.JobPodsSelector()
+				options.LabelSelector = jobsSelector
 				return o.kubeClient.CoreV1().Pods("").List(ctx, options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				options.LabelSelector = myk8s.JobPodsSelector()
+				options.LabelSelector = jobsSelector
 				return o.kubeClient.CoreV1().Pods("").Watch(ctx, options)
 			},
 		},

@@ -27,6 +27,8 @@ spec:
         args:
         - --logtostderr=true
         env:
+        - name: BRIGADE_ID
+          value: {{ .Release.Namespace }}.{{ .Release.Name }}
         - name: API_ADDRESS
           {{- if .Values.apiserver.tls.enabled }}
           value: https://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local

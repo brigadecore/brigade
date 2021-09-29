@@ -18,9 +18,6 @@ claims. For that reason, it is prudent to configure security.
 - *Isolate Brigade in a namespace*: It is best to run Brigade in its own
   namespace. For example, when installing Brigade via its [Helm chart], do
   `helm install --namespace brigade ...`.
-- *RBAC Enabled*: Role-based access control is enabled by default. While it is
-  possible to disable via a corresponding chart value, we won't vouch for the
-  security of anything Brigade-related in a non-RBAC-enabled cluster.
 - *Multiple tenants in Brigade*: Brigade supports multiple projects per Brigade
   server instance, but it must be mentioned that users within Brigade can
   usually see (read) all projects on that instance, though they might not
@@ -49,17 +46,26 @@ For more details on deploying Brigade securely, see the [Deployment] doc.
 
 ## How RBAC Is Configured
 
-The [Helm chart] for Brigade includes all RBAC configuration necessary to run
-properly. The RBAC resources include a service account for every Brigade core
-deployment (API, Observer, Scheduler, etc.), as well as a service accounts for
-each project: one for the Brigade worker and another for the jobs. This allows
-competent Kubernetes users with adequate permissions to modify the service
-account(s) for a given project to permit things that cannot be done otherwise--
-such as scripting Kubernetes itself.
+Brigade requires and assumes that the underlying Kubernetes cluster is
+RBAC-enabled. Without RBAC, the risk that user-defined workloads may
+accidentally or maliciously manipulate the Kubernetes cluster itself is high, so
+such a configuration is strictly not supported.
 
-Each aforementioned deployment also has a Role, which describes the permissions
-that the particular service needs. The resulting Role Binding resources, then,
-are a one-to-one match between the Service Account and the Role.
+The [Helm chart] for Brigade creates numerous RBAC-related resources that are
+necessary for Brigade to function properly. These include `ServiceAccount`s and
+applicable `ClusterRoleBinding`s for each of Brigade's components (API Server,
+Observer, Scheduler, etc.) By default, the `ClusterRole`s referenced by those
+`ClusterRoleBinding`s are also created. If more than one instance of Brigade is
+being installed in a given cluster, only the first to be installed must include
+these `ClusterRole`s. For the installation of subsequent Brigade instances in
+the same cluster, creation of those `ClusterRole`s can be disabled if their
+pre-existence proves problematic. To disable the creation of `ClusterRole`s, set
+`rbac.installGlobalResources` to `false` at the time of installation. Disabling
+this does _not_ disable RBAC, but merely indicates the pre-existence of
+cluster-scoped resources.
+
+Brigade itself manages `ServiceAccount`s and other RBAC-related resources for
+each Brigade project in each project's own namespace.
 
 ## Project Security
 

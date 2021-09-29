@@ -9,6 +9,7 @@ import (
 const (
 	AnnotationTimeoutDuration = "brigade.sh/timeoutDuration"
 
+	LabelBrigadeID = "brigade.sh/id"
 	LabelComponent = "brigade.sh/component"
 	LabelEvent     = "brigade.sh/event"
 	LabelJob       = "brigade.sh/job"
@@ -37,9 +38,10 @@ func WorkerPodName(eventID string) string {
 	return eventID
 }
 
-func WorkerPodsSelector() string {
+func WorkerPodsSelector(brigadeID string) string {
 	return labels.Set(
 		map[string]string{
+			LabelBrigadeID: brigadeID,
 			LabelComponent: LabelKeyWorker,
 		},
 	).AsSelector().String()
@@ -53,9 +55,10 @@ func JobPodName(eventID, jobName string) string {
 	return fmt.Sprintf("%s-%s", eventID, jobName)
 }
 
-func JobPodsSelector() string {
+func JobPodsSelector(brigadeID string) string {
 	return labels.Set(
 		map[string]string{
+			LabelBrigadeID: brigadeID,
 			LabelComponent: LabelKeyJob,
 		},
 	).AsSelector().String()
