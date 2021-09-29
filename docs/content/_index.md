@@ -38,13 +38,3 @@ For maintainers of this project, steps on cutting a new release of Brigade can b
 ### Articles and Videos
 
 Coming soon!
-
-### Technical
-
-Brigade-related projects and tools.
-
-- [Brigadier](https://github.com/brigadecore/brigade/tree/v2/v2/brigadier): The JavaScript/TypeScript library for your Brigade scripts
-- [Brigade Metrics](https://github.com/brigadecore/brigade-metrics): Collect and visualize metrics for Brigade
-
-If you'd like to add links to this list, open a pull request on
-[Brigade's GitHub project](https://github.com/brigadecore/brigade)
