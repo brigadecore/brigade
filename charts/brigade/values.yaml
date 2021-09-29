@@ -3,7 +3,11 @@
 ## Declare variables to be passed into your templates.
 
 rbac:
-  enabled: true
+  ## Indicates whether relevant cluster-scoped roles should be installed/updated
+  ## by this chart. Set to false if this is NOT the first install of brigade in
+  ## a given cluster, otherwise this chart will attempt to create resources that
+  ## already exist.
+  installGlobalResources: true
 
 ## All settings for the API server
 apiserver:
