@@ -14,6 +14,7 @@ import (
 )
 
 func TestGetObserverConfig(t *testing.T) {
+	const testBrigadeID = "4077th"
 	// Note that unit testing in Go does NOT clear environment variables between
 	// tests, which can sometimes be a pain, but it's fine here-- so each of these
 	// test cases builds on the previous case.
@@ -23,16 +24,18 @@ func TestGetObserverConfig(t *testing.T) {
 		assertions func(observerConfig, error)
 	}{
 		{
-			name:  "success with defaults",
+			name:  "BRIGADE_ID not set",
 			setup: func() {},
-			assertions: func(config observerConfig, err error) {
-				require.Equal(t, 30*time.Second, config.healthcheckInterval)
-				require.Equal(t, time.Minute, config.delayBeforeCleanup)
+			assertions: func(_ observerConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "BRIGADE_ID")
 			},
 		},
 		{
 			name: "DELAY_BEFORE_CLEANUP not parsable as duration",
 			setup: func() {
+				t.Setenv("BRIGADE_ID", testBrigadeID)
 				t.Setenv("DELAY_BEFORE_CLEANUP", "foo")
 			},
 			assertions: func(config observerConfig, err error) {
@@ -66,11 +69,12 @@ func TestGetObserverConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "success with overrides",
+			name: "success",
 			setup: func() {
 				t.Setenv("MAX_JOB_LIFETIME", "2m")
 			},
 			assertions: func(config observerConfig, err error) {
+				require.Equal(t, testBrigadeID, config.brigadeID)
 				require.Equal(t, 2*time.Minute, config.delayBeforeCleanup)
 			},
 		},

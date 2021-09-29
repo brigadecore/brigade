@@ -99,6 +99,10 @@ func writerFactoryConfig() (amqp.WriterFactoryConfig, error) {
 func substrateConfig() (kubernetes.SubstrateConfig, error) {
 	config := kubernetes.SubstrateConfig{}
 	var err error
+	config.BrigadeID, err = os.GetRequiredEnvVar("BRIGADE_ID")
+	if err != nil {
+		return config, err
+	}
 	config.APIAddress, err = os.GetRequiredEnvVar("API_ADDRESS")
 	if err != nil {
 		return config, err

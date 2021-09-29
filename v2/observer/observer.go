@@ -19,11 +19,15 @@ type observerConfig struct {
 	healthcheckInterval time.Duration
 	maxWorkerLifetime   time.Duration
 	maxJobLifetime      time.Duration
+	brigadeID           string
 }
 
 func getObserverConfig() (observerConfig, error) {
 	config := observerConfig{}
 	var err error
+	if config.brigadeID, err = os.GetRequiredEnvVar("BRIGADE_ID"); err != nil {
+		return config, err
+	}
 	config.healthcheckInterval = 30 * time.Second
 	if config.delayBeforeCleanup, err =
 		os.GetDurationFromEnvVar("DELAY_BEFORE_CLEANUP", time.Minute); err != nil {
