@@ -14,7 +14,7 @@ metadata:
   {{- end }}
 spec:
   {{- if and (.Values.apiserver.ingress.ingressClassName) ($networkingApiSupportsIngressClassName) }}
-  ingressClassName: {{ .Values.api.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.apiserver.ingress.ingressClassName }}
   {{- end }}
   rules:
   - host: {{ .Values.apiserver.host }}
