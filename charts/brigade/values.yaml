@@ -122,6 +122,9 @@ apiserver:
     ## documentation to customize the behavior of the ingress resource.
     annotations:
       # kubernetes.io/ingress.class: nginx
+    ## From Kubernetes 1.18+ this field is supported in case your ingress controller supports it.
+    ## When set, you do not need to add the ingress class as annotation.
+    ingressClassName:
     tls:
       ## Whether to enable TLS. If true then you MUST do ONE of three things to
       ## ensure the existence of a TLS certificate:

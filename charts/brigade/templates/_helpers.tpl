@@ -121,3 +121,22 @@ app.kubernetes.io/os: windows
 {{- $template := index . 2 }}
 {{- include $template (dict "Chart" (dict "Name" $subchart) "Values" (index $dot.Values $subchart) "Release" $dot.Release "Capabilities" $dot.Capabilities) }}
 {{- end }}
+
+{{/*
+Return the appropriate apiVersion for a networking object.
+*/}}
+{{- define "networking.apiVersion" -}}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- print "networking.k8s.io/v1" -}}
+{{- else -}}
+{{- print "networking.k8s.io/v1beta1" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "networking.apiVersion.isStable" -}}
+  {{- eq (include "networking.apiVersion" .) "networking.k8s.io/v1" -}}
+{{- end -}}
+
+{{- define "networking.apiVersion.supportIngressClassName" -}}
+  {{- semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- end -}}
