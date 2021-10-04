@@ -1,6 +1,6 @@
 ---
 title: Advanced Scripting Guide
-description: 'This guide provides some tips and ideas for advanced scripting.'
+description: This guide provides some tips and ideas for advanced scripting
 section: scripting
 weight: 3
 aliases:
@@ -11,24 +11,34 @@ aliases:
 
 # Advanced Scripting Guide
 
-This guide provides some tips and ideas for advanced scripting. It assumes that
-you are familiar with [the scripting guide](scripting.md) and the 
-[JavaScript API](javascript.md).
+This guide provides some tips and ideas for advanced scripting. It assumes
+familiarity with [the scripting guide] and the [Brigadier API].
 
-## Using `async` and `await` to run Jobs
+[the scripting guide]: /topics/scripting/guide
+[Brigadier API]: /topics/scripting/brigadier
 
-Recent versions of JavaScript added a new way of declaring asynchronous methods, and then calling them. This way is compatible with promises. Brigade supports the new `async` and `await` decorators.
+## Promises and the `async` and `await` decorators
 
-Here's a simple [Promise chain](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) that calls two jobs:
+Brigade supports the various methods provided by the JavaScript language for
+controlling the flow of asynchronous execution. This includes chaining together
+promises as well as utilization of the `async` and `await` decorators.
+
+Here is an example that uses a [Promise chain] to organize the execution of two
+jobs:
 
 ```javascript
-const { events, Job } = require("brigadier");
+const { events, Job } = require("@brigadecore/brigadier");
 
-events.on("exec", exec);
+events.on("brigade.sh/cli", "exec", exec);
 
-function exec(e, p) {
-    let j1 = new Job("j1", "alpine:3.7", ["echo hello"]);
-    let j2 = new Job("j2", "alpine:3.7", ["echo goodbye"]);
+function exec(event) {
+    let j1 = new Job("j1", "alpine:3.14", event);
+    j1.primaryContainer.command = ["echo"];
+    j1.primaryContainer.arguments = ["hello " + event.payload];
+
+    let j2 = new Job("j2", "alpine:3.14", event);
+    j2.primaryContainer.command = ["echo"];
+    j2.primaryContainer.arguments = ["goodbye " + event.payload];
 
     j1.run()
     .then(() => {
@@ -37,45 +47,86 @@ function exec(e, p) {
     .then(() => {
         console.log("done");
     });
-};
+}
+
+events.process();
 ```
-[advanced-01.js](../../examples/advanced-01.js)
 
-In the example above, we use implicit JavaScript `Promise` objects for chaining two jobs, then printing `done` after the two jobs are run. Each `Job.run()` call returns a `Promise`, and we call that `Promise`'s `then()` method.
+In the example above, we use implicit JavaScript `Promise` objects for chaining
+two jobs, then printing `done` after the two jobs are run. Each `Job.run()`
+call returns a `Promise`, and we call that `Promise`'s `then()` method.
 
-We can rewrite this to use `await` and get the same result:
+Here's what it looks like when the script is run:
+
+```console
+$ brig event create --project promises --payload world --follow
+
+Created event "882f832a-c156-4afc-9936-00d3b2d61083".
+
+Waiting for event's worker to be RUNNING...
+2021-10-04T22:33:22.078Z INFO: brigade-worker version: 5c94a15-dirty
+2021-10-04T22:33:22.502Z [job: j1] INFO: Creating job j1
+2021-10-04T22:33:25.052Z [job: j2] INFO: Creating job j2
+done
+
+$ brig event logs --id 882f832a-c156-4afc-9936-00d3b2d61083 --job j1
+
+hello world
+
+$ brig event logs --id 882f832a-c156-4afc-9936-00d3b2d61083 --job j2
+
+goodbye world
+```
+
+We can rewrite the example to use [await] and get the same result:
 
 ```javascript
-const { events, Job } = require("brigadier");
+const { events, Job } = require("@brigadecore/brigadier");
 
-events.on("exec", exec);
+events.on("brigade.sh/cli", "exec", exec);
 
-async function exec(e, p) {
-    let j1 = new Job("j1", "alpine:3.7", ["echo hello"]);
-    let j2 = new Job("j2", "alpine:3.7", ["echo goodbye"]);
+async function exec(event) {
+    let j1 = new Job("j1", "alpine:3.14", event);
+    j1.primaryContainer.command = ["echo"];
+    j1.primaryContainer.arguments = ["hello " + event.payload];
+
+    let j2 = new Job("j2", "alpine:3.14", event);
+    j2.primaryContainer.command = ["echo"];
+    j2.primaryContainer.arguments = ["goodbye " + event.payload];
 
     await j1.run();
     await j2.run();
     console.log("done");
 }
+
+events.process();
 ```
-[advanced-02.js](../../examples/advanced-02.js)
 
-The first thing to note about this example is that we are annotating our `exec()` function with the `async` prefix. This tells the JavaScript runtime that the function is an asynchronous handler.
+The first thing to note about this example is that we are annotating our
+`exec()` function with the `async` prefix. This tells the JavaScript runtime
+that the function is an asynchronous handler.
 
-The two `await` statements will cause the job runs to [run synchronously](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await). The first job will run to completion, then the second job will run to completion. Then the `console.log` function will execute.
+The two `await` statements will cause the jobs to [run synchronously][await].
+The first job will run to completion, then the second job will run to
+completion. Then the `console.log` function will execute.
 
-Note that when errors occur, they are thrown as exceptions. To handle this case, use `try`/`catch` blocks:
+Note that when errors occur, they are thrown as exceptions. To handle this
+case, use `try`/`catch` blocks:
 
 ```javascript
-const { events, Job } = require("brigadier");
+const { events, Job } = require("@brigadecore/brigadier");
 
-events.on("exec", exec);
+events.on("brigade.sh/cli", "exec", exec);
 
-async function exec(e, p) {
-    let j1 = new Job("j1", "alpine:3.7", ["echo hello"]);
-    // This will fail
-    let j2 = new Job("j2", "alpine:3.7", ["exit 1"]);
+async function exec(event) {
+    let j1 = new Job("j1", "alpine:3.14", event);
+    j1.primaryContainer.command = ["echo"];
+    j1.primaryContainer.arguments = ["hello " + event.payload];
+
+    // j2 is configured to fail
+    let j2 = new Job("j2", "alpine:3.14", event);
+    j2.primaryContainer.command = ["exit"];
+    j2.primaryContainer.arguments = ["1"];
 
     try {
         await j1.run();
@@ -83,142 +134,120 @@ async function exec(e, p) {
         console.log("done");
     } catch (e) {
         console.log(`Caught Exception ${e}`);
-    } 
-};
-```
-[advanced-03.js](../../examples/advanced-03.js)
+    }
+}
 
-In the example above, the second job (`j2`) will execute `exit 1`, which will cause the container to exit with an error. When `await j2.run()` is executed, it will throw an exception because `j2` exited with an error. In our `catch` block, we print the error message that we receive.
+events.process();
+```
+
+In the example above, the second job (`j2`) will execute `exit 1`, which will
+cause the container to exit with an error. When `await j2.run()` is executed,
+it will throw an exception because `j2` exited with an error. In our `catch`
+block, we print the error message that we receive.
 
 If we run this, we'll see something like this:
 
 ```console
-$ brig run -f advanced-03.js brigadecore/empty-testbed
-Event created. Waiting for worker pod named "brigade-worker-01ckcc06200kqdvkdp3nc65bap".
-Build: 01ckcc06200kqdvkdp3nc65bap, Worker: brigade-worker-01ckcc06200kqdvkdp3nc65bap
-prestart: no dependencies file found
-prestart: src/brigade.js written
-[brigade] brigade-worker version: 0.15.0
-[brigade:k8s] Creating PVC named brigade-worker-01ckcc06200kqdvkdp3nc65bap
-// Omitted status messages
-[brigade:k8s] brigade/j2-01ckcc06200kqdvkdp3nc65bap phase Failed
-  Error: Pod j2-01ckcc06200kqdvkdp3nc65bap failed to run to completion
+$ brig event create --project await --payload world --follow
 
-  - k8s.js:417 k.readNamespacedPod.then.response
-    ./dist/k8s.js:417:32
+Created event "69b5713f-b612-434f-9b52-9bcd57f044c5".
 
-
-Caught Exception Error: job j2(j2-01ckcc06200kqdvkdp3nc65bap): Error: Pod j2-01ckcc06200kqdvkdp3nc65bap failed to run to completion
-
-[brigade:app] after: default event handler fired
-[brigade:app] beforeExit(2): destroying storage
-[brigade:k8s] Destroying PVC named brigade-worker-01ckcc06200kqdvkdp3nc65bap
+Waiting for event's worker to be RUNNING...
+2021-10-04T22:45:45.808Z INFO: brigade-worker version: 5c94a15-dirty
+2021-10-04T22:45:46.235Z [job: j1] INFO: Creating job j1
+2021-10-04T22:45:48.826Z [job: j2] INFO: Creating job j2
+Caught Exception Error: Job "j2" failed
 ```
 
 The line `Caught Exception...` shows the error that we received.
 
-Some people feel that using `async`/`await` makes code more readable. Others prefer the `Promise` notation. Brigade will support either. The pattern above can be used with `Group` and other `Promise`-aware Brigade objects as well.
+Some people feel that using `async`/`await` makes code more readable. Others
+prefer the `Promise` notation. Brigade will support either. The pattern above
+can also be used with `Job.concurrent()` and `Job.sequence()`, as their `run()`
+methods return `Promise` objects as well.
+
+[Promise chain]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
+[await]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await
 
 ## Using Object-oriented JavaScript to Extend `Job`
 
-JavaScript supports class-based object oriented programming. And Brigade, written in TypeScript, provides some useful ways of working with the `Job` class. The `Job` class can be extended to either preconfigure similar jobs or to add extra functionality to a job.
+JavaScript supports class-based, object-oriented programming. And Brigade,
+written in TypeScript, provides some useful ways of working with the `Job`
+class. The `Job` class can be extended to either preconfigure similar jobs or
+to add extra functionality to a job.
 
-The following example creates a `MyJob` class that extends `Job` and provides some predefined
-fields:
+The following example creates a `MyJob` class that extends `Job` and provides
+some predefined fields:
 
 ```javascript
-const {events, Job, Group} = require("brigadier");
+const { events, Job } = require("@brigadecore/brigadier");
 
 class MyJob extends Job {
-  constructor(name) {
-    super(name, "alpine:3.7");
-    this.tasks = [
-      "echo hello",
-      "echo world"
-    ];
+  constructor(name, event) {
+    super(name, "alpine:3.14", event);
+    this.primaryContainer.command = ["echo"];
+    this.primaryContainer.arguments = ["hello " + event.payload];
   }
 }
 
-events.on("exec", (e, p) => {
-  const j1 = new MyJob("j1")
-  const j2 = new MyJob("j2")
+events.on("brigade.sh/cli", "exec", async event => {
+  const j1 = new MyJob("j1", event);
+  const j2 = new MyJob("j2", event);
 
-  Group.runEach([j1, j2])
+  await Job.sequence(j1, j2).run();
 });
+
+events.process();
 ```
-[advanced-04.js](../../examples/advanced-04.js)
 
-In the example above, both `j1` and `j2` will have the same image and the same tasks. They inherited these predefined settings from the `MyJob` class. Using inheritence in this way can reduce boilerplate code.
+In the example above, both `j1` and `j2` will have the same image and the same
+command. They inherited these predefined settings from the `MyJob` class. Using
+inheritence in this way can reduce boilerplate code.
 
-The fields can be selectively overwritten, as well. So we could, for example, add another task to the first job without impacting the second job:
+The fields can be selectively overwritten, as well. We could, for example,
+override the command arguments for the second job without affecting the first:
 
 ```javascript
-const {events, Job, Group} = require("brigadier");
+const { events, Job } = require("@brigadecore/brigadier");
 
 class MyJob extends Job {
-  constructor(name) {
-    super(name, "alpine:3.7");
-    this.tasks = [
-      "echo hello",
-      "echo world"
-    ];
+  constructor(name, event) {
+    super(name, "alpine:3.14", event);
+    this.primaryContainer.command = ["echo"];
+    this.primaryContainer.arguments = ["hello " + event.payload];
   }
 }
 
-events.on("exec", (e, p) => {
-  const j1 = new MyJob("j1")
-  j1.tasks.push("echo goodbye");
-  
-  const j2 = new MyJob("j2")
+events.on("brigade.sh/cli", "exec", async event => {
+  const j1 = new MyJob("j1", event);
+  const j2 = new MyJob("j2", event);
+  j2.primaryContainer.arguments = ["goodbye " + event.payload];
 
-  Group.runEach([j1, j2])
+  await Job.sequence(j1, j2).run();
 });
-```
-[advanced-05.js](../../examples/advanced-05.js)
 
+events.process();
+```
 
 If we were to look at the output of these two jobs, we'd see something like this:
 
 ```console
-$ brig build logs --last --jobs
-# ...
-==========[  j1-01ckccs3vs14qzjma4z1zyrjas  ]==========
-hello
-world
-goodbye
+$ brig event create --project jobs --payload world --follow
 
-==========[  j2-01ckccs3vs14qzjma4z1zyrjas  ]==========
-hello
-world
+Created event "c4906ec3-fec1-400f-8d8f-89fd6a379475".
+
+Waiting for event's worker to be RUNNING...
+2021-10-04T23:02:58.191Z INFO: brigade-worker version: 5c94a15-dirty
+2021-10-04T23:02:58.545Z [job: j1] INFO: Creating job j1
+2021-10-04T23:03:01.088Z [job: j2] INFO: Creating job j2
+
+$ brig event logs --id c4906ec3-fec1-400f-8d8f-89fd6a379475 --job j1
+
+hello world
+
+$ brig event logs --id c4906ec3-fec1-400f-8d8f-89fd6a379475 --job j2
+
+goodbye world
 ```
 
-Job `j1` has our extra command, while `j2` only inherited the defaults from `MyJob`.
-
-
-## Using Docker Within a Brigade Job
-
-It is possible to use Docker inside of a Brigade job. However, you will need to do some extra work. Because a Job must run in privileged mode to use the Docker socket, the method here presents a security risk and should not be allowed for untrusted brigade scripts.
-
-Before you can write scripts that use privileged mode, you will need to set the following permissions on your Brigade project:
-
-```yaml
-allowPrivilegedJobs: "true"
-```
-
-To use Docker-in-Docker inside of a job, you will need to do three things:
-
-- Select a container image for your job that can use Docker in Docker
-- Set the job to `privileged = true`
-- Run extra tasks to setup Docker-in-Docker (see the `dockerd-entrypoint.sh &` command below)
-
-```javascript
-  let dind = new Job("dind-run", "docker:dind");
-  dind.privileged = true; // allowPrivilegedJobs must be set to true for this to work
-  dind.tasks = [
-      "dockerd-entrypoint.sh &", // <-- this sets up the Docker in Docker daemon
-      "sleep 20", // Wait for the dockerd to start
-      "echo ready to do docker builds and things."
-  ];
-```
-
-Normally, you would create your own Docker image that used `FROM docker:dind` and then added your own code, but the above shows you the main steps necessary.
+Job `j2` has the different command, while `j1` inherited the defaults from `MyJob`.
