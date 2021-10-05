@@ -144,9 +144,14 @@ type Substrate interface {
 
 	// ScheduleWorker prepares the substrate for the Event's worker and schedules
 	// the Worker for async / eventual execution.
-	ScheduleWorker(context.Context, Project, Event) error
+	ScheduleWorker(context.Context, Event) error
 	// StartWorker starts an Event's Worker on the substrate.
-	StartWorker(context.Context, Project, Event) error
+	StartWorker(
+		ctx context.Context,
+		project Project,
+		event Event,
+		token string,
+	) error
 
 	// StoreJobEnvironment securely stores Job environment variables where they
 	// are accessible to other substrate operations. This obviates the need to

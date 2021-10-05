@@ -358,16 +358,47 @@ func (s *substrate) DeleteProject(
 	return nil
 }
 
-func (s *substrate) ScheduleWorker(
+func (s *substrate) ScheduleWorker(ctx context.Context, event api.Event) error {
+	queueWriter, err := s.queueWriterFactory.NewWriter(
+		fmt.Sprintf("workers.%s", event.ProjectID),
+	)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error creating queue writer for project %q workers",
+			event.ProjectID,
+		)
+	}
+	defer func() {
+		closeCtx, cancelCloseCtx :=
+			context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelCloseCtx()
+		queueWriter.Close(closeCtx)
+	}()
+
+	if err := queueWriter.Write(
+		ctx,
+		event.ID,
+		&queue.MessageOptions{
+			Durable: true,
+		},
+	); err != nil {
+		return errors.Wrapf(
+			err,
+			"error submitting execution task for event %q worker",
+			event.ID,
+		)
+	}
+
+	return nil
+}
+
+func (s *substrate) StartWorker(
 	ctx context.Context,
 	project api.Project,
 	event api.Event,
+	token string,
 ) error {
-	// Create a Kubernetes secret containing relevant Event and Project details.
-	// This is created PRIOR to scheduling so that these details will reflect an
-	// accurate snapshot of Project configuration at the time the Event was
-	// created.
-
 	projectSecretsSecret, err := s.kubeClient.CoreV1().Secrets(
 		project.Kubernetes.Namespace,
 	).Get(ctx, "project-secrets", metav1.GetOptions{})
@@ -427,7 +458,7 @@ func (s *substrate) ScheduleWorker(
 			Payload:    event.Payload,
 			Worker: worker{
 				APIAddress:           s.config.APIAddress,
-				APIToken:             event.Worker.Token,
+				APIToken:             token,
 				LogLevel:             event.Worker.Spec.LogLevel,
 				ConfigFilesDirectory: event.Worker.Spec.ConfigFilesDirectory,
 				DefaultConfigFiles:   event.Worker.Spec.DefaultConfigFiles,
@@ -471,45 +502,6 @@ func (s *substrate) ScheduleWorker(
 		)
 	}
 
-	queueWriter, err := s.queueWriterFactory.NewWriter(
-		fmt.Sprintf("workers.%s", event.ProjectID),
-	)
-	if err != nil {
-		return errors.Wrapf(
-			err,
-			"error creating queue writer for project %q workers",
-			event.ProjectID,
-		)
-	}
-	defer func() {
-		closeCtx, cancelCloseCtx :=
-			context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancelCloseCtx()
-		queueWriter.Close(closeCtx)
-	}()
-
-	if err := queueWriter.Write(
-		ctx,
-		event.ID,
-		&queue.MessageOptions{
-			Durable: true,
-		},
-	); err != nil {
-		return errors.Wrapf(
-			err,
-			"error submitting execution task for event %q worker",
-			event.ID,
-		)
-	}
-
-	return nil
-}
-
-func (s *substrate) StartWorker(
-	ctx context.Context,
-	project api.Project,
-	event api.Event,
-) error {
 	if event.Worker.Spec.UseWorkspace {
 		if err := s.createWorkspacePVCFn(ctx, project, event); err != nil {
 			return errors.Wrapf(

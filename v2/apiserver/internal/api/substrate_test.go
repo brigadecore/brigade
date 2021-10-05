@@ -175,8 +175,8 @@ type mockSubstrate struct {
 		project Project,
 	) (Project, error)
 	DeleteProjectFn       func(context.Context, Project) error
-	ScheduleWorkerFn      func(context.Context, Project, Event) error
-	StartWorkerFn         func(context.Context, Project, Event) error
+	ScheduleWorkerFn      func(context.Context, Event) error
+	StartWorkerFn         func(context.Context, Project, Event, string) error
 	StoreJobEnvironmentFn func(
 		ctx context.Context,
 		project Project,
@@ -233,18 +233,18 @@ func (m *mockSubstrate) DeleteProject(
 
 func (m *mockSubstrate) ScheduleWorker(
 	ctx context.Context,
-	project Project,
 	event Event,
 ) error {
-	return m.ScheduleWorkerFn(ctx, project, event)
+	return m.ScheduleWorkerFn(ctx, event)
 }
 
 func (m *mockSubstrate) StartWorker(
 	ctx context.Context,
 	project Project,
 	event Event,
+	token string,
 ) error {
-	return m.StartWorkerFn(ctx, project, event)
+	return m.StartWorkerFn(ctx, project, event, token)
 }
 
 func (m *mockSubstrate) StoreJobEnvironment(
