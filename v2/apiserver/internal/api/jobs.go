@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
@@ -127,7 +128,14 @@ type JobSpec struct {
 }
 
 func (js JobSpec) EqualTo(js2 JobSpec) bool {
-	// Compare SidecarContainers maps
+	// Compare PrimaryContainers; if equivalent, nil out
+	if !js.PrimaryContainer.EqualTo(js2.PrimaryContainer) {
+		return false
+	}
+	js.PrimaryContainer, js2.PrimaryContainer =
+		JobContainerSpec{}, JobContainerSpec{}
+
+	// Compare SidecarContainers maps; if equivalent, nil out
 	if len(js.SidecarContainers) != len(js2.SidecarContainers) {
 		return false
 	}
@@ -136,18 +144,18 @@ func (js JobSpec) EqualTo(js2 JobSpec) bool {
 			return false
 		}
 	}
-	// Need to check if Host values are nil
+	js.SidecarContainers, js2.SidecarContainers = nil, nil
+
+	// Compare Host; if equivalent, nil out
 	if js.Host == nil || js2.Host == nil {
 		if js.Host == nil && js2.Host == nil {
-			return js.PrimaryContainer.EqualTo(js2.PrimaryContainer) &&
-				js.TimeoutDuration == js2.TimeoutDuration
+			return reflect.DeepEqual(js, js2)
 		}
 		return false
 	}
-	// Return remaining field equivalence
-	return js.PrimaryContainer.EqualTo(js2.PrimaryContainer) &&
-		js.TimeoutDuration == js2.TimeoutDuration &&
-		js.Host.EqualTo(js2.Host)
+	js.Host, js2.Host = nil, nil
+
+	return reflect.DeepEqual(js, js2)
 }
 
 // JobContainerSpec amends the ContainerSpec type with additional Job-specific
@@ -184,12 +192,13 @@ type JobContainerSpec struct {
 }
 
 func (jcs JobContainerSpec) EqualTo(jcs2 JobContainerSpec) bool {
-	return jcs.ContainerSpec.EqualTo(jcs2.ContainerSpec) &&
-		jcs.WorkingDirectory == jcs2.WorkingDirectory &&
-		jcs.WorkspaceMountPath == jcs2.WorkspaceMountPath &&
-		jcs.SourceMountPath == jcs2.SourceMountPath &&
-		jcs.Privileged == jcs2.Privileged &&
-		jcs.UseHostDockerSocket == jcs2.UseHostDockerSocket
+	// Compare ContainerSpecs; if equivalent, nil out
+	if !jcs.ContainerSpec.EqualTo(jcs2.ContainerSpec) {
+		return false
+	}
+	jcs.ContainerSpec, jcs2.ContainerSpec = ContainerSpec{}, ContainerSpec{}
+
+	return reflect.DeepEqual(jcs, jcs2)
 }
 
 // JobHost represents criteria for selecting a suitable host (substrate node)
@@ -206,6 +215,7 @@ type JobHost struct {
 }
 
 func (jh *JobHost) EqualTo(jh2 *JobHost) bool {
+	// Compare NodeSelector maps; if equivalent, nil out
 	if len(jh.NodeSelector) != len(jh2.NodeSelector) {
 		return false
 	}
@@ -214,7 +224,9 @@ func (jh *JobHost) EqualTo(jh2 *JobHost) bool {
 			return false
 		}
 	}
-	return jh.OS == jh2.OS
+	jh.NodeSelector, jh2.NodeSelector = nil, nil
+
+	return reflect.DeepEqual(jh, jh2)
 }
 
 // JobStatus represents the status of a Job.

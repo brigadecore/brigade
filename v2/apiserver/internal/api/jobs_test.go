@@ -1561,20 +1561,21 @@ func TestJobsServiceTimeout(t *testing.T) {
 }
 
 func TestJobSpecEqualTo(t *testing.T) {
+	// Note: leaving fields that are maps or slices as empty is crucial for
+	// testing the behavior of comparison between a 'fresh' JobSpec and one that
+	// as roundtrip'd through bson marshaling. The latter seems to return with
+	// nil values instead, which throws other comparison methods off (like
+	// reflect.DeepEqual).
 	var testJobHost = JobHost{
-		OS: "brigOS",
-		NodeSelector: map[string]string{
-			"node": "js",
-		},
+		OS:           "brigOS",
+		NodeSelector: map[string]string{},
 	}
 	var testContainerSpec = ContainerSpec{
 		Image:           "imagine",
 		ImagePullPolicy: ImagePullPolicy("Always"),
-		Command:         []string{"echo"},
-		Arguments:       []string{"hola el mundo"},
-		Environment: map[string]string{
-			"partly": "cloudy",
-		},
+		Command:         []string{},
+		Arguments:       []string{},
+		Environment:     map[string]string{},
 	}
 	var testJobContainerSpec = JobContainerSpec{
 		ContainerSpec:       testContainerSpec,
@@ -1605,23 +1606,6 @@ func TestJobSpecEqualTo(t *testing.T) {
 					// No sidecar containers
 					TimeoutDuration: "1ms",
 					Host:            &testJobHost,
-				},
-				testJobSpec,
-			},
-			assertions: func(equal bool) {
-				require.False(t, equal)
-			},
-		},
-		{
-			name: "some fields nil; not equal",
-			specs: []JobSpec{
-				{
-					PrimaryContainer: testJobContainerSpec,
-					SidecarContainers: map[string]JobContainerSpec{
-						"sidecar": testJobContainerSpec,
-					},
-					TimeoutDuration: "1ms",
-					Host:            nil,
 				},
 				testJobSpec,
 			},

@@ -1,5 +1,7 @@
 package api
 
+import "reflect"
+
 // ImagePullPolicy represents a policy for whether container hosts already
 // having a certain OCI image should attempt to re-pull that image prior to
 // launching a new container based on that image.
@@ -25,7 +27,7 @@ type ContainerSpec struct {
 }
 
 func (cs ContainerSpec) EqualTo(cs2 ContainerSpec) bool {
-	// Compare Command slices
+	// Compare Command slices; if equivalent, nil out
 	if len(cs.Command) != len(cs2.Command) {
 		return false
 	}
@@ -34,8 +36,9 @@ func (cs ContainerSpec) EqualTo(cs2 ContainerSpec) bool {
 			return false
 		}
 	}
+	cs.Command, cs2.Command = nil, nil
 
-	// Compare Arguments slices
+	// Compare Arguments slices; if equivalent, nil out
 	if len(cs.Arguments) != len(cs2.Arguments) {
 		return false
 	}
@@ -44,8 +47,9 @@ func (cs ContainerSpec) EqualTo(cs2 ContainerSpec) bool {
 			return false
 		}
 	}
+	cs.Arguments, cs2.Arguments = nil, nil
 
-	// Compare Environment maps
+	// Compare Environment maps, if equivalent, nil out
 	if len(cs.Environment) != len(cs2.Environment) {
 		return false
 	}
@@ -54,8 +58,7 @@ func (cs ContainerSpec) EqualTo(cs2 ContainerSpec) bool {
 			return false
 		}
 	}
+	cs.Environment, cs2.Environment = nil, nil
 
-	// Return remaining field equivalence
-	return cs.Image == cs2.Image &&
-		cs.ImagePullPolicy == cs2.ImagePullPolicy
+	return reflect.DeepEqual(cs, cs2)
 }
