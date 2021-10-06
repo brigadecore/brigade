@@ -43,19 +43,6 @@ func TestLogsServiceStream(t *testing.T) {
 		assertions func(<-chan LogEntry, error)
 	}{
 		{
-			name: "invalid worker container name",
-			selector: LogsSelector{
-				Container: "foo",
-			},
-			service: &logsService{},
-			assertions: func(_ <-chan LogEntry, err error) {
-				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "WorkerContainer", err.(*meta.ErrNotFound).Type)
-				require.Equal(t, "foo", err.(*meta.ErrNotFound).ID)
-			},
-		},
-		{
 			name:     "error retrieving event from store",
 			selector: LogsSelector{},
 			service: &logsService{
@@ -85,6 +72,26 @@ func TestLogsServiceStream(t *testing.T) {
 			assertions: func(_ <-chan LogEntry, err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "invalid worker container name",
+			selector: LogsSelector{
+				Container: "foo",
+			},
+			service: &logsService{
+				projectAuthorize: alwaysProjectAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{}, nil
+					},
+				},
+			},
+			assertions: func(_ <-chan LogEntry, err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotFound{}, err)
+				require.Equal(t, "WorkerContainer", err.(*meta.ErrNotFound).Type)
+				require.Equal(t, "foo", err.(*meta.ErrNotFound).ID)
 			},
 		},
 		{
