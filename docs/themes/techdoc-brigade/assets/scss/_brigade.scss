@@ -235,7 +235,7 @@ main article.content-wrap {
 }
 
 .cookie-banner {
-  font-size: 0.75rem;
+  font-size: 0.925rem;
   text-align: center;
   color: white;
   padding: 0.75rem 0 0.5rem;
@@ -247,6 +247,11 @@ main article.content-wrap {
   right: 0;
   z-index: 800;
   line-height: 1;
+
+  a {
+    color: white;
+    font-weight: bold;
+  }
 }
 
 
