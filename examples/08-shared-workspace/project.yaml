@@ -10,7 +10,7 @@ spec:
     types:
     - exec
   workerTemplate:
-    logLevel: DEBUG
+    # logLevel: DEBUG
     useWorkspace: true
     defaultConfigFiles:
       brigade.js: | 

@@ -73,7 +73,7 @@ worker:
 To enable shared Worker storage, set `useWorkspace` to `true` under the
 `workerTemplate` section on the [project configuration file][project file]
 (usually `project.yaml`) for a Project. For example, here is the relevant bit
-of configuration from the [10-shared-workspace example project]:
+of configuration from the [08-shared-workspace example project]:
 
 ```yaml
 spec:
@@ -113,7 +113,7 @@ events.process();
 ```
 
 [project file]: /topics/project-developers/projects#project-definition-files
-[10-shared-workspace example project]: https://github.com/brigadecore/brigade/blob/v2/examples/10-shared-workspace/project.yaml
+[08-shared-workspace example project]: https://github.com/brigadecore/brigade/blob/v2/examples/08-shared-workspace/project.yaml
 
 ## Artemis storage
 
