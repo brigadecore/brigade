@@ -15,7 +15,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -40,7 +39,7 @@ func TestSubstrateCountRunningWorkers(t *testing.T) {
 	_, err := podsClient.Create(
 		context.Background(),
 		&corev1.Pod{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "bar",
 				Labels: map[string]string{
 					myk8s.LabelBrigadeID: testBrigadeID,
@@ -51,14 +50,14 @@ func TestSubstrateCountRunningWorkers(t *testing.T) {
 				Phase: corev1.PodRunning,
 			},
 		},
-		v1.CreateOptions{},
+		metav1.CreateOptions{},
 	)
 	require.NoError(t, err)
 	// This pod has correct labels
 	_, err = podsClient.Create(
 		context.Background(),
 		&corev1.Pod{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "bat",
 				Labels: map[string]string{
 					myk8s.LabelBrigadeID: testBrigadeID,
@@ -69,7 +68,7 @@ func TestSubstrateCountRunningWorkers(t *testing.T) {
 				Phase: corev1.PodRunning,
 			},
 		},
-		v1.CreateOptions{},
+		metav1.CreateOptions{},
 	)
 	require.NoError(t, err)
 	s := &substrate{
@@ -92,7 +91,7 @@ func TestSubstrateCountRunningJobs(t *testing.T) {
 	_, err := podsClient.Create(
 		context.Background(),
 		&corev1.Pod{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "bar",
 				Labels: map[string]string{
 					myk8s.LabelBrigadeID: testBrigadeID,
@@ -103,14 +102,14 @@ func TestSubstrateCountRunningJobs(t *testing.T) {
 				Phase: corev1.PodRunning,
 			},
 		},
-		v1.CreateOptions{},
+		metav1.CreateOptions{},
 	)
 	require.NoError(t, err)
 	// This pod has correct labels
 	_, err = podsClient.Create(
 		context.Background(),
 		&corev1.Pod{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "bat",
 				Labels: map[string]string{
 					myk8s.LabelBrigadeID: testBrigadeID,
@@ -121,7 +120,7 @@ func TestSubstrateCountRunningJobs(t *testing.T) {
 				Phase: corev1.PodRunning,
 			},
 		},
-		v1.CreateOptions{},
+		metav1.CreateOptions{},
 	)
 	require.NoError(t, err)
 	s := &substrate{
@@ -385,14 +384,14 @@ func TestSubstrateCreateProject(t *testing.T) {
 				// Check that an RBAC Role was created for the Project's Workers
 				role, err := kubeClient.RbacV1().Roles(
 					project.Kubernetes.Namespace,
-				).Get(context.Background(), "workers", v1.GetOptions{})
+				).Get(context.Background(), "workers", metav1.GetOptions{})
 				require.NoError(t, err)
 				require.NotNil(t, role)
 
 				// Check that a ServiceAccount was created for the Project's Workers
 				servicAccount, err := kubeClient.CoreV1().ServiceAccounts(
 					project.Kubernetes.Namespace,
-				).Get(context.Background(), "workers", v1.GetOptions{})
+				).Get(context.Background(), "workers", metav1.GetOptions{})
 				require.NoError(t, err)
 				require.NotNil(t, servicAccount)
 
@@ -400,21 +399,21 @@ func TestSubstrateCreateProject(t *testing.T) {
 				// with the Workers' RBAC Role
 				roleBinding, err := kubeClient.RbacV1().RoleBindings(
 					project.Kubernetes.Namespace,
-				).Get(context.Background(), "workers", v1.GetOptions{})
+				).Get(context.Background(), "workers", metav1.GetOptions{})
 				require.NoError(t, err)
 				require.NotNil(t, roleBinding)
 
 				// Check that an RBAC Role was created for the Project's Jobs
 				role, err = kubeClient.RbacV1().Roles(
 					project.Kubernetes.Namespace,
-				).Get(context.Background(), "jobs", v1.GetOptions{})
+				).Get(context.Background(), "jobs", metav1.GetOptions{})
 				require.NoError(t, err)
 				require.NotNil(t, role)
 
 				// Check that a ServiceAccount was created for the Project's Jobs
 				servicAccount, err = kubeClient.CoreV1().ServiceAccounts(
 					project.Kubernetes.Namespace,
-				).Get(context.Background(), "jobs", v1.GetOptions{})
+				).Get(context.Background(), "jobs", metav1.GetOptions{})
 				require.NoError(t, err)
 				require.NotNil(t, servicAccount)
 
@@ -422,14 +421,14 @@ func TestSubstrateCreateProject(t *testing.T) {
 				// with the Jobs' RBAC Role
 				roleBinding, err = kubeClient.RbacV1().RoleBindings(
 					project.Kubernetes.Namespace,
-				).Get(context.Background(), "jobs", v1.GetOptions{})
+				).Get(context.Background(), "jobs", metav1.GetOptions{})
 				require.NoError(t, err)
 				require.NotNil(t, roleBinding)
 
 				// Check that a Secret was created to store the Project's Secrets
 				secrets, err := kubeClient.CoreV1().Secrets(
 					project.Kubernetes.Namespace,
-				).Get(context.Background(), "project-secrets", v1.GetOptions{})
+				).Get(context.Background(), "project-secrets", metav1.GetOptions{})
 				require.NoError(t, err)
 				require.NotNil(t, secrets)
 			},
@@ -494,7 +493,7 @@ func TestSubstrateDeleteProject(t *testing.T) {
 				_, err = kubeClient.CoreV1().Namespaces().Get(
 					context.Background(),
 					testNamespace,
-					v1.GetOptions{},
+					metav1.GetOptions{},
 				)
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "not found")
@@ -524,6 +523,101 @@ func TestSubstrateDeleteProject(t *testing.T) {
 }
 
 func TestSubstrateScheduleWorker(t *testing.T) {
+	const testEventID = "12345"
+	testCases := []struct {
+		name       string
+		substrate  api.Substrate
+		assertions func(error)
+	}{
+		{
+			name: "error creating queue writer",
+			substrate: &substrate{
+				queueWriterFactory: &mockQueueWriterFactory{
+					NewWriterFn: func(queueName string) (queue.Writer, error) {
+						return nil, errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error creating queue writer")
+			},
+		},
+
+		{
+			name: "error writing to queue",
+			substrate: &substrate{
+				queueWriterFactory: &mockQueueWriterFactory{
+					NewWriterFn: func(queueName string) (queue.Writer, error) {
+						return &mockQueueWriter{
+							WriteFn: func(
+								context.Context,
+								string,
+								*queue.MessageOptions,
+							) error {
+								return errors.New("something went wrong")
+							},
+							CloseFn: func(context.Context) error {
+								return nil
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(
+					t,
+					err.Error(),
+					"error submitting execution task for event",
+				)
+			},
+		},
+
+		{
+			name: "success",
+			substrate: &substrate{
+				queueWriterFactory: &mockQueueWriterFactory{
+					NewWriterFn: func(queueName string) (queue.Writer, error) {
+						return &mockQueueWriter{
+							WriteFn: func(
+								context.Context,
+								string,
+								*queue.MessageOptions,
+							) error {
+								return nil
+							},
+							CloseFn: func(context.Context) error {
+								return nil
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.substrate.ScheduleWorker(
+				context.Background(),
+				api.Event{
+					ObjectMeta: meta.ObjectMeta{
+						ID: testEventID,
+					},
+				},
+			)
+			testCase.assertions(err)
+		})
+	}
+}
+
+func TestSubstrateStartWorker(t *testing.T) {
 	const testNamespace = "foo"
 	const testEventID = "12345"
 	testCases := []struct {
@@ -555,11 +649,11 @@ func TestSubstrateScheduleWorker(t *testing.T) {
 				_, err := kubeClient.CoreV1().Secrets(testNamespace).Create(
 					context.Background(),
 					&corev1.Secret{
-						ObjectMeta: v1.ObjectMeta{
+						ObjectMeta: metav1.ObjectMeta{
 							Name: "project-secrets",
 						},
 					},
-					v1.CreateOptions{},
+					metav1.CreateOptions{},
 				)
 				require.NoError(t, err)
 				// We'll force an error creating the event secret by having it already
@@ -567,11 +661,11 @@ func TestSubstrateScheduleWorker(t *testing.T) {
 				_, err = kubeClient.CoreV1().Secrets(testNamespace).Create(
 					context.Background(),
 					&corev1.Secret{
-						ObjectMeta: v1.ObjectMeta{
+						ObjectMeta: metav1.ObjectMeta{
 							Name: myk8s.EventSecretName(testEventID),
 						},
 					},
-					v1.CreateOptions{},
+					metav1.CreateOptions{},
 				)
 				require.NoError(t, err)
 				return &substrate{
@@ -585,80 +679,74 @@ func TestSubstrateScheduleWorker(t *testing.T) {
 		},
 
 		{
-			name: "error creating queue writer",
+			name: "error creating workspace",
 			setup: func() api.Substrate {
 				kubeClient := fake.NewSimpleClientset()
 				_, err := kubeClient.CoreV1().Secrets(testNamespace).Create(
 					context.Background(),
 					&corev1.Secret{
-						ObjectMeta: v1.ObjectMeta{
+						ObjectMeta: metav1.ObjectMeta{
 							Name: "project-secrets",
 						},
 					},
-					v1.CreateOptions{},
+					metav1.CreateOptions{},
 				)
 				require.NoError(t, err)
 				return &substrate{
 					kubeClient: kubeClient,
-					queueWriterFactory: &mockQueueWriterFactory{
-						NewWriterFn: func(queueName string) (queue.Writer, error) {
-							return nil, errors.New("something went wrong")
-						},
+					createWorkspacePVCFn: func(
+						context.Context,
+						api.Project,
+						api.Event,
+					) error {
+						return errors.New("something went wrong")
 					},
 				}
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error creating queue writer")
+				require.Contains(t, err.Error(), "error creating workspace for event")
 			},
 		},
-
 		{
-			name: "error writing to queue",
+			name: "error creating worker pod",
 			setup: func() api.Substrate {
 				kubeClient := fake.NewSimpleClientset()
 				_, err := kubeClient.CoreV1().Secrets(testNamespace).Create(
 					context.Background(),
 					&corev1.Secret{
-						ObjectMeta: v1.ObjectMeta{
+						ObjectMeta: metav1.ObjectMeta{
 							Name: "project-secrets",
 						},
 					},
-					v1.CreateOptions{},
+					metav1.CreateOptions{},
 				)
 				require.NoError(t, err)
 				return &substrate{
 					kubeClient: kubeClient,
-					queueWriterFactory: &mockQueueWriterFactory{
-						NewWriterFn: func(queueName string) (queue.Writer, error) {
-							return &mockQueueWriter{
-								WriteFn: func(
-									context.Context,
-									string,
-									*queue.MessageOptions,
-								) error {
-									return errors.New("something went wrong")
-								},
-								CloseFn: func(context.Context) error {
-									return nil
-								},
-							}, nil
-						},
+					createWorkspacePVCFn: func(
+						context.Context,
+						api.Project,
+						api.Event,
+					) error {
+						return nil
+					},
+					createWorkerPodFn: func(
+						context.Context,
+						api.Project,
+						api.Event,
+					) error {
+						return errors.New("something went wrong")
 					},
 				}
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(
-					t,
-					err.Error(),
-					"error submitting execution task for event",
-				)
+				require.Contains(t, err.Error(), "error creating pod for event")
 			},
 		},
-
 		{
 			name: "success",
 			setup: func() api.Substrate {
@@ -666,30 +754,28 @@ func TestSubstrateScheduleWorker(t *testing.T) {
 				_, err := kubeClient.CoreV1().Secrets(testNamespace).Create(
 					context.Background(),
 					&corev1.Secret{
-						ObjectMeta: v1.ObjectMeta{
+						ObjectMeta: metav1.ObjectMeta{
 							Name: "project-secrets",
 						},
 					},
-					v1.CreateOptions{},
+					metav1.CreateOptions{},
 				)
 				require.NoError(t, err)
 				return &substrate{
 					kubeClient: kubeClient,
-					queueWriterFactory: &mockQueueWriterFactory{
-						NewWriterFn: func(queueName string) (queue.Writer, error) {
-							return &mockQueueWriter{
-								WriteFn: func(
-									context.Context,
-									string,
-									*queue.MessageOptions,
-								) error {
-									return nil
-								},
-								CloseFn: func(context.Context) error {
-									return nil
-								},
-							}, nil
-						},
+					createWorkspacePVCFn: func(
+						context.Context,
+						api.Project,
+						api.Event,
+					) error {
+						return nil
+					},
+					createWorkerPodFn: func(
+						context.Context,
+						api.Project,
+						api.Event,
+					) error {
+						return nil
 					},
 				}
 			},
@@ -698,11 +784,9 @@ func TestSubstrateScheduleWorker(t *testing.T) {
 			},
 		},
 	}
-
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			substrate := testCase.setup()
-			err := substrate.ScheduleWorker(
+			err := testCase.setup().StartWorker(
 				context.Background(),
 				api.Project{
 					Kubernetes: &api.KubernetesDetails{
@@ -713,95 +797,13 @@ func TestSubstrateScheduleWorker(t *testing.T) {
 					ObjectMeta: meta.ObjectMeta{
 						ID: testEventID,
 					},
-				},
-			)
-			testCase.assertions(err)
-		})
-	}
-}
-
-func TestSubstrateStartWorker(t *testing.T) {
-	testCases := []struct {
-		name       string
-		substrate  api.Substrate
-		assertions func(error)
-	}{
-		{
-			name: "error creating workspace",
-			substrate: &substrate{
-				createWorkspacePVCFn: func(
-					context.Context,
-					api.Project,
-					api.Event,
-				) error {
-					return errors.New("something went wrong")
-				},
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error creating workspace for event")
-			},
-		},
-		{
-			name: "error creating worker pod",
-			substrate: &substrate{
-				createWorkspacePVCFn: func(
-					context.Context,
-					api.Project,
-					api.Event,
-				) error {
-					return nil
-				},
-				createWorkerPodFn: func(
-					context.Context,
-					api.Project,
-					api.Event,
-				) error {
-					return errors.New("something went wrong")
-				},
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "something went wrong")
-				require.Contains(t, err.Error(), "error creating pod for event")
-			},
-		},
-		{
-			name: "success",
-			substrate: &substrate{
-				createWorkspacePVCFn: func(
-					context.Context,
-					api.Project,
-					api.Event,
-				) error {
-					return nil
-				},
-				createWorkerPodFn: func(
-					context.Context,
-					api.Project,
-					api.Event,
-				) error {
-					return nil
-				},
-			},
-			assertions: func(err error) {
-				require.NoError(t, err)
-			},
-		},
-	}
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			err := testCase.substrate.StartWorker(
-				context.Background(),
-				api.Project{},
-				api.Event{
 					Worker: api.Worker{
 						Spec: api.WorkerSpec{
 							UseWorkspace: true,
 						},
 					},
 				},
+				"fake token",
 			)
 			testCase.assertions(err)
 		})
@@ -1144,11 +1146,11 @@ func TestSubstrateCreateWorkspacePVC(t *testing.T) {
 				).Create(
 					context.Background(),
 					&corev1.PersistentVolumeClaim{
-						ObjectMeta: v1.ObjectMeta{
+						ObjectMeta: metav1.ObjectMeta{
 							Name: myk8s.WorkspacePVCName(testEventID),
 						},
 					},
-					v1.CreateOptions{},
+					metav1.CreateOptions{},
 				)
 				require.NoError(t, err)
 				return &substrate{
@@ -1183,7 +1185,7 @@ func TestSubstrateCreateWorkspacePVC(t *testing.T) {
 				).Get(
 					context.Background(),
 					myk8s.WorkspacePVCName(testEventID),
-					v1.GetOptions{},
+					metav1.GetOptions{},
 				)
 				require.NoError(t, err)
 				require.NotNil(t, pvc)
@@ -1245,11 +1247,11 @@ func TestSubstrateCreateWorkerPod(t *testing.T) {
 				).Create(
 					context.Background(),
 					&corev1.Pod{
-						ObjectMeta: v1.ObjectMeta{
+						ObjectMeta: metav1.ObjectMeta{
 							Name: myk8s.WorkerPodName(testEvent.ID),
 						},
 					},
-					v1.CreateOptions{},
+					metav1.CreateOptions{},
 				)
 				require.NoError(t, err)
 				return &substrate{
@@ -1275,7 +1277,7 @@ func TestSubstrateCreateWorkerPod(t *testing.T) {
 				).Get(
 					context.Background(),
 					myk8s.WorkerPodName(testEvent.ID),
-					v1.GetOptions{},
+					metav1.GetOptions{},
 				)
 				require.NoError(t, err)
 				require.NotNil(t, pod)
@@ -1336,11 +1338,11 @@ func TestSubstrateCreateJobSecret(t *testing.T) {
 				).Create(
 					context.Background(),
 					&corev1.Secret{
-						ObjectMeta: v1.ObjectMeta{
+						ObjectMeta: metav1.ObjectMeta{
 							Name: myk8s.JobSecretName(testEventID, testJobName),
 						},
 					},
-					v1.CreateOptions{},
+					metav1.CreateOptions{},
 				)
 				require.NoError(t, err)
 				return &substrate{
@@ -1366,7 +1368,7 @@ func TestSubstrateCreateJobSecret(t *testing.T) {
 				).Get(
 					context.Background(),
 					myk8s.JobSecretName(testEventID, testJobName),
-					v1.GetOptions{},
+					metav1.GetOptions{},
 				)
 				require.NoError(t, err)
 				require.NotNil(t, secret)
@@ -1457,11 +1459,11 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 				).Create(
 					context.Background(),
 					&corev1.Pod{
-						ObjectMeta: v1.ObjectMeta{
+						ObjectMeta: metav1.ObjectMeta{
 							Name: myk8s.JobPodName(testEvent.ID, testJobName),
 						},
 					},
-					v1.CreateOptions{},
+					metav1.CreateOptions{},
 				)
 				require.NoError(t, err)
 				return &substrate{
@@ -1487,7 +1489,7 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 				).Get(
 					context.Background(),
 					myk8s.JobPodName(testEvent.ID, testJobName),
-					v1.GetOptions{},
+					metav1.GetOptions{},
 				)
 				require.NoError(t, err)
 				require.NotNil(t, pod)

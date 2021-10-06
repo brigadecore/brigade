@@ -361,7 +361,7 @@ func TestEventsServiceCreateSingleEvent(t *testing.T) {
 					},
 				},
 				substrate: &mockSubstrate{
-					ScheduleWorkerFn: func(c context.Context, p Project, e Event) error {
+					ScheduleWorkerFn: func(context.Context, Event) error {
 						return errors.New("substrate error")
 					},
 				},
@@ -394,7 +394,7 @@ func TestEventsServiceCreateSingleEvent(t *testing.T) {
 					},
 				},
 				substrate: &mockSubstrate{
-					ScheduleWorkerFn: func(c context.Context, p Project, e Event) error {
+					ScheduleWorkerFn: func(context.Context, Event) error {
 						return nil
 					},
 				},
@@ -419,7 +419,7 @@ func TestEventsServiceCreateSingleEvent(t *testing.T) {
 					},
 				},
 				substrate: &mockSubstrate{
-					ScheduleWorkerFn: func(c context.Context, p Project, e Event) error {
+					ScheduleWorkerFn: func(context.Context, Event) error {
 						return nil
 					},
 				},
@@ -436,8 +436,6 @@ func TestEventsServiceCreateSingleEvent(t *testing.T) {
 				require.Equal(t, testEvent.Git.Ref, event.Worker.Spec.Git.Ref)
 				require.Equal(t, LogLevelInfo, event.Worker.Spec.LogLevel)
 				require.Equal(t, WorkerPhasePending, event.Worker.Status.Phase)
-				require.NotEmpty(t, event.Worker.Token)
-				require.NotEmpty(t, event.Worker.HashedToken)
 			},
 		},
 	}
