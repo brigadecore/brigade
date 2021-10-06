@@ -121,15 +121,6 @@ func (l *logsService) Stream(
 			// If a container isn't specified, we want the one named "worker"
 			selector.Container = myk8s.LabelKeyWorker
 		}
-		// These are the only legitimate container names for ANY worker
-		if selector.Container != myk8s.LabelKeyWorker &&
-			selector.Container != "vcs" {
-			// Any other container name is an error
-			return nil, &meta.ErrNotFound{
-				Type: "WorkerContainer",
-				ID:   selector.Container,
-			}
-		}
 	} else { // A job was specified, so we want job logs
 		if selector.Container == "" {
 			// If a container isn't specified, we want the primary container's logs.
@@ -165,8 +156,20 @@ func (l *logsService) Stream(
 		return nil, err
 	}
 
-	if selector.Job != "" {
-		// Make sure the job exists
+	var containerFound bool
+	if selector.Job == "" {
+		// If we're here, we want worker logs.
+		if selector.Container != myk8s.LabelKeyWorker &&
+			!(selector.Container == "vcs" && event.Worker.Spec.Git != nil) {
+			return nil, &meta.ErrNotFound{
+				Type: "WorkerContainer",
+				ID:   selector.Container,
+			}
+		}
+		containerFound = true
+	} else {
+		// If we're here, we want logs from a specific job. Make sure that job
+		// exists.
 		job, ok := event.Worker.Job(selector.Job)
 		if !ok {
 			return nil, &meta.ErrNotFound{
@@ -174,12 +177,40 @@ func (l *logsService) Stream(
 				ID:   selector.Job,
 			}
 		}
-		if selector.Container != selector.Job {
-			if _, ok := job.Spec.SidecarContainers[selector.Container]; !ok {
-				return nil, &meta.ErrNotFound{
-					Type: "JobContainer",
-					ID:   selector.Container,
+		// And make sure the container exists.
+		if selector.Container == job.Name {
+			// If the container name matches the job name, it's a request for logs
+			// from the primary container. That always exists.
+			containerFound = true
+		} else if selector.Container == "vcs" {
+			// vcs is a valid container name IF at least one of the job's containers
+			// use source from git.
+			containerFound = job.Spec.PrimaryContainer.SourceMountPath != ""
+			if !containerFound {
+				// If we get to here, the primary container didn't use source, so check
+				// if any of the sidecars do.
+				for _, containerSpec := range job.Spec.SidecarContainers {
+					if containerSpec.SourceMountPath != "" {
+						containerFound = true
+						break
+					}
 				}
+			}
+		} else {
+			// If we get to here, the container name didn't match the job name (which
+			// is also the name of the primary container) and it wasn't "vcs" either.
+			// Just loop through the sidecars to see if such a container exists.
+			for containerName := range job.Spec.SidecarContainers {
+				if containerName == selector.Container {
+					containerFound = true
+					break
+				}
+			}
+		}
+		if !containerFound {
+			return nil, &meta.ErrNotFound{
+				Type: "JobContainer",
+				ID:   selector.Container,
 			}
 		}
 
