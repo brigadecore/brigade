@@ -113,12 +113,8 @@ Notes:
 
 ## Using local dependencies from the project repository
 
-Local dependencies are resolved using standard Node [module resolution], with
-one change: the worker's `node_modules` directory is added as a fallback, so
-`brigade.js` - and any local dependencies - can resolve modules installed via
-`package.json`.
-
-This approach works great for using dependencies that are not intended to be
+Local dependencies are resolved using standard Node [module resolution]. This
+approach works great for using dependencies that are not intended to be
 external packages, and which are located in the project repository. 
 
 Let's consider the following scenario: we have a JavaScript file located in
@@ -178,12 +174,3 @@ incorporated into one project. Feel free to create the project, create events
 for the project, etc., to get a feel for how both methods work.
 
 [13-dependencies]: https://github.com/brigadecore/brigade/tree/v2/examples/13-dependencies
-## Best Practices
-
-As we have seen, it is easy to add new functionality to the Brigade worker. But
-it is important to keep in mind that the Worker is intended to do one thing:
-execute Brigade chains.
-
-To that end, it is best to fight the temptation to put too much logic into the
-Brigade worker. Where possible, use Jobs to perform specific tasks within their
-own containers, and use workers to control the execution of a series of Jobs.
