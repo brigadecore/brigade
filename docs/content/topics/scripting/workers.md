@@ -58,28 +58,28 @@ worker that does not utilize such configuration.
 
 Here's a rundown on the data present in the event JSON:
 
-| Field Name | Description |
-|------------|-------------|
-| `id` | A unique ID for the event |
-| `project.id` | The project ID that this event is associated with |
-| `project.kubernetes.namespace` | The Kubernetes namespace that the project uses |
-| `project.secrets` | The key/value map of [secrets] for the project |
-| `source` | The event [source] |
-| `type` | The event [type] |
-| `qualifiers` | The event [qualifiers] |
-| `labels` | The event [labels] |
-| `shortTitle` | A [short title] for the event |
-| `longTitle` | A [long title] for the event |
-| `payload` | The event [payload] |
-| `worker.apiAddress` | The address for the Brigade API server |
-| `worker.apiToken` | The token used for communicating with the Brigade API server |
-| `worker.logLevel` | The log level for worker logs |
-| `worker.configFilesDirectory` | The directory in the worker where the Brigade config files may be found |
-| `worker.defaultConfigFiles` | The default config files to use if not provided elsewhere (e.g. via a git repository's source code) |
-| `worker.git.cloneURL` | The clone URL of the git repository associated with the worker |
-| `worker.git.commit` | The commit SHA for the git repository |
-| `worker.git.ref` | The reference for the git repository |
-| `worker.git.initSubmodules` | Whether or not git submodules should be initialized |
+| Field Name | Description | Notes |
+|------------|-------------|-------|
+| `id` | A unique ID for the event | |
+| `project.id` | The project ID that this event is associated with | |
+| `project.kubernetes.namespace` | The Kubernetes namespace that the project uses | |
+| `project.secrets` | The key/value map of [secrets] for the project | |
+| `source` | The event [source] | |
+| `type` | The event [type] | |
+| `qualifiers` | The event [qualifiers] | |
+| `labels` | The event [labels] | |
+| `shortTitle` | A [short title] for the event | |
+| `longTitle` | A [long title] for the event | |
+| `payload` | The event [payload] | |
+| `worker.apiAddress` | The address for the Brigade API server | This value, along with the apiToken, can be used to obtain an API client via the SDK of your choice. |
+| `worker.apiToken` | The token used for communicating with the Brigade API server | This value, along with the apiAddress, can be used to obtain an API client via the SDK of your choice. |
+| `worker.logLevel` | The log level for worker logs | |
+| `worker.configFilesDirectory` | The directory in the worker where the Brigade config files may be found | This is only applicable when there is a git repository associated with the project. In such cases, this value is relative to where the source code has been mounted in the worker's container (`/var/vcs`) |
+| `worker.defaultConfigFiles` | The default config files to use if not provided elsewhere (e.g. via a git repository's source code) | Note: this is a map of file names to file contents, which are embedded inside a project's definition. |
+| `worker.git.cloneURL` | The clone URL of the git repository associated with the worker | |
+| `worker.git.commit` | The commit SHA for the git repository | |
+| `worker.git.ref` | The reference for the git repository | |
+| `worker.git.initSubmodules` | Whether or not git submodules should be initialized | |
 
 [secrets]: /topics/project-developers/secrets
 [source]: /topics/project-developers/events#source
@@ -90,32 +90,6 @@ Here's a rundown on the data present in the event JSON:
 [long title]: /topics/project-developers/events#long-title
 [payload]: /topics/project-developers/events#payload
 
-## Job Pod Names and Labels
-
-To be visible to the rest of Brigade, certain naming and labeling conventions
-must be adhered to for job pods spawned by the worker.
-
-1. Pod names MUST take the form `<event ID>-<job name>`.
-
-1. Pods MUST be labeled as follows:
-
-    | Key | Value |
-    |-----|-------|
-    | `brigade.sh/component` | `job` |
-    | `brigade.sh/job` | Job Name |
-    | `brigade.sh/event` | Event ID |
-    | `brigade.sh/id` | Brigade's ID<sup>*</sup> |
-    | `brigade.sh/project` | Project ID |
-
-<sup>*</sup> Brigade's ID is based on the Kubernetes namespace that Brigade is
-deployed to and the deployed release name of Brigade, e.g.
-`brigade-namespace.brigade-release`
-
-All the [usual constraints][K8s label constraints] in labeling Kubernetes pods
-apply.
-
-[K8s label constraints]: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
-
 ## Exit Code
 
 Brigade determines the ultimate success or failure of an event by the return
@@ -125,6 +99,21 @@ Workers that successfully execute to completion with no errors MUST exit with
 return code 0.
 
 Worker executions that fail MUST exit with a non-zero return code.
+
+# General Worker flow
+
+At a high level, the flow of a custom worker when handling an event for a
+project would be the following:
+
+  1. Consume the event details (e.g. `/var/event/event.json` inside the
+    worker's container)
+  1. Load the code or configuration specified by the project that defines which
+    events to handle and how
+  1. Combine the event details with the blueprint on how to handle the event
+    and then excute, mostly by using one of the [Brigade SDKs] to create/schedule
+    jobs
+
+[Brigade SDKs]: https://github.com/brigadecore/brigade/blob/v2/README.md#sdks
 
 # Building and Publishing a Custom Worker Image
 
