@@ -21,7 +21,7 @@ familiarity with [the scripting guide] and the [Brigadier API].
 
 Brigade supports the various methods provided by the JavaScript language for
 controlling the flow of asynchronous execution. This includes chaining together
-promises as well as utilization of the `async` and `await` decorators.
+promises as well as utilization of the `async` and `await` keywords.
 
 Here is an example that uses a [Promise chain] to organize the execution of two
 jobs:
@@ -52,9 +52,9 @@ function exec(event) {
 events.process();
 ```
 
-In the example above, we use implicit JavaScript `Promise` objects for chaining
-two jobs, then printing `done` after the two jobs are run. Each `Job.run()`
-call returns a `Promise`, and we call that `Promise`'s `then()` method.
+In the example above, we use JavaScript `Promise` objects for chaining two
+jobs, then printing `done` after the two jobs are run. Each `Job.run()` call
+returns a `Promise`, and we call that `Promise`'s `then()` method.
 
 Here's what it looks like when the script is run:
 
@@ -110,8 +110,11 @@ The two `await` statements will cause the jobs to [run synchronously][await].
 The first job will run to completion, then the second job will run to
 completion. Then the `console.log` function will execute.
 
+## Error Handling
+
 Note that when errors occur, they are thrown as exceptions. To handle this
-case, use `try`/`catch` blocks:
+case, use `try`/`catch` blocks. These can be employed with either the promise
+chain approach or the `async`/`await` approach. Here we show the latter:
 
 ```javascript
 const { events, Job } = require("@brigadecore/brigadier");
@@ -161,10 +164,33 @@ Caught Exception Error: Job "j2" failed
 
 The line `Caught Exception...` shows the error that we received.
 
+Note, however, we didn't configure the worker to fail when we caught the
+exception in the example above; we simply logged it. Although the `j2` job
+fails, the worker succeeds. We see this when looking at the event afterwards:
+
+```console
+$ brig event get --id 69b5713f-b612-434f-9b52-9bcd57f044c5
+
+ID                                  	PROJECT	SOURCE        	TYPE	AGE	WORKER PHASE
+69b5713f-b612-434f-9b52-9bcd57f044c5	await  	brigade.sh/cli	exec	20s	SUCCEEDED
+
+Event "69b5713f-b612-434f-9b52-9bcd57f044c5" jobs:
+
+NAME	STARTED	ENDED	PHASE
+j1  	16s    	13s  	SUCCEEDED
+j2  	11s    	11s  	FAILED
+```
+
+This illustrates the following point: As the script-writer, catching exceptions
+from jobs (or other runnables) creates the opportunity to decide whether the
+workflow succeeds or fails. Perhaps we do wish to fail the worker immediately.
+Alternatively, perhaps we wish to execute conditional logic which would then
+ultimately dictate worker success.
+
 Some people feel that using `async`/`await` makes code more readable. Others
-prefer the `Promise` notation. Brigade will support either. The pattern above
-can also be used with `Job.concurrent()` and `Job.sequence()`, as their `run()`
-methods return `Promise` objects as well.
+prefer the `Promise` notation. Brigade will support either. The same patterns
+shown above can also be used with `Job.concurrent()` and `Job.sequence()`, as
+their `run()` methods return `Promise` objects as well.
 
 [Promise chain]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
 [await]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await
