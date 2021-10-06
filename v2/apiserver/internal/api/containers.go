@@ -1,5 +1,7 @@
 package api
 
+import "reflect"
+
 // ImagePullPolicy represents a policy for whether container hosts already
 // having a certain OCI image should attempt to re-pull that image prior to
 // launching a new container based on that image.
@@ -22,4 +24,41 @@ type ContainerSpec struct {
 	// Environment is a map of key/value pairs that specify environment variables
 	// to be set within the OCI container.
 	Environment map[string]string `json:"environment,omitempty" bson:"environment,omitempty"` // nolint: lll
+}
+
+func (cs ContainerSpec) EqualTo(cs2 ContainerSpec) bool {
+	// Compare Command slices; if equivalent, nil out
+	if len(cs.Command) != len(cs2.Command) {
+		return false
+	}
+	for i, command := range cs.Command {
+		if command != cs2.Command[i] {
+			return false
+		}
+	}
+	cs.Command, cs2.Command = nil, nil
+
+	// Compare Arguments slices; if equivalent, nil out
+	if len(cs.Arguments) != len(cs2.Arguments) {
+		return false
+	}
+	for i, argument := range cs.Arguments {
+		if argument != cs2.Arguments[i] {
+			return false
+		}
+	}
+	cs.Arguments, cs2.Arguments = nil, nil
+
+	// Compare Environment maps, if equivalent, nil out
+	if len(cs.Environment) != len(cs2.Environment) {
+		return false
+	}
+	for name, value := range cs.Environment {
+		if value != cs2.Environment[name] {
+			return false
+		}
+	}
+	cs.Environment, cs2.Environment = nil, nil
+
+	return reflect.DeepEqual(cs, cs2)
 }
