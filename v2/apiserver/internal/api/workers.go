@@ -6,6 +6,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/crypto"
+	libCrypto "github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/pkg/errors"
 )
@@ -97,11 +99,6 @@ type Worker struct {
 	Spec WorkerSpec `json:"spec" bson:"spec"`
 	// Status contains details of the Worker's current state.
 	Status WorkerStatus `json:"status" bson:"status"`
-	// Token is an API token that grants a Worker permission to create new Jobs
-	// only for the Event to which it belongs.
-	Token string `json:"-" bson:"-"`
-	// HashedToken is a secure hash of the Token field.
-	HashedToken string `json:"-" bson:"hashedToken"`
 	// Jobs contains details of all Jobs spawned by the Worker during handling of
 	// the Event.
 	Jobs []Job `json:"jobs,omitempty" bson:"jobs"`
@@ -307,6 +304,21 @@ func (w *workersService) Start(ctx context.Context, eventID string) error {
 		)
 	}
 
+	// This is a token unique to the Event so that the Event's Worker can use when
+	// communicating with the API server to do things like spawn a new Job. i.e.
+	// Only THIS event's worker can create new Jobs for THIS event.
+	token := libCrypto.NewToken(256)
+	hashedToken := crypto.Hash("", token)
+
+	if err =
+		w.workersStore.UpdateHashedToken(ctx, eventID, hashedToken); err != nil {
+		return errors.Wrapf(
+			err,
+			"error updating event %q worker hashed token in store",
+			eventID,
+		)
+	}
+
 	if err = w.workersStore.UpdateStatus(
 		ctx,
 		eventID,
@@ -321,7 +333,7 @@ func (w *workersService) Start(ctx context.Context, eventID string) error {
 		)
 	}
 
-	if err = w.substrate.StartWorker(ctx, project, event); err != nil {
+	if err = w.substrate.StartWorker(ctx, project, event, token); err != nil {
 		return errors.Wrapf(err, "error starting worker for event %q", event.ID)
 	}
 	return nil
@@ -492,6 +504,12 @@ type WorkersStore interface {
 		ctx context.Context,
 		eventID string,
 		status WorkerStatus,
+	) error
+
+	UpdateHashedToken(
+		ctx context.Context,
+		eventID string,
+		hashedToken string,
 	) error
 
 	Timeout(ctx context.Context, eventID string) error
