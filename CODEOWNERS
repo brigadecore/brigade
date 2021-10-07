@@ -1,4 +1,7 @@
 # This file is described here:  https://help.github.com/en/articles/about-code-owners
 
-# Global Owners: These members are Core Maintainers of Brigade
+# Global Owners: These are brigadecore org maintainers
 * @brigadecore/maintainers
+
+# Doc Owners:
+/docs/ @brigadecore/docs-maintainers
