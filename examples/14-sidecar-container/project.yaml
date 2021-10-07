@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/brigadecore/brigade/v2/v2/apiserver/schemas/project.json
+apiVersion: brigade.sh/v2-beta
+kind: Project
+metadata:
+  id: sidecar-container
+description: Demonstrates how to configure a sidecar container on a Job
+spec:
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
+  workerTemplate:
+    # logLevel: DEBUG
+    defaultConfigFiles:
+      brigade.js: | 
+        const { events, Job, Container } = require("@brigadecore/brigadier");
+
+        events.on("brigade.sh/cli", "exec", async event => {
+          let job = new Job("my-job", "debian:latest", event);
+          job.primaryContainer.command = ["echo"];
+          job.primaryContainer.arguments = ["Hello from the primary container!"];
+
+          job.sidecarContainers = {
+            "sidecar": new Container("debian:latest")
+          };
+          job.sidecarContainers.sidecar.command = ["echo"];
+          job.sidecarContainers.sidecar.arguments = ["Hello from the sidecar container!"];
+
+          console.log("Running 'my-job' with the following sidecar containers:")
+          for (const [name, container] of Object.entries(job.sidecarContainers)) {
+            console.log(`-> ${name}: ${container.image}`);
+          }
+
+          await job.run();
+        });
+
+        events.process();
