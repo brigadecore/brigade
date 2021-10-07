@@ -58,6 +58,36 @@ func (w *workersStore) UpdateStatus(
 	return nil
 }
 
+func (w *workersStore) UpdateHashedToken(
+	ctx context.Context,
+	eventID string,
+	hashedToken string,
+) error {
+	res, err := w.collection.UpdateOne(
+		ctx,
+		bson.M{"id": eventID},
+		bson.M{
+			"$set": bson.M{
+				"worker.hashedToken": hashedToken,
+			},
+		},
+	)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"error updating event %q worker hashed token",
+			eventID,
+		)
+	}
+	if res.MatchedCount == 0 {
+		return &meta.ErrNotFound{
+			Type: api.EventKind,
+			ID:   eventID,
+		}
+	}
+	return nil
+}
+
 func (w *workersStore) Timeout(
 	ctx context.Context,
 	eventID string,

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade-foundations/crypto"
-	libCrypto "github.com/brigadecore/brigade/v2/apiserver/internal/lib/crypto"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -480,20 +479,12 @@ func (e *eventsService) createSingleEvent(
 		workerSpec.ConfigFilesDirectory = ".brigade"
 	}
 
-	// This is a token unique to the Event so that the Event's Worker can use when
-	// communicating with the API server to do things like spawn a new Job. i.e.
-	// Only THIS event's worker can create new Jobs for THIS event.
-	token := libCrypto.NewToken(256)
-
 	event.Worker = Worker{
 		Jobs: jobs,
 		Spec: workerSpec,
 		Status: WorkerStatus{
 			Phase: WorkerPhasePending,
 		},
-		// Note: The cleartext Token field doesn't get persisted to the data store
-		Token:       token,
-		HashedToken: crypto.Hash("", token),
 	}
 
 	// Persist the Event
@@ -507,7 +498,7 @@ func (e *eventsService) createSingleEvent(
 
 	// Prepare the substrate for the Worker and schedule the Worker for async /
 	// eventual execution
-	if err := e.substrate.ScheduleWorker(ctx, project, event); err != nil {
+	if err := e.substrate.ScheduleWorker(ctx, event); err != nil {
 		return event, errors.Wrapf(
 			err,
 			"error scheduling event %q worker on the substrate",

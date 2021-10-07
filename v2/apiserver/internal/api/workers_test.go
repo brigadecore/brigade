@@ -111,6 +111,38 @@ func TestWorkersServiceStart(t *testing.T) {
 			},
 		},
 		{
+			name: "error updating hashed token",
+			service: &workersService{
+				authorize: alwaysAuthorize,
+				eventsStore: &mockEventsStore{
+					GetFn: func(context.Context, string) (Event, error) {
+						return Event{
+							Worker: Worker{
+								Status: WorkerStatus{
+									Phase: WorkerPhasePending,
+								},
+							},
+						}, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+				workersStore: &mockWorkersStore{
+					UpdateHashedTokenFn: func(context.Context, string, string) error {
+						return errors.New("something went wrong")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "something went wrong")
+				require.Contains(t, err.Error(), "error updating event")
+			},
+		},
+		{
 			name: "error updating worker status",
 			service: &workersService{
 				authorize: alwaysAuthorize,
@@ -131,6 +163,9 @@ func TestWorkersServiceStart(t *testing.T) {
 					},
 				},
 				workersStore: &mockWorkersStore{
+					UpdateHashedTokenFn: func(context.Context, string, string) error {
+						return nil
+					},
 					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
 						return errors.New("something went wrong")
 					},
@@ -163,12 +198,15 @@ func TestWorkersServiceStart(t *testing.T) {
 					},
 				},
 				workersStore: &mockWorkersStore{
+					UpdateHashedTokenFn: func(context.Context, string, string) error {
+						return nil
+					},
 					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
 						return nil
 					},
 				},
 				substrate: &mockSubstrate{
-					StartWorkerFn: func(c context.Context, p Project, e Event) error {
+					StartWorkerFn: func(context.Context, Project, Event, string) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -200,12 +238,15 @@ func TestWorkersServiceStart(t *testing.T) {
 					},
 				},
 				workersStore: &mockWorkersStore{
+					UpdateHashedTokenFn: func(context.Context, string, string) error {
+						return nil
+					},
 					UpdateStatusFn: func(context.Context, string, WorkerStatus) error {
 						return nil
 					},
 				},
 				substrate: &mockSubstrate{
-					StartWorkerFn: func(c context.Context, p Project, e Event) error {
+					StartWorkerFn: func(context.Context, Project, Event, string) error {
 						return nil
 					},
 				},
@@ -742,6 +783,12 @@ type mockWorkersStore struct {
 		status WorkerStatus,
 	) error
 
+	UpdateHashedTokenFn func(
+		ctx context.Context,
+		eventID string,
+		hashedToken string,
+	) error
+
 	TimeoutFn func(ctx context.Context, eventID string) error
 }
 
@@ -751,6 +798,14 @@ func (m *mockWorkersStore) UpdateStatus(
 	status WorkerStatus,
 ) error {
 	return m.UpdateStatusFn(ctx, eventID, status)
+}
+
+func (m *mockWorkersStore) UpdateHashedToken(
+	ctx context.Context,
+	eventID string,
+	hashedToken string,
+) error {
+	return m.UpdateHashedTokenFn(ctx, eventID, hashedToken)
 }
 
 func (m *mockWorkersStore) Timeout(ctx context.Context, eventID string) error {
