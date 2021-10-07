@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/brigadecore/brigade/v2/v2/apiserver/schemas/project.json
+apiVersion: brigade.sh/v2-beta
+kind: Project
+metadata:
+  id: dependencies
+description: Example project illustrating a few ways to add/use dependencies
+spec:
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
+  workerTemplate:
+    # logLevel: DEBUG
+    configFilesDirectory: examples/13-dependencies/.brigade
+    git:
+      cloneURL: https://github.com/brigadecore/brigade.git
+      ref: refs/heads/v2
