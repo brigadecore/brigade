@@ -293,7 +293,7 @@ logger:
       #   memory: 128Mi
 
     nodeSelector:
-      beta.kubernetes.io/os: linux
+      kubernetes.io/os: linux
 
     tolerations: []
 
@@ -320,7 +320,7 @@ logger:
       #   memory: 128Mi
 
     nodeSelector:
-      beta.kubernetes.io/os: windows
+      kubernetes.io/os: windows
 
     tolerations:
     - effect: NoSchedule
