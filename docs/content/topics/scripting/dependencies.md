@@ -115,16 +115,19 @@ Notes:
 
 Local dependencies are resolved using standard Node [module resolution]. This
 approach works great for using dependencies that are not intended to be
-external packages, and which are located in the project repository. 
+external packages, and which are located in the project repository.
+
+These dependencies may be placed in the default configuration directory for
+Brigade, `./brigade`, alongside other config files like the project script
+(e.g. `brigade.js`) and `package.json`.
 
 Let's consider the following scenario: we have a JavaScript file located in
-`/local-deps/circle.js`, where `local-deps` is a directory at the root of our
-git repository. In our Brigade script, we can use any exported method or
+`/.brigade/circle.js`. In our Brigade script, we can use any exported method or
 variable from that package by simply using a `require` statement, just like in
 any other JavaScript project.
 
 ```javascript
-// file /local-deps/circle.js
+// file /.brigade/circle.js
 var PI = 3.14;
 exports.area = function (r) {
     return PI * r * r;
@@ -138,7 +141,7 @@ Then, in our `brigade.js` we can import that file and use it:
 
 ```javascript
 const { events } = require("@brigadecore/brigadier");
-const circle = require("../local-deps/circle");
+const circle = require("./circle");
 
 events.on("brigade.sh/cli", "exec", async event => {
   console.log("area of a circle with radius 3: " + circle.area(3));
