@@ -256,25 +256,6 @@ build-brigadier:
 		npx typedoc src/ --out ./docs/ts \
 	'
 
-.PHONY: publish-brigadier-docs
-publish-brigadier-docs: build-brigadier
-	$(JS_DOCKER_CMD) sh -c ' \
-		cd v2/brigadier && \
-		yarn run publish \
-	'
-
-.PHONY: stop-brigadier-docs-preview
-stop-brigadier-docs-preview:
-	@docker rm -f brigadier-docs &> /dev/null || true
-
-.PHONY: brigadier-docs-preview
-brigadier-docs-preview: stop-brigadier-docs-preview build-brigadier
-	@docker run -d \
-		-v $$PWD/v2/brigadier/docs:/srv/jekyll \
-		-p 4000:4000 \
-		--name brigadier-docs \
-		jekyll/jekyll:latest jekyll serve
-
 .PHONY: build-images
 build-images: build-artemis build-apiserver build-scheduler build-observer build-logger-linux build-git-initializer build-worker
 
@@ -337,6 +318,13 @@ publish-brigadier: build-brigadier
 			--new-version $$(printf $(VERSION) | cut -c 2- ) \
 			--access public \
 			--no-git-tag-version \
+	'
+
+.PHONY: publish-brigadier-docs
+publish-brigadier-docs: build-brigadier
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		yarn run publish \
 	'
 
 .PHONY: push-images
@@ -497,6 +485,10 @@ load-%:
 	@kind load docker-image $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
 			|| echo >&2 "kind not installed or error loading image: $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
 
+################################################################################
+# Docs Preview targets.                                                        #
+################################################################################
+
 docs-stop-preview:
 	@docker rm -f brigade-docs &> /dev/null || true
 
@@ -506,3 +498,15 @@ docs-preview: docs-stop-preview
 	# Wait for the documentation web server to finish rendering
 	@until docker logs brigade-docs | grep -m 1  "Web Server is available"; do : ; done
 	@open "http://localhost:1313"
+
+.PHONY: stop-brigadier-docs-preview
+stop-brigadier-docs-preview:
+	@docker rm -f brigadier-docs &> /dev/null || true
+
+.PHONY: brigadier-docs-preview
+brigadier-docs-preview: stop-brigadier-docs-preview build-brigadier
+	@docker run -d \
+		-v $$PWD/v2/brigadier/docs:/srv/jekyll \
+		-p 4000:4000 \
+		--name brigadier-docs \
+		jekyll/jekyll:latest jekyll serve
