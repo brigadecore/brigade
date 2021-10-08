@@ -15,7 +15,7 @@
     "lint": "eslint src/ test/",
     "build": "tsc",
     "build-docs": "rm -rf docs && mkdir -p docs && jsdoc dist/ --destination ./docs/js && typedoc src/ --out ./docs/ts",
-    "publish": "gh-pages --dist docs --repo https://brigadeci:${GH_TOKEN}@github.com/brigadecore/brigade.git --user 'Brigade CI <brigade-ci@brigadecore>' --message 'Publish Brigadier documentation'"
+    "publish-docs": "gh-pages --dist docs --repo https://brigadeci:${GH_TOKEN}@github.com/brigadecore/brigade.git --user 'Brigade CI <brigade-ci@brigadecore>' --message 'Publish Brigadier documentation'"
   },
   "keywords": [
     "kubernetes",

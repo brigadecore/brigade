@@ -321,7 +321,7 @@ publish-brigadier: build-brigadier
 publish-brigadier-docs: build-brigadier
 	$(JS_DOCKER_CMD) sh -c ' \
 		cd v2/brigadier && \
-		yarn run publish \
+		yarn publish-docs \
 	'
 
 .PHONY: push-images
