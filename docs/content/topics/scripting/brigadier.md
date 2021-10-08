@@ -9,7 +9,7 @@ aliases:
   - /topics/scripting/brigadier.md
 ---
 
-# The Brigade.js API
+# The Brigade scripting API
 
 This document describes the public APIs typically used for writing Brigade
 scripts in either JavaScript or TypeScript. It does not describe internal
@@ -42,8 +42,7 @@ an event, the associated event handler will be called.
 
 The main library for Brigade is called `brigadier`. The default Brigade Worker
 sets up access to this library automatically. The source code for this library
-is located [here][brigadier source code] and the npm package page
-[here][brigadier npm page].
+is located [here][brigadier] and the npm package page [here][brigadier npm].
 
 To import the library for use in a script, add the following to the top:
 
@@ -57,11 +56,94 @@ It is considered idiomatic to destructure the library on import:
 const { events, Job, Group } = require('@brigadecore/brigadier')
 ```
 
+## Local development
+
+The brigadier library is actually split into two implementations:
+
+* [brigadier] contains nearly no-op implementations of the library's public
+  interfaces
+* [brigadier-polyfill] contains the logic to actually communicate with a
+  Brigade API server; this is the version subsituted by the worker at runtime
+
+By employing this strategy, developers are offered the possibility of running a
+Brigade script locally, without consequence, to support
+development/troubleshooting efforts.
+
+Let's look at an example.
+
+First, create a new project directory and place the following script contents
+into a file named `brigade.js`:
+
+```javascript
+const { events, Job } = require("@brigadecore/brigadier");
+
+events.on("brigade.sh/cli", "exec", async event => {
+  let job = new Job("my-first-job", "debian:latest", event);
+  job.primaryContainer.command = ["echo"];
+  job.primaryContainer.arguments = ["My first job!"];
+  await job.run();
+});
+
+events.process();
+```
+
+Then, create a `package.json` file with our brigadier dependency added:
+
+```json
+{
+  "dependencies": {
+    "@brigadecore/brigadier": "^2.0.0-beta.3"
+  }
+}
+```
+
+Next, fetch the brigadier dependency (and in turn, its dependencies):
+
+```console
+$ npm install
+
+added 3 packages, and audited 4 packages in 1s
+
+found 0 vulnerabilities
+```
+
+Now we're ready to run our Brigade script in a development capacity, using only
+the core `brigadier` library: 
+
+```console
+$ node brigade.js
+No dummy event file provided
+Generating a dummy event
+No dummy event type provided
+Using default dummy event with source "brigade.sh/cli" and type "exec"
+Processing the following dummy event:
+{
+  id: '7eafd0d3-39e9-4341-bd33-7a215e481024',
+  source: 'brigade.sh/cli',
+  type: 'exec',
+  project: { id: '82259392-feea-4102-a8a3-080fdd85cfa9', secrets: {} },
+  worker: {
+    apiAddress: 'https://brigade2.example.com',
+    apiToken: '7000152b-cd0d-483f-b21f-5ef20292e72a',
+    configFilesDirectory: '.brigade',
+    defaultConfigFiles: {}
+  }
+}
+The Brigade worker would run job my-first-job here.
+```
+
+Success!
+
+Say we forgot to add the `events.process()` call at the bottom of our Brigade
+script. We'd know immediately when executing the script as there would be no
+output at all, signaling that the event handler did not run.
+
 For further example usage of brigadier, please review the [Scripting guide]
 and/or peruse the [Examples].
 
-[brigadier source code]: https://github.com/brigadecore/brigade/tree/v2/v2/brigadier
-[brigadier npm page]: https://www.npmjs.com/package/@brigadecore/brigadier
+[brigadier]: https://github.com/brigadecore/brigade/tree/v2/v2/brigadier
+[brigadier npm]: https://www.npmjs.com/package/@brigadecore/brigadier
+[brigadier-polyfill]: https://github.com/brigadecore/brigade/tree/v2/v2/brigadier-polyfill
 [Scripting guide]: /topics/scripting/guide
 [Examples]: /topics/examples
 
