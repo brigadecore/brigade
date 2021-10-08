@@ -138,6 +138,19 @@ Say we forgot to add the `events.process()` call at the bottom of our Brigade
 script. We'd know immediately when executing the script as there would be no
 output at all, signaling that the event handler did not run.
 
+### Optional event config
+
+Developers can optionally provide the following when running their scripts
+locally:
+
+  * `BRIGADE_EVENT_FILE` - This is the path to a file containing a JSON
+    representation of a dummy event. To see what a valid event looks like from
+    Brigadier's perspective, see the dummy event example in the output above
+    or refer to [events.ts]
+  * `BRIGADE_EVENT` - This is a string of the form `<source>:<type>` to specify
+    the event source and type that will be handled by the script. In the
+    example above, the dummy event uses `brigade.sh/cli:exec`
+
 For further example usage of brigadier, please review the [Scripting guide]
 and/or peruse the [Examples].
 
@@ -145,6 +158,7 @@ and/or peruse the [Examples].
 [brigadier npm]: https://www.npmjs.com/package/@brigadecore/brigadier
 [brigadier-polyfill]: https://github.com/brigadecore/brigade/tree/v2/v2/brigadier-polyfill
 [Scripting guide]: /topics/scripting/guide
+[events.ts]: https://github.com/brigadecore/brigade/tree/v2/v2/brigadier/src/events.ts
 [Examples]: /topics/examples
 
 ## Brigadier API Documentation
