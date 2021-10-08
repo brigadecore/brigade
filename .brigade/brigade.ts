@@ -221,23 +221,9 @@ jobs[publishChartJobName] = publishChartJob
 
 const publishBrigadierDocsJobName = "publish-brigadier-docs"
 const publishBrigadierDocsJob = (event: Event) => {
-  let publisher = new Job(publishBrigadierDocsJobName, jsImg, event)
-  publisher.primaryContainer.sourceMountPath = localPath
-  publisher.primaryContainer.workingDirectory = localPath
-  publisher.primaryContainer.environment["SKIP_DOCKER"] = "true"
-  publisher.primaryContainer.command = ["bash"]
-  publisher.primaryContainer.arguments = [
-    "-c",
-    "make build-brigadier",
-    "npm install -g gh-pages@3.0.0",
-    "cd v2/brigadier",
-    `gh-pages \
-      --dist docs \
-      --repo https://brigadeci:${event.project.secrets.ghToken}@github.com/brigadecore/brigade.git \
-      --user "Brigade CI <brigade@ci>" \
-      --message "Publish Brigadier documentation"`
-  ]
-  return publisher
+  return new MakeTargetJob(publishBrigadierDocsJobName, jsImg, event, {
+    "GH_TOKEN": event.project.secrets.ghToken
+  })
 }
 jobs[publishBrigadierDocsJobName] = publishBrigadierDocsJob
 

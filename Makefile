@@ -250,9 +250,17 @@ build-brigadier:
 		cd v2/brigadier && \
 		yarn install && \
 		yarn build && \
+		rm -rf docs && \
 		mkdir -p docs && \
 		npx jsdoc dist/ --destination ./docs/js && \
 		npx typedoc src/ --out ./docs/ts \
+	'
+
+.PHONY: publish-brigadier-docs
+publish-brigadier-docs: build-brigadier
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		yarn run publish \
 	'
 
 .PHONY: stop-brigadier-docs-preview
