@@ -250,10 +250,7 @@ build-brigadier:
 		cd v2/brigadier && \
 		yarn install && \
 		yarn build && \
-		rm -rf docs && \
-		mkdir -p docs && \
-		npx jsdoc dist/ --destination ./docs/js && \
-		npx typedoc src/ --out ./docs/ts \
+		yarn build-docs \
 	'
 
 .PHONY: build-images
