@@ -1,8 +1,6 @@
-FROM node:16.11.0-alpine3.14
+FROM node:16.11.0-bullseye-slim
 ARG VERSION
 ENV WORKER_VERSION=${VERSION}
-
-RUN apk add bash
 
 # Prevent update notices from appearing on npm/yarn install/run, etc.
 RUN npm config set update-notifier false \
