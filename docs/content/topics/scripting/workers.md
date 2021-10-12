@@ -2,7 +2,7 @@
 title: Workers
 description: How to use a custom Worker in Brigade
 section: scripting
-weight: 5
+weight: 4
 aliases:
   - /workers.md
   - /topics/workers.md
