@@ -219,6 +219,14 @@ const publishChartJob = (event: Event) => {
 }
 jobs[publishChartJobName] = publishChartJob
 
+const publishBrigadierDocsJobName = "publish-brigadier-docs"
+const publishBrigadierDocsJob = (event: Event) => {
+  return new MakeTargetJob(publishBrigadierDocsJobName, jsImg, event, {
+    "GH_TOKEN": event.project.secrets.ghToken
+  })
+}
+jobs[publishBrigadierDocsJobName] = publishBrigadierDocsJob
+
 // Run the entire suite of tests WITHOUT publishing anything initially. If
 // EVERYTHING passes AND this was a push (merge, presumably) to the v2 branch,
 // then run jobs to publish "edge" images.
@@ -305,6 +313,7 @@ events.on("brigade.sh/github", "push", async event => {
       ),
       new ConcurrentGroup(
         publishBrigadierJob(event),
+        publishBrigadierDocsJob(event),
         publishChartJob(event),
         publishCLIJob(event)
       )
