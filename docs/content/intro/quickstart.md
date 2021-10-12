@@ -18,7 +18,7 @@ In this QuickStart, you will install Brigade, create a project and execute it.
 
 ## Prerequisites
 
-* [A development Kubernetes cluster](#create-a-cluster).
+* [A development Kubernetes 1.16.0+ cluster](#create-a-cluster).
 * [Brigade CLI](#install-the-brigade-cli) installed.
 * [Helm] v3.7.0+ installed.
 * [kubectl] CLI installed.
