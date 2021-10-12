@@ -44,8 +44,9 @@ event listing. Here we select the `first-job` project:
 
 ![Project view](https://v2--brigade-docs.netlify.app/img/brigterm_first-job_project.png)
 
-To view details for a specific event, click on the ID you wish to explore. Here
-we select the one event available to us:
+To view details for a specific event, navigate to the ID you wish to explore
+via the arrow keys and select using the `Enter` key. Here we select the one
+event available to us:
 
 ![Event view](https://v2--brigade-docs.netlify.app/img/brigterm_first-job_event.png)
 
@@ -53,7 +54,7 @@ Worker logs for the event can be seen by typing the `L` key:
 
 ![Worker logs](https://v2--brigade-docs.netlify.app/img/brigterm_first-job_worker_logs.png)
 
-You can also click on any job to view its full details. Here we navigate to the
+You can also select any job to view its full details. Here we navigate to the
 details for the `my-first-job` job:
 
 ![Job view](https://v2--brigade-docs.netlify.app/img/brigterm_first-job_job.png)
