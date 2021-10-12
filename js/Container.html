@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: Container</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Class: Container</h1>
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2><span class="attribs"><span class="type-signature"></span></span>Container<span class="signature">(image)</span><span class="type-signature"></span></h2>
+        
+            <div class="class-description">A single OCI container in a Job.</div>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+    <h2>Constructor</h2>
+    
+
+    
+    <h4 class="name" id="Container"><span class="type-signature"></span>new Container<span class="signature">(image)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Constructs a new Container.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>image</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The OCI reference to the container image</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jobs.js.html">jobs.js</a>, <a href="jobs.js.html#line147">line 147</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="arguments"><span class="type-signature"></span>arguments<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    The arguments to pass to Container#command.  If the command includes arguments
+already, the arguments property are appended. A common convention is to use the command
+array for subcommands and the arguments array for argument values.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jobs.js.html">jobs.js</a>, <a href="jobs.js.html#line185">line 185</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>job.primaryContainer.command = ["helm", "install"]
+job.primaryContainer.arguments = ["stable/nginx", "-g"]</code></pre>
+
+
+
+        
+            
+<h4 class="name" id="command"><span class="type-signature"></span>command<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    The command to run in the container. If not specified, the default entry point
+of the container is called.
+
+Only the first element of the array is the actual command. Subsequent elements
+are treated as arguments. For example, a command of ["echo", "hello"] is
+equivalent to running 'echo hello'. A common convention is to use the command
+array for subcommands and the arguments array for argument values.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jobs.js.html">jobs.js</a>, <a href="jobs.js.html#line174">line 174</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>job.primaryContainer.command = ["helm", "install"]
+job.primaryContainer.arguments = ["stable/nginx", "-g"]</code></pre>
+
+
+
+        
+            
+<h4 class="name" id="environment"><span class="type-signature"></span>environment<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Environment variables to set in the container. These are often derived from
+project settings such as secrets.
+
+You can safely pass secrets via environment variables, because Brigade treats
+all enviroment variables as secrets.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jobs.js.html">jobs.js</a>, <a href="jobs.js.html#line196">line 196</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>job.primaryContainer.env.AUTH_TOKEN = e.project.secrets.authToken  // e is event that triggered the handler</code></pre>
+
+
+
+        
+            
+<h4 class="name" id="imagePullPolicy"><span class="type-signature"></span>imagePullPolicy<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Specifies under what conditions the host node should re-fetch an image
+that is already in its local cache. The permitted values are as IfNotPresent
+(the default) and Always.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jobs.js.html">jobs.js</a>, <a href="jobs.js.html#line158">line 158</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="privileged"><span class="type-signature"></span>privileged<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Whether the container should run with privileged permissions. This is
+typically required only for "Docker in Docker" scenarios where the
+container must run its own Docker daemon.
+
+Privileged execution may be disallowed by Brigade project configuration.
+If so, the container will run unprivileged.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jobs.js.html">jobs.js</a>, <a href="jobs.js.html#line226">line 226</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="sourceMountPath"><span class="type-signature"></span>sourceMountPath<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    The path in the container's file system where, if applicable,
+source code retrieved from a version control system repository should be
+mounted. If empty (the default), Brigade will not mount any source
+code automatically.
+
+Source code mounting must be enabled at the project configuration level
+for containers to access it. If it is not enabled, you should leave this
+property empty.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jobs.js.html">jobs.js</a>, <a href="jobs.js.html#line217">line 217</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="useHostDockerSocket"><span class="type-signature"></span>useHostDockerSocket<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Whether the container should mount the host's Docker socket into its own
+file system. This is typically required only for "Docker-out-of-Docker" ("DooD")
+scenarios where the container needs to use the host's Docker daemon.
+This is strongly discouraged for almost all use cases.
+
+Host Docker socket access may be disallowed by Brigade project configuration.
+If so, the container will run without such access.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jobs.js.html">jobs.js</a>, <a href="jobs.js.html#line236">line 236</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="workingDirectory"><span class="type-signature"></span>workingDirectory<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    The working directory for the process running in the container.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jobs.js.html">jobs.js</a>, <a href="jobs.js.html#line160">line 160</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="workspaceMountPath"><span class="type-signature"></span>workspaceMountPath<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    The path in the container's file system where, if applicable, the
+Brigade worker's shared workspace should be mounted. If empty (the default),
+the Job does not have access to the shared workspace.
+
+The shared workspace must be enabled at the project configuration level
+for containers to access it. If it is not enabled, you should leave this
+property empty.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jobs.js.html">jobs.js</a>, <a href="jobs.js.html#line206">line 206</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+    
+
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="ConcurrentGroup.html">ConcurrentGroup</a></li><li><a href="Container.html">Container</a></li><li><a href="EventRegistry.html">EventRegistry</a></li><li><a href="Group.html">Group</a></li><li><a href="Job.html">Job</a></li><li><a href="JobHost.html">JobHost</a></li><li><a href="Logger.html">Logger</a></li><li><a href="SerialGroup.html">SerialGroup</a></li></ul><h3>Global</h3><ul><li><a href="global.html#events">events</a></li><li><a href="global.html#ImagePullPolicy">ImagePullPolicy</a></li><li><a href="global.html#logger">logger</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.7</a> on Tue Oct 12 2021 20:35:11 GMT+0000 (Coordinated Universal Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

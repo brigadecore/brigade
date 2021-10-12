@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: events.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: events.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.events = exports.EventRegistry = void 0;
+/**
+ * Contains event handler registrations for a script.
+ *
+ * Access the registry through the global `events` object.
+ */
+class EventRegistry {
+    constructor() {
+        this.handlers = {};
+    }
+    /**
+     * Registers a handler to be run when a particular kind of event occurs.
+     * When Brigade receives a matching event, it will run the specified
+     * handler.
+     *
+     * Possible event sources depend on the gateways configured in your Brigade
+     * system, and possible event types depend on the gateway. See the Brigade
+     * and gateway documentation for details.
+     *
+     * @param eventSource The event source (gateway) to register the handler for
+     * @param eventType The event type to register the handler for
+     * @param eventHandler The handler to run when an event with the given source and
+     * type occurs
+     */
+    on(eventSource, eventType, eventHandler) {
+        this.handlers[`${eventSource}:${eventType}`] = eventHandler;
+        return this;
+    }
+    process() {
+        let event;
+        if (process.env.BRIGADE_EVENT_FILE) {
+            console.log(`Loading dummy event from file ${process.env.BRIGADE_EVENT_FILE}`);
+            event = require(process.env.BRIGADE_EVENT_FILE);
+        }
+        else {
+            console.log("No dummy event file provided");
+            console.log("Generating a dummy event");
+            let source;
+            let type;
+            if (process.env.BRIGADE_EVENT) {
+                let eventTokens = [];
+                const match = process.env.BRIGADE_EVENT.match(/^(.+?):(.+)$/);
+                if (match) {
+                    eventTokens = Array.from(match);
+                }
+                if (eventTokens.length != 3) {
+                    throw new Error(`${process.env.BRIGADE_EVENT} is not a valid event of the form &lt;source>:&lt;type>`);
+                }
+                source = eventTokens[1];
+                type = eventTokens[2];
+                console.log(`Using specified dummy event with source "${source}" and type "${type}"`);
+            }
+            else {
+                console.log("No dummy event type provided");
+                source = "brigade.sh/cli";
+                type = "exec";
+                console.log(`Using default dummy event with source "${source}" and type "${type}"`);
+            }
+            event = {
+                id: this.newUUID(),
+                source: source,
+                type: type,
+                project: {
+                    id: this.newUUID(),
+                    secrets: {}
+                },
+                worker: {
+                    apiAddress: "https://brigade2.example.com",
+                    apiToken: this.newUUID(),
+                    configFilesDirectory: ".brigade",
+                    defaultConfigFiles: {}
+                }
+            };
+        }
+        console.log("Processing the following dummy event:");
+        console.log(event);
+        this.fire(event);
+    }
+    fire(event) {
+        let handlerFn = this.handlers[`${event.source}:${event.type}`];
+        if (!handlerFn) {
+            handlerFn = this.handlers[`${event.source}:*`];
+        }
+        if (handlerFn) {
+            return handlerFn(event);
+        }
+    }
+    newUUID() {
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0, v = c == "x" ? r : (r &amp; 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+}
+exports.EventRegistry = EventRegistry;
+/** Contains event handler registrations for a script. */
+exports.events = new EventRegistry();
+//# sourceMappingURL=events.js.map</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="ConcurrentGroup.html">ConcurrentGroup</a></li><li><a href="Container.html">Container</a></li><li><a href="EventRegistry.html">EventRegistry</a></li><li><a href="Group.html">Group</a></li><li><a href="Job.html">Job</a></li><li><a href="JobHost.html">JobHost</a></li><li><a href="Logger.html">Logger</a></li><li><a href="SerialGroup.html">SerialGroup</a></li></ul><h3>Global</h3><ul><li><a href="global.html#events">events</a></li><li><a href="global.html#ImagePullPolicy">ImagePullPolicy</a></li><li><a href="global.html#logger">logger</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.7</a> on Tue Oct 12 2021 20:35:11 GMT+0000 (Coordinated Universal Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
