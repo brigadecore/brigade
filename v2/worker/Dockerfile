@@ -4,6 +4,9 @@ ENV WORKER_VERSION=${VERSION}
 
 RUN apk add bash
 
+# Prevent update notices from appearing on npm/yarn install/run, etc.
+RUN npm config set update-notifier false
+
 WORKDIR /var/brigade-worker/brigadier
 COPY v2/brigadier/ .
 RUN bash -c 'if [[ $WORKER_VERSION =~ ^v[0-9]+(\.[0-9]+)*(\-.+)?$ ]]; then \
