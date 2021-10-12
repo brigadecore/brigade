@@ -1,4 +1,4 @@
-FROM node:16.8.0-alpine3.14
+FROM node:16.11.0-alpine3.14
 ARG VERSION
 ENV WORKER_VERSION=${VERSION}
 
