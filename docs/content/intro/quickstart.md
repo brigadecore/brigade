@@ -33,6 +33,8 @@ If you do not already have a development cluster, we recommend using [KinD].
 KinD runs a Kubernetes cluster locally using [Docker].
 [Minikube] also works well for local development.
 
+1. Ensure that Docker is running on your machine. For example, `docker ps` should return a listing of running containers.
+
 1. Install [KinD]. See the KinD documentation for full installation instructions, below are instructions for common environments:
 
     **linux**
