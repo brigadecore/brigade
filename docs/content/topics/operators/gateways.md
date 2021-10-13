@@ -135,8 +135,8 @@ progress) also exist.
 Before proceeding further, we're obliged to mention that [Events] omitted by a
 gateway should **NEVER** contain secret or sensitive information. Because
 Brigade routes events to interested parties ([projects]) based on a
-subscription model, always assume that anyone in your cluster could be
-subscribed to any event that a gateway creates.
+subscription model, always assume that any project in your Brigade instance
+could be subscribed to any event that a gateway creates.
 
 In practice, this shouldn't be a difficult thing to overcome. Events can
 contain non-secret references to things that parties (projects) having
@@ -145,9 +145,15 @@ events from the [GitHub gateway] originating from any repo -- even private ones
 -- but only projects having the correct secrets will ever be able to pull
 source from such a repo.
 
+Otherwise, operators also have the choice of installing a separate, private
+Brigade instance with its own gateway array. See the [Deployment] doc for
+guidance on how to deploy more than one Brigade instance to a Kubernetes
+cluster.
+
 [Events]: /topics/project-developers/events
 [projects]: /topics/project-developers/projects
 [GitHub gateway]: https://github.com/brigadecore/brigade-github-gateway
+[Deployment]: /topics/operators/deployment#deploying-multiple-brigade-instances
 
 ## Example Gateway
 
