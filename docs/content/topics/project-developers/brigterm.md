@@ -40,13 +40,13 @@ Here is a sample view of the main project overview page:
 ![Project Overview](https://v2--brigade-docs.netlify.app/img/brigterm_project_overview.png)
 
 From this view, you can navigate to a given project to see its full details and
-event listing. Here we select the `first-job` project:
+event listing using the arrow keys. Press the `Enter` key to select the project
+you wish to view. Here we have selected the `first-job` project:
 
 ![Project view](https://v2--brigade-docs.netlify.app/img/brigterm_first-job_project.png)
 
-To view details for a specific event, navigate to the ID you wish to explore
-via the arrow keys and select using the `Enter` key. Here we select the one
-event available to us:
+To view details for a specific event, select the ID you wish to explore. Here
+we select the one event available to us:
 
 ![Event view](https://v2--brigade-docs.netlify.app/img/brigterm_first-job_event.png)
 
