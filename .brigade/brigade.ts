@@ -260,7 +260,7 @@ async function runSuite(event: Event): Promise<void> {
     // npm packages MUST be semantically versioned, so we DON'T publish an
     // edge brigadier package.
     //
-    // To keep our github released page tidy, we're also not publishing "edge"
+    // To keep our github releases page tidy, we're also not publishing "edge"
     // CLI binaries.
     await new ConcurrentGroup(
       pushArtemisJob(event),
@@ -270,6 +270,7 @@ async function runSuite(event: Event): Promise<void> {
       pushObserverJob(event),
       pushSchedulerJob(event),
       pushWorkerJob(event),
+      publishBrigadierDocsJob(event),
     ).run()
   }
 }
