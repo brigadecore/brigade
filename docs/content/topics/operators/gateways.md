@@ -132,7 +132,7 @@ progress) also exist.
 
 ## Events and Sensitive Information
 
-Before proceeding further, we're obliged to mention that [Events] omitted by a
+Before proceeding further, we're obliged to mention that [Events] emitted by a
 gateway should **NEVER** contain secret or sensitive information. Because
 Brigade routes events to interested parties ([projects]) based on a
 subscription model, always assume that any project in your Brigade instance
