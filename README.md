@@ -49,6 +49,7 @@ them to Brigade events that are emitted into Brigade's event bus.
 * [CloudEvents Gateway](https://github.com/brigadecore/brigade-cloudevents-gateway)
 * [Docker Hub Gateway](https://github.com/brigadecore/brigade-dockerhub-gateway)
 * [GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway)
+* [Slack Gateway](https://github.com/brigadecore/brigade-slack-gateway)
 
 The [Brigade GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway),
 in particular, is already utilized extensively by the Brigade team in
