@@ -5,7 +5,8 @@ ENV WORKER_VERSION=${VERSION}
 RUN apk add bash
 
 # Prevent update notices from appearing on npm/yarn install/run, etc.
-RUN npm config set update-notifier false
+RUN npm config set update-notifier false \
+  && yarn config set disable-self-update-check true
 
 WORKDIR /var/brigade-worker/brigadier
 COPY v2/brigadier/ .
