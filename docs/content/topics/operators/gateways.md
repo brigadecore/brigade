@@ -40,7 +40,8 @@ Currently, the list of official Brigade v2 gateways is as follows:
 * [BitBucket Gateway](https://github.com/brigadecore/brigade-bitbucket-gateway/tree/v2)
 * [CloudEvents Gateway](https://github.com/brigadecore/brigade-cloudevents-gateway)
 * [Docker Hub Gateway](https://github.com/brigadecore/brigade-dockerhub-gateway)
-* [Github Gateway](https://github.com/brigadecore/brigade-github-gateway)
+* [GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway)
+* [Slack Gateway](https://github.com/brigadecore/brigade-slack-gateway)
 
 Follow the installation instructions provided in each gateway's repository to
 learn how to get started.
@@ -127,6 +128,32 @@ progress) also exist.
 [Go SDK]: https://github.com/brigadecore/brigade/tree/v2/sdk
 [Javascript/Typescript SDK]: https://github.com/brigadecore/brigade-sdk-for-js
 [Rust SDK]: https://github.com/brigadecore/brigade-sdk-for-rust
+
+
+## Events and Sensitive Information
+
+Before proceeding further, we're obliged to mention that [Events] emitted by a
+gateway should **NEVER** contain secret or sensitive information. Because
+Brigade routes events to interested parties ([projects]) based on a
+subscription model, always assume that any project in your Brigade instance
+could be subscribed to any event that a gateway creates.
+
+In practice, this shouldn't be a difficult thing to overcome. Events can
+contain non-secret references to things that parties (projects) having
+appropriate secrets can access. By way of example, anyone can subscribe to
+events from the [GitHub gateway] originating from any repo -- even private ones
+-- but only projects having the correct secrets will ever be able to pull
+source from such a repo.
+
+Otherwise, operators also have the choice of installing a separate, private
+Brigade instance with its own gateway array. See the [Deployment] doc for
+guidance on how to deploy more than one Brigade instance to a Kubernetes
+cluster.
+
+[Events]: /topics/project-developers/events
+[projects]: /topics/project-developers/projects
+[GitHub gateway]: https://github.com/brigadecore/brigade-github-gateway
+[Deployment]: /topics/operators/deployment#deploying-multiple-brigade-instances
 
 ## Example Gateway
 

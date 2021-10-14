@@ -298,3 +298,20 @@ chart version or to update release configuration.  For more details around
 managing Helm releases, see [Helm's documentation].
 
 [Helm's documentation]: https://helm.sh/docs/intro/using_helm
+
+## Deploying multiple Brigade instances
+
+It is possible to deploy multiple Brigade instances to one underlying
+Kubernetes cluster. However, there is one piece of configuration necessary for
+each Brigade instance other than the original. This is due to the global RBAC
+resources that are created by the original deployment.
+
+For each subsequent Brigade deployment, include the following configuration
+in the chart values file:
+
+```yaml
+rbac:
+  installGlobalResources: false
+```
+
+Then, deploy as usual!
