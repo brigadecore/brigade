@@ -159,6 +159,18 @@ spec:
           value: {{ .Values.worker.image.pullPolicy }}
         - name: WORKSPACE_STORAGE_CLASS
           value: {{ .Values.worker.workspaceStorageClass }}
+        {{- if .Values.worker.nodeSelector }}
+        - name: NODE_SELECTOR_KEY
+          value: {{ .Values.worker.nodeSelector.key }}
+        - name: NODE_SELECTOR_VALUE
+          value: {{ .Values.worker.nodeSelector.value }}
+        {{- end }}
+        {{- if .Values.worker.toleration }}
+        - name: TOLERATION_KEY
+          value: {{ .Values.worker.toleration.key }}
+        - name: TOLERATION_VALUE
+          value: {{ .Values.worker.toleration.value }}
+        {{- end }}
         ports:
         - name: healthz
           containerPort: 8080
