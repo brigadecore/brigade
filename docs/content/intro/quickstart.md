@@ -171,7 +171,13 @@ kubectl get service --namespace brigade brigade-apiserver -o=jsonpath='{.status.
 
 ## Log in to Brigade
 
-Authenticate to Brigade as the root user using demo password `F00Bar!!!`. The \--insecure flag instructs Brigade to ignore the self-signed certificate used by our local installation of Brigade.
+Authenticate to Brigade as the root user. First, we need to acquire the auto-generated root user password using the following kubectl command:
+
+```
+kubectl get secret --namespace brigade brigade-apiserver -o=jsonpath='{.data.root-user-password}' | base64 --decode
+```
+
+The \--insecure flag instructs Brigade to ignore the self-signed certificate used by our local installation of Brigade.
 
 **local clusters**
 

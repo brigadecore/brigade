@@ -279,10 +279,19 @@ To expose the apiserver port, run the following command:
 $ make hack-expose-apiserver
 ```
 
+The root user password will be auto-generated if not overridden in the values
+file (via `apiserver.rootUser.password`). To retrieve its value after install,
+run the following:
+
+```console
+$ kubectl get secret --namespace brigade brigade-apiserver \
+    -o=jsonpath='{.data.root-user-password}' | base64 --decode
+```
+
 You can then log in to the apiserver with the following `brig` command:
 
 ```console
-$ brig login -s https://localhost:7000 -r -p 'F00Bar!!!' -k
+$ brig login -s https://localhost:7000 -r -p <root user password> -k
 ```
 
 To create your first Brigade project, check out [projects](./projects.md) to
@@ -313,10 +322,19 @@ $ export DOCKER_REGISTRY=localhost:5000
 $ make hack
 ```
 
+The root user password will be auto-generated if not overridden in the values
+file (via `apiserver.rootUser.password`). To retrieve its value after install,
+run the following:
+
+```console
+$ kubectl get secret --namespace brigade brigade-apiserver \
+    -o=jsonpath='{.data.root-user-password}' | base64 --decode
+```
+
 You can then log in to the apiserver with the following `brig` command:
 
 ```console
-$ brig login -s https://localhost:31600 -r -p 'F00Bar!!!' -k
+$ brig login -s https://localhost:31600 -r -p <root user password> -k
 ```
 
 To create your first Brigade project, check out [projects](/topics/project-developers/projects.md) to

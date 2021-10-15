@@ -28,8 +28,13 @@ apiserver:
 
   rootUser:
     enabled: true
-    # TODO: This should probably be generated
-    password: F00Bar!!!
+
+    ## The root user password will be an auto-generated random string when not
+    ## supplied. Its value can be resolved via kubectl, e.g.
+    ##   kubectl --namespace brigade get secret brigade-apiserver \
+    ##     -o jsonpath={.data.root-user-password} | base64 --decode
+    # password:
+
     ## Session TTL dictates the default time-to-live for the root user session.
     ## Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
     ## For example, "60s", "2h45m", "168h" (1 week)
