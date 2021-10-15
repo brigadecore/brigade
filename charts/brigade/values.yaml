@@ -269,22 +269,23 @@ worker:
   workspaceStorageClass: nfs
 
   # Optional nodeSelector key/value for all worker and job pods, for scheduling
-  # on specific nodes.
+  # on nodes reserved for Brigade workloads.
   #
   # For more details, see
   # https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
   #
   # Example:
   # nodeSelector:
-  #   key: disktype
-  #   value: ssd
-  # This will match any/all nodes with the 'disktype=ssd' label.
+  #   key: brigadehost
+  #   value: true
+  # This will match any/all nodes with the 'brigadehost=true' label.
   nodeSelector:
     # key:
     # value:
 
   # Optional toleration key/value for all worker and job pods, for tolerating
-  # (i.e. allowing to schedule on) particular tainted nodes.
+  # (i.e. allowing to schedule on) nodes specifically intended to run Brigade
+  # workloads.
   #
   # Notes:
   # If only a key is supplied, the toleration operator field will be set to
@@ -299,17 +300,17 @@ worker:
   #
   # Example:
   # toleration:
-  #   key: taint
+  #   key: brigadehost
   # This will allow scheduling an any/all nodes tainted with
-  # 'taint=<value>:<effect>', for any value and any effect.
+  # 'brigadehost=<value>:<effect>', for any value and any effect.
   # (Operator = "Exists")
   #
   # Example:
   # toleration:
-  #   key: taint
+  #   key: brigadehost
   #   value: true
   # This will allow scheduling an any/all nodes tainted with
-  # 'taint=true:<effect>', for any effect. (Operator = "Equal")
+  # 'brigadehost=true:<effect>', for any effect. (Operator = "Equal")
   toleration:
     # key:
     # value:
