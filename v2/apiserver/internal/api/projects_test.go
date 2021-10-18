@@ -104,6 +104,7 @@ func TestNewProjectsService(t *testing.T) {
 }
 
 func TestProjectServiceCreate(t *testing.T) {
+	testProjectID := "myproject"
 	testCases := []struct {
 		name       string
 		service    ProjectsService
@@ -120,9 +121,51 @@ func TestProjectServiceCreate(t *testing.T) {
 			},
 		},
 		{
+			name: "error checking for project existence",
+			service: &projectsService{
+				authorize: alwaysAuthorize,
+				projectsStore: &mockProjectsStore{
+					GetFn: func(_ context.Context, id string) (Project, error) {
+						return Project{}, errors.New("service error")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "service error")
+			},
+		},
+		{
+			name: "project already exists",
+			service: &projectsService{
+				authorize: alwaysAuthorize,
+				projectsStore: &mockProjectsStore{
+					GetFn: func(_ context.Context, id string) (Project, error) {
+						return Project{
+							ObjectMeta: meta.ObjectMeta{
+								ID: testProjectID,
+							},
+						}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrConflict{}, err)
+				require.Equal(t, ProjectKind, err.(*meta.ErrConflict).Type)
+				require.Equal(t, testProjectID, err.(*meta.ErrConflict).ID)
+				require.Contains(t, err.(*meta.ErrConflict).Reason, "already exists")
+			},
+		},
+		{
 			name: "error creating project in substrate",
 			service: &projectsService{
 				authorize: alwaysAuthorize,
+				projectsStore: &mockProjectsStore{
+					GetFn: func(_ context.Context, id string) (Project, error) {
+						return Project{}, &meta.ErrNotFound{}
+					},
+				},
 				substrate: &mockSubstrate{
 					CreateProjectFn: func(
 						_ context.Context,
@@ -154,6 +197,9 @@ func TestProjectServiceCreate(t *testing.T) {
 					CreateFn: func(context.Context, Project) error {
 						return errors.New("store error")
 					},
+					GetFn: func(_ context.Context, id string) (Project, error) {
+						return Project{}, &meta.ErrNotFound{}
+					},
 				},
 			},
 			assertions: func(err error) {
@@ -178,6 +224,9 @@ func TestProjectServiceCreate(t *testing.T) {
 					CreateFn: func(context.Context, Project) error {
 						return nil
 					},
+					GetFn: func(_ context.Context, id string) (Project, error) {
+						return Project{}, &meta.ErrNotFound{}
+					},
 				},
 			},
 			assertions: func(err error) {
@@ -187,7 +236,14 @@ func TestProjectServiceCreate(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			_, err := testCase.service.Create(context.Background(), Project{})
+			_, err := testCase.service.Create(
+				context.Background(),
+				Project{
+					ObjectMeta: meta.ObjectMeta{
+						ID: testProjectID,
+					},
+				},
+			)
 			testCase.assertions(err)
 		})
 	}
