@@ -18,7 +18,7 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
-  image: brigadecore/kind-node:v1.20.2
+  image: brigadecore/kind-node:v1.22.2
   extraPortMappings:
   - containerPort: 31600
     hostPort: 31600
