@@ -1561,6 +1561,241 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 	}
 }
 
+func TestSubstrateCreatePodWithNodeSelectorAndToleration(t *testing.T) {
+	testProject := api.Project{
+		Kubernetes: &api.KubernetesDetails{
+			Namespace: "foo",
+		},
+	}
+	testEvent := api.Event{
+		ObjectMeta: meta.ObjectMeta{
+			ID: "123456789",
+		},
+		Worker: api.Worker{},
+	}
+	testJobName := "italian"
+	testCases := []struct {
+		name       string
+		setup      func() *substrate
+		assertions func(kubernetes.Interface)
+	}{
+		{
+			name: "empty node selector, empty toleration",
+			setup: func() *substrate {
+				return &substrate{
+					kubeClient: fake.NewSimpleClientset(),
+					config:     SubstrateConfig{},
+				}
+			},
+			assertions: func(kubeClient kubernetes.Interface) {
+				workerPod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					myk8s.WorkerPodName(testEvent.ID),
+					metav1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, workerPod)
+				require.Nil(t, workerPod.Spec.NodeSelector)
+				require.Nil(t, workerPod.Spec.Tolerations)
+
+				jobPod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					myk8s.JobPodName(testEvent.ID, testJobName),
+					metav1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, jobPod)
+				require.Nil(t, jobPod.Spec.NodeSelector)
+				require.Nil(t, jobPod.Spec.Tolerations)
+			},
+		},
+		{
+			name: "node selector key but no value",
+			setup: func() *substrate {
+				return &substrate{
+					kubeClient: fake.NewSimpleClientset(),
+					config: SubstrateConfig{
+						NodeSelectorKey: "foo",
+					},
+				}
+			},
+			assertions: func(kubeClient kubernetes.Interface) {
+				workerPod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					myk8s.WorkerPodName(testEvent.ID),
+					metav1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, workerPod)
+				require.Nil(t, workerPod.Spec.NodeSelector)
+				require.Nil(t, workerPod.Spec.Tolerations)
+
+				jobPod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					myk8s.JobPodName(testEvent.ID, testJobName),
+					metav1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, jobPod)
+				require.Nil(t, jobPod.Spec.NodeSelector)
+				require.Nil(t, jobPod.Spec.Tolerations)
+			},
+		},
+		{
+			name: "node selector key and value",
+			setup: func() *substrate {
+				return &substrate{
+					kubeClient: fake.NewSimpleClientset(),
+					config: SubstrateConfig{
+						NodeSelectorKey:   "foo",
+						NodeSelectorValue: "bar",
+					},
+				}
+			},
+			assertions: func(kubeClient kubernetes.Interface) {
+				workerPod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					myk8s.WorkerPodName(testEvent.ID),
+					metav1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, workerPod)
+				require.Equal(t, "bar", workerPod.Spec.NodeSelector["foo"])
+				require.Nil(t, workerPod.Spec.Tolerations)
+
+				jobPod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					myk8s.JobPodName(testEvent.ID, testJobName),
+					metav1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, jobPod)
+				require.Equal(t, "bar", jobPod.Spec.NodeSelector["foo"])
+				require.Nil(t, jobPod.Spec.Tolerations)
+			},
+		},
+		{
+			name: "toleration key, no value",
+			setup: func() *substrate {
+				return &substrate{
+					kubeClient: fake.NewSimpleClientset(),
+					config: SubstrateConfig{
+						TolerationKey: "foo",
+					},
+				}
+			},
+			assertions: func(kubeClient kubernetes.Interface) {
+				workerPod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					myk8s.WorkerPodName(testEvent.ID),
+					metav1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, workerPod)
+				require.Nil(t, workerPod.Spec.NodeSelector)
+				require.Equal(t, corev1.Toleration{
+					Key:      "foo",
+					Operator: corev1.TolerationOpExists,
+				}, workerPod.Spec.Tolerations[0])
+
+				jobPod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					myk8s.JobPodName(testEvent.ID, testJobName),
+					metav1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, jobPod)
+				require.Nil(t, jobPod.Spec.NodeSelector)
+				require.Equal(t, corev1.Toleration{
+					Key:      "foo",
+					Operator: corev1.TolerationOpExists,
+				}, jobPod.Spec.Tolerations[0])
+			},
+		},
+		{
+			name: "toleration key and value",
+			setup: func() *substrate {
+				return &substrate{
+					kubeClient: fake.NewSimpleClientset(),
+					config: SubstrateConfig{
+						TolerationKey:   "foo",
+						TolerationValue: "bar",
+					},
+				}
+			},
+			assertions: func(kubeClient kubernetes.Interface) {
+				workerPod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					myk8s.WorkerPodName(testEvent.ID),
+					metav1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, workerPod)
+				require.Nil(t, workerPod.Spec.NodeSelector)
+				require.Equal(t, corev1.Toleration{
+					Key:      "foo",
+					Value:    "bar",
+					Operator: corev1.TolerationOpEqual,
+				}, workerPod.Spec.Tolerations[0])
+
+				jobPod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					myk8s.JobPodName(testEvent.ID, testJobName),
+					metav1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, jobPod)
+				require.Nil(t, jobPod.Spec.NodeSelector)
+				require.Equal(t, corev1.Toleration{
+					Key:      "foo",
+					Value:    "bar",
+					Operator: corev1.TolerationOpEqual,
+				}, jobPod.Spec.Tolerations[0])
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			substrate := testCase.setup()
+			err := substrate.createWorkerPod(
+				context.Background(),
+				testProject,
+				testEvent,
+			)
+			require.NoError(t, err)
+			err = substrate.createJobPod(
+				context.Background(),
+				testProject,
+				testEvent,
+				testJobName,
+				api.JobSpec{},
+			)
+			require.NoError(t, err)
+			testCase.assertions(substrate.kubeClient)
+		})
+	}
+}
+
 func TestGenerateNewNamespace(t *testing.T) {
 	namespace := generateNewNamespace()
 	tokens := strings.SplitN(namespace, "-", 2)
