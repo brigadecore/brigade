@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
@@ -227,8 +228,28 @@ func (p *projectsService) Create(
 	now := time.Now().UTC()
 	project.Created = &now
 
+	_, err := p.projectsStore.Get(ctx, project.ID)
+	if err != nil {
+		if _, ok := err.(*meta.ErrNotFound); !ok {
+			return project, errors.Wrapf(
+				err,
+				"error checking for project %q existence",
+				project.ID,
+			)
+		}
+	} else {
+		return project, &meta.ErrConflict{
+			Type: ProjectKind,
+			ID:   project.ID,
+			Reason: fmt.Sprintf(
+				"Project %q already exists.",
+				project.ID,
+			),
+		}
+	}
+
 	// Add substrate-specific details BEFORE we persist.
-	project, err := p.substrate.CreateProject(ctx, project)
+	project, err = p.substrate.CreateProject(ctx, project)
 	if err != nil {
 		return project, errors.Wrapf(
 			err,
