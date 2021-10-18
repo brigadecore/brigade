@@ -132,6 +132,10 @@ func substrateConfig() (kubernetes.SubstrateConfig, error) {
 		api.ImagePullPolicy(defaultWorkerImagePullPolicyStr)
 	config.WorkspaceStorageClass, err =
 		os.GetRequiredEnvVar("WORKSPACE_STORAGE_CLASS")
+	config.NodeSelectorKey = os.GetEnvVar("NODE_SELECTOR_KEY", "")
+	config.NodeSelectorValue = os.GetEnvVar("NODE_SELECTOR_VALUE", "")
+	config.TolerationKey = os.GetEnvVar("TOLERATION_KEY", "")
+	config.TolerationValue = os.GetEnvVar("TOLERATION_VALUE", "")
 	return config, err
 }
 

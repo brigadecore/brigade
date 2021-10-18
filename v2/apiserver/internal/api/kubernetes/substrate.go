@@ -68,6 +68,18 @@ type SubstrateConfig struct {
 	// WorkspaceStorageClass is the Kubernetes StorageClass that should be used
 	// for a Worker's shared storage.
 	WorkspaceStorageClass string
+	// NodeSelectorKey is the key to use for the optional nodeSelector
+	// configuration for worker and jobs.
+	NodeSelectorKey string
+	// NodeSelectorValue is the value to use for the optional nodeSelector
+	// configuration for worker and jobs.
+	NodeSelectorValue string
+	// TolerationKey is the key to use for the optional tolerations
+	// configuration for worker and jobs.
+	TolerationKey string
+	// TolerationValue is the value to use for the optional tolerations
+	// configuration for worker and jobs.
+	TolerationValue string
 }
 
 // substrate is a Kubernetes-based implementation of the api.Substrate
@@ -978,6 +990,25 @@ func (s *substrate) createWorkerPod(
 		},
 	}
 
+	if s.config.NodeSelectorKey != "" && s.config.NodeSelectorValue != "" {
+		workerPod.Spec.NodeSelector = map[string]string{
+			s.config.NodeSelectorKey: s.config.NodeSelectorValue,
+		}
+	}
+
+	if s.config.TolerationKey != "" {
+		workerPod.Spec.Tolerations = []corev1.Toleration{
+			{
+				Key:      s.config.TolerationKey,
+				Operator: corev1.TolerationOpExists,
+			},
+		}
+		if s.config.TolerationValue != "" {
+			workerPod.Spec.Tolerations[0].Value = s.config.TolerationValue
+			workerPod.Spec.Tolerations[0].Operator = corev1.TolerationOpEqual
+		}
+	}
+
 	podClient := s.kubeClient.CoreV1().Pods(project.Kubernetes.Namespace)
 	if _, err := podClient.Create(
 		ctx,
@@ -1205,6 +1236,25 @@ func (s *substrate) createJobPod(
 			Containers:         containers,
 			Volumes:            volumes,
 		},
+	}
+
+	if s.config.NodeSelectorKey != "" && s.config.NodeSelectorValue != "" {
+		jobPod.Spec.NodeSelector = map[string]string{
+			s.config.NodeSelectorKey: s.config.NodeSelectorValue,
+		}
+	}
+
+	if s.config.TolerationKey != "" {
+		jobPod.Spec.Tolerations = []corev1.Toleration{
+			{
+				Key:      s.config.TolerationKey,
+				Operator: corev1.TolerationOpExists,
+			},
+		}
+		if s.config.TolerationValue != "" {
+			jobPod.Spec.Tolerations[0].Value = s.config.TolerationValue
+			jobPod.Spec.Tolerations[0].Operator = corev1.TolerationOpEqual
+		}
 	}
 
 	podClient := s.kubeClient.CoreV1().Pods(project.Kubernetes.Namespace)
