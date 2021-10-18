@@ -190,7 +190,6 @@ lint-chart:
 	'
 
 APISERVER_ADDRESS ?= "https://localhost:7000"
-APISERVER_ROOT_PASSWORD ?=
 
 .PHONY: test-integration
 test-integration: hack-expose-apiserver
@@ -427,6 +426,7 @@ hack-push-%: hack-build-%
 	docker push $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)
 
 IMAGE_PULL_POLICY ?= Always
+APISERVER_ROOT_PASSWORD ?=
 
 .PHONY: hack-deploy
 hack-deploy:
