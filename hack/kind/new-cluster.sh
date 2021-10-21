@@ -3,8 +3,8 @@
 set -o errexit
 
 # Create a local Docker image registry that we'll hook up to kind
-reg_name='kind-registry'
-reg_port='5000'
+reg_name="${KIND_REGISTRY_NAME:-kind-registry}"
+reg_port="${KIND_REGISTRY_PORT:-5000}"
 running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
 if [ "${running}" != 'true' ]; then
   docker run \
@@ -25,7 +25,7 @@ nodes:
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${reg_port}"]
-    endpoint = ["http://${reg_name}:${reg_port}"]
+    endpoint = ["http://${reg_name}:5000"]
 EOF
 
 # Make sure the local Docker image registry is connected to the same network
