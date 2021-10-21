@@ -1,0 +1,21 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm --namespace {{ .Release.Namespace }} status {{ .Release.Name }}
+  $ helm --namespace {{ .Release.Namespace }} get all {{ .Release.Name }}
+
+To retrieve the auto-generated password for the Brigade API server
+root user (when enabled), run:
+
+  $ kubectl --namespace {{ .Release.Namespace }} get secret \
+      {{ .Release.Name }}-apiserver \
+      -o jsonpath={.data.root-user-password} | base64 --decode
+
+To retrieve the auto-generated password for Artemis, run:
+
+  $ kubectl --namespace {{ .Release.Namespace }} get secret \
+      {{ .Release.Name }}-artemis \
+      -o jsonpath={.data.password} | base64 --decode

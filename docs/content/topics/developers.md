@@ -281,12 +281,7 @@ $ make hack-expose-apiserver
 
 The root user password will be auto-generated if not overridden in the values
 file (via `apiserver.rootUser.password`). To retrieve its value after install,
-run the following:
-
-```console
-$ kubectl get secret --namespace brigade brigade-apiserver \
-    -o=jsonpath='{.data.root-user-password}' | base64 --decode
-```
+follow the steps provided in the `Notes` section after deployment.
 
 You can then log in to the apiserver with the following `brig` command:
 
@@ -324,12 +319,7 @@ $ make hack
 
 The root user password will be auto-generated if not overridden in the values
 file (via `apiserver.rootUser.password`). To retrieve its value after install,
-run the following:
-
-```console
-$ kubectl get secret --namespace brigade brigade-apiserver \
-    -o=jsonpath='{.data.root-user-password}' | base64 --decode
-```
+follow the steps provided in the `Notes` section after deployment.
 
 You can then log in to the apiserver with the following `brig` command:
 

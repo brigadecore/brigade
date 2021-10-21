@@ -30,9 +30,7 @@ apiserver:
     enabled: true
 
     ## The root user password will be an auto-generated random string when not
-    ## supplied. Its value can be resolved via kubectl, e.g.
-    ##   kubectl --namespace brigade get secret brigade-apiserver \
-    ##     -o jsonpath={.data.root-user-password} | base64 --decode
+    ## supplied. See NOTES.txt after deployment for retrieval steps.
     # password:
 
     ## Session TTL dictates the default time-to-live for the root user session.
@@ -1434,9 +1432,7 @@ artemis:
 
   username: brigade
   ## The password will be an auto-generated random string when not
-  ## supplied. Its value can be resolved via kubectl, e.g.
-  ##   kubectl --namespace brigade get secret brigade-artemis \
-  ##     -o jsonpath={.data.password} | base64 --decode
+  ## supplied. See NOTES.txt after deployment for retrieval steps.
   # password:
 
   ## Persist data to a volume
