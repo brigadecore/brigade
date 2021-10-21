@@ -1433,10 +1433,11 @@ artemis:
     pullPolicy: IfNotPresent
 
   username: brigade
-  ## If not specified, a random password is automatically selected. It will
-  ## change on every upgrade, so choosing one up front may improve availability
-  ## during upgrades.
-  password: artemis
+  ## The password will be an auto-generated random string when not
+  ## supplied. Its value can be resolved via kubectl, e.g.
+  ##   kubectl --namespace brigade get secret brigade-artemis \
+  ##     -o jsonpath={.data.password} | base64 --decode
+  # password:
 
   ## Persist data to a volume
   persistence:
