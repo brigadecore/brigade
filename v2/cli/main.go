@@ -28,6 +28,7 @@ func main() {
 		serviceAccountCommand,
 		userCommand,
 		termCommand,
+		versionCommand,
 	}
 	fmt.Println()
 	if err := app.RunContext(signals.Context(), os.Args); err != nil {
