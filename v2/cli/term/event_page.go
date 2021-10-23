@@ -36,7 +36,7 @@ func newEventPage(
 		workerInfo: tview.NewTextView().SetDynamicColors(true),
 		jobsTable:  tview.NewTable().SetSelectable(true, false),
 		usage: tview.NewTextView().SetDynamicColors(true).SetText(
-			"[yellow](F5) [white]Reload    [yellow](<-/Del) [white]Back    [yellow](L) [white]Logs    [yellow](ESC) [white]Home    [yellow](Q) [white]Quit", // nolint: lll
+			"[yellow](F5 R) [white]Reload    [yellow](<-/Del) [white]Back    [yellow](L) [white]Logs    [yellow](ESC) [white]Home    [yellow](Q) [white]Quit", // nolint: lll
 		),
 	}
 	e.eventInfo.SetBorder(true).SetBorderColor(tcell.ColorWhite)

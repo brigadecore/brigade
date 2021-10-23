@@ -126,7 +126,7 @@ func (p *projectsPage) refresh(ctx context.Context) {
 }
 
 func (p *projectsPage) fillUsage(projects core.ProjectList) {
-	usageText := "[yellow](F5) [white]Reload"
+	usageText := "[yellow](F5 R) [white]Reload"
 	if len(p.projectsContinueValues) > 1 {
 		usageText = fmt.Sprintf("%s    [yellow](P) [white]Previous Page", usageText)
 	}

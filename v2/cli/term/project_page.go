@@ -180,7 +180,7 @@ func (p *projectPage) fillProjectInfo(project core.Project) {
 }
 
 func (p *projectPage) fillUsage(events core.EventList) {
-	usageText := "[yellow](F5) [white]Reload    [yellow](<-/Del) [white]Back    [yellow](ESC) [white]Home" // nolint: lll
+	usageText := "[yellow](F5 R) [white]Reload    [yellow](<-/Del) [white]Back    [yellow](ESC) [white]Home" // nolint: lll
 	if len(p.eventsContinueValues) > 1 {
 		usageText = fmt.Sprintf("%s    [yellow](P) [white]Previous Page", usageText)
 	}
