@@ -14,6 +14,7 @@ var versionCommand = &cli.Command{
 }
 
 func printVersion(c *cli.Context) error {
-	fmt.Printf("Brigade version %s", version.Version())
+	fmt.Printf("Brigade version %s -- commit %s\n",
+		version.Version(), version.Commit())
 	return nil
 }
