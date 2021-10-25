@@ -32,7 +32,7 @@ func newJobPage(
 		jobInfo:         tview.NewTextView().SetDynamicColors(true),
 		containersTable: tview.NewTable().SetSelectable(true, false),
 		usage: tview.NewTextView().SetDynamicColors(true).SetText(
-			"[yellow](F5) [white]Reload    [yellow](<-/Del) [white]Back    [yellow](L) [white]Logs    [yellow](ESC) [white]Home    [yellow](Q) [white]Quit", // nolint: lll
+			"[yellow](F5 R) [white]Reload    [yellow](<-/Del) [white]Back    [yellow](L) [white]Logs    [yellow](ESC) [white]Home    [yellow](Q) [white]Quit", // nolint: lll
 		),
 	}
 	j.jobInfo.SetBorder(true).SetBorderColor(tcell.ColorYellow)
