@@ -21,8 +21,6 @@ const testIntegrationJob = (e, p) => {
     // 'Always', the images loaded manually into kind will be ignored and the
     // pods will attempt to pull from remote registries.
     "IMAGE_PULL_POLICY": "IfNotPresent",
-    // Use a hard-coded apiserver password for deployment and subsequent login
-    "APISERVER_ROOT_PASSWORD": "F00Bar!!!"
   };
   kind.tasks.push(
     // Install git and golang deps
@@ -35,8 +33,7 @@ const testIntegrationJob = (e, p) => {
     // It would be more efficient to mount built images from associated
     // build jobs; however, they currently use kaniko, which doesn't preserve
     // images in the local Docker cache.
-    "make hack-build-images hack-load-images",
-    "make hack-deploy test-integration",
+    "make hack-build-images hack-load-images hack-deploy test-integration",
   );
   return kind;
 }

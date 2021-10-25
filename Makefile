@@ -426,7 +426,7 @@ hack-push-%: hack-build-%
 	docker push $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)
 
 IMAGE_PULL_POLICY ?= Always
-APISERVER_ROOT_PASSWORD ?=
+APISERVER_ROOT_PASSWORD ?= 'F00Bar!!!'
 
 .PHONY: hack-deploy
 hack-deploy:
