@@ -46,9 +46,7 @@ KinD runs a Kubernetes cluster locally using [Docker].
 
     **macos with Homebrew**
     ```bash
-    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-darwin-amd64
-    chmod +x ./kind
-    mv ./kind /usr/local/bin
+    brew install kind
     ```
 
     **windows**
