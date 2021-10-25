@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/brigadecore/brigade-foundations/signals"
-	"github.com/brigadecore/brigade-foundations/version"
 	"github.com/urfave/cli/v2"
 )
 
@@ -13,11 +12,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "Brigade"
 	app.Usage = "Event Driven Scripting for Kubernetes"
-	app.Version = fmt.Sprintf(
-		"%s -- commit %s",
-		version.Version(),
-		version.Commit(),
-	)
+	app.HideVersion = true
 	app.Commands = []*cli.Command{
 		eventCommand,
 		initCommand,
