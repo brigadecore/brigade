@@ -74,10 +74,12 @@ where default passwords are used. It is recommended to supply your own values
 for these fields. Here are the values to update and their locations in the
 file:
 
-  - The root user password at `apiserver.rootUser.password`
+  - The root user password at `apiserver.rootUser.password` (by default, this
+    will be an auto-generated random string)
   - The MongoDB root user and database passwords at `mongodb.auth.rootPassword`
     and `mongodb.auth.password`
-  - The Artemis user password at `artemis.password`
+  - The Artemis user password at `artemis.password` (by default, this
+    will be an auto-generated random string)
 
 ## Certificates and TLS
 

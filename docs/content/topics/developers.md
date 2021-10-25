@@ -279,10 +279,14 @@ To expose the apiserver port, run the following command:
 $ make hack-expose-apiserver
 ```
 
+The root user password will be auto-generated if not overridden in the values
+file (via `apiserver.rootUser.password`). To retrieve its value after install,
+follow the steps provided in the `Notes` section after deployment.
+
 You can then log in to the apiserver with the following `brig` command:
 
 ```console
-$ brig login -s https://localhost:7000 -r -p 'F00Bar!!!' -k
+$ brig login -s https://localhost:7000 -r -p <root user password> -k
 ```
 
 To create your first Brigade project, check out [projects](./projects.md) to
@@ -312,6 +316,10 @@ Brigade:
 $ export DOCKER_REGISTRY=localhost:5000
 $ make hack
 ```
+
+Normally, the root user password will be auto-generated if not overridden in the
+values file (via `apiserver.rootUser.password`). For the `hack` targets, this
+value is hard-coded to `F00Bar!!!`.
 
 You can then log in to the apiserver with the following `brig` command:
 
