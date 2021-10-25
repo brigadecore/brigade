@@ -46,9 +46,7 @@ KinD runs a Kubernetes cluster locally using [Docker].
 
     **macos with Homebrew**
     ```bash
-    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-darwin-amd64
-    chmod +x ./kind
-    mv ./kind /usr/local/bin
+    brew install kind
     ```
 
     **windows**
@@ -171,13 +169,19 @@ kubectl get service --namespace brigade brigade-apiserver -o=jsonpath='{.status.
 
 ## Log in to Brigade
 
-Authenticate to Brigade as the root user using demo password `F00Bar!!!`. The \--insecure flag instructs Brigade to ignore the self-signed certificate used by our local installation of Brigade.
+Authenticate to Brigade as the root user. First, you need to acquire the auto-generated root user password using the following kubectl command:
+
+```
+export APISERVER_ROOT_PASSWORD=$(kubectl get secret --namespace brigade brigade-apiserver -o=jsonpath='{.data.root-user-password}' | base64 --decode)
+```
 
 **local clusters**
 
 ```
-brig login --insecure --server https://localhost:8443 --root
+brig login --insecure --server https://localhost:8443 --root --password "${APISERVER_ROOT_PASSWORD}"
 ```
+
+The \--insecure flag instructs Brigade to ignore the self-signed certificate used by our local installation of Brigade.
 
 If the address https://localhost:8443 does not resolve, double-check that the brigade-apiserver service was successfully forwarded from the previous section.
 
@@ -186,7 +190,7 @@ If the address https://localhost:8443 does not resolve, double-check that the br
 Replace `IP_ADDRESS` with the External IP address of your cluster:
 
 ```
-brig login --insecure --server https://IP_ADDRESS --root
+brig login --insecure --server https://IP_ADDRESS --root --password "${APISERVER_ROOT_PASSWORD}"
 ```
 
 ## Create a Project
