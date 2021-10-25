@@ -16,7 +16,11 @@ const testIntegrationJob = (e, p) => {
   let kind = new KindJob(testIntegrationJobName);
   kind.mountPath = localPath;
   kind.env = {
-    "BRIGADE_CI_PRIVATE_REPO_SSH_KEY": p.secrets.privateRepoSSHKey
+    "BRIGADE_CI_PRIVATE_REPO_SSH_KEY": p.secrets.privateRepoSSHKey,
+    // IMAGE_PULL_POLICY is set to 'IfNotPresent' for deploy; if set to
+    // 'Always', the images loaded manually into kind will be ignored and the
+    // pods will attempt to pull from remote registries.
+    "IMAGE_PULL_POLICY": "IfNotPresent",
   };
   kind.tasks.push(
     // Install git and golang deps
@@ -29,12 +33,7 @@ const testIntegrationJob = (e, p) => {
     // It would be more efficient to mount built images from associated
     // build jobs; however, they currently use kaniko, which doesn't preserve
     // images in the local Docker cache.
-    "make hack-build-images hack-load-images",
-    // IMAGE_PULL_POLICY is set to 'IfNotPresent' for deploy; if set to
-    // 'Always', the images loaded manually into kind will be ignored and the
-    // pods will attempt to pull from remote registries.
-    "IMAGE_PULL_POLICY=IfNotPresent make hack-deploy",
-    "make test-integration",
+    "make hack-build-images hack-load-images hack-deploy test-integration",
   );
   return kind;
 }

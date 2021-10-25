@@ -28,8 +28,11 @@ apiserver:
 
   rootUser:
     enabled: true
-    # TODO: This should probably be generated
-    password: F00Bar!!!
+
+    ## The root user password will be an auto-generated random string when not
+    ## supplied. See NOTES.txt after deployment for retrieval steps.
+    # password:
+
     ## Session TTL dictates the default time-to-live for the root user session.
     ## Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
     ## For example, "60s", "2h45m", "168h" (1 week)
@@ -1428,10 +1431,9 @@ artemis:
     pullPolicy: IfNotPresent
 
   username: brigade
-  ## If not specified, a random password is automatically selected. It will
-  ## change on every upgrade, so choosing one up front may improve availability
-  ## during upgrades.
-  password: artemis
+  ## The password will be an auto-generated random string when not
+  ## supplied. See NOTES.txt after deployment for retrieval steps.
+  # password:
 
   ## Persist data to a volume
   persistence:

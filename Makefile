@@ -445,6 +445,7 @@ hack-deploy:
 		--set apiserver.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set apiserver.service.type=NodePort \
 		--set apiserver.service.nodePort=31600 \
+		--set apiserver.rootUser.password="${APISERVER_ROOT_PASSWORD}" \
 		--set scheduler.image.repository=$(DOCKER_IMAGE_PREFIX)scheduler \
 		--set scheduler.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set scheduler.image.pullPolicy=$(IMAGE_PULL_POLICY) \
