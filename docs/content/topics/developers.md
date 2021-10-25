@@ -317,14 +317,14 @@ $ export DOCKER_REGISTRY=localhost:5000
 $ make hack
 ```
 
-The root user password will be auto-generated if not overridden in the values
-file (via `apiserver.rootUser.password`). To retrieve its value after install,
-follow the steps provided in the `Notes` section after deployment.
+Normally, the root user password will be auto-generated if not overridden in the
+values file (via `apiserver.rootUser.password`). For the `hack` targets, this
+value is hard-coded to `F00Bar!!!`.
 
 You can then log in to the apiserver with the following `brig` command:
 
 ```console
-$ brig login -s https://localhost:31600 -r -p <root user password> -k
+$ brig login -s https://localhost:31600 -r -p 'F00Bar!!!' -k
 ```
 
 To create your first Brigade project, check out [projects](/topics/project-developers/projects.md) to
