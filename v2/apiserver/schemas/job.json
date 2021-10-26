@@ -116,8 +116,11 @@
 				"sidecarContainers": {
 					"type": "object",
 					"description": "Specification for the job's sidecar containers, if any",
-					"additionalProperties": {
-						"$ref": "#/definitions/containerSpec"
+					"additionalProperties": false,
+					"patternProperties": {
+						"^[a-z][a-z\\d-]*[a-z\\d]$": {
+							"$ref": "#/definitions/containerSpec"
+						}
 					}
 				},
 				"timeoutDuration": {
