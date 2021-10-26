@@ -76,7 +76,7 @@
 						"object",
 						"null"
 					],
-					"additionalProperties": true,
+					"additionalProperties": false,
 					"patternProperties": {
 						"^[a-z][a-z\\d-]*[a-z\\d]$": {
 							"$ref": "common.json#/definitions/label"
@@ -88,7 +88,7 @@
 						"object",
 						"null"
 					],
-					"additionalProperties": true,
+					"additionalProperties": false,
 					"patternProperties": {
 						"^[a-z][a-z\\d-]*[a-z\\d]$": {
 							"$ref": "common.json#/definitions/label"
