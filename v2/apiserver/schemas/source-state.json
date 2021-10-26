@@ -12,7 +12,7 @@
 
 		"stateMap": {
 			"type": "object",
-			"additionalProperties": true,
+			"additionalProperties": false,
 			"patternProperties": {
 				"^[a-z][a-z\\d-]*[a-z\\d]$": {
 					"type": "string"
