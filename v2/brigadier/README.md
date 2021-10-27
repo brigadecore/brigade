@@ -22,7 +22,7 @@ const { events, Job } = require("@brigadecore/brigadier");
 To facilitate script development, you may also install brigadier to your
 environment with Yarn, NPM, etc.:
 
-```console
+```sh
 $ yarn add @brigadecore/brigadier
 ```
 
