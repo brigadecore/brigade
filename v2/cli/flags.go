@@ -7,6 +7,7 @@ const (
 	flagAnyPhase       = "any-phase"
 	flagBrowse         = "browse"
 	flagCanceled       = "canceled"
+	flagClient         = "client"
 	flagContainer      = "container"
 	flagContinue       = "continue"
 	flagDescription    = "description"
