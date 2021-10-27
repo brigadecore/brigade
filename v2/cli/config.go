@@ -87,7 +87,7 @@ func saveConfig(config config) error {
 		return errors.Wrap(err, "error marshaling config")
 	}
 	if err :=
-		ioutil.WriteFile(configFile, configBytes, 0644); err != nil {
+		ioutil.WriteFile(configFile, configBytes, 0600); err != nil {
 		return errors.Wrapf(err, "error writing to %s", configFile)
 	}
 	return nil

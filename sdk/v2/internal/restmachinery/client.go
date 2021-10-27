@@ -44,7 +44,7 @@ func NewBaseClient(
 	retryClient.CheckRetry = defaultRetryPolicy
 	retryClient.HTTPClient.Transport = &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: opts.AllowInsecureConnections,
+			InsecureSkipVerify: opts.AllowInsecureConnections, // nolint: gosec
 		},
 	}
 	retryClient.Logger = log.New(ioutil.Discard, "", log.LstdFlags)

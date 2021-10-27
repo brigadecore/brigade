@@ -93,7 +93,7 @@ func TestBaseClientExecuteRequest(t *testing.T) {
 		HTTPClient: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
+					InsecureSkipVerify: true, // nolint: gosec
 				},
 			},
 		},
@@ -257,7 +257,7 @@ func TestBaseClientSubmitRequest(t *testing.T) {
 				HTTPClient: &http.Client{
 					Transport: &http.Transport{
 						TLSClientConfig: &tls.Config{
-							InsecureSkipVerify: true,
+							InsecureSkipVerify: true, // nolint: gosec
 						},
 					},
 				},
