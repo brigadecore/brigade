@@ -9,6 +9,7 @@ linters:
   - depguard
   # - dupl
   - errcheck
+  - exportloopref
   - goconst
   - gocyclo
   - gofmt
