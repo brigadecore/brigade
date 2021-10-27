@@ -26,15 +26,16 @@ func printVersion(c *cli.Context) error {
 		printClientVersion()
 	} else {
 		printClientVersion()
-		printServerVersion()
+		if err := printServerVersion(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func printClientVersion() error {
+func printClientVersion() {
 	fmt.Printf("Brigade version %s -- commit %s\n",
 		version.Version(), version.Commit())
-	return nil
 }
 
 func printServerVersion() error {
