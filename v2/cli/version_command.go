@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/brigadecore/brigade-foundations/version"
@@ -22,32 +21,20 @@ var versionCommand = &cli.Command{
 }
 
 func printVersion(c *cli.Context) error {
-	if c.Bool(flagClient) {
-		printClientVersion()
-	} else {
-		printClientVersion()
-		if err := printServerVersion(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func printClientVersion() {
+	// Client version
 	fmt.Printf("Brigade version %s -- commit %s\n",
 		version.Version(), version.Commit())
-}
-
-func printServerVersion() error {
-	client, err := getClient()
-	if err != nil {
-		return err
+	// Server version
+	if !c.Bool(flagClient) {
+		client, err := getClient()
+		if err != nil {
+			return err
+		}
+		serverVersionRaw, err := client.System().UnversionedPing(c.Context)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Brigade API Server version %s", string(serverVersionRaw))
 	}
-	ctx := context.Background()
-	serverVersionRaw, err := client.System().UnversionedPing(ctx)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("Brigade API Server version %s", string(serverVersionRaw))
 	return nil
 }
