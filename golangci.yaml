@@ -6,6 +6,7 @@ run:
 linters:
   disable-all: true
   enable:
+  - bodyclose
   - depguard
   # - dupl
   - errcheck

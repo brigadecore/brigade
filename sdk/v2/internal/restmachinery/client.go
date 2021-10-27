@@ -183,16 +183,16 @@ func (b *BaseClient) SubmitRequest(
 		case http.StatusInternalServerError:
 			apiErr = &meta.ErrInternalServer{}
 		default:
-			return nil, errors.Errorf("received %d from API server", resp.StatusCode)
+			return resp, errors.Errorf("received %d from API server", resp.StatusCode)
 		}
 		bodyBytes, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return nil, errors.Wrap(err, "error reading error response body")
+			return resp, errors.Wrap(err, "error reading error response body")
 		}
 		if err = json.Unmarshal(bodyBytes, apiErr); err != nil {
-			return nil, errors.Wrap(err, "error unmarshaling error response body")
+			return resp, errors.Wrap(err, "error unmarshaling error response body")
 		}
-		return nil, apiErr
+		return resp, apiErr
 	}
 	return resp, nil
 }

@@ -263,6 +263,7 @@ func TestBaseClientSubmitRequest(t *testing.T) {
 				},
 			}
 			resp, err := client.SubmitRequest(context.Background(), testCase.req)
+			defer resp.Body.Close()
 			testCase.assertions(t, resp, err)
 		})
 	}

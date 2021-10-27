@@ -23,7 +23,7 @@ func TestFilter(t *testing.T) {
 		filter     *tokenAuthFilter
 		handler    func(w http.ResponseWriter, r *http.Request)
 		setup      func() *http.Request
-		assertions func(handlerCalled bool, rr *httptest.ResponseRecorder)
+		assertions func(handlerCalled bool, r *http.Response)
 	}{
 		{
 			name:   "auth header missing",
@@ -33,8 +33,8 @@ func TestFilter(t *testing.T) {
 				require.NoError(t, err)
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusUnauthorized, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, r.StatusCode)
 				assert.False(t, handlerCalled)
 			},
 		},
@@ -48,8 +48,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Digest foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusUnauthorized, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, r.StatusCode)
 				assert.False(t, handlerCalled)
 			},
 		},
@@ -72,8 +72,8 @@ func TestFilter(t *testing.T) {
 				require.NotNil(t, principal)
 				require.Same(t, scheduler, principal)
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusOK, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusOK, r.StatusCode)
 				assert.True(t, handlerCalled)
 			},
 		},
@@ -96,8 +96,8 @@ func TestFilter(t *testing.T) {
 				require.NotNil(t, principal)
 				require.Same(t, observer, principal)
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusOK, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusOK, r.StatusCode)
 				assert.True(t, handlerCalled)
 			},
 		},
@@ -116,8 +116,8 @@ func TestFilter(t *testing.T) {
 				return req
 			},
 			handler: func(w http.ResponseWriter, r *http.Request) {},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusInternalServerError, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, r.StatusCode)
 				assert.False(t, handlerCalled)
 			},
 		},
@@ -140,8 +140,8 @@ func TestFilter(t *testing.T) {
 				require.NotNil(t, principal)
 				require.IsType(t, &workerPrincipal{}, principal)
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusOK, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusOK, r.StatusCode)
 				assert.True(t, handlerCalled)
 			},
 		},
@@ -165,8 +165,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusInternalServerError, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, r.StatusCode)
 				require.False(t, handlerCalled)
 			},
 		},
@@ -193,8 +193,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusForbidden, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusForbidden, r.StatusCode)
 				assert.False(t, handlerCalled)
 			},
 		},
@@ -223,8 +223,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusOK, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusOK, r.StatusCode)
 				assert.True(t, handlerCalled)
 			},
 		},
@@ -254,8 +254,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusInternalServerError, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, r.StatusCode)
 				assert.False(t, handlerCalled)
 			},
 		},
@@ -285,8 +285,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusUnauthorized, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, r.StatusCode)
 				assert.False(t, handlerCalled)
 			},
 		},
@@ -318,8 +318,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusUnauthorized, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, r.StatusCode)
 				assert.False(t, handlerCalled)
 			},
 		},
@@ -363,8 +363,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusOK, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusOK, r.StatusCode)
 				assert.True(t, handlerCalled)
 			},
 		},
@@ -394,8 +394,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusUnauthorized, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, r.StatusCode)
 				assert.False(t, handlerCalled)
 			},
 		},
@@ -428,8 +428,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusUnauthorized, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, r.StatusCode)
 				assert.False(t, handlerCalled)
 			},
 		},
@@ -467,8 +467,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusUnauthorized, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, r.StatusCode)
 				assert.False(t, handlerCalled)
 			},
 		},
@@ -509,8 +509,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusInternalServerError, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, r.StatusCode)
 				assert.False(t, handlerCalled)
 			},
 		},
@@ -554,8 +554,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusForbidden, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusForbidden, r.StatusCode)
 				assert.False(t, handlerCalled)
 			},
 		},
@@ -606,8 +606,8 @@ func TestFilter(t *testing.T) {
 				req.Header.Add("Authorization", "Bearer foo")
 				return req
 			},
-			assertions: func(handlerCalled bool, rr *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusOK, rr.Code)
+			assertions: func(handlerCalled bool, r *http.Response) {
+				require.Equal(t, http.StatusOK, r.StatusCode)
 				assert.True(t, handlerCalled)
 			},
 		},
@@ -624,7 +624,9 @@ func TestFilter(t *testing.T) {
 					testCase.handler(w, r)
 				}
 			})(rr, req)
-			testCase.assertions(handlerCalled, rr)
+			res := rr.Result()
+			defer res.Body.Close()
+			testCase.assertions(handlerCalled, res)
 		})
 	}
 }

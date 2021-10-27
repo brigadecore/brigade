@@ -91,7 +91,7 @@ func (l *logsClient) Stream(
 		queryParams["follow"] = "true"
 	}
 
-	resp, err := l.SubmitRequest(
+	resp, err := l.SubmitRequest( // nolint: bodyclose
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
@@ -107,6 +107,7 @@ func (l *logsClient) Stream(
 	logCh := make(chan LogEntry)
 	errCh := make(chan error)
 
+	// This goroutine will close the response body when it completes
 	go l.receiveStream(ctx, resp.Body, logCh, errCh)
 
 	return logCh, errCh, nil
