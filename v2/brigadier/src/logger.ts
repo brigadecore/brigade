@@ -5,11 +5,11 @@
  * 
  * Access the logger through the global `logger` object.
  * 
- * NOTE: In a local test environment, the logger writes to the normal JavaScript.
+ * NOTE: In a local test environment, the logger writes to the normal JavaScript
  * console. In the real Brigade runtime environment, a levelled logger is
  * used which responds appropriately to the configured level.
  */
-class Logger {
+export class Logger {
 
   /**
    * Logs a message at Debug level.
