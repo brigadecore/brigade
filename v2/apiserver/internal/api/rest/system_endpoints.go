@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/version"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/queue"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
@@ -17,9 +19,8 @@ import (
 // SystemEndpoints implements restmachinery.Endpoints to provide
 // System-related URL --> action mappings to a restmachinery.Server.
 type SystemEndpoints struct {
-	APIServerVersion string
-	DatabaseClient   *mongo.Client
-	WriterFactory    queue.WriterFactory
+	DatabaseClient *mongo.Client
+	WriterFactory  queue.WriterFactory
 }
 
 // Register is invoked by restmachinery.Server to register System-related
@@ -96,7 +97,13 @@ func (h *SystemEndpoints) unversionedPing(
 			W: w,
 			R: r,
 			EndpointLogic: func() (interface{}, error) {
-				return []byte(h.APIServerVersion), nil
+				return []byte(
+					fmt.Sprintf(
+						"version %s -- commit %s",
+						version.Version(),
+						version.Commit(),
+					),
+				), nil
 			},
 			SuccessCode: http.StatusOK,
 		},
@@ -111,7 +118,10 @@ func (h *SystemEndpoints) ping(w http.ResponseWriter, r *http.Request) {
 			W: w,
 			R: r,
 			EndpointLogic: func() (interface{}, error) {
-				return PingResponse{Version: h.APIServerVersion}, nil
+				return PingResponse{
+					Version: version.Version(),
+					Commit:  version.Commit(),
+				}, nil
 			},
 			SuccessCode: http.StatusOK,
 		},
@@ -121,6 +131,7 @@ func (h *SystemEndpoints) ping(w http.ResponseWriter, r *http.Request) {
 // PingResponse represents the response object returned by the ping endpoint
 type PingResponse struct {
 	Version string
+	Commit  string
 }
 
 // MarshalJSON amends PingResponse instances with type metadata.

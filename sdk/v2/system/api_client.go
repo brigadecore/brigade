@@ -14,6 +14,7 @@ import (
 // API Server's v2/ping endpoint
 type PingResponse struct {
 	Version string
+	Commit  string
 }
 
 // APIClient is the client for system checks involving the Brigade API.
