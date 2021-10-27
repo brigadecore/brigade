@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/brigadecore/brigade-foundations/version"
 	"github.com/urfave/cli/v2"
@@ -32,20 +31,22 @@ func printVersion(c *cli.Context) error {
 	return nil
 }
 
-func printClientVersion() {
+func printClientVersion() error {
 	fmt.Printf("Brigade version %s -- commit %s\n",
 		version.Version(), version.Commit())
+	return nil
 }
 
-func printServerVersion() {
+func printServerVersion() error {
 	client, err := getClient()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	ctx := context.Background()
 	serverVersionRaw, err := client.System().UnversionedPing(ctx)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	fmt.Printf("Brigade API Server version %s", string(serverVersionRaw))
+	return nil
 }
