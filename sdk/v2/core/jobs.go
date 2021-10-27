@@ -165,7 +165,15 @@ type JobContainerSpec struct {
 	// DISCOURAGED. Note this field REQUESTS to mount the host's Docker socket
 	// into the container, but that may be disallowed by Project-level
 	// configuration.
-	UseHostDockerSocket bool `json:"useHostDockerSocket"`
+	//
+	// Note: This is being removed for the 2.0.0 release because of security
+	// issues AND declining usefulness. (Many Kubernetes distros now use
+	// containerd instead of Docker.) This can be put back in the future if the
+	// need is proven AND if it can be done safely.
+	//
+	// For more details, see https://github.com/brigadecore/brigade/issues/1666
+	//
+	// UseHostDockerSocket bool `json:"useHostDockerSocket"`
 }
 
 // JobHost represents criteria for selecting a suitable host (substrate node)

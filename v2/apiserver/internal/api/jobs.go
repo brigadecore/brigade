@@ -188,7 +188,16 @@ type JobContainerSpec struct {
 	// DISCOURAGED. Note this field REQUESTS to mount the host's Docker socket
 	// into the container, but that may be disallowed by Project-level
 	// configuration.
-	UseHostDockerSocket bool `json:"useHostDockerSocket" bson:"useHostDockerSocket"` // nolint: lll
+	//
+	// Note: This is being removed for the 2.0.0 release because of security
+	// issues AND declining usefulness. (Many Kubernetes distros now use
+	// containerd instead of Docker.) This can be put back in the future if the
+	// need is proven AND if it can be done safely.
+	//
+	// For more details, see https://github.com/brigadecore/brigade/issues/1666
+	//
+	// nolint: lll
+	// UseHostDockerSocket bool `json:"useHostDockerSocket" bson:"useHostDockerSocket"`
 }
 
 func (jcs JobContainerSpec) EqualTo(jcs2 JobContainerSpec) bool {
@@ -377,7 +386,7 @@ func (j *jobsService) Create(
 	//   3. Mount the host's Docker socket
 	var useWorkspace = job.Spec.PrimaryContainer.WorkspaceMountPath != ""
 	var usePrivileged = job.Spec.PrimaryContainer.Privileged
-	var useDockerSocket = job.Spec.PrimaryContainer.UseHostDockerSocket
+	// var useDockerSocket = job.Spec.PrimaryContainer.UseHostDockerSocket
 	for _, sidecarContainer := range job.Spec.SidecarContainers {
 		if sidecarContainer.WorkspaceMountPath != "" {
 			useWorkspace = true
@@ -385,9 +394,9 @@ func (j *jobsService) Create(
 		if sidecarContainer.Privileged {
 			usePrivileged = true
 		}
-		if sidecarContainer.UseHostDockerSocket {
-			useDockerSocket = true
-		}
+		// if sidecarContainer.UseHostDockerSocket {
+		// 	useDockerSocket = true
+		// }
 	}
 
 	// Fail quickly if any job is trying to run privileged or use the host's
@@ -400,14 +409,14 @@ func (j *jobsService) Create(
 				"containers.",
 		}
 	}
-	if useDockerSocket &&
-		(event.Worker.Spec.JobPolicies == nil ||
-			!event.Worker.Spec.JobPolicies.AllowDockerSocketMount) {
-		return &meta.ErrAuthorization{
-			Reason: "Worker configuration forbids jobs from mounting the Docker " +
-				"socket.",
-		}
-	}
+	// if useDockerSocket &&
+	// 	(event.Worker.Spec.JobPolicies == nil ||
+	// 		!event.Worker.Spec.JobPolicies.AllowDockerSocketMount) {
+	// 	return &meta.ErrAuthorization{
+	// 		Reason: "Worker configuration forbids jobs from mounting the Docker " +
+	// 			"socket.",
+	// 	}
+	// }
 
 	// Fail quickly if the job needs to use shared workspace, but the worker
 	// doesn't have any shared workspace.

@@ -211,7 +211,7 @@ export class Container {
    * project settings such as secrets.
    * 
    * You can safely pass secrets via environment variables, because Brigade treats
-   * all enviroment variables as secrets.
+   * all environment variables as secrets.
    * 
    * @example
    * job.primaryContainer.env.AUTH_TOKEN = e.project.secrets.authToken  // e is event that triggered the handler
@@ -255,8 +255,15 @@ export class Container {
    * 
    * Host Docker socket access may be disallowed by Brigade project configuration.
    * If so, the container will run without such access.
+   * 
+   * Note: This is being removed for the 2.0.0 release because of security
+   * issues AND declining usefulness. (Many Kubernetes distros now use
+   * containerd instead of Docker.) This can be put back in the future if the
+   * need is proven AND if it can be done safely.
+   * 
+   * For more details, see https://github.com/brigadecore/brigade/issues/1666
    */
-  public useHostDockerSocket = false
+  // public useHostDockerSocket = false
 
   /**
    * Constructs a new Container.
