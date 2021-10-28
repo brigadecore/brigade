@@ -15,7 +15,7 @@ import (
 
 const (
 	testJobName = "test-job"
-	testTimeout = time.Duration(120 * time.Second)
+	testTimeout = 120 * time.Second
 )
 
 var (

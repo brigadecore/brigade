@@ -24,6 +24,7 @@ linters:
   - misspell
   - nakedret
   - prealloc
+  - unconvert
   - unparam
   - unused
 
