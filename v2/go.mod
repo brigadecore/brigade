@@ -16,7 +16,6 @@ require (
 	github.com/brigadecore/brigade/sdk/v2 v2.0.0-20200923171232-9f56c474d8bf
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/fatih/color v1.9.0 // indirect
-	github.com/gdamore/tcell v1.4.0
 	github.com/gdamore/tcell/v2 v2.3.3
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-billy/v5 v5.0.0
