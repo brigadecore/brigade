@@ -1,7 +1,7 @@
 # This Dockerfile builds a custom Fluentd image that layers in the Fluentd
 # plugins we rely upon on top of a standard Fluentd image.
 
-FROM fluent/fluentd:v1.11.5-debian-1.0
+FROM fluentd:v1.14.0-debian-1.0
 
 USER root
 
@@ -12,10 +12,10 @@ RUN buildDeps="make gcc g++ libc-dev libffi-dev" \
     $buildDeps \
     net-tools \
   && gem install \
-    bson:4.11.1 \
-    fluent-plugin-rewrite-tag-filter:2.3.0 \
-    fluent-plugin-mongo:1.4.1 \
-    fluent-plugin-kubernetes_metadata_filter:2.5.2 \
+    bson:4.12.1 \
+    fluent-plugin-rewrite-tag-filter:2.4.0 \
+    fluent-plugin-mongo:1.5.0 \
+    fluent-plugin-kubernetes_metadata_filter:2.9.1 \
     fluent-plugin-multi-format-parser:1.0.0 \
   && apt-get purge -y --auto-remove \
     $buildDeps \

@@ -1,10 +1,11 @@
-import { events, Event, Job, ConcurrentGroup, SerialGroup } from "@brigadecore/brigadier"
+import { events, Event, Job, ConcurrentGroup, SerialGroup, Container } from "@brigadecore/brigadier"
 
 const releaseTagRegex = /^refs\/tags\/(v[0-9]+(?:\.[0-9]+)*(?:\-.+)?)$/
 
 const goImg = "brigadecore/go-tools:v0.4.0"
 const jsImg = "node:16.11.0-bullseye"
-const kanikoImg = "brigadecore/kaniko:v0.2.0"
+const dindImg = "docker:20.10.9-dind"
+const dockerClientImg = "brigadecore/docker-tools:v0.1.0"
 const helmImg = "brigadecore/helm-tools:v0.4.0"
 const localPath = "/workspaces/brigade"
 
@@ -27,10 +28,67 @@ class MakeTargetJob extends Job {
   }
 }
 
+// BuildImageJob is a specialized job type for building multiarch Docker images.
+//
+// Note: This isn't the optimal way to do this. It's a workaround. These notes
+// are here so that as the situation improves, we can improve our approach.
+//
+// The optimal way of doing this would involve no sidecars and wouldn't closely
+// resemble the "DinD" (Docker in Docker) pattern that we are accustomed to.
+//
+// `docker buildx build` has full support for building images using remote
+// BuildKit instances. Such instances can use qemu to emulate other CPU
+// architectures. This permits us to build images for arm64 (aka arm64/v8, aka
+// aarch64), even though, as of this writing, we only have access to amd64 VMs.
+//
+// In an ideal world, we'd have a pool of BuildKit instances up and running at
+// all times in our cluster and we'd somehow JOIN it and be off to the races.
+// Alas, as of this writing, this isn't supported yet. (BuildKit supports it,
+// but the `docker buildx` family of commands does not.) The best we can do is
+// use `docker buildx create` to create a brand new builder.
+//
+// Tempting as it is to create a new builder using the Kubernetes driver (i.e.
+// `docker buildx create --driver kubernetes`), this comes with two problems:
+// 
+// 1. It would require giving our jobs a lot of additional permissions that they
+//    don't otherwise need (creating deployments, for instance). This represents
+//    an attack vector I'd rather not open.
+//
+// 2. If the build should fail, nothing guarantees the builder gets shut down.
+//    Over time, this could really clutter the cluster and starve us of
+//    resources.
+//
+// The workaround I have chosen is to launch a new builder using the default
+// docker-container driver. This runs inside a DinD sidecar. This has the
+// benefit of always being cleaned up when the job is observed complete by the
+// Brigade observer. The downside is that we're building an image inside a
+// Russian nesting doll of containers with an ephemeral cache. It is slow, but
+// it works.
+//
+// If and when the capability exists to use `docker buildx` with existing
+// builders, we can streamline all of this pretty significantly.
+class BuildImageJob extends MakeTargetJob {
+  constructor(target: string, event: Event, env?: {[key: string]: string}) {
+    super(target, dockerClientImg, event, env)
+    this.primaryContainer.environment.DOCKER_HOST = "localhost:2375"
+    this.primaryContainer.command = [ "sh" ]
+    this.primaryContainer.arguments = [
+      "-c",
+      // The sleep is a grace period after which we assume the DinD sidecar is
+      // probably up and running.
+      `sleep 20 && docker buildx create --name builder --use && docker buildx ls && make ${target}`
+    ]
+
+    this.sidecarContainers.docker = new Container(dindImg)
+    this.sidecarContainers.docker.privileged = true
+    this.sidecarContainers.docker.environment.DOCKER_TLS_CERTDIR=""
+  }
+}
+
 // PushImageJob is a specialized job type for publishing Docker images.
-class PushImageJob extends MakeTargetJob {
+class PushImageJob extends BuildImageJob {
   constructor(target: string, event: Event) {
-    super(target, kanikoImg, event, {
+    super(target, event, {
       "DOCKER_ORG": event.project.secrets.dockerhubOrg,
       "DOCKER_USERNAME": event.project.secrets.dockerhubUsername,
       "DOCKER_PASSWORD": event.project.secrets.dockerhubPassword
@@ -96,7 +154,7 @@ jobs[validateExamplesJobName] = validateExamplesJob;
 
 const buildArtemisJobName = "build-artemis"
 const buildArtemisJob = (event: Event) => {
-  return new MakeTargetJob(buildArtemisJobName, kanikoImg, event)
+  return new BuildImageJob(buildArtemisJobName, event)
 }
 jobs[buildArtemisJobName] = buildArtemisJob
 
@@ -108,7 +166,7 @@ jobs[pushArtemisJobName] = pushArtemisJob
 
 const buildAPIServerJobName = "build-apiserver"
 const buildAPIServerJob = (event: Event) => {
-  return new MakeTargetJob(buildAPIServerJobName, kanikoImg, event)
+  return new BuildImageJob(buildAPIServerJobName, event)
 }
 jobs[buildAPIServerJobName] = buildAPIServerJob
 
@@ -120,7 +178,7 @@ jobs[pushAPIServerJobName] = pushAPIServerJob
 
 const buildGitInitializerJobName = "build-git-initializer"
 const buildGitInitializerJob = (event: Event) => {
-  return new MakeTargetJob(buildGitInitializerJobName, kanikoImg, event)
+  return new BuildImageJob(buildGitInitializerJobName, event)
 }
 jobs[buildGitInitializerJobName] = buildGitInitializerJob
 
@@ -132,7 +190,7 @@ jobs[pushGitInitializerJobName] = pushGitInitializerJob
 
 const buildLoggerLinuxJobName = "build-logger-linux"
 const buildLoggerLinuxJob = (event: Event) => {
-  return new MakeTargetJob(buildLoggerLinuxJobName, kanikoImg, event)
+  return new BuildImageJob(buildLoggerLinuxJobName, event)
 }
 jobs[buildLoggerLinuxJobName] = buildLoggerLinuxJob
 
@@ -144,7 +202,7 @@ jobs[pushLoggerLinuxJobName] = pushLoggerLinuxJob
 
 const buildObserverJobName = "build-observer"
 const buildObserverJob = (event: Event) => {
-  return new MakeTargetJob(buildObserverJobName, kanikoImg, event)
+  return new BuildImageJob(buildObserverJobName, event)
 }
 jobs[buildObserverJobName] = buildObserverJob
 
@@ -156,7 +214,7 @@ jobs[pushObserverJobName] = pushObserverJob
 
 const buildSchedulerJobName = "build-scheduler"
 const buildSchedulerJob = (event: Event) => {
-  return new MakeTargetJob(buildSchedulerJobName, kanikoImg, event)
+  return new BuildImageJob(buildSchedulerJobName, event)
 }
 jobs[buildSchedulerJobName] = buildSchedulerJob
 
@@ -168,7 +226,7 @@ jobs[pushSchedulerJobName] = pushSchedulerJob
 
 const buildWorkerJobName = "build-worker"
 const buildWorkerJob = (event: Event) => {
-  return new MakeTargetJob(buildWorkerJobName, kanikoImg, event)
+  return new BuildImageJob(buildWorkerJobName, event)
 }
 jobs[buildWorkerJobName] = buildWorkerJob
 
