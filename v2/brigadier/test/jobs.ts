@@ -47,7 +47,7 @@ describe("jobs", () => {
         assert.isEmpty(container.workspaceMountPath)
         assert.isEmpty(container.sourceMountPath)
         assert.isFalse(container.privileged)
-        assert.isFalse(container.useHostDockerSocket)
+        // assert.isFalse(container.useHostDockerSocket)
       })
     })
   })

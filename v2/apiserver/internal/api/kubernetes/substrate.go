@@ -1089,7 +1089,7 @@ func (s *substrate) createJobPod(
 	//   3. Mount the host's Docker socket
 	var useWorkspace = jobSpec.PrimaryContainer.WorkspaceMountPath != ""
 	var useSource = jobSpec.PrimaryContainer.SourceMountPath != ""
-	var useDockerSocket = jobSpec.PrimaryContainer.UseHostDockerSocket
+	// var useDockerSocket = jobSpec.PrimaryContainer.UseHostDockerSocket
 	for _, sidecarContainer := range jobSpec.SidecarContainers {
 		if sidecarContainer.WorkspaceMountPath != "" {
 			useWorkspace = true
@@ -1097,9 +1097,9 @@ func (s *substrate) createJobPod(
 		if sidecarContainer.SourceMountPath != "" {
 			useSource = true
 		}
-		if sidecarContainer.UseHostDockerSocket {
-			useDockerSocket = true
-		}
+		// if sidecarContainer.UseHostDockerSocket {
+		// 	useDockerSocket = true
+		// }
 	}
 
 	imagePullSecrets := []corev1.LocalObjectReference{}
@@ -1149,19 +1149,19 @@ func (s *substrate) createJobPod(
 			},
 		)
 	}
-	if useDockerSocket {
-		volumes = append(
-			volumes,
-			corev1.Volume{
-				Name: "docker-socket",
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/var/run/docker.sock",
-					},
-				},
-			},
-		)
-	}
+	// if useDockerSocket {
+	// 	volumes = append(
+	// 		volumes,
+	// 		corev1.Volume{
+	// 			Name: "docker-socket",
+	// 			VolumeSource: corev1.VolumeSource{
+	// 				HostPath: &corev1.HostPathVolumeSource{
+	// 					Path: "/var/run/docker.sock",
+	// 				},
+	// 			},
+	// 		},
+	// 	)
+	// }
 
 	initContainers := []corev1.Container{}
 	if useSource &&
@@ -1322,15 +1322,15 @@ func getContainerFromSpec(
 			},
 		)
 	}
-	if spec.UseHostDockerSocket {
-		container.VolumeMounts = append(
-			container.VolumeMounts,
-			corev1.VolumeMount{
-				Name:      "docker-socket",
-				MountPath: "/var/run/docker.sock",
-			},
-		)
-	}
+	// if spec.UseHostDockerSocket {
+	// 	container.VolumeMounts = append(
+	// 		container.VolumeMounts,
+	// 		corev1.VolumeMount{
+	// 			Name:      "docker-socket",
+	// 			MountPath: "/var/run/docker.sock",
+	// 		},
+	// 	)
+	// }
 	if spec.Privileged {
 		tru := true
 		container.SecurityContext = &corev1.SecurityContext{

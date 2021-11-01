@@ -116,34 +116,35 @@ func TestJobsServiceCreate(t *testing.T) {
 				)
 			},
 		},
-		{
-			name: "host docker socket mount requested but not allowed",
-			service: &jobsService{
-				authorize: alwaysAuthorize,
-				eventsStore: &mockEventsStore{
-					GetFn: func(context.Context, string) (Event, error) {
-						return Event{
-							Worker: Worker{
-								Spec: WorkerSpec{
-									JobPolicies: &JobPolicies{
-										AllowPrivileged: true,
-									},
-								},
-							},
-						}, nil
-					},
-				},
-			},
-			assertions: func(err error) {
-				require.Error(t, err)
-				require.IsType(t, &meta.ErrAuthorization{}, err)
-				require.Equal(
-					t,
-					"Worker configuration forbids jobs from mounting the Docker socket.",
-					err.(*meta.ErrAuthorization).Reason,
-				)
-			},
-		},
+		// nolint: lll
+		// {
+		// 	name: "host docker socket mount requested but not allowed",
+		// 	service: &jobsService{
+		// 		authorize: alwaysAuthorize,
+		// 		eventsStore: &mockEventsStore{
+		// 			GetFn: func(context.Context, string) (Event, error) {
+		// 				return Event{
+		// 					Worker: Worker{
+		// 						Spec: WorkerSpec{
+		// 							JobPolicies: &JobPolicies{
+		// 								AllowPrivileged: true,
+		// 							},
+		// 						},
+		// 					},
+		// 				}, nil
+		// 			},
+		// 		},
+		// 	},
+		// 	assertions: func(err error) {
+		// 		require.Error(t, err)
+		// 		require.IsType(t, &meta.ErrAuthorization{}, err)
+		// 		require.Equal(
+		// 			t,
+		// 			"Worker configuration forbids jobs from mounting the Docker socket.",
+		// 			err.(*meta.ErrAuthorization).Reason,
+		// 		)
+		// 	},
+		// },
 		{
 			name: "uses workspace but worker does not",
 			service: &jobsService{
@@ -154,8 +155,8 @@ func TestJobsServiceCreate(t *testing.T) {
 							Worker: Worker{
 								Spec: WorkerSpec{
 									JobPolicies: &JobPolicies{
-										AllowPrivileged:        true,
-										AllowDockerSocketMount: true,
+										AllowPrivileged: true,
+										// AllowDockerSocketMount: true,
 									},
 								},
 							},
@@ -185,8 +186,8 @@ func TestJobsServiceCreate(t *testing.T) {
 								Spec: WorkerSpec{
 									UseWorkspace: true,
 									JobPolicies: &JobPolicies{
-										AllowPrivileged:        true,
-										AllowDockerSocketMount: true,
+										AllowPrivileged: true,
+										// AllowDockerSocketMount: true,
 									},
 								},
 							},
@@ -216,8 +217,8 @@ func TestJobsServiceCreate(t *testing.T) {
 								Spec: WorkerSpec{
 									UseWorkspace: true,
 									JobPolicies: &JobPolicies{
-										AllowPrivileged:        true,
-										AllowDockerSocketMount: true,
+										AllowPrivileged: true,
+										// AllowDockerSocketMount: true,
 									},
 								},
 							},
@@ -252,8 +253,8 @@ func TestJobsServiceCreate(t *testing.T) {
 								Spec: WorkerSpec{
 									UseWorkspace: true,
 									JobPolicies: &JobPolicies{
-										AllowPrivileged:        true,
-										AllowDockerSocketMount: true,
+										AllowPrivileged: true,
+										// AllowDockerSocketMount: true,
 									},
 								},
 							},
@@ -299,8 +300,8 @@ func TestJobsServiceCreate(t *testing.T) {
 								Spec: WorkerSpec{
 									UseWorkspace: true,
 									JobPolicies: &JobPolicies{
-										AllowPrivileged:        true,
-										AllowDockerSocketMount: true,
+										AllowPrivileged: true,
+										// AllowDockerSocketMount: true,
 									},
 								},
 							},
@@ -349,8 +350,8 @@ func TestJobsServiceCreate(t *testing.T) {
 								Spec: WorkerSpec{
 									UseWorkspace: true,
 									JobPolicies: &JobPolicies{
-										AllowPrivileged:        true,
-										AllowDockerSocketMount: true,
+										AllowPrivileged: true,
+										// AllowDockerSocketMount: true,
 									},
 								},
 							},
@@ -422,18 +423,18 @@ func TestJobsServiceCreate(t *testing.T) {
 								ContainerSpec: ContainerSpec{
 									Environment: testEnvironment,
 								},
-								Privileged:          true,
-								UseHostDockerSocket: true,
-								WorkspaceMountPath:  "/var/workspace",
+								Privileged: true,
+								// UseHostDockerSocket: true,
+								WorkspaceMountPath: "/var/workspace",
 							},
 							SidecarContainers: map[string]JobContainerSpec{
 								"foo": {
 									ContainerSpec: ContainerSpec{
 										Environment: testEnvironment,
 									},
-									Privileged:          true,
-									UseHostDockerSocket: true,
-									WorkspaceMountPath:  "/var/workspace",
+									Privileged: true,
+									// UseHostDockerSocket: true,
+									WorkspaceMountPath: "/var/workspace",
 								},
 							},
 						},
@@ -1578,12 +1579,12 @@ func TestJobSpecEqualTo(t *testing.T) {
 		Environment:     map[string]string{},
 	}
 	var testJobContainerSpec = JobContainerSpec{
-		ContainerSpec:       testContainerSpec,
-		WorkingDirectory:    "be",
-		WorkspaceMountPath:  "here",
-		SourceMountPath:     "now",
-		Privileged:          true,
-		UseHostDockerSocket: true,
+		ContainerSpec:      testContainerSpec,
+		WorkingDirectory:   "be",
+		WorkspaceMountPath: "here",
+		SourceMountPath:    "now",
+		Privileged:         true,
+		// UseHostDockerSocket: true,
 	}
 	var testJobSpec = JobSpec{
 		PrimaryContainer: testJobContainerSpec,
