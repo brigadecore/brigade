@@ -1,10 +1,15 @@
 FROM openjdk:8-jre-bullseye
 
-ENV ARTEMIS_VERSION=2.18.0
+ENV ARTEMIS_VERSION=2.19.0
 ENV ARTEMIS_USERNAME=artemis
 ENV ARTEMIS_PASSWORD=artemis
 
 WORKDIR /opt/artemis
+## Special note about the URL for downloading Artemis: Annoyingly, the URL for
+## the latest release and the the URLs for previous releases do not vary only
+## by version number. If this build starts breaking, the very likely cause is a
+## 404 on the download. It can be fixed by upgrading to the latest Artemis or
+## by changing the download URL.
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
     ca-certificates \
