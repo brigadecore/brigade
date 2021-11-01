@@ -334,9 +334,8 @@ func main() {
 					Service: workersService,
 				},
 				&rest.SystemEndpoints{
-					APIServerVersion: version.Version(),
-					DatabaseClient:   database.Client(),
-					WriterFactory:    queueWriterFactory,
+					DatabaseClient: database.Client(),
+					WriterFactory:  queueWriterFactory,
 				},
 				&assets.Endpoints{},
 			},
