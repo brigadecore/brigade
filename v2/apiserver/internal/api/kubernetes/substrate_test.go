@@ -1425,10 +1425,10 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 					"FOO": "bar",
 				},
 			},
-			WorkspaceMountPath:  "/var/workspace",
-			SourceMountPath:     "/var/source",
-			UseHostDockerSocket: true,
-			Privileged:          true,
+			WorkspaceMountPath: "/var/workspace",
+			SourceMountPath:    "/var/source",
+			// UseHostDockerSocket: true,
+			Privileged: true,
 		},
 		SidecarContainers: map[string]api.JobContainerSpec{
 			"helper": {
@@ -1437,10 +1437,10 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 						"BAT": "baz",
 					},
 				},
-				WorkspaceMountPath:  "/var/workspace",
-				SourceMountPath:     "/var/source",
-				UseHostDockerSocket: true,
-				Privileged:          true,
+				WorkspaceMountPath: "/var/workspace",
+				SourceMountPath:    "/var/source",
+				// UseHostDockerSocket: true,
+				Privileged: true,
 			},
 		},
 	}
@@ -1494,11 +1494,11 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, pod)
 				// Volumes:
-				require.Len(t, pod.Spec.Volumes, 4)
+				require.Len(t, pod.Spec.Volumes, 3)
 				require.Equal(t, "workspace", pod.Spec.Volumes[0].Name)
 				require.Equal(t, "event", pod.Spec.Volumes[1].Name)
 				require.Equal(t, "vcs", pod.Spec.Volumes[2].Name)
-				require.Equal(t, "docker-socket", pod.Spec.Volumes[3].Name)
+				// require.Equal(t, "docker-socket", pod.Spec.Volumes[3].Name)
 				// Init container:
 				require.Len(t, pod.Spec.InitContainers, 1)
 				require.Equal(t, "vcs", pod.Spec.InitContainers[0].Name)
@@ -1515,34 +1515,34 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 				require.Equal(t, testJobName, pod.Spec.Containers[0].Name)
 				require.Len(t, pod.Spec.Containers[0].Env, 1)
 				require.Equal(t, "FOO", pod.Spec.Containers[0].Env[0].Name)
-				require.Len(t, pod.Spec.Containers[0].VolumeMounts, 3)
+				require.Len(t, pod.Spec.Containers[0].VolumeMounts, 2)
 				require.Equal(
 					t,
 					"workspace",
 					pod.Spec.Containers[0].VolumeMounts[0].Name,
 				)
 				require.Equal(t, "vcs", pod.Spec.Containers[0].VolumeMounts[1].Name)
-				require.Equal(
-					t,
-					"docker-socket",
-					pod.Spec.Containers[0].VolumeMounts[2].Name,
-				)
+				// require.Equal(
+				// 	t,
+				// 	"docker-socket",
+				// 	pod.Spec.Containers[0].VolumeMounts[2].Name,
+				// )
 				// Sidecar container:
 				require.Equal(t, "helper", pod.Spec.Containers[1].Name)
 				require.Len(t, pod.Spec.Containers[1].Env, 1)
 				require.Equal(t, "BAT", pod.Spec.Containers[1].Env[0].Name)
-				require.Len(t, pod.Spec.Containers[1].VolumeMounts, 3)
+				require.Len(t, pod.Spec.Containers[1].VolumeMounts, 2)
 				require.Equal(
 					t,
 					"workspace",
 					pod.Spec.Containers[1].VolumeMounts[0].Name,
 				)
 				require.Equal(t, "vcs", pod.Spec.Containers[1].VolumeMounts[1].Name)
-				require.Equal(
-					t,
-					"docker-socket",
-					pod.Spec.Containers[1].VolumeMounts[2].Name,
-				)
+				// require.Equal(
+				// 	t,
+				// 	"docker-socket",
+				// 	pod.Spec.Containers[1].VolumeMounts[2].Name,
+				// )
 			},
 		},
 	}
