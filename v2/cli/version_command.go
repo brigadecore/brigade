@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/brigadecore/brigade-foundations/file"
 	"github.com/brigadecore/brigade-foundations/version"
 	"github.com/urfave/cli/v2"
 )
@@ -22,19 +23,28 @@ var versionCommand = &cli.Command{
 
 func printVersion(c *cli.Context) error {
 	// Client version
-	fmt.Printf("Brigade version %s -- commit %s\n",
-		version.Version(), version.Commit())
+	fmt.Printf(
+		"Brigade client: version %s -- commit %s\n",
+		version.Version(),
+		version.Commit(),
+	)
 	// Server version
 	if !c.Bool(flagClient) {
+		// Skip checking server version if not logged in to any server
+		if configFile, err := getConfigPath(); err != nil {
+			return err
+		} else if exists, err := file.Exists(configFile); err != nil || !exists {
+			return err
+		}
 		client, err := getClient()
 		if err != nil {
 			return err
 		}
-		serverVersionRaw, err := client.System().UnversionedPing(c.Context)
+		serverVersionBytes, err := client.System().UnversionedPing(c.Context)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Brigade API Server version %s", string(serverVersionRaw))
+		fmt.Printf("Brigade API server: %s\n", string(serverVersionBytes))
 	}
 	return nil
 }
