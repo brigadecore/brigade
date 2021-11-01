@@ -14,6 +14,8 @@ const jobs = {};
 const testIntegrationJobName = "test-integration";
 const testIntegrationJob = (e, p) => {
   let kind = new KindJob(testIntegrationJobName);
+  // Override the image with one having a newer Docker client
+  kind.image = "brigadecore/int-test-tools:v0.1.0";
   kind.mountPath = localPath;
   kind.env = {
     "BRIGADE_CI_PRIVATE_REPO_SSH_KEY": p.secrets.privateRepoSSHKey,

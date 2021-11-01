@@ -39,17 +39,6 @@ ifneq ($(SKIP_DOCKER),true)
 		-w /workspaces/brigade \
 		$(JS_DEV_IMAGE)
 
-	KANIKO_IMAGE := brigadecore/kaniko:v0.2.0
-
-	KANIKO_DOCKER_CMD := docker run \
-		-it \
-		--rm \
-		-e SKIP_DOCKER=true \
-		-e DOCKER_PASSWORD=$${DOCKER_PASSWORD} \
-		-v $(PROJECT_ROOT):/workspaces/brigade \
-		-w /workspaces/brigade \
-		$(KANIKO_IMAGE)
-
 	HELM_IMAGE := brigadecore/helm-tools:v0.4.0
 
 	HELM_DOCKER_CMD := docker run \
@@ -256,32 +245,26 @@ build-brigadier:
 .PHONY: build-images
 build-images: build-artemis build-apiserver build-scheduler build-observer build-logger-linux build-git-initializer build-worker
 
-.PHONY: build-logger-linux
-build-logger-linux:
-	$(KANIKO_DOCKER_CMD) kaniko \
-		--dockerfile /workspaces/brigade/v2/logger/Dockerfile.linux \
-		--context dir:///workspaces/brigade/logger \
-		--no-push
-
-# Using docker directly here (kaniko doesn't support Windows container builds)
-# and this does require a Windows build machine, but we're placing this here
-# to make use of the image prefix and tag logic.
-# See the GitHub action(s) yaml in .github/ for use in CI.
 .PHONY: build-logger-windows
 build-logger-windows:
 	docker build \
-		-f v2/logger/Dockerfile.winserv-2019 \
+		-f v2/logger-windows/Dockerfile \
 		-t $(DOCKER_IMAGE_PREFIX)logger-windows:$(IMMUTABLE_DOCKER_TAG) \
-		-t $(DOCKER_IMAGE_PREFIX)logger-windows:$(MUTABLE_DOCKER_TAG) v2/logger
+		-t $(DOCKER_IMAGE_PREFIX)logger-windows:$(MUTABLE_DOCKER_TAG) \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg COMMIT=$(GIT_VERSION) \
+		.
 
 .PHONY: build-%
 build-%:
-	$(KANIKO_DOCKER_CMD) kaniko \
+	docker buildx build \
+		-f v2/$*/Dockerfile \
+		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
+		-t $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
 		--build-arg VERSION=$(VERSION) \
 		--build-arg COMMIT=$(GIT_VERSION) \
-		--dockerfile /workspaces/brigade/v2/$*/Dockerfile \
-		--context dir:///workspaces/brigade/ \
-		--no-push
+		--platform linux/amd64,linux/arm64 \
+		.
 
 .PHONY: build-cli
 build-cli:
@@ -327,17 +310,6 @@ publish-brigadier-docs: build-brigadier
 .PHONY: push-images
 push-images: push-artemis push-apiserver push-scheduler push-observer push-logger-linux push-git-initializer push-worker
 
-.PHONY: push-logger-linux
-push-logger-linux:
-	$(KANIKO_DOCKER_CMD) sh -c ' \
-		docker login $(DOCKER_REGISTRY) -u $(DOCKER_USERNAME) -p $${DOCKER_PASSWORD} && \
-		kaniko \
-			--dockerfile /workspaces/brigade/v2/logger/Dockerfile.linux \
-			--context dir:///workspaces/brigade/logger \
-			--destination $(DOCKER_IMAGE_PREFIX)logger-linux:$(IMMUTABLE_DOCKER_TAG) \
-			--destination $(DOCKER_IMAGE_PREFIX)logger-linux:$(MUTABLE_DOCKER_TAG) \
-	'
-
 .PHONY: push-logger-windows
 push-logger-windows:
 	docker push $(DOCKER_IMAGE_PREFIX)logger-windows:$(IMMUTABLE_DOCKER_TAG)
@@ -345,16 +317,16 @@ push-logger-windows:
 
 .PHONY: push-%
 push-%:
-	$(KANIKO_DOCKER_CMD) sh -c ' \
-		docker login $(DOCKER_REGISTRY) -u $(DOCKER_USERNAME) -p $${DOCKER_PASSWORD} && \
-		kaniko \
-			--build-arg VERSION="$(VERSION)" \
-			--build-arg COMMIT="$(GIT_VERSION)" \
-			--dockerfile /workspaces/brigade/v2/$*/Dockerfile \
-			--context dir:///workspaces/brigade/ \
-			--destination $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
-			--destination $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
-	'
+	docker login $(DOCKER_REGISTRY) -u $(DOCKER_USERNAME) -p $${DOCKER_PASSWORD}
+	docker buildx build \
+		-f v2/$*/Dockerfile \
+		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
+		-t $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg COMMIT=$(GIT_VERSION) \
+		--platform linux/amd64,linux/arm64 \
+		--push \
+		.
 
 .PHONY: publish-chart
 publish-chart:
@@ -389,15 +361,6 @@ hack-new-kind-cluster:
 
 .PHONY: hack-build-images
 hack-build-images: hack-build-artemis hack-build-apiserver hack-build-scheduler hack-build-observer hack-build-logger-linux hack-build-git-initializer hack-build-worker
-
-.PHONY: hack-build-logger-linux
-hack-build-logger-linux:
-	docker build \
-		-f v2/logger/Dockerfile.linux \
-		-t $(DOCKER_IMAGE_PREFIX)logger-linux:$(IMMUTABLE_DOCKER_TAG) \
-		--build-arg VERSION='$(VERSION)' \
-		--build-arg COMMIT='$(GIT_VERSION)' \
-		v2/logger
 
 .PHONY: hack-build-%
 hack-build-%:
