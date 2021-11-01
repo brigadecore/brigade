@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package tests
@@ -36,18 +37,27 @@ func TestMain(t *testing.T) {
 	require.NoError(t, err, "error creating root session")
 	tokenStr := token.Value
 
-	// Check unversionedPing endpoint for expected version
-	wantResp := os.Getenv("VERSION")
-	require.NotEmpty(t, wantResp, "expected the VERSION env var to be non-empty")
+	// Check ping endpoint for expected version
+	wantVersion := os.Getenv("VERSION")
+	require.NotEmpty(
+		t,
+		wantVersion,
+		"expected the VERSION env var to be non-empty",
+	)
 
 	systemClient := system.NewAPIClient(
 		apiServerAddress,
 		tokenStr,
 		apiClientOpts,
 	)
-	resp, err := systemClient.UnversionedPing(ctx)
+	resp, err := systemClient.Ping(ctx)
 	require.NoError(t, err)
-	require.Equal(t, wantResp, string(resp), "ping response did not match expected")
+	require.Equal(
+		t,
+		wantVersion,
+		string(resp.Version),
+		"ping response did not match expected",
+	)
 
 	// Create the api client for use in tests below
 	client := sdk.NewAPIClient(
