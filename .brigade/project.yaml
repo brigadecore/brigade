@@ -17,3 +17,5 @@ spec:
   workerTemplate:
     git:
       cloneURL: https://github.com/brigadecore/brigade.git
+    jobPolicies:
+      allowPrivileged: true
