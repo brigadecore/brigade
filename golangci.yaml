@@ -16,7 +16,6 @@ linters:
   - gocyclo
   - gofmt
   - goimports
-  - golint
   - gosec
   - govet
   - lll
@@ -24,6 +23,7 @@ linters:
   - misspell
   - nakedret
   - prealloc
+  - revive
   - unconvert
   - unparam
   - unused
@@ -61,9 +61,6 @@ linters-settings:
     # put imports beginning with prefix after 3rd-party packages;
     # it's a comma-separated list of prefixes
     local-prefixes: github.com/org/project
-  golint:
-    # minimal confidence for issues, default is 0.8
-    min-confidence: 0.8
   govet:
     # report about shadowed variables
     check-shadowing: true
