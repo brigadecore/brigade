@@ -8,244 +8,196 @@ aliases:
   - /topics/design.md
 ---
 
-TODO: update per v2
-
-# Brigade Design
-
-_This is a living document, and is kept up to date with the current state of
-Brigade. It is a high-level explanation of the Brigade design._
-
-Brigade is an in-cluster runtime environment. It interprets scripts, and executes
-them often by invoking resources inside of the cluster. Brigade is event-based
-scripting of Kubernetes pipelines.
-
-![Event-based scripting of pipelines](https://docs.brigade.sh/img/design-01.png)
-
-- Event-based: A script execution is triggered by a Brigade event.
-- Scripting: Programs are expressed as JavaScript files that declare one or more event handlers.
-- Pipelines: A script expresses a series of related jobs that run in parallel or serially.
+This document describes the function of each of Brigade's major components and
+how they integrate with one another to provide an event-driven scripting
+platform. It also provides some historical context for how maintainers arrived
+at the current architecture.
 
 ## Terminology
 
-![Brigade Run](https://docs.brigade.sh/img/design-02.png)
+It is useful to begin with an implementation-neutral description of Brigade's
+most important concepts. This is a non-exhaustive introduction to topics that
+are covered more thoroughly elsewhere in the documentation.
 
-- **Brigade** is the name of the project. Often, the term is used generically to
-  refer to the in-cluster Brigade components.
-  - **Brigade Controller** is the name of the central controller.
-  - **Brigade API** is an API server used to access information about Brigade's
-    current and past workloads.
-- **Brig** is a command line client for Brigade.
-- **Event** is a Brigade-issued indicator that something happened.
-- **Gateways** transform outside triggers (a Git pull request, a Trello card move) into
-  events.
-- **brigade.js** is the standard name for a JavaScript file that contains one or more Brigade event handlers.
-- **Job** is a build unit, comprised of one or more build steps called "tasks"
-  - **Task** is a step within a job.
-- **Webhook** is an incoming HTTP/HTTPS request from an external source. Some gateways
-  uses webhooks as triggers for events.
-- **Project** is a named collection of data that Brigade operates on. Often, though
-  not always, a Project is linked to a Git project. All scripts are executed within
-  the context of a project.
-  - **Secrets** are bits of configuration considered "non-public". They are stored
-  in projects, and may be accessed within scripts.
-  - **VCS Sidecar** is a special Docker image that knows how to load a project's
-  related VCS repository into a build or job. The default VCS sidecar only knows
-  about Git.
-- **Build** is a run (an instance) of a script. When a script is executed, the
-  data about that execution is conceptually referenced as a _build_. A build
-  must handle at least one event, and may handle multiple events.
+### Events
 
-## The Developer's View
+__Events__ originate in external systems and arrive in Brigade's
+[event bus](#the-event-bus) via [gateways](#event-gateways) and the
+[Brigade API](#the-api-server).
 
-From the developer's view, Brigade works like this:
+<center>
+  <img src="../../static/img/design-events.png"/>
+</center>
 
-A _project_ describes the context in which a Brigade script will run. It may define
-the following:
+### Projects
 
-- Project name
-- Related files, stored in a VCS repository (Git is supported out of the box, others
-  require a different VCS sidecar)
-- Configuration, such as tokens, SSH keys, and other items necessary to wire up
-  a script run.
-- Secrets, which are opaque configuration items that are presumed to be non-public.
-  While configuration information is not guaranteed to be available inside of a
-  script, secrets are.
-- The VCS sidecar to use. (Default is the Git sidecar)
+__Projects__ are user-defined. They pair event subscriptions with configuration
+and scripts that will handle those events.
 
-One or more scripts may be executed within the context of a project. Brigade
-assumes that a default script will reside in the project's VCS repository at the
-relative path `./brigade.js`. Gateways may provide other ways of sending
-scripts into Brigade.
+<center>
+  <img src="../../static/img/design-projects.png"/>
+</center>
 
-A Brigade script should have at least one event handler defined. Event handlers
-are triggered when a gateway emits an event. Events are bound to projects, so
-an event will only be triggered for the explicitly declared project. (In other
-words, there are no _global_ events, only project-bound events.)
+### The Lifecycle of an Event
 
-An event specifies the following things:
+When a new [event](#events) arrives at the Brigade
+[API server](#the-api-server), a discrete copy of of it is enqueued on the
+[event bus](#the-event-bus) for each subscribed [project](#projects).
 
-- Which project it is attached to (e.g. `my/project`)
-- The name of the event that fired (e.g. `pull_request`)
-- The entity that triggered the event (e.g. `github`)
-- The script to run (defaults to `./brigade.js` in the VCS)
-- A payload containing event data.
+As capacity permits, a [worker](#workers) described by project configuration is
+launched to handle each event by executing script.
 
-(The list above is not exhaustive.)
+## High Level Architecture
 
-When Brigade receives an event, it loads the referenced project, then starts a
-new worker. The worker executes the Brigade script, using as its entry point the
-event handler for the triggered event (e.g. `events.on('pull_request')`. The worker
-processes the script until one of the following occurs:
+The following depicts the major components of Brigade:
 
-- The script exits successfully
-- The script terminates because of an error
-- The worker times out
+<center>
+  <img src="../../static/img/design-architecture.png"/>
+</center>
 
-The fundamental units of a script are event handlers, jobs, and tasks.
+The following sections describe each of these components in greater detail. They
+are presented in an order that is intended accelerate understanding of the
+high-level architecture for project newcomers.
 
-An _event handler_ associates a named event with a function that can process the
-event:
+### The Workload Execution Substrate
 
-```javascript
-events.on('event name', () => { /* handler */ })
-```
+Brigade's tagline has long been "event-driven scripting for Kubernetes,"
+but since v2, Kubernetes is effectively an implementation detail.
 
-An event handler is explicitly given two pieces of information: the `event` record
-and the `project` record.
+With an exception for advanced use cases wherein a Brigade script may modify the
+Kubernetes cluster in which it executes, and therefore may require some
+cluster-specific setup, end-users of Brigade do not interact directly with
+Kubernetes. Instead, users interact with Brigade using Brigade's own API. (This
+is usually indirectly, via the CLI or other tooling.)
 
-- The `event` record provides information about the event.
-- The `project` record provides some (but not all) information about the project,
-  notably names, secrets, and VCS information
+The [API server](#the-api-server) treats Kubernetes as one of several back-end
+components. Specifically, it utilizes Kubernetes as a "workload execution
+substrate." In other words, it is used to host containerized environments in
+which to execute users' scripts.
 
-A typical event handler declares and runs one or more _jobs_. A job is a discrete
-unit of work that is associated with a _container image_.
+While project maintainers have no immediate plans to support alternative
+substrates, it is nevertheless worth noting that Brigade was explicitly designed
+in a manner that retains the possibility of doing so.
 
-```javascript
-const myJob = new Job("job-name", "image:tag")
-```
+### The API Server
 
-When a job is executed, the container image is _pulled_ from an origin (such as DockerHub),
-and is executed in the cluster. A job specifies configuration and input to that
-container. And the output of that container is returned from the job.
+All of Brigade's most important functions are abstracted by a RESTful API.
+The __API server__ implements and serves that API.
 
-A job may declare zero or more _tasks_. A task is an individual step executed inside
-of a container. For example, if a container is just a simple Linux container with
-a shell, multiple shell commands can be run as tasks:
+Other Brigade components' interactions with back-end systems such as the
+[database](#the-database) or [substrate](#the-workload-execution-substrate) are
+generally abstracted by the API. Most components, therefore, depend on the API
+server.
 
-```
-myJob.tasks = [
-  "echo hello",
-  "echo world"
-]
-```
+It is fair to regard the API server as Brigade's "brain."
 
-In addition to jobs, scripts may declare _groups_, where groups are merely organizing
-units that can execute multiple jobs according to predefined patterns (e.g. all
-in parallel, each serially).
+### The Database
 
-When a script is executed, cluster resources are allocated to execute each job as
-an independent cluster resource (a Pod). Various storage configurations may provide
-shared space between jobs in a build, or between multiple instances of the same
-job in different builds.
+The [API server](#the-api-server) utilizes [MongoDB](https://www.mongodb.com/)
+for all record keeping. This includes, but is not limited to, storing
+user-defined projects, events, and even logs produced by users' scripts.
 
-## The Operator's View
+### The Event Bus
 
-Operationally speaking, Brigade is a tool for chaining together Kubernetes pods
-in order to accomplish high level goals. It is analogous to the way UNIX shell scripts
-work.
+The [API Server](#the-api-server) utilizes
+[Apache ActiveMQ Artemis](https://activemq.apache.org/components/artemis/),
+which implements AMQP 1.0 (Advanced Message Queueing Protocol), as its internal
+event bus. A queue per Brigade project ensures events for a given project are
+handled on a FIFO (first in, first out) basis.
 
-A UNIX shell script defines the workflow around executing one or more lower-level
-system executables. Similarly, a Brigade script defines a workflow for executing
-multiple containers within a cluster.
+### Event Gateways
 
-Brigade has several functional concepts.
+__Event gateways__ are peripheral components, installed separately from Brigade
+itself. Their role is to receive events from external systems, transform them
+into _Brigade_ events, and utilize the Brigade API to enqueue them in Brigade's
+[event bus](#the-event-bus).
 
-![Design Overview](https://docs.brigade.sh/img/design-overview.png)
+### The Scheduler
 
-A Gateway is a workload, typically a Kubernetes Deployment fronted by a Service
-or Ingress, that transforms a trigger (inbound webhook, item on queue) into a
-Brigade event.
+The __scheduler__ component listens to each project's queue on the
+[event bus](#the-event-bus) and also uses the API to monitor capacity on the
+[substrate](#the-workload-execution-substrate). The scheduler allocates
+available capacity by making API calls to launch [workers](#workers) to handle
+each event.
 
-![Service, Trigger, Gateway, Event](https://docs.brigade.sh/img/design-trigger-gateway.png)
+When the demand for substrate capacity outpaces supply, the scheduler
+pseudo-randomly allocates newfound capacity. This incorporates a degree of
+"fairness" into Brigade's scheduling and prevents projects with high event
+volume from monopolizing substrate capacity.
 
-The illustration above shows how GitHub translates a Git event into a webhook, which
-the optional [Brigade GitHub Gateway](./github.md) translates into an event to be
-consumed by the Brigade controller.
+Note that the scheduler function cannot be scaled horizontally. Decoupling this
+function from the API server and implementing it as its own microservice ensures
+that deployments of Brigade can constrain themselves to a single instance of the
+scheduler component whilst still permitting the API server to scale
+horizontally.
 
-In Brigade, all scripts are executed in the context of a _project_. Projects are
-represented as Kubernetes Secrets.
+### The Observer
 
-The Controller is a Kubernetes controller that listens for Brigade event objects,
-and handles these objects by starting workers.
+The role of the __observer__ component is to directly monitor workloads on the
+[substrate](#the-workload-execution-substrate) and report their status via the
+API.
 
-Brigade events are currently specified as Kubernetes Secrets with particular
-labels. We use secrets because at the time of development, Third Party Resources
-were deprecated and Custom Resource Descriptions are not final.
+When a workload is observed to be complete, the observer is also responsible for
+evicting the workload from the substrate after a short grace period. This is not
+done directly, but again, via an API call. The purpose of the grace period is to
+improve the likelihood that log agents capture _all_ logs produced by users'
+scripts _before_ the [workers](#workers) that execute them are deleted forever.
 
-Brigade Workers are pods that execute brigade scripts. Each worker handles exactly
-one brigade script. Workers are never pooled. A worker runs to completion, to failure,
-or to timeout.
+As with the [scheduler](#the-scheduler), the observer function cannot be scaled
+horizontally. Decoupling this function from the API server and implementing it
+as its own microservice ensures that deployments of Brigade can constrain
+themselves to a single instance of the observer component whilst still
+permitting the API server to scale horizontally.
 
-Brigade workers handle an event by starting a _build_, where a build executes a
-script. A build will create a PVC for shared storage (job-to-job shared filesystem),
-and will create one or more pods (one per job). The worker will attempt to destroy
-all destroyable resources once the build has completed. Note that jobs are left in
-the Complete state (not deleted) so that their logs may be accessed. Cache PVCs
-are left unattached, and prepared for re-use.
+### Workers
 
-A Brigade Job is started by a worker, and is executed as a pod. A job is run
-to completion, to error, or to timeout. Its status and results are made available
-to the calling worker, which in turn provides access to the script.
+A __worker__ is a containerized script execution environment that is launched
+on the [substrate](#the-workload-execution-substrate) to handle an event.
+Because that underlying substrate is Kubernetes, a worker is implemented as a
+[Kubernetes pod](https://kubernetes.io/docs/concepts/workloads/pods/).
 
-Along with the execution of an event-build pipeline, Brigade also provides an
-API server that provides access to information about current and past builds, projects,
-and jobs. The API server is typically fronted by a Service or Ingress.
+The default worker Docker image can execute scripts written in
+[JavaScript](https://en.wikipedia.org/wiki/JavaScript) or
+[TypeScript](https://www.typescriptlang.org/) using
+[Node.js](https://nodejs.org/). It can also resolve any of a script's
+dependencies using either
+[npm](https://nodejs.org/en/knowledge/getting-started/npm/what-is-npm/) or
+[yarn](https://yarnpkg.com/).
 
-## Reasoning for Certain Design Decisions
+It is also possible, through project configuration, to use workers based on an
+alternative Docker image. Such images could provide support for handlers that
+are defined using alternative scripting languages or even a declarative syntax.
 
-- Go was selected because it provides the most mature Kubernetes APIs.
-- At various points, we explored using TPRs and later CRDs. But the feature sets
-  and stability of these two facilities never reached a satisfactorily stable
-  point. So we use secrets for configuration data. Secrets have the following benefits:
-  - They are mountable via the volume system, a feature we use frequently
-  - They can be injected as environment variables
-  - They benefit from Kubernetes improvements to secret storage
-- JavaScript was selected because of it's high score on just about all language
-  usage analyses.
-- Node.js was selected because of its robust ecosystem
-- TypeScript was selected because its type system resembled Go's.
-- The Controller model was selected because it gave us the advantages of a queueing
-  system, but without requiring a stand-alone service.
-- GitHub and Git were selected because they appear to be the leading tools used
-  by developers.
-- Docker containers were selected because they are the clear market leader.
-- PVCs are used for shared storage because they are the closest Kubernetes comes
-  to providing a shareable filesystem. We explored, and ultimately rejected, multiple
-  userland alternatives.
-- The Job/Task terminology comes from ETL
-- The Event terminology comes from JavaScript's event model
-- The Build terminology comes from CI/CD systems
+### Log Agents
+
+Brigade utilizes an instance of [Fluentd](https://www.fluentd.org/) per
+Kubernetes node to scrape logs from [worker](#workers) containers and forward
+them to the [database](#the-database). This ensures that logs produced by users'
+scripts are persisted beyond the short lifetime of the workers that run them.
 
 ## History of Brigade
 
-Brigade was designed in March 2016 by the Deis Helm Team (now part of Microsoft).
+Like its sister project, [Helm](https://helm.sh/), Brigade was born at Deis
+prior to the company's eventual acquisition by Microsoft. Both projects were the
+product of the same process. Viewing Kubernetes as a sort of "cluster operating
+system," the team at Deis sought to identify features of a traditional operating
+system that are often taken for granted, but were conspicuously absent from
+Kubernetes. Kubernetes lacked a package manager and that directly led to the
+inception of Helm to close that gap. Similarly, Kubernetes lacked a scripting
+environment -- and that is the gap that Brigade was designed to close.
 
-The first design used Lua instead of JavaScript, and relied on very few Kubernetes resources.
-Instead, it used a Redis queue for message passing and key/value storage. Other
-than some proof-of-concept work, the Lua engine never materialized. JavaScript's
-popularity made it a better choice.
+Brigade reached a stable, 1.0 release in March 2019 and was donated to
+[CNCF](https://www.cncf.io/) at that time, becoming a
+[sandbox project](https://www.cncf.io/sandbox-projects/). Four minor releases
+followed.
 
-An original Kubernetes-oriented JavaScript engine was developed several months later.
-This was intended to be both a stand-alone component and a foundational piece for
-Brigade. Work was abandoned in favor of the Node.js worker pattern.
-
-In April of 2017, Brigade was designated as the third part of the Helm/Draft/Brigade
-ecosystem. At this point, it was renamed "Acid" (Acme Continuous Integration & Deployment).
-
-Brigade reached a stability point in September 2017, and was re-renamed back from
-Acid to Brigade. Brigade was released publicly under the MIT license in October
-2017, as release 0.1.0.
-
-In March of 2019, in tandem with Brigade's 1.0.0 release, the project was donated to
-the CNCF org as a Sandbox Project.  During this transition, the license was updated to
-Apache-2.0.
+By early 2020, Brigade had proven reasonably popular among among
+[CNCF survey](https://www.cncf.io/wp-content/uploads/2020/08/CNCF_Survey_Report.pdf)
+respondents. Popular though it may have been, maintainers had also accumulated
+enough feedback from the community to recognize some course corrections were
+required to position the project for greater success. Most insights led back to
+a fundamental need to better abstract Brigade users from the underlying
+complexities of Kubernetes. A formal proposal for Brigade v2 was drafted by
+maintainers and ratified by the community. Over the following two years, Brigade
+was re-written from the ground up. As of this writing (early Nov 2021), a GA
+release of Brigade v2 is expected in the coming weeks.
