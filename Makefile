@@ -243,7 +243,7 @@ build-brigadier:
 	'
 
 .PHONY: build-images
-build-images: build-artemis build-apiserver build-scheduler build-observer build-logger-linux build-git-initializer build-worker
+build-images: build-artemis build-apiserver build-scheduler build-observer build-logger build-git-initializer build-worker
 
 .PHONY: build-logger-windows
 build-logger-windows:
@@ -308,7 +308,7 @@ publish-brigadier-docs: build-brigadier
 	'
 
 .PHONY: push-images
-push-images: push-artemis push-apiserver push-scheduler push-observer push-logger-linux push-git-initializer push-worker
+push-images: push-artemis push-apiserver push-scheduler push-observer push-logger push-git-initializer push-worker
 
 .PHONY: push-logger-windows
 push-logger-windows:
@@ -360,7 +360,7 @@ hack-new-kind-cluster:
 	hack/kind/new-cluster.sh
 
 .PHONY: hack-build-images
-hack-build-images: hack-build-artemis hack-build-apiserver hack-build-scheduler hack-build-observer hack-build-logger-linux hack-build-git-initializer hack-build-worker
+hack-build-images: hack-build-artemis hack-build-apiserver hack-build-scheduler hack-build-observer hack-build-logger hack-build-git-initializer hack-build-worker
 
 .PHONY: hack-build-%
 hack-build-%:
@@ -383,7 +383,7 @@ hack-build-cli:
 	'
 
 .PHONY: hack-push-images
-hack-push-images: hack-push-artemis hack-push-apiserver hack-push-scheduler hack-push-observer hack-push-logger-linux hack-push-git-initializer hack-push-worker
+hack-push-images: hack-push-artemis hack-push-apiserver hack-push-scheduler hack-push-observer hack-push-logger hack-push-git-initializer hack-push-worker
 
 .PHONY: hack-push-%
 hack-push-%: hack-build-%
@@ -421,7 +421,7 @@ hack-deploy:
 		--set gitInitializer.image.repository=$(DOCKER_IMAGE_PREFIX)git-initializer \
 		--set gitInitializer.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set gitInitializer.image.pullPolicy=$(IMAGE_PULL_POLICY) \
-		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)logger-linux \
+		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)logger\
 		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set logger.linux.image.pullPolicy=$(IMAGE_PULL_POLICY)
 
@@ -439,7 +439,7 @@ hack-unexpose-apiserver:
 
 # Convenience targets for loading images into a KinD cluster
 .PHONY: hack-load-images
-hack-load-images: load-artemis load-apiserver load-scheduler load-observer load-logger-linux load-git-initializer load-worker
+hack-load-images: load-artemis load-apiserver load-scheduler load-observer load-logger load-git-initializer load-worker
 
 load-%:
 	@echo "Loading $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"

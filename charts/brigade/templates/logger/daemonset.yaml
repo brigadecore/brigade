@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ include "brigade.logger.linux.fullname" . }}
+  name: {{ include "brigade.logger.fullname" . }}
   labels:
     {{- include "brigade.labels" . | nindent 4 }}
     {{- include "brigade.logger.linux.labels" . | nindent 4 }}
