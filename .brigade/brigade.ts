@@ -188,13 +188,13 @@ const pushGitInitializerJob = (event: Event) => {
 }
 jobs[pushGitInitializerJobName] = pushGitInitializerJob
 
-const buildLoggerLinuxJobName = "build-logger-linux"
+const buildLoggerLinuxJobName = "build-logger"
 const buildLoggerLinuxJob = (event: Event) => {
   return new BuildImageJob(buildLoggerLinuxJobName, event)
 }
 jobs[buildLoggerLinuxJobName] = buildLoggerLinuxJob
 
-const pushLoggerLinuxJobName = "push-logger-linux"
+const pushLoggerLinuxJobName = "push-logger"
 const pushLoggerLinuxJob = (event: Event) => {
   return new PushImageJob(pushLoggerLinuxJobName, event)
 }
