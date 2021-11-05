@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/brigadecore/brigade/v2/v2/apiserver/schemas/project.json
+apiVersion: brigade.sh/v2-beta
+kind: Project
+metadata:
+  id: windows
+description: Demonstrates a Windows-based job
+spec:
+  eventSubscriptions:
+  - source: brigade.sh/cli
+    types:
+    - exec
+  workerTemplate:
+    # logLevel: DEBUG
+    defaultConfigFiles:
+      brigade.js: |
+        const { events, Job } = require("@brigadecore/brigadier");
+
+        events.on("brigade.sh/cli", "exec", async event => {
+          let job = new Job("hello", "mcr.microsoft.com/windows/nanoserver", event);
+          job.primaryContainer.command = ["echo"];
+          job.primaryContainer.arguments = ["Hello from Windows!"];
+          job.host = {
+            nodeSelector: {
+              os: "windows"
+            }
+          };
+          await job.run();
+        });
+
+        events.process();
