@@ -15,3 +15,6 @@ jobs:
       - name: Build Windows logger agent
         run: |
           make build-logger-windows
+      - name: Build Windows git initializer
+        run: |
+          make build-git-initializer-windows

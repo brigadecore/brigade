@@ -255,6 +255,16 @@ build-logger-windows:
 		--build-arg COMMIT=$(GIT_VERSION) \
 		.
 
+.PHONY: build-git-initializer-windows
+build-git-initializer-windows:
+	docker build \
+		-f v2/git-initializer-windows/Dockerfile \
+		-t $(DOCKER_IMAGE_PREFIX)git-initializer-windows:$(IMMUTABLE_DOCKER_TAG) \
+		-t $(DOCKER_IMAGE_PREFIX)git-initializer-windows:$(MUTABLE_DOCKER_TAG) \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg COMMIT=$(GIT_VERSION) \
+		.
+
 .PHONY: build-%
 build-%:
 	docker buildx build \
@@ -314,6 +324,11 @@ push-images: push-artemis push-apiserver push-scheduler push-observer push-logge
 push-logger-windows:
 	docker push $(DOCKER_IMAGE_PREFIX)logger-windows:$(IMMUTABLE_DOCKER_TAG)
 	docker push $(DOCKER_IMAGE_PREFIX)logger-windows:$(MUTABLE_DOCKER_TAG)
+
+.PHONY: push-git-initializer-windows
+push-git-initializer-windows:
+	docker push $(DOCKER_IMAGE_PREFIX)git-initializer-windows:$(IMMUTABLE_DOCKER_TAG)
+	docker push $(DOCKER_IMAGE_PREFIX)git-initializer-windows:$(MUTABLE_DOCKER_TAG)
 
 .PHONY: push-%
 push-%:
