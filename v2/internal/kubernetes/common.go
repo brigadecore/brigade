@@ -21,9 +21,9 @@ const (
 	LabelKeyWorkspace      = "workspace"
 	LabelKeyProjectSecrets = "project-secrets"
 
-	SecretTypeProjectSecrets = "brigade.sh/project-secrets"
-	SecretTypeEvent          = "brigade.sh/event"
-	SecretTypeJobSecrets     = "brigade.sh/job"
+	SecretTypeProjectSecrets = "brigade.sh/project-secrets" // nolint: gosec
+	SecretTypeEvent          = "brigade.sh/event"           // nolint: gosec
+	SecretTypeJobSecrets     = "brigade.sh/job"             // nolint: gosec
 )
 
 func EventSecretName(eventID string) string {

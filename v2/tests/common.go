@@ -15,7 +15,7 @@ import (
 
 const (
 	testJobName = "test-job"
-	testTimeout = time.Duration(120 * time.Second)
+	testTimeout = 120 * time.Second
 )
 
 var (
@@ -55,10 +55,9 @@ func GetRequiredEnvVar(t *testing.T, name string) string {
 	return val
 }
 
-// nolint: golint
 func assertWorkerPhase(
 	t *testing.T,
-	ctx context.Context,
+	ctx context.Context, // nolint: revive
 	client sdk.APIClient,
 	e core.Event,
 	wantPhase core.WorkerPhase,
@@ -97,10 +96,9 @@ func assertWorkerPhase(
 	}
 }
 
-// nolint: golint
 func assertJobPhase(
 	t *testing.T,
-	ctx context.Context,
+	ctx context.Context, // nolint: revive
 	client sdk.APIClient,
 	e core.Event,
 	job string, // nolint: unparam
@@ -137,10 +135,9 @@ func assertJobPhase(
 	}
 }
 
-// nolint: golint
 func assertVCSLogs(
 	t *testing.T,
-	ctx context.Context,
+	ctx context.Context, // nolint: revive
 	client sdk.APIClient,
 	e core.Event,
 	wantLogs string,
@@ -155,10 +152,9 @@ func assertVCSLogs(
 	)
 }
 
-// nolint: golint
 func assertWorkerLogs(
 	t *testing.T,
-	ctx context.Context,
+	ctx context.Context, // nolint: revive
 	client sdk.APIClient,
 	e core.Event,
 	wantLogs string, // nolint: unparam
@@ -173,10 +169,9 @@ func assertWorkerLogs(
 	)
 }
 
-// nolint: golint
 func assertJobLogs(
 	t *testing.T,
-	ctx context.Context,
+	ctx context.Context, // nolint: revive
 	client sdk.APIClient,
 	e core.Event,
 	job string, // nolint: unparam
@@ -192,10 +187,9 @@ func assertJobLogs(
 	)
 }
 
-// nolint: golint
 func assertLogs(
 	t *testing.T,
-	ctx context.Context,
+	ctx context.Context, // nolint: revive
 	client sdk.APIClient,
 	e core.Event,
 	selector *core.LogsSelector,

@@ -26,7 +26,7 @@ func TestGetConfig(t *testing.T) {
 	configFile := path.Join(testHome, ".brigade", "config")
 	configBytes, err := json.Marshal(testConfig)
 	require.NoError(t, err)
-	err = ioutil.WriteFile(configFile, configBytes, 0644)
+	err = ioutil.WriteFile(configFile, configBytes, 0644) // nolint: gosec
 	require.NoError(t, err)
 	cfg, err := getConfig()
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestSaveConfig(t *testing.T) {
 	configFile := path.Join(brigadeHome, "config")
 	info, err = os.Stat(configFile)
 	require.NoError(t, err)
-	require.Equal(t, os.FileMode(0644), info.Mode().Perm())
+	require.Equal(t, os.FileMode(0600), info.Mode().Perm())
 	configBytes, err := ioutil.ReadFile(configFile)
 	require.NoError(t, err)
 	cfg := config{}
@@ -71,7 +71,7 @@ func TestDeleteConfig(t *testing.T) {
 	err = os.Mkdir(brigadeHome, 0755)
 	require.NoError(t, err)
 	configFile := path.Join(testHome, ".brigade", "config")
-	err = ioutil.WriteFile(configFile, []byte("config!"), 0644)
+	err = ioutil.WriteFile(configFile, []byte("config!"), 0644) // nolint: gosec
 	require.NoError(t, err)
 	err = deleteConfig()
 	require.NoError(t, err)

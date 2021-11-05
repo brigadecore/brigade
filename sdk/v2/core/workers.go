@@ -347,7 +347,7 @@ func (w *workersClient) WatchStatus(
 	ctx context.Context,
 	eventID string,
 ) (<-chan WorkerStatus, <-chan error, error) {
-	resp, err := w.SubmitRequest(
+	resp, err := w.SubmitRequest( // nolint: bodyclose
 		ctx,
 		rm.OutboundRequest{
 			Method: http.MethodGet,
@@ -365,6 +365,7 @@ func (w *workersClient) WatchStatus(
 	statusCh := make(chan WorkerStatus)
 	errCh := make(chan error)
 
+	// This goroutine will close the response body when it completes
 	go w.receiveStatusStream(ctx, resp.Body, statusCh, errCh)
 
 	return statusCh, errCh, nil

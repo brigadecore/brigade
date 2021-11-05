@@ -93,7 +93,7 @@ func TestBaseClientExecuteRequest(t *testing.T) {
 		HTTPClient: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
+					InsecureSkipVerify: true, // nolint: gosec
 				},
 			},
 		},
@@ -257,12 +257,13 @@ func TestBaseClientSubmitRequest(t *testing.T) {
 				HTTPClient: &http.Client{
 					Transport: &http.Transport{
 						TLSClientConfig: &tls.Config{
-							InsecureSkipVerify: true,
+							InsecureSkipVerify: true, // nolint: gosec
 						},
 					},
 				},
 			}
 			resp, err := client.SubmitRequest(context.Background(), testCase.req)
+			defer resp.Body.Close()
 			testCase.assertions(t, resp, err)
 		})
 	}

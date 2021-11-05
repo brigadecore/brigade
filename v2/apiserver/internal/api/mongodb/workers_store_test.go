@@ -93,7 +93,7 @@ func TestWorkersStoreUpdateStatus(t *testing.T) {
 
 func TestWorkersStoreUpdateHashedToken(t *testing.T) {
 	const testEvent = "123456789"
-	const testHashedToken = "a fake hashed token"
+	const testHashedToken = "a fake hashed token" // nolint: gosec
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection

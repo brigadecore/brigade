@@ -187,7 +187,8 @@ func TestRunWorkerLoop(t *testing.T) {
 						},
 					},
 					workerLoopErrFn: func(i ...interface{}) {
-						err := i[0].(error)
+						err, ok := i[0].(error)
+						require.True(t, ok)
 						require.Equal(t, err.Error(), "something went wrong")
 						cancelFn()
 					},
@@ -233,7 +234,8 @@ func TestRunWorkerLoop(t *testing.T) {
 						},
 					},
 					workerLoopErrFn: func(i ...interface{}) {
-						err := i[0].(error)
+						err, ok := i[0].(error)
+						require.True(t, ok)
 						require.Equal(t, err.Error(), "something went wrong")
 						cancelFn()
 					},
@@ -339,7 +341,8 @@ func TestRunWorkerLoop(t *testing.T) {
 						},
 					},
 					workerLoopErrFn: func(i ...interface{}) {
-						err := i[0].(error)
+						err, ok := i[0].(error)
+						require.True(t, ok)
 						require.Equal(t, err.Error(), "something went wrong")
 						cancelFn()
 					},
