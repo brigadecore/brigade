@@ -109,7 +109,7 @@ func initialize(c *cli.Context) error {
 			return err
 		}
 		if fileWrite {
-			if err = ioutil.WriteFile(
+			if err = ioutil.WriteFile( // nolint: gosec
 				scriptPath,
 				scriptBytes,
 				0644,
@@ -136,7 +136,7 @@ func initialize(c *cli.Context) error {
 			return err
 		}
 		if fileWrite {
-			if err = ioutil.WriteFile(
+			if err = ioutil.WriteFile( // nolint: gosec
 				packagePath,
 				packageBytes,
 				0644,
@@ -165,7 +165,7 @@ func initialize(c *cli.Context) error {
 		return err
 	}
 	if fileWrite {
-		if err = ioutil.WriteFile(
+		if err = ioutil.WriteFile( // nolint: gosec
 			projectPath,
 			projectBytes,
 			0644,
@@ -191,7 +191,7 @@ func initialize(c *cli.Context) error {
 		return err
 	}
 	if fileWrite {
-		if err = ioutil.WriteFile(
+		if err = ioutil.WriteFile( // nolint: gosec
 			notesPath,
 			notesBytes,
 			0644,
@@ -220,7 +220,7 @@ func initialize(c *cli.Context) error {
 		if err = ioutil.WriteFile(
 			secretsPath,
 			secretsBytes,
-			0644,
+			0600,
 		); err != nil {
 			return err
 		}

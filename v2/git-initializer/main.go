@@ -99,7 +99,7 @@ func gitCheckout() error {
 		// The following avoids:
 		// "unable to find any valid known_hosts file,
 		// set SSH_KNOWN_HOSTS env variable"
-		publicKeys.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+		publicKeys.HostKeyCallback = ssh.InsecureIgnoreHostKey() // nolint: gosec
 		auth = publicKeys
 	}
 

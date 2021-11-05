@@ -46,7 +46,7 @@ func (o *observer) syncJobPods(ctx context.Context) {
 
 func (o *observer) syncJobPod(obj interface{}) {
 	ctx := context.Background()
-	pod := obj.(*corev1.Pod)
+	pod := obj.(*corev1.Pod) // nolint: forcetypeassert
 	// Map pod status to job status
 	status := o.getJobStatusFromPod(pod)
 	// Manage the timeout clock

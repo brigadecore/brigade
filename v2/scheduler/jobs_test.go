@@ -186,7 +186,8 @@ func TestRunJobLoop(t *testing.T) {
 						},
 					},
 					jobLoopErrFn: func(i ...interface{}) {
-						err := i[0].(error)
+						err, ok := i[0].(error)
+						require.True(t, ok)
 						require.Equal(t, err.Error(), "something went wrong")
 						cancelFn()
 					},
@@ -219,7 +220,8 @@ func TestRunJobLoop(t *testing.T) {
 						},
 					},
 					jobLoopErrFn: func(i ...interface{}) {
-						err := i[0].(error)
+						err, ok := i[0].(error)
+						require.True(t, ok)
 						require.Contains(t, err.Error(), "received invalid message")
 						cancelFn()
 					},
@@ -267,7 +269,8 @@ func TestRunJobLoop(t *testing.T) {
 						},
 					},
 					jobLoopErrFn: func(i ...interface{}) {
-						err := i[0].(error)
+						err, ok := i[0].(error)
+						require.True(t, ok)
 						require.Equal(t, err.Error(), "something went wrong")
 						cancelFn()
 					},
@@ -307,7 +310,8 @@ func TestRunJobLoop(t *testing.T) {
 						},
 					},
 					jobLoopErrFn: func(i ...interface{}) {
-						err := i[0].(error)
+						err, ok := i[0].(error)
+						require.True(t, ok)
 						require.Contains(t, err.Error(), "no job")
 						require.Contains(t, err.Error(), "exists for event")
 						cancelFn()
@@ -426,7 +430,8 @@ func TestRunJobLoop(t *testing.T) {
 						},
 					},
 					jobLoopErrFn: func(i ...interface{}) {
-						err := i[0].(error)
+						err, ok := i[0].(error)
+						require.True(t, ok)
 						require.Equal(t, err.Error(), "something went wrong")
 						cancelFn()
 					},

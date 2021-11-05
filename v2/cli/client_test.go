@@ -26,7 +26,7 @@ func TestGetClient(t *testing.T) {
 	configFile := path.Join(testHome, ".brigade", "config")
 	configBytes, err := json.Marshal(testConfig)
 	require.NoError(t, err)
-	err = ioutil.WriteFile(configFile, configBytes, 0644)
+	err = ioutil.WriteFile(configFile, configBytes, 0644) // nolint: gosec
 	require.NoError(t, err)
 	cfg, err := getConfig()
 	require.NoError(t, err)

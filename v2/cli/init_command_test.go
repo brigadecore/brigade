@@ -50,7 +50,7 @@ func TestAddLinesToFile(t *testing.T) {
 	verifyFileContents(t, editFilePath, "f00bar")
 
 	// Clear editFile, test functionality of writing to existing editFile
-	err = ioutil.WriteFile(editFilePath, []byte(``), 0644)
+	err = ioutil.WriteFile(editFilePath, []byte(``), 0644) // nolint: gosec
 	require.NoError(t, err)
 	err = addLinesToFile(editFilePath, "f00bar")
 	require.NoError(t, err)

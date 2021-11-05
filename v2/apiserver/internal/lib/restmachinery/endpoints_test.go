@@ -52,7 +52,7 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 			t *testing.T,
 			result bool,
 			obj interface{},
-			rr *httptest.ResponseRecorder,
+			r *http.Response,
 		)
 	}{
 
@@ -71,15 +71,15 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				t *testing.T,
 				result bool,
 				obj interface{},
-				rr *httptest.ResponseRecorder,
+				r *http.Response,
 			) {
 				assert.True(t, result)
 				// OK is a response's default status. If nothing went wrong, that
 				// shouldn't have been overridden.
-				require.Equal(t, http.StatusOK, rr.Result().StatusCode)
+				require.Equal(t, http.StatusOK, r.StatusCode)
 				// If nothing went wrong, we also should not have written any response
 				// yet.
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Empty(t, bodyBytes)
 				// We're expecting our body object to still be nil
@@ -102,12 +102,12 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				t *testing.T,
 				result bool,
 				obj interface{},
-				rr *httptest.ResponseRecorder,
+				r *http.Response,
 			) {
 				assert.False(t, result)
 				// Marshaling should have failed
-				require.Equal(t, http.StatusBadRequest, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+				require.Equal(t, http.StatusBadRequest, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(
 					t,
@@ -135,12 +135,12 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				t *testing.T,
 				result bool,
 				obj interface{},
-				rr *httptest.ResponseRecorder,
+				r *http.Response,
 			) {
 				assert.False(t, result)
 				// Validation should have failed
-				require.Equal(t, http.StatusBadRequest, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+				require.Equal(t, http.StatusBadRequest, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(
 					t,
@@ -167,12 +167,12 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				t *testing.T,
 				result bool,
 				obj interface{},
-				rr *httptest.ResponseRecorder,
+				r *http.Response,
 			) {
 				assert.False(t, result)
 				// Validation should have failed
-				require.Equal(t, http.StatusBadRequest, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+				require.Equal(t, http.StatusBadRequest, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(
 					t,
@@ -203,15 +203,15 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				t *testing.T,
 				result bool,
 				obj interface{},
-				rr *httptest.ResponseRecorder,
+				r *http.Response,
 			) {
 				assert.True(t, result)
 				// OK is a response's default status. If nothing went wrong, that
 				// shouldn't have been overridden.
-				require.Equal(t, http.StatusOK, rr.Result().StatusCode)
+				require.Equal(t, http.StatusOK, r.StatusCode)
 				// If nothing went wrong, we also should not have written any response
 				// yet.
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Empty(t, bodyBytes)
 				// We're expecting our body object to still be nil
@@ -237,15 +237,15 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				t *testing.T,
 				result bool,
 				obj interface{},
-				rr *httptest.ResponseRecorder,
+				r *http.Response,
 			) {
 				assert.True(t, result)
 				// OK is a response's default status. If nothing went wrong, that
 				// shouldn't have been overridden.
-				require.Equal(t, http.StatusOK, rr.Result().StatusCode)
+				require.Equal(t, http.StatusOK, r.StatusCode)
 				// If nothing went wrong, we also should not have written any response
 				// yet.
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Empty(t, bodyBytes)
 				// We're expecting our body object to have been populated
@@ -272,12 +272,12 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				t *testing.T,
 				result bool,
 				obj interface{},
-				rr *httptest.ResponseRecorder,
+				r *http.Response,
 			) {
 				assert.False(t, result)
 				// Validation should have failed
-				require.Equal(t, http.StatusBadRequest, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+				require.Equal(t, http.StatusBadRequest, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(
 					t,
@@ -307,12 +307,12 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				t *testing.T,
 				result bool,
 				obj interface{},
-				rr *httptest.ResponseRecorder,
+				r *http.Response,
 			) {
 				assert.False(t, result)
 				// Validation should have failed
-				require.Equal(t, http.StatusBadRequest, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+				require.Equal(t, http.StatusBadRequest, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(
 					t,
@@ -343,15 +343,15 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				t *testing.T,
 				result bool,
 				obj interface{},
-				rr *httptest.ResponseRecorder,
+				r *http.Response,
 			) {
 				assert.True(t, result)
 				// OK is a response's default status. If nothing went wrong, that
 				// shouldn't have been overridden.
-				require.Equal(t, http.StatusOK, rr.Result().StatusCode)
+				require.Equal(t, http.StatusOK, r.StatusCode)
 				// If nothing went wrong, we also should not have written any response
 				// yet.
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Empty(t, bodyBytes)
 				// We're expecting our body object to still be nil
@@ -377,15 +377,15 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				t *testing.T,
 				result bool,
 				obj interface{},
-				rr *httptest.ResponseRecorder,
+				r *http.Response,
 			) {
 				assert.True(t, result)
 				// OK is a response's default status. If nothing went wrong, that
 				// shouldn't have been overridden.
-				require.Equal(t, http.StatusOK, rr.Result().StatusCode)
+				require.Equal(t, http.StatusOK, r.StatusCode)
 				// If nothing went wrong, we also should not have written any response
 				// yet.
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Empty(t, bodyBytes)
 				// We're expecting our body object to have been populated
@@ -400,7 +400,9 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 			r, schema, obj := testCase.setup(t)
 			rr := httptest.NewRecorder()
 			result := ReadAndValidateRequestBody(rr, r, schema, obj)
-			testCase.assertions(t, result, obj, rr)
+			res := rr.Result()
+			defer res.Body.Close()
+			testCase.assertions(t, result, obj, res)
 		})
 	}
 }
@@ -409,7 +411,7 @@ func TestServeRequest(t *testing.T) {
 	testCases := []struct {
 		name       string
 		setup      func() InboundRequest
-		assertions func(req InboundRequest)
+		assertions func(*http.Response)
 	}{
 
 		{
@@ -421,15 +423,13 @@ func TestServeRequest(t *testing.T) {
 				require.NoError(t, err)
 				return InboundRequest{
 					R:                   r,
-					W:                   httptest.NewRecorder(),
 					ReqBodySchemaLoader: testSchema,
 				}
 			},
-			assertions: func(req InboundRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
+			assertions: func(r *http.Response) {
 				// Validation should fail
-				require.Equal(t, http.StatusBadRequest, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+				require.Equal(t, http.StatusBadRequest, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "BadRequestError")
 			},
@@ -443,16 +443,14 @@ func TestServeRequest(t *testing.T) {
 				require.NoError(t, err)
 				return InboundRequest{
 					R: r,
-					W: httptest.NewRecorder(),
 					EndpointLogic: func() (interface{}, error) {
 						return nil, &meta.ErrAuthentication{}
 					},
 				}
 			},
-			assertions: func(req InboundRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusUnauthorized, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "AuthenticationError")
 			},
@@ -466,16 +464,14 @@ func TestServeRequest(t *testing.T) {
 				require.NoError(t, err)
 				return InboundRequest{
 					R: r,
-					W: httptest.NewRecorder(),
 					EndpointLogic: func() (interface{}, error) {
 						return nil, &meta.ErrAuthorization{}
 					},
 				}
 			},
-			assertions: func(req InboundRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusForbidden, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusForbidden, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "AuthorizationError")
 			},
@@ -489,16 +485,14 @@ func TestServeRequest(t *testing.T) {
 				require.NoError(t, err)
 				return InboundRequest{
 					R: r,
-					W: httptest.NewRecorder(),
 					EndpointLogic: func() (interface{}, error) {
 						return nil, &meta.ErrBadRequest{}
 					},
 				}
 			},
-			assertions: func(req InboundRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusBadRequest, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusBadRequest, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "BadRequestError")
 			},
@@ -512,16 +506,14 @@ func TestServeRequest(t *testing.T) {
 				require.NoError(t, err)
 				return InboundRequest{
 					R: r,
-					W: httptest.NewRecorder(),
 					EndpointLogic: func() (interface{}, error) {
 						return nil, &meta.ErrNotFound{}
 					},
 				}
 			},
-			assertions: func(req InboundRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusNotFound, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusNotFound, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "NotFoundError")
 			},
@@ -535,16 +527,14 @@ func TestServeRequest(t *testing.T) {
 				require.NoError(t, err)
 				return InboundRequest{
 					R: r,
-					W: httptest.NewRecorder(),
 					EndpointLogic: func() (interface{}, error) {
 						return nil, &meta.ErrConflict{}
 					},
 				}
 			},
-			assertions: func(req InboundRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusConflict, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusConflict, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "ConflictError")
 			},
@@ -558,16 +548,14 @@ func TestServeRequest(t *testing.T) {
 				require.NoError(t, err)
 				return InboundRequest{
 					R: r,
-					W: httptest.NewRecorder(),
 					EndpointLogic: func() (interface{}, error) {
 						return nil, &meta.ErrNotSupported{}
 					},
 				}
 			},
-			assertions: func(req InboundRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusNotImplemented, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusNotImplemented, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "NotSupportedError")
 			},
@@ -581,16 +569,14 @@ func TestServeRequest(t *testing.T) {
 				require.NoError(t, err)
 				return InboundRequest{
 					R: r,
-					W: httptest.NewRecorder(),
 					EndpointLogic: func() (interface{}, error) {
 						return nil, &meta.ErrInternalServer{}
 					},
 				}
 			},
-			assertions: func(req InboundRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusInternalServerError, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "InternalServerError")
 			},
@@ -604,16 +590,14 @@ func TestServeRequest(t *testing.T) {
 				require.NoError(t, err)
 				return InboundRequest{
 					R: r,
-					W: httptest.NewRecorder(),
 					EndpointLogic: func() (interface{}, error) {
 						return nil, errors.New("something went wrong")
 					},
 				}
 			},
-			assertions: func(req InboundRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusInternalServerError, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "InternalServerError")
 			},
@@ -627,16 +611,14 @@ func TestServeRequest(t *testing.T) {
 				require.NoError(t, err)
 				return InboundRequest{
 					R: r,
-					W: httptest.NewRecorder(),
 					EndpointLogic: func() (interface{}, error) {
 						return testType{Foo: "bar"}, nil
 					},
 				}
 			},
-			assertions: func(req InboundRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusOK, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusOK, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "foo")
 				require.Contains(t, string(bodyBytes), "bar")
@@ -647,9 +629,12 @@ func TestServeRequest(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			req := testCase.setup()
-			req.W = httptest.NewRecorder()
+			rr := httptest.NewRecorder()
+			req.W = rr
 			ServeRequest(req)
-			testCase.assertions(req)
+			res := rr.Result()
+			defer res.Body.Close()
+			testCase.assertions(res)
 		})
 	}
 }
@@ -676,8 +661,14 @@ func TestWriteAPIResponse(t *testing.T) {
 			const testStatusCode = http.StatusNotFound
 			rr := httptest.NewRecorder()
 			WriteAPIResponse(rr, testStatusCode, testCase.response)
-			require.Equal(t, testStatusCode, rr.Result().StatusCode)
-			bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			res := rr.Result()
+			defer res.Body.Close()
+			require.Equal(
+				t,
+				testStatusCode,
+				res.StatusCode,
+			)
+			bodyBytes, err := ioutil.ReadAll(res.Body)
 			require.NoError(t, err)
 			require.Contains(t, string(bodyBytes), "foo")
 			require.Contains(t, string(bodyBytes), "bar")
@@ -689,21 +680,19 @@ func TestServeWebUIRequest(t *testing.T) {
 	testCases := []struct {
 		name       string
 		req        InboundWebUIRequest
-		assertions func(req InboundWebUIRequest)
+		assertions func(*http.Response)
 	}{
 
 		{
 			name: "endpoint logic returns authn error",
 			req: InboundWebUIRequest{
-				W: httptest.NewRecorder(),
 				EndpointLogic: func() (interface{}, error) {
 					return nil, &meta.ErrAuthentication{}
 				},
 			},
-			assertions: func(req InboundWebUIRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusUnauthorized, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(
 					t,
@@ -716,15 +705,13 @@ func TestServeWebUIRequest(t *testing.T) {
 		{
 			name: "endpoint logic returns authz error",
 			req: InboundWebUIRequest{
-				W: httptest.NewRecorder(),
 				EndpointLogic: func() (interface{}, error) {
 					return nil, &meta.ErrAuthorization{}
 				},
 			},
-			assertions: func(req InboundWebUIRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusForbidden, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusForbidden, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "The request is not authorized")
 			},
@@ -733,15 +720,13 @@ func TestServeWebUIRequest(t *testing.T) {
 		{
 			name: "endpoint logic returns bad request error",
 			req: InboundWebUIRequest{
-				W: httptest.NewRecorder(),
 				EndpointLogic: func() (interface{}, error) {
 					return nil, &meta.ErrBadRequest{}
 				},
 			},
-			assertions: func(req InboundWebUIRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusBadRequest, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusBadRequest, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "Bad request")
 			},
@@ -750,15 +735,13 @@ func TestServeWebUIRequest(t *testing.T) {
 		{
 			name: "endpoint logic returns not found error",
 			req: InboundWebUIRequest{
-				W: httptest.NewRecorder(),
 				EndpointLogic: func() (interface{}, error) {
 					return nil, &meta.ErrNotFound{}
 				},
 			},
-			assertions: func(req InboundWebUIRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusNotFound, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusNotFound, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "not found")
 			},
@@ -767,43 +750,37 @@ func TestServeWebUIRequest(t *testing.T) {
 		{
 			name: "endpoint logic returns conflict error",
 			req: InboundWebUIRequest{
-				W: httptest.NewRecorder(),
 				EndpointLogic: func() (interface{}, error) {
 					return nil, &meta.ErrConflict{}
 				},
 			},
-			assertions: func(req InboundWebUIRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusConflict, rr.Result().StatusCode)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusConflict, r.StatusCode)
 			},
 		},
 
 		{
 			name: "endpoint logic returns not implemented error",
 			req: InboundWebUIRequest{
-				W: httptest.NewRecorder(),
 				EndpointLogic: func() (interface{}, error) {
 					return nil, &meta.ErrNotSupported{}
 				},
 			},
-			assertions: func(req InboundWebUIRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusNotImplemented, rr.Result().StatusCode)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusNotImplemented, r.StatusCode)
 			},
 		},
 
 		{
 			name: "endpoint logic returns internal server error",
 			req: InboundWebUIRequest{
-				W: httptest.NewRecorder(),
 				EndpointLogic: func() (interface{}, error) {
 					return nil, &meta.ErrInternalServer{}
 				},
 			},
-			assertions: func(req InboundWebUIRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusInternalServerError, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(
 					t,
@@ -816,15 +793,13 @@ func TestServeWebUIRequest(t *testing.T) {
 		{
 			name: "endpoint logic returns unanticipated error",
 			req: InboundWebUIRequest{
-				W: httptest.NewRecorder(),
 				EndpointLogic: func() (interface{}, error) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(req InboundWebUIRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusInternalServerError, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(
 					t,
@@ -837,15 +812,13 @@ func TestServeWebUIRequest(t *testing.T) {
 		{
 			name: "endpoint logic returns bytes",
 			req: InboundWebUIRequest{
-				W: httptest.NewRecorder(),
 				EndpointLogic: func() (interface{}, error) {
 					return []byte("lorem ipsum"), nil
 				},
 			},
-			assertions: func(req InboundWebUIRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusOK, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusOK, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "lorem ipsum")
 			},
@@ -854,15 +827,13 @@ func TestServeWebUIRequest(t *testing.T) {
 		{
 			name: "endpoint logic returns string",
 			req: InboundWebUIRequest{
-				W: httptest.NewRecorder(),
 				EndpointLogic: func() (interface{}, error) {
 					return "lorem ipsum", nil
 				},
 			},
-			assertions: func(req InboundWebUIRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusOK, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusOK, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "lorem ipsum")
 			},
@@ -871,15 +842,13 @@ func TestServeWebUIRequest(t *testing.T) {
 		{
 			name: "endpoint logic returns fmt.Stringer",
 			req: InboundWebUIRequest{
-				W: httptest.NewRecorder(),
 				EndpointLogic: func() (interface{}, error) {
 					return &testType{Foo: "lorem ipsum"}, nil
 				},
 			},
-			assertions: func(req InboundWebUIRequest) {
-				rr := req.W.(*httptest.ResponseRecorder)
-				require.Equal(t, http.StatusOK, rr.Result().StatusCode)
-				bodyBytes, err := ioutil.ReadAll(rr.Result().Body)
+			assertions: func(r *http.Response) {
+				require.Equal(t, http.StatusOK, r.StatusCode)
+				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
 				require.Contains(t, string(bodyBytes), "lorem ipsum")
 			},
@@ -888,8 +857,12 @@ func TestServeWebUIRequest(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			rr := httptest.NewRecorder()
+			testCase.req.W = rr
 			ServeWebUIRequest(testCase.req)
-			testCase.assertions(testCase.req)
+			res := rr.Result()
+			defer res.Body.Close()
+			testCase.assertions(res)
 		})
 	}
 }

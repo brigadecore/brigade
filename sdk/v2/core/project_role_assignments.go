@@ -159,7 +159,7 @@ func (p *projectRoleAssignmentsClient) List(
 	if selector != nil {
 		if selector.Principal != nil {
 			queryParams["principalType"] = string(selector.Principal.Type)
-			queryParams["principalID"] = string(selector.Principal.ID)
+			queryParams["principalID"] = selector.Principal.ID
 		}
 		if selector.Role != "" {
 			queryParams["role"] = string(selector.Role)

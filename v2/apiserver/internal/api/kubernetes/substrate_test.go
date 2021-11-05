@@ -1374,10 +1374,10 @@ func TestSubstrateCreateJobSecret(t *testing.T) {
 				require.NotNil(t, secret)
 				val, ok := secret.StringData["italian.FOO"]
 				require.True(t, ok)
-				require.Equal(t, "bar", string(val))
+				require.Equal(t, "bar", val)
 				val, ok = secret.StringData["helper.BAT"]
 				require.True(t, ok)
-				require.Equal(t, "baz", string(val))
+				require.Equal(t, "baz", val)
 			},
 		},
 	}
