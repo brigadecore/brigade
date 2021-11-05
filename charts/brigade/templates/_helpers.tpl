@@ -40,10 +40,6 @@ If release name contains chart name it will be used as a full name.
 {{ include "brigade.fullname" . | printf "%s-logger" }}
 {{- end -}}
 
-{{- define "brigade.logger.linux.fullname" -}}
-{{ include "brigade.logger.fullname" . | printf "%s-linux" }}
-{{- end -}}
-
 {{- define "brigade.logger.windows.fullname" -}}
 {{ include "brigade.logger.fullname" . | printf "%s-windows" }}
 {{- end -}}

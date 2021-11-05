@@ -229,7 +229,15 @@ type JobPolicies struct {
 	// AllowDockerSocketMount specifies whether the Worker is permitted to launch
 	// Jobs that mount the underlying host's Docker socket into its own file
 	// system.
-	AllowDockerSocketMount bool `json:"allowDockerSocketMount"`
+	//
+	// Note: This is being removed for the 2.0.0 release because of security
+	// issues AND declining usefulness. (Many Kubernetes distros now use
+	// containerd instead of Docker.) This can be put back in the future if the
+	// need is proven AND if it can be done safely.
+	//
+	// For more details, see https://github.com/brigadecore/brigade/issues/1666
+	//
+	// AllowDockerSocketMount bool `json:"allowDockerSocketMount"`
 }
 
 // WorkerStatus represents the status of a Worker.
