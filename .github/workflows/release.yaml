@@ -1,9 +1,9 @@
-name: Brigade v2 Merge
+name: Brigade v2 Release
 
 on:
   push:
-    branches:
-      - v2
+    tags:
+      - v2.*.*
 
 jobs:
   build:
@@ -22,6 +22,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push Windows logger agent
-        run: make push-logger-windows
+        run: VERSION=${GITHUB_REF:10} make push-logger-windows
       - name: Push Windows git initializer
-        run: make push-git-initializer-windows
+        run: VERSION=${GITHUB_REF:10} make push-git-initializer-windows
