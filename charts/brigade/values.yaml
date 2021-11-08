@@ -253,12 +253,21 @@ observer:
 
 gitInitializer:
 
-  image:
-    repository: brigadecore/brigade2-git-initializer
-    ## tag should only be specified if you want to override Chart.appVersion
-    ## The default tag is the value of .Chart.AppVersion
-    # tag:
-    pullPolicy: IfNotPresent
+  linux:
+    image:
+      repository: brigadecore/brigade2-git-initializer
+      ## tag should only be specified if you want to override Chart.appVersion
+      ## The default tag is the value of .Chart.AppVersion
+      # tag:
+      pullPolicy: IfNotPresent
+
+  windows:
+    image:
+      repository: brigadecore/brigade2-git-initializer-windows
+      ## tag should only be specified if you want to override Chart.appVersion
+      ## The default tag is the value of .Chart.AppVersion
+      # tag:
+      pullPolicy: IfNotPresent
 
 worker:
 

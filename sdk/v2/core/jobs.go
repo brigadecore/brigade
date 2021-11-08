@@ -16,6 +16,16 @@ import (
 // JobKind represents the canonical Job kind string
 const JobKind = "Job"
 
+// OSFamily represents a type of operating system.
+type OSFamily string
+
+const (
+	// OSFamilyLinux represents a Linux-based OS.
+	OSFamilyLinux OSFamily = "linux"
+	// OSFamilyWindows represents a Windows-based OS.
+	OSFamilyWindows OSFamily = "windows"
+)
+
 // JobPhase represents where a Job is within its lifecycle.
 type JobPhase string
 
@@ -182,7 +192,7 @@ type JobHost struct {
 	// OS specifies which "family" of operating system is required on a substrate
 	// node to host a Job. Valid values are "linux" and "windows". When empty,
 	// Brigade assumes "linux".
-	OS string `json:"os,omitempty"`
+	OS OSFamily `json:"os,omitempty"`
 	// NodeSelector specifies labels that must be present on the substrate node to
 	// host a Job. This provides an opaque mechanism for communicating Job needs
 	// such as specific hardware like an SSD or GPU.

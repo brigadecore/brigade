@@ -50,13 +50,20 @@ type SubstrateConfig struct {
 	// this information whenever it needs to tell another component where to find
 	// the API server.
 	APIAddress string
-	// GitInitializerImage is the name of the OCI image that will be used (when
-	// applicable) for the git initializer. The expected format is
+	// GitInitializerImage is the name of the Linux-based OCI image that will be
+	// used (when applicable) for the git initializer. The expected format is
 	// [REGISTRY/][ORG/]IMAGE_NAME[:TAG].
 	GitInitializerImage string
 	// GitInitializerImagePullPolicy is the ImagePullPolicy that will be used
-	// (when applicable) for the git initializer.
+	// (when applicable) for the Linux-based git initializer.
 	GitInitializerImagePullPolicy api.ImagePullPolicy
+	// GitInitializerWindowsImage is the name of the Windows-based OCI image that
+	// will be used (when applicable) for the git initializer. The expected format
+	// is [REGISTRY/][ORG/]IMAGE_NAME[:TAG].
+	GitInitializerWindowsImage string
+	// GitInitializerWindowsImagePullPolicy is the ImagePullPolicy that will be
+	// used (when applicable) for the Windows-based git initializer.
+	GitInitializerWindowsImagePullPolicy api.ImagePullPolicy
 	// DefaultWorkerImage is the name of the OCI image that will be used for the
 	// Worker pod's container[0] if none is specified in a Project's
 	// configuration. The expected format is [REGISTRY/][ORG/]IMAGE_NAME[:TAG].
@@ -1167,13 +1174,18 @@ func (s *substrate) createJobPod(
 	if useSource &&
 		event.Worker.Spec.Git != nil &&
 		event.Worker.Spec.Git.CloneURL != "" {
+		gitInitializerImage := s.config.GitInitializerImage
+		gitInitializerImagePullPolicy := s.config.GitInitializerImagePullPolicy
+		if jobSpec.Host != nil && jobSpec.Host.OS == api.OSFamilyWindows {
+			gitInitializerImage = s.config.GitInitializerWindowsImage
+			gitInitializerImagePullPolicy =
+				s.config.GitInitializerWindowsImagePullPolicy
+		}
 		initContainers = []corev1.Container{
 			{
-				Name:  "vcs",
-				Image: s.config.GitInitializerImage,
-				ImagePullPolicy: corev1.PullPolicy(
-					s.config.GitInitializerImagePullPolicy,
-				),
+				Name:            "vcs",
+				Image:           gitInitializerImage,
+				ImagePullPolicy: corev1.PullPolicy(gitInitializerImagePullPolicy),
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      myk8s.LabelKeyEvent,
@@ -1238,23 +1250,36 @@ func (s *substrate) createJobPod(
 		},
 	}
 
+	jobPod.Spec.NodeSelector = map[string]string{}
+	if jobSpec.Host != nil && jobSpec.Host.OS == api.OSFamilyWindows {
+		jobPod.Spec.NodeSelector[corev1.LabelOSStable] = "windows"
+	}
 	if s.config.NodeSelectorKey != "" && s.config.NodeSelectorValue != "" {
-		jobPod.Spec.NodeSelector = map[string]string{
-			s.config.NodeSelectorKey: s.config.NodeSelectorValue,
-		}
+		jobPod.Spec.NodeSelector[s.config.NodeSelectorKey] =
+			s.config.NodeSelectorValue
 	}
 
-	if s.config.TolerationKey != "" {
+	jobPod.Spec.Tolerations = []corev1.Toleration{}
+	if jobSpec.Host != nil && jobSpec.Host.OS == api.OSFamilyWindows {
 		jobPod.Spec.Tolerations = []corev1.Toleration{
 			{
-				Key:      s.config.TolerationKey,
-				Operator: corev1.TolerationOpExists,
+				Key:      "os",
+				Operator: corev1.TolerationOpEqual,
+				Value:    "windows",
+				Effect:   corev1.TaintEffectNoSchedule,
 			},
 		}
-		if s.config.TolerationValue != "" {
-			jobPod.Spec.Tolerations[0].Value = s.config.TolerationValue
-			jobPod.Spec.Tolerations[0].Operator = corev1.TolerationOpEqual
+	}
+	if s.config.TolerationKey != "" {
+		toleration := corev1.Toleration{
+			Key:      s.config.TolerationKey,
+			Operator: corev1.TolerationOpExists,
 		}
+		if s.config.TolerationValue != "" {
+			toleration.Value = s.config.TolerationValue
+			toleration.Operator = corev1.TolerationOpEqual
+		}
+		jobPod.Spec.Tolerations = append(jobPod.Spec.Tolerations, toleration)
 	}
 
 	podClient := s.kubeClient.CoreV1().Pods(project.Kubernetes.Namespace)
