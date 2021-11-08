@@ -77,6 +77,8 @@ func WorkerPhasesAll() []WorkerPhase {
 		WorkerPhaseFailed,
 		WorkerPhasePending,
 		WorkerPhaseRunning,
+		WorkerPhaseSchedulingFailed,
+		WorkerPhaseStarting,
 		WorkerPhaseSucceeded,
 		WorkerPhaseTimedOut,
 		WorkerPhaseUnknown,
