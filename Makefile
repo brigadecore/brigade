@@ -433,9 +433,9 @@ hack-deploy:
 		--set worker.image.repository=$(DOCKER_IMAGE_PREFIX)worker \
 		--set worker.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set worker.image.pullPolicy=$(IMAGE_PULL_POLICY) \
-		--set gitInitializer.image.repository=$(DOCKER_IMAGE_PREFIX)git-initializer \
-		--set gitInitializer.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set gitInitializer.image.pullPolicy=$(IMAGE_PULL_POLICY) \
+		--set gitInitializer.linux.image.repository=$(DOCKER_IMAGE_PREFIX)git-initializer \
+		--set gitInitializer.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
+		--set gitInitializer.linux.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)logger\
 		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set logger.linux.image.pullPolicy=$(IMAGE_PULL_POLICY)
