@@ -158,13 +158,18 @@ func TestWriterFactoryConfig(t *testing.T) {
 }
 
 func TestSubstrateConfig(t *testing.T) {
-	const testBrigadeID = "4077th"
-	const testAPIAddress = "http://localhost"
-	const testGitInitializerImage = "brigadecore/brigade2-git-initializer:2.0.0"
-	const testGitInitializerImagePullPolicy = api.ImagePullPolicy("IfNotPresent")
-	const testDefaultWorkerImage = "brigadecore/brigade2-worker:2.0.0"
-	const testDefaultWorkerImagePullPolicy = api.ImagePullPolicy("IfNotPresent")
-	const testWorkspaceStorageClass = "nfs"
+	// nolint: lll
+	const (
+		testBrigadeID                            = "4077th"
+		testAPIAddress                           = "http://localhost"
+		testGitInitializerImage                  = "brigadecore/brigade2-git-initializer:2.0.0"
+		testGitInitializerImagePullPolicy        = api.ImagePullPolicy("IfNotPresent")
+		testGitInitializerWindowsImage           = "brigadecore/brigade2-git-initializer-windows:2.0.0"
+		testGitInitializerWindowsImagePullPolicy = api.ImagePullPolicy("IfNotPresent")
+		testDefaultWorkerImage                   = "brigadecore/brigade2-worker:2.0.0"
+		testDefaultWorkerImagePullPolicy         = api.ImagePullPolicy("IfNotPresent")
+		testWorkspaceStorageClass                = "nfs"
+	)
 	testCases := []struct {
 		name       string
 		setup      func()
@@ -213,11 +218,43 @@ func TestSubstrateConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "DEFAULT_WORKER_IMAGE not set",
+			name: "GIT_INITIALIZER_WINDOWS_IMAGE not set",
 			setup: func() {
 				t.Setenv(
 					"GIT_INITIALIZER_IMAGE_PULL_POLICY",
 					string(testGitInitializerImagePullPolicy),
+				)
+			},
+			assertions: func(_ kubernetes.SubstrateConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "GIT_INITIALIZER_WINDOWS_IMAGE")
+			},
+		},
+		{
+			name: "GIT_INITIALIZER_WINDOWS_IMAGE_PULL_POLICY not set",
+			setup: func() {
+				t.Setenv(
+					"GIT_INITIALIZER_WINDOWS_IMAGE",
+					testGitInitializerWindowsImage,
+				)
+			},
+			assertions: func(_ kubernetes.SubstrateConfig, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(
+					t,
+					err.Error(),
+					"GIT_INITIALIZER_WINDOWS_IMAGE_PULL_POLICY",
+				)
+			},
+		},
+		{
+			name: "DEFAULT_WORKER_IMAGE not set",
+			setup: func() {
+				t.Setenv(
+					"GIT_INITIALIZER_WINDOWS_IMAGE_PULL_POLICY",
+					string(testGitInitializerWindowsImagePullPolicy),
 				)
 			},
 			assertions: func(_ kubernetes.SubstrateConfig, err error) {
@@ -265,6 +302,16 @@ func TestSubstrateConfig(t *testing.T) {
 					t,
 					testGitInitializerImagePullPolicy,
 					config.GitInitializerImagePullPolicy,
+				)
+				require.Equal(
+					t,
+					testGitInitializerWindowsImage,
+					config.GitInitializerWindowsImage,
+				)
+				require.Equal(
+					t,
+					testGitInitializerWindowsImagePullPolicy,
+					config.GitInitializerWindowsImagePullPolicy,
 				)
 				require.Equal(t, testDefaultWorkerImage, config.DefaultWorkerImage)
 				require.Equal(

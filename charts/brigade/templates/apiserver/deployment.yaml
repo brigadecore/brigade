@@ -150,9 +150,13 @@ spec:
               name: {{ include "brigade.artemis.fullname" . }}
               key: password
         - name: GIT_INITIALIZER_IMAGE
-          value: {{ .Values.gitInitializer.image.repository }}:{{ default .Chart.AppVersion .Values.gitInitializer.image.tag }}
+          value: {{ .Values.gitInitializer.linux.image.repository }}:{{ default .Chart.AppVersion .Values.gitInitializer.linux.image.tag }}
         - name: GIT_INITIALIZER_IMAGE_PULL_POLICY
-          value: {{ .Values.gitInitializer.image.pullPolicy }}
+          value: {{ .Values.gitInitializer.linux.image.pullPolicy }}
+        - name: GIT_INITIALIZER_WINDOWS_IMAGE
+          value: {{ .Values.gitInitializer.windows.image.repository }}:{{ default .Chart.AppVersion .Values.gitInitializer.windows.image.tag }}
+        - name: GIT_INITIALIZER_WINDOWS_IMAGE_PULL_POLICY
+          value: {{ .Values.gitInitializer.windows.image.pullPolicy }}
         - name: DEFAULT_WORKER_IMAGE
           value: {{ .Values.worker.image.repository }}:{{ default .Chart.AppVersion .Values.worker.image.tag }}
         - name: DEFAULT_WORKER_IMAGE_PULL_POLICY

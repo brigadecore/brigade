@@ -1397,6 +1397,12 @@ func TestSubstrateCreateJobSecret(t *testing.T) {
 }
 
 func TestSubstrateCreateJobPod(t *testing.T) {
+	testSubstrateConfig := SubstrateConfig{
+		GitInitializerImage:                  "brigadecore/brigade2-git-initializer:v2.0.0", // nolint: lll
+		GitInitializerImagePullPolicy:        "IfNotPresent",
+		GitInitializerWindowsImage:           "brigadecore/brigade2-git-initializer-windows:v2.0.0", // nolint: lll
+		GitInitializerWindowsImagePullPolicy: "IfNotPresent",
+	}
 	testProject := api.Project{
 		Kubernetes: &api.KubernetesDetails{
 			Namespace: "foo",
@@ -1447,6 +1453,7 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 	testCases := []struct {
 		name       string
 		setup      func() *substrate
+		jobSpec    func() api.JobSpec
 		assertions func(kubernetes.Interface, error)
 	}{
 		{
@@ -1467,8 +1474,12 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 				)
 				require.NoError(t, err)
 				return &substrate{
+					config:     testSubstrateConfig,
 					kubeClient: kubeClient,
 				}
+			},
+			jobSpec: func() api.JobSpec {
+				return testJobSpec
 			},
 			assertions: func(_ kubernetes.Interface, err error) {
 				require.Error(t, err)
@@ -1479,8 +1490,12 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 			name: "success",
 			setup: func() *substrate {
 				return &substrate{
+					config:     testSubstrateConfig,
 					kubeClient: fake.NewSimpleClientset(),
 				}
+			},
+			jobSpec: func() api.JobSpec {
+				return testJobSpec
 			},
 			assertions: func(kubeClient kubernetes.Interface, err error) {
 				require.NoError(t, err)
@@ -1502,6 +1517,16 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 				// Init container:
 				require.Len(t, pod.Spec.InitContainers, 1)
 				require.Equal(t, "vcs", pod.Spec.InitContainers[0].Name)
+				require.Equal(
+					t,
+					testSubstrateConfig.GitInitializerImage,
+					pod.Spec.InitContainers[0].Image,
+				)
+				require.Equal(
+					t,
+					corev1.PullPolicy(testSubstrateConfig.GitInitializerImagePullPolicy),
+					pod.Spec.InitContainers[0].ImagePullPolicy,
+				)
 				require.Len(t, pod.Spec.InitContainers[0].VolumeMounts, 2)
 				require.Equal(
 					t,
@@ -1545,6 +1570,49 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 				// )
 			},
 		},
+		{
+			name: "success with windows",
+			setup: func() *substrate {
+				return &substrate{
+					config:     testSubstrateConfig,
+					kubeClient: fake.NewSimpleClientset(),
+				}
+			},
+			jobSpec: func() api.JobSpec {
+				jobSpecCopy := testJobSpec
+				jobSpecCopy.Host = &api.JobHost{
+					OS: api.OSFamilyWindows,
+				}
+				return jobSpecCopy
+			},
+			assertions: func(kubeClient kubernetes.Interface, err error) {
+				require.NoError(t, err)
+				pod, err := kubeClient.CoreV1().Pods(
+					testProject.Kubernetes.Namespace,
+				).Get(
+					context.Background(),
+					myk8s.JobPodName(testEvent.ID, testJobName),
+					metav1.GetOptions{},
+				)
+				require.NoError(t, err)
+				require.NotNil(t, pod)
+				// These should be the only real differences from the previous test case
+				//
+				// Make sure the pod is assigned to a Windows node
+				require.Equal(t, "windows", pod.Spec.NodeSelector[corev1.LabelOSStable])
+				// Make sure we use the Windows variant of the git initializer image
+				require.Equal(
+					t,
+					testSubstrateConfig.GitInitializerWindowsImage,
+					pod.Spec.InitContainers[0].Image,
+				)
+				require.Equal(
+					t,
+					corev1.PullPolicy(testSubstrateConfig.GitInitializerWindowsImagePullPolicy), // nolint: lll
+					pod.Spec.InitContainers[0].ImagePullPolicy,
+				)
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -1554,7 +1622,7 @@ func TestSubstrateCreateJobPod(t *testing.T) {
 				testProject,
 				testEvent,
 				testJobName,
-				testJobSpec,
+				testCase.jobSpec(),
 			)
 			testCase.assertions(substrate.kubeClient, err)
 		})
@@ -1597,8 +1665,8 @@ func TestSubstrateCreatePodWithNodeSelectorAndToleration(t *testing.T) {
 				)
 				require.NoError(t, err)
 				require.NotNil(t, workerPod)
-				require.Nil(t, workerPod.Spec.NodeSelector)
-				require.Nil(t, workerPod.Spec.Tolerations)
+				require.Empty(t, workerPod.Spec.NodeSelector)
+				require.Empty(t, workerPod.Spec.Tolerations)
 
 				jobPod, err := kubeClient.CoreV1().Pods(
 					testProject.Kubernetes.Namespace,
@@ -1609,8 +1677,8 @@ func TestSubstrateCreatePodWithNodeSelectorAndToleration(t *testing.T) {
 				)
 				require.NoError(t, err)
 				require.NotNil(t, jobPod)
-				require.Nil(t, jobPod.Spec.NodeSelector)
-				require.Nil(t, jobPod.Spec.Tolerations)
+				require.Empty(t, jobPod.Spec.NodeSelector)
+				require.Empty(t, jobPod.Spec.Tolerations)
 			},
 		},
 		{
@@ -1633,8 +1701,8 @@ func TestSubstrateCreatePodWithNodeSelectorAndToleration(t *testing.T) {
 				)
 				require.NoError(t, err)
 				require.NotNil(t, workerPod)
-				require.Nil(t, workerPod.Spec.NodeSelector)
-				require.Nil(t, workerPod.Spec.Tolerations)
+				require.Empty(t, workerPod.Spec.NodeSelector)
+				require.Empty(t, workerPod.Spec.Tolerations)
 
 				jobPod, err := kubeClient.CoreV1().Pods(
 					testProject.Kubernetes.Namespace,
@@ -1645,8 +1713,8 @@ func TestSubstrateCreatePodWithNodeSelectorAndToleration(t *testing.T) {
 				)
 				require.NoError(t, err)
 				require.NotNil(t, jobPod)
-				require.Nil(t, jobPod.Spec.NodeSelector)
-				require.Nil(t, jobPod.Spec.Tolerations)
+				require.Empty(t, jobPod.Spec.NodeSelector)
+				require.Empty(t, jobPod.Spec.Tolerations)
 			},
 		},
 		{
@@ -1671,7 +1739,7 @@ func TestSubstrateCreatePodWithNodeSelectorAndToleration(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, workerPod)
 				require.Equal(t, "bar", workerPod.Spec.NodeSelector["foo"])
-				require.Nil(t, workerPod.Spec.Tolerations)
+				require.Empty(t, workerPod.Spec.Tolerations)
 
 				jobPod, err := kubeClient.CoreV1().Pods(
 					testProject.Kubernetes.Namespace,
@@ -1683,7 +1751,7 @@ func TestSubstrateCreatePodWithNodeSelectorAndToleration(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, jobPod)
 				require.Equal(t, "bar", jobPod.Spec.NodeSelector["foo"])
-				require.Nil(t, jobPod.Spec.Tolerations)
+				require.Empty(t, jobPod.Spec.Tolerations)
 			},
 		},
 		{
@@ -1706,7 +1774,7 @@ func TestSubstrateCreatePodWithNodeSelectorAndToleration(t *testing.T) {
 				)
 				require.NoError(t, err)
 				require.NotNil(t, workerPod)
-				require.Nil(t, workerPod.Spec.NodeSelector)
+				require.Empty(t, workerPod.Spec.NodeSelector)
 				require.Equal(t, corev1.Toleration{
 					Key:      "foo",
 					Operator: corev1.TolerationOpExists,
@@ -1721,7 +1789,7 @@ func TestSubstrateCreatePodWithNodeSelectorAndToleration(t *testing.T) {
 				)
 				require.NoError(t, err)
 				require.NotNil(t, jobPod)
-				require.Nil(t, jobPod.Spec.NodeSelector)
+				require.Empty(t, jobPod.Spec.NodeSelector)
 				require.Equal(t, corev1.Toleration{
 					Key:      "foo",
 					Operator: corev1.TolerationOpExists,
@@ -1749,7 +1817,7 @@ func TestSubstrateCreatePodWithNodeSelectorAndToleration(t *testing.T) {
 				)
 				require.NoError(t, err)
 				require.NotNil(t, workerPod)
-				require.Nil(t, workerPod.Spec.NodeSelector)
+				require.Empty(t, workerPod.Spec.NodeSelector)
 				require.Equal(t, corev1.Toleration{
 					Key:      "foo",
 					Value:    "bar",
@@ -1765,7 +1833,7 @@ func TestSubstrateCreatePodWithNodeSelectorAndToleration(t *testing.T) {
 				)
 				require.NoError(t, err)
 				require.NotNil(t, jobPod)
-				require.Nil(t, jobPod.Spec.NodeSelector)
+				require.Empty(t, jobPod.Spec.NodeSelector)
 				require.Equal(t, corev1.Toleration{
 					Key:      "foo",
 					Value:    "bar",
