@@ -123,14 +123,14 @@ spec:
           value: {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.mongodb.service.port }}
         {{- end }}
         - name: DATABASE_NAME
-          value: {{ .Values.mongodb.auth.database }}
+          value: {{ index .Values.mongodb.auth.databases 0 }}
         - name: DATABASE_USERNAME
-          value: {{ .Values.mongodb.auth.username }}
+          value: {{ index .Values.mongodb.auth.usernames 0 }}
         - name: DATABASE_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }}
-              key: mongodb-password
+              key: mongodb-passwords
         {{- else }}
         - name: DATABASE_CONNECTION_STRING
           valueFrom:
