@@ -108,20 +108,20 @@ Below are instructions for common environments:
 
 **Linux**
 ```bash
-$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-linux-amd64
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.4/brig-linux-amd64
 $ chmod +x /usr/local/bin/brig
 ```
 
 **macOS**
 ```bash
-$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-darwin-amd64
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.4/brig-darwin-amd64
 $ chmod +x /usr/local/bin/brig
 ```
 
 **Windows**
 ```powershell
 > mkdir -force $env:USERPROFILE\bin
-> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.4/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
 > $env:PATH+=";$env:USERPROFILE\bin"
 ```
 
@@ -155,7 +155,7 @@ To install server-side components on your local, development-grade cluster:
     ```
     $ helm install brigade \
         oci://ghcr.io/brigadecore/brigade \
-        --version v2.0.0-beta.3 \
+        --version v2.0.0-beta.4 \
         --create-namespace \
         --namespace brigade \
         --wait \
@@ -305,7 +305,7 @@ Below is example output:
 Created event "2cb85062-f964-454d-ac5c-526cdbdd2679".
 
 Waiting for event's worker to be RUNNING...
-2021-08-10T16:52:01.699Z INFO: brigade-worker version: v2.0.0-beta.3
+2021-08-10T16:52:01.699Z INFO: brigade-worker version: v2.0.0-beta.4
 2021-08-10T16:52:01.701Z DEBUG: writing default brigade.ts to /var/vcs/.brigade/brigade.ts
 2021-08-10T16:52:01.702Z DEBUG: using npm as the package manager
 2021-08-10T16:52:01.702Z DEBUG: path /var/vcs/.brigade/node_modules/@brigadecore does not exist; creating it
@@ -362,13 +362,13 @@ After you have freed up disk space, remove the bad installation, and then retry
 using the following commands:
 
 ```console
-helm uninstall brigade -n brigade
-helm install brigade \
-      oci://ghcr.io/brigadecore/brigade \
-      --version v2.0.0-beta.3 \
-      --namespace brigade \
-      --wait \
-      --timeout 300s
+$ helm uninstall brigade -n brigade
+$ helm install brigade \
+    oci://ghcr.io/brigadecore/brigade \
+    --version v2.0.0-beta.4 \
+    --namespace brigade \
+    --wait \
+    --timeout 300s
 ```
 
 ### Login Command Hangs

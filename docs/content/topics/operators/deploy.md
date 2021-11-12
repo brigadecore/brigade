@@ -74,7 +74,7 @@ cluster, view our [QuickStart](/intro/quickstart/) instead.
 
 ```console
 $ helm inspect values oci://ghcr.io/brigadecore/brigade \
-    --version v2.0.0-beta.3 > ~/brigade-values.yaml
+    --version v2.0.0-beta.4 > ~/brigade-values.yaml
 ```
 
 In the next steps, we'll edit `~/brigade-values.yaml` to configure a
@@ -301,7 +301,7 @@ suitable for production, we can proceed with installation:
 ```console
 $ helm install brigade \
     oci://ghcr.io/brigadecore/brigade \
-    --version v2.0.0-beta.3 \
+    --version v2.0.0-beta.4 \
     --create-namespace \
     --namespace brigade \
     --values ~/brigade-values.yaml \
@@ -360,20 +360,20 @@ Below are instructions for common environments:
 
 **Linux**
 ```bash
-$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-linux-amd64
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.4/brig-linux-amd64
 $ chmod +x /usr/local/bin/brig
 ```
 
 **macOS**
 ```bash
-$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-darwin-amd64
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.4/brig-darwin-amd64
 $ chmod +x /usr/local/bin/brig
 ```
 
 **Windows**
 ```powershell
 > mkdir -force $env:USERPROFILE\bin
-> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.4/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
 > $env:PATH+=";$env:USERPROFILE\bin"
 ```
 
