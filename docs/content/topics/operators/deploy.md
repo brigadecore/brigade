@@ -1,6 +1,6 @@
 ---
-title: Deployment
-description: How to deploy and manage Brigade
+title: Deploying to Production
+description: How to configure and install a production-grade Brigade deployment
 section: operators
 weight: 1
 aliases:
@@ -9,202 +9,294 @@ aliases:
   - /topics/operators/deploy.md
 ---
 
-# Deploying and managing Brigade
+This guide will cover configuration and installation of a production-grade
+Brigade deployment. If you are looking for a more comprehensive introduction to
+Brigade or are interested in evaluating Brigade in a local, development-grade
+cluster, view our [QuickStart](/intro/quickstart/) instead.
 
-In this doc, we'll go over steps for setting up and managing a
-production-grade Brigade deployment.  This includes:
-
-  - [Configuring passwords](#configuring-passwords)
-  - [Certificates and TLS](#certificates-and-tls)
-  - [Managing external access to Brigade via an ingress resource](#managing-inbound-traffic-via-ingress)
-  - [Choosing a third-party authentication provider for managing user auth](#third-party-authentication)
-
-(Alternatively, if you're interested in trying Brigade in a private and/or local development
-environment, take a look at the [QuickStart].)
-
-[QuickStart]: /intro/quickstart.md
+* [Prerequisites](#prerequisites)
+* [Preparation](#preparation)
+  * [Configure Host Name](#configure-host-name)
+  * [Configure Passwords](#configure-passwords)
+  * [Disable the Root User](#disable-the-root-user)
+  * [Configure Ingress](#configure-ingress)
+  * [Configure TLS](#configure-tls)
+  * [Configure an Authentication Provider](#configure-an-authentication-provider)
+  * [Configure MongoDB](#configure-mongodb)
+  * [Configure ActiveMQ Artemis](#configure-activemq-artemis)
+  * [Configure Shared Storage](#configure-shared-storage)
+  * [Other Configuration Options](#other-configuration-options)
+* [Install Brigade](#install-brigade)
+* [Update DNS](#update-dns)
+* [Verify the Deployment](#verify-the-deployment)
+  * [Install the Brigade CLI](#install-the-brigade-cli)
+  * [Log In](#log-in)
+* [Wrap-Up](#wrap-up)
+* [Deploying Multiple Brigades](#deploying-multiple-brigades)
 
 ## Prerequisites
 
-* A [Kubernetes cluster], version 1.16+.
-  Your cluster must be accessible to the outside world, e.g. to source(s) of
-  event triggers (gateways) and to browsers for authentication callbacks.
-  As long as the cluster is able to provision a public ip address, as any
-  cloud provider's Kubernetes offering will support, you should be good to go.
-* [Helm] v3.7.0+ installed.
-* [kubectl] CLI installed.
-* Free disk space on the cluster nodes.
-  The installation requires sufficient free disk space and will fail if a
-  cluster node disk is nearly full.
+* A remote, production-grade Kubernetes v1.16.0+ cluster. Your cluster must be
+  capable of the following:
+    * Provisioning public IPs. (If you're using a managed Kubernetes service
+      from any prominent cloud provider, for instance, you're all set.)
+    * Provisioning volumes that can be mounted to multiple pods simultaneously
+      over the network. If your cloud provider or Kubernetes distro does not
+      already provide a suitable
+      [`StorageClass`]((https://kubernetes.io/docs/concepts/storage/storage-classes/))
+       for this purpose, the
+      [NFS Server Provisioner chart](https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner),
+      although deprecated, provides a viable and popular option.
+* [Helm v3.7.0+](https://helm.sh/docs/intro/install/)
+* [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+* Free disk space on the cluster nodes. The installation requires sufficient
+  free disk space and will fail if a cluster node disk is nearly full.
 
-[Kubernetes cluster]: https://kubernetes.io/docs/setup/
-[Helm]: https://helm.sh/docs/intro/install/
-[kubectl]: https://kubernetes.io/docs/tasks/tools/#kubectl
+## Preparation
 
-## Prepping the Brigade 2 installation
+1. Enable Helm's experimental OCI support:
 
-For now, we're using the [GitHub Container Registry](https://ghcr.io) (which is
-an [OCI registry](https://helm.sh/docs/topics/registries/)) to host our Helm
-chart. Helm 3.7 has _experimental_ support for OCI registries. In the event that
-the Helm 3.7 dependency proves troublesome for Brigade users, or in the event
-that this experimental feature goes away, or isn't working like we'd hope, we
-will revisit this choice before going GA.
+    **POSIX**
+    ```bash
+    $ export HELM_EXPERIMENTAL_OCI=1
+    ```
 
-First, let's set the necessary environment variable to enable this experimental
-support and pull the Brigade chart to a local directory:
+    **PowerShell**
+    ```powershell
+    > $env:HELM_EXPERIMENTAL_OCI=1
+    ```
+
+1. Extract the default configuration from the Helm chart and save it to a
+   convenient location. In the example below, we save it to
+   `~/brigade-values.yaml`. We'll use that path to refer to that file throughout
+   the remainder of this document, but if you save it to a different location,
+   make the appropriate substitutions wherever you see that path.
 
 ```console
-$ export HELM_EXPERIMENTAL_OCI=1
-```
-
-You're now ready to view and edit configuration options:
-
-```console
-$ helm inspect values oci://ghcr.io/brigadecore/brigade-acr-gateway \
+$ helm inspect values oci://ghcr.io/brigadecore/brigade \
     --version v2.0.0-beta.3 > ~/brigade-values.yaml
 ```
 
-In the next steps, we'll go through the configuration needed for a
+In the next steps, we'll edit `~/brigade-values.yaml` to configure a
 production-grade deployment.
 
-## Configuring passwords
+### Configure Host Name
 
-In the Brigade chart values file (`brigade-values.yaml`) there are a few spots
-where default passwords are used. It is recommended to supply your own values
-for these fields. Here are the values to update and their locations in the
-file:
+In the Brigade chart values file (`~/brigade-values.yaml`), setting
+`apiserver.host` has a default value of `localhost`. This is a suitable value
+for a non-production deployment of Brigade, but for a variety of reasons, this
+value should be set correctly for a production-grade deployment of Brigade.
 
-  - The root user password at `apiserver.rootUser.password` (by default, this
-    will be an auto-generated random string)
-  - The MongoDB root user and database passwords at `mongodb.auth.rootPassword`
-    and `mongodb.auth.password`
-  - The Artemis user password at `artemis.password` (by default, this
-    will be an auto-generated random string)
+Change the value of `apiserver.host` to reflect the DNS host name by which
+end-users will log in via the CLI.
 
-## Certificates and TLS
+### Configure Passwords
 
-There are a handful of configuration options around certificates and TLS in
-Brigade.  Here's a listing of each option as well as their locations in the
-chart values file:
+In the Brigade chart values file (`~/brigade-values.yaml`) there is one
+password with a hard-coded default. For production-grade deployments, it is
+critical to supply your own value for that field.
 
-1. Disable TLS
-    - Set `apiserver.tls.enabled` to `false`
+Replace the value of `mongodb.auth.passwords[0]` with a complex string of your
+own. If you're personally in the habit of using a password manager and it can
+generate strong passwords for you, consider using that.
 
-2. Use self-signed certificates (auto-generated by the Helm chart)
-    - No configuration needed (this is the default)
+You may _optionally_ supply your own values for the following fields as well:
 
-3. Add certificate and key material to the corresponding fields in the chart
-   values file
-    - Set `apiserver.tls.cert` to the certificate value
-    - Set `apiserver.tls.key` to the key value
-    - Set `apiserver.tls.generateSelfSignedCert` to `false`
+* `apiserver.rootUser.password`: If you do not set a value for this, one will be
+  generated on initial install and _will not_ change on subsequent
+  `helm upgrade` operations unless explicitly overridden.
+* `mongodb.auth.passwords`: If you do not set a value for this, one will be
+  generated on initial install _and will be be regenerated/changed by every
+  subsequent `helm upgrade` operation unless explicitly overridden. Since you
+  will rarely, if ever, need to use this password, this is generally not a
+  problem.
+* `artemis.password`: If you do not set a value for this, one will be
+  generated on initial install and _will not_ change on subsequent
+  `helm upgrade` operations unless explicitly overridden.
 
-4. Ensure the [Kubernetes Cert Secret] resource exists, either by creating it
-   yourself or via another method (e.g. [Cert Manager] or another provider)
-    - Set `apiserver.tls.generateSelfSignedCert` to `false`
+### Disable the Root User
 
-For a production cluster, we highly recommend options 3 or 4.
+Production-grade Brigade deployments utilize third-party identity providers for
+authentication. We'll configure this a little later.
 
-[Kubernetes Cert Secret]: charts/brigade/templates/cert-secret.yaml
+Since Brigade's default configuration is optimized for getting started very
+quickly in a local, development-grade cluster, the default configuration does
+_not_ utilize any third-party identity provider for authentication. Instead, it
+exposes a single, "root" user that has full administrative privileges.
+
+We highly recommend _disabling_ the root user for production deployments. To do
+so, set the value of of `apiserver.rootUser.enabled` to `false`.
+
+## Configure Ingress
+
+The term "ingress" can be overloaded. Although we _will_ discuss Kubernetes
+[`Ingress` resources](https://kubernetes.io/docs/concepts/services-networking/ingress/)
+below, this section is really about ingress in a more general sense -- how
+traffic reaches Brigade's API server.
+
+In the default configuration, the API server's Kubernetes `Service` is
+configured as type `ClusterIP`. This means the API server does not receive a
+public IP and will therefore not be reachable from outside your Kubernetes
+cluster.
+
+To make your API server reachable from outside your cluster (e.g. to users of
+the `brig` CLI), you must do one of the following:
+
+* **Enable Ingress:** (Here "ingress" refers to a Kubernetes `Ingress`
+   resource.) Leave `apiserver.service.type` set to `CLusterIP` and change
+   `apiserver.ingress.enabled` to `true`. If your
+   [ingress controller](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/)
+   requires you to decorate your `Ingress` resources with any
+   controller-specific annotations, add those under
+   `apiserver.ingress.annotations`.
+
+* **Use a LoadBalancer:** Leave `apiserver.ingress.enabled` set to `false` and
+  change `apiserver.service.type` to `LoadBalancer`.
+
+### Configure TLS
+
+In a production-grade Brigade deployment, the API server must _always_ secure
+communication with the API server using TLS. If this is disabled, then the
+secrecy of user credentials cannot be ensured as requests traverse unsecured
+networks (e.g. the internet).
+
+In the default configuration, self-signed TLS certificates are auto-generated
+for the API server during installation. Because self-signed certificates are not
+trusted, these should be overridden with valid, trusted certificates for
+production-grade deployments.
+
+How you proceed depends on choices made in the previous section:
+
+* If you are using an ingress controller to route inbound traffic (see previous
+  section), set `apiserver.ingress.tls.generateSelfSignedCert` to `false`. Once
+  auto-generation of a cert is disabled, you become responsible for providing
+  the certificate yourself. There are two ways to do this:
+
+  * Provide cert/key material directly by (individually) base64-encoding your
+    PEM encoded certificate and key and adding them, respectively, as the values
+    for `apiserver.ingress.tls.cert` and `apiserver.ingress.tls.key`.
+
+  * Alternatively, ensure the existence of a
+    [Kubernetes cert `Secret`](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets)
+    resource named `<Helm release name>-apiserver-ingres-cert` in the same
+    namespace as Brigade. This would typically be
+    `brigade-apiserver-ingres-cert` in the `brigade` namespace. _How_ you
+    achieve this is up to you, but an easy and sensible way to accomplish it is
+    through the use of a [cert manager].
+
+* If you are _not_ using an ingress controller to route inbound traffic, and
+  instead opted to use a `Service` of type `LoadBalancer` (see previous
+  section), set `apiserver.tls.generateSelfSignedCert` to `false`. Once
+  auto-generation of a cert is disabled, you become responsible for providing
+  the certificate yourself. There are two ways to do this:
+
+  * Provide cert/key material directly by (individually) base64-encoding your
+    PEM encoded certificate and key and adding them, respectively, as the values
+    for `apiserver.tls.cert` and `apiserver.tls.key`.
+
+  * Alternatively, ensure the existence of a
+    [Kubernetes cert `Secret`](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets)
+    resource named `<Helm release name>-apiserver-cert` in the same namespace as
+    Brigade. This would typically be `brigade-apiserver-cert` in the `brigade`
+    namespace. _How_ you achieve this is up to you, but an easy and sensible way
+    to accomplish it is through the use of a [cert manager].
+
 [Cert Manager]: https://cert-manager.io/docs/
 
-## Managing inbound traffic via Ingress
+## Configure an Authentication Provider
 
-By default, the Brigade chart configures the service type for the API server to
-be `LoadBalancer`, which utilizes the cloud provider's infrastructure to
-provision an external IP address. If this is suitable for your needs, you can
-proceed to the next section.  After deployment of Brigade, you'll locate this
-IP for the optional DNS record configuration.
+Production-grade Brigade deployments utilize third-party identity providers for
+authentication. Any identity provider that supports
+[OpenID Connect](https://openid.net/connect/) should work. Brigade has been
+verified to work with
+[Azure Active Directory](https://azure.microsoft.com/en-us/services/active-directory/)
+and [Google Identity Platform](https://cloud.google.com/identity-platform).
+[GitHub](https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps)
+does not implement OpenID Connect, but is also supported due to its popularity.
 
-Alternatively, you can configure an [Ingress resource] to be created when
-Brigade is deployed. (We'll assume you've already selected an [Ingress
-Controller] and deployed it to your Kubernetes cluster.)
+* For identity providers that support OpenID Connect, set
+  `apiserver.thirdPartyAuth.strategy` to `oidc`, then set each of the following
+  to values provided by your identity provider:
 
-DNS record creation will be mandatory when using Ingress, so be sure you have a
-domain ready and you are able to create A records under this domain.
+  * `apiserver.thirdPartyAuth.oidc.providerURL`
+  * `apiserver.thirdPartyAuth.oidc.clientID`
+  * `apiserver.thirdPartyAuth.oidc.clientSecret`
 
-All configuration will go under the `apiserver` section of the chart values
-file. Here's the breakdown of the relevant fields, with other nearby sections
-omitted:
+* For GitHub, set `apiserver.thirdPartyAuth.strategy` to `github`, then set each
+  of the following to to values provided by GitHub after setting up a
+  [GitHub OAuth App](https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps):
 
-```yaml
-apiserver:
+  * `apiserver.thirdPartyAuth.github.clientID`
+  * `apiserver.thirdPartyAuth.github.clientSecret`
 
-  ## This is the DNS hostname you'll set up in a subsequent step
-  ## For example, if you own the example.com domain and you create
-  ## an A record for 'mybrigade', the host will be 'mybrigade.example.com'
-  host: mybrigade.example.com
+  Optionally, enumerate GitHub organizations whose members are permitted to
+  authenticate to your Brigade API server under
+  `apiserver.thirdPartyAuth.github.allowedOrganizations`.
 
-  ## Ensure tls is enabled for all Brigade's internal components
-  ## For this example, we'll use self-signed certs
-  tls:
-    enabled: true
-    generateSelfSignedCert: true
+Regardless of which third-party identity provider you select, we recommend using
+the `apiserver.thirdPartyAuth.admins` field to enumerate users who should
+automatically be granted administrative privileges upon initial login. Without
+this set, the root user would have to be temporarily enabled to facilitate
+initial setup -- and we do not recommend that. Note that removing someone from
+this list before performing a `helm upgrade` does _not_ revoke their existing
+administrative privileges nor does adding a user to this list grant
+administrative privileges if they have already logged in for the first time.
+This list strictly manages auto-grant of administrative privileges on _first
+login_ for each of the enumerated users.
 
-  ## Here's where we configure ingress
-  ingress:
-    enabled: true
-    ## Annotations specific to the chosen ingress controller go here
-    annotations:
-    tls:
-      enabled: true
-      generateSelfSignedCert: false
-      # cert: base 64 encoded cert goes here
-      # key: base 64 encoded key goes here
-```
+### Configure MongoDB
 
-Save your updates to `brigade-values2.yaml` and proceed to the next section.
+[MongoDB](https://www.mongodb.com/) is used to persist the API server's user
+data, project data, event data, logs, and more. If your use cases require
+Brigade to be highly available or you have specific data retention requirements,
+you may wish to tweak various aspects of the MongoDB deployment in the `mongodb`
+section of `~/brigade-values.yaml`. Extensive discussion of this is out of scope
+for this guide. Brigade utilizes
+[MongoDB packaged by Bitnami](https://bitnami.com/stack/mongodb/helm) as a
+sub-chart. Refer directly to their documentation for further details.
 
-[Ingress resource]: https://kubernetes.io/docs/concepts/services-networking/ingress/
-[Ingress Controller]: https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/
+We _do_ strongly recommend increasing the size of volumes utilized by MongoDB
+by setting `mongodb.persistence.size` to _at least_ 40 gigabytes (`40Gi`).
 
-## Third-Party Authentication
+### Configure ActiveMQ Artemis
 
-The default mode of authentication into Brigade, that of a root user and
-password, is not suitable for a setup involving multiple users.
+Brigade's event bus is implemented using
+[ActiveMQ Artemis](https://activemq.apache.org/components/artemis/). If your
+uses cases require Brigade to be highly available, you may wish to set
+`artemis.ha.enabled` to `true`. This will establish a "warm," secondary node to
+fail over to in the event that the primary node should fail. Failover and
+fail back are automatic.
 
-For production-grade user authentication, Brigade ships with support for
-[OpenID Connect]-compatible providers (such as [Google Identity Platform] and
-[Azure Active Directory]) or [GitHub].  In this doc, we'll configure GitHub to
-be the auth provider.
+We do _not_ recommend modifying Artemis topology to use distributed queues
+because it undermines the guarantee that events for a given project are handled
+on a FIFO basis.
 
-[OpenID Connect]: https://openid.net/connect/
-[Google Identity Platform]: https://cloud.google.com/identity-platform
-[Azure Active Directory]: https://azure.microsoft.com/en-us/services/active-directory/
-[GitHub]: https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps
+We _do_ strongly recommend increasing the size of volumes utilized by Artemis
+by setting `artemis.persistence.size` to _at least_ 40 gigabytes (`40Gi`).
 
-### Configuring GitHub Authentication
+### Configure Shared Storage
 
-Please see the [GitHub OAuth Provider] section of the [Authentication] doc for
-setup and configuration.
+Brigade workers and jobs may optionally mount a shared storage volume. This
+provides a convenient mechanism for jobs to persist results or artifacts to a
+location that's accessible to the worker and to downstream jobs.
 
-After configuration is complete, save the updated file and proceed to the next
-section.
+Brigade is pre-configured to use Kubernetes
+[`StorageClass`](https://kubernetes.io/docs/concepts/storage/storage-classes/)
+`nfs` for dynamically shared storage volumes. If you'd like to use an
+alternative `StorageClass`, override the value of
+`worker.workspaceStorageClass`. The `StorageClass` used _must_ support access
+mode `ReadWriteMany`.
 
-[GitHub OAuth Provider]: /topics/administrators/authentication#github-oauth-provider
-[Authentication]: /topics/administrators/authentication
+### Other Configuration Options
 
-## Additional configuration to consider
+Although we've covered the most critical, consider perusing
+`~/brigade-values.yaml` further to discover other settings you may wish to fine
+tune. The file itself is liberally commented with detailed instructions.
 
-### Increasing volume size
+## Install Brigade
 
-Data volumes are used by both the backing data store and messaging queue
-components, with implementations currently provided by MongoDB and Artemis,
-respectively. For production deployments, it is recommended to increase the
-size of both volumes.  As an example, Brigade's own CI/CD cluster is configured
-with both volume sizes set to `40Gi`.
-
-These values can be updated via the following two locations:
-
-  - `mongodb.persistence.size`
-  - `artemis.persistence.size`
-
-## Deployment time!
-
-Now that you have your `brigade-values.yaml` updated with your desired
-configuration, you're ready to deploy!  Issue the following command, supplying
-a dedicated Kubernetes namespace where all resources will be created and the
-filepath to the chart values file you've updated and saved:
+Finally, it's time. With `~/brigade-values.yaml` updated with configuration
+suitable for production, we can proceed with installation:
 
 ```console
 $ helm install brigade \
@@ -212,108 +304,123 @@ $ helm install brigade \
     --version v2.0.0-beta.3 \
     --create-namespace \
     --namespace brigade \
-    --values ~/brigade-values.yaml
+    --values ~/brigade-values.yaml \
+    --wait \
+    --timeout 300s
 ```
 
-You can issue the following `kubectl` command to monitor the status of the
-deployments:
+Installation and initial startup may take a few minutes to complete and it is
+normal for components to restart repeatedly until their own network-bound
+dependencies are up and running.
+
+## Update DNS
+
+Now that Brigade is deployed, we'll determine the public IP address of the API
+server or the ingress controller that will route inbound traffic _to_ the API
+server. Which of these is applicable depends on the choice you made in the
+[Configure Ingress](#configure-ingress) section.
+
+* If you are _not_ using an ingress controller to route inbound traffic to your
+  API server, use the following command to determine the API server's public IP:
+
+  ```console
+  $ kubectl get svc brigade-apiserver --namespace brigade \
+      --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
+  ```
+
+* If you _are_ using an ingress controller to route inbound traffic to your API
+  server, determine the public IP of that ingress controller. The procedure for
+  this will vary from one ingress controller to the next, but will generally
+  involve querying the ingress controller's `Service` of type `LoadBalancer`.
+  The following example depicts how Brigade's maintainers make this
+  determination for our own cluster's
+  [Nginx Ingress Controller](https://kubernetes.github.io/ingress-nginx/):
+
+  ```console
+  $ kubectl get svc nginx-ingress-nginx-controller --namespace nginx \
+      --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
+  ```
+
+With the public IP in hand, user your domain's DNS provider to create an
+[A record](https://www.cloudflare.com/learning/dns/dns-records/dns-a-record/)
+to map a hostname (the value of `apiserver.host`) to the public IP.
+
+## Verify the Deployment
+
+In this section, we'll verify our ability to at least log in to our new,
+production-grade Brigade deployment.
+
+### Install the Brigade CLI
+
+If you haven't done so already, install the Brigade CLI, `brig`, by copying the
+appropriate binary from our
+[releases page](https://github.com/brigadecore/brigade/releases) into a
+directory on your machine that is included in your `PATH` environment variable.
+Below are instructions for common environments:
+
+**Linux**
+```bash
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-linux-amd64
+$ chmod +x /usr/local/bin/brig
+```
+
+**macOS**
+```bash
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-darwin-amd64
+$ chmod +x /usr/local/bin/brig
+```
+
+**Windows**
+```powershell
+> mkdir -force $env:USERPROFILE\bin
+> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+> $env:PATH+=";$env:USERPROFILE\bin"
+```
+
+The script above downloads `brig.exe` and adds it to your `PATH` for the current
+session. Add the following line to your
+[PowerShell Profile](https://www.howtogeek.com/126469/how-to-create-a-powershell-profile/)
+if you want to make the change permanent:
+
+```powershell
+> $env:PATH+=";$env:USERPROFILE\bin"
+```
+
+### Log In
+
+Now you're ready to log in to Brigade! For the server URL value, use the DNS
+hostname configured above. In the example below, we use `brigade.example.com`:
 
 ```console
-$ kubectl rollout status deployment brigade-apiserver -n brigade --timeout 5m
+$ brig login --server https://brigade.example.com
 ```
 
-### DNS hostname
+This command will return a URL which can be copied, then pasted into your web
+browser to complete authentication using the configured identity provider. We
+recommend using the optional `--browse` (or `-b`) flag to bypass the manual
+copy/paste process. Using that flag will immediately navigate to the
+authentication URL using your system's default browser.
 
-Now that you have Brigade deployed, you're ready for DNS record creation.
+Upon successful authentication, you will be redirected to a splash page that
+informs you that you may resume using the Brigade CLI.
 
-If you haven't configured ingress for Brigade, you may choose to login via the
-service IP directly, though it is highly recommended to create a DNS hostname
-pointing to this IP instead.
+## Wrap-Up
 
-To locate the IP, execute the following command:
+Now that you have a production-grade Brigade deployment, day-to-day operations
+can all be completed using the `brig` CLI.
 
-```console
-$ kubectl -n brigade get svc \
-  -l app.kubernetes.io/name=brigade,app.kubernetes.io/component=apiserver \
-  -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}'
-```
+Upgrading Brigade's server-side components to a newer release or updating
+Brigade's configuration can be accomplished with the `helm upgrade` command.
+Uninstalling Brigade can be accomplished with `helm uninstall`. For more details
+on using Helm, refer directly
+to [Helm's own documentation](https://helm.sh/docs/intro/using_helm).
 
-(If you've configured ingress for Brigade, you'll use the external IP address
-of the ingress controller instead.)
+## Deploying Multiple Brigades
 
-With the external IP address in hand, you're now ready to create the DNS entry.
-With your DNS provider of choice, you'll create an [A record] mapping the
-hostname on a domain you control to this IP address.  For example, if you
-control the `example.com` domain and wish for the hostname for the Brigade
-server to be `mybrigade.example.com`, create the DNS record with `mybrigade` as
-the name, `A` as the record type and the external IP address captured
-previously as the entry in the corresponding IP addresses section.
-
-[A record]: https://www.cloudflare.com/learning/dns/dns-records/dns-a-record/
-
-## Verifying deployment
-
-Once all of the Kubernetes resources associated with Brigade are up and
-running, you're ready to interact with Brigade.  You'll install the brig CLI and
-verify TLS/cert setup, ingress and third-party auth, all via one command,
-`brig login`.
-
-### Installing the `brig` CLI
-
-Next, download the appropriate, pre-built `brig` CLI (command line interface)
-from our [releases page](https://github.com/brigadecore/brigade/releases) and
-move it to any location on your path, such as `/usr/local/bin`, for instance.
-
-### Logging In
-
-Now you're ready to log in to Brigade!  For the server URL value, use the
-hostname configured above (or external service IP directly).  Say the hostname
-is `mybrigade.example.com`, the login command would then be:
-
-```console
-$ brig login --server https://mybrigade.example.com
-```
-
-This command will return a GitHub Oauth URL which you'll paste into the
-browser of your choice to complete authentication.
-
-_Note: you can also supply the `-b/--browse` flag if you'd like the default
-browser to automatically open a page to the authentication callback URL
-returned by the command._
-
-On first login, the browser will navigate to a GitHub webpage requesting access
-on behalf of the GitHub Oauth App to high-level, read-only access to your
-GitHub user account (basically, to read your username and organization
-associations).  Once approved, you should see a Brigade webpage confirming that
-you are now logged in and ready to use the Brigade CLI.
-
-## Wrap-up
-
-Now that you have a production-ready Brigade server deployed using established
-services for managing traffic, certificates and authentication, you're ready to
-accept new users and transition focus to the Brigade system itself.
-
-As all of the services, including Brigade itself, have been deployed by their
-corresponding Helm charts, lifecycle management and configuration changes are
-as easy as executing a `helm upgrade` command, either to bump to a more recent
-chart version or to update release configuration.  For more details around
-managing Helm releases, see [Helm's documentation].
-
-[Helm's documentation]: https://helm.sh/docs/intro/using_helm
-
-## Deploying multiple Brigade instances
-
-It is possible to deploy multiple Brigade instances to one underlying
+It is possible to deploy multiple Brigade instances to a single
 Kubernetes cluster. However, there is one piece of configuration necessary for
 each Brigade instance other than the original. This is due to the global RBAC
 resources that are created by the original deployment.
 
-For each subsequent Brigade deployment, include the following configuration
-in the chart values file:
-
-```yaml
-rbac:
-  installGlobalResources: false
-```
-
-Then, deploy as usual!
+For each subsequent Brigade deployment, set `rbac.installGlobalResources` to
+`false`, then deploy as usual.
