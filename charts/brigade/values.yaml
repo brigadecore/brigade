@@ -389,17 +389,7 @@ logger:
       operator: Equal
       value: windows
 
-externalMongodb:
-
-  isCosmosdb: false
-  connectionString: mongodb://<username>:<password>@<host>:<port>/<database>?<options>
-  database: <database>
-
 mongodb:
-
-  enabled: true
-
-  ## @section Global parameters
   ## Global Docker image parameters
   ## Please, note that this will override the image parameters, including dependencies, configured to use the global value
   ## Current available global Docker image parameters: imageRegistry, imagePullSecrets and storageClass
