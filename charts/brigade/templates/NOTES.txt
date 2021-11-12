@@ -13,13 +13,25 @@ To retrieve the auto-generated password for the Brigade API server
 root user, run:
 
   $ kubectl --namespace {{ .Release.Namespace }} get secret \
-      {{ .Release.Name }}-apiserver \
+      {{ include "brigade.apiserver.fullname" . }} \
       -o jsonpath={.data.root-user-password} | base64 --decode
 
 {{- end }}
 
+To retrieve the root password for MongoDB, run:
+
+  $ kubectl --namespace {{ .Release.Namespace }} get secret \
+      {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }} \
+      -o jsonpath={.data.mongodb-root-password} | base64 --decode
+
+To retrieve the password for the {{ quote .Values.mongodb.auth.database }} database, run:
+
+  $ kubectl --namespace {{ .Release.Namespace }} get secret \
+      {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }} \
+      -o jsonpath={.data.mongodb-password} | base64 --decode
+
 To retrieve the auto-generated password for Artemis, run:
 
   $ kubectl --namespace {{ .Release.Namespace }} get secret \
-      {{ .Release.Name }}-artemis \
+      {{ include "brigade.artemis.fullname" . }} \
       -o jsonpath={.data.password} | base64 --decode
