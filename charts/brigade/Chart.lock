@@ -1,6 +1,6 @@
 dependencies:
 - name: mongodb
   repository: https://charts.bitnami.com/bitnami
-  version: 10.3.7
-digest: sha256:0370ef4db426321d173bf80ae4e8a5e6b7152bdf38cc3bfbe6d31a3c78fdb3b6
-generated: "2021-02-10T10:05:38.297831-05:00"
+  version: 10.29.2
+digest: sha256:8767dceb9c2c808c8a089b700f3287727c8fb48c1be288c5486e08d228030839
+generated: "2021-11-12T09:50:47.56396-05:00"
