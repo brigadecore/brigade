@@ -28,7 +28,7 @@ To retrieve the password for the {{ quote .Values.mongodb.auth.database }} datab
 
   $ kubectl --namespace {{ .Release.Namespace }} get secret \
       {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }} \
-      -o jsonpath={.data.mongodb-password} | base64 --decode
+      -o jsonpath={.data.mongodb-passwords} | base64 --decode
 
 To retrieve the auto-generated password for Artemis, run:
 
