@@ -8,201 +8,240 @@ aliases:
   - /intro/quickstart.md
 ---
 
-In this QuickStart, you will install Brigade, create a project and execute it.
+This QuickStart presents a comprehensive introduction to Brigade. You will
+install Brigade with default configuration on a local, development-grade
+cluster, create a project and an event, watch Brigade handle that event, then
+clean up.
+
+> ⚠️ Note that the default configuration is appropriate only for evaluating
+> Brigade on a local, development-grade cluster and is not appropriate for _any_
+> shared cluster -- _especially a production one_. See our
+> [Deployment Guide](/topics/operators/deploy/) for instructions suitable for
+> shared or production clusters.
 
 * [Prerequisites](#prerequisites)
+  * [Create a KinD Cluster](#create-a-kind-cluster)
 * [Install Brigade](#install-brigade)
-* [Log in to Brigade](#log-in-to-brigade)
-* [Create a Project](#create-a-project)
-* [Trigger an Event](#trigger-an-event)
+  * [Install the Brigade CLI](#install-the-brigade-cli)
+  * [Install Server-Side Components](#install-server-side-components)
+  * [Port Forwarding](#port-forwarding)
+* [Trying It Out](#trying-it-out)
+  * [Log into Brigade](#log-into-brigade)
+  * [Create a Project](#create-a-project)
+  * [Create an Event](#create-an-event)
+* [Cleanup](#cleanup)
+* [Next Steps](#next-steps)
+* [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
 
-* [A development Kubernetes 1.16.0+ cluster](#create-a-cluster).
-* [Brigade CLI](#install-the-brigade-cli) installed.
-* [Helm] v3.7.0+ installed.
-* [kubectl] CLI installed.
-* Free disk space. The installation requires sufficient free disk space and will fail if your disk is nearly full.
+* [A local, development-grade Kubernetes v1.16.0+ cluster](#create-a-kind-cluster)
+* [Helm v3.7.0+](https://helm.sh/docs/intro/install/)
+* [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+* Free disk space. The installation requires sufficient free disk space and will
+  fail if your disk is nearly full.
 
-> Please take note that the default configuration is not secure and is not appropriate for any shared cluster.
-> This configuration is appropriate for evaluating Brigade on a local development cluster, and should not be used in production.
+### Create a KinD Cluster
 
-### Create a Cluster
+If you do not already have a local, development-grade cluster, we recommend
+using [KinD]. KinD runs an entire Kubernetes cluster locally within a
+[Docker](https://docs.docker.com/get-docker/) container.
+([Minikube](https://minikube.sigs.k8s.io/docs/start/) also works well for local
+development, but isn't covered in this guide.)
 
-If you do not already have a development cluster, we recommend using [KinD].
-KinD runs a Kubernetes cluster locally using [Docker].
-[Minikube] also works well for local development.
+1. Ensure that Docker is running on your machine. For example, `docker ps`
+   should return a list of running containers.
 
-1. Ensure that Docker is running on your machine. For example, `docker ps` should return a listing of running containers.
+1. Install [KinD]. See the KinD documentation for full installation
+   instructions. Below are instructions for common environments:
 
-1. Install [KinD]. See the KinD documentation for full installation instructions, below are instructions for common environments:
-
-    **linux**
+    **Linux**
     ```bash
-    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
-    chmod +x ./kind
-    mv ./kind /usr/local/bin
+    $ curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
+    $ chmod +x ./kind
+    $ mv ./kind /usr/local/bin
     ```
 
-    **macos with Homebrew**
+    **macOS with Homebrew**
     ```bash
-    brew install kind
+    $ brew install kind
     ```
 
-    **windows**
+    **Windows**
     ```powershell
-    mkdir -force $env:USERPROFILE\bin
-    (New-Object Net.WebClient).DownloadFile("https://kind.sigs.k8s.io/dl/v0.11.1/kind-windows-amd64", "$ENV:USERPROFILE\bin\kind.exe")
-    $env:PATH+=";$env:USERPROFILE\bin"
+    > mkdir -force $env:USERPROFILE\bin
+    > (New-Object Net.WebClient).DownloadFile("https://kind.sigs.k8s.io/dl/v0.11.1/kind-windows-amd64", "$ENV:USERPROFILE\bin\kind.exe")
+    > $env:PATH+=";$env:USERPROFILE\bin"
     ```
 
-    The script above downloads kind.exe and adds it to your PATH for the current session.
-    Add the following line to your [PowerShell Profile](https://www.howtogeek.com/126469/how-to-create-a-powershell-profile/) to make the change permanent.
+    The script above downloads `kind.exe` and adds it to your `PATH` for the
+    current session. Add the following line to your
+    [PowerShell Profile](https://www.howtogeek.com/126469/how-to-create-a-powershell-profile/)
+    if you want to make the change permanent:
 
     ```powershell
-    $env:PATH+=";$env:USERPROFILE\bin"
+    > $env:PATH+=";$env:USERPROFILE\bin"
     ```
 
 1. Create a Kubernetes cluster by running the following command:
-    ```
-    kind create cluster
+
+    ```console
+    $ kind create cluster
     ```
 
-1. Verify that you can connect to the cluster using kubectl:
-    ```
-    kubectl cluster-info
+1. Verify that you can connect to the cluster using `kubectl`:
+
+    ```console
+    $ kubectl cluster-info
     ```
 
-[Helm]: https://helm.sh/docs/intro/install/
-[Minikube]: https://minikube.sigs.k8s.io/docs/start/
 [KinD]: https://kind.sigs.k8s.io/docs/user/quick-start/
-[kubectl]: https://kubernetes.io/docs/tasks/tools/#kubectl
-[Docker]: https://docs.docker.com/get-docker/
-
-### Install the Brigade CLI
-
-Install the Brigade CLI, brig, by copying the appropriate binary from our releases page into a directory on your machine that is included in your PATH environment variable.
-
-**linux**
-```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-linux-amd64
-chmod +x /usr/local/bin/brig
-```
-
-**macos**
-```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-darwin-amd64
-chmod +x /usr/local/bin/brig
-```
-
-**windows**
-```powershell
-mkdir -force $env:USERPROFILE\bin
-(New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
-$env:PATH+=";$env:USERPROFILE\bin"
-```
-
-The script above downloads brig.exe and adds it to your PATH for the current session.
-Add the following line to your [PowerShell Profile](https://www.howtogeek.com/126469/how-to-create-a-powershell-profile/) to make the change permanent.
-
-```powershell
-$env:PATH+=";$env:USERPROFILE\bin"
-```
 
 ## Install Brigade
 
-Install Brigade on your local development cluster. See our [Installation] instructions for full instructions suitable for production clusters.
+### Install the Brigade CLI
 
-1. Enable Helm's experimental OCI support by setting the `HELM_EXPERIMENTAL_OCI` environment variable to 1.
+Install the Brigade CLI, `brig`, by copying the appropriate binary from our
+[releases page](https://github.com/brigadecore/brigade/releases) into a
+directory on your machine that is included in your `PATH` environment variable.
+Below are instructions for common environments:
 
-    **posix**
+**Linux**
+```bash
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-linux-amd64
+$ chmod +x /usr/local/bin/brig
+```
+
+**macOS**
+```bash
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-darwin-amd64
+$ chmod +x /usr/local/bin/brig
+```
+
+**Windows**
+```powershell
+> mkdir -force $env:USERPROFILE\bin
+> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0-beta.3/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+> $env:PATH+=";$env:USERPROFILE\bin"
+```
+
+The script above downloads `brig.exe` and adds it to your `PATH` for the current
+session. Add the following line to your
+[PowerShell Profile](https://www.howtogeek.com/126469/how-to-create-a-powershell-profile/)
+if you want to make the change permanent:
+
+```powershell
+> $env:PATH+=";$env:USERPROFILE\bin"
+```
+
+### Install Server-Side Components
+
+To install server-side components on your local, development-grade cluster:
+
+1. Enable Helm's experimental OCI support:
+
+    **POSIX**
     ```bash
-    export HELM_EXPERIMENTAL_OCI=1
+    $ export HELM_EXPERIMENTAL_OCI=1
     ```
 
-    **powershell**
+    **PowerShell**
     ```powershell
-    $env:HELM_EXPERIMENTAL_OCI=1
+    > $env:HELM_EXPERIMENTAL_OCI=1
     ```
 
-1. Run the following commands to install Brigade.
+1. Run the following commands to install Brigade with default configuration:
 
     ```
-    helm install brigade \
-      oci://ghcr.io/brigadecore/brigade \
-      --version v2.0.0-beta.3 \
-      --create-namespace \
-      --namespace brigade
-    kubectl rollout status deployment brigade-apiserver -n brigade --timeout 5m
+    $ helm install brigade \
+        oci://ghcr.io/brigadecore/brigade \
+        --version v2.0.0-beta.3 \
+        --create-namespace \
+        --namespace brigade \
+        --wait \
+        --timeout 300s
     ```
-    
-    Wait for the Brigade deployment to be ready.
-    If the deployment fails, proceed to the [installation troubleshooting](/intro/install/#troubleshooting) section.
 
-Now that Brigade is running, you need to determine the address of the Brigade API so that you can use it later in this QuickStart:
+    > ⚠️ Installation and initial startup may take a few minutes to complete and
+    > it is normal for components to restart repeatedly until their own
+    > network-bound dependencies are up and running.
 
-### Port Forward a Local Cluster
+    If the deployment fails, proceed to the [troubleshooting](#troubleshooting)
+    section.
 
-If you are running a cluster locally, use port forwarding to make the Brigade API available via localhost:
+### Port Forwarding
 
-**posix**
+Since you are running Brigade locally, use port forwarding to make the Brigade
+API available via the local network interface:
 
-```
-kubectl --namespace brigade port-forward service/brigade-apiserver 8443:443 &>/dev/null &
-```
-
-**powershell**
-
-```
-& kubectl --namespace brigade port-forward service/brigade-apiserver 8443:443 *> $null  
+**POSIX**
+```bash
+$ kubectl --namespace brigade port-forward service/brigade-apiserver 8443:443 &>/dev/null &
 ```
 
-### Get External IP of a Remote Cluster
-
-If you are running a cluster remotely, such as on a cloud provider, the Brigade API is available at the External IP of the brigade-apiserver service:
-
-```
-kubectl get service --namespace brigade brigade-apiserver -o=jsonpath='{.status.loadBalancer.ingress[0].ip}'
+**PowerShell**
+```powershell
+> kubectl --namespace brigade port-forward service/brigade-apiserver 8443:443 *> $null  
 ```
 
-[Installation]: /intro/install/
+## Trying It Out
 
-## Log in to Brigade
+### Log into Brigade
 
-Authenticate to Brigade as the root user. First, you need to acquire the auto-generated root user password using the following kubectl command:
+To authenticate to Brigade as the root user, you first need to acquire the
+auto-generated root user password:
 
-```
-export APISERVER_ROOT_PASSWORD=$(kubectl get secret --namespace brigade brigade-apiserver -o=jsonpath='{.data.root-user-password}' | base64 --decode)
-```
-
-**local clusters**
-
-```
-brig login --insecure --server https://localhost:8443 --root --password "${APISERVER_ROOT_PASSWORD}"
+**POSIX**
+```bash
+$ export APISERVER_ROOT_PASSWORD=$(kubectl get secret --namespace brigade brigade-apiserver --output jsonpath='{.data.root-user-password}' | base64 --decode)
 ```
 
-The \--insecure flag instructs Brigade to ignore the self-signed certificate used by our local installation of Brigade.
-
-If the address https://localhost:8443 does not resolve, double-check that the brigade-apiserver service was successfully forwarded from the previous section.
-
-**remote clusters**
-
-Replace `IP_ADDRESS` with the External IP address of your cluster:
-
-```
-brig login --insecure --server https://IP_ADDRESS --root --password "${APISERVER_ROOT_PASSWORD}"
+**PowerShell**
+```powershell
+> $env:APISERVER_ROOT_PASSWORD=$(kubectl get secret --namespace brigade brigade-apiserver --output jsonpath='{.data.root-user-password}' | base64 --decode)
 ```
 
-## Create a Project
+Then:
 
-A Brigade [project] defines event handlers, such as the definition of a CI pipeline.
+**POSIX**
+```bash
+$ brig login --insecure --server https://localhost:8443 --root --password "${APISERVER_ROOT_PASSWORD}"
+```
 
-1. Initialize a new Brigade project with the `brig init` CLI command.
+**PowerShell**
+```powershell
+> brig login --insecure --server https://localhost:8443 --root --password "$env:APISERVER_ROOT_PASSWORD"
+```
+
+The `--insecure` flag instructs `brig login` to ignore the self-signed
+certificate used by our local installation of Brigade.
+
+If the `brig login` command hangs or fails, double-check that port-forwarding
+for the `brigade-apiserver` service was successfully completed in the previous
+section.
+
+### Create a Project
+
+A Brigade [project](/topics/project-developers/projects) pairs event
+subscriptions with worker (event handler) configuration.
+
+1. Rather than create a project definition from scratch, we'll accelerate the
+   process using the `brig init` command:
 
     ```console
-    brig init --id first-project
+    $ mkdir first-project
+    $ cd first-project
+    $ brig init --id first-project
     ```
-    This will create a project definition like the following in `.brigade/project.yaml`, which defines a handler for the "exec" event and echoes "Hello, World!".
+
+    This will create a project definition similar to the following in
+    `.brigade/project.yaml`. It subscribes to `exec` events emitted from a
+    source named `brigade.sh/cli`. (This type of event is easily created using
+    the CLI, so it is great for demo purposes.) When such an event is received,
+    the embedded script is executed. The script itself branches depending on the
+    source and type of the event received. For an `exec` event from the source
+    named `brigade.sh/cli`, this script will spawn and execute a simple "Hello
+    World!" job. For any other type of event, this script will do nothing.
 
     ```yaml
     apiVersion: brigade.sh/v2-beta
@@ -235,32 +274,34 @@ A Brigade [project] defines event handlers, such as the definition of a CI pipel
         events.process()
     ```
 
-1. Create the project in Brigade with the following command.
+1. The previous command only generated a project definition from a template. We
+   still need to upload this definition to Brigade to complete project creation:
 
     ```console
-    brig project create --file .brigade/project.yaml
+    $ brig project create --file .brigade/project.yaml
     ```
 
-1. List the defined projects with `brig project list` and verify that you see your new project:
+1. To see that Brigade now knows about this project, use `brig project list`:
 
     ```console
-    brig project list
+    $ brig project list
+
     ID           	DESCRIPTION                         	AGE
-    first-project	My new Brigade project               	49m
+    first-project	My new Brigade project               	1m
     ```
 
-[project]: /topics/projects/#an-introduction-to-projects
+### Create an Event
 
-## Trigger an Event
+With our project defined, we are now ready to manually create an event and watch
+Brigade handle it:
 
-With our project defined, you are now ready to trigger an event and watch your handler execute.
-
+```console
+$ brig event create --project first-project --follow
 ```
-brig event create --project first-project --follow
-```
 
-Below is example output of a successful event handler:
-```
+Below is example output:
+
+```console
 Created event "2cb85062-f964-454d-ac5c-526cdbdd2679".
 
 Waiting for event's worker to be RUNNING...
@@ -275,32 +316,63 @@ Waiting for event's worker to be RUNNING...
 2021-08-10T16:52:06.921Z [job: hello] DEBUG: Current job phase is SUCCEEDED
 ```
 
+> ⚠️ By default, Brigade's scheduler scans for new projects every thirty
+> seconds. If Brigade is slow to handle your first event, this may be why.
+
 ## Cleanup
 
-If you want to keep your Brigade installation, run the following command to remove the example project created in this QuickStart:
+If you want to keep your Brigade installation, run the following command to
+remove the example project created in this QuickStart:
 
+```console
+$ brig project delete --id first-project
 ```
-brig project delete --id first-project
-```
 
-Otherwise, you can remove ALL resources created in this QuickStart by either:
+Otherwise, you can remove _all_ resources created in this QuickStart by either:
 
-* Deleting the KinD cluster that you created at the beginning with `kind delete cluster --name kind-kind` OR
-* Preserving the cluster and uninstalling Brigade with `helm delete brigade -n brigade`
+* Deleting the KinD cluster that you created at the beginning with `kind delete
+  cluster --name kind-kind` OR
+* Preserving the cluster and uninstalling Brigade with
+  `helm delete brigade -n brigade`
 
 ## Next Steps
 
-You now know how to install Brigade on a local development cluster, define a project, and trigger an event for the project.
-Continue on to the [Read Next] document where we review more advanced topics to delve into.
-
-[Read Next]: /intro/readnext
+You now know how to install Brigade on a local, development-grade cluster,
+define a project, and manually create an event. Continue on to the
+[Read Next](/intro/readnext) document where we suggest more advanced topics to
+explore.
 
 ## Troubleshooting
 
-* [Brigade installation does not finish successfully](/intro/install/#troubleshooting)
+* [Installation Does Not Complete Successfully](#installation-does-not-complete-successfully)
 * [Login command hangs](#login-command-hangs)
 
-### Login command hangs
+### Installation Does Not Complete Successfully
 
-If the brig login command hangs, check that you included the -k flag.
-This flag is required because our local development installation of Brigade is using a self-signed certificate.
+A common cause for failed Brigade deployments is low disk space on the cluster
+node. In a local, development-grade cluster on macOS or Windows, this could be
+because insufficient disk space is allocated to Docker Desktop, or the space
+allocated is nearly full. If this is the case, it should be evident by examining
+logs from Brigade's MongoDB or ActiveMQ Artemis pods. If the logs include
+messages such as "No space left on device" or "Disk Full!", then you need to
+free up disk space and retry the installation. Running `docker system prune` is
+one way to recover disk space.
+
+After you have freed up disk space, remove the bad installation, and then retry
+using the following commands:
+
+```console
+helm uninstall brigade -n brigade
+helm install brigade \
+      oci://ghcr.io/brigadecore/brigade \
+      --version v2.0.0-beta.3 \
+      --namespace brigade \
+      --wait \
+      --timeout 300s
+```
+
+### Login Command Hangs
+
+If the `brig login` command hangs, check that you included the `--insecure` (or
+`-k`) flag. This flag is required because the default configuration utilized by
+this QuickStart makes use of a self-signed certificate.
