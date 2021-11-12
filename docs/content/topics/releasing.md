@@ -28,8 +28,8 @@ the following files require updates. They should be updated to reflect the
 version number we intend to assign to the release.
 
 * `README.md`
-* `docs/content/intro/install.md`
 * `docs/content/intro/quickstart.md`
+* `docs/content/topics/operators/deploy.md`
 
 ### If the API Version is Changing
 

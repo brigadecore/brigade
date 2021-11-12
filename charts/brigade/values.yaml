@@ -17,7 +17,7 @@ apiserver:
   ## Host should be set accurately for a variety of reasons. This is used in
   ## ingress resources, cert generation, and in creating URLs for Open ID
   ## Connect "three legged" authentication.
-  host: localhost:31600
+  host: localhost
 
   image:
     repository: brigadecore/brigade2-apiserver
@@ -117,9 +117,8 @@ apiserver:
     # key: base 64 encoded key goes here
 
   ingress:
-    ## Whether to enable ingress. By default, this is disabled and the
-    ## apiserver's service is of type LoadBalancer instead. Enabling ingress is
-    ## advanced usage.
+    ## Whether to enable ingress. By default, this is disabled. Enabling ingress
+    ## is advanced usage.
     enabled: false
     ## Optionally use annotations specified by your ingress controller's
     ## documentation to customize the behavior of the ingress resource.
@@ -176,12 +175,15 @@ apiserver:
   tolerations: []
 
   service:
-    ## If you're going to use an ingress controller, you can change the service
-    ## type to CLusterIP.
-    type: LoadBalancer
+    ## If you're not going to use an ingress controller, you may want to change
+    ## this value to LoadBalancer for production deployments. If running
+    ## locally, you may want to change it to NodePort OR leave it as ClusterIP
+    ## and use `kubectl port-forward` to map a port on the local network
+    ## interface to the service.
+    type: CLusterIP
     ## Host port the service will be mapped to when service type is either
     ## NodePort or LoadBalancer. If not specified, Kubernetes chooses.
-    # nodePort: 31600
+    # nodePort:
 
 scheduler:
 
