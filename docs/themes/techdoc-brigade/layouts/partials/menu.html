@@ -1,21 +1,29 @@
 {{ $currentPage := . }}
-{{- if .Site.Menus.index -}}
+{{- if .Site.Menus.index }}
 <nav>
   <ul>
-    {{- range .Site.Menus.index.ByWeight -}}
-      {{ if .HasChildren -}}
-      <li class="parent{{ if $currentPage.HasMenuCurrent "index" . }} active{{ end }}"><a href="{{ .URL | relURL }}">{{- .Name -}} <i class="fas fa-angle-right"></i></a>
-        
+    {{- range .Site.Menus.index.ByWeight }}
+    {{- if .HasChildren }}
+    <li class="parent{{ if $currentPage.HasMenuCurrent "index" . }} active{{ end }}"><a href="{{ .URL | relURL }}">{{- .Name -}} <i class="fas fa-angle-right"></i></a>  
+      <ul class="sub-menu">
+        {{- range .Children }}
+        {{- if .HasChildren }}
+        <li class="child{{ if $currentPage.HasMenuCurrent "index" . }} active{{ end }}"><a href="{{ .URL | relURL }}">{{ .Name }} <i class="fas fa-angle-right"></i></a></li>
         <ul class="sub-menu">
-          {{ range .Children -}}
+          {{- range .Children }}
           <li class="child{{ if $currentPage.HasMenuCurrent "index" . }} active{{ end }}"><a href="{{ .URL | relURL }}">{{ .Name }}</a></li>
-          {{ end -}}
+          {{- end }}
         </ul>
-      </li>
-      {{- else }}
-      <li{{ if $currentPage.HasMenuCurrent "index" . }} class="active"{{ end }}><a href="{{ .URL | relURL }}">{{- .Name -}}</a></li>
-      {{- end -}}
-    {{- end -}}
+        {{- else }}
+        <li class="child{{ if $currentPage.HasMenuCurrent "index" . }} active{{ end }}"><a href="{{ .URL | relURL }}">{{ .Name }}</a></li>
+        {{- end }}
+        {{- end }}
+      </ul>
+    </li>
+    {{- else }}
+    <li{{ if $currentPage.HasMenuCurrent "index" . }} class="active"{{ end }}><a href="{{ .URL | relURL }}">{{- .Name -}}</a></li>
+    {{- end }}
+    {{- end }}
   </ul>
 </nav>
 {{- end }}
