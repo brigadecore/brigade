@@ -180,7 +180,7 @@ apiserver:
     ## locally, you may want to change it to NodePort OR leave it as ClusterIP
     ## and use `kubectl port-forward` to map a port on the local network
     ## interface to the service.
-    type: CLusterIP
+    type: ClusterIP
     ## Host port the service will be mapped to when service type is either
     ## NodePort or LoadBalancer. If not specified, Kubernetes chooses.
     # nodePort:
