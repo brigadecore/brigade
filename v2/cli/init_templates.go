@@ -10,7 +10,7 @@ import (
 // Template project.yaml file for Brigade projects
 // nolint: lll
 var projectTemplate = []byte(`# yaml-language-server: $schema=https://raw.githubusercontent.com/brigadecore/brigade/v2/v2/apiserver/schemas/project.json
-apiVersion: brigade.sh/v2-beta
+apiVersion: brigade.sh/v2
 kind: Project
 metadata:
   id: {{ .ProjectID }}
