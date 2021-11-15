@@ -297,8 +297,8 @@ async function runSuite(event: Event): Promise<void> {
       lintJSJob(event),
       yarnAuditJob(event),
       lintChartJob(event),
-      validateSchemasJob(event),
-      validateExamplesJob(event)
+      validateSchemasJob(event)
+      // validateExamplesJob(event)
     ),
     new ConcurrentGroup( // Build everything
       buildArtemisJob(event),
