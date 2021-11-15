@@ -78,7 +78,7 @@
 					],
 					"additionalProperties": false,
 					"patternProperties": {
-						"^[a-z][a-z\\d-]*[a-z\\d]$": {
+						"^[a-zA-Z][a-zA-Z\\d-]*[a-zA-Z\\d]$": {
 							"$ref": "common.json#/definitions/label"
 						}
 					}
@@ -90,7 +90,7 @@
 					],
 					"additionalProperties": false,
 					"patternProperties": {
-						"^[a-z][a-z\\d-]*[a-z\\d]$": {
+						"^[a-zA-Z][a-zA-Z\\d-]*[a-zA-Z\\d]$": {
 							"$ref": "common.json#/definitions/label"
 						}
 					}
