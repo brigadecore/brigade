@@ -24,7 +24,7 @@ To retrieve the root password for MongoDB, run:
       {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }} \
       -o jsonpath={.data.mongodb-root-password} | base64 --decode
 
-To retrieve the password for the {{ quote .Values.mongodb.auth.database }} database, run:
+To retrieve the password for the {{ quote (index .Values.mongodb.auth.databases 0) }} database, run:
 
   $ kubectl --namespace {{ .Release.Namespace }} get secret \
       {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }} \

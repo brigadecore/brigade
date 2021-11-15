@@ -30,7 +30,7 @@ spec:
           mountPath: /ProgramData/docker/containers
           readOnly: true
         - name: logger-config
-          mountPath: /fluentd/etc
+          mountPath: /fluent/conf
       volumes:
       - name: var-log
         hostPath:
