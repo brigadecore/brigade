@@ -2127,7 +2127,7 @@ artemis:
   tolerations: []
 
   service:
-    type: NodePort
+    type: ClusterIP
 
 externalAMQP:
   address:
