@@ -16,13 +16,11 @@ spec:
         const { events, Job } = require("@brigadecore/brigadier");
 
         events.on("brigade.sh/cli", "exec", async event => {
-          let job = new Job("hello", "mcr.microsoft.com/windows/nanoserver", event);
-          job.primaryContainer.command = ["echo"];
-          job.primaryContainer.arguments = ["Hello from Windows!"];
+          let job = new Job("hello", "mcr.microsoft.com/windows/nanoserver:1809", event);
+          job.primaryContainer.command = ["cmd.exe"];
+          job.primaryContainer.arguments = ["/k", "echo Hello from Windows!"];
           job.host = {
-            nodeSelector: {
-              os: "windows"
-            }
+            os: "windows"
           };
           await job.run();
         });
