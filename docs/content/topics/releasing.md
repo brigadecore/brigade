@@ -31,34 +31,6 @@ version number we intend to assign to the release.
 * `docs/content/intro/quickstart.md`
 * `docs/content/topics/operators/deploy.md`
 
-### If the API Version is Changing
-
-In the rare event that the API version supported by the server is changing,
-which for Brigade 2 should occur only once more, when moving out of beta and
-into GA, additional files must be updated to reflect the new API version.
-
-* `sdk/v2/meta/meta.go`
-* `v2/apiserver/internal/meta/meta.go`
-* `v2/apiserver/internal/meta/testing/meta.go`
-* `v2/apiserver/schemas/common.json`
-* `v2/cli/init_templates.go`
-* `project.yaml` for every example in `examples/`
-
-The `brigadier-polyfill` component (directly) and the `worker` component
-(indirectly) depend on the `@brigadecore/brigade-sdk` NPM package. Generally,
-the head of the `v2` branch will already reference an appropriate version of
-that package. In the rare case that the API version supported by the server is
-changing, however, that package must be updated as part of the release process,
-or else the API client used by the worker component will not agree with the API
-server on what version of the API is in use. In such a scenario, a release of
-`@brigadecore/brigade-sdk` must occur _first_ (in accordance with its own
-release procedures), then the following must be performed:
-
-1. Update `v2/brigadier-polyfill/package.json` to use the latest version of the
-   SDK.
-1. Run `yarn install` from the `v2/brigadier-polyfill/` directory.
-1. Run `yarn install` from the `v2/worker/` directory.
-
 ### Submit a PR
 
 All pre-release changes should be incorporated into a PR opened by a maintainer
@@ -77,8 +49,6 @@ the possibility of accidentally tagging the wrong commit.
 [https://github.com/brigadecore/brigade/releases/new](https://github.com/brigadecore/brigade/releases/new).
 1. Apply the desired semver tag to the head of the `v2` branch.
 1. Use the same value as the title of the release.
-1. For beta releases, release candidates, etc., check the box titled __This is a
-   pre-release__.
 1. Click __Publish release__.
 
 Release automation should take everything from there.
