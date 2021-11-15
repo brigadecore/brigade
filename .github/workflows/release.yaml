@@ -22,6 +22,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push Windows logger agent
-        run: VERSION=${GITHUB_REF:10} make push-logger-windows
+        run: $env:VERSION=$env:GITHUB_REF.substring(10, $env:GITHUB_REF.length-10); make push-logger-windows
       - name: Push Windows git initializer
-        run: VERSION=${GITHUB_REF:10} make push-git-initializer-windows
+        run: $env:VERSION=$env:GITHUB_REF.substring(10, $env:GITHUB_REF.length-10); make push-git-initializer-windows
