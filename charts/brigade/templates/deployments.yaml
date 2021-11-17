@@ -1,0 +1,940 @@
+# Some notes about this file:
+#
+# This file contains templates for several Kubernetes Secrets, Deployments, and
+# StatefulSets. While we would have preferred keeping the template for each of
+# these resources in their own file, there are practical considerations that
+# forced us to use this approach.
+#
+# First, Kubernetes Deployments and StatefulSets do not automatically replace
+# pods when the values of Secrets they consume change. To automate the rolling
+# of Deployments or StatefulSets when Secrets are updated, we have long relied
+# on a trick that involves calculating a checksum of each Secret (the entire
+# manifest) upon which a Deployment or StatefulSet depends and using that
+# checksum as the value of an annotation in the Deployment or StatefulSet's pod
+# template. When a helm upgrade changes the value of a Secret, the value of the
+# checksum also changes. The Deployment or StatefulSet is thus fooled into
+# thinking pod configuration has changed and will proceed to replace the pods it
+# manages.
+#
+# The above strategy is tried and true.
+#
+# The issue we encounter, however, has to do with the fact that to minimize
+# operator hassle, and in the name of being more secure by default, our chart
+# automatically generates random values for things like passwords, tokens, and
+# even self-signed certificates. We also have logic in place that prevents these
+# from being RE-generated on every helm upgrade operation. This is done by
+# looking up existing Secrets and re-using their values. On initial install,
+# however, with no existing Secrets, values are generated. But for each Secret,
+# random values are generated TWICE -- once to render the manifest for the
+# Secret in question and a SECOND time to render the manifest for the Secret in
+# question AND pipe it into the sha256sum function to arrive at a checksum that
+# can be used as the value of an annotation on the Deployment or StatefulSet's
+# pod template. Since different random values would be generated each of the two
+# times a given Secret was rendered, the end result is that the checksum used as
+# an annotation value will NOT actually match the Secret in question. (Re-read
+# this section if you're still confused!!!)
+#
+# On helm upgrade (even assuming no configuration changes have been made by the
+# operator), the whole process repeats. This time, however, because existing
+# Secret values are re-used, the process of rendering a Secret, which was
+# non-deterministic at install time, now IS deterministic. This time around, the
+# checksum used as an annotation value on the Deployment or StatefulSet's pod
+# template WILL match the contents of the Secret, but will differ from the
+# checksum calculated during the initial install. The end result is that even
+# though no Secret value changed, the Deployment or StatefulSet will still roll
+# all its pods -- unnecessarily.
+#
+# To work around all of the above, it is important that upon initial install,
+# randomly generated values are generated only ONCE each. (i.e. Not generated
+# once to render a Secret and a second time to arrive at an incorrect checksum
+# for that Secret.)
+#
+# It would be quite nice if, working within the constraints of Helm, there were
+# a way to initialize global variables of some sort that could then be used
+# throughout the chart's many templates, but alas, no such mechanism exists.
+#
+# The workaround, therefore, requires that we use a single template to define
+# both our Secrets and the Deployments and StatefulSets that consume them. By
+# doing so, we are able to generate random values ONCE at install time and pipe
+# those individual values (rather than entire re-rendered manifests) into
+# sha256sum to arrive at annotation values that will change only when a Secret
+# legitimately has.
+---
+{{- $rootUserPassword := "" }}
+{{- if .Values.apiserver.rootUser.enabled }}
+  {{- $data := (lookup "v1" "Secret" .Release.Namespace (include "brigade.apiserver.fullname" . )).data }}
+  {{- if $data }}
+    # Reuse the existing root password unless the operator specified one
+    {{- $rootUserPassword = default (b64dec (index $data "root-user-password")) .Values.apiserver.rootUser.password }}
+  {{- else }}
+    # Generate a root password unless the operator specified one
+    {{- $rootUserPassword = default (randAlphaNum 20) .Values.apiserver.rootUser.password }}
+  {{- end }}
+{{- end }}
+
+{{- $schedulerAPIToken := "" }}
+{{- $data := (lookup "v1" "Secret" .Release.Namespace (include "brigade.scheduler.fullname" . )).data }}
+{{- if $data }}
+  # Reuse the existing token
+  {{- $schedulerAPIToken = b64dec (index $data "api-token") }}
+{{- else }}
+  # Generate a new token
+  {{- $schedulerAPIToken = randAlphaNum 30 }}
+{{- end }}
+
+{{- $observerAPIToken := "" }}
+{{- $data = (lookup "v1" "Secret" .Release.Namespace (include "brigade.observer.fullname" . )).data }}
+{{- if $data }}
+  # Reuse the existing token
+  {{- $observerAPIToken = b64dec (index $data "api-token") }}
+{{- else }}
+  # Generate a new token
+  {{- $observerAPIToken = randAlphaNum 30 }}
+{{- end }}
+
+{{- $apiServerTLSCert := "" }}
+{{- $apiServerTLSKey := "" }}
+{{- if and .Values.apiserver.tls.enabled }} 
+  {{- if .Values.apiserver.tls.generateSelfSignedCert }}
+    {{- $data := (lookup "v1" "Secret" .Release.Namespace (printf "%s-cert" (include "brigade.apiserver.fullname" . ))).data }}
+    {{- if $data }}
+      # Reuse the existing cert and key
+      {{- $apiServerTLSCert = index $data "tls.crt" }}
+      {{- $apiServerTLSKey = index $data "tls.key" }}
+    {{- else }}
+      # Generate a new cert and key
+      {{- $altName1 := include "brigade.apiserver.fullname" . }}
+      {{- $altName2 := printf "%s.%s" (include "brigade.apiserver.fullname" .) .Release.Namespace }}
+      {{- $altName3 := printf "%s.%s.svc" (include "brigade.apiserver.fullname" .) .Release.Namespace }}
+      {{- $altName4 := printf "%s.%s.svc.cluster" (include "brigade.apiserver.fullname" .) .Release.Namespace }}
+      {{- $altName5 := printf "%s.%s.svc.cluster.local" (include "brigade.apiserver.fullname" .) .Release.Namespace }}
+      {{- $cert := genSelfSignedCert .Values.apiserver.host nil (list .Values.apiserver.host $altName1 $altName2 $altName3 $altName4 $altName5) 3650 }}
+      {{- $apiServerTLSCert = b64enc $cert.Cert }}
+      {{- $apiServerTLSKey = b64enc $cert.Key }}
+    {{- end }}
+  {{- else if .Values.apiserver.tls.cert }}
+    # Use operator supplied cert and key
+    {{- $apiServerTLSCert = .Values.apiserver.tls.cert }}
+    {{- $apiServerTLSKey = .Values.apiserver.tls.key }}
+  {{- end }}
+{{- end }}
+
+{{- $artemisPassword := "" }}
+{{- $data = (lookup "v1" "Secret" .Release.Namespace (include "brigade.artemis.fullname" . )).data }}
+{{- if $data }}
+  # Reuse the existing password unless the operator specified one
+  {{- $artemisPassword = default (b64dec ($data.password)) .Values.artemis.password }}
+{{- else }}
+  # Generate a password unless the operator specified one
+  {{- $artemisPassword = default (randAlphaNum 20) .Values.artemis.password }}
+{{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "brigade.apiserver.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.apiserver.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  {{- if .Values.apiserver.rootUser.enabled }}
+  root-user-password: {{ $rootUserPassword }}
+  {{- end }}
+  {{- if eq .Values.apiserver.thirdPartyAuth.strategy "oidc" }}
+  oidc-client-secret: {{ .Values.apiserver.thirdPartyAuth.oidc.clientSecret }}
+  {{- end }}
+  {{- if eq .Values.apiserver.thirdPartyAuth.strategy "github" }}
+  github-client-secret: {{ .Values.apiserver.thirdPartyAuth.github.clientSecret }}
+  {{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "brigade.scheduler.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.scheduler.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  api-token: {{ $schedulerAPIToken }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "brigade.observer.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.observer.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  api-token: {{ $observerAPIToken }}
+---
+# If these conditions are not true, then the operator needs to supply the cert
+# secret themselves out-of-band.
+{{- if and .Values.apiserver.tls.enabled (or .Values.apiserver.tls.generateSelfSignedCert .Values.apiserver.tls.cert) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "brigade.apiserver.fullname" . }}-cert
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.apiserver.labels" . | nindent 4 }}
+type: Opaque
+data:
+  tls.crt: {{ $apiServerTLSCert }}
+  tls.key: {{ $apiServerTLSKey }}
+{{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "brigade.artemis.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.artemis.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  password: {{ $artemisPassword }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "brigade.apiserver.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.apiserver.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.apiserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "brigade.selectorLabels" . | nindent 6 }}
+      {{- include "brigade.apiserver.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade.selectorLabels" . | nindent 8 }}
+        {{- include "brigade.apiserver.labels" . | nindent 8 }}
+      annotations:
+        {{- if .Values.apiserver.rootUser.enabled }}
+        checksum/root-user-password: {{ sha256sum $rootUserPassword }}
+        {{- end }}
+        {{- if eq .Values.apiserver.thirdPartyAuth.strategy "oidc" }}
+        checksum/oidc-client-secret: {{ sha256sum .Values.apiserver.thirdPartyAuth.oidc.clientSecret }}
+        {{- end }}
+        {{- if eq .Values.apiserver.thirdPartyAuth.strategy "github" }}
+        checksum/github-client-secret: {{ sha256sum .Values.apiserver.thirdPartyAuth.github.clientSecret }}
+        {{- end }}
+        checksum/scheduler-api-token: {{ sha256sum $schedulerAPIToken }}
+        checksum/observer-api-token: {{ sha256sum $observerAPIToken }}
+        # If these conditions are true, then the chart is managing the cert
+        # secret. If these conditions aren't true, then the operator is
+        # supplying the cert secret themselves out-of-band and the chart cannot
+        # detect when it has changed. In such cases, the operator will have to
+        # roll the deployment themselves.
+        {{- if and .Values.apiserver.tls.enabled (or .Values.apiserver.tls.generateSelfSignedCert .Values.apiserver.tls.cert) }}
+        checksum/tls-cert: {{ sha256sum $apiServerTLSCert }}
+        checksum/tls-key: {{ sha256sum $apiServerTLSKey }}
+        {{- end }}
+        checksum/artemis-password: {{ sha256sum $artemisPassword }}
+    spec:
+      serviceAccount: {{ include "brigade.apiserver.fullname" . }}
+      containers:
+      - name: apiserver
+        image: {{ .Values.apiserver.image.repository }}:{{ default .Chart.AppVersion .Values.apiserver.image.tag }}
+        imagePullPolicy: {{ .Values.apiserver.image.pullPolicy }}
+        args:
+        - --logtostderr=true
+        env:
+        - name: BRIGADE_ID
+          value: {{ .Release.Namespace }}.{{ .Release.Name }}
+        - name: API_ADDRESS
+          {{- if .Values.apiserver.tls.enabled }}
+          value: https://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          {{- else }}
+          value: http://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          {{- end }}
+        - name: ROOT_USER_ENABLED
+          value: {{ quote .Values.apiserver.rootUser.enabled }}
+        {{- if .Values.apiserver.rootUser.enabled }}
+        - name: ROOT_USER_SESSION_TTL
+          value: {{ .Values.apiserver.rootUser.sessionTTL }}
+        - name: ROOT_USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: root-user-password
+        {{- end }}
+        - name: THIRD_PARTY_AUTH_STRATEGY
+          value: {{ quote .Values.apiserver.thirdPartyAuth.strategy }}
+        {{- if not (eq .Values.apiserver.thirdPartyAuth.strategy "disabled") }}
+        - name: USER_SESSION_TTL
+          value: {{ .Values.apiserver.thirdPartyAuth.userSessionTTL }}
+        - name: ADMIN_USER_IDS
+          value: {{ join "," .Values.apiserver.thirdPartyAuth.admins }}
+        {{- end }}
+        {{- if eq .Values.apiserver.thirdPartyAuth.strategy "oidc" }}
+        - name: OIDC_PROVIDER_URL
+          value: {{ .Values.apiserver.thirdPartyAuth.oidc.providerURL }}
+        - name: OIDC_CLIENT_ID
+          value: {{ .Values.apiserver.thirdPartyAuth.oidc.clientID }}
+        - name: OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: oidc-client-secret
+        - name: OIDC_REDIRECT_URL_BASE
+          {{- if or (and (not .Values.apiserver.ingress.enabled) .Values.apiserver.tls.enabled) (and .Values.apiserver.ingress.enabled .Values.apiserver.ingress.tls.enabled) }}
+          value: https://{{ .Values.apiserver.host }}
+          {{- else }}
+          value: http://{{ .Values.apiserver.host }}
+          {{- end }}
+        {{- end }}
+        {{- if eq .Values.apiserver.thirdPartyAuth.strategy "github" }}
+        - name: GITHUB_CLIENT_ID
+          value: {{ .Values.apiserver.thirdPartyAuth.github.clientID }}
+        - name: GITHUB_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: github-client-secret
+        - name: GITHUB_ALLOWED_ORGANIZATIONS
+          value: {{ join "," .Values.apiserver.thirdPartyAuth.github.allowedOrganizations }}
+        {{- end }}
+        - name: SCHEDULER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.scheduler.fullname" . }}
+              key: api-token
+        - name: OBSERVER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.observer.fullname" . }}
+              key: api-token
+        - name: TLS_ENABLED
+          value: {{ quote .Values.apiserver.tls.enabled }}
+        {{- if .Values.apiserver.tls.enabled }}
+        - name: TLS_CERT_PATH
+          value: /app/certs/tls.crt
+        - name: TLS_KEY_PATH
+          value: /app/certs/tls.key
+        {{- end }}
+        {{- if eq .Values.mongodb.architecture "replicaset" }}
+        {{- $replicaCount := int .Values.mongodb.replicaCount }}
+        {{- $fullname := include "call-nested" (list . "mongodb" "mongodb.fullname") }}
+        {{- $releaseNamespace := .Release.Namespace }}
+        {{- $port := .Values.mongodb.service.port }}
+        {{- $hostList := list }}
+        {{- range $e, $i := until $replicaCount }}
+        {{- $hostList = append $hostList (printf "%s-%d.%s-headless.%s.svc.cluster.local:%g" $fullname $i $fullname $releaseNamespace $port) }}
+        {{- end }}
+        - name: DATABASE_HOSTS
+          value: {{ join "," $hostList }}
+        - name: DATABASE_REPLICA_SET
+          value: {{ .Values.mongodb.replicaSetName }}
+        {{- else }}
+        - name: DATABASE_HOSTS
+          value: {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.mongodb.service.port }}
+        {{- end }}
+        - name: DATABASE_NAME
+          value: {{ index .Values.mongodb.auth.databases 0 }}
+        - name: DATABASE_USERNAME
+          value: {{ index .Values.mongodb.auth.usernames 0 }}
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }}
+              key: mongodb-passwords
+        - name: AMQP_ADDRESS
+          value: amqp://{{ include "brigade.artemis.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:5672
+        - name: AMQP_USERNAME
+          value: {{ .Values.artemis.username }}
+        - name: AMQP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.artemis.fullname" . }}
+              key: password
+        - name: GIT_INITIALIZER_IMAGE
+          value: {{ .Values.gitInitializer.linux.image.repository }}:{{ default .Chart.AppVersion .Values.gitInitializer.linux.image.tag }}
+        - name: GIT_INITIALIZER_IMAGE_PULL_POLICY
+          value: {{ .Values.gitInitializer.linux.image.pullPolicy }}
+        - name: GIT_INITIALIZER_WINDOWS_IMAGE
+          value: {{ .Values.gitInitializer.windows.image.repository }}:{{ default .Chart.AppVersion .Values.gitInitializer.windows.image.tag }}
+        - name: GIT_INITIALIZER_WINDOWS_IMAGE_PULL_POLICY
+          value: {{ .Values.gitInitializer.windows.image.pullPolicy }}
+        - name: DEFAULT_WORKER_IMAGE
+          value: {{ .Values.worker.image.repository }}:{{ default .Chart.AppVersion .Values.worker.image.tag }}
+        - name: DEFAULT_WORKER_IMAGE_PULL_POLICY
+          value: {{ .Values.worker.image.pullPolicy }}
+        - name: WORKSPACE_STORAGE_CLASS
+          value: {{ .Values.worker.workspaceStorageClass }}
+        {{- if .Values.worker.nodeSelector }}
+        - name: NODE_SELECTOR_KEY
+          value: {{ .Values.worker.nodeSelector.key }}
+        - name: NODE_SELECTOR_VALUE
+          value: {{ .Values.worker.nodeSelector.value }}
+        {{- end }}
+        {{- if .Values.worker.toleration }}
+        - name: TOLERATION_KEY
+          value: {{ .Values.worker.toleration.key }}
+        - name: TOLERATION_VALUE
+          value: {{ .Values.worker.toleration.value }}
+        {{- end }}
+        ports:
+        - name: healthz
+          containerPort: 8080
+        livenessProbe:
+          httpGet:
+            port: healthz
+            path: /healthz
+            {{- if .Values.apiserver.tls.enabled }}
+            scheme: HTTPS
+            {{- end }}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            port: healthz
+            path: /healthz
+            {{- if .Values.apiserver.tls.enabled }}
+            scheme: HTTPS
+            {{- end }}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        startupProbe:
+          httpGet:
+            port: healthz
+            path: /healthz
+            {{- if .Values.apiserver.tls.enabled }}
+            scheme: HTTPS
+            {{- end }}
+          failureThreshold: 30
+          periodSeconds: 10
+        {{- if .Values.apiserver.tls.enabled }}
+        volumeMounts:
+        - name: cert
+          mountPath: /app/certs
+          readOnly: true
+        {{- end }}
+      {{- if .Values.apiserver.tls.enabled }}
+      volumes:
+      - name: cert
+        secret:
+          secretName: {{ include "brigade.apiserver.fullname" . }}-cert
+      {{- end }}
+      {{- with .Values.apiserver.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.apiserver.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "brigade.scheduler.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.scheduler.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "brigade.selectorLabels" . | nindent 6 }}
+      {{- include "brigade.scheduler.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade.selectorLabels" . | nindent 8 }}
+        {{- include "brigade.scheduler.labels" . | nindent 8 }}
+      annotations:
+        checksum/api-token: {{ sha256sum $schedulerAPIToken }}
+        checksum/artemis-password: {{ sha256sum $artemisPassword }}
+    spec:
+      serviceAccount: {{ include "brigade.scheduler.fullname" . }}
+      containers:
+      - name: scheduler
+        image: {{ .Values.scheduler.image.repository }}:{{ default .Chart.AppVersion .Values.scheduler.image.tag }}
+        imagePullPolicy: {{ .Values.scheduler.image.pullPolicy }}
+        args:
+        - --logtostderr=true
+        env:
+        - name: API_ADDRESS
+          {{- if .Values.apiserver.tls.enabled }}
+          value: https://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          {{- else }}
+          value: http://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          {{- end }}
+        - name: API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.scheduler.fullname" . }}
+              key: api-token
+        - name: API_IGNORE_CERT_WARNINGS
+          value: {{ quote (and .Values.apiserver.tls.enabled .Values.scheduler.tls.ignoreCertWarnings) }}
+        - name: AMQP_ADDRESS
+          value: amqp://{{ include "brigade.artemis.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:5672
+        - name: AMQP_USERNAME
+          value: {{ .Values.artemis.username }}
+        - name: AMQP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.artemis.fullname" . }}
+              key: password
+        - name: MAX_CONCURRENT_WORKERS
+          value: {{ quote .Values.scheduler.scheduling.maxConcurrentWorkers }}
+        - name: MAX_CONCURRENT_JOBS
+          value: {{ quote .Values.scheduler.scheduling.maxConcurrentJobs }}
+      {{- with .Values.scheduler.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.scheduler.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "brigade.observer.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.observer.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "brigade.selectorLabels" . | nindent 6 }}
+      {{- include "brigade.observer.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade.selectorLabels" . | nindent 8 }}
+        {{- include "brigade.observer.labels" . | nindent 8 }}
+      annotations:
+        checksum/api-token: {{ sha256sum $observerAPIToken }}
+    spec:
+      serviceAccount: {{ include "brigade.observer.fullname" . }}
+      containers:
+      - name: observer
+        image: {{ .Values.observer.image.repository }}:{{ default .Chart.AppVersion .Values.observer.image.tag }}
+        imagePullPolicy: {{ .Values.observer.image.pullPolicy }}
+        args:
+        - --logtostderr=true
+        env:
+        - name: BRIGADE_ID
+          value: {{ .Release.Namespace }}.{{ .Release.Name }}
+        - name: API_ADDRESS
+          {{- if .Values.apiserver.tls.enabled }}
+          value: https://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          {{- else }}
+          value: http://{{ include "brigade.apiserver.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+          {{- end }}
+        - name: API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.observer.fullname" . }}
+              key: api-token
+        - name: API_IGNORE_CERT_WARNINGS
+          value: {{ quote (and .Values.apiserver.tls.enabled .Values.observer.tls.ignoreCertWarnings) }}
+        {{- if .Values.observer.config }}
+        - name: MAX_WORKER_LIFETIME
+          value: {{ .Values.observer.config.maxWorkerLifetime }}
+        - name: MAX_JOB_LIFETIME
+          value: {{ .Values.observer.config.maxJobLifetime }}
+        - name: DELAY_BEFORE_CLEANUP
+          value: {{ .Values.observer.config.delayBeforeCleanup }}
+        {{- end }}
+      {{- with .Values.observer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.observer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+{{- if not .Values.artemis.ha.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "brigade.artemis.fullname" . }}
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.artemis.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "brigade.artemis.fullname" . }}-internal
+  replicas: {{ .Values.artemis.replicas }}
+  updateStrategy:
+    type: OnDelete
+  selector:
+    matchLabels:
+      {{- include "brigade.selectorLabels" . | nindent 6 }}
+      {{- include "brigade.artemis.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade.selectorLabels" . | nindent 8 }}
+        {{- include "brigade.artemis.labels" . | nindent 8 }}
+      annotations:
+        checksum/password: {{ sha256sum $artemisPassword }} 
+        checksum/common-config: {{ include (print $.Template.BasePath "/artemis/common-config.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/artemis/config.yaml") . | sha256sum }}
+    spec:
+      initContainers:
+      - name: config
+        image: {{ .Values.artemis.image.repository }}:{{ default .Chart.AppVersion .Values.artemis.image.tag }}
+        imagePullPolicy: {{ .Values.artemis.image.pullPolicy }}
+        command: ["/bin/sh", "/opt/config/configure-node.sh"]
+        volumeMounts:
+          - name: common-config
+            mountPath: /opt/common-config
+          - name: config
+            mountPath: /opt/config
+          - name: config-overrides
+            mountPath: /var/lib/artemis/etc-override
+      containers:
+      - name: artemis
+        image: {{ .Values.artemis.image.repository }}:{{ default .Chart.AppVersion .Values.artemis.image.tag }}
+        imagePullPolicy: {{ .Values.artemis.image.pullPolicy }}
+        resources:
+          {{- toYaml .Values.artemis.resources | indent 10 }}
+        env:
+        - name: ARTEMIS_USERNAME
+          value: {{ .Values.artemis.username }}
+        - name: ARTEMIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.artemis.fullname" . }}
+              key: password
+        ports:
+        - name: http
+          containerPort: 8161
+        - name: core
+          containerPort: 61616
+        - name: amqp
+          containerPort: 5672
+        livenessProbe:
+          tcpSocket:
+            port: core
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: core
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        startupProbe:
+          tcpSocket:
+            port: core
+          failureThreshold: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: config-overrides
+          mountPath: /var/lib/artemis/etc-override
+        - name: data
+          mountPath: /var/lib/artemis/data
+      volumes:
+      - name: config-overrides
+        emptyDir: {}
+      - name: common-config
+        secret:
+          secretName: {{ include "brigade.artemis.fullname" . }}-common-config
+      - name: config
+        configMap:
+          name: {{ include "brigade.artemis.fullname" . }}
+      {{- if not .Values.artemis.persistence.enabled }}
+      - name: data
+        emptyDir: {}
+      {{- end }}
+      {{- if .Values.artemis.persistence.enabled }}
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsNonRoot: true
+      {{- end }}
+  {{- if .Values.artemis.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      {{- if .Values.artemis.persistence.storageClass }}
+      storageClassName: {{ .Values.artemis.persistence.storageClass }}
+      {{- end }}
+      accessModes: [ {{ .Values.artemis.persistence.accessMode }} ]
+      resources:
+        requests:
+          storage: {{ .Values.artemis.persistence.size }}
+  {{- end}}
+{{- end }}
+---
+{{- if .Values.artemis.ha.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "brigade.artemis.fullname" . }}-primary
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.artemis.primary.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "brigade.artemis.fullname" . }}-primary
+  replicas: {{ .Values.artemis.replicas }}
+  updateStrategy:
+    type: OnDelete
+  selector:
+    matchLabels:
+      {{- include "brigade.selectorLabels" . | nindent 6 }}
+      {{- include "brigade.artemis.primary.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade.selectorLabels" . | nindent 8 }}
+        {{- include "brigade.artemis.primary.labels" . | nindent 8 }}
+      annotations:
+        checksum/password: {{ sha256sum $artemisPassword }} 
+        checksum/common-config: {{ include (print $.Template.BasePath "/artemis/common-config.yaml") . | sha256sum }}
+        checksum/primary-config: {{ include (print $.Template.BasePath "/artemis/primary-config.yaml") . | sha256sum }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          {{- if eq .Values.artemis.ha.antiAffinity "hard" }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchLabels:
+                {{- include "brigade.selectorLabels" . | nindent 16 }}
+                {{- include "brigade.artemis.secondary.labels" . | nindent 16 }}
+          {{- else if eq .Values.artemis.ha.antiAffinity "soft" }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 5
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  {{- include "brigade.selectorLabels" . | nindent 18 }}
+                  {{- include "brigade.artemis.secondary.labels" . | nindent 18 }}
+          {{- end }}
+      initContainers:
+      - name: config
+        image: {{ .Values.artemis.image.repository }}:{{ default .Chart.AppVersion .Values.artemis.image.tag }}
+        imagePullPolicy: {{ .Values.artemis.image.pullPolicy }}
+        command: ["/bin/sh", "/opt/primary-config/configure-primary-node.sh"]
+        volumeMounts:
+          - name: common-config
+            mountPath: /opt/common-config
+          - name: primary-config
+            mountPath: /opt/primary-config
+          - name: config-overrides
+            mountPath: /var/lib/artemis/etc-override
+      containers:
+      - name: artemis
+        image: {{ .Values.artemis.image.repository }}:{{ default .Chart.AppVersion .Values.artemis.image.tag }}
+        imagePullPolicy: {{ .Values.artemis.image.pullPolicy }}
+        resources:
+          {{- toYaml .Values.artemis.resources | indent 10 }}
+        env:
+        - name: ARTEMIS_USERNAME
+          value: {{ .Values.artemis.username }}
+        - name: ARTEMIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.artemis.fullname" . }}
+              key: password
+        ports:
+        - name: http
+          containerPort: 8161
+        - name: core
+          containerPort: 61616
+        - name: amqp
+          containerPort: 5672
+        livenessProbe:
+          tcpSocket:
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: core
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        startupProbe:
+          tcpSocket:
+            port: core
+          failureThreshold: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: config-overrides
+          mountPath: /var/lib/artemis/etc-override
+        - name: data
+          mountPath: /var/lib/artemis/data
+      volumes:
+      - name: config-overrides
+        emptyDir: {}
+      - name: common-config
+        secret:
+          secretName: {{ include "brigade.artemis.fullname" . }}-common-config
+      - name: primary-config
+        configMap:
+          name: {{ include "brigade.artemis.fullname" . }}-primary
+      {{- if not .Values.artemis.persistence.enabled }}
+      - name: data
+        emptyDir: {}
+      {{- end }}
+      {{- if .Values.artemis.persistence.enabled }}
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsNonRoot: true
+      {{- end }}
+  {{- if .Values.artemis.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      {{- if .Values.artemis.persistence.storageClass }}
+      storageClassName: {{ .Values.artemis.persistence.storageClass }}
+      {{- end }}
+      accessModes: [ {{ .Values.artemis.persistence.accessMode }} ]
+      resources:
+        requests:
+          storage: {{ .Values.artemis.persistence.size }}
+  {{- end }}
+{{- end }}
+---
+{{- if .Values.artemis.ha.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "brigade.artemis.fullname" . }}-secondary
+  labels:
+    {{- include "brigade.labels" . | nindent 4 }}
+    {{- include "brigade.artemis.secondary.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "brigade.artemis.fullname" . }}-secondary
+  replicas: {{ .Values.artemis.replicas }}
+  updateStrategy:
+    type: OnDelete
+  selector:
+    matchLabels:
+      {{- include "brigade.selectorLabels" . | nindent 6 }}
+      {{- include "brigade.artemis.secondary.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade.selectorLabels" . | nindent 8 }}
+        {{- include "brigade.artemis.secondary.labels" . | nindent 8 }}
+      annotations:
+        checksum/password: {{ sha256sum $artemisPassword }} 
+        checksum/common-config: {{ include (print $.Template.BasePath "/artemis/common-config.yaml") . | sha256sum }}
+        checksum/secondary-config: {{ include (print $.Template.BasePath "/artemis/secondary-config.yaml") . | sha256sum }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          {{- if eq .Values.artemis.ha.antiAffinity "hard" }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchLabels:
+                {{- include "brigade.selectorLabels" . | nindent 16 }}
+                {{- include "brigade.artemis.primary.labels" . | nindent 16 }}
+          {{- else if eq .Values.artemis.ha.antiAffinity "soft" }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 5
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  {{- include "brigade.selectorLabels" . | nindent 18 }}
+                  {{- include "brigade.artemis.primary.labels" . | nindent 18 }}
+          {{- end }}
+      initContainers:
+      - name: config
+        image: {{ .Values.artemis.image.repository }}:{{ default .Chart.AppVersion .Values.artemis.image.tag }}
+        imagePullPolicy: {{ .Values.artemis.image.pullPolicy }}
+        command: ["/bin/sh", "/opt/secondary-config/configure-secondary-node.sh"]
+        volumeMounts:
+          - name: common-config
+            mountPath: /opt/common-config
+          - name: secondary-config
+            mountPath: /opt/secondary-config
+          - name: config-overrides
+            mountPath: /var/lib/artemis/etc-override
+      containers:
+      - name: artemis
+        image: {{ .Values.artemis.image.repository }}:{{ default .Chart.AppVersion .Values.artemis.image.tag }}
+        imagePullPolicy: {{ .Values.artemis.image.pullPolicy }}
+        resources:
+          {{- toYaml .Values.artemis.resources | indent 10 }}
+        env:
+        - name: ARTEMIS_USERNAME
+          value: {{ .Values.artemis.username }}
+        - name: ARTEMIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.artemis.fullname" . }}
+              key: password
+        ports:
+        - name: http
+          containerPort: 8161
+        - name: core
+          containerPort: 61616
+        - name: amqp
+          containerPort: 5672
+        livenessProbe:
+          tcpSocket:
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: core
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        startupProbe:
+          tcpSocket:
+            port: core
+          failureThreshold: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: config-overrides
+          mountPath: /var/lib/artemis/etc-override
+        - name: data
+          mountPath: /var/lib/artemis/data
+      volumes:
+      - name: config-overrides
+        emptyDir: {}
+      - name: common-config
+        secret:
+          secretName: {{ include "brigade.artemis.fullname" . }}-common-config
+      - name: secondary-config
+        configMap:
+          name: {{ include "brigade.artemis.fullname" . }}-secondary
+      {{- if not .Values.artemis.persistence.enabled }}
+      - name: data
+        emptyDir: {}
+      {{- end }}
+      {{- if .Values.artemis.persistence.enabled }}
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsNonRoot: true
+      {{- end }}
+  {{- if .Values.artemis.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      {{- if .Values.artemis.persistence.storageClass }}
+      storageClassName: {{ .Values.artemis.persistence.storageClass }}
+      {{- end }}
+      accessModes: [ {{ .Values.artemis.persistence.accessMode }} ]
+      resources:
+        requests:
+          storage: {{ .Values.artemis.persistence.size }}
+  {{- end}}
+{{- end }}
