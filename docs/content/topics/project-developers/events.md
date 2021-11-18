@@ -147,7 +147,7 @@ Here we'll look at a sample project and dig into its `eventSubscriptions`
 section:
 
 ```yaml
-apiVersion: brigade.sh/v2-beta
+apiVersion: brigade.sh/v2
 kind: Project
 metadata:
   id: hello-world
@@ -194,7 +194,7 @@ section of its Worker spec. In the script, we'll look at the event handler for
 inbound events of source `brigade.sh/cli` and type `exec`:
 
 ```yaml
-apiVersion: brigade.sh/v2-beta
+apiVersion: brigade.sh/v2
 kind: Project
 metadata:
   id: hello-world
