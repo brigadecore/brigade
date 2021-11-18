@@ -5,17 +5,11 @@
 
 <img width="100" align="left" src="logo.png">
 
-Brigade 2 is currently in a _beta_ state and remains under active development,
-but that effort is primarily oriented around improving the platform's stability.
-Breaking changes to APIs are not anticipated.
-
-<br clear="left"/>
-
-## Introducing Brigade 2
-
 Brigade 2 has been lovingly re-engineered from the ground up. We believe we've
 remained faithful to the original vision of Brigade 1.x, and as such, much
 general knowledge of Brigade 1.x can be carried over.
+
+<br clear="left"/>
 
 _But we've also learned a lot from Brigade 1.x._ Brigade 2 has been designed,
 _explicitly_ to reduce the degree of Kubernetes knowledge required for success.
@@ -37,8 +31,7 @@ is well-polished and we refer users wishing to test drive Brigade 2 to
 ## The Brigade 2 Ecosystem
 
 Brigade 2's all new API lowers the bar to creating all manner of peripherals--
-tooling, event gateways, and more. Even though we're still in beta, some great
-integrations already exist!
+tooling, event gateways, and more.
 
 ### Gateways
 

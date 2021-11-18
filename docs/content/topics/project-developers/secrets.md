@@ -197,7 +197,7 @@ named `privateregistrysecret` exists on the substrate in the namespace for
 project `my-project`, it can be added to the project definition like so:
 
 ```yaml
-apiVersion: brigade.sh/v2-beta
+apiVersion: brigade.sh/v2
 kind: Project
 metadata:
   id: my-project

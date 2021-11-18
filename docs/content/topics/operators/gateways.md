@@ -62,7 +62,7 @@ worker status. The primary fields that can be set by a client (a gateway in
 this case) are `projectID`, `source` and `type`.
 
 ```yaml
-apiVersion: brigade.sh/v2-beta
+apiVersion: brigade.sh/v2
 kind: Event
 metadata:
   created: "2021-08-11T22:22:41.366Z"
@@ -80,7 +80,7 @@ worker:
     useWorkspace: false
     workspaceSize: 10Gi
   status:
-    apiVersion: brigade.sh/v2-beta
+    apiVersion: brigade.sh/v2
     ended: "2021-08-11T22:22:49Z"
     kind: WorkerStatus
     phase: SUCCEEDED
@@ -357,7 +357,7 @@ Here's the project definition file.  Note the `spec.eventSubscriptions` section
 and the default `brigade.ts` script which contains our event handler:
 
 ```yaml
-apiVersion: brigade.sh/v2-beta
+apiVersion: brigade.sh/v2
 kind: Project
 metadata:
   id: example-gateway-project

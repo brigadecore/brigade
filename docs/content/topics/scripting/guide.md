@@ -472,7 +472,7 @@ Earlier we talked about how a project may have an associated Git repository.
 Let's look at one such project now.
 
 ```yaml
-apiVersion: brigade.sh/v2-beta
+apiVersion: brigade.sh/v2
 kind: Project
 metadata:
   id: git

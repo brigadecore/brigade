@@ -1,5 +1,5 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/brigadecore/brigade/v2/v2/apiserver/schemas/project.json
-apiVersion: brigade.sh/v2-beta
+# yaml-language-server: $schema=https://schemas.brigade.sh/schemas-v2/project.json
+apiVersion: brigade.sh/v2
 kind: Project
 metadata:
   id: first-job

@@ -58,7 +58,7 @@ As an example, let's look at a project definition expressed in YAML and break
 it down into its main sections:
 
 ```yaml
-apiVersion: brigade.sh/v2-beta
+apiVersion: brigade.sh/v2
 kind: Project
 metadata:
   id: hello-world
@@ -219,7 +219,7 @@ note the `kubernetes.namespace` value.  For example:
 ```console
 $ brig project get --id hello-world --output yaml
 
-apiVersion: brigade.sh/v2-beta
+apiVersion: brigade.sh/v2
 description: The simplest possible example
 kind: Project
 kubernetes:

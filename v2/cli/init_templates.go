@@ -9,7 +9,7 @@ import (
 
 // Template project.yaml file for Brigade projects
 // nolint: lll
-var projectTemplate = []byte(`# yaml-language-server: $schema=https://raw.githubusercontent.com/brigadecore/brigade/v2/v2/apiserver/schemas/project.json
+var projectTemplate = []byte(`# yaml-language-server: $schema=https://schemas.brigade.sh/schemas-v2/project.json
 apiVersion: brigade.sh/v2
 kind: Project
 metadata:
@@ -136,7 +136,7 @@ var secretsTemplate = []byte(`## This file was created by brig init.
 var packageTemplate = []byte(`{
   "name": "{{ .ProjectID }}",
   "dependencies": {
-    "@brigadecore/brigadier": "^2.0.0-beta.4"
+    "@brigadecore/brigadier": "^2.0.0-rc.1"
   }
 }
 `)
