@@ -1,5 +1,5 @@
-github.com/brigadecore/brigade/sdk/v2 v2.0.0-beta.4 h1:FZdBDwCUxDFtYW9CeTlH++oSFL7QjmiJnc58a9/PmFc=
-github.com/brigadecore/brigade/sdk/v2 v2.0.0-beta.4/go.mod h1:rB3y/pIheORX5AHbxaSAw5Xr/U6bUAUtSLkgJcbOHIY=
+github.com/brigadecore/brigade/sdk/v2 v2.0.0-rc.1 h1:VVGS/GOA1jSmEXTIOk54rf9GsqCxwosoulrA1OwC2xg=
+github.com/brigadecore/brigade/sdk/v2 v2.0.0-rc.1/go.mod h1:rB3y/pIheORX5AHbxaSAw5Xr/U6bUAUtSLkgJcbOHIY=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
