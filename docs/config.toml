@@ -195,6 +195,11 @@ relativeURLs = "true"
     weight = 2
 
 [[menu.main]]
+    name = "Blog"
+    url = "https://blog.brigade.sh"
+    weight = 3
+
+[[menu.main]]
     name = "Github"
     url = "https://github.com/brigadecore/brigade"
-    weight = 3
+    weight = 4
