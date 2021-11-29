@@ -102,26 +102,23 @@ function runSuite(e, p) {
   // throw it so the whole build will fail.
   //
   // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all#Promise.all_fail-fast_behaviour
-  //
-  // Note: as provided language string is used in job naming, it must consist
-  // of lowercase letters and hyphens only (per Brigade/K8s restrictions)
   return Promise.all([
     runTests(e, p, goTest).catch((err) => { return err }),
     runTests(e, p, jsTest).catch((err) => { return err }),
-    runTests(e, p, yarnAudit).catch((err) => { return err }),
-    runTests(e, p, e2e).catch((err) => { return err }),
-  ])
-    .then((values) => {
-      values.forEach((value) => {
-        if (value instanceof Error) throw value;
-      });
-    })
-    .then(() => {
-      if (e.revision.ref == "master") {
-        // This builds and publishes "edge" images
-        buildAndPublishImages(p, "").run();
-      }
+    // Swallow audit errors because we want to treat these as informational only
+    // and do not want them to interfere with progressing further.
+    runTests(e, p, yarnAudit).catch(() => { return null }),
+    runTests(e, p, e2e).catch((err) => { return err })
+  ]).then((values) => {
+    values.forEach((value) => {
+      if (value instanceof Error) throw value;
     });
+  }).then(() => {
+    if (e.revision.ref == "master") {
+      // This builds and publishes "edge" images
+      buildAndPublishImages(p, "").run();
+    }
+  });
 }
 
 // runCheck is the default function invoked on a check_run:* event
@@ -133,7 +130,7 @@ function runCheck(e, p) {
   payload = JSON.parse(e.payload);
 
   // Extract the check name
-  name = payload.body.check_run.name;
+  let name = payload.body.check_run.name;
 
   // Determine which check to run
   switch (name) {
@@ -193,12 +190,24 @@ events.on("e2e", () => {
 })
 
 events.on("exec", (e, p) => {
-  return Group.runAll([
-    goTest(),
-    jsTest(),
-    yarnAudit(),
-    e2e()
-  ]);
+  // Important: To prevent Promise.all() from failing fast, we catch and
+  // return all errors. This ensures Promise.all() always resolves. We then
+  // iterate over all resolved values looking for errors. If we find one, we
+  // throw it so the whole build will fail.
+  //
+  // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all#Promise.all_fail-fast_behaviour
+  Promise.all([
+    goTest().run().catch((err) => { return err }),
+    jsTest().run().catch((err) => { return err }),
+    // Swallow audit errors because we want to treat these as informational only
+    // and do not want them to interfere with progressing further.
+    yarnAudit().run().catch(() => { return null }),
+    e2e().run().catch((err) => { return err })
+  ]).then((values) => {
+    values.forEach((value) => {
+      if (value instanceof Error) throw value;
+    });
+  });
 });
 
 events.on("push", (e, p) => {
@@ -207,13 +216,24 @@ events.on("push", (e, p) => {
     // This is an official release with a semantically versioned tag
     let matchTokens = Array.from(matchStr);
     let version = matchTokens[1];
-    return Group.runAll([
-      goTest(),
-      jsTest(),
-      yarnAudit(),
-      e2e()
-    ])
-    .then(() => {
+    // Important: To prevent Promise.all() from failing fast, we catch and
+    // return all errors. This ensures Promise.all() always resolves. We then
+    // iterate over all resolved values looking for errors. If we find one, we
+    // throw it so the whole build will fail.
+    //
+    // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all#Promise.all_fail-fast_behaviour
+    Promise.all([
+      goTest().run().catch((err) => { return err }),
+      jsTest().run().catch((err) => { return err }),
+      // Swallow audit errors because we want to treat these as informational only
+      // and do not want them to interfere with progressing further.
+      yarnAudit().run().catch(() => { return null }),
+      e2e().run().catch((err) => { return err })
+    ]).then((values) => {
+      values.forEach((value) => {
+        if (value instanceof Error) throw value;
+      });
+    }).then(() => {
       Group.runEach([
         buildAndPublishImages(p, version),
         buildBrig(version),
