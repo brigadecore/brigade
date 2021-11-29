@@ -25,7 +25,7 @@ CLIENT_ARCH ?= $(shell go env GOARCH)
 ifneq ($(SKIP_DOCKER),true)
 	PROJECT_ROOT := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 	GO_DEV_IMAGE := brigadecore/go-tools:v0.1.0
-	JS_DEV_IMAGE := node:12.3.1-stretch
+	JS_DEV_IMAGE := node:12.22.7-bullseye
 
 	GO_DOCKER_CMD := docker run \
 		-it \

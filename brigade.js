@@ -14,7 +14,7 @@ const gopath = "/go";
 const localPath = gopath + `/src/github.com/${projectOrg}/${projectName}`;
 
 // JS build defaults
-const jsImg = "node:12.3.1-stretch";
+const jsImg = "node:12.22.7-bullseye";
 
 const releaseTagRegex = /^refs\/tags\/(v[0-9]+(?:\.[0-9]+)*(?:\-.+)?)$/;
 

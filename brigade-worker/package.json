@@ -27,21 +27,21 @@
     "@types/sinon": "^7.0.11",
     "@types/ws": "6.0.1",
     "chai": "^4.1.0",
-    "mocha": "^6.2.3",
+    "mocha": "^9.1.3",
     "mock-require": "^3.0.3",
     "prettier": "^1.9.1",
     "rimraf": "^2.6.2",
     "sinon": "^7.3.1",
     "ts-node": "^8.0.2",
-    "typescript": "^3.2.2"
+    "typescript": "^3.8.3"
   },
   "dependencies": {
-    "@brigadecore/brigadier": "^0.9.0",
+    "@brigadecore/brigadier": "^1.5.0",
     "@kubernetes/client-node": "^0.10.1",
     "byline": "^5.0.0",
     "child-process-promise": "^2.2.1",
     "module-alias": "^2.2.0",
-    "pretty-error": "^2.1.1",
+    "pretty-error": "^4.0.0",
     "ulid": "^0.2.0"
   },
   "resolutions": {
