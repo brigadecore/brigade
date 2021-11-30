@@ -1,42 +1,38 @@
-# Brigade 2: Event-based Scripting for Kubernetes
+# Brigade: Event-based Scripting for Kubernetes
 
-![build](https://badgr.brigade2.io/v1/github/checks/brigadecore/brigade/badge.svg?appID=99005&branch=v2)
+![build](https://badgr.brigade2.io/v1/github/checks/brigadecore/brigade/badge.svg?appID=99005&branch=main)
 [![slack](https://img.shields.io/badge/slack-brigade-brightgreen.svg?logo=slack)](https://kubernetes.slack.com/messages/C87MF1RFD)
 
 <img width="100" align="left" src="logo.png">
 
-Brigade 2 has been lovingly re-engineered from the ground up. We believe we've
-remained faithful to the original vision of Brigade 1.x, and as such, much
-general knowledge of Brigade 1.x can be carried over.
+Brigade is a full-featured, event-driven scripting platform built on top of
+Kubernetes. It integrates with many different event sources, more are always
+being added, and it's easy to create your own if you need something specific.
+And the best part -- Kubernetes is well-abstracted so even team members without
+extensive Kubernetes experience or without direct access to a cluster can be
+productive.
 
 <br clear="left"/>
 
-_But we've also learned a lot from Brigade 1.x._ Brigade 2 has been designed,
-_explicitly_ to reduce the degree of Kubernetes knowledge required for success.
-While Brigade 1.x was hailed as "event driven scripting for Kubernetes," Brigade
-2 is "event driven scripting (for Kubernetes)." Moreover, great care has been
-taken to improve security and scalability, and with our all new API and
-complementary SDKs, we're also lowering barriers to integration.
-
-We hope you'll enjoy this product refresh as much as we are.
+> ⚠️ You are viewing docs and code for Brigade 2. If you are looking for legacy
+> Brigade 1.x documentation and code, visit
+> [the v1 branch](https://github.com/brigadecore/brigade/tree/v1) 
 
 ## Getting Started
 
-While comprehensive documentation remains a work in progress, our [quickstart]
-is well-polished and we refer users wishing to test drive Brigade 2 to
-[that documentation][quickstart].
+Ready to get started? Check out our
+[QuickStart](https://docs.brigade.sh/intro/quickstart/) for comprehensive
+instructions.
 
-[quickstart]: https://v2--brigade-docs.netlify.app/intro/quickstart/
+## The Brigade Ecosystem
 
-## The Brigade 2 Ecosystem
-
-Brigade 2's all new API lowers the bar to creating all manner of peripherals--
-tooling, event gateways, and more.
+Brigade's API makes it easy to create all manner of peripherals-- tooling, event
+gateways, and more.
 
 ### Gateways
 
-Gateways receive events from upstream systems (the "outside world") and convert
-them to Brigade events that are emitted into Brigade's event bus.
+Our event gateways receive events from upstream systems (the "outside world")
+and convert them to Brigade events that are emitted into Brigade's event bus.
 
 * [ACR (Azure Container Registry) Gateway](https://github.com/brigadecore/brigade-acr-gateway)
 * [Bitbucket Gateway](https://github.com/brigadecore/brigade-bitbucket-gateway/tree/v2)
@@ -45,22 +41,16 @@ them to Brigade events that are emitted into Brigade's event bus.
 * [GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway)
 * [Slack Gateway](https://github.com/brigadecore/brigade-slack-gateway)
 
-The [Brigade GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway),
-in particular, is already utilized extensively by the Brigade team in
-combination with Brigade 2 to implement the project's own CI/CD. This is our
-favorite gateway at the moment because it also reports event statuses upstream
-to GitHub, making it a true showcase for what can be done with gateways.
-
 ### Monitoring
 
 [Brigade Metrics](https://github.com/brigadecore/brigade-metrics) is a great way
-to obtain operational insights into a Brigade 2 installation.
+to obtain operational insights into a Brigade installation.
 
 ### Chaos Engineering
 
 The Brigade team is utilizing
 [Brigade Noisy Neighbor](https://github.com/brigadecore/brigade-noisy-neighbor)
-to keep our own internal Brigade 2 installation under a steady load. We hope the
+to keep our own internal Brigade installation under a steady load. We hope the
 larger event volumes than what we generate on our own will help us to identify
 and resolve bugs sooner.
 
@@ -68,9 +58,8 @@ and resolve bugs sooner.
 
 Use any of these to develop your own integrations!
 
-* [Brigade SDK for Go](https://github.com/brigadecore/brigade/tree/v2/sdk) (used by Brigade itself)
+* [Brigade SDK for Go](https://github.com/brigadecore/brigade/tree/main/sdk) (used by Brigade itself)
 * [Brigade SDK for JavaScript](https://github.com/krancour/brigade-sdk-for-js) (and TypeScript)]
-* [Brigade SDK for Rust](https://github.com/brigadecore/brigade-sdk-for-rust) (still a work-in-progress)
 
 ## Contributing
 

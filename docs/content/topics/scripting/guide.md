@@ -46,7 +46,7 @@ Let's begin!
 [`package.json`]: /topics/scripting/dependencies
 [secrets]: /topics/project-developers/secrets
 [project definition]: /topics/project-developers/projects#project-definition-files
-[example projects]: https://github.com/brigadecore/brigade/tree/v2/examples
+[example projects]: https://github.com/brigadecore/brigade/tree/main/examples
 [brig]: /topics/project-developers/brig
 
 ## A Basic Brigade Script
@@ -57,7 +57,7 @@ log:
 ```javascript
 console.log("Hello, World!");
 ```
-[01-hello-world](https://github.com/brigadecore/brigade/tree/v2/examples/01-hello-world)
+[01-hello-world](https://github.com/brigadecore/brigade/tree/main/examples/01-hello-world)
 
 First let's create the example project:
 
@@ -114,7 +114,7 @@ events.on("brigade.sh/cli", "exec", async event => {
 
 events.process();
 ```
-[02-first-event](https://github.com/brigadecore/brigade/tree/v2/examples/02-first-event)
+[02-first-event](https://github.com/brigadecore/brigade/tree/main/examples/02-first-event)
 
 There are a few things to note about this script:
 
@@ -308,7 +308,7 @@ events.on("brigade.sh/cli", "exec", async event => {
 
 events.process();
 ```
-[03-first-job](https://github.com/brigadecore/brigade/tree/v2/examples/03-first-job)
+[03-first-job](https://github.com/brigadecore/brigade/tree/main/examples/03-first-job)
 
 A command can be anything that is supported by the job's image. In the example
 above, our command invokes the `echo` binary with the arguments supplied.
@@ -371,7 +371,7 @@ events.on("brigade.sh/cli", "exec", async event => {
 
 events.process();
 ```
-[04-simple-pipeline](https://github.com/brigadecore/brigade/tree/v2/examples/04-simple-pipeline)
+[04-simple-pipeline](https://github.com/brigadecore/brigade/tree/main/examples/04-simple-pipeline)
 
 In this example we create two jobs (`my-first-job` and `my-second-job`). Each
 starts a Debian container and prints a message, then exits. On account of the
@@ -430,7 +430,7 @@ events.on("brigade.sh/cli", "exec", async event => {
 
 events.process();
 ```
-[05-groups](https://github.com/brigadecore/brigade/tree/v2/examples/05-groups)
+[05-groups](https://github.com/brigadecore/brigade/tree/main/examples/05-groups)
 
 There are two things to notice in the example above:
 
@@ -487,10 +487,10 @@ spec:
     configFilesDirectory: examples/06-git/.brigade
     git:
       cloneURL: https://github.com/brigadecore/brigade.git
-      ref: refs/heads/v2
+      ref: refs/heads/main
 
 ```
-[06-git](https://github.com/brigadecore/brigade/tree/v2/examples/06-git)
+[06-git](https://github.com/brigadecore/brigade/tree/main/examples/06-git)
 
 Notice that there is no embedded script in this project definition. Rather, the
 project specifies where the Brigade config file directory
@@ -616,7 +616,7 @@ events.on("brigade.sh/cli", "exec", async event => {
 
 events.process();
 ```
-[07-first-payload](https://github.com/brigadecore/brigade/tree/v2/examples/07-first-payload)
+[07-first-payload](https://github.com/brigadecore/brigade/tree/main/examples/07-first-payload)
 
 When we create an event with a payload for the script above, we'll see output
 like this:
@@ -703,7 +703,7 @@ events.on("brigade.sh/cli", "exec", async event => {
 
 events.process();
 ```
-[08-shared-workspace](https://github.com/brigadecore/brigade/tree/v2/examples/08-shared-workspace)
+[08-shared-workspace](https://github.com/brigadecore/brigade/tree/main/examples/08-shared-workspace)
 
 ```console
 $ brig event create --project shared-workspace
@@ -915,4 +915,4 @@ for further reading:
 Happy Scripting!
 
 [Advanced Scripting Guide]: /topics/scripting/advanced
-[Examples]: https://github.com/brigadecore/brigade/tree/v2/examples
+[Examples]: https://github.com/brigadecore/brigade/tree/main/examples

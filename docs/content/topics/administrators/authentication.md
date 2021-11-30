@@ -94,7 +94,7 @@ permissions for users who have already logged in for the first time must be
 done via the brig CLI directly rather than re-deploying with differing
 configuration.
 
-[values.yaml]: https://github.com/brigadecore/brigade/blob/v2/charts/brigade/values.yaml
+[values.yaml]: https://github.com/brigadecore/brigade/blob/main/charts/brigade/values.yaml
 
 ### GitHub OAuth Provider
 

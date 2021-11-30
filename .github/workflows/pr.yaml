@@ -1,9 +1,9 @@
-name: Brigade v2 PR
+name: Brigade PR
 
 on:
   pull_request:
     branches:
-      - v2
+      - main
 
 jobs:
   build:
@@ -11,7 +11,7 @@ jobs:
     env:
       DOCKER_ORG: brigadecore
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@main
       - name: Build Windows logger agent
         run: |
           make build-logger-windows

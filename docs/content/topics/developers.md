@@ -53,14 +53,6 @@ $ git clone git@github.com:brigadecore/brigade.git
 $ git clone https://github.com/brigadecore/brigade.git
 ```
 
-**Note**: this leaves you at the tip of **master** in the repository. As of
-writing, active development on Brigade v2 is happening on the `v2` branch. To
-switch branches, run the following command:
-
-```console
-$ git checkout v2
-```
-
 After cloning the project locally, you should run this command to
 [configure the remote](https://help.github.com/articles/configuring-a-remote-for-a-fork/): 
 

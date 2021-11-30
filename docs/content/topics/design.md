@@ -199,5 +199,4 @@ required to position the project for greater success. Most insights led back to
 a fundamental need to better abstract Brigade users from the underlying
 complexities of Kubernetes. A formal proposal for Brigade v2 was drafted by
 maintainers and ratified by the community. Over the following two years, Brigade
-was re-written from the ground up. As of this writing (early Nov 2021), a GA
-release of Brigade v2 is expected in the coming weeks.
+was re-written from the ground up. Brigade v2 was released December 1, 2021.

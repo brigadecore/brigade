@@ -113,7 +113,7 @@ project would be the following:
     and then excute, mostly by using one of the [Brigade SDKs] to create/schedule
     jobs
 
-[Brigade SDKs]: https://github.com/brigadecore/brigade/blob/v2/README.md#sdks
+[Brigade SDKs]: https://github.com/brigadecore/brigade/blob/main/README.md#sdks
 
 # Building and Publishing a Custom Worker Image
 
@@ -162,7 +162,7 @@ worker:
 You can then use Helm's [upgrade command] to update Brigade with these new
 values.
 
-[Brigade chart]: https://github.com/brigadecore/brigade/tree/v2/charts/brigade
+[Brigade chart]: https://github.com/brigadecore/brigade/tree/main/charts/brigade
 [upgrade command]: https://helm.sh/docs/helm/helm_upgrade/
 ## Project Overrides
 
