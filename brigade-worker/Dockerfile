@@ -1,4 +1,4 @@
-FROM node:12.16.2-alpine3.11
+FROM node:12.22.7-alpine3.14
 
 WORKDIR /home/src
 COPY brigade-worker/ /home/src/
