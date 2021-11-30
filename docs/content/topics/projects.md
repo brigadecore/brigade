@@ -16,7 +16,7 @@ In Brigade, a project is just a special Kubernetes secret. The Brigade project c
 two methods to create a project: via the `brig` cli and via the [brigade-project][brigade-project-chart]
 Helm chart.  The latter is managed in the [brigadecore/charts][charts] repo
 and an in-depth overview of its configuration can be seen in the chart
-[README](https://github.com/brigadecore/charts/blob/master/chart/brigade-project/README.md).
+[README](https://github.com/brigadecore/charts/blob/main/chart/brigade-project/README.md).
 
 This document explains how to use both methods for managing your Brigade projects.
 
@@ -296,8 +296,8 @@ over the network via the URL provided in `cloneURL`.
 It is possible to write a simple VCS sidecar that uses other VCS systems such as
 Mercurial, Bazaar, or Subversion. Essentially, a VCS sidecar need only be able
 to take the given information from the project and use it to create a local snapshot
-of the project in an appointed location. See the [Git sidecar](https://github.com/brigadecore/brigade/tree/master/git-sidecar)
+of the project in an appointed location. See the [Git sidecar](https://github.com/brigadecore/brigade/tree/v1/git-sidecar)
 for an example.
 
 [charts]: https://github.com/brigadecore/charts
-[brigade-project-chart]: https://github.com/brigadecore/charts/tree/master/charts/brigade-project
+[brigade-project-chart]: https://github.com/brigadecore/charts/tree/main/charts/brigade-project

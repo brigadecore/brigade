@@ -114,7 +114,7 @@ function runSuite(e, p) {
       if (value instanceof Error) throw value;
     });
   }).then(() => {
-    if (e.revision.ref == "master") {
+    if (e.revision.ref == "v1") {
       // This builds and publishes "edge" images
       buildAndPublishImages(p, "").run();
     }

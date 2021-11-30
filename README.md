@@ -1,6 +1,6 @@
 # Brigade: Event-based Scripting for Kubernetes
 
-![Build Status](https://badgr.brigade2.io/v1/github/checks/brigadecore/brigade/badge.svg?appID=27316&branch=master)
+![Build Status](https://badgr.brigade2.io/v1/github/checks/brigadecore/brigade/badge.svg?appID=27316&branch=v1)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2688/badge)](https://bestpractices.coreinfrastructure.org/projects/2688)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbrigadecore%2Fbrigade.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbrigadecore%2Fbrigade?ref=badge_shield)
 [![slack](https://img.shields.io/badge/slack-brigade-brightgreen.svg?logo=slack)](https://kubernetes.slack.com/messages/C87MF1RFD)
@@ -78,7 +78,7 @@ The Brigade project accepts contributions via GitHub pull requests. The [Contrib
 
 We have a slack channel! [Kubernetes/#brigade](https://kubernetes.slack.com/messages/C87MF1RFD) Feel free to join for any support questions or feedback, we are happy to help. To report an issue or to request a feature open an issue [here](https://github.com/brigadecore/brigade/issues)
 
-[brigade-project-chart]: https://github.com/brigadecore/charts/tree/master/charts/brigade-project
+[brigade-project-chart]: https://github.com/brigadecore/charts/tree/main/charts/brigade-project
 
 
 ## License

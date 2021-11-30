@@ -60,7 +60,7 @@ $ git clone https://github.com/brigadecore/brigade $GOPATH/src/github.com/brigad
 $ cd $GOPATH/src/github.com/brigadecore/brigade
 ```
 
-**Note**: this leaves you at the tip of **master** in the repository where active development
+**Note**: this leaves you at the tip of **main** in the repository where active development
 is happening. You might prefer to checkout the most recent stable tag:
 
 - `$ git checkout v1.2.1`
@@ -379,7 +379,7 @@ yarn start
 You may change the variables above to point to the desired project.
 
 [charts]: https://github.com/brigadecore/charts
-[brigade-project-chart]: https://github.com/brigadecore/charts/tree/master/charts/brigade-project
+[brigade-project-chart]: https://github.com/brigadecore/charts/tree/main/charts/brigade-project
 
 > Note: an Node dependency audit is part of the build process. To execute it manually, before pushing, you can run `make yarn-audit`.
 

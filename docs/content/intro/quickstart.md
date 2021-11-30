@@ -157,7 +157,7 @@ ID                              TYPE    PROVIDER        PROJECT                 
 01d0y7bcxs6ke0yayrx6nbvm39      exec    brigade-cli     brigade-4897c99315be5d2a2403ea33bdcb24f8116dc69613d5917d879d5f  Succeeded       4m
 ```
 
-What is not directly visible here is the fact that the Job Pod used [git-sidecar](https://github.com/brigadecore/brigade/tree/master/git-sidecar) as its [initContainer](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/). The `git-sidecar` container pulled the source code from the `master` branch of the `github.com/brigadecore/empty-testbed` repo and stored it in an `emptyDir` [Volume](https://kubernetes.io/docs/concepts/storage/volumes/). The Job Pod also mounts this Volume and therefore has access to the source code from the repo.
+What is not directly visible here is the fact that the Job Pod used [git-sidecar](https://github.com/brigadecore/brigade/tree/v1/git-sidecar) as its [initContainer](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/). The `git-sidecar` container pulled the source code from the `master` branch of the `github.com/brigadecore/empty-testbed` repo and stored it in an `emptyDir` [Volume](https://kubernetes.io/docs/concepts/storage/volumes/). The Job Pod also mounts this Volume and therefore has access to the source code from the repo.
 
 Brigade also supports private repos, you should select `Yes` on `Configure GitHub Access?` question of `brig project create` and fill out the prompts.
 Last but not least, Brigade can listen to events (and trigger Builds) from a VCS via a [Gateway](https://docs.brigade.sh/topics/gateways/). We have some gateways for you to use, check them out: 
