@@ -40,4 +40,4 @@ If you don't see a topic guide here and have a reasonable level of knowledge on 
 - Examples
   - [Example Projects](../index/#technical): Brigade-related projects.
 
-[write]: https://github.com/brigadecore/brigade/new/master/content/docs/topics
+[write]: https://github.com/brigadecore/brigade/new/v1/content/docs/topics

@@ -188,7 +188,7 @@ relativeURLs = "true"
 
 [[menu.main]]
     name = "Examples"
-    url = "https://github.com/brigadecore/brigade/tree/master/docs/content/examples"
+    url = "https://github.com/brigadecore/brigade/tree/v1/docs/content/examples"
     weight = 3
 
 [[menu.main]]

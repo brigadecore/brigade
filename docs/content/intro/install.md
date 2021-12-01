@@ -53,7 +53,7 @@ Note that this is just one way of configuring Brigade to receive inbound connect
 
 ## Brig
 
-We recommend using [Brig](https://github.com/brigadecore/brigade/tree/master/brig), a command line tool for interacting with Brigade. Read the [Brig guide](../topics/brig.md) for installation and usage docs.
+We recommend using [Brig](https://github.com/brigadecore/brigade/tree/v1/brig), a command line tool for interacting with Brigade. Read the [Brig guide](../topics/brig.md) for installation and usage docs.
 
 ## Notes for Minikube
 

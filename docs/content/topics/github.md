@@ -55,7 +55,7 @@ $ helm install -n brigade/brigade -f brigade-values.yaml -f brigade-github-app-v
 ```
 
 To link this GitHub App up with GitHub repositories by way of Brigade projects, continue following the
-[README.md](https://github.com/brigadecore/brigade-github-app/blob/master/README.md#6-add-brigade-projects-for-each-github-project).
+[README.md](https://github.com/brigadecore/brigade-github-app/blob/main/README.md#6-add-brigade-projects-for-each-github-project).
 
 [brigade-github-app]: https://github.com/brigadecore/brigade-github-app
-[brigade-github-app-readme]: https://github.com/brigadecore/brigade-github-app/blob/master/README.md
+[brigade-github-app-readme]: https://github.com/brigadecore/brigade-github-app/blob/main/README.md

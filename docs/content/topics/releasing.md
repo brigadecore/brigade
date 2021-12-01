@@ -29,10 +29,10 @@ we can follow these steps to release Brigade:
 
 1. Lastly, issue a pull request in [brigadecore/charts][charts]
 bumping the `version` and `appVersion` values in both the Brigade
-[chart](https://github.com/brigadecore/charts/blob/master/charts/brigade/Chart.yaml) and
-the Brigade Project [chart](https://github.com/brigadecore/charts/blob/master/charts/brigade-project/Chart.yaml)
+[chart](https://github.com/brigadecore/charts/blob/main/charts/brigade/Chart.yaml) and
+the Brigade Project [chart](https://github.com/brigadecore/charts/blob/main/charts/brigade-project/Chart.yaml)
 to match the current release value.  Once this pull request is merged, the
-[brigade.js pipeline](https://github.com/brigadecore/charts/blob/master/brigade.js) will handle building
+[brigade.js pipeline](https://github.com/brigadecore/charts/blob/main/brigade.js) will handle building
 fresh chart artifacts and updating the chart index file.
 
 [charts]: https://github.com/brigadecore/charts
