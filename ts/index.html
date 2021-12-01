@@ -25,9 +25,9 @@ environment with Yarn, NPM, etc.:</p>
   <h2>Versioning</h2>
 </a>
 <p>The 0.x Brigadier npm releases are compatible with
-<a href="https://github.com/brigadecore/brigade/tree/master">Brigade v1.x and under</a>.</p>
+<a href="https://github.com/brigadecore/brigade/tree/v1">Brigade v1.x and under</a>.</p>
 <p>The 2.x brigadier npm releases are compatible with
-<a href="https://github.com/brigadecore/brigade/tree/v2">Brigade v2.x</a>.</p>
+<a href="https://github.com/brigadecore/brigade/tree/main">Brigade v2.x</a>.</p>
 
 <a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
   <h2>Usage</h2>
@@ -43,7 +43,7 @@ GitHub push events, running tests for the project it is associated with:</p>
 <pre><code class="language-typescript"><span class="hl-6">import</span><span class="hl-1"> { </span><span class="hl-5">events</span><span class="hl-1">, </span><span class="hl-5">Event</span><span class="hl-1">, </span><span class="hl-5">Job</span><span class="hl-1"> } </span><span class="hl-6">from</span><span class="hl-1"> </span><span class="hl-4">&quot;@brigadecore/brigadier&quot;</span><br/><br/><span class="hl-0">const</span><span class="hl-1"> </span><span class="hl-2">localPath</span><span class="hl-1"> = </span><span class="hl-4">&quot;/workspaces/brigade&quot;</span><br/><br/><span class="hl-5">events</span><span class="hl-1">.</span><span class="hl-3">on</span><span class="hl-1">(</span><span class="hl-4">&quot;brigade.sh/github&quot;</span><span class="hl-1">, </span><span class="hl-4">&quot;push&quot;</span><span class="hl-1">, </span><span class="hl-0">async</span><span class="hl-1"> </span><span class="hl-5">event</span><span class="hl-1"> </span><span class="hl-0">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-0">let</span><span class="hl-1"> </span><span class="hl-5">test</span><span class="hl-1"> = </span><span class="hl-0">new</span><span class="hl-1"> </span><span class="hl-3">Job</span><span class="hl-1">(</span><span class="hl-4">&quot;test&quot;</span><span class="hl-1">, </span><span class="hl-4">&quot;golang:1.17&quot;</span><span class="hl-1">, </span><span class="hl-5">event</span><span class="hl-1">)</span><br/><span class="hl-1">  </span><span class="hl-5">test</span><span class="hl-1">.</span><span class="hl-5">primaryContainer</span><span class="hl-1">.</span><span class="hl-5">sourceMountPath</span><span class="hl-1"> = </span><span class="hl-5">localPath</span><br/><span class="hl-1">  </span><span class="hl-5">test</span><span class="hl-1">.</span><span class="hl-5">primaryContainer</span><span class="hl-1">.</span><span class="hl-5">workingDirectory</span><span class="hl-1"> = </span><span class="hl-5">localPath</span><br/><span class="hl-1">  </span><span class="hl-5">test</span><span class="hl-1">.</span><span class="hl-5">primaryContainer</span><span class="hl-1">.</span><span class="hl-5">command</span><span class="hl-1"> = [</span><span class="hl-4">&quot;make&quot;</span><span class="hl-1">]</span><br/><span class="hl-1">  </span><span class="hl-5">test</span><span class="hl-1">.</span><span class="hl-5">primaryContainer</span><span class="hl-1">.</span><span class="hl-5">arguments</span><span class="hl-1"> = [</span><span class="hl-4">&quot;test&quot;</span><span class="hl-1">]</span><br/><br/><span class="hl-1">  </span><span class="hl-6">await</span><span class="hl-1"> </span><span class="hl-5">test</span><span class="hl-1">.</span><span class="hl-3">run</span><span class="hl-1">()</span><br/><span class="hl-1">})</span><br/><br/><span class="hl-5">events</span><span class="hl-1">.</span><span class="hl-3">process</span><span class="hl-1">()</span>
 </code></pre>
 <p>To learn more, visit the <a href="https://docs.brigade.sh/topics/scripting">official scripting guide</a> or explore the Brigade
-<a href="https://github.com/brigadecore/brigade/tree/v2/examples">example projects</a>.</p>
+<a href="https://github.com/brigadecore/brigade/tree/main/examples">example projects</a>.</p>
 
 <a href="#contributing" id="contributing" style="color: inherit; text-decoration: none;">
   <h2>Contributing</h2>
