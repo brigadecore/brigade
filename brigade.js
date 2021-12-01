@@ -43,7 +43,7 @@ jobs[testIntegrationJobName] = testIntegrationJob;
 
 // Run the entire suite of tests, builds, etc. concurrently WITHOUT publishing
 // anything initially. If EVERYTHING passes AND this was a push (merge,
-// presumably) to the v2 branch, then run jobs to publish "edge" images.
+// presumably) to the main branch, then run jobs to publish "edge" images.
 function runSuite(e, p) {
   // Important: To prevent Promise.all() from failing fast, we catch and
   // return all errors. This ensures Promise.all() always resolves. We then

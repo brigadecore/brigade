@@ -176,4 +176,4 @@ Check out the [13-dependencies] example project to see both approaches
 incorporated into one project. Feel free to create the project, create events
 for the project, etc., to get a feel for how both methods work.
 
-[13-dependencies]: https://github.com/brigadecore/brigade/tree/v2/examples/13-dependencies
+[13-dependencies]: https://github.com/brigadecore/brigade/tree/main/examples/13-dependencies

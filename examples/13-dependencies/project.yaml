@@ -14,4 +14,4 @@ spec:
     configFilesDirectory: examples/13-dependencies/.brigade
     git:
       cloneURL: https://github.com/brigadecore/brigade.git
-      ref: refs/heads/v2
+      ref: refs/heads/main

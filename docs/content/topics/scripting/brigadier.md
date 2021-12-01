@@ -154,11 +154,11 @@ locally:
 For further example usage of brigadier, please review the [Scripting guide]
 and/or peruse the [Examples].
 
-[brigadier]: https://github.com/brigadecore/brigade/tree/v2/v2/brigadier
+[brigadier]: https://github.com/brigadecore/brigade/tree/main/v2/brigadier
 [brigadier npm]: https://www.npmjs.com/package/@brigadecore/brigadier
-[brigadier-polyfill]: https://github.com/brigadecore/brigade/tree/v2/v2/brigadier-polyfill
+[brigadier-polyfill]: https://github.com/brigadecore/brigade/tree/main/v2/brigadier-polyfill
 [Scripting guide]: /topics/scripting/guide
-[events.ts]: https://github.com/brigadecore/brigade/tree/v2/v2/brigadier/src/events.ts
+[events.ts]: https://github.com/brigadecore/brigade/tree/main/v2/brigadier/src/events.ts
 [Examples]: /topics/examples
 
 ## Brigadier API Documentation

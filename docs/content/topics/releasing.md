@@ -39,7 +39,7 @@ and signed off upon by another maintainer.
 ## Release
 
 When the PR containing pre-release changes have been merged and post-merge CI
-has completed without error on the `v2` branch, it is safe to cut the release
+has completed without error on the `main` branch, it is safe to cut the release
 through application of a semver tag.
 
 The _safest_ way to do this is through the GitHub UI since that helps mitigate
@@ -47,7 +47,7 @@ the possibility of accidentally tagging the wrong commit.
 
 1. Go to
 [https://github.com/brigadecore/brigade/releases/new](https://github.com/brigadecore/brigade/releases/new).
-1. Apply the desired semver tag to the head of the `v2` branch.
+1. Apply the desired semver tag to the head of the `main` branch.
 1. Use the same value as the title of the release.
 1. Click __Publish release__.
 
@@ -58,9 +58,9 @@ the semver tag. Without this tag, Go's dependency management will be unable to
 locate this release of the SDK for Go. For lack of a better alternative, this
 really needs to be done via the `git` CLI.
 
-1. Make sure your local `v2` branch is up to date with respect to the remote
+1. Make sure your local `main` branch is up to date with respect to the remote
    `github.com/brigadecore/brigade` repository.
-1. On the head of the `v2` branch, run `git tag sdk/<semver>` where `<semver>`
+1. On the head of the `main` branch, run `git tag sdk/<semver>` where `<semver>`
    is equal to the semantic version applied to this release, _including the
    leading `v`_.
 

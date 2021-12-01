@@ -286,7 +286,7 @@ const publishBrigadierDocsJob = (event: Event) => {
 jobs[publishBrigadierDocsJobName] = publishBrigadierDocsJob
 
 // Run the entire suite of tests WITHOUT publishing anything initially. If
-// EVERYTHING passes AND this was a push (merge, presumably) to the v2 branch,
+// EVERYTHING passes AND this was a push (merge, presumably) to the main branch,
 // then run jobs to publish "edge" images.
 async function runSuite(event: Event): Promise<void> {
   await new SerialGroup(
@@ -312,7 +312,7 @@ async function runSuite(event: Event): Promise<void> {
       buildCLIJob(event)
     )
   ).run()
-  if (event.worker?.git?.ref == "v2") {
+  if (event.worker?.git?.ref == "main") {
     // Push "edge" images.
     //
     // npm packages MUST be semantically versioned, so we DON'T publish an

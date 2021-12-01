@@ -29,10 +29,10 @@ $ yarn add @brigadecore/brigadier
 ## Versioning
 
 The 0.x Brigadier npm releases are compatible with
-[Brigade v1.x and under](https://github.com/brigadecore/brigade/tree/master).
+[Brigade v1.x and under](https://github.com/brigadecore/brigade/tree/v1).
 
 The 2.x brigadier npm releases are compatible with
-[Brigade v2.x](https://github.com/brigadecore/brigade/tree/v2).
+[Brigade v2.x](https://github.com/brigadecore/brigade/tree/main).
 
 ## Usage
 
@@ -83,7 +83,7 @@ To learn more, visit the [official scripting guide] or explore the Brigade
 [example projects].
 
 [official scripting guide]: https://docs.brigade.sh/topics/scripting
-[example projects]: https://github.com/brigadecore/brigade/tree/v2/examples
+[example projects]: https://github.com/brigadecore/brigade/tree/main/examples
 
 ## Contributing
 
