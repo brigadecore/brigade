@@ -28,13 +28,13 @@ a message queue, run as a chat bot, or watch files on a file system.
 While Brigade ships without any gateways included, installing one alongside
 Brigade is as simple as a [Helm] chart install, along with any additional setup
 particular to a given gateway. See [below](#available-gateways) for a current
-listing of v2-compatible gateways.
+listing of compatible gateways.
 
 [Helm]: https://helm.sh
 
 ## Available Gateways
 
-Currently, the list of official Brigade v2 gateways is as follows:
+Currently, the list of official Brigade gateways is as follows:
 
 * [ACR (Azure Container Registry) Gateway](https://github.com/brigadecore/brigade-acr-gateway)
 * [BitBucket Gateway](https://github.com/brigadecore/brigade-bitbucket-gateway/tree/v2)
@@ -107,8 +107,8 @@ Let's look at the high-level sections in the event definition above.  They are:
 To explore the SDK definitions of an Event object, see the [Go SDK Event] and
 [JavaScript/TypeScript SDK Event].
 
-[01-hello-world sample project]: https://github.com/brigadecore/brigade/tree/v2/examples/01-hello-world
-[Go SDK Event]: https://github.com/brigadecore/brigade/blob/v2/sdk/v2/core/events.go
+[01-hello-world sample project]: https://github.com/brigadecore/brigade/tree/main/examples/01-hello-world
+[Go SDK Event]: https://github.com/brigadecore/brigade/blob/main/sdk/v2/core/events.go
 [JavaScript/TypeScript SDK Event]: https://github.com/brigadecore/brigade-sdk-for-js/blob/main/src/core/events.ts
 
 ## Creating Custom Gateways
@@ -124,8 +124,8 @@ to pick an [SDK] to use. For this example, we'll be using the [Go SDK]. As of
 this writing, a [Javascript/Typescript SDK] and a [Rust SDK] (work in
 progress) also exist.
 
-[SDK]: https://github.com/brigadecore/brigade/tree/v2#sdks
-[Go SDK]: https://github.com/brigadecore/brigade/tree/v2/sdk
+[SDK]: https://github.com/brigadecore/brigade/tree/main#sdks
+[Go SDK]: https://github.com/brigadecore/brigade/tree/main/sdk
 [Javascript/Typescript SDK]: https://github.com/brigadecore/brigade-sdk-for-js
 [Rust SDK]: https://github.com/brigadecore/brigade-sdk-for-rust
 
@@ -428,4 +428,4 @@ SDK was helpful. All of the sample code can be found in the
 We look forward to seeing the Brigade Gateway ecosystem expand with
 contributions from readers like you!
 
-[examples/gateways]: https://github.com/brigadecore/brigade/tree/v2/examples/gateways/example-gateway
+[examples/gateways]: https://github.com/brigadecore/brigade/tree/main/examples/gateways/example-gateway

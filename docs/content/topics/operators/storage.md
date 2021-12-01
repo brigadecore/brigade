@@ -66,7 +66,7 @@ worker:
 [Azure File]: https://azure.microsoft.com/en-us/services/storage/files/
 [AKS]: https://azure.microsoft.com/en-us/services/kubernetes-service/
 [Azure Disk]: https://azure.microsoft.com/en-us/services/storage/disks/
-[Helm chart values]: https://github.com/brigadecore/brigade/blob/v2/charts/brigade/values.yaml
+[Helm chart values]: https://github.com/brigadecore/brigade/blob/main/charts/brigade/values.yaml
 
 ### Enabling Worker storage
 
@@ -113,7 +113,7 @@ events.process();
 ```
 
 [project file]: /topics/project-developers/projects#project-definition-files
-[08-shared-workspace example project]: https://github.com/brigadecore/brigade/blob/v2/examples/08-shared-workspace/project.yaml
+[08-shared-workspace example project]: https://github.com/brigadecore/brigade/blob/main/examples/08-shared-workspace/project.yaml
 
 ## Artemis storage
 

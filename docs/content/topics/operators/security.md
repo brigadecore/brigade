@@ -40,7 +40,7 @@ enabled and SSL certificates should not be self-signed.
 
 For more details on deploying Brigade securely, see the [Deployment] doc.
 
-[Helm chart]: https://github.com/brigadecore/brigade/tree/v2/charts/brigade
+[Helm chart]: https://github.com/brigadecore/brigade/tree/main/charts/brigade
 [ingress controller]: https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/
 [Deployment]: /topics/operators/deploy
 
