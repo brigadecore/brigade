@@ -1,7 +1,5 @@
 import { events, Event, Job, ConcurrentGroup, SerialGroup, Container } from "@brigadecore/brigadier"
 
-const releaseTagRegex = /^refs\/tags\/(v[0-9]+(?:\.[0-9]+)*(?:\-.+)?)$/
-
 const goImg = "brigadecore/go-tools:v0.5.0"
 const jsImg = "node:16.11.0-bullseye"
 const dindImg = "docker:20.10.9-dind"
@@ -17,12 +15,6 @@ class MakeTargetJob extends Job {
     this.primaryContainer.workingDirectory = localPath
     this.primaryContainer.environment = env || {}
     this.primaryContainer.environment["SKIP_DOCKER"] = "true"
-    if (event.worker?.git?.ref) {
-      const matchStr = event.worker.git.ref.match(releaseTagRegex)
-      if (matchStr) {
-        this.primaryContainer.environment["VERSION"] = Array.from(matchStr)[1] as string
-      }
-    }
     this.primaryContainer.command = [ "make" ]
     this.primaryContainer.arguments = [ target ]
   }
@@ -87,18 +79,22 @@ class BuildImageJob extends MakeTargetJob {
 
 // PushImageJob is a specialized job type for publishing Docker images.
 class PushImageJob extends BuildImageJob {
-  constructor(target: string, event: Event) {
-    super(target, event, {
+  constructor(target: string, event: Event, version?: string) {
+    const env = {
       "DOCKER_ORG": event.project.secrets.dockerhubOrg,
       "DOCKER_USERNAME": event.project.secrets.dockerhubUsername,
       "DOCKER_PASSWORD": event.project.secrets.dockerhubPassword
-    })
+    }
+    if (version) {
+      env["VERSION"] = version
+    }
+    super(target, event, env)
   }
 }
 
 // A map of all jobs. When a check_run:rerequested event wants to re-run a
 // single job, this allows us to easily find that job by name.
-const jobs: {[key: string]: (event: Event) => Job } = {}
+const jobs: {[key: string]: (event: Event, version?: string) => Job } = {}
 
 // Basic tests:
 
@@ -159,8 +155,8 @@ const buildArtemisJob = (event: Event) => {
 jobs[buildArtemisJobName] = buildArtemisJob
 
 const pushArtemisJobName = "push-artemis"
-const pushArtemisJob = (event: Event) => {
-  return new PushImageJob(pushArtemisJobName, event)
+const pushArtemisJob = (event: Event, version?: string) => {
+  return new PushImageJob(pushArtemisJobName, event, version)
 }
 jobs[pushArtemisJobName] = pushArtemisJob
 
@@ -171,8 +167,8 @@ const buildAPIServerJob = (event: Event) => {
 jobs[buildAPIServerJobName] = buildAPIServerJob
 
 const pushAPIServerJobName = "push-apiserver"
-const pushAPIServerJob = (event: Event) => {
-  return new PushImageJob(pushAPIServerJobName, event)
+const pushAPIServerJob = (event: Event, version?: string) => {
+  return new PushImageJob(pushAPIServerJobName, event, version)
 }
 jobs[pushAPIServerJobName] = pushAPIServerJob
 
@@ -183,8 +179,8 @@ const buildGitInitializerJob = (event: Event) => {
 jobs[buildGitInitializerJobName] = buildGitInitializerJob
 
 const pushGitInitializerJobName = "push-git-initializer"
-const pushGitInitializerJob = (event: Event) => {
-  return new PushImageJob(pushGitInitializerJobName, event)
+const pushGitInitializerJob = (event: Event, version?: string) => {
+  return new PushImageJob(pushGitInitializerJobName, event, version)
 }
 jobs[pushGitInitializerJobName] = pushGitInitializerJob
 
@@ -195,8 +191,8 @@ const buildLoggerLinuxJob = (event: Event) => {
 jobs[buildLoggerLinuxJobName] = buildLoggerLinuxJob
 
 const pushLoggerLinuxJobName = "push-logger"
-const pushLoggerLinuxJob = (event: Event) => {
-  return new PushImageJob(pushLoggerLinuxJobName, event)
+const pushLoggerLinuxJob = (event: Event, version?: string) => {
+  return new PushImageJob(pushLoggerLinuxJobName, event, version)
 }
 jobs[pushLoggerLinuxJobName] = pushLoggerLinuxJob
 
@@ -207,8 +203,8 @@ const buildObserverJob = (event: Event) => {
 jobs[buildObserverJobName] = buildObserverJob
 
 const pushObserverJobName = "push-observer"
-const pushObserverJob = (event: Event) => {
-  return new PushImageJob(pushObserverJobName, event)
+const pushObserverJob = (event: Event, version?: string) => {
+  return new PushImageJob(pushObserverJobName, event, version)
 }
 jobs[pushObserverJobName] = pushObserverJob
 
@@ -219,8 +215,8 @@ const buildSchedulerJob = (event: Event) => {
 jobs[buildSchedulerJobName] = buildSchedulerJob
 
 const pushSchedulerJobName = "push-scheduler"
-const pushSchedulerJob = (event: Event) => {
-  return new PushImageJob(pushSchedulerJobName, event)
+const pushSchedulerJob = (event: Event, version?: string) => {
+  return new PushImageJob(pushSchedulerJobName, event, version)
 }
 jobs[pushSchedulerJobName] = pushSchedulerJob
 
@@ -231,8 +227,8 @@ const buildWorkerJob = (event: Event) => {
 jobs[buildWorkerJobName] = buildWorkerJob
 
 const pushWorkerJobName = "push-worker"
-const pushWorkerJob = (event: Event) => {
-  return new PushImageJob(pushWorkerJobName, event)
+const pushWorkerJob = (event: Event, version?: string) => {
+  return new PushImageJob(pushWorkerJobName, event, version)
 }
 jobs[pushWorkerJobName] = pushWorkerJob
 
@@ -243,8 +239,9 @@ const buildBrigadierJob = (event: Event) => {
 jobs[buildBrigadierJobName] = buildBrigadierJob
 
 const publishBrigadierJobName = "publish-brigadier"
-const publishBrigadierJob = (event: Event) => {
+const publishBrigadierJob = (event: Event, version: string) => {
   return new MakeTargetJob(publishBrigadierJobName, jsImg, event, {
+    "VERSION": version,
     "NPM_TOKEN": event.project.secrets.npmToken
   })
 }
@@ -257,8 +254,9 @@ const buildCLIJob = (event: Event) => {
 jobs[buildCLIJobName] = buildCLIJob
 
 const publishCLIJobName = "publish-cli"
-const publishCLIJob = (event: Event) => {
+const publishCLIJob = (event: Event, version: string) => {
   return new MakeTargetJob(publishCLIJobName, goImg, event, {
+    "VERSION": version,
     "GITHUB_ORG": event.project.secrets.githubOrg,
     "GITHUB_REPO": event.project.secrets.githubRepo,
     "GITHUB_TOKEN": event.project.secrets.githubToken
@@ -267,8 +265,9 @@ const publishCLIJob = (event: Event) => {
 jobs[publishCLIJobName] = publishCLIJob
 
 const publishChartJobName = "publish-chart"
-const publishChartJob = (event: Event) => {
+const publishChartJob = (event: Event, version: string) => {
   return new MakeTargetJob(publishChartJobName, helmImg, event, {
+    "VERSION": version,
     "HELM_REGISTRY": event.project.secrets.helmRegistry || "ghcr.io",
     "HELM_ORG": event.project.secrets.helmOrg,
     "HELM_USERNAME": event.project.secrets.helmUsername,
@@ -278,8 +277,9 @@ const publishChartJob = (event: Event) => {
 jobs[publishChartJobName] = publishChartJob
 
 const publishBrigadierDocsJobName = "publish-brigadier-docs"
-const publishBrigadierDocsJob = (event: Event) => {
+const publishBrigadierDocsJob = (event: Event, version?: string) => {
   return new MakeTargetJob(publishBrigadierDocsJobName, jsImg, event, {
+    "VERSION": version,
     "GH_TOKEN": event.project.secrets.ghToken
   })
 }
@@ -351,35 +351,25 @@ events.on("brigade.sh/github", "check_run:rerequested", async event => {
   throw new Error(`No job found with name: ${jobName}`)
 })
 
-// Pushing new commits to any branch in github triggers a check suite. Such
-// events are already handled above. Here we're only concerned with the case
-// wherein a new TAG has been pushed-- and even then, we're only concerned with
-// tags that look like a semantic version and indicate a formal release should
-// be performed.
-events.on("brigade.sh/github", "push", async event => {
-  const matchStr = event.worker.git.ref.match(releaseTagRegex)
-  if (matchStr) {
-    // This is an official release with a semantically versioned tag
-    await new SerialGroup(
-      new ConcurrentGroup(
-        pushArtemisJob(event),
-        pushAPIServerJob(event),
-        pushGitInitializerJob(event),
-        pushLoggerLinuxJob(event),
-        pushObserverJob(event),
-        pushSchedulerJob(event),
-        pushWorkerJob(event)
-      ),
-      new ConcurrentGroup(
-        publishBrigadierJob(event),
-        publishBrigadierDocsJob(event),
-        publishChartJob(event),
-        publishCLIJob(event)
-      )
-    ).run()
-  } else {
-    console.log(`Ref ${event.worker.git.ref} does not match release tag regex (${releaseTagRegex}); not releasing.`)
-  }
+events.on("brigade.sh/github", "release:published", async event => {
+  const version = JSON.parse(event.payload).release.tag_name
+  await new SerialGroup(
+    new ConcurrentGroup(
+      pushArtemisJob(event, version),
+      pushAPIServerJob(event, version),
+      pushGitInitializerJob(event, version),
+      pushLoggerLinuxJob(event, version),
+      pushObserverJob(event, version),
+      pushSchedulerJob(event, version),
+      pushWorkerJob(event, version)
+    ),
+    new ConcurrentGroup(
+      publishBrigadierJob(event, version),
+      publishBrigadierDocsJob(event, version),
+      publishChartJob(event, version),
+      publishCLIJob(event, version)
+    )
+  ).run()
 })
 
 events.process()
