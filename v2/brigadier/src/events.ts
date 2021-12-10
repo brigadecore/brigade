@@ -13,6 +13,10 @@ export interface Event {
   source: string
   /** The type of event. Values and meanings are source-specific. */
   type: string
+  /** Event's type disambiguators. */
+  qualifiers?: { [key: string]: string }
+  /** Supplementary Event details. */
+  labels?: { [key: string]: string }
   /** A short title for the event, suitable for display in space-limited UI such as lists. */
   shortTitle?: string
   /** A detailed title for the event. */
