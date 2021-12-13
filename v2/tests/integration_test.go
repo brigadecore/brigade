@@ -5,113 +5,236 @@ package tests
 
 import (
 	"context"
+	"log"
 	"os"
+	"strings"
 	"testing"
+	"time"
 
+	foundOS "github.com/brigadecore/brigade-foundations/os"
 	"github.com/brigadecore/brigade/sdk/v2"
 	"github.com/brigadecore/brigade/sdk/v2/authn"
 	"github.com/brigadecore/brigade/sdk/v2/core"
 	"github.com/brigadecore/brigade/sdk/v2/meta"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
-	"github.com/brigadecore/brigade/sdk/v2/system"
 	"github.com/stretchr/testify/require"
 )
 
-func TestMain(t *testing.T) {
+var client sdk.APIClient
+
+const testTimeout = 5 * time.Minute
+
+func TestMain(m *testing.M) {
 	ctx := context.Background()
 
-	apiServerAddress := GetRequiredEnvVar(t, "APISERVER_ADDRESS")
-	rootPassword := GetRequiredEnvVar(t, "APISERVER_ROOT_PASSWORD")
+	apiServerAddress, err := foundOS.GetRequiredEnvVar("APISERVER_ADDRESS")
+	if err != nil {
+		log.Fatal(err)
+	}
+	rootPassword, err := foundOS.GetRequiredEnvVar("APISERVER_ROOT_PASSWORD")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	apiClientOpts := &restmachinery.APIClientOptions{
 		AllowInsecureConnections: true,
 	}
 
-	authClient := authn.NewSessionsClient(
+	token, err := authn.NewSessionsClient(
 		apiServerAddress,
 		"",
 		apiClientOpts,
+	).CreateRootSession(ctx, rootPassword)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client = sdk.NewAPIClient(
+		apiServerAddress,
+		token.Value,
+		apiClientOpts,
 	)
 
-	token, err := authClient.CreateRootSession(ctx, rootPassword)
-	require.NoError(t, err, "error creating root session")
-	tokenStr := token.Value
+	os.Exit(m.Run())
+}
+
+func TestIntegration(t *testing.T) {
+	ctx := context.Background()
 
 	// Check ping endpoint for expected version
-	wantVersion := os.Getenv("VERSION")
-	require.NotEmpty(
-		t,
-		wantVersion,
-		"expected the VERSION env var to be non-empty",
-	)
-
-	systemClient := system.NewAPIClient(
-		apiServerAddress,
-		tokenStr,
-		apiClientOpts,
-	)
-	resp, err := systemClient.Ping(ctx)
+	expectedVersion, err := foundOS.GetRequiredEnvVar("VERSION")
 	require.NoError(t, err)
-	require.Equal(
-		t,
-		wantVersion,
-		string(resp.Version),
-		"ping response did not match expected",
-	)
+	pingResponse, err := client.System().Ping(ctx)
+	require.NoError(t, err)
+	require.Equal(t, expectedVersion, pingResponse.Version)
 
-	// Create the api client for use in tests below
-	client := sdk.NewAPIClient(
-		apiServerAddress,
-		tokenStr,
-		apiClientOpts,
-	)
-
-	for _, tc := range TestCases {
-		// Skip private repo test if required env var not present
-		if tc.name == "GitHub - private repo" &&
-			os.Getenv("BRIGADE_CI_PRIVATE_REPO_SSH_KEY") == "" {
+	// Create projects used by all test cases
+	for _, testCase := range testCases {
+		if testCase.shouldTest != nil && !testCase.shouldTest(t) {
 			continue
 		}
+		_, err = client.Core().Projects().Create(ctx, testCase.project)
+		require.NoErrorf(t, err, "error creating project %q", testCase.project.ID)
+		// nolint: errcheck
+		defer client.Core().Projects().Delete(ctx, testCase.project.ID)
+		if testCase.postProjectCreate != nil {
+			require.NoErrorf(
+				t,
+				testCase.postProjectCreate(ctx),
+				"error running post-create steps for project %q",
+				testCase.project.ID,
+			)
+		}
+	}
 
-		t.Run(tc.name, func(t *testing.T) {
-			// Update the project with defaults, if needed
-			if len(tc.configFiles) > 0 {
-				tc.project.Spec.WorkerTemplate.DefaultConfigFiles = tc.configFiles
-			} else {
-				tc.project.Spec.WorkerTemplate.DefaultConfigFiles = DefaultConfigFiles
-			}
+	// The scheduler learns about new projects every 30 seconds. This grace period
+	// ensures the scheduler is listening on every new project's queue before we
+	// move on.
+	<-time.After(30 * time.Second)
 
-			// Create the test project
-			_, err = client.Core().Projects().Create(ctx, tc.project)
-			require.NoError(t, err, "error creating project")
-			// Run post-project create logic, if defined
-			if tc.postProjectCreate != nil {
-				require.NoError(t, tc.postProjectCreate(ctx, client))
-			}
-
+	for _, testCase := range testCases {
+		if testCase.shouldTest != nil && !testCase.shouldTest(t) {
+			continue
+		}
+		t.Run(testCase.project.Description, func(t *testing.T) {
 			// Verify there are no events for this project
-			eList, err := client.Core().Events().List(
+			events, err := client.Core().Events().List(
 				ctx,
-				&core.EventsSelector{ProjectID: tc.project.ID},
+				&core.EventsSelector{ProjectID: testCase.project.ID},
 				&meta.ListOptions{Limit: 1},
 			)
-			require.Equal(t, 0, len(eList.Items), "event list items should be exactly zero")
+			require.NoError(t, err)
+			require.Empty(t, events.Items)
 
 			// Create a new event
 			event := core.Event{
-				ProjectID: tc.project.ID,
+				ProjectID: testCase.project.ID,
 				Source:    "brigade.sh/cli",
 				Type:      "exec",
 			}
 
-			eList, err = client.Core().Events().Create(ctx, event)
-			require.NoError(t, err, "error creating event")
-
-			tc.assertions(t, ctx, client, eList)
-
-			// Delete the test project
-			err = client.Core().Projects().Delete(ctx, tc.project.ID)
-			require.NoError(t, err, "error deleting project")
+			events, err = client.Core().Events().Create(ctx, event)
+			require.NoError(t, err)
+			testCase.assertions(t, ctx, events)
 		})
+	}
+}
+
+func assertWorkerPhase(
+	t *testing.T,
+	ctx context.Context, // nolint: revive
+	eventID string,
+	expectedPhase core.WorkerPhase,
+) {
+	statusCh, errCh, err := client.Core().Events().Workers().WatchStatus(
+		ctx,
+		eventID,
+	)
+	require.NoError(t, err)
+
+	timer := time.NewTimer(testTimeout)
+	defer timer.Stop()
+
+	for {
+		select {
+		case status := <-statusCh:
+			phase := status.Phase
+			if phase.IsTerminal() {
+				require.Equal(
+					t,
+					expectedPhase,
+					phase,
+					"worker's terminal phase does not match expected",
+				)
+				return
+			}
+		case err := <-errCh:
+			t.Fatalf("error encountered watching worker status: %s", err)
+		case <-timer.C:
+			t.Fatal("timeout waiting for worker to reach a terminal phase")
+		}
+	}
+}
+
+func assertJobPhase(
+	t *testing.T,
+	ctx context.Context, // nolint: revive
+	eventID string,
+	expectedPhase core.JobPhase,
+) {
+	statusCh, errCh, err := client.Core().Events().Workers().Jobs().WatchStatus(
+		ctx,
+		eventID,
+		testJobName,
+	)
+	require.NoError(t, err, "error encountered attempting to watch job status")
+
+	timer := time.NewTimer(testTimeout)
+	defer timer.Stop()
+
+	for {
+		select {
+		case status := <-statusCh:
+			phase := status.Phase
+			if phase.IsTerminal() {
+				require.Equal(
+					t,
+					expectedPhase,
+					phase,
+					"job's terminal phase does not match expected",
+				)
+				return
+			}
+		case err := <-errCh:
+			t.Fatalf("error encountered watching job status: %s", err)
+		case <-timer.C:
+			t.Fatal("timeout waiting for job to reach a terminal phase")
+		}
+	}
+}
+
+func assertLogs(
+	t *testing.T,
+	ctx context.Context, // nolint: revive
+	eventID string,
+	selector *core.LogsSelector,
+	expectedLogs string,
+) {
+	if expectedLogs == "" {
+		return
+	}
+
+	logEntryCh, errCh, err :=
+		client.Core().Events().Logs().Stream(
+			ctx,
+			eventID,
+			selector,
+			&core.LogStreamOptions{},
+		)
+	require.NoError(t, err, "error acquiring log stream")
+
+	for {
+		select {
+		case logEntry, ok := <-logEntryCh:
+			if ok {
+				if strings.Contains(logEntry.Message, expectedLogs) {
+					return
+				}
+			} else {
+				logEntryCh = nil
+			}
+		case err, ok := <-errCh:
+			if ok {
+				t.Fatalf("error from log stream: %s", err)
+			}
+			errCh = nil
+		case <-ctx.Done():
+			return
+		}
+
+		// log and err channels empty; we haven't found what we're looking for
+		if logEntryCh == nil && errCh == nil {
+			t.Fatalf("logs do not contain expected string %q", expectedLogs)
+		}
 	}
 }

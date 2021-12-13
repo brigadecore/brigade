@@ -285,6 +285,33 @@ const publishBrigadierDocsJob = (event: Event, version?: string) => {
 }
 jobs[publishBrigadierDocsJobName] = publishBrigadierDocsJob
 
+const testIntegrationJobName = "test-integration"
+const testIntegrationJob = (event: Event) => {
+  const job = new Job(testIntegrationJobName, "brigadecore/int-test-tools:v0.2.0", event)
+  job.primaryContainer.sourceMountPath = localPath
+  job.primaryContainer.workingDirectory = localPath
+  job.primaryContainer.environment = {
+    "DOCKER_REGISTRY": "localhost:5000",
+    "SKIP_DOCKER": "true",
+    "DOCKER_HOST": "localhost:2375",
+    "CGO_ENABLED": "0",
+    "BRIGADE_CI_PRIVATE_REPO_SSH_KEY": event.project.secrets.privateRepoSSHKey
+  }
+  job.primaryContainer.command = [ "sh" ]
+  job.primaryContainer.arguments = [
+    "-c",
+    // The sleep is a grace period after which we assume the DinD sidecar is
+    // probably up and running.
+    `sleep 20 && make hack-new-kind-cluster hack test-integration`
+  ]
+  job.sidecarContainers.docker = new Container(dindImg)
+  job.sidecarContainers.docker.privileged = true
+  job.sidecarContainers.docker.environment.DOCKER_TLS_CERTDIR=""
+  job.timeoutSeconds = 30 * 60
+  return job
+}
+jobs[testIntegrationJobName] = testIntegrationJob
+
 // Run the entire suite of tests WITHOUT publishing anything initially. If
 // EVERYTHING passes AND this was a push (merge, presumably) to the main branch,
 // then run jobs to publish "edge" images.
@@ -310,7 +337,8 @@ async function runSuite(event: Event): Promise<void> {
       buildWorkerJob(event),
       buildBrigadierJob(event),  
       buildCLIJob(event)
-    )
+    ),
+    testIntegrationJob(event)
   ).run()
   if (event.worker?.git?.ref == "main") {
     // Push "edge" images.
