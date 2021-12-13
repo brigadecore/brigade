@@ -136,7 +136,7 @@ var secretsTemplate = []byte(`## This file was created by brig init.
 var packageTemplate = []byte(`{
   "name": "{{ .ProjectID }}",
   "dependencies": {
-    "@brigadecore/brigadier": "^2.0.0"
+    "@brigadecore/brigadier": "^2.1.0"
   }
 }
 `)
