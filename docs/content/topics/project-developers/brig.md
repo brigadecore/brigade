@@ -22,48 +22,41 @@ of the [suite of commands] that brig provides.
 
 ## Install Brig
 
-Brig can be installed via a few methods. Below we demonstrate how to install
-via the [GoFish](#gofish) package manager and via the
-[GitHub releases](#github-releases) page.
+In general, `brig` can be installed by downloading the appropriate pre-built
+binary from our [releases page](https://github.com/brigadecore/brigade/releases)
+to a directory on your machine that is included in your `PATH` environment
+variable. On some systems, it is even easier than this.
 
 You can also build brig from source; see the [Developers] guide for more info.
 
 [Developers]: /topics/developers
 
-### GoFish
-
-[GoFish] is a handy cross-platform package manager supporting all three major
-operating systems (Windows, MacOS and Linux). Assuming GoFish is [installed and
-initialized] locally, we can use it to install the brig CLI. Here's an example
-on a MacOS or Linux machine:
-
-```console
-gofish install brig@2
-gofish link brig@2
-```
-
-[Gofish]: https://gofi.sh/
-[installed and initialized]: https://gofi.sh/#install
-
-### GitHub Releases
-
-To install brig via Brigade's GitHub [releases] page, copy the appropriate
-binary into a directory on your machine that is included in your PATH
-environment variable.
-
 **linux**
+
 ```bash
 curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0/brig-linux-amd64
 chmod +x /usr/local/bin/brig
 ```
 
 **macos**
+
+The popular [Homebrew](https://brew.sh/) package manager provides the most
+convenient method of installing the Brigade CLI on a Mac:
+
+```bash
+$ brew install brigade-cli
+```
+
+Alternatively, you can install manually by directly downloading a pre-built
+binary:
+
 ```bash
 curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0/brig-darwin-amd64
 chmod +x /usr/local/bin/brig
 ```
 
 **windows**
+
 ```powershell
 mkdir -force $env:USERPROFILE\bin
 (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
