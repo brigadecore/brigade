@@ -101,24 +101,39 @@ development, but isn't covered in this guide.)
 
 ### Install the Brigade CLI
 
-Install the Brigade CLI, `brig`, by copying the appropriate binary from our
-[releases page](https://github.com/brigadecore/brigade/releases) into a
-directory on your machine that is included in your `PATH` environment variable.
-Below are instructions for common environments:
+In general, the Brigade CLI, `brig`, can be installed by downloading the
+appropriate pre-built binary from our
+[releases page](https://github.com/brigadecore/brigade/releases) to a directory
+on your machine that is included in your `PATH` environment variable. On some
+systems, it is even easier than this. Below are instructions for common
+environments:
 
 **Linux**
+
 ```bash
 $ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0/brig-linux-amd64
 $ chmod +x /usr/local/bin/brig
 ```
 
 **macOS**
+
+The popular [Homebrew](https://brew.sh/) package manager provides the most
+convenient method of installing the Brigade CLI on a Mac:
+
+```bash
+$ brew install brigade-cli
+```
+
+Alternatively, you can install manually by directly downloading a pre-built
+binary:
+
 ```bash
 $ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.0.0/brig-darwin-amd64
 $ chmod +x /usr/local/bin/brig
 ```
 
 **Windows**
+
 ```powershell
 > mkdir -force $env:USERPROFILE\bin
 > (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.0.0/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
