@@ -17,3 +17,6 @@ docs/public/*
 
 # Developer
 pvt/
+
+.brigade/secrets.yaml
+.brigade/node_modules/

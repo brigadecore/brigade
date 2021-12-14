@@ -202,6 +202,7 @@ helm-install: helm-upgrade
 .PHONY: helm-upgrade
 helm-upgrade:
 	$(HELM) upgrade --install $(BRIGADE_RELEASE) brigade/brigade --namespace $(BRIGADE_NAMESPACE) \
+		--create-namespace \
 		--set brigade-github-app.enabled=true \
 		--set controller.registry=$(BRIGADE_REGISTRY) \
 		--set controller.tag=$(BRIGADE_VERSION) \
@@ -216,7 +217,9 @@ helm-upgrade:
 		--set genericGateway.registry=$(BRIGADE_REGISTRY) \
 		--set genericGateway.tag=$(BRIGADE_VERSION) \
 		--set vacuum.registry=$(BRIGADE_REGISTRY) \
-		--set vacuum.tag=$(BRIGADE_VERSION)
+		--set vacuum.tag=$(BRIGADE_VERSION) \
+		--timeout 600s \
+		--wait
 
 # Functional tests assume access to github.com
 # and Brigade chart installed with `--set brigade-github-app.enabled=true`
@@ -246,7 +249,7 @@ test-functional:
 
 .PHONY: e2e
 e2e:
-	CLIENT_PLATFORM=$(CLIENT_PLATFORM) CLIENT_ARCH=$(CLIENT_ARCH) ./e2e/run.sh
+	BRIGADE_NAMESPACE=$(BRIGADE_NAMESPACE) ./e2e/run.sh
 
 .PHONY: e2e-docker
 e2e-docker:
