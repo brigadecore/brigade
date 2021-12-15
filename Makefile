@@ -134,7 +134,6 @@ build: build-all-images build-brig
 build-all-images: $(addsuffix -build-image,$(IMAGES))
 
 %-build-image:
-	cp $*/.dockerignore .
 	docker build \
 		-f $*/Dockerfile \
 		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \

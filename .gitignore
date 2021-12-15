@@ -4,7 +4,6 @@
 /brigade-worker/doc/
 /brigade-worker/node_modules/
 /tests/testdata/*-generated.*
-/.dockerignore
 .DS_Store
 
 # IDEs
