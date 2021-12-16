@@ -51,35 +51,49 @@ export class Job extends BrigadierJob {
       const statusStream = jobsClient.watchStatus(this.event.id, this.name)
       statusStream.onData((status: core.JobStatus) => {
         this.logger.debug(`Current job phase is ${status.phase}`)
-        switch (status.phase) {
-        case core.JobPhase.Aborted:
-          reject(new Error(`Job "${this.name}" was aborted`))
-          break
-        case core.JobPhase.Canceled:
-          reject(new Error(`Job "${this.name}" was canceled before starting`))
-          break
-        case core.JobPhase.Failed:
-          reject(new Error(`Job "${this.name}" failed`))
-          break
-        case core.JobPhase.SchedulingFailed:
-          reject(new Error(`Job "${this.name}" scheduling failed`))
-          break
-        case core.JobPhase.Succeeded:
-          resolve()
-          break
-        case core.JobPhase.TimedOut:
-          reject(new Error(`Job "${this.name}" timed out`))
-          break
+        if (!this.fallible) {
+          switch (status.phase) {
+          case core.JobPhase.Aborted:
+            reject(new Error(`Job "${this.name}" was aborted`))
+            break
+          case core.JobPhase.Canceled:
+            reject(new Error(`Job "${this.name}" was canceled before starting`))
+            break
+          case core.JobPhase.Failed:
+            reject(new Error(`Job "${this.name}" failed`))
+            break
+          case core.JobPhase.SchedulingFailed:
+            reject(new Error(`Job "${this.name}" scheduling failed`))
+            break
+          case core.JobPhase.Succeeded:
+            resolve()
+            break
+          case core.JobPhase.TimedOut:
+            reject(new Error(`Job "${this.name}" timed out`))
+            break
+          }
         }
       })
       statusStream.onReconnecting(() => {
-        console.log("status stream connecting")
+        this.logger.warn("status stream connecting")
       })
       statusStream.onClosed(() => {
-        reject("status stream closed")
+        const msg = "status stream closed"
+        if (this.fallible) {
+          this.logger.warn(msg)
+          resolve()
+        } else {
+          reject(new Error(msg)) 
+        }
       })
       statusStream.onError((e: Error) => {
-        reject(new Error(`Error watching status for job "${this.name}": ${e.message}`))
+        const msg = `Error watching status for job "${this.name}": ${e.message}`
+        if (this.fallible) {
+          this.logger.warn(msg)
+          resolve()
+        } else {
+          reject(new Error(msg))
+        }
       })
       statusStream.onDone(() => {
         resolve()
@@ -111,7 +125,7 @@ export class Job extends BrigadierJob {
         logs += logEntry.message
       })
       logsStream.onReconnecting(() => {
-        console.log("log stream connecting")
+        this.logger.warn("log stream connecting")
       })
       logsStream.onClosed(() => {
         reject("log stream closed")

@@ -42,6 +42,11 @@ export class Job implements Runnable {
   /** Specifies requirements for the job execution environment. */
   public host: JobHost = new JobHost()
 
+  /** Specifies whether the job is permitted to fail WITHOUT causing the worker
+   * process to fail.
+   */
+  public fallible = false
+
   /** The event that triggered the job. */
   protected event: Event
 
