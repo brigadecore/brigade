@@ -384,7 +384,15 @@ func (e *eventsService) Create(
 			event.ProjectID,
 			RoleProjectUser,
 		); err != nil {
-			return events, err
+			// Fall back on checking if the principal is permitted to create events
+			// from the specified source.
+			if err := e.authorize(
+				ctx,
+				RoleEventCreator,
+				event.Source,
+			); err != nil {
+				return events, err
+			}
 		}
 	}
 
