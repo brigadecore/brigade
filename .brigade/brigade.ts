@@ -291,18 +291,18 @@ const testIntegrationJob = (event: Event) => {
   job.primaryContainer.sourceMountPath = localPath
   job.primaryContainer.workingDirectory = localPath
   job.primaryContainer.environment = {
-    "DOCKER_REGISTRY": "localhost:5000",
     "SKIP_DOCKER": "true",
     "DOCKER_HOST": "localhost:2375",
     "CGO_ENABLED": "0",
-    "BRIGADE_CI_PRIVATE_REPO_SSH_KEY": event.project.secrets.privateRepoSSHKey
+    "BRIGADE_CI_PRIVATE_REPO_SSH_KEY": event.project.secrets.privateRepoSSHKey,
+    "IMAGE_PULL_POLICY": "IfNotPresent"
   }
   job.primaryContainer.command = [ "sh" ]
   job.primaryContainer.arguments = [
     "-c",
     // The sleep is a grace period after which we assume the DinD sidecar is
     // probably up and running.
-    `sleep 20 && make hack-new-kind-cluster hack test-integration`
+    `sleep 20 && kind create cluster && make hack-build-images hack-load-images hack-deploy test-integration`
   ]
   job.sidecarContainers.docker = new Container(dindImg)
   job.sidecarContainers.docker.privileged = true
