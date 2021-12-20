@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@brigadecore/brigadier": "2.0.0",
+    "@brigadecore/brigadier": "2.1.0",
     "unique-names-generator": "4.4.0"
   }
 }

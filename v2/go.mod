@@ -13,7 +13,7 @@ require (
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
 	github.com/bacongobbler/browser v1.1.0
 	github.com/brigadecore/brigade-foundations v0.3.0
-	github.com/brigadecore/brigade/sdk/v2 v2.0.0-20200923171232-9f56c474d8bf
+	github.com/brigadecore/brigade/sdk/v2 v2.1.0
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/gdamore/tcell/v2 v2.3.3
