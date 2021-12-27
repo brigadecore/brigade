@@ -160,12 +160,13 @@ func assertJobPhase(
 	t *testing.T,
 	ctx context.Context, // nolint: revive
 	eventID string,
+	jobName string,
 	expectedPhase core.JobPhase,
 ) {
 	statusCh, errCh, err := client.Core().Events().Workers().Jobs().WatchStatus(
 		ctx,
 		eventID,
-		testJobName,
+		jobName,
 	)
 	require.NoError(t, err, "error encountered attempting to watch job status")
 

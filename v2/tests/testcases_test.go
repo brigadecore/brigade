@@ -64,7 +64,7 @@ var testCases = []struct {
 			event := events.Items[0]
 			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseSucceeded)
 			assertLogs(
 				t,
 				ctx,
@@ -96,7 +96,7 @@ var testCases = []struct {
 			event := events.Items[0]
 			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseSucceeded)
 			assertLogs(
 				t,
 				ctx,
@@ -128,7 +128,7 @@ var testCases = []struct {
 			event := events.Items[0]
 			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseSucceeded)
 			assertLogs(
 				t,
 				ctx,
@@ -160,7 +160,7 @@ var testCases = []struct {
 			event := events.Items[0]
 			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseSucceeded)
 			assertLogs(
 				t,
 				ctx,
@@ -192,7 +192,7 @@ var testCases = []struct {
 			event := events.Items[0]
 			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseSucceeded)
 			assertLogs(
 				t,
 				ctx,
@@ -237,7 +237,7 @@ var testCases = []struct {
 			event := events.Items[0]
 			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseSucceeded)
 			assertLogs(
 				t,
 				ctx,
@@ -312,7 +312,7 @@ events.process()`,
 			event := events.Items[0]
 			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseFailed)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, core.JobPhaseFailed)
+			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseFailed)
 			assertLogs(
 				t,
 				ctx,
@@ -351,7 +351,7 @@ events.process()`,
 			event := events.Items[0]
 			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseFailed)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, core.JobPhaseTimedOut)
+			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseTimedOut)
 		},
 	},
 	{
@@ -383,7 +383,7 @@ events.process()`,
 			require.Len(t, events.Items, 1)
 			event := events.Items[0]
 			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseTimedOut)
-			assertJobPhase(t, ctx, event.ID, core.JobPhaseAborted)
+			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseAborted)
 		},
 	},
 	{
@@ -398,6 +398,42 @@ events.process()`,
 		},
 		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
 			require.Empty(t, events.Items)
+		},
+	},
+	{
+		project: core.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "fallible-job-fail",
+			},
+			Description: "fallible job fails",
+			Spec: core.ProjectSpec{
+				EventSubscriptions: testEventSubscriptions,
+				WorkerTemplate: core.WorkerSpec{
+					DefaultConfigFiles: map[string]string{
+						"brigade.ts": `
+import { events, Job } from "@brigadecore/brigadier"
+events.on("brigade.sh/cli", "exec", async event => {
+	let job1 = new Job("test-job1", "alpine", event)
+	job1.primaryContainer.command = ["false"]
+	job1.fallible = true
+	await job1.run()
+
+	let job2 = new Job("test-job2", "alpine", event)
+	job2.primaryContainer.command = ["true"]
+	await job2.run()
+})
+events.process()`,
+					},
+				},
+			},
+		},
+		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+			require.Len(t, events.Items, 1)
+			event := events.Items[0]
+			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
+			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
+			assertJobPhase(t, ctx, event.ID, "test-job1", core.JobPhaseFailed)
+			assertJobPhase(t, ctx, event.ID, "test-job2", core.JobPhaseSucceeded)
 		},
 	},
 }
