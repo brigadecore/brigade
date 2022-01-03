@@ -4,7 +4,6 @@
 /brigade-worker/doc/
 /brigade-worker/node_modules/
 /tests/testdata/*-generated.*
-/.dockerignore
 .DS_Store
 
 # IDEs
@@ -17,3 +16,6 @@ docs/public/*
 
 # Developer
 pvt/
+
+.brigade/secrets.yaml
+.brigade/node_modules/
