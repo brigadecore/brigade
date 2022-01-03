@@ -53,22 +53,19 @@ func (u *UsersEndpoints) list(w http.ResponseWriter, r *http.Request) {
 		Continue: r.URL.Query().Get("continue"),
 	}
 	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		limitStr := r.URL.Query().Get("limit")
-		if limitStr != "" {
-			var err error
-			if opts.Limit, err = strconv.ParseInt(limitStr, 10, 64); err != nil ||
-				opts.Limit < 1 || opts.Limit > 100 {
-				restmachinery.WriteAPIResponse(
-					w,
-					http.StatusBadRequest,
-					&meta.ErrBadRequest{
-						Reason: fmt.Sprintf(
-							`Invalid value %q for "limit" query parameter`,
-							limitStr,
-						),
-					},
-				)
-			}
+		var err error
+		if opts.Limit, err = strconv.ParseInt(limitStr, 10, 64); err != nil ||
+			opts.Limit < 1 || opts.Limit > 100 {
+			restmachinery.WriteAPIResponse(
+				w,
+				http.StatusBadRequest,
+				&meta.ErrBadRequest{
+					Reason: fmt.Sprintf(
+						`Invalid value %q for "limit" query parameter`,
+						limitStr,
+					),
+				},
+			)
 			return
 		}
 	}
