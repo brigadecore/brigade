@@ -1,6 +1,6 @@
 {
   "name": "brigade-ci-cd",
   "dependencies": {
-    "@brigadecore/brigadier": "^2.1.0"
+    "@brigadecore/brigadier": "^2.2.0"
   }
 }
