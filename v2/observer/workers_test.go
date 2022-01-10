@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	coreTesting "github.com/brigadecore/brigade/sdk/v2/testing/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing/core"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -110,6 +110,7 @@ func TestSyncWorkerPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						status core.WorkerStatus,
+						_ *core.WorkerStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.WorkerPhaseAborted, status.Phase)
 						return nil
@@ -138,6 +139,7 @@ func TestSyncWorkerPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						status core.WorkerStatus,
+						_ *core.WorkerStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.WorkerPhaseRunning, status.Phase)
 						return nil
@@ -174,6 +176,7 @@ func TestSyncWorkerPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						status core.WorkerStatus,
+						_ *core.WorkerStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.WorkerPhaseRunning, status.Phase)
 						require.NotNil(t, now, status.Started)
@@ -237,6 +240,7 @@ func TestSyncWorkerPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						status core.WorkerStatus,
+						_ *core.WorkerStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.WorkerPhaseSucceeded, status.Phase)
 						require.NotNil(t, now, status.Started)
@@ -297,6 +301,7 @@ func TestSyncWorkerPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						status core.WorkerStatus,
+						_ *core.WorkerStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.WorkerPhaseFailed, status.Phase)
 						require.NotNil(t, now, status.Started)
@@ -335,6 +340,7 @@ func TestSyncWorkerPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						status core.WorkerStatus,
+						_ *core.WorkerStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.WorkerPhaseUnknown, status.Phase)
 						return nil
@@ -368,6 +374,7 @@ func TestSyncWorkerPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						status core.WorkerStatus,
+						_ *core.WorkerStatusUpdateOptions,
 					) error {
 						return errors.New("something went wrong")
 					},
@@ -494,7 +501,11 @@ func TestRunWorkerTimer(t *testing.T) {
 					"ns:nombre": func() {},
 				},
 				workersClient: &coreTesting.MockWorkersClient{
-					TimeoutFn: func(context.Context, string) error {
+					TimeoutFn: func(
+						context.Context,
+						string,
+						*core.WorkerTimeoutOptions,
+					) error {
 						require.Fail(
 							t,
 							"timout should not have been called on workers client, but was",
@@ -532,7 +543,11 @@ func TestRunWorkerTimer(t *testing.T) {
 					"ns:nombre": func() {},
 				},
 				workersClient: &coreTesting.MockWorkersClient{
-					TimeoutFn: func(context.Context, string) error {
+					TimeoutFn: func(
+						context.Context,
+						string,
+						*core.WorkerTimeoutOptions,
+					) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -567,7 +582,11 @@ func TestRunWorkerTimer(t *testing.T) {
 					"ns:nombre": func() {},
 				},
 				workersClient: &coreTesting.MockWorkersClient{
-					TimeoutFn: func(context.Context, string) error {
+					TimeoutFn: func(
+						context.Context,
+						string,
+						*core.WorkerTimeoutOptions,
+					) error {
 						return nil
 					},
 				},
@@ -606,7 +625,11 @@ func TestCleanupWorker(t *testing.T) {
 					delayBeforeCleanup: time.Second,
 				},
 				workersClient: &coreTesting.MockWorkersClient{
-					CleanupFn: func(context.Context, string) error {
+					CleanupFn: func(
+						context.Context,
+						string,
+						*core.WorkerCleanupOptions,
+					) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -626,7 +649,11 @@ func TestCleanupWorker(t *testing.T) {
 					delayBeforeCleanup: time.Second,
 				},
 				workersClient: &coreTesting.MockWorkersClient{
-					CleanupFn: func(context.Context, string) error {
+					CleanupFn: func(
+						context.Context,
+						string,
+						*core.WorkerCleanupOptions,
+					) error {
 						return nil
 					},
 				},

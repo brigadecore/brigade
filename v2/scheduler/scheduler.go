@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade-foundations/os"
-	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 )
 

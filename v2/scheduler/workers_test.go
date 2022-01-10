@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	coreTesting "github.com/brigadecore/brigade/sdk/v2/testing/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing/core"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/stretchr/testify/require"
 )
@@ -31,6 +31,7 @@ func TestManageWorkerCapacity(t *testing.T) {
 				substrateClient: &coreTesting.MockSubstrateClient{
 					CountRunningWorkersFn: func(
 						context.Context,
+						*core.RunningWorkerCountOptions,
 					) (core.SubstrateWorkerCount, error) {
 						return core.SubstrateWorkerCount{},
 							errors.New("something went wrong")
@@ -68,6 +69,7 @@ func TestManageWorkerCapacity(t *testing.T) {
 				substrateClient: &coreTesting.MockSubstrateClient{
 					CountRunningWorkersFn: func(
 						context.Context,
+						*core.RunningWorkerCountOptions,
 					) (core.SubstrateWorkerCount, error) {
 						return core.SubstrateWorkerCount{
 							Count: 2,
@@ -100,6 +102,7 @@ func TestManageWorkerCapacity(t *testing.T) {
 				substrateClient: &coreTesting.MockSubstrateClient{
 					CountRunningWorkersFn: func(
 						context.Context,
+						*core.RunningWorkerCountOptions,
 					) (core.SubstrateWorkerCount, error) {
 						return core.SubstrateWorkerCount{
 							Count: 1,
@@ -220,7 +223,11 @@ func TestRunWorkerLoop(t *testing.T) {
 						},
 					},
 					eventsClient: &coreTesting.MockEventsClient{
-						GetFn: func(context.Context, string) (core.Event, error) {
+						GetFn: func(
+							context.Context,
+							string,
+							*core.EventGetOptions,
+						) (core.Event, error) {
 							return core.Event{}, errors.New("something went wrong")
 						},
 					},
@@ -229,6 +236,7 @@ func TestRunWorkerLoop(t *testing.T) {
 							context.Context,
 							string,
 							core.WorkerStatus,
+							*core.WorkerStatusUpdateOptions,
 						) error {
 							return nil
 						},
@@ -267,7 +275,11 @@ func TestRunWorkerLoop(t *testing.T) {
 						},
 					},
 					eventsClient: &coreTesting.MockEventsClient{
-						GetFn: func(context.Context, string) (core.Event, error) {
+						GetFn: func(
+							context.Context,
+							string,
+							*core.EventGetOptions,
+						) (core.Event, error) {
 							cancelFn()
 							return core.Event{
 								Worker: &core.Worker{
@@ -324,7 +336,11 @@ func TestRunWorkerLoop(t *testing.T) {
 						},
 					},
 					eventsClient: &coreTesting.MockEventsClient{
-						GetFn: func(context.Context, string) (core.Event, error) {
+						GetFn: func(
+							context.Context,
+							string,
+							*core.EventGetOptions,
+						) (core.Event, error) {
 							return core.Event{
 								Worker: &core.Worker{
 									Status: core.WorkerStatus{
@@ -336,7 +352,11 @@ func TestRunWorkerLoop(t *testing.T) {
 					},
 					workerAvailabilityCh: workerAvailabilityCh,
 					workersClient: &coreTesting.MockWorkersClient{
-						StartFn: func(context.Context, string) error {
+						StartFn: func(
+							context.Context,
+							string,
+							*core.WorkerStartOptions,
+						) error {
 							return errors.New("something went wrong")
 						},
 					},
@@ -385,7 +405,11 @@ func TestRunWorkerLoop(t *testing.T) {
 						},
 					},
 					eventsClient: &coreTesting.MockEventsClient{
-						GetFn: func(context.Context, string) (core.Event, error) {
+						GetFn: func(
+							context.Context,
+							string,
+							*core.EventGetOptions,
+						) (core.Event, error) {
 							return core.Event{
 								Worker: &core.Worker{
 									Status: core.WorkerStatus{
@@ -397,7 +421,11 @@ func TestRunWorkerLoop(t *testing.T) {
 					},
 					workerAvailabilityCh: workerAvailabilityCh,
 					workersClient: &coreTesting.MockWorkersClient{
-						StartFn: func(context.Context, string) error {
+						StartFn: func(
+							context.Context,
+							string,
+							*core.WorkerStartOptions,
+						) error {
 							cancelFn()
 							return nil
 						},

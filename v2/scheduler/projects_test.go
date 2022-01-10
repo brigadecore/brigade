@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
-	coreTesting "github.com/brigadecore/brigade/sdk/v2/testing/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
+	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing/core"
 	"github.com/stretchr/testify/require"
 )
 

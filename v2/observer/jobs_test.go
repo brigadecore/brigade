@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	coreTesting "github.com/brigadecore/brigade/sdk/v2/testing/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing/core"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -111,6 +111,7 @@ func TestSyncJobPod(t *testing.T) {
 						eventID string,
 						jobName string,
 						status core.JobStatus,
+						_ *core.JobStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.JobPhaseAborted, status.Phase)
 						return nil
@@ -140,6 +141,7 @@ func TestSyncJobPod(t *testing.T) {
 						eventID string,
 						jobName string,
 						status core.JobStatus,
+						_ *core.JobStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.JobPhaseRunning, status.Phase)
 						return nil
@@ -174,6 +176,7 @@ func TestSyncJobPod(t *testing.T) {
 						eventID string,
 						jobName string,
 						status core.JobStatus,
+						_ *core.JobStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.JobPhaseRunning, status.Phase)
 						require.Nil(t, status.Ended)
@@ -231,6 +234,7 @@ func TestSyncJobPod(t *testing.T) {
 						eventID string,
 						jobName string,
 						status core.JobStatus,
+						_ *core.JobStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.JobPhaseSucceeded, status.Phase)
 						require.NotNil(t, status.Ended)
@@ -262,6 +266,7 @@ func TestSyncJobPod(t *testing.T) {
 						eventID string,
 						jobName string,
 						status core.JobStatus,
+						_ *core.JobStatusUpdateOptions,
 					) error {
 						return errors.New("something went wrong")
 					},
@@ -316,6 +321,7 @@ func TestSyncJobPod(t *testing.T) {
 						eventID string,
 						jobName string,
 						status core.JobStatus,
+						_ *core.JobStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.JobPhaseFailed, status.Phase)
 						require.NotNil(t, status.Ended)
@@ -353,6 +359,7 @@ func TestSyncJobPod(t *testing.T) {
 						eventID string,
 						jobName string,
 						status core.JobStatus,
+						_ *core.JobStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.JobPhaseSucceeded, status.Phase)
 						return nil
@@ -388,6 +395,7 @@ func TestSyncJobPod(t *testing.T) {
 						eventID string,
 						jobName string,
 						status core.JobStatus,
+						_ *core.JobStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.JobPhaseFailed, status.Phase)
 						return nil
@@ -423,6 +431,7 @@ func TestSyncJobPod(t *testing.T) {
 						eventID string,
 						jobName string,
 						status core.JobStatus,
+						_ *core.JobStatusUpdateOptions,
 					) error {
 						require.Equal(t, core.JobPhaseUnknown, status.Phase)
 						return nil
@@ -552,7 +561,12 @@ func TestRunJobTimer(t *testing.T) {
 					"ns:nombre": func() {},
 				},
 				jobsClient: &coreTesting.MockJobsClient{
-					TimeoutFn: func(context.Context, string, string) error {
+					TimeoutFn: func(
+						context.Context,
+						string,
+						string,
+						*core.JobTimeoutOptions,
+					) error {
 						require.Fail(
 							t,
 							"timout should not have been called on jobs client, but was",
@@ -591,7 +605,12 @@ func TestRunJobTimer(t *testing.T) {
 					"ns:nombre": func() {},
 				},
 				jobsClient: &coreTesting.MockJobsClient{
-					TimeoutFn: func(context.Context, string, string) error {
+					TimeoutFn: func(
+						context.Context,
+						string,
+						string,
+						*core.JobTimeoutOptions,
+					) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -627,7 +646,12 @@ func TestRunJobTimer(t *testing.T) {
 					"ns:nombre": func() {},
 				},
 				jobsClient: &coreTesting.MockJobsClient{
-					TimeoutFn: func(context.Context, string, string) error {
+					TimeoutFn: func(
+						context.Context,
+						string,
+						string,
+						*core.JobTimeoutOptions,
+					) error {
 						return nil
 					},
 				},
@@ -666,7 +690,12 @@ func TestCleanupJob(t *testing.T) {
 					delayBeforeCleanup: time.Second,
 				},
 				jobsClient: &coreTesting.MockJobsClient{
-					CleanupFn: func(context.Context, string, string) error {
+					CleanupFn: func(
+						context.Context,
+						string,
+						string,
+						*core.JobCleanupOptions,
+					) error {
 						return errors.New("something went wrong")
 					},
 				},
@@ -686,7 +715,12 @@ func TestCleanupJob(t *testing.T) {
 					delayBeforeCleanup: time.Second,
 				},
 				jobsClient: &coreTesting.MockJobsClient{
-					CleanupFn: func(context.Context, string, string) error {
+					CleanupFn: func(
+						context.Context,
+						string,
+						string,
+						*core.JobCleanupOptions,
+					) error {
 						return nil
 					},
 				},

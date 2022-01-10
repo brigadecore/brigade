@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -59,6 +59,7 @@ func (o *observer) syncWorkerPod(obj interface{}) {
 		ctx,
 		eventID,
 		status,
+		nil,
 	); err != nil {
 		if _, conflict :=
 			err.(*meta.ErrConflict); !conflict || pod.DeletionTimestamp == nil {
@@ -188,7 +189,7 @@ func (o *observer) runWorkerTimer(ctx context.Context, pod *corev1.Pod) {
 		timeoutCtx, cancel :=
 			context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		if err := o.workersClient.Timeout(timeoutCtx, eventID); err != nil {
+		if err := o.workersClient.Timeout(timeoutCtx, eventID, nil); err != nil {
 			o.errFn(
 				errors.Wrapf(
 					err,
@@ -204,7 +205,7 @@ func (o *observer) runWorkerTimer(ctx context.Context, pod *corev1.Pod) {
 func (o *observer) cleanupWorker(eventID string) {
 	ctx, cancel := context.WithTimeout(context.Background(), apiRequestTimeout)
 	defer cancel()
-	if err := o.workersClient.Cleanup(ctx, eventID); err != nil {
+	if err := o.workersClient.Cleanup(ctx, eventID, nil); err != nil {
 		o.errFn(
 			fmt.Sprintf(
 				"error cleaning up after worker for event %q: %s",

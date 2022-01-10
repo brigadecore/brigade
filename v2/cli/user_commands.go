@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
@@ -190,7 +190,7 @@ func userGet(c *cli.Context) error {
 		return err
 	}
 
-	user, err := client.Authn().Users().Get(c.Context, id)
+	user, err := client.Authn().Users().Get(c.Context, id, nil)
 	if err != nil {
 		return err
 	}
@@ -239,7 +239,7 @@ func userLock(c *cli.Context) error {
 		return err
 	}
 
-	if err := client.Authn().Users().Lock(c.Context, id); err != nil {
+	if err := client.Authn().Users().Lock(c.Context, id, nil); err != nil {
 		return err
 	}
 
@@ -256,7 +256,7 @@ func userUnlock(c *cli.Context) error {
 		return err
 	}
 
-	if err := client.Authn().Users().Unlock(c.Context, id); err != nil {
+	if err := client.Authn().Users().Unlock(c.Context, id, nil); err != nil {
 		return err
 	}
 
@@ -281,7 +281,7 @@ func userDelete(c *cli.Context) error {
 		return err
 	}
 
-	if err := client.Authn().Users().Delete(c.Context, id); err != nil {
+	if err := client.Authn().Users().Delete(c.Context, id, nil); err != nil {
 		return err
 	}
 

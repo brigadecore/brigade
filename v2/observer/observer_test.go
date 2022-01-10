@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
-	"github.com/brigadecore/brigade/sdk/v2/system"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v3/system"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes/fake"
 )

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"k8s.io/apimachinery/pkg/util/duration"
@@ -85,12 +85,12 @@ func (e *eventPage) load(ctx context.Context, eventID string) {
 
 // refresh refreshes Event info and associated Jobs and repaints the page.
 func (e *eventPage) refresh(ctx context.Context, eventID string) {
-	event, err := e.apiClient.Events().Get(ctx, eventID)
+	event, err := e.apiClient.Events().Get(ctx, eventID, nil)
 	if err != nil {
 		// TODO: This return is a bandaid fix to stop nil pointer dereference!
 		return
 	}
-	project, err := e.apiClient.Projects().Get(ctx, event.ProjectID)
+	project, err := e.apiClient.Projects().Get(ctx, event.ProjectID, nil)
 	if err != nil {
 		// TODO: This return is a bandaid fix to stop nil pointer dereference!
 		return

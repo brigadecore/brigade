@@ -69,8 +69,6 @@ github.com/bacongobbler/browser v1.1.0 h1:6YTctUlzcApit1vpWgh+myjh8lQUyQRD2Ltoyv
 github.com/bacongobbler/browser v1.1.0/go.mod h1:T9AaY4DSJ61FNgVTlCP/FWPrJ36TMRwI0Z18eLZ3IKI=
 github.com/brigadecore/brigade-foundations v0.3.0 h1:galsMzxSprURAEc2pxsmYJandiW4D+Npchx6ZiBIHkY=
 github.com/brigadecore/brigade-foundations v0.3.0/go.mod h1:edMgSJCUgfHN1RNGiiVOTRW4X4VykBLgssgWHPZK7Sg=
-github.com/brigadecore/brigade/sdk/v2 v2.2.0 h1:r9j7mCPUoBqiaOllKzdSl1GZp8Bx7SCJixgp3BFEMwg=
-github.com/brigadecore/brigade/sdk/v2 v2.2.0/go.mod h1:rB3y/pIheORX5AHbxaSAw5Xr/U6bUAUtSLkgJcbOHIY=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=

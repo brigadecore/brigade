@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	coreTesting "github.com/brigadecore/brigade/sdk/v2/testing/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing/core"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/stretchr/testify/require"
 )
@@ -31,6 +31,7 @@ func TestManageJobsCapacity(t *testing.T) {
 				substrateClient: &coreTesting.MockSubstrateClient{
 					CountRunningJobsFn: func(
 						context.Context,
+						*core.RunningJobCountOptions,
 					) (core.SubstrateJobCount, error) {
 						return core.SubstrateJobCount{}, errors.New("something went wrong")
 					},
@@ -67,6 +68,7 @@ func TestManageJobsCapacity(t *testing.T) {
 				substrateClient: &coreTesting.MockSubstrateClient{
 					CountRunningJobsFn: func(
 						context.Context,
+						*core.RunningJobCountOptions,
 					) (core.SubstrateJobCount, error) {
 						return core.SubstrateJobCount{
 							Count: 2,
@@ -99,6 +101,7 @@ func TestManageJobsCapacity(t *testing.T) {
 				substrateClient: &coreTesting.MockSubstrateClient{
 					CountRunningJobsFn: func(
 						context.Context,
+						*core.RunningJobCountOptions,
 					) (core.SubstrateJobCount, error) {
 						return core.SubstrateJobCount{
 							Count: 1,
@@ -254,7 +257,11 @@ func TestRunJobLoop(t *testing.T) {
 						},
 					},
 					eventsClient: &coreTesting.MockEventsClient{
-						GetFn: func(context.Context, string) (core.Event, error) {
+						GetFn: func(
+							context.Context,
+							string,
+							*core.EventGetOptions,
+						) (core.Event, error) {
 							return core.Event{}, errors.New("something went wrong")
 						},
 					},
@@ -264,6 +271,7 @@ func TestRunJobLoop(t *testing.T) {
 							string,
 							string,
 							core.JobStatus,
+							*core.JobStatusUpdateOptions,
 						) error {
 							return nil
 						},
@@ -303,7 +311,11 @@ func TestRunJobLoop(t *testing.T) {
 						},
 					},
 					eventsClient: &coreTesting.MockEventsClient{
-						GetFn: func(context.Context, string) (core.Event, error) {
+						GetFn: func(
+							context.Context,
+							string,
+							*core.EventGetOptions,
+						) (core.Event, error) {
 							return core.Event{
 								Worker: &core.Worker{},
 							}, nil
@@ -345,7 +357,11 @@ func TestRunJobLoop(t *testing.T) {
 						},
 					},
 					eventsClient: &coreTesting.MockEventsClient{
-						GetFn: func(context.Context, string) (core.Event, error) {
+						GetFn: func(
+							context.Context,
+							string,
+							*core.EventGetOptions,
+						) (core.Event, error) {
 							cancelFn()
 							return core.Event{
 								Worker: &core.Worker{
@@ -408,7 +424,11 @@ func TestRunJobLoop(t *testing.T) {
 						},
 					},
 					eventsClient: &coreTesting.MockEventsClient{
-						GetFn: func(context.Context, string) (core.Event, error) {
+						GetFn: func(
+							context.Context,
+							string,
+							*core.EventGetOptions,
+						) (core.Event, error) {
 							return core.Event{
 								Worker: &core.Worker{
 									Jobs: []core.Job{
@@ -425,7 +445,12 @@ func TestRunJobLoop(t *testing.T) {
 					},
 					jobAvailabilityCh: jobAvailabilityCh,
 					jobsClient: &coreTesting.MockJobsClient{
-						StartFn: func(context.Context, string, string) error {
+						StartFn: func(
+							context.Context,
+							string,
+							string,
+							*core.JobStartOptions,
+						) error {
 							return errors.New("something went wrong")
 						},
 					},
@@ -475,7 +500,11 @@ func TestRunJobLoop(t *testing.T) {
 						},
 					},
 					eventsClient: &coreTesting.MockEventsClient{
-						GetFn: func(context.Context, string) (core.Event, error) {
+						GetFn: func(
+							context.Context,
+							string,
+							*core.EventGetOptions,
+						) (core.Event, error) {
 							return core.Event{
 								Worker: &core.Worker{
 									Jobs: []core.Job{
@@ -492,7 +521,12 @@ func TestRunJobLoop(t *testing.T) {
 					},
 					jobAvailabilityCh: jobAvailabilityCh,
 					jobsClient: &coreTesting.MockJobsClient{
-						StartFn: func(context.Context, string, string) error {
+						StartFn: func(
+							context.Context,
+							string,
+							string,
+							*core.JobStartOptions,
+						) error {
 							cancelFn()
 							return nil
 						},

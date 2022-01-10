@@ -6,8 +6,8 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/bacongobbler/browser"
-	"github.com/brigadecore/brigade/sdk/v2/authn"
-	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v3/authn"
+	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/crypto/ssh/terminal"
@@ -93,7 +93,7 @@ func login(c *cli.Context) error {
 			}
 		}
 
-		token, err := client.CreateRootSession(c.Context, password)
+		token, err := client.CreateRootSession(c.Context, password, nil)
 		if err != nil {
 			return err
 		}

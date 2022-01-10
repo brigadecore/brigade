@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade-foundations/file"
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
@@ -419,7 +419,7 @@ func eventCreate(c *cli.Context) error {
 		return err
 	}
 
-	events, err := client.Core().Events().Create(c.Context, event)
+	events, err := client.Core().Events().Create(c.Context, event, nil)
 	if err != nil {
 		return err
 	}
@@ -628,7 +628,7 @@ func eventGet(c *cli.Context) error {
 		return err
 	}
 
-	event, err := client.Core().Events().Get(c.Context, id)
+	event, err := client.Core().Events().Get(c.Context, id, nil)
 	if err != nil {
 		return err
 	}
@@ -716,7 +716,7 @@ func eventCancel(c *cli.Context) error {
 		return err
 	}
 
-	if err = client.Core().Events().Cancel(c.Context, id); err != nil {
+	if err = client.Core().Events().Cancel(c.Context, id, nil); err != nil {
 		return err
 	}
 	fmt.Printf("Event %q canceled.\n", id)
@@ -756,7 +756,7 @@ func eventCancelMany(c *cli.Context) error {
 		WorkerPhases: workerPhases,
 	}
 
-	events, err := client.Core().Events().CancelMany(c.Context, selector)
+	events, err := client.Core().Events().CancelMany(c.Context, selector, nil)
 	if err != nil {
 		return err
 	}
@@ -781,7 +781,7 @@ func eventDelete(c *cli.Context) error {
 		return err
 	}
 
-	if err = client.Core().Events().Delete(c.Context, id); err != nil {
+	if err = client.Core().Events().Delete(c.Context, id, nil); err != nil {
 		return err
 	}
 	fmt.Printf("Event %q deleted.\n", id)
@@ -857,7 +857,7 @@ func eventDeleteMany(c *cli.Context) error {
 		WorkerPhases: workerPhases,
 	}
 
-	events, err := client.Core().Events().DeleteMany(c.Context, selector)
+	events, err := client.Core().Events().DeleteMany(c.Context, selector, nil)
 	if err != nil {
 		return err
 	}
@@ -875,7 +875,7 @@ func eventClone(c *cli.Context) error {
 		return err
 	}
 
-	event, err := client.Core().Events().Clone(c.Context, id)
+	event, err := client.Core().Events().Clone(c.Context, id, nil)
 	if err != nil {
 		return err
 	}
@@ -911,7 +911,7 @@ func eventRetry(c *cli.Context) error {
 		return err
 	}
 
-	event, err := client.Core().Events().Retry(c.Context, id)
+	event, err := client.Core().Events().Retry(c.Context, id, nil)
 	if err != nil {
 		return err
 	}

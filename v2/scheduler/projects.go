@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/pkg/errors"
 )
 

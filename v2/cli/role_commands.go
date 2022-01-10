@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/brigadecore/brigade/sdk/v2/authz"
-	libAuthz "github.com/brigadecore/brigade/sdk/v2/lib/authz"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
-	"github.com/brigadecore/brigade/sdk/v2/system"
+	"github.com/brigadecore/brigade/sdk/v3/authz"
+	libAuthz "github.com/brigadecore/brigade/sdk/v3/lib/authz"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
+	"github.com/brigadecore/brigade/sdk/v3/system"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
@@ -213,6 +213,7 @@ func grantSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			if err = client.Authz().RoleAssignments().Grant(
 				c.Context,
 				roleAssignment,
+				nil,
 			); err != nil {
 				return err
 			}
@@ -227,6 +228,7 @@ func grantSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			if err = client.Authz().RoleAssignments().Grant(
 				c.Context,
 				roleAssignment,
+				nil,
 			); err != nil {
 				return err
 			}
@@ -377,6 +379,7 @@ func revokeSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			if err = client.Authz().RoleAssignments().Revoke(
 				c.Context,
 				roleAssignment,
+				nil,
 			); err != nil {
 				return err
 			}
@@ -391,6 +394,7 @@ func revokeSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			if err = client.Authz().RoleAssignments().Revoke(
 				c.Context,
 				roleAssignment,
+				nil,
 			); err != nil {
 				return err
 			}

@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/stretchr/testify/require"
 )
 
@@ -230,6 +230,7 @@ var testCases = []struct {
 					Key:   "gitSSHKey",
 					Value: os.Getenv("BRIGADE_CI_PRIVATE_REPO_SSH_KEY"),
 				},
+				nil,
 			)
 		},
 		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
