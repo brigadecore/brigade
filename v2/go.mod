@@ -2,8 +2,6 @@ module github.com/brigadecore/brigade/v2
 
 go 1.15
 
-replace github.com/brigadecore/brigade/sdk/v2 => ../sdk/v2
-
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
 	github.com/Azure/go-amqp v0.13.1

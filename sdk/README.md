@@ -14,15 +14,15 @@ consumers of this SDK.
 ## Quickstart
 
 ```console
-$ go get github.com/brigadecore/brigade/sdk/v2
+$ go get github.com/brigadecore/brigade/sdk/v3
 ```
 
 In your gateway code:
 
 ```golang
 import (
-	"github.com/brigadecore/brigade/sdk/v2"
-	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v3"
+	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 )
 
 // ...
@@ -58,8 +58,8 @@ upstream systems):
 
 ```golang
 import (
-	"github.com/brigadecore/brigade/sdk/v2"
-	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v3"
+	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 )
 
 // ...
@@ -78,10 +78,10 @@ if err != nil {
 
 The SDK's [godoc] are quite thorough. Please explore those for further details.
 
-[godoc]: https://pkg.go.dev/github.com/brigadecore/brigade/sdk/v2
-[authn.APIClient]: https://pkg.go.dev/github.com/brigadecore/brigade/sdk/v2/authn#APIClient
-[authz.APIClient]: https://pkg.go.dev/github.com/brigadecore/brigade/sdk/v2/authz#APIClient
-[core.APIClient]: https://pkg.go.dev/github.com/brigadecore/brigade/sdk/v2/core#APIClient
+[godoc]: https://pkg.go.dev/github.com/brigadecore/brigade/sdk/v3
+[authn.APIClient]: https://pkg.go.dev/github.com/brigadecore/brigade/sdk/v3/authn#APIClient
+[authz.APIClient]: https://pkg.go.dev/github.com/brigadecore/brigade/sdk/v3/authz#APIClient
+[core.APIClient]: https://pkg.go.dev/github.com/brigadecore/brigade/sdk/v3/core#APIClient
 
 ## Using with Brigade 2
 
