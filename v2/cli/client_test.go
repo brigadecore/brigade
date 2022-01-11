@@ -31,7 +31,7 @@ func TestGetClient(t *testing.T) {
 	cfg, err := getConfig()
 	require.NoError(t, err)
 	require.Equal(t, testConfig, cfg)
-	client, err := getClient()
+	client, err := getClient(false)
 	require.NoError(t, err)
 	require.NotNil(t, client)
 }

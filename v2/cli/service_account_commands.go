@@ -146,7 +146,7 @@ func serviceAccountCreate(c *cli.Context) error {
 		return errors.Errorf("unknown output format %q", output)
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func serviceAccountList(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -288,7 +288,7 @@ func serviceAccountGet(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -341,7 +341,7 @@ func serviceAccountGet(c *cli.Context) error {
 func serviceAccountLock(c *cli.Context) error {
 	id := c.String(flagID)
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -358,7 +358,7 @@ func serviceAccountLock(c *cli.Context) error {
 func serviceAccountUnlock(c *cli.Context) error {
 	id := c.String(flagID)
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -392,7 +392,7 @@ func serviceAccountDelete(c *cli.Context) error {
 		return nil
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}

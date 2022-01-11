@@ -104,7 +104,7 @@ func secretsList(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -226,7 +226,7 @@ func secretsSet(c *cli.Context) error {
 		secrets[kvTokens[0]] = kvTokens[1]
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -253,7 +253,7 @@ func secretsUnset(c *cli.Context) error {
 	projectID := c.String(flagID)
 	keys := c.StringSlice(flagUnset)
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 )
 
-func getClient() (sdk.APIClient, error) {
+func getClient(testConn bool) (sdk.APIClient, error) {
 	cfg, err := getConfig()
 	if err != nil {
 		return nil, errors.Wrapf(
@@ -24,12 +24,14 @@ func getClient() (sdk.APIClient, error) {
 			AllowInsecureConnections: cfg.IgnoreCertErrors,
 		},
 	)
-	_, err = client.System().UnversionedPing(context.Background())
-	if err != nil {
-		return nil, errors.Wrapf(
-			err,
-			"error getting brigade client: error pinging API server",
-		)
+	if testConn {
+		_, err = client.System().UnversionedPing(context.Background())
+		if err != nil {
+			return nil, errors.Wrapf(
+				err,
+				"error getting brigade client: error pinging API server",
+			)
+		}
 	}
 	return client, nil
 }

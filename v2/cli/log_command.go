@@ -52,7 +52,7 @@ func logs(c *cli.Context) error {
 		Follow: follow,
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}

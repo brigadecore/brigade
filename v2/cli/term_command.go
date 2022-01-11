@@ -14,7 +14,7 @@ var termCommand = &cli.Command{
 }
 
 func term(c *cli.Context) error {
-	client, err := getClient()
+	client, err := getClient(true)
 	if err != nil {
 		return err
 	}

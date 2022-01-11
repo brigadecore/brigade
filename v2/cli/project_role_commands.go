@@ -187,7 +187,7 @@ func grantProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 			)
 		}
 
-		client, err := getClient()
+		client, err := getClient(false)
 		if err != nil {
 			return err
 		}
@@ -266,7 +266,7 @@ func listProjectRoles(c *cli.Context) error {
 		}
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -353,7 +353,7 @@ func revokeProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 			)
 		}
 
-		client, err := getClient()
+		client, err := getClient(false)
 		if err != nil {
 			return err
 		}

@@ -131,7 +131,7 @@ func projectCreate(c *cli.Context) error {
 		return errors.Wrapf(err, "error unmarshaling project file %s", filename)
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func projectList(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -235,7 +235,7 @@ func projectGet(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -317,7 +317,7 @@ func projectUpdate(c *cli.Context) error {
 		return errors.New("project definition does not specify an ID")
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -346,7 +346,7 @@ func projectDelete(c *cli.Context) error {
 		return nil
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}

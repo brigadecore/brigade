@@ -203,7 +203,7 @@ func grantSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			roleAssignment.Scope = c.String(flagSource)
 		}
 
-		client, err := getClient()
+		client, err := getClient(false)
 		if err != nil {
 			return err
 		}
@@ -273,7 +273,7 @@ func listSystemRoles(c *cli.Context) error {
 		}
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -367,7 +367,7 @@ func revokeSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			roleAssignment.Scope = c.String(flagSource)
 		}
 
-		client, err := getClient()
+		client, err := getClient(false)
 		if err != nil {
 			return err
 		}

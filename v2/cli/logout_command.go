@@ -14,7 +14,7 @@ var logoutCommand = &cli.Command{
 }
 
 func logout(c *cli.Context) error {
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
