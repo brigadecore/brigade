@@ -414,7 +414,7 @@ func eventCreate(c *cli.Context) error {
 		Payload:   payload,
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -533,7 +533,7 @@ func eventList(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -623,7 +623,7 @@ func eventGet(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -711,7 +711,7 @@ func eventCancel(c *cli.Context) error {
 		return nil
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -746,7 +746,7 @@ func eventCancelMany(c *cli.Context) error {
 		return nil
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -776,7 +776,7 @@ func eventDelete(c *cli.Context) error {
 		return nil
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -847,7 +847,7 @@ func eventDeleteMany(c *cli.Context) error {
 		return nil
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -870,7 +870,7 @@ func eventClone(c *cli.Context) error {
 	id := c.String(flagID)
 	follow := c.Bool(flagFollow)
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -906,7 +906,7 @@ func eventRetry(c *cli.Context) error {
 	id := c.String(flagID)
 	follow := c.Bool(flagFollow)
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}

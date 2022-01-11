@@ -36,7 +36,7 @@ func printVersion(c *cli.Context) error {
 		} else if exists, err := file.Exists(configFile); err != nil || !exists {
 			return err
 		}
-		client, err := getClient()
+		client, err := getClient(false)
 		if err != nil {
 			return err
 		}

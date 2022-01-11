@@ -104,7 +104,7 @@ func userList(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func userGet(c *cli.Context) error {
 		return err
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -234,7 +234,7 @@ func userGet(c *cli.Context) error {
 func userLock(c *cli.Context) error {
 	id := c.String(flagID)
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func userLock(c *cli.Context) error {
 func userUnlock(c *cli.Context) error {
 	id := c.String(flagID)
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
@@ -276,7 +276,7 @@ func userDelete(c *cli.Context) error {
 		return nil
 	}
 
-	client, err := getClient()
+	client, err := getClient(false)
 	if err != nil {
 		return err
 	}
