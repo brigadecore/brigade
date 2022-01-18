@@ -88,7 +88,7 @@ func (l *logsClient) Stream(
 		}
 	}
 	if opts != nil && opts.Follow {
-		queryParams["follow"] = "true"
+		queryParams["follow"] = trueStr
 	}
 
 	resp, err := l.SubmitRequest( // nolint: bodyclose

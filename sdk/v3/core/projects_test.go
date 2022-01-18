@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	rmTesting "github.com/brigadecore/brigade/sdk/v3/internal/restmachinery/testing" // nolint: lll
@@ -170,6 +171,9 @@ func TestProjectsClientUpdate(t *testing.T) {
 			ID: "bluebook",
 		},
 	}
+	testOpts := ProjectUpdateOptions{
+		CreateIfNotFound: true,
+	}
 	server := httptest.NewServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -179,6 +183,11 @@ func TestProjectsClientUpdate(t *testing.T) {
 					t,
 					fmt.Sprintf("/v2/projects/%s", testProject.ID),
 					r.URL.Path,
+				)
+				require.Equal(
+					t,
+					strconv.FormatBool(testOpts.CreateIfNotFound),
+					r.URL.Query().Get("create"),
 				)
 				bodyBytes, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
@@ -193,7 +202,7 @@ func TestProjectsClientUpdate(t *testing.T) {
 	)
 	defer server.Close()
 	client := NewProjectsClient(server.URL, rmTesting.TestAPIToken, nil)
-	project, err := client.Update(context.Background(), testProject, nil)
+	project, err := client.Update(context.Background(), testProject, &testOpts)
 	require.NoError(t, err)
 	require.Equal(t, testProject, project)
 }

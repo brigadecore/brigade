@@ -151,7 +151,7 @@ func TestJobsClientWatchStatus(t *testing.T) {
 				)
 				require.Equal(
 					t,
-					"true",
+					trueStr,
 					r.URL.Query().Get("watch"),
 				)
 				bodyBytes, err := json.Marshal(testStatus)

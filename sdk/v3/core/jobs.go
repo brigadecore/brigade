@@ -416,7 +416,7 @@ func (j *jobsClient) WatchStatus(
 				jobName,
 			),
 			QueryParams: map[string]string{
-				"watch": "true",
+				"watch": trueStr,
 			},
 			SuccessCode: http.StatusOK,
 		},
