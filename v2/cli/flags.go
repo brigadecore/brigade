@@ -10,6 +10,7 @@ const (
 	flagClient         = "client"
 	flagContainer      = "container"
 	flagContinue       = "continue"
+	flagCreate         = "create"
 	flagDescription    = "description"
 	flagEvent          = "event"
 	flagFailed         = "failed"

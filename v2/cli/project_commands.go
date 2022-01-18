@@ -99,6 +99,12 @@ var projectCommand = &cli.Command{
 					Required:  true,
 					TakesFile: true,
 				},
+				&cli.BoolFlag{
+					Name:    flagCreate,
+					Aliases: []string{"c"},
+					Usage: "If set and project does not exist, will create the " +
+						"project",
+				},
 			},
 			Action: projectUpdate,
 		},
@@ -287,6 +293,7 @@ func projectGet(c *cli.Context) error {
 
 func projectUpdate(c *cli.Context) error {
 	filename := c.String(flagFile)
+	create := c.Bool(flagCreate)
 
 	// Read and parse the file
 	projectBytes, err := ioutil.ReadFile(filename)
@@ -323,11 +330,15 @@ func projectUpdate(c *cli.Context) error {
 		return err
 	}
 
+	opts := &core.ProjectUpdateOptions{
+		CreateIfNotFound: create,
+	}
+
 	if _, err = client.Core().Projects().UpdateFromBytes(
 		c.Context,
 		project.ID,
 		projectBytes,
-		nil,
+		opts,
 	); err != nil {
 		return err
 	}
