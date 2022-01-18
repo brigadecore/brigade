@@ -117,6 +117,8 @@ func (p *ProjectsEndpoints) get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *ProjectsEndpoints) update(w http.ResponseWriter, r *http.Request) {
+	// nolint: errcheck
+	createIfNotFound, _ := strconv.ParseBool(r.URL.Query().Get("create"))
 	project := api.Project{}
 	restmachinery.ServeRequest(
 		restmachinery.InboundRequest{
@@ -131,7 +133,13 @@ func (p *ProjectsEndpoints) update(w http.ResponseWriter, r *http.Request) {
 							"not match.",
 					}
 				}
-				return project, p.Service.Update(r.Context(), project)
+				return project, p.Service.Update(
+					r.Context(),
+					project,
+					api.ProjectUpdateOptions{
+						CreateIfNotFound: createIfNotFound,
+					},
+				)
 			},
 			SuccessCode: http.StatusOK,
 		},

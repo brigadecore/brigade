@@ -95,6 +95,15 @@ func (p ProjectList) Contains(project Project) bool {
 	return false
 }
 
+// ProjectUpdateOptions represents useful, optional settings for updating a
+// Project. It currently has no fields, but exists to preserve the possibility
+// of future expansion without having to change client function signatures.
+type ProjectUpdateOptions struct {
+	// CreateIfNotFound when set to true will cause a non-existing Project to be
+	// created instead of updated.
+	CreateIfNotFound bool
+}
+
 // ProjectSpec is the technical component of a Project. It pairs
 // EventSubscriptions with a prototypical WorkerSpec that is used as a template
 // for creating new Workers.
@@ -179,7 +188,7 @@ type ProjectsService interface {
 	// exist, implementations MUST return a *meta.ErrNotFound error.
 	// Implementations may assume the Project passed to this function has been
 	// pre-validated.
-	Update(context.Context, Project) error
+	Update(context.Context, Project, ProjectUpdateOptions) error
 	// Delete deletes a single Project specified by its identifier. If the
 	// specified Project does not exist, implementations MUST return a
 	// *meta.ErrNotFound error.
@@ -371,20 +380,32 @@ func (p *projectsService) Get(
 	return project, nil
 }
 
-func (p *projectsService) Update(ctx context.Context, project Project) error {
+func (p *projectsService) Update(
+	ctx context.Context,
+	project Project,
+	opts ProjectUpdateOptions,
+) error {
 	if err :=
 		p.projectAuthorize(ctx, project.ID, RoleProjectDeveloper); err != nil {
 		return err
 	}
 
-	if err := p.projectsStore.Update(ctx, project); err != nil {
+	err := p.projectsStore.Update(ctx, project)
+	if err == nil {
+		return nil
+	}
+	_, isErrNotFound := errors.Cause(err).(*meta.ErrNotFound)
+	if !isErrNotFound || !opts.CreateIfNotFound {
 		return errors.Wrapf(
 			err,
 			"error updating project %q in store",
 			project.ID,
 		)
 	}
-	return nil
+
+	// If we get to here, we need to try to create the project
+	_, err = p.Create(ctx, project)
+	return err
 }
 
 func (p *projectsService) Delete(ctx context.Context, id string) error {
