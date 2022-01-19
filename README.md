@@ -21,7 +21,7 @@ productive.
 ## Getting Started
 
 Ready to get started? Check out our
-[QuickStart](https://docs.brigade.sh/intro/quickstart/) for comprehensive
+[QuickStart]( https://www.youtube.com/watch?v=VFyvYOjm6zc) for comprehensive
 instructions.
 
 ## The Brigade Ecosystem
