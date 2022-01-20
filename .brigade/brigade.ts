@@ -124,7 +124,9 @@ jobs[lintJSJobName] = lintJSJob
 
 const yarnAuditJobName = "yarn-audit"
 const yarnAuditJob = (event: Event) => {
-  return new MakeTargetJob(yarnAuditJobName, jsImg, event)
+  const job = new MakeTargetJob(yarnAuditJobName, jsImg, event) 
+  job.fallible = true
+  return job
 }
 jobs[yarnAuditJobName] = yarnAuditJob
 
