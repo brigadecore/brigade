@@ -58,7 +58,7 @@ func TestSessionsClientCreateRootSession(t *testing.T) {
 }
 
 func TestSessionsClientCreateUserSession(t *testing.T) {
-	testThirdPartyAuthOpts := &ThirdPartyAuthOptions{
+	testUserSessionCreateOpts := &UserSessionCreateOptions{
 		SuccessURL: "https://example.com/success",
 	}
 	testThirdPartyAuthDetails := ThirdPartyAuthDetails{
@@ -72,7 +72,7 @@ func TestSessionsClientCreateUserSession(t *testing.T) {
 				require.Empty(t, r.Header.Get("Authorization"))
 				require.Equal(
 					t,
-					testThirdPartyAuthOpts.SuccessURL,
+					testUserSessionCreateOpts.SuccessURL,
 					r.URL.Query().Get("successURL"),
 				)
 				bodyBytes, err := json.Marshal(testThirdPartyAuthDetails)
@@ -85,7 +85,7 @@ func TestSessionsClientCreateUserSession(t *testing.T) {
 	defer server.Close()
 	client := NewSessionsClient(server.URL, rmTesting.TestAPIToken, nil)
 	thirdPartyAuthDetails, err :=
-		client.CreateUserSession(context.Background(), testThirdPartyAuthOpts)
+		client.CreateUserSession(context.Background(), testUserSessionCreateOpts)
 	require.NoError(t, err)
 	require.Equal(t, testThirdPartyAuthDetails, thirdPartyAuthDetails)
 }

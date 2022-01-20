@@ -86,12 +86,12 @@ type UserGetOptions struct{}
 // future expansion without having to change client function signatures.
 type UserLockOptions struct{}
 
-// UserLockOptions represents useful, optional settings for the unlocking of a
+// UserUnlockOptions represents useful, optional settings for the unlocking of a
 // User. It currently has no fields, but exists to preserve the possibility of
 // future expansion without having to change client function signatures.
 type UserUnlockOptions struct{}
 
-// UserLockOptions represents useful, optional settings for the deletion of a
+// UserDeleteOptions represents useful, optional settings for the deletion of a
 // User. It currently has no fields, but exists to preserve the possibility of
 // future expansion without having to change client function signatures.
 type UserDeleteOptions struct{}
