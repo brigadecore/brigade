@@ -8,7 +8,7 @@ aliases:
   - /intro/quickstart.md
 ---
 
-This QuickStart presents a comprehensive introduction to Brigade. You will
+This [QuickStart](https://www.youtube.com/watch?v=VFyvYOjm6zc) presents a comprehensive introduction to Brigade. You will
 install Brigade with default configuration on a local, development-grade
 cluster, create a project and an event, watch Brigade handle that event, then
 clean up.
