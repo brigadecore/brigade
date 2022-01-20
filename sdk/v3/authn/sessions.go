@@ -12,9 +12,9 @@ import (
 	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 )
 
-// ThirdPartyAuthOptions encapsulates user-specified options when creating a new
-// Session that will authenticate using a third-party identity provider.
-type ThirdPartyAuthOptions struct {
+// UserSessionCreateOptions encapsulates user-specified options when creating a
+// new Session that will authenticate using a third-party identity provider.
+type UserSessionCreateOptions struct {
 	// SuccessURL indicates where users should be redirected to after successful
 	// completion of a third-party authentication workflow. If this is left
 	// unspecified, users will be redirected to a default success page.
@@ -84,7 +84,7 @@ type SessionsClient interface {
 	// authentication process.
 	CreateUserSession(
 		context.Context,
-		*ThirdPartyAuthOptions,
+		*UserSessionCreateOptions,
 	) (ThirdPartyAuthDetails, error)
 	// Delete deletes the Session identified by the token in use by this client.
 	Delete(context.Context, *SessionDeleteOptions) error
@@ -138,7 +138,7 @@ func (s *sessionsClient) CreateRootSession(
 
 func (s *sessionsClient) CreateUserSession(
 	ctx context.Context,
-	opts *ThirdPartyAuthOptions,
+	opts *UserSessionCreateOptions,
 ) (ThirdPartyAuthDetails, error) {
 	includeAuthHeader := false
 	thirdPartyAuthDetails := ThirdPartyAuthDetails{}

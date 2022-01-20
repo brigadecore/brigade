@@ -251,10 +251,9 @@ type DeleteManyEventsResult struct {
 	Count int64 `json:"count"`
 }
 
-// RoleAssignmentGrantOptions represents useful, optional settings for creating
-// a new Event. It currently has no fields, but exists to preserve the
-// possibility of future expansion without having to change client function
-// signatures.
+// EventCreateOptions represents useful, optional settings for creating a new
+// Event. It currently has no fields, but exists to preserve the possibility of
+// future expansion without having to change client function signatures.
 type EventCreateOptions struct{}
 
 // EventGetOptions represents useful, optional criteria for retrieval of an
@@ -301,7 +300,7 @@ type EventDeleteOptions struct{}
 // future expansion without having to change client function signatures.
 type EventDeleteManyOptions struct{}
 
-// EventDeleteOptions represents useful, optional settings for retrying an
+// EventRetryOptions represents useful, optional settings for retrying an
 // existing Event. It currently has no fields, but exists to preserve the
 // possibility of future expansion without having to change client function
 // signatures.

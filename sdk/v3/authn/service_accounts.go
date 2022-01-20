@@ -94,7 +94,7 @@ type ServiceAccountLockOptions struct{}
 // function signatures.
 type ServiceAccountUnlockOptions struct{}
 
-// ServiceAccountUnlockOptions represents useful, optional settings for the
+// ServiceAccountDeleteOptions represents useful, optional settings for the
 // deletion of a ServiceAccount. It currently has no fields, but exists to
 // preserve the possibility of future expansion without having to change client
 // function signatures.

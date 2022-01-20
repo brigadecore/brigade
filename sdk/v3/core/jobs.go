@@ -228,7 +228,7 @@ func (j JobStatus) MarshalJSON() ([]byte, error) {
 	)
 }
 
-// EventDeleteOptions represents useful, optional settings for creating a new
+// JobCreateOptions represents useful, optional settings for creating a new
 // Job. It currently has no fields, but exists to preserve the possibility of
 // future expansion without having to change client function signatures.
 type JobCreateOptions struct{}
@@ -261,7 +261,7 @@ type JobStatusUpdateOptions struct{}
 // future expansion without having to change client function signatures.
 type JobCleanupOptions struct{}
 
-// JobCleanupOptions represents useful, optional settings for timing out a Job.
+// JobTimeoutOptions represents useful, optional settings for timing out a Job.
 // It currently has no fields, but exists to preserve the possibility of future
 // expansion without having to change client function signatures.
 type JobTimeoutOptions struct{}

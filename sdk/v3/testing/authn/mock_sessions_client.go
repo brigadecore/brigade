@@ -14,7 +14,7 @@ type MockSessionsClient struct {
 	) (authn.Token, error)
 	CreateUserSessionFn func(
 		context.Context,
-		*authn.ThirdPartyAuthOptions,
+		*authn.UserSessionCreateOptions,
 	) (authn.ThirdPartyAuthDetails, error)
 	DeleteFn func(context.Context, *authn.SessionDeleteOptions) error
 }
@@ -29,7 +29,7 @@ func (m *MockSessionsClient) CreateRootSession(
 
 func (m *MockSessionsClient) CreateUserSession(
 	ctx context.Context,
-	opts *authn.ThirdPartyAuthOptions,
+	opts *authn.UserSessionCreateOptions,
 ) (authn.ThirdPartyAuthDetails, error) {
 	return m.CreateUserSessionFn(ctx, opts)
 }
