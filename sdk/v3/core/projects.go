@@ -165,8 +165,7 @@ type ProjectCreateOptions struct{}
 type ProjectGetOptions struct{}
 
 // ProjectUpdateOptions represents useful, optional settings for updating a
-// Project. It currently has no fields, but exists to preserve the possibility
-// of future expansion without having to change client function signatures.
+// Project.
 type ProjectUpdateOptions struct {
 	// CreateIfNotFound when set to true will cause a non-existing Project to be
 	// created instead of updated.
