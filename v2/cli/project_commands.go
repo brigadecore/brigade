@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
@@ -139,6 +139,7 @@ func projectCreate(c *cli.Context) error {
 	if _, err := client.Core().Projects().CreateFromBytes(
 		c.Context,
 		projectBytes,
+		nil,
 	); err != nil {
 		return err
 	}
@@ -240,7 +241,7 @@ func projectGet(c *cli.Context) error {
 		return err
 	}
 
-	project, err := client.Core().Projects().Get(c.Context, id)
+	project, err := client.Core().Projects().Get(c.Context, id, nil)
 	if err != nil {
 		return err
 	}
@@ -326,6 +327,7 @@ func projectUpdate(c *cli.Context) error {
 		c.Context,
 		project.ID,
 		projectBytes,
+		nil,
 	); err != nil {
 		return err
 	}
@@ -351,7 +353,7 @@ func projectDelete(c *cli.Context) error {
 		return err
 	}
 
-	if err := client.Core().Projects().Delete(c.Context, id); err != nil {
+	if err := client.Core().Projects().Delete(c.Context, id, nil); err != nil {
 		return err
 	}
 

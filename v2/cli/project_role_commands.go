@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/brigadecore/brigade/sdk/v2/authz"
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	libAuthz "github.com/brigadecore/brigade/sdk/v2/lib/authz"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v3/authz"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	libAuthz "github.com/brigadecore/brigade/sdk/v3/lib/authz"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
@@ -202,6 +202,7 @@ func grantProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 				c.Context,
 				projectID,
 				projectRoleAssignment,
+				nil,
 			); err != nil {
 				return err
 			}
@@ -218,6 +219,7 @@ func grantProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 				c.Context,
 				projectID,
 				projectRoleAssignment,
+				nil,
 			); err != nil {
 				return err
 			}
@@ -368,6 +370,7 @@ func revokeProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 				c.Context,
 				projectID,
 				projectRoleAssignment,
+				nil,
 			); err != nil {
 				return err
 			}
@@ -384,6 +387,7 @@ func revokeProjectRole(role libAuthz.Role) func(c *cli.Context) error {
 				c.Context,
 				projectID,
 				projectRoleAssignment,
+				nil,
 			); err != nil {
 				return err
 			}

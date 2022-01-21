@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
@@ -240,6 +240,7 @@ func secretsSet(c *cli.Context) error {
 			c.Context,
 			projectID,
 			secret,
+			nil,
 		); err != nil {
 			return err
 		}
@@ -263,6 +264,7 @@ func secretsUnset(c *cli.Context) error {
 			c.Context,
 			projectID,
 			key,
+			nil,
 		); err != nil {
 			return err
 		}

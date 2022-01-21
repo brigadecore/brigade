@@ -91,7 +91,7 @@ IMMUTABLE_DOCKER_TAG := $(VERSION)
 .PHONY: lint-go
 lint-go:
 	$(GO_DOCKER_CMD) sh -c ' \
-		cd sdk/v2 && \
+		cd sdk/v3 && \
 		golangci-lint run --config ../../golangci.yaml && \
 		cd ../../v2 && \
 		golangci-lint run --config ../golangci.yaml \
@@ -100,7 +100,7 @@ lint-go:
 .PHONY: test-unit-go
 test-unit-go:
 	$(GO_DOCKER_CMD) sh -c ' \
-		cd sdk/v2 && \
+		cd sdk/v3 && \
 		go test \
 			-v \
 			-timeout=60s \

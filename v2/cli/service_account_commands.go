@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/authn"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v3/authn"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
 	"k8s.io/apimachinery/pkg/util/duration"
@@ -159,6 +159,7 @@ func serviceAccountCreate(c *cli.Context) error {
 			},
 			Description: description,
 		},
+		nil,
 	)
 	if err != nil {
 		return err
@@ -293,7 +294,8 @@ func serviceAccountGet(c *cli.Context) error {
 		return err
 	}
 
-	serviceAccount, err := client.Authn().ServiceAccounts().Get(c.Context, id)
+	serviceAccount, err :=
+		client.Authn().ServiceAccounts().Get(c.Context, id, nil)
 	if err != nil {
 		return err
 	}
@@ -346,7 +348,8 @@ func serviceAccountLock(c *cli.Context) error {
 		return err
 	}
 
-	if err := client.Authn().ServiceAccounts().Lock(c.Context, id); err != nil {
+	if err :=
+		client.Authn().ServiceAccounts().Lock(c.Context, id, nil); err != nil {
 		return err
 	}
 
@@ -363,7 +366,7 @@ func serviceAccountUnlock(c *cli.Context) error {
 		return err
 	}
 
-	token, err := client.Authn().ServiceAccounts().Unlock(c.Context, id)
+	token, err := client.Authn().ServiceAccounts().Unlock(c.Context, id, nil)
 	if err != nil {
 		return err
 	}
@@ -397,7 +400,8 @@ func serviceAccountDelete(c *cli.Context) error {
 		return err
 	}
 
-	if err := client.Authn().ServiceAccounts().Delete(c.Context, id); err != nil {
+	if err :=
+		client.Authn().ServiceAccounts().Delete(c.Context, id, nil); err != nil {
 		return err
 	}
 

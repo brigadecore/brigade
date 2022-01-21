@@ -12,11 +12,11 @@ import (
 	"time"
 
 	foundOS "github.com/brigadecore/brigade-foundations/os"
-	"github.com/brigadecore/brigade/sdk/v2"
-	"github.com/brigadecore/brigade/sdk/v2/authn"
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
-	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v3"
+	"github.com/brigadecore/brigade/sdk/v3/authn"
+	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
+	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 	"github.com/stretchr/testify/require"
 )
 
@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 		apiServerAddress,
 		"",
 		apiClientOpts,
-	).CreateRootSession(ctx, rootPassword)
+	).CreateRootSession(ctx, rootPassword, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -64,7 +64,7 @@ func TestIntegration(t *testing.T) {
 	// Check ping endpoint for expected version
 	expectedVersion, err := foundOS.GetRequiredEnvVar("VERSION")
 	require.NoError(t, err)
-	pingResponse, err := client.System().Ping(ctx)
+	pingResponse, err := client.System().Ping(ctx, nil)
 	require.NoError(t, err)
 	require.Equal(t, expectedVersion, pingResponse.Version)
 
@@ -73,10 +73,10 @@ func TestIntegration(t *testing.T) {
 		if testCase.shouldTest != nil && !testCase.shouldTest(t) {
 			continue
 		}
-		_, err = client.Core().Projects().Create(ctx, testCase.project)
+		_, err = client.Core().Projects().Create(ctx, testCase.project, nil)
 		require.NoErrorf(t, err, "error creating project %q", testCase.project.ID)
 		// nolint: errcheck
-		defer client.Core().Projects().Delete(ctx, testCase.project.ID)
+		defer client.Core().Projects().Delete(ctx, testCase.project.ID, nil)
 		if testCase.postProjectCreate != nil {
 			require.NoErrorf(
 				t,
@@ -113,7 +113,7 @@ func TestIntegration(t *testing.T) {
 				Type:      "exec",
 			}
 
-			events, err = client.Core().Events().Create(ctx, event)
+			events, err = client.Core().Events().Create(ctx, event, nil)
 			require.NoError(t, err)
 			testCase.assertions(t, ctx, events)
 		})
@@ -129,6 +129,7 @@ func assertWorkerPhase(
 	statusCh, errCh, err := client.Core().Events().Workers().WatchStatus(
 		ctx,
 		eventID,
+		nil,
 	)
 	require.NoError(t, err)
 
@@ -167,6 +168,7 @@ func assertJobPhase(
 		ctx,
 		eventID,
 		jobName,
+		nil,
 	)
 	require.NoError(t, err, "error encountered attempting to watch job status")
 

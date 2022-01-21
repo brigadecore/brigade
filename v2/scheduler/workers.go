@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade-foundations/retries"
-	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 )
 
@@ -28,7 +28,8 @@ func (s *scheduler) manageWorkerCapacity(ctx context.Context) {
 					return false, nil // Stop looking
 				default:
 				}
-				substrateWorkerCount, err := s.substrateClient.CountRunningWorkers(ctx)
+				substrateWorkerCount, err :=
+					s.substrateClient.CountRunningWorkers(ctx, nil)
 				if err != nil {
 					return false, err // Real error; stop retrying
 				}
@@ -117,7 +118,7 @@ outerLoop:
 
 			eventID := msg.Message
 
-			event, err := s.eventsClient.Get(ctx, eventID)
+			event, err := s.eventsClient.Get(ctx, eventID, nil)
 			if err != nil {
 				s.workerLoopErrFn(err)
 
@@ -127,6 +128,7 @@ outerLoop:
 					core.WorkerStatus{
 						Phase: core.WorkerPhaseSchedulingFailed,
 					},
+					nil,
 				); err != nil {
 					s.workerLoopErrFn(err)
 				}
@@ -160,7 +162,7 @@ outerLoop:
 
 			// Now use the API to start the Worker...
 
-			if err := s.workersClient.Start(ctx, event.ID); err != nil {
+			if err := s.workersClient.Start(ctx, event.ID, nil); err != nil {
 				s.workerLoopErrFn(err)
 			}
 

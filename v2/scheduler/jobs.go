@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade-foundations/retries"
-	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/pkg/errors"
 )
@@ -30,7 +30,7 @@ func (s *scheduler) manageJobCapacity(ctx context.Context) {
 					return false, nil // Stop looking
 				default:
 				}
-				substrateJobCount, err := s.substrateClient.CountRunningJobs(ctx)
+				substrateJobCount, err := s.substrateClient.CountRunningJobs(ctx, nil)
 				if err != nil {
 					return false, err // Real error; stop retrying
 				}
@@ -133,7 +133,7 @@ outerLoop:
 			eventID := messageTokens[0]
 			jobName := messageTokens[1]
 
-			event, err := s.eventsClient.Get(ctx, eventID)
+			event, err := s.eventsClient.Get(ctx, eventID, nil)
 			if err != nil {
 				s.jobLoopErrFn(err)
 
@@ -144,6 +144,7 @@ outerLoop:
 					core.JobStatus{
 						Phase: core.JobPhaseSchedulingFailed,
 					},
+					nil,
 				); err != nil {
 					s.jobLoopErrFn(err)
 				}
@@ -192,7 +193,7 @@ outerLoop:
 
 			// Now use the API to start the Job...
 
-			if err := s.jobsClient.Start(ctx, event.ID, jobName); err != nil {
+			if err := s.jobsClient.Start(ctx, event.ID, jobName, nil); err != nil {
 				s.jobLoopErrFn(err)
 			}
 

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/armon/circbuf"
-	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )

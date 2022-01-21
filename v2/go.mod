@@ -2,7 +2,7 @@ module github.com/brigadecore/brigade/v2
 
 go 1.15
 
-replace github.com/brigadecore/brigade/sdk/v2 => ../sdk/v2
+replace github.com/brigadecore/brigade/sdk/v3 => ../sdk/v3
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
@@ -13,7 +13,7 @@ require (
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
 	github.com/bacongobbler/browser v1.1.0
 	github.com/brigadecore/brigade-foundations v0.3.0
-	github.com/brigadecore/brigade/sdk/v2 v2.2.0
+	github.com/brigadecore/brigade/sdk/v3 v3.0.0-00010101000000-000000000000
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/gdamore/tcell/v2 v2.3.3

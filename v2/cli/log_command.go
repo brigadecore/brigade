@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
 	"github.com/urfave/cli/v2"
 )
 

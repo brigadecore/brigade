@@ -23,7 +23,7 @@ import (
 
 	"github.com/brigadecore/brigade-foundations/retries"
 	"github.com/brigadecore/brigade-foundations/version"
-	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
 )
 
 const (

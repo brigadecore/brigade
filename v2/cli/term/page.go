@@ -1,7 +1,7 @@
 package term
 
 import (
-	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
 	"github.com/rivo/tview"
 )
 

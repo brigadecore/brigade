@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brigadecore/brigade/sdk/v2/core"
+	"github.com/brigadecore/brigade/sdk/v3/core"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -67,7 +67,7 @@ func (j *jobPage) load(ctx context.Context, eventID, jobName string) {
 
 // refresh refreshes Job info and repaints the page.
 func (j *jobPage) refresh(ctx context.Context, eventID, jobName string) {
-	event, err := j.apiClient.Events().Get(ctx, eventID)
+	event, err := j.apiClient.Events().Get(ctx, eventID, nil)
 	if err != nil {
 		// TODO: This return is a bandaid fix to stop nil pointer dereference!
 		return
