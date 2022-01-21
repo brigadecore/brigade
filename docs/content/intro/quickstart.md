@@ -13,6 +13,8 @@ install Brigade with default configuration on a local, development-grade
 cluster, create a project and an event, watch Brigade handle that event, then
 clean up.
 
+If you prefer learning through video, check out the [video adaptation](https://www.youtube.com/watch?v=VFyvYOjm6zc) of this QuickStart guide on our YouTube channel.
+
 > ⚠️ Note that the default configuration is appropriate only for evaluating
 > Brigade on a local, development-grade cluster and is not appropriate for _any_
 > shared cluster -- _especially a production one_. See our
