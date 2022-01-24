@@ -405,7 +405,7 @@ func (w *workersClient) WatchStatus(
 			Method: http.MethodGet,
 			Path:   fmt.Sprintf("v2/events/%s/worker/status", eventID),
 			QueryParams: map[string]string{
-				"watch": "true",
+				"watch": trueStr,
 			},
 			SuccessCode: http.StatusOK,
 		},

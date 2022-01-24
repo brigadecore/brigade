@@ -2,11 +2,11 @@ package api
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
 	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -364,6 +364,7 @@ func TestProjectServiceGet(t *testing.T) {
 func TestProjectServiceUpdate(t *testing.T) {
 	testCases := []struct {
 		name       string
+		opts       ProjectUpdateOptions
 		service    ProjectsService
 		assertions func(error)
 	}{
@@ -394,6 +395,54 @@ func TestProjectServiceUpdate(t *testing.T) {
 			},
 		},
 		{
+			name: "not found error from store; create option not set",
+			service: &projectsService{
+				projectAuthorize: alwaysProjectAuthorize,
+				projectsStore: &mockProjectsStore{
+					UpdateFn: func(context.Context, Project) error {
+						return &meta.ErrNotFound{}
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrNotFound{}, errors.Cause(err))
+				require.Contains(t, err.Error(), "error updating project")
+			},
+		},
+		{
+			name: "not found error from store; create option set",
+			opts: ProjectUpdateOptions{
+				CreateIfNotFound: true,
+			},
+			service: &projectsService{
+				authorize:        alwaysAuthorize,
+				projectAuthorize: alwaysProjectAuthorize,
+				substrate: &mockSubstrate{
+					CreateProjectFn: func(
+						_ context.Context,
+						project Project,
+					) (Project, error) {
+						return project, nil
+					},
+				},
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, &meta.ErrNotFound{}
+					},
+					UpdateFn: func(context.Context, Project) error {
+						return &meta.ErrNotFound{}
+					},
+					CreateFn: func(context.Context, Project) error {
+						return nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.NoError(t, err)
+			},
+		},
+		{
 			name: "success",
 			service: &projectsService{
 				projectAuthorize: alwaysProjectAuthorize,
@@ -410,7 +459,11 @@ func TestProjectServiceUpdate(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			err := testCase.service.Update(context.Background(), Project{})
+			err := testCase.service.Update(
+				context.Background(),
+				Project{},
+				testCase.opts,
+			)
 			testCase.assertions(err)
 		})
 	}

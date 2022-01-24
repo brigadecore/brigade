@@ -165,9 +165,12 @@ type ProjectCreateOptions struct{}
 type ProjectGetOptions struct{}
 
 // ProjectUpdateOptions represents useful, optional settings for updating a
-// Project. It currently has no fields, but exists to preserve the possibility
-// of future expansion without having to change client function signatures.
-type ProjectUpdateOptions struct{}
+// Project.
+type ProjectUpdateOptions struct {
+	// CreateIfNotFound when set to true will cause a non-existing Project to be
+	// created instead of updated.
+	CreateIfNotFound bool
+}
 
 // ProjectDeleteOptions represents useful, optional settings for deleting a
 // Project. It currently has no fields, but exists to preserve the possibility
@@ -322,14 +325,19 @@ func (p *projectsClient) Get(
 func (p *projectsClient) Update(
 	ctx context.Context,
 	project Project,
-	_ *ProjectUpdateOptions,
+	opts *ProjectUpdateOptions,
 ) (Project, error) {
+	queryParams := map[string]string{}
+	if opts != nil && opts.CreateIfNotFound {
+		queryParams["create"] = trueStr
+	}
 	updatedProject := Project{}
 	return updatedProject, p.ExecuteRequest(
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/projects/%s", project.ID),
+			QueryParams: queryParams,
 			ReqBodyObj:  project,
 			SuccessCode: http.StatusOK,
 			RespObj:     &updatedProject,
@@ -341,14 +349,19 @@ func (p *projectsClient) UpdateFromBytes(
 	ctx context.Context,
 	projectID string,
 	projectBytes []byte,
-	_ *ProjectUpdateOptions,
+	opts *ProjectUpdateOptions,
 ) (Project, error) {
+	queryParams := map[string]string{}
+	if opts != nil && opts.CreateIfNotFound {
+		queryParams["create"] = trueStr
+	}
 	updatedProject := Project{}
 	return updatedProject, p.ExecuteRequest(
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodPut,
 			Path:        fmt.Sprintf("v2/projects/%s", projectID),
+			QueryParams: queryParams,
 			ReqBodyObj:  projectBytes,
 			SuccessCode: http.StatusOK,
 			RespObj:     &updatedProject,
