@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/meta"
-	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing/core"
+	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,10 +28,10 @@ func TestManageProjects(t *testing.T) {
 					projectsClient: &coreTesting.MockProjectsClient{
 						ListFn: func(
 							context.Context,
-							*core.ProjectsSelector,
+							*sdk.ProjectsSelector,
 							*meta.ListOptions,
-						) (core.ProjectList, error) {
-							return core.ProjectList{}, errors.New("something went wrong")
+						) (sdk.ProjectList, error) {
+							return sdk.ProjectList{}, errors.New("something went wrong")
 						},
 					},
 				}
@@ -52,11 +52,11 @@ func TestManageProjects(t *testing.T) {
 					projectsClient: &coreTesting.MockProjectsClient{
 						ListFn: func(
 							context.Context,
-							*core.ProjectsSelector,
+							*sdk.ProjectsSelector,
 							*meta.ListOptions,
-						) (core.ProjectList, error) {
-							return core.ProjectList{
-								Items: []core.Project{
+						) (sdk.ProjectList, error) {
+							return sdk.ProjectList{
+								Items: []sdk.Project{
 									{
 										ObjectMeta: meta.ObjectMeta{
 											ID: "blue-book",

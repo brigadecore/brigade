@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/stretchr/testify/require"
@@ -90,7 +90,7 @@ func TestGetSchedulerConfig(t *testing.T) {
 }
 
 func TestNewScheduler(t *testing.T) {
-	coreClient := core.NewAPIClient("", "", &restmachinery.APIClientOptions{})
+	coreClient := sdk.NewCoreClient("", "", &restmachinery.APIClientOptions{})
 	queueReaderFactory := &mockQueueReaderFactory{}
 	config := schedulerConfig{
 		addAndRemoveProjectsInterval: 2 * time.Minute,

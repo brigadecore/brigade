@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade-foundations/os"
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 )
 
@@ -38,11 +38,11 @@ func getSchedulerConfig() (schedulerConfig, error) {
 
 type scheduler struct {
 	queueReaderFactory   queue.ReaderFactory
-	projectsClient       core.ProjectsClient
-	substrateClient      core.SubstrateClient
-	eventsClient         core.EventsClient
-	workersClient        core.WorkersClient
-	jobsClient           core.JobsClient
+	projectsClient       sdk.ProjectsClient
+	substrateClient      sdk.SubstrateClient
+	eventsClient         sdk.EventsClient
+	workersClient        sdk.WorkersClient
+	jobsClient           sdk.JobsClient
 	config               schedulerConfig
 	workerAvailabilityCh chan struct{}
 	jobAvailabilityCh    chan struct{}
@@ -60,7 +60,7 @@ type scheduler struct {
 }
 
 func newScheduler(
-	coreClient core.APIClient,
+	coreClient sdk.CoreClient,
 	queueReaderFactory queue.ReaderFactory,
 	config schedulerConfig,
 ) *scheduler {

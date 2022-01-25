@@ -5,7 +5,7 @@ import (
 
 	"github.com/brigadecore/brigade-foundations/signals"
 	"github.com/brigadecore/brigade-foundations/version"
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue/amqp"
 )
@@ -20,13 +20,13 @@ func main() {
 	ctx := signals.Context()
 
 	// Brigade core API client
-	var apiClient core.APIClient
+	var coreClient sdk.CoreClient
 	{
 		address, token, opts, err := apiClientConfig()
 		if err != nil {
 			log.Fatal(err)
 		}
-		apiClient = core.NewAPIClient(address, token, &opts)
+		coreClient = sdk.NewCoreClient(address, token, &opts)
 	}
 
 	// Message receiving abstraction
@@ -48,7 +48,7 @@ func main() {
 			log.Fatal(err)
 		}
 		scheduler = newScheduler(
-			apiClient,
+			coreClient,
 			queueReaderFactory,
 			config,
 		)
