@@ -1,31 +1,28 @@
 package testing
 
 import (
-	"github.com/brigadecore/brigade/sdk/v3/authn"
-	"github.com/brigadecore/brigade/sdk/v3/authz"
-	"github.com/brigadecore/brigade/sdk/v3/core"
-	"github.com/brigadecore/brigade/sdk/v3/system"
+	"github.com/brigadecore/brigade/sdk/v3"
 )
 
 type MockAPIClient struct {
-	AuthnClient  authn.APIClient
-	AuthzClient  authz.APIClient
-	CoreClient   core.APIClient
-	SystemClient system.APIClient
+	AuthnClient  sdk.AuthnClient
+	AuthzClient  sdk.SystemAuthzClient
+	CoreClient   sdk.CoreClient
+	SystemClient sdk.SystemClient
 }
 
-func (m *MockAPIClient) Authn() authn.APIClient {
+func (m *MockAPIClient) Authn() sdk.AuthnClient {
 	return m.AuthnClient
 }
 
-func (m *MockAPIClient) Authz() authz.APIClient {
+func (m *MockAPIClient) Authz() sdk.SystemAuthzClient {
 	return m.AuthzClient
 }
 
-func (m *MockAPIClient) Core() core.APIClient {
+func (m *MockAPIClient) Core() sdk.CoreClient {
 	return m.CoreClient
 }
 
-func (m *MockAPIClient) System() system.APIClient {
+func (m *MockAPIClient) System() sdk.SystemClient {
 	return m.SystemClient
 }
