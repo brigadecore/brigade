@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade-foundations/file"
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
@@ -407,7 +407,7 @@ func eventCreate(c *cli.Context) error {
 		payload = string(payloadBytes)
 	}
 
-	event := core.Event{
+	event := sdk.Event{
 		ProjectID: projectID,
 		Source:    source,
 		Type:      eventType,
@@ -445,7 +445,7 @@ func eventCreate(c *cli.Context) error {
 		client.Core().Events().Logs(),
 		event.ID,
 		nil,
-		&core.LogStreamOptions{
+		&sdk.LogStreamOptions{
 			Follow: true,
 		},
 	)
@@ -481,34 +481,34 @@ func eventList(c *cli.Context) error {
 		labels[keyValStrs[0]] = keyValStrs[1]
 	}
 
-	workerPhases := []core.WorkerPhase{}
+	workerPhases := []sdk.WorkerPhase{}
 
 	if c.Bool(flagAborted) {
-		workerPhases = append(workerPhases, core.WorkerPhaseAborted)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseAborted)
 	}
 	if c.Bool(flagCanceled) {
-		workerPhases = append(workerPhases, core.WorkerPhaseCanceled)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseCanceled)
 	}
 	if c.Bool(flagFailed) {
-		workerPhases = append(workerPhases, core.WorkerPhaseFailed)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseFailed)
 	}
 	if c.Bool(flagPending) {
-		workerPhases = append(workerPhases, core.WorkerPhasePending)
+		workerPhases = append(workerPhases, sdk.WorkerPhasePending)
 	}
 	if c.Bool(flagRunning) {
-		workerPhases = append(workerPhases, core.WorkerPhaseRunning)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseRunning)
 	}
 	if c.Bool(flagStarting) {
-		workerPhases = append(workerPhases, core.WorkerPhaseStarting)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseStarting)
 	}
 	if c.Bool(flagSucceeded) {
-		workerPhases = append(workerPhases, core.WorkerPhaseSucceeded)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseSucceeded)
 	}
 	if c.Bool(flagTimedOut) {
-		workerPhases = append(workerPhases, core.WorkerPhaseTimedOut)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseTimedOut)
 	}
 	if c.Bool(flagUnknown) {
-		workerPhases = append(workerPhases, core.WorkerPhaseUnknown)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseUnknown)
 	}
 
 	if c.Bool(flagTerminal) {
@@ -517,7 +517,7 @@ func eventList(c *cli.Context) error {
 				"--terminal is mutually exclusive with all other phase flags",
 			)
 		}
-		workerPhases = core.WorkerPhasesTerminal()
+		workerPhases = sdk.WorkerPhasesTerminal()
 	}
 
 	if c.Bool(flagNonTerminal) {
@@ -526,7 +526,7 @@ func eventList(c *cli.Context) error {
 				"--non-terminal is mutually exclusive with all other phase flags",
 			)
 		}
-		workerPhases = core.WorkerPhasesNonTerminal()
+		workerPhases = sdk.WorkerPhasesNonTerminal()
 	}
 
 	if err := validateOutputFormat(output); err != nil {
@@ -538,7 +538,7 @@ func eventList(c *cli.Context) error {
 		return err
 	}
 
-	selector := core.EventsSelector{
+	selector := sdk.EventsSelector{
 		ProjectID:    c.String(flagProject),
 		Source:       c.String(flagSource),
 		Type:         c.String(flagType),
@@ -727,15 +727,15 @@ func eventCancel(c *cli.Context) error {
 func eventCancelMany(c *cli.Context) error {
 	projectID := c.String(flagProject)
 
-	workerPhases := []core.WorkerPhase{
-		core.WorkerPhasePending,
+	workerPhases := []sdk.WorkerPhase{
+		sdk.WorkerPhasePending,
 	}
 
 	if c.Bool(flagRunning) {
-		workerPhases = append(workerPhases, core.WorkerPhaseRunning)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseRunning)
 	}
 	if c.Bool(flagStarting) {
-		workerPhases = append(workerPhases, core.WorkerPhaseStarting)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseStarting)
 	}
 
 	confirmed, err := confirmed(c)
@@ -751,7 +751,7 @@ func eventCancelMany(c *cli.Context) error {
 		return err
 	}
 
-	selector := core.EventsSelector{
+	selector := sdk.EventsSelector{
 		ProjectID:    projectID,
 		WorkerPhases: workerPhases,
 	}
@@ -791,34 +791,34 @@ func eventDelete(c *cli.Context) error {
 
 func eventDeleteMany(c *cli.Context) error {
 	projectID := c.String(flagProject)
-	workerPhases := []core.WorkerPhase{}
+	workerPhases := []sdk.WorkerPhase{}
 
 	if c.Bool(flagAborted) {
-		workerPhases = append(workerPhases, core.WorkerPhaseAborted)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseAborted)
 	}
 	if c.Bool(flagCanceled) {
-		workerPhases = append(workerPhases, core.WorkerPhaseCanceled)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseCanceled)
 	}
 	if c.Bool(flagFailed) {
-		workerPhases = append(workerPhases, core.WorkerPhaseFailed)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseFailed)
 	}
 	if c.Bool(flagPending) {
-		workerPhases = append(workerPhases, core.WorkerPhasePending)
+		workerPhases = append(workerPhases, sdk.WorkerPhasePending)
 	}
 	if c.Bool(flagRunning) {
-		workerPhases = append(workerPhases, core.WorkerPhaseRunning)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseRunning)
 	}
 	if c.Bool(flagStarting) {
-		workerPhases = append(workerPhases, core.WorkerPhaseStarting)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseStarting)
 	}
 	if c.Bool(flagSucceeded) {
-		workerPhases = append(workerPhases, core.WorkerPhaseSucceeded)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseSucceeded)
 	}
 	if c.Bool(flagTimedOut) {
-		workerPhases = append(workerPhases, core.WorkerPhaseTimedOut)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseTimedOut)
 	}
 	if c.Bool(flagUnknown) {
-		workerPhases = append(workerPhases, core.WorkerPhaseUnknown)
+		workerPhases = append(workerPhases, sdk.WorkerPhaseUnknown)
 	}
 
 	if c.Bool(flagAnyPhase) {
@@ -827,7 +827,7 @@ func eventDeleteMany(c *cli.Context) error {
 				"--any-phase is mutually exclusive with all other phase flags",
 			)
 		}
-		workerPhases = core.WorkerPhasesAll()
+		workerPhases = sdk.WorkerPhasesAll()
 	}
 
 	if c.Bool(flagTerminal) {
@@ -836,7 +836,7 @@ func eventDeleteMany(c *cli.Context) error {
 				"--terminal is mutually exclusive with all other phase flags",
 			)
 		}
-		workerPhases = core.WorkerPhasesTerminal()
+		workerPhases = sdk.WorkerPhasesTerminal()
 	}
 
 	confirmed, err := confirmed(c)
@@ -852,7 +852,7 @@ func eventDeleteMany(c *cli.Context) error {
 		return err
 	}
 
-	selector := core.EventsSelector{
+	selector := sdk.EventsSelector{
 		ProjectID:    projectID,
 		WorkerPhases: workerPhases,
 	}
@@ -896,7 +896,7 @@ func eventClone(c *cli.Context) error {
 		client.Core().Events().Logs(),
 		event.ID,
 		nil,
-		&core.LogStreamOptions{
+		&sdk.LogStreamOptions{
 			Follow: true,
 		},
 	)
@@ -933,7 +933,7 @@ func eventRetry(c *cli.Context) error {
 		client.Core().Events().Logs(),
 		event.ID,
 		nil,
-		&core.LogStreamOptions{
+		&sdk.LogStreamOptions{
 			Follow: true,
 		},
 	)

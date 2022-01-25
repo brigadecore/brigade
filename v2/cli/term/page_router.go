@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/rivo/tview"
 )
 
@@ -26,7 +26,7 @@ type pageRouter struct {
 // NewPageRouter returns a custom UI component composed of tview.Pages which
 // can be refreshed and brought into focus on command.
 func NewPageRouter(
-	apiClient core.APIClient,
+	apiClient sdk.APIClient,
 	app *tview.Application,
 ) tview.Primitive {
 	r := &pageRouter{

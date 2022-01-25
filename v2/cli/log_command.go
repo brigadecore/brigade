@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/urfave/cli/v2"
 )
 
@@ -44,11 +44,11 @@ func logs(c *cli.Context) error {
 	eventID := c.String(flagID)
 	follow := c.Bool(flagFollow)
 
-	selector := &core.LogsSelector{
+	selector := &sdk.LogsSelector{
 		Job:       c.String(flagJob),
 		Container: c.String(flagContainer),
 	}
-	opts := &core.LogStreamOptions{
+	opts := &sdk.LogStreamOptions{
 		Follow: follow,
 	}
 
@@ -68,10 +68,10 @@ func logs(c *cli.Context) error {
 
 func streamLogs(
 	ctx context.Context,
-	logsClient core.LogsClient,
+	logsClient sdk.LogsClient,
 	eventID string,
-	selector *core.LogsSelector,
-	opts *core.LogStreamOptions,
+	selector *sdk.LogsSelector,
+	opts *sdk.LogStreamOptions,
 ) error {
 	logEntryCh, errCh, err := logsClient.Stream(ctx, eventID, selector, opts)
 	if err != nil {

@@ -21,7 +21,7 @@ func term(c *cli.Context) error {
 	app := tview.NewApplication()
 	app.SetRoot(
 		tview.NewFlex().SetDirection(tview.FlexRow).AddItem(
-			terminal.NewPageRouter(client.Core(), app),
+			terminal.NewPageRouter(client, app),
 			0,
 			1, // Proportionate width-- 100%
 			true,

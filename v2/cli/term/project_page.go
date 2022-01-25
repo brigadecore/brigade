@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -28,7 +28,7 @@ type projectPage struct {
 // newProjectPage returns a custom UI component that displays Project info and a
 // list of associated Events.
 func newProjectPage(
-	apiClient core.APIClient,
+	apiClient sdk.APIClient,
 	app *tview.Application,
 	router *pageRouter,
 ) *projectPage {
@@ -77,13 +77,13 @@ func (p *projectPage) refresh(ctx context.Context, projectID string) {
 		p.eventsContinueValues = []string{""}
 	}
 
-	project, err := p.apiClient.Projects().Get(ctx, projectID, nil)
+	project, err := p.apiClient.Core().Projects().Get(ctx, projectID, nil)
 	if err != nil {
 		// TODO: Handle this
 	}
-	events, err := p.apiClient.Events().List(
+	events, err := p.apiClient.Core().Events().List(
 		ctx,
-		&core.EventsSelector{
+		&sdk.EventsSelector{
 			ProjectID: projectID,
 		},
 		&meta.ListOptions{
@@ -138,7 +138,7 @@ func (p *projectPage) refresh(ctx context.Context, projectID string) {
 
 }
 
-func (p *projectPage) fillProjectInfo(project core.Project) {
+func (p *projectPage) fillProjectInfo(project sdk.Project) {
 	p.projectInfo.Clear()
 	p.projectInfo.SetTitle(fmt.Sprintf(" %s ", project.ID))
 	infoText := fmt.Sprintf("[grey]Description: [white]%s", project.Description)
@@ -179,7 +179,7 @@ func (p *projectPage) fillProjectInfo(project core.Project) {
 	p.projectInfo.SetText(infoText)
 }
 
-func (p *projectPage) fillUsage(events core.EventList) {
+func (p *projectPage) fillUsage(events sdk.EventList) {
 	usageText := "[yellow](F5 R) [white]Reload    [yellow](<-/Del) [white]Back    [yellow](ESC) [white]Home" // nolint: lll
 	if len(p.eventsContinueValues) > 1 {
 		usageText = fmt.Sprintf("%s    [yellow](P) [white]Previous Page", usageText)
@@ -191,7 +191,7 @@ func (p *projectPage) fillUsage(events core.EventList) {
 	p.usage.SetText(usageText)
 }
 
-func (p *projectPage) fillEventsTable(events core.EventList) {
+func (p *projectPage) fillEventsTable(events sdk.EventList) {
 	const (
 		statusCol int = iota
 		idCol

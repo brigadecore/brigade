@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
@@ -232,7 +232,7 @@ func secretsSet(c *cli.Context) error {
 	}
 
 	for k, v := range secrets {
-		secret := core.Secret{
+		secret := sdk.Secret{
 			Key:   k,
 			Value: v,
 		}
