@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/meta"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/pkg/errors"
@@ -92,10 +92,10 @@ func (o *observer) syncJobPod(obj interface{}) {
 	}
 }
 
-func (o *observer) getJobStatusFromPod(pod *corev1.Pod) core.JobStatus {
+func (o *observer) getJobStatusFromPod(pod *corev1.Pod) sdk.JobStatus {
 	// Determine the jobs's phase based on pod phase
-	status := core.JobStatus{
-		Phase: core.JobPhaseRunning,
+	status := sdk.JobStatus{
+		Phase: sdk.JobPhaseRunning,
 	}
 	if pod.DeletionTimestamp != nil {
 		// This pod has been deleted. Pods usually hang around for a while after
@@ -105,13 +105,13 @@ func (o *observer) getJobStatusFromPod(pod *corev1.Pod) core.JobStatus {
 		// the job's pod was manually deleted by an operator, we'll attempt a final
 		// phase change to ABORTED here, knowing that it will simply fail if the job
 		// has already reached a terminal state.
-		status.Phase = core.JobPhaseAborted
+		status.Phase = sdk.JobPhaseAborted
 	} else {
 		// Otherwise, the job's phase depends on the pod's phase
 		switch pod.Status.Phase {
 		case corev1.PodPending:
 			// For Brigade's purposes, this counts as running
-			status.Phase = core.JobPhaseRunning
+			status.Phase = sdk.JobPhaseRunning
 			// Unless... when an image pull backoff occurs, the pod still shows as
 			// pending. We account for that here and treat it as a failure.
 			//
@@ -120,30 +120,30 @@ func (o *observer) getJobStatusFromPod(pod *corev1.Pod) core.JobStatus {
 				if containerStatus.State.Waiting != nil &&
 					(containerStatus.State.Waiting.Reason == "ImagePullBackOff" ||
 						containerStatus.State.Waiting.Reason == "ErrImagePull") {
-					status.Phase = core.JobPhaseFailed
+					status.Phase = sdk.JobPhaseFailed
 					break
 				}
 			}
 		case corev1.PodRunning:
-			status.Phase = core.JobPhaseRunning
+			status.Phase = sdk.JobPhaseRunning
 		case corev1.PodSucceeded:
-			status.Phase = core.JobPhaseSucceeded
+			status.Phase = sdk.JobPhaseSucceeded
 		case corev1.PodFailed:
-			status.Phase = core.JobPhaseFailed
+			status.Phase = sdk.JobPhaseFailed
 		case corev1.PodUnknown:
-			status.Phase = core.JobPhaseUnknown
+			status.Phase = sdk.JobPhaseUnknown
 		}
 	}
 	// Due to our sidecar support, even if the phase is running, we're not REALLY
 	// running if container[0] has exited. Adjust accordingly.
-	if status.Phase == core.JobPhaseRunning {
+	if status.Phase == sdk.JobPhaseRunning {
 		for _, containerStatus := range pod.Status.ContainerStatuses {
 			if containerStatus.Name == pod.Spec.Containers[0].Name {
 				if containerStatus.State.Terminated != nil {
 					if containerStatus.State.Terminated.ExitCode == 0 {
-						status.Phase = core.JobPhaseSucceeded
+						status.Phase = sdk.JobPhaseSucceeded
 					} else {
-						status.Phase = core.JobPhaseFailed
+						status.Phase = sdk.JobPhaseFailed
 					}
 				}
 				break
@@ -173,7 +173,7 @@ func (o *observer) getJobStatusFromPod(pod *corev1.Pod) core.JobStatus {
 func (o *observer) manageJobTimeout(
 	ctx context.Context,
 	pod *corev1.Pod,
-	phase core.JobPhase,
+	phase sdk.JobPhase,
 ) {
 	namespacedPodName := namespacedPodName(pod.Namespace, pod.Name)
 	cancelFn, timed := o.timedPodsSet[namespacedPodName]

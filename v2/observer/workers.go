@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/meta"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/pkg/errors"
@@ -89,10 +89,10 @@ func (o *observer) syncWorkerPod(obj interface{}) {
 	}
 }
 
-func (o *observer) getWorkerStatusFromPod(pod *corev1.Pod) core.WorkerStatus {
+func (o *observer) getWorkerStatusFromPod(pod *corev1.Pod) sdk.WorkerStatus {
 	// Determine the worker's phase based on pod phase
-	status := core.WorkerStatus{
-		Phase: core.WorkerPhaseRunning,
+	status := sdk.WorkerStatus{
+		Phase: sdk.WorkerPhaseRunning,
 	}
 	if pod.DeletionTimestamp != nil {
 		// This pod has been deleted. Pods usually hang around for a while after
@@ -102,12 +102,12 @@ func (o *observer) getWorkerStatusFromPod(pod *corev1.Pod) core.WorkerStatus {
 		// the worker's pod was manually deleted by an operator, we'll attempt a
 		// final phase change to ABORTED here, knowing that it will simply fail if
 		// the worker has already reached a terminal state.
-		status.Phase = core.WorkerPhaseAborted
+		status.Phase = sdk.WorkerPhaseAborted
 	} else {
 		switch pod.Status.Phase {
 		case corev1.PodPending:
 			// For Brigade's purposes, this counts as running
-			status.Phase = core.WorkerPhaseRunning
+			status.Phase = sdk.WorkerPhaseRunning
 			// Unless... when an image pull backoff occurs, the pod still shows as
 			// pending. We account for that here and treat it as a failure.
 			//
@@ -116,18 +116,18 @@ func (o *observer) getWorkerStatusFromPod(pod *corev1.Pod) core.WorkerStatus {
 				if containerStatus.State.Waiting != nil &&
 					(containerStatus.State.Waiting.Reason == "ImagePullBackOff" ||
 						containerStatus.State.Waiting.Reason == "ErrImagePull") {
-					status.Phase = core.WorkerPhaseFailed
+					status.Phase = sdk.WorkerPhaseFailed
 					break
 				}
 			}
 		case corev1.PodRunning:
-			status.Phase = core.WorkerPhaseRunning
+			status.Phase = sdk.WorkerPhaseRunning
 		case corev1.PodSucceeded:
-			status.Phase = core.WorkerPhaseSucceeded
+			status.Phase = sdk.WorkerPhaseSucceeded
 		case corev1.PodFailed:
-			status.Phase = core.WorkerPhaseFailed
+			status.Phase = sdk.WorkerPhaseFailed
 		case corev1.PodUnknown:
-			status.Phase = core.WorkerPhaseUnknown
+			status.Phase = sdk.WorkerPhaseUnknown
 		}
 	}
 	// Determine the worker's start time based on pod start time
@@ -154,7 +154,7 @@ func (o *observer) getWorkerStatusFromPod(pod *corev1.Pod) core.WorkerStatus {
 func (o *observer) manageWorkerTimeout(
 	ctx context.Context,
 	pod *corev1.Pod,
-	phase core.WorkerPhase,
+	phase sdk.WorkerPhase,
 ) {
 	namespacedPodName := namespacedPodName(pod.Namespace, pod.Name)
 	cancelFn, timed := o.timedPodsSet[namespacedPodName]

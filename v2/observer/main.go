@@ -5,8 +5,7 @@ import (
 
 	"github.com/brigadecore/brigade-foundations/signals"
 	"github.com/brigadecore/brigade-foundations/version"
-	"github.com/brigadecore/brigade/sdk/v3/core"
-	"github.com/brigadecore/brigade/sdk/v3/system"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/v2/internal/kubernetes"
 )
 
@@ -20,15 +19,15 @@ func main() {
 	ctx := signals.Context()
 
 	// Brigade Healthcheck and Workers API clients
-	var systemClient system.APIClient
-	var workersClient core.WorkersClient
+	var systemClient sdk.SystemClient
+	var workersClient sdk.WorkersClient
 	{
 		address, token, opts, err := apiClientConfig()
 		if err != nil {
 			log.Fatal(err)
 		}
-		systemClient = system.NewAPIClient(address, token, &opts)
-		workersClient = core.NewWorkersClient(address, token, &opts)
+		systemClient = sdk.NewSystemClient(address, token, &opts)
+		workersClient = sdk.NewWorkersClient(address, token, &opts)
 	}
 
 	kubeClient, err := kubernetes.Client()
