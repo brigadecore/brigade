@@ -10,10 +10,9 @@ spec:
     qualifiers:
       repo: brigadecore/brigade
     types:
-    - check_run:rerequested
-    - check_suite:requested
-    - check_suite:rerequested
-    - release:published
+    - ci:pipeline_requested
+    - ci:job_requested
+    - cd:pipeline_requested
   workerTemplate:
     git:
       cloneURL: https://github.com/brigadecore/brigade.git
