@@ -92,8 +92,8 @@ class PushImageJob extends BuildImageJob {
   }
 }
 
-// A map of all jobs. When a check_run:rerequested event wants to re-run a
-// single job, this allows us to easily find that job by name.
+// A map of all jobs. When a ci:job_requested event wants to re-run a single
+// job, this allows us to easily find that job by name.
 const jobs: {[key: string]: (event: Event, version?: string) => Job } = {}
 
 // Basic tests:
@@ -317,7 +317,7 @@ jobs[testIntegrationJobName] = testIntegrationJob
 // Run the entire suite of tests WITHOUT publishing anything initially. If
 // EVERYTHING passes AND this was a push (merge, presumably) to the main branch,
 // then run jobs to publish "edge" images.
-async function runSuite(event: Event): Promise<void> {
+events.on("brigade.sh/github", "ci:pipeline_requested", async event => {
   await new SerialGroup(
     new ConcurrentGroup( // Basic tests
       testUnitGoJob(event),
@@ -361,27 +361,19 @@ async function runSuite(event: Event): Promise<void> {
       publishBrigadierDocsJob(event),
     ).run()
   }
-}
-
-// Either of these events should initiate execution of the entire test suite.
-events.on("brigade.sh/github", "check_suite:requested", runSuite)
-events.on("brigade.sh/github", "check_suite:rerequested", runSuite)
+})
 
 // This event indicates a specific job is to be re-run.
-events.on("brigade.sh/github", "check_run:rerequested", async event => {
-  // Check run names are of the form <project name>:<job name>, so we strip
-  // event.project.id.length + 1 characters off the start of the check run name
-  // to find the job name.
-  const jobName = JSON.parse(event.payload).check_run.name.slice(event.project.id.length + 1)
-  const job = jobs[jobName]
+events.on("brigade.sh/github", "ci:job_requested", async event => {
+  const job = jobs[event.labels.job]
   if (job) {
     await job(event).run()
     return
   }
-  throw new Error(`No job found with name: ${jobName}`)
+  throw new Error(`No job found with name: ${event.labels.job}`)
 })
 
-events.on("brigade.sh/github", "release:published", async event => {
+events.on("brigade.sh/github", "cd:pipeline_requested", async event => {
   const version = JSON.parse(event.payload).release.tag_name
   await new SerialGroup(
     new ConcurrentGroup(
