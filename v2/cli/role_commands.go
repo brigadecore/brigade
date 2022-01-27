@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/brigadecore/brigade/sdk/v3/authz"
-	libAuthz "github.com/brigadecore/brigade/sdk/v3/lib/authz"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/meta"
-	"github.com/brigadecore/brigade/sdk/v3/system"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
 	"github.com/pkg/errors"
@@ -52,21 +50,21 @@ var rolesCommands = &cli.Command{
 			Usage: "Grant a system-level role to a user or service account",
 			Subcommands: []*cli.Command{
 				{
-					Name: string(system.RoleAdmin),
+					Name: string(sdk.RoleAdmin),
 					Usage: fmt.Sprintf(
 						"Grant the %s role, which enables system management including "+
 							"system-level permissions for other users and service accounts.",
-						system.RoleAdmin,
+						sdk.RoleAdmin,
 					),
 					Flags:  roleGrantFlags,
-					Action: grantSystemRole(system.RoleAdmin),
+					Action: grantSystemRole(sdk.RoleAdmin),
 				},
 				{
-					Name: string(system.RoleEventCreator),
+					Name: string(sdk.RoleEventCreator),
 					Usage: fmt.Sprintf(
 						"Grant the %s role, which enables creation of events for all "+
 							"projects.",
-						system.RoleEventCreator,
+						sdk.RoleEventCreator,
 					),
 					Flags: append(
 						roleGrantFlags,
@@ -77,26 +75,26 @@ var rolesCommands = &cli.Command{
 							Required: true,
 						},
 					),
-					Action: grantSystemRole(system.RoleEventCreator),
+					Action: grantSystemRole(sdk.RoleEventCreator),
 				},
 				{
-					Name: string(system.RoleProjectCreator),
+					Name: string(sdk.RoleProjectCreator),
 					Usage: fmt.Sprintf(
 						"Grant the %s role, which enables creation of new projects.",
-						system.RoleProjectCreator,
+						sdk.RoleProjectCreator,
 					),
 					Flags:  roleGrantFlags,
-					Action: grantSystemRole(system.RoleProjectCreator),
+					Action: grantSystemRole(sdk.RoleProjectCreator),
 				},
 				{
-					Name: string(system.RoleReader),
+					Name: string(sdk.RoleReader),
 					Usage: fmt.Sprintf(
 						"Grant the %s role, which enables global read-only access to "+
 							"Brigade.",
-						system.RoleReader,
+						sdk.RoleReader,
 					),
 					Flags:  roleGrantFlags,
-					Action: grantSystemRole(system.RoleReader),
+					Action: grantSystemRole(sdk.RoleReader),
 				},
 			},
 		},
@@ -132,21 +130,21 @@ var rolesCommands = &cli.Command{
 			Usage: "Revoke a system-level role from a user or service account",
 			Subcommands: []*cli.Command{
 				{
-					Name: string(system.RoleAdmin),
+					Name: string(sdk.RoleAdmin),
 					Usage: fmt.Sprintf(
 						"Revoke the %s role, which enables system management including "+
 							"system-level permissions for other users and service accounts.",
-						system.RoleAdmin,
+						sdk.RoleAdmin,
 					),
 					Flags:  roleRevokeFlags,
-					Action: revokeSystemRole(system.RoleAdmin),
+					Action: revokeSystemRole(sdk.RoleAdmin),
 				},
 				{
-					Name: string(system.RoleEventCreator),
+					Name: string(sdk.RoleEventCreator),
 					Usage: fmt.Sprintf(
 						"Grant the %s role, which enables creation of events for all "+
 							"projects.",
-						system.RoleEventCreator,
+						sdk.RoleEventCreator,
 					),
 					Flags: append(
 						roleRevokeFlags,
@@ -157,33 +155,33 @@ var rolesCommands = &cli.Command{
 							Required: true,
 						},
 					),
-					Action: revokeSystemRole(system.RoleEventCreator),
+					Action: revokeSystemRole(sdk.RoleEventCreator),
 				},
 				{
-					Name: string(system.RoleProjectCreator),
+					Name: string(sdk.RoleProjectCreator),
 					Usage: fmt.Sprintf(
 						"Revoke the %s role, which enables creation of new projects.",
-						system.RoleProjectCreator,
+						sdk.RoleProjectCreator,
 					),
 					Flags:  roleRevokeFlags,
-					Action: revokeSystemRole(system.RoleProjectCreator),
+					Action: revokeSystemRole(sdk.RoleProjectCreator),
 				},
 				{
-					Name: string(system.RoleReader),
+					Name: string(sdk.RoleReader),
 					Usage: fmt.Sprintf(
 						"Revoke the %s role, which enables global read-only access to "+
 							"Brigade.",
-						system.RoleReader,
+						sdk.RoleReader,
 					),
 					Flags:  roleRevokeFlags,
-					Action: revokeSystemRole(system.RoleReader),
+					Action: revokeSystemRole(sdk.RoleReader),
 				},
 			},
 		},
 	},
 }
 
-func grantSystemRole(role libAuthz.Role) func(c *cli.Context) error {
+func grantSystemRole(role sdk.Role) func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		userIDs := c.StringSlice(flagUser)
 		serviceAccountIDs := c.StringSlice(flagServiceAccount)
@@ -194,12 +192,12 @@ func grantSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			)
 		}
 
-		roleAssignment := libAuthz.RoleAssignment{
+		roleAssignment := sdk.RoleAssignment{
 			Role: role,
 		}
 
 		// Special logic for EVENT_CREATOR
-		if role == system.RoleEventCreator {
+		if role == sdk.RoleEventCreator {
 			roleAssignment.Scope = c.String(flagSource)
 		}
 
@@ -208,7 +206,7 @@ func grantSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			return err
 		}
 
-		roleAssignment.Principal.Type = authz.PrincipalTypeUser
+		roleAssignment.Principal.Type = sdk.PrincipalTypeUser
 		for _, roleAssignment.Principal.ID = range userIDs {
 			if err = client.Authz().RoleAssignments().Grant(
 				c.Context,
@@ -223,7 +221,7 @@ func grantSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 				roleAssignment.Principal.ID,
 			)
 		}
-		roleAssignment.Principal.Type = authz.PrincipalTypeServiceAccount
+		roleAssignment.Principal.Type = sdk.PrincipalTypeServiceAccount
 		for _, roleAssignment.Principal.ID = range serviceAccountIDs {
 			if err = client.Authz().RoleAssignments().Grant(
 				c.Context,
@@ -259,18 +257,18 @@ func listSystemRoles(c *cli.Context) error {
 		return err
 	}
 
-	selector := authz.RoleAssignmentsSelector{
-		Role: libAuthz.Role(role),
+	selector := sdk.RoleAssignmentsSelector{
+		Role: sdk.Role(role),
 	}
 
 	if userID != "" {
-		selector.Principal = &libAuthz.PrincipalReference{
-			Type: authz.PrincipalTypeUser,
+		selector.Principal = &sdk.PrincipalReference{
+			Type: sdk.PrincipalTypeUser,
 			ID:   userID,
 		}
 	} else if serviceAccountID != "" {
-		selector.Principal = &libAuthz.PrincipalReference{
-			Type: authz.PrincipalTypeServiceAccount,
+		selector.Principal = &sdk.PrincipalReference{
+			Type: sdk.PrincipalTypeServiceAccount,
 			ID:   serviceAccountID,
 		}
 	}
@@ -349,7 +347,7 @@ func listSystemRoles(c *cli.Context) error {
 	return nil
 }
 
-func revokeSystemRole(role libAuthz.Role) func(c *cli.Context) error {
+func revokeSystemRole(role sdk.Role) func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		userIDs := c.StringSlice(flagUser)
 		serviceAccountIDs := c.StringSlice(flagServiceAccount)
@@ -360,12 +358,12 @@ func revokeSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			)
 		}
 
-		roleAssignment := libAuthz.RoleAssignment{
+		roleAssignment := sdk.RoleAssignment{
 			Role: role,
 		}
 
 		// Special logic for EVENT_CREATOR
-		if role == system.RoleEventCreator {
+		if role == sdk.RoleEventCreator {
 			roleAssignment.Scope = c.String(flagSource)
 		}
 
@@ -374,7 +372,7 @@ func revokeSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 			return err
 		}
 
-		roleAssignment.Principal.Type = authz.PrincipalTypeUser
+		roleAssignment.Principal.Type = sdk.PrincipalTypeUser
 		for _, roleAssignment.Principal.ID = range userIDs {
 			if err = client.Authz().RoleAssignments().Revoke(
 				c.Context,
@@ -389,7 +387,7 @@ func revokeSystemRole(role libAuthz.Role) func(c *cli.Context) error {
 				roleAssignment.Principal.ID,
 			)
 		}
-		roleAssignment.Principal.Type = authz.PrincipalTypeServiceAccount
+		roleAssignment.Principal.Type = sdk.PrincipalTypeServiceAccount
 		for _, roleAssignment.Principal.ID = range serviceAccountIDs {
 			if err = client.Authz().RoleAssignments().Revoke(
 				c.Context,

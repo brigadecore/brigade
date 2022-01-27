@@ -8,8 +8,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade-foundations/os"
-	"github.com/brigadecore/brigade/sdk/v3/core"
-	"github.com/brigadecore/brigade/sdk/v3/system"
+	"github.com/brigadecore/brigade/sdk/v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -44,9 +43,9 @@ func getObserverConfig() (observerConfig, error) {
 
 type observer struct {
 	kubeClient    kubernetes.Interface
-	systemClient  system.APIClient
-	workersClient core.WorkersClient
-	jobsClient    core.JobsClient
+	systemClient  sdk.SystemClient
+	workersClient sdk.WorkersClient
+	jobsClient    sdk.JobsClient
 	config        observerConfig
 	timedPodsSet  map[string]context.CancelFunc
 	// All of the scheduler's goroutines will send fatal errors here
@@ -55,12 +54,12 @@ type observer struct {
 	runHealthcheckLoopFn  func(context.Context)
 	syncWorkerPodsFn      func(context.Context)
 	syncWorkerPodFn       func(obj interface{})
-	manageWorkerTimeoutFn func(context.Context, *corev1.Pod, core.WorkerPhase)
+	manageWorkerTimeoutFn func(context.Context, *corev1.Pod, sdk.WorkerPhase)
 	runWorkerTimerFn      func(context.Context, *corev1.Pod)
 	cleanupWorkerFn       func(eventID string)
 	syncJobPodsFn         func(context.Context)
 	syncJobPodFn          func(obj interface{})
-	manageJobTimeoutFn    func(context.Context, *corev1.Pod, core.JobPhase)
+	manageJobTimeoutFn    func(context.Context, *corev1.Pod, sdk.JobPhase)
 	runJobTimerFn         func(context.Context, *corev1.Pod)
 	cleanupJobFn          func(eventID, jobName string)
 	errFn                 func(...interface{})
@@ -68,8 +67,8 @@ type observer struct {
 }
 
 func newObserver(
-	systemClient system.APIClient,
-	workersClient core.WorkersClient,
+	systemClient sdk.SystemClient,
+	workersClient sdk.WorkersClient,
 	kubeClient kubernetes.Interface,
 	config observerConfig,
 ) *observer {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -26,7 +26,7 @@ type projectsPage struct {
 // newProjectsPage returns a custom UI component that displays the list of all
 // Projects.
 func newProjectsPage(
-	apiClient core.APIClient,
+	apiClient sdk.APIClient,
 	app *tview.Application,
 	router *pageRouter,
 ) *projectsPage {
@@ -61,7 +61,7 @@ func (p *projectsPage) load(ctx context.Context) {
 
 // refresh refreshes the list of all Projects and repaints the page.
 func (p *projectsPage) refresh(ctx context.Context) {
-	projects, err := p.apiClient.Projects().List(
+	projects, err := p.apiClient.Core().Projects().List(
 		ctx,
 		nil,
 		&meta.ListOptions{
@@ -72,11 +72,11 @@ func (p *projectsPage) refresh(ctx context.Context) {
 	if err != nil {
 		// TODO: Handle this
 	}
-	mostRecentEventByProject := map[string]core.Event{}
+	mostRecentEventByProject := map[string]sdk.Event{}
 	for _, project := range projects.Items {
-		events, err := p.apiClient.Events().List(
+		events, err := p.apiClient.Core().Events().List(
 			ctx,
-			&core.EventsSelector{
+			&sdk.EventsSelector{
 				ProjectID: project.ID,
 			},
 			&meta.ListOptions{
@@ -125,7 +125,7 @@ func (p *projectsPage) refresh(ctx context.Context) {
 	})
 }
 
-func (p *projectsPage) fillUsage(projects core.ProjectList) {
+func (p *projectsPage) fillUsage(projects sdk.ProjectList) {
 	usageText := "[yellow](F5 R) [white]Reload"
 	if len(p.projectsContinueValues) > 1 {
 		usageText = fmt.Sprintf("%s    [yellow](P) [white]Previous Page", usageText)
@@ -138,8 +138,8 @@ func (p *projectsPage) fillUsage(projects core.ProjectList) {
 }
 
 func (p *projectsPage) fillProjectsTable(
-	projects core.ProjectList,
-	mostRecentEventByProject map[string]core.Event,
+	projects sdk.ProjectList,
+	mostRecentEventByProject map[string]sdk.Event,
 ) {
 	const (
 		statusCol int = iota
@@ -183,8 +183,8 @@ func (p *projectsPage) fillProjectsTable(
 	for r, project := range projects.Items {
 		row := r + 1
 		var since time.Duration
-		color := getColorFromWorkerPhase(core.WorkerPhaseUnknown)
-		icon := getIconFromWorkerPhase(core.WorkerPhaseUnknown)
+		color := getColorFromWorkerPhase(sdk.WorkerPhaseUnknown)
+		icon := getIconFromWorkerPhase(sdk.WorkerPhaseUnknown)
 		lastEvent, found := mostRecentEventByProject[project.ID]
 		if found {
 			color = getColorFromWorkerPhase(lastEvent.Worker.Status.Phase)

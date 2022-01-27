@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
@@ -132,7 +132,7 @@ func projectCreate(c *cli.Context) error {
 	// JSON schema validation is applied to what's in the file and NOT to a
 	// project description that was inadvertently scrubbed of non-permitted fields
 	// during client-side unmarshaling.
-	project := core.Project{}
+	project := sdk.Project{}
 	if err = json.Unmarshal(projectBytes, &project); err != nil {
 		return errors.Wrapf(err, "error unmarshaling project file %s", filename)
 	}
@@ -313,7 +313,7 @@ func projectUpdate(c *cli.Context) error {
 	// JSON schema validation is applied to what's in the file and NOT to a
 	// project description that was inadvertently scrubbed of non-permitted fields
 	// during client-side unmarshaling.
-	project := core.Project{}
+	project := sdk.Project{}
 	if err = json.Unmarshal(projectBytes, &project); err != nil {
 		return errors.Wrapf(err, "error unmarshaling project file %s", filename)
 	}
@@ -330,7 +330,7 @@ func projectUpdate(c *cli.Context) error {
 		return err
 	}
 
-	opts := &core.ProjectUpdateOptions{
+	opts := &sdk.ProjectUpdateOptions{
 		CreateIfNotFound: create,
 	}
 

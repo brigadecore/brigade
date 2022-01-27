@@ -13,8 +13,6 @@ import (
 
 	foundOS "github.com/brigadecore/brigade-foundations/os"
 	"github.com/brigadecore/brigade/sdk/v3"
-	"github.com/brigadecore/brigade/sdk/v3/authn"
-	"github.com/brigadecore/brigade/sdk/v3/core"
 	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 	"github.com/stretchr/testify/require"
@@ -40,7 +38,7 @@ func TestMain(m *testing.M) {
 		AllowInsecureConnections: true,
 	}
 
-	token, err := authn.NewSessionsClient(
+	token, err := sdk.NewSessionsClient(
 		apiServerAddress,
 		"",
 		apiClientOpts,
@@ -100,14 +98,14 @@ func TestIntegration(t *testing.T) {
 			// Verify there are no events for this project
 			events, err := client.Core().Events().List(
 				ctx,
-				&core.EventsSelector{ProjectID: testCase.project.ID},
+				&sdk.EventsSelector{ProjectID: testCase.project.ID},
 				&meta.ListOptions{Limit: 1},
 			)
 			require.NoError(t, err)
 			require.Empty(t, events.Items)
 
 			// Create a new event
-			event := core.Event{
+			event := sdk.Event{
 				ProjectID: testCase.project.ID,
 				Source:    "brigade.sh/cli",
 				Type:      "exec",
@@ -124,7 +122,7 @@ func assertWorkerPhase(
 	t *testing.T,
 	ctx context.Context, // nolint: revive
 	eventID string,
-	expectedPhase core.WorkerPhase,
+	expectedPhase sdk.WorkerPhase,
 ) {
 	statusCh, errCh, err := client.Core().Events().Workers().WatchStatus(
 		ctx,
@@ -162,7 +160,7 @@ func assertJobPhase(
 	ctx context.Context, // nolint: revive
 	eventID string,
 	jobName string,
-	expectedPhase core.JobPhase,
+	expectedPhase sdk.JobPhase,
 ) {
 	statusCh, errCh, err := client.Core().Events().Workers().Jobs().WatchStatus(
 		ctx,
@@ -200,7 +198,7 @@ func assertLogs(
 	t *testing.T,
 	ctx context.Context, // nolint: revive
 	eventID string,
-	selector *core.LogsSelector,
+	selector *sdk.LogsSelector,
 	expectedLogs string,
 ) {
 	if expectedLogs == "" {
@@ -212,7 +210,7 @@ func assertLogs(
 			ctx,
 			eventID,
 			selector,
-			&core.LogStreamOptions{},
+			&sdk.LogStreamOptions{},
 		)
 	require.NoError(t, err, "error acquiring log stream")
 

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade-foundations/retries"
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/pkg/errors"
 )
@@ -141,8 +141,8 @@ outerLoop:
 					ctx,
 					eventID,
 					jobName,
-					core.JobStatus{
-						Phase: core.JobPhaseSchedulingFailed,
+					sdk.JobStatus{
+						Phase: sdk.JobPhaseSchedulingFailed,
 					},
 					nil,
 				); err != nil {
@@ -173,7 +173,7 @@ outerLoop:
 			}
 
 			// If the Job's phase isn't PENDING, then there's nothing to do
-			if job.Status.Phase != core.JobPhasePending {
+			if job.Status.Phase != sdk.JobPhasePending {
 				if err := msg.Ack(ctx); err != nil {
 					s.jobLoopErrFn(err)
 				}

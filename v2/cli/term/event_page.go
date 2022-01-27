@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"k8s.io/apimachinery/pkg/util/duration"
@@ -26,7 +26,7 @@ type eventPage struct {
 // newEventPage returns a custom UI component that displays Event info and a
 // list of associated Jobs.
 func newEventPage(
-	apiClient core.APIClient,
+	apiClient sdk.APIClient,
 	app *tview.Application,
 	router *pageRouter,
 ) *eventPage {
@@ -85,12 +85,12 @@ func (e *eventPage) load(ctx context.Context, eventID string) {
 
 // refresh refreshes Event info and associated Jobs and repaints the page.
 func (e *eventPage) refresh(ctx context.Context, eventID string) {
-	event, err := e.apiClient.Events().Get(ctx, eventID, nil)
+	event, err := e.apiClient.Core().Events().Get(ctx, eventID, nil)
 	if err != nil {
 		// TODO: This return is a bandaid fix to stop nil pointer dereference!
 		return
 	}
-	project, err := e.apiClient.Projects().Get(ctx, event.ProjectID, nil)
+	project, err := e.apiClient.Core().Projects().Get(ctx, event.ProjectID, nil)
 	if err != nil {
 		// TODO: This return is a bandaid fix to stop nil pointer dereference!
 		return
@@ -126,7 +126,7 @@ func (e *eventPage) refresh(ctx context.Context, eventID string) {
 
 }
 
-func (e *eventPage) fillEventInfo(project core.Project, event core.Event) {
+func (e *eventPage) fillEventInfo(project sdk.Project, event sdk.Event) {
 	e.eventInfo.Clear()
 	e.eventInfo.SetTitle(fmt.Sprintf(" %s ", event.ID))
 	infoText := fmt.Sprintf(
@@ -188,7 +188,7 @@ func (e *eventPage) fillEventInfo(project core.Project, event core.Event) {
 	e.eventInfo.SetText(infoText)
 }
 
-func (e *eventPage) fillWorkerInfo(event core.Event) {
+func (e *eventPage) fillWorkerInfo(event sdk.Event) {
 	e.workerInfo.Clear()
 	workerPhaseColor := getColorFromWorkerPhase(event.Worker.Status.Phase)
 	e.workerInfo.SetBorderColor(workerPhaseColor).SetTitleColor(workerPhaseColor)
@@ -220,7 +220,7 @@ func (e *eventPage) fillWorkerInfo(event core.Event) {
 	e.workerInfo.SetText(infoText)
 }
 
-func (e *eventPage) fillJobsTable(event core.Event) {
+func (e *eventPage) fillJobsTable(event sdk.Event) {
 	const (
 		statusCol int = iota
 		nameCol

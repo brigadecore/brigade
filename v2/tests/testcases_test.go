@@ -8,14 +8,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/stretchr/testify/require"
 )
 
 const testJobName = "test-job"
 
-var testEventSubscriptions = []core.EventSubscription{
+var testEventSubscriptions = []sdk.EventSubscription{
 	{
 		Source: "brigade.sh/cli",
 		Types: []string{
@@ -39,51 +39,51 @@ events.process()`,
 
 var testCases = []struct {
 	shouldTest        func(*testing.T) bool
-	project           core.Project
+	project           sdk.Project
 	postProjectCreate func(context.Context) error
-	assertions        func(*testing.T, context.Context, core.EventList)
+	assertions        func(*testing.T, context.Context, sdk.EventList)
 }{
 	{
-		project: core.Project{
+		project: sdk.Project{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "github-no-ref",
 			},
 			Description: "GitHub - no ref",
-			Spec: core.ProjectSpec{
+			Spec: sdk.ProjectSpec{
 				EventSubscriptions: testEventSubscriptions,
-				WorkerTemplate: core.WorkerSpec{
-					Git: &core.GitConfig{
+				WorkerTemplate: sdk.WorkerSpec{
+					Git: &sdk.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
 					},
 					DefaultConfigFiles: testConfigFiles,
 				},
 			},
 		},
-		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
 			require.Len(t, events.Items, 1)
 			event := events.Items[0]
-			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
+			assertWorkerPhase(t, ctx, event.ID, sdk.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, testJobName, sdk.JobPhaseSucceeded)
 			assertLogs(
 				t,
 				ctx,
 				event.ID,
-				&core.LogsSelector{Job: testJobName},
+				&sdk.LogsSelector{Job: testJobName},
 				"README.md",
 			)
 		},
 	},
 	{
-		project: core.Project{
+		project: sdk.Project{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "github-full-ref",
 			},
 			Description: "GitHub - full ref",
-			Spec: core.ProjectSpec{
+			Spec: sdk.ProjectSpec{
 				EventSubscriptions: testEventSubscriptions,
-				WorkerTemplate: core.WorkerSpec{
-					Git: &core.GitConfig{
+				WorkerTemplate: sdk.WorkerSpec{
+					Git: &sdk.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
 						Ref:      "refs/heads/main",
 					},
@@ -91,31 +91,31 @@ var testCases = []struct {
 				},
 			},
 		},
-		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
 			require.Len(t, events.Items, 1)
 			event := events.Items[0]
-			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
+			assertWorkerPhase(t, ctx, event.ID, sdk.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, testJobName, sdk.JobPhaseSucceeded)
 			assertLogs(
 				t,
 				ctx,
 				event.ID,
-				&core.LogsSelector{Job: testJobName},
+				&sdk.LogsSelector{Job: testJobName},
 				"README.md",
 			)
 		},
 	},
 	{
-		project: core.Project{
+		project: sdk.Project{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "github-casual-ref",
 			},
 			Description: "GitHub - casual ref",
-			Spec: core.ProjectSpec{
+			Spec: sdk.ProjectSpec{
 				EventSubscriptions: testEventSubscriptions,
-				WorkerTemplate: core.WorkerSpec{
-					Git: &core.GitConfig{
+				WorkerTemplate: sdk.WorkerSpec{
+					Git: &sdk.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
 						Ref:      "main",
 					},
@@ -123,31 +123,31 @@ var testCases = []struct {
 				},
 			},
 		},
-		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
 			require.Len(t, events.Items, 1)
 			event := events.Items[0]
-			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
+			assertWorkerPhase(t, ctx, event.ID, sdk.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, testJobName, sdk.JobPhaseSucceeded)
 			assertLogs(
 				t,
 				ctx,
 				event.ID,
-				&core.LogsSelector{Job: testJobName},
+				&sdk.LogsSelector{Job: testJobName},
 				"README.md",
 			)
 		},
 	},
 	{
-		project: core.Project{
+		project: sdk.Project{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "github-sha",
 			},
 			Description: "GitHub - commit sha",
-			Spec: core.ProjectSpec{
+			Spec: sdk.ProjectSpec{
 				EventSubscriptions: testEventSubscriptions,
-				WorkerTemplate: core.WorkerSpec{
-					Git: &core.GitConfig{
+				WorkerTemplate: sdk.WorkerSpec{
+					Git: &sdk.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
 						Commit:   "589e15029e1e44dee48de4800daf1f78e64287c0",
 					},
@@ -155,31 +155,31 @@ var testCases = []struct {
 				},
 			},
 		},
-		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
 			require.Len(t, events.Items, 1)
 			event := events.Items[0]
-			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
+			assertWorkerPhase(t, ctx, event.ID, sdk.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, testJobName, sdk.JobPhaseSucceeded)
 			assertLogs(
 				t,
 				ctx,
 				event.ID,
-				&core.LogsSelector{Job: testJobName},
+				&sdk.LogsSelector{Job: testJobName},
 				"README.md",
 			)
 		},
 	},
 	{
-		project: core.Project{
+		project: sdk.Project{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "github-submodules",
 			},
 			Description: "GitHub - submodules",
-			Spec: core.ProjectSpec{
+			Spec: sdk.ProjectSpec{
 				EventSubscriptions: testEventSubscriptions,
-				WorkerTemplate: core.WorkerSpec{
-					Git: &core.GitConfig{
+				WorkerTemplate: sdk.WorkerSpec{
+					Git: &sdk.GitConfig{
 						CloneURL:       "https://github.com/brigadecore/empty-testbed.git",
 						InitSubmodules: true,
 					},
@@ -187,17 +187,17 @@ var testCases = []struct {
 				},
 			},
 		},
-		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
 			require.Len(t, events.Items, 1)
 			event := events.Items[0]
-			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
+			assertWorkerPhase(t, ctx, event.ID, sdk.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, testJobName, sdk.JobPhaseSucceeded)
 			assertLogs(
 				t,
 				ctx,
 				event.ID,
-				&core.LogsSelector{Job: testJobName},
+				&sdk.LogsSelector{Job: testJobName},
 				"README.md",
 			)
 		},
@@ -206,15 +206,15 @@ var testCases = []struct {
 		shouldTest: func(t *testing.T) bool {
 			return os.Getenv("BRIGADE_CI_PRIVATE_REPO_SSH_KEY") != ""
 		},
-		project: core.Project{
+		project: sdk.Project{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "github-private-ssh",
 			},
 			Description: "GitHub - private repo",
-			Spec: core.ProjectSpec{
+			Spec: sdk.ProjectSpec{
 				EventSubscriptions: testEventSubscriptions,
-				WorkerTemplate: core.WorkerSpec{
-					Git: &core.GitConfig{
+				WorkerTemplate: sdk.WorkerSpec{
+					Git: &sdk.GitConfig{
 						CloneURL: "git@github.com:brigadecore/private-test-repo.git",
 						Ref:      "main",
 					},
@@ -226,38 +226,38 @@ var testCases = []struct {
 			return client.Core().Projects().Secrets().Set(
 				ctx,
 				"github-private-ssh",
-				core.Secret{
+				sdk.Secret{
 					Key:   "gitSSHKey",
 					Value: os.Getenv("BRIGADE_CI_PRIVATE_REPO_SSH_KEY"),
 				},
 				nil,
 			)
 		},
-		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
 			require.Len(t, events.Items, 1)
 			event := events.Items[0]
-			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
+			assertWorkerPhase(t, ctx, event.ID, sdk.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, testJobName, sdk.JobPhaseSucceeded)
 			assertLogs(
 				t,
 				ctx,
 				event.ID,
-				&core.LogsSelector{Job: testJobName},
+				&sdk.LogsSelector{Job: testJobName},
 				"README.md",
 			)
 		},
 	},
 	{
-		project: core.Project{
+		project: sdk.Project{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "github-vcs-fail",
 			},
 			Description: "GitHub - vcs failure",
-			Spec: core.ProjectSpec{
+			Spec: sdk.ProjectSpec{
 				EventSubscriptions: testEventSubscriptions,
-				WorkerTemplate: core.WorkerSpec{
-					Git: &core.GitConfig{
+				WorkerTemplate: sdk.WorkerSpec{
+					Git: &sdk.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
 						Ref:      "non-existent",
 					},
@@ -265,30 +265,30 @@ var testCases = []struct {
 				},
 			},
 		},
-		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
 			require.Len(t, events.Items, 1)
 			event := events.Items[0]
-			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseFailed)
+			assertWorkerPhase(t, ctx, event.ID, sdk.WorkerPhaseFailed)
 			assertLogs(
 				t,
 				ctx,
 				event.ID,
-				&core.LogsSelector{Container: "vcs"},
+				&sdk.LogsSelector{Container: "vcs"},
 				`reference "non-existent" not found in repo `+
 					`"https://github.com/brigadecore/empty-testbed.git"`,
 			)
 		},
 	},
 	{
-		project: core.Project{
+		project: sdk.Project{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "github-job-fail",
 			},
 			Description: "GitHub - job fails",
-			Spec: core.ProjectSpec{
+			Spec: sdk.ProjectSpec{
 				EventSubscriptions: testEventSubscriptions,
-				WorkerTemplate: core.WorkerSpec{
-					Git: &core.GitConfig{
+				WorkerTemplate: sdk.WorkerSpec{
+					Git: &sdk.GitConfig{
 						CloneURL: "https://github.com/brigadecore/empty-testbed.git",
 					},
 					DefaultConfigFiles: map[string]string{
@@ -308,30 +308,30 @@ events.process()`,
 				},
 			},
 		},
-		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
 			require.Len(t, events.Items, 1)
 			event := events.Items[0]
-			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseFailed)
+			assertWorkerPhase(t, ctx, event.ID, sdk.WorkerPhaseFailed)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseFailed)
+			assertJobPhase(t, ctx, event.ID, testJobName, sdk.JobPhaseFailed)
 			assertLogs(
 				t,
 				ctx,
 				event.ID,
-				&core.LogsSelector{Job: testJobName},
+				&sdk.LogsSelector{Job: testJobName},
 				"Goodbye World",
 			)
 		},
 	},
 	{
-		project: core.Project{
+		project: sdk.Project{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "job-times-out",
 			},
 			Description: "Job times out",
-			Spec: core.ProjectSpec{
+			Spec: sdk.ProjectSpec{
 				EventSubscriptions: testEventSubscriptions,
-				WorkerTemplate: core.WorkerSpec{
+				WorkerTemplate: sdk.WorkerSpec{
 					DefaultConfigFiles: map[string]string{
 						"brigade.ts": `
 import { events, Job } from "@brigadecore/brigadier"
@@ -347,23 +347,23 @@ events.process()`,
 				},
 			},
 		},
-		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
 			require.Len(t, events.Items, 1)
 			event := events.Items[0]
-			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseFailed)
+			assertWorkerPhase(t, ctx, event.ID, sdk.WorkerPhaseFailed)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseTimedOut)
+			assertJobPhase(t, ctx, event.ID, testJobName, sdk.JobPhaseTimedOut)
 		},
 	},
 	{
-		project: core.Project{
+		project: sdk.Project{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "worker-times-out",
 			},
 			Description: "Worker times out",
-			Spec: core.ProjectSpec{
+			Spec: sdk.ProjectSpec{
 				EventSubscriptions: testEventSubscriptions,
-				WorkerTemplate: core.WorkerSpec{
+				WorkerTemplate: sdk.WorkerSpec{
 					// Timeout a bit "long" to allow for job to spin up
 					TimeoutDuration: "10s",
 					DefaultConfigFiles: map[string]string{
@@ -380,36 +380,36 @@ events.process()`,
 				},
 			},
 		},
-		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
 			require.Len(t, events.Items, 1)
 			event := events.Items[0]
-			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseTimedOut)
-			assertJobPhase(t, ctx, event.ID, testJobName, core.JobPhaseAborted)
+			assertWorkerPhase(t, ctx, event.ID, sdk.WorkerPhaseTimedOut)
+			assertJobPhase(t, ctx, event.ID, testJobName, sdk.JobPhaseAborted)
 		},
 	},
 	{
-		project: core.Project{
+		project: sdk.Project{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "project-not-subscribed",
 			},
 			Description: "Project not subscribed",
-			Spec: core.ProjectSpec{
-				EventSubscriptions: []core.EventSubscription{},
+			Spec: sdk.ProjectSpec{
+				EventSubscriptions: []sdk.EventSubscription{},
 			},
 		},
-		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
 			require.Empty(t, events.Items)
 		},
 	},
 	{
-		project: core.Project{
+		project: sdk.Project{
 			ObjectMeta: meta.ObjectMeta{
 				ID: "fallible-job-fail",
 			},
 			Description: "fallible job fails",
-			Spec: core.ProjectSpec{
+			Spec: sdk.ProjectSpec{
 				EventSubscriptions: testEventSubscriptions,
-				WorkerTemplate: core.WorkerSpec{
+				WorkerTemplate: sdk.WorkerSpec{
 					DefaultConfigFiles: map[string]string{
 						"brigade.ts": `
 import { events, Job } from "@brigadecore/brigadier"
@@ -428,13 +428,13 @@ events.process()`,
 				},
 			},
 		},
-		assertions: func(t *testing.T, ctx context.Context, events core.EventList) {
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
 			require.Len(t, events.Items, 1)
 			event := events.Items[0]
-			assertWorkerPhase(t, ctx, event.ID, core.WorkerPhaseSucceeded)
+			assertWorkerPhase(t, ctx, event.ID, sdk.WorkerPhaseSucceeded)
 			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
-			assertJobPhase(t, ctx, event.ID, "test-job1", core.JobPhaseFailed)
-			assertJobPhase(t, ctx, event.ID, "test-job2", core.JobPhaseSucceeded)
+			assertJobPhase(t, ctx, event.ID, "test-job1", sdk.JobPhaseFailed)
+			assertJobPhase(t, ctx, event.ID, "test-job2", sdk.JobPhaseSucceeded)
 		},
 	},
 }

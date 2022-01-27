@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -23,7 +23,7 @@ type jobPage struct {
 // newJobPage returns a custom UI component that displays Job info and a list of
 // associated logs.
 func newJobPage(
-	apiClient core.APIClient,
+	apiClient sdk.APIClient,
 	app *tview.Application,
 	router *pageRouter,
 ) *jobPage {
@@ -67,7 +67,7 @@ func (j *jobPage) load(ctx context.Context, eventID, jobName string) {
 
 // refresh refreshes Job info and repaints the page.
 func (j *jobPage) refresh(ctx context.Context, eventID, jobName string) {
-	event, err := j.apiClient.Events().Get(ctx, eventID, nil)
+	event, err := j.apiClient.Core().Events().Get(ctx, eventID, nil)
 	if err != nil {
 		// TODO: This return is a bandaid fix to stop nil pointer dereference!
 		return
@@ -108,7 +108,7 @@ func (j *jobPage) refresh(ctx context.Context, eventID, jobName string) {
 	)
 }
 
-func (j *jobPage) fillJobInfo(eventID string, job core.Job) {
+func (j *jobPage) fillJobInfo(eventID string, job sdk.Job) {
 	j.jobInfo.SetTitle(fmt.Sprintf(" %s: %s ", eventID, job.Name))
 	j.jobInfo.SetBorderColor(getColorFromJobPhase(job.Status.Phase))
 	j.jobInfo.Clear()
@@ -132,7 +132,7 @@ func (j *jobPage) fillJobInfo(eventID string, job core.Job) {
 	j.jobInfo.SetText(infoText)
 }
 
-func (j *jobPage) fillContainersTable(job core.Job) {
+func (j *jobPage) fillContainersTable(job sdk.Job) {
 	const (
 		statusCol int = iota
 		nameCol

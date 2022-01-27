@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
-	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing/core"
+	"github.com/brigadecore/brigade/sdk/v3"
+	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/stretchr/testify/require"
 )
@@ -31,9 +31,9 @@ func TestManageJobsCapacity(t *testing.T) {
 				substrateClient: &coreTesting.MockSubstrateClient{
 					CountRunningJobsFn: func(
 						context.Context,
-						*core.RunningJobCountOptions,
-					) (core.SubstrateJobCount, error) {
-						return core.SubstrateJobCount{}, errors.New("something went wrong")
+						*sdk.RunningJobCountOptions,
+					) (sdk.SubstrateJobCount, error) {
+						return sdk.SubstrateJobCount{}, errors.New("something went wrong")
 					},
 				},
 				jobAvailabilityCh: make(chan struct{}),
@@ -68,9 +68,9 @@ func TestManageJobsCapacity(t *testing.T) {
 				substrateClient: &coreTesting.MockSubstrateClient{
 					CountRunningJobsFn: func(
 						context.Context,
-						*core.RunningJobCountOptions,
-					) (core.SubstrateJobCount, error) {
-						return core.SubstrateJobCount{
+						*sdk.RunningJobCountOptions,
+					) (sdk.SubstrateJobCount, error) {
+						return sdk.SubstrateJobCount{
 							Count: 2,
 						}, nil
 					},
@@ -101,9 +101,9 @@ func TestManageJobsCapacity(t *testing.T) {
 				substrateClient: &coreTesting.MockSubstrateClient{
 					CountRunningJobsFn: func(
 						context.Context,
-						*core.RunningJobCountOptions,
-					) (core.SubstrateJobCount, error) {
-						return core.SubstrateJobCount{
+						*sdk.RunningJobCountOptions,
+					) (sdk.SubstrateJobCount, error) {
+						return sdk.SubstrateJobCount{
 							Count: 1,
 						}, nil
 					},
@@ -260,9 +260,9 @@ func TestRunJobLoop(t *testing.T) {
 						GetFn: func(
 							context.Context,
 							string,
-							*core.EventGetOptions,
-						) (core.Event, error) {
-							return core.Event{}, errors.New("something went wrong")
+							*sdk.EventGetOptions,
+						) (sdk.Event, error) {
+							return sdk.Event{}, errors.New("something went wrong")
 						},
 					},
 					jobsClient: &coreTesting.MockJobsClient{
@@ -270,8 +270,8 @@ func TestRunJobLoop(t *testing.T) {
 							context.Context,
 							string,
 							string,
-							core.JobStatus,
-							*core.JobStatusUpdateOptions,
+							sdk.JobStatus,
+							*sdk.JobStatusUpdateOptions,
 						) error {
 							return nil
 						},
@@ -314,10 +314,10 @@ func TestRunJobLoop(t *testing.T) {
 						GetFn: func(
 							context.Context,
 							string,
-							*core.EventGetOptions,
-						) (core.Event, error) {
-							return core.Event{
-								Worker: &core.Worker{},
+							*sdk.EventGetOptions,
+						) (sdk.Event, error) {
+							return sdk.Event{
+								Worker: &sdk.Worker{},
 							}, nil
 						},
 					},
@@ -360,16 +360,16 @@ func TestRunJobLoop(t *testing.T) {
 						GetFn: func(
 							context.Context,
 							string,
-							*core.EventGetOptions,
-						) (core.Event, error) {
+							*sdk.EventGetOptions,
+						) (sdk.Event, error) {
 							cancelFn()
-							return core.Event{
-								Worker: &core.Worker{
-									Jobs: []core.Job{
+							return sdk.Event{
+								Worker: &sdk.Worker{
+									Jobs: []sdk.Job{
 										{
 											Name: "bar",
-											Status: &core.JobStatus{
-												Phase: core.JobPhaseRunning,
+											Status: &sdk.JobStatus{
+												Phase: sdk.JobPhaseRunning,
 											},
 										},
 									},
@@ -427,15 +427,15 @@ func TestRunJobLoop(t *testing.T) {
 						GetFn: func(
 							context.Context,
 							string,
-							*core.EventGetOptions,
-						) (core.Event, error) {
-							return core.Event{
-								Worker: &core.Worker{
-									Jobs: []core.Job{
+							*sdk.EventGetOptions,
+						) (sdk.Event, error) {
+							return sdk.Event{
+								Worker: &sdk.Worker{
+									Jobs: []sdk.Job{
 										{
 											Name: "bar",
-											Status: &core.JobStatus{
-												Phase: core.JobPhasePending,
+											Status: &sdk.JobStatus{
+												Phase: sdk.JobPhasePending,
 											},
 										},
 									},
@@ -449,7 +449,7 @@ func TestRunJobLoop(t *testing.T) {
 							context.Context,
 							string,
 							string,
-							*core.JobStartOptions,
+							*sdk.JobStartOptions,
 						) error {
 							return errors.New("something went wrong")
 						},
@@ -503,15 +503,15 @@ func TestRunJobLoop(t *testing.T) {
 						GetFn: func(
 							context.Context,
 							string,
-							*core.EventGetOptions,
-						) (core.Event, error) {
-							return core.Event{
-								Worker: &core.Worker{
-									Jobs: []core.Job{
+							*sdk.EventGetOptions,
+						) (sdk.Event, error) {
+							return sdk.Event{
+								Worker: &sdk.Worker{
+									Jobs: []sdk.Job{
 										{
 											Name: "bar",
-											Status: &core.JobStatus{
-												Phase: core.JobPhasePending,
+											Status: &sdk.JobStatus{
+												Phase: sdk.JobPhasePending,
 											},
 										},
 									},
@@ -525,7 +525,7 @@ func TestRunJobLoop(t *testing.T) {
 							context.Context,
 							string,
 							string,
-							*core.JobStartOptions,
+							*sdk.JobStartOptions,
 						) error {
 							cancelFn()
 							return nil

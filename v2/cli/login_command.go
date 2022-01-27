@@ -6,7 +6,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/bacongobbler/browser"
-	"github.com/brigadecore/brigade/sdk/v3/authn"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
@@ -60,7 +60,7 @@ func login(c *cli.Context) error {
 	password := c.String(flagPassword)
 	rootLogin := c.Bool(flagRoot)
 
-	client := authn.NewSessionsClient(
+	client := sdk.NewSessionsClient(
 		address,
 		"",
 		&restmachinery.APIClientOptions{

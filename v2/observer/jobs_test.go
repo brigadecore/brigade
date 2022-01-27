@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
-	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing/core"
+	"github.com/brigadecore/brigade/sdk/v3"
+	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -102,7 +102,7 @@ func TestSyncJobPod(t *testing.T) {
 				manageJobTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.JobPhase,
+					sdk.JobPhase,
 				) {
 				},
 				jobsClient: &coreTesting.MockJobsClient{
@@ -110,10 +110,10 @@ func TestSyncJobPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						jobName string,
-						status core.JobStatus,
-						_ *core.JobStatusUpdateOptions,
+						status sdk.JobStatus,
+						_ *sdk.JobStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.JobPhaseAborted, status.Phase)
+						require.Equal(t, sdk.JobPhaseAborted, status.Phase)
 						return nil
 					},
 				},
@@ -132,7 +132,7 @@ func TestSyncJobPod(t *testing.T) {
 				manageJobTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.JobPhase,
+					sdk.JobPhase,
 				) {
 				},
 				jobsClient: &coreTesting.MockJobsClient{
@@ -140,10 +140,10 @@ func TestSyncJobPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						jobName string,
-						status core.JobStatus,
-						_ *core.JobStatusUpdateOptions,
+						status sdk.JobStatus,
+						_ *sdk.JobStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.JobPhaseRunning, status.Phase)
+						require.Equal(t, sdk.JobPhaseRunning, status.Phase)
 						return nil
 					},
 				},
@@ -167,7 +167,7 @@ func TestSyncJobPod(t *testing.T) {
 				manageJobTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.JobPhase,
+					sdk.JobPhase,
 				) {
 				},
 				jobsClient: &coreTesting.MockJobsClient{
@@ -175,10 +175,10 @@ func TestSyncJobPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						jobName string,
-						status core.JobStatus,
-						_ *core.JobStatusUpdateOptions,
+						status sdk.JobStatus,
+						_ *sdk.JobStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.JobPhaseRunning, status.Phase)
+						require.Equal(t, sdk.JobPhaseRunning, status.Phase)
 						require.Nil(t, status.Ended)
 						return nil
 					},
@@ -222,7 +222,7 @@ func TestSyncJobPod(t *testing.T) {
 				manageJobTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.JobPhase,
+					sdk.JobPhase,
 				) {
 				},
 				timedPodsSet: map[string]context.CancelFunc{
@@ -233,10 +233,10 @@ func TestSyncJobPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						jobName string,
-						status core.JobStatus,
-						_ *core.JobStatusUpdateOptions,
+						status sdk.JobStatus,
+						_ *sdk.JobStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.JobPhaseSucceeded, status.Phase)
+						require.Equal(t, sdk.JobPhaseSucceeded, status.Phase)
 						require.NotNil(t, status.Ended)
 						require.Equal(t, now, *status.Ended)
 						return nil
@@ -257,7 +257,7 @@ func TestSyncJobPod(t *testing.T) {
 				manageJobTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.JobPhase,
+					sdk.JobPhase,
 				) {
 				},
 				jobsClient: &coreTesting.MockJobsClient{
@@ -265,8 +265,8 @@ func TestSyncJobPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						jobName string,
-						status core.JobStatus,
-						_ *core.JobStatusUpdateOptions,
+						status sdk.JobStatus,
+						_ *sdk.JobStatusUpdateOptions,
 					) error {
 						return errors.New("something went wrong")
 					},
@@ -312,7 +312,7 @@ func TestSyncJobPod(t *testing.T) {
 				manageJobTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.JobPhase,
+					sdk.JobPhase,
 				) {
 				},
 				jobsClient: &coreTesting.MockJobsClient{
@@ -320,10 +320,10 @@ func TestSyncJobPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						jobName string,
-						status core.JobStatus,
-						_ *core.JobStatusUpdateOptions,
+						status sdk.JobStatus,
+						_ *sdk.JobStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.JobPhaseFailed, status.Phase)
+						require.Equal(t, sdk.JobPhaseFailed, status.Phase)
 						require.NotNil(t, status.Ended)
 						require.Equal(t, now, *status.Ended)
 						return nil
@@ -350,7 +350,7 @@ func TestSyncJobPod(t *testing.T) {
 				manageJobTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.JobPhase,
+					sdk.JobPhase,
 				) {
 				},
 				jobsClient: &coreTesting.MockJobsClient{
@@ -358,10 +358,10 @@ func TestSyncJobPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						jobName string,
-						status core.JobStatus,
-						_ *core.JobStatusUpdateOptions,
+						status sdk.JobStatus,
+						_ *sdk.JobStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.JobPhaseSucceeded, status.Phase)
+						require.Equal(t, sdk.JobPhaseSucceeded, status.Phase)
 						return nil
 					},
 				},
@@ -386,7 +386,7 @@ func TestSyncJobPod(t *testing.T) {
 				manageJobTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.JobPhase,
+					sdk.JobPhase,
 				) {
 				},
 				jobsClient: &coreTesting.MockJobsClient{
@@ -394,10 +394,10 @@ func TestSyncJobPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						jobName string,
-						status core.JobStatus,
-						_ *core.JobStatusUpdateOptions,
+						status sdk.JobStatus,
+						_ *sdk.JobStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.JobPhaseFailed, status.Phase)
+						require.Equal(t, sdk.JobPhaseFailed, status.Phase)
 						return nil
 					},
 				},
@@ -422,7 +422,7 @@ func TestSyncJobPod(t *testing.T) {
 				manageJobTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.JobPhase,
+					sdk.JobPhase,
 				) {
 				},
 				jobsClient: &coreTesting.MockJobsClient{
@@ -430,10 +430,10 @@ func TestSyncJobPod(t *testing.T) {
 						ctx context.Context,
 						eventID string,
 						jobName string,
-						status core.JobStatus,
-						_ *core.JobStatusUpdateOptions,
+						status sdk.JobStatus,
+						_ *sdk.JobStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.JobPhaseUnknown, status.Phase)
+						require.Equal(t, sdk.JobPhaseUnknown, status.Phase)
 						return nil
 					},
 				},
@@ -465,14 +465,14 @@ func TestManageJobTimeout(t *testing.T) {
 	}
 	testCases := []struct {
 		name       string
-		phase      core.JobPhase
+		phase      sdk.JobPhase
 		observer   *observer
 		assertions func(*observer)
 	}{
 		{
 			name: "job in terminal phase and not already timed",
 			// Nothing should happen
-			phase: core.JobPhaseSucceeded,
+			phase: sdk.JobPhaseSucceeded,
 			observer: &observer{
 				timedPodsSet: map[string]context.CancelFunc{},
 			},
@@ -483,7 +483,7 @@ func TestManageJobTimeout(t *testing.T) {
 		{
 			name: "job in terminal phase and already timed",
 			// Should stop the clock
-			phase: core.JobPhaseSucceeded,
+			phase: sdk.JobPhaseSucceeded,
 			observer: &observer{
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
@@ -496,7 +496,7 @@ func TestManageJobTimeout(t *testing.T) {
 		{
 			name: "job in non-terminal phase and not already timed",
 			// Should start the clock
-			phase: core.JobPhaseRunning,
+			phase: sdk.JobPhaseRunning,
 			observer: &observer{
 				timedPodsSet:  map[string]context.CancelFunc{},
 				runJobTimerFn: func(context.Context, *corev1.Pod) {},
@@ -508,7 +508,7 @@ func TestManageJobTimeout(t *testing.T) {
 		{
 			name: "job in non-terminal phase and already timed",
 			// Nothing should happen
-			phase: core.JobPhaseRunning,
+			phase: sdk.JobPhaseRunning,
 			observer: &observer{
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
@@ -565,7 +565,7 @@ func TestRunJobTimer(t *testing.T) {
 						context.Context,
 						string,
 						string,
-						*core.JobTimeoutOptions,
+						*sdk.JobTimeoutOptions,
 					) error {
 						require.Fail(
 							t,
@@ -609,7 +609,7 @@ func TestRunJobTimer(t *testing.T) {
 						context.Context,
 						string,
 						string,
-						*core.JobTimeoutOptions,
+						*sdk.JobTimeoutOptions,
 					) error {
 						return errors.New("something went wrong")
 					},
@@ -650,7 +650,7 @@ func TestRunJobTimer(t *testing.T) {
 						context.Context,
 						string,
 						string,
-						*core.JobTimeoutOptions,
+						*sdk.JobTimeoutOptions,
 					) error {
 						return nil
 					},
@@ -694,7 +694,7 @@ func TestCleanupJob(t *testing.T) {
 						context.Context,
 						string,
 						string,
-						*core.JobCleanupOptions,
+						*sdk.JobCleanupOptions,
 					) error {
 						return errors.New("something went wrong")
 					},
@@ -719,7 +719,7 @@ func TestCleanupJob(t *testing.T) {
 						context.Context,
 						string,
 						string,
-						*core.JobCleanupOptions,
+						*sdk.JobCleanupOptions,
 					) error {
 						return nil
 					},

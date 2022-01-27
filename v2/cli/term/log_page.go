@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/armon/circbuf"
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -22,7 +22,7 @@ type logPage struct {
 }
 
 func newLogPage(
-	apiClient core.APIClient,
+	apiClient sdk.APIClient,
 	app *tview.Application,
 	router *pageRouter,
 ) *logPage {
@@ -117,17 +117,17 @@ func (l *logPage) refresh(ctx context.Context, eventID string, jobID string) {
 // nolint: lll
 func (l *logPage) streamLogsToBuffer(ctx context.Context, eventID string, jobID string) {
 	l.logBuf.Reset()
-	var logsSelector core.LogsSelector
+	var logsSelector sdk.LogsSelector
 	if jobID == "" {
-		logsSelector = core.LogsSelector{}
+		logsSelector = sdk.LogsSelector{}
 	} else {
-		logsSelector = core.LogsSelector{Job: jobID}
+		logsSelector = sdk.LogsSelector{Job: jobID}
 	}
-	logEntryCh, errCh, err := l.apiClient.Events().Logs().Stream(
+	logEntryCh, errCh, err := l.apiClient.Core().Events().Logs().Stream(
 		ctx,
 		eventID,
 		&logsSelector,
-		&core.LogStreamOptions{Follow: true},
+		&sdk.LogStreamOptions{Follow: true},
 	)
 	if err != nil {
 		l.logText.SetText(err.Error())

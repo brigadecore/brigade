@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/brigadecore/brigade-foundations/retries"
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 )
 
@@ -125,8 +125,8 @@ outerLoop:
 				if err := s.workersClient.UpdateStatus(
 					ctx,
 					eventID,
-					core.WorkerStatus{
-						Phase: core.WorkerPhaseSchedulingFailed,
+					sdk.WorkerStatus{
+						Phase: sdk.WorkerPhaseSchedulingFailed,
 					},
 					nil,
 				); err != nil {
@@ -142,7 +142,7 @@ outerLoop:
 			}
 
 			// If the Worker's phase isn't PENDING, then there's nothing to do
-			if event.Worker.Status.Phase != core.WorkerPhasePending {
+			if event.Worker.Status.Phase != sdk.WorkerPhasePending {
 				if err := msg.Ack(ctx); err != nil {
 					s.workerLoopErrFn(err)
 				}

@@ -6,9 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
-	"github.com/brigadecore/brigade/sdk/v3/system"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -93,12 +92,12 @@ func TestNewObserver(t *testing.T) {
 	apiToken := ""
 	apiClientOpts := &restmachinery.APIClientOptions{}
 
-	systemClient := system.NewAPIClient(
+	systemClient := sdk.NewSystemClient(
 		apiAddress,
 		apiToken,
 		apiClientOpts,
 	)
-	workersClient := core.NewWorkersClient(
+	workersClient := sdk.NewWorkersClient(
 		apiAddress,
 		apiToken,
 		apiClientOpts,

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
-	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing/core"
+	"github.com/brigadecore/brigade/sdk/v3"
+	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue"
 	"github.com/stretchr/testify/require"
 )
@@ -31,9 +31,9 @@ func TestManageWorkerCapacity(t *testing.T) {
 				substrateClient: &coreTesting.MockSubstrateClient{
 					CountRunningWorkersFn: func(
 						context.Context,
-						*core.RunningWorkerCountOptions,
-					) (core.SubstrateWorkerCount, error) {
-						return core.SubstrateWorkerCount{},
+						*sdk.RunningWorkerCountOptions,
+					) (sdk.SubstrateWorkerCount, error) {
+						return sdk.SubstrateWorkerCount{},
 							errors.New("something went wrong")
 					},
 				},
@@ -69,9 +69,9 @@ func TestManageWorkerCapacity(t *testing.T) {
 				substrateClient: &coreTesting.MockSubstrateClient{
 					CountRunningWorkersFn: func(
 						context.Context,
-						*core.RunningWorkerCountOptions,
-					) (core.SubstrateWorkerCount, error) {
-						return core.SubstrateWorkerCount{
+						*sdk.RunningWorkerCountOptions,
+					) (sdk.SubstrateWorkerCount, error) {
+						return sdk.SubstrateWorkerCount{
 							Count: 2,
 						}, nil
 					},
@@ -102,9 +102,9 @@ func TestManageWorkerCapacity(t *testing.T) {
 				substrateClient: &coreTesting.MockSubstrateClient{
 					CountRunningWorkersFn: func(
 						context.Context,
-						*core.RunningWorkerCountOptions,
-					) (core.SubstrateWorkerCount, error) {
-						return core.SubstrateWorkerCount{
+						*sdk.RunningWorkerCountOptions,
+					) (sdk.SubstrateWorkerCount, error) {
+						return sdk.SubstrateWorkerCount{
 							Count: 1,
 						}, nil
 					},
@@ -226,17 +226,17 @@ func TestRunWorkerLoop(t *testing.T) {
 						GetFn: func(
 							context.Context,
 							string,
-							*core.EventGetOptions,
-						) (core.Event, error) {
-							return core.Event{}, errors.New("something went wrong")
+							*sdk.EventGetOptions,
+						) (sdk.Event, error) {
+							return sdk.Event{}, errors.New("something went wrong")
 						},
 					},
 					workersClient: &coreTesting.MockWorkersClient{
 						UpdateStatusFn: func(
 							context.Context,
 							string,
-							core.WorkerStatus,
-							*core.WorkerStatusUpdateOptions,
+							sdk.WorkerStatus,
+							*sdk.WorkerStatusUpdateOptions,
 						) error {
 							return nil
 						},
@@ -278,13 +278,13 @@ func TestRunWorkerLoop(t *testing.T) {
 						GetFn: func(
 							context.Context,
 							string,
-							*core.EventGetOptions,
-						) (core.Event, error) {
+							*sdk.EventGetOptions,
+						) (sdk.Event, error) {
 							cancelFn()
-							return core.Event{
-								Worker: &core.Worker{
-									Status: core.WorkerStatus{
-										Phase: core.WorkerPhaseRunning,
+							return sdk.Event{
+								Worker: &sdk.Worker{
+									Status: sdk.WorkerStatus{
+										Phase: sdk.WorkerPhaseRunning,
 									},
 								},
 							}, nil
@@ -339,12 +339,12 @@ func TestRunWorkerLoop(t *testing.T) {
 						GetFn: func(
 							context.Context,
 							string,
-							*core.EventGetOptions,
-						) (core.Event, error) {
-							return core.Event{
-								Worker: &core.Worker{
-									Status: core.WorkerStatus{
-										Phase: core.WorkerPhasePending,
+							*sdk.EventGetOptions,
+						) (sdk.Event, error) {
+							return sdk.Event{
+								Worker: &sdk.Worker{
+									Status: sdk.WorkerStatus{
+										Phase: sdk.WorkerPhasePending,
 									},
 								},
 							}, nil
@@ -355,7 +355,7 @@ func TestRunWorkerLoop(t *testing.T) {
 						StartFn: func(
 							context.Context,
 							string,
-							*core.WorkerStartOptions,
+							*sdk.WorkerStartOptions,
 						) error {
 							return errors.New("something went wrong")
 						},
@@ -408,12 +408,12 @@ func TestRunWorkerLoop(t *testing.T) {
 						GetFn: func(
 							context.Context,
 							string,
-							*core.EventGetOptions,
-						) (core.Event, error) {
-							return core.Event{
-								Worker: &core.Worker{
-									Status: core.WorkerStatus{
-										Phase: core.WorkerPhasePending,
+							*sdk.EventGetOptions,
+						) (sdk.Event, error) {
+							return sdk.Event{
+								Worker: &sdk.Worker{
+									Status: sdk.WorkerStatus{
+										Phase: sdk.WorkerPhasePending,
 									},
 								},
 							}, nil
@@ -424,7 +424,7 @@ func TestRunWorkerLoop(t *testing.T) {
 						StartFn: func(
 							context.Context,
 							string,
-							*core.WorkerStartOptions,
+							*sdk.WorkerStartOptions,
 						) error {
 							cancelFn()
 							return nil

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/authn"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
@@ -153,7 +153,7 @@ func serviceAccountCreate(c *cli.Context) error {
 
 	token, err := client.Authn().ServiceAccounts().Create(
 		c.Context,
-		authn.ServiceAccount{
+		sdk.ServiceAccount{
 			ObjectMeta: meta.ObjectMeta{
 				ID: id,
 			},

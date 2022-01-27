@@ -9,7 +9,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/brigadecore/brigade-foundations/file"
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/urfave/cli/v2"
 )
 
@@ -57,13 +57,13 @@ func initialize(c *cli.Context) error {
 		Script:      "",
 	}
 
-	err := core.ValidateProjectID(fields.ProjectID)
+	err := sdk.ValidateProjectID(fields.ProjectID)
 	if err != nil {
 		return err
 	}
 
 	if fields.GitCloneURL != "" {
-		if err = core.ValidateGitCloneURL(fields.GitCloneURL); err != nil {
+		if err = sdk.ValidateGitCloneURL(fields.GitCloneURL); err != nil {
 			return err
 		}
 	}

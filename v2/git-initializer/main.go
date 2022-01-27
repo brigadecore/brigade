@@ -23,7 +23,7 @@ import (
 
 	"github.com/brigadecore/brigade-foundations/retries"
 	"github.com/brigadecore/brigade-foundations/version"
-	"github.com/brigadecore/brigade/sdk/v3/core"
+	"github.com/brigadecore/brigade/sdk/v3"
 )
 
 const (
@@ -58,7 +58,7 @@ func gitCheckout() error {
 			Secrets map[string]string `json:"secrets"`
 		} `json:"project"`
 		Worker struct {
-			Git *core.GitConfig `json:"git"`
+			Git *sdk.GitConfig `json:"git"`
 		} `json:"worker"`
 	}
 	err = json.Unmarshal(data, &event)

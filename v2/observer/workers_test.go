@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v3/core"
-	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing/core"
+	"github.com/brigadecore/brigade/sdk/v3"
+	coreTesting "github.com/brigadecore/brigade/sdk/v3/testing"
 	myk8s "github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -102,17 +102,17 @@ func TestSyncWorkerPod(t *testing.T) {
 				manageWorkerTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.WorkerPhase,
+					sdk.WorkerPhase,
 				) {
 				},
 				workersClient: &coreTesting.MockWorkersClient{
 					UpdateStatusFn: func(
 						ctx context.Context,
 						eventID string,
-						status core.WorkerStatus,
-						_ *core.WorkerStatusUpdateOptions,
+						status sdk.WorkerStatus,
+						_ *sdk.WorkerStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.WorkerPhaseAborted, status.Phase)
+						require.Equal(t, sdk.WorkerPhaseAborted, status.Phase)
 						return nil
 					},
 				},
@@ -131,17 +131,17 @@ func TestSyncWorkerPod(t *testing.T) {
 				manageWorkerTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.WorkerPhase,
+					sdk.WorkerPhase,
 				) {
 				},
 				workersClient: &coreTesting.MockWorkersClient{
 					UpdateStatusFn: func(
 						ctx context.Context,
 						eventID string,
-						status core.WorkerStatus,
-						_ *core.WorkerStatusUpdateOptions,
+						status sdk.WorkerStatus,
+						_ *sdk.WorkerStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.WorkerPhaseRunning, status.Phase)
+						require.Equal(t, sdk.WorkerPhaseRunning, status.Phase)
 						return nil
 					},
 				},
@@ -168,17 +168,17 @@ func TestSyncWorkerPod(t *testing.T) {
 				manageWorkerTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.WorkerPhase,
+					sdk.WorkerPhase,
 				) {
 				},
 				workersClient: &coreTesting.MockWorkersClient{
 					UpdateStatusFn: func(
 						ctx context.Context,
 						eventID string,
-						status core.WorkerStatus,
-						_ *core.WorkerStatusUpdateOptions,
+						status sdk.WorkerStatus,
+						_ *sdk.WorkerStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.WorkerPhaseRunning, status.Phase)
+						require.Equal(t, sdk.WorkerPhaseRunning, status.Phase)
 						require.NotNil(t, now, status.Started)
 						require.Equal(t, now, *status.Started)
 						return nil
@@ -232,17 +232,17 @@ func TestSyncWorkerPod(t *testing.T) {
 				manageWorkerTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.WorkerPhase,
+					sdk.WorkerPhase,
 				) {
 				},
 				workersClient: &coreTesting.MockWorkersClient{
 					UpdateStatusFn: func(
 						ctx context.Context,
 						eventID string,
-						status core.WorkerStatus,
-						_ *core.WorkerStatusUpdateOptions,
+						status sdk.WorkerStatus,
+						_ *sdk.WorkerStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.WorkerPhaseSucceeded, status.Phase)
+						require.Equal(t, sdk.WorkerPhaseSucceeded, status.Phase)
 						require.NotNil(t, now, status.Started)
 						require.Equal(t, now, *status.Started)
 						require.NotNil(t, now, status.Ended)
@@ -293,17 +293,17 @@ func TestSyncWorkerPod(t *testing.T) {
 				manageWorkerTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.WorkerPhase,
+					sdk.WorkerPhase,
 				) {
 				},
 				workersClient: &coreTesting.MockWorkersClient{
 					UpdateStatusFn: func(
 						ctx context.Context,
 						eventID string,
-						status core.WorkerStatus,
-						_ *core.WorkerStatusUpdateOptions,
+						status sdk.WorkerStatus,
+						_ *sdk.WorkerStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.WorkerPhaseFailed, status.Phase)
+						require.Equal(t, sdk.WorkerPhaseFailed, status.Phase)
 						require.NotNil(t, now, status.Started)
 						require.Equal(t, now, *status.Started)
 						require.NotNil(t, now, status.Ended)
@@ -332,17 +332,17 @@ func TestSyncWorkerPod(t *testing.T) {
 				manageWorkerTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.WorkerPhase,
+					sdk.WorkerPhase,
 				) {
 				},
 				workersClient: &coreTesting.MockWorkersClient{
 					UpdateStatusFn: func(
 						ctx context.Context,
 						eventID string,
-						status core.WorkerStatus,
-						_ *core.WorkerStatusUpdateOptions,
+						status sdk.WorkerStatus,
+						_ *sdk.WorkerStatusUpdateOptions,
 					) error {
-						require.Equal(t, core.WorkerPhaseUnknown, status.Phase)
+						require.Equal(t, sdk.WorkerPhaseUnknown, status.Phase)
 						return nil
 					},
 				},
@@ -366,15 +366,15 @@ func TestSyncWorkerPod(t *testing.T) {
 				manageWorkerTimeoutFn: func(
 					context.Context,
 					*corev1.Pod,
-					core.WorkerPhase,
+					sdk.WorkerPhase,
 				) {
 				},
 				workersClient: &coreTesting.MockWorkersClient{
 					UpdateStatusFn: func(
 						ctx context.Context,
 						eventID string,
-						status core.WorkerStatus,
-						_ *core.WorkerStatusUpdateOptions,
+						status sdk.WorkerStatus,
+						_ *sdk.WorkerStatusUpdateOptions,
 					) error {
 						return errors.New("something went wrong")
 					},
@@ -406,14 +406,14 @@ func TestManageWorkerTimeout(t *testing.T) {
 	}
 	testCases := []struct {
 		name       string
-		phase      core.WorkerPhase
+		phase      sdk.WorkerPhase
 		observer   *observer
 		assertions func(*observer)
 	}{
 		{
 			name: "worker in terminal phase and not already timed",
 			// Nothing should happen
-			phase: core.WorkerPhaseSucceeded,
+			phase: sdk.WorkerPhaseSucceeded,
 			observer: &observer{
 				timedPodsSet: map[string]context.CancelFunc{},
 			},
@@ -424,7 +424,7 @@ func TestManageWorkerTimeout(t *testing.T) {
 		{
 			name: "worker in terminal phase and already timed",
 			// Should stop the clock
-			phase: core.WorkerPhaseSucceeded,
+			phase: sdk.WorkerPhaseSucceeded,
 			observer: &observer{
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
@@ -437,7 +437,7 @@ func TestManageWorkerTimeout(t *testing.T) {
 		{
 			name: "worker in non-terminal phase and not already timed",
 			// Should start the clock
-			phase: core.WorkerPhaseRunning,
+			phase: sdk.WorkerPhaseRunning,
 			observer: &observer{
 				timedPodsSet:     map[string]context.CancelFunc{},
 				runWorkerTimerFn: func(context.Context, *corev1.Pod) {},
@@ -449,7 +449,7 @@ func TestManageWorkerTimeout(t *testing.T) {
 		{
 			name: "worker in non-terminal phase and already timed",
 			// Nothing should happen
-			phase: core.WorkerPhaseRunning,
+			phase: sdk.WorkerPhaseRunning,
 			observer: &observer{
 				timedPodsSet: map[string]context.CancelFunc{
 					"ns:nombre": func() {},
@@ -504,7 +504,7 @@ func TestRunWorkerTimer(t *testing.T) {
 					TimeoutFn: func(
 						context.Context,
 						string,
-						*core.WorkerTimeoutOptions,
+						*sdk.WorkerTimeoutOptions,
 					) error {
 						require.Fail(
 							t,
@@ -546,7 +546,7 @@ func TestRunWorkerTimer(t *testing.T) {
 					TimeoutFn: func(
 						context.Context,
 						string,
-						*core.WorkerTimeoutOptions,
+						*sdk.WorkerTimeoutOptions,
 					) error {
 						return errors.New("something went wrong")
 					},
@@ -585,7 +585,7 @@ func TestRunWorkerTimer(t *testing.T) {
 					TimeoutFn: func(
 						context.Context,
 						string,
-						*core.WorkerTimeoutOptions,
+						*sdk.WorkerTimeoutOptions,
 					) error {
 						return nil
 					},
@@ -628,7 +628,7 @@ func TestCleanupWorker(t *testing.T) {
 					CleanupFn: func(
 						context.Context,
 						string,
-						*core.WorkerCleanupOptions,
+						*sdk.WorkerCleanupOptions,
 					) error {
 						return errors.New("something went wrong")
 					},
@@ -652,7 +652,7 @@ func TestCleanupWorker(t *testing.T) {
 					CleanupFn: func(
 						context.Context,
 						string,
-						*core.WorkerCleanupOptions,
+						*sdk.WorkerCleanupOptions,
 					) error {
 						return nil
 					},
