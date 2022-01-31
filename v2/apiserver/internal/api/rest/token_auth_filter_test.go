@@ -138,7 +138,7 @@ func TestFilter(t *testing.T) {
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				principal := api.PrincipalFromContext(r.Context())
 				require.NotNil(t, principal)
-				require.IsType(t, &workerPrincipal{}, principal)
+				require.IsType(t, &api.WorkerPrincipal{}, principal)
 			},
 			assertions: func(handlerCalled bool, r *http.Response) {
 				require.Equal(t, http.StatusOK, r.StatusCode)
