@@ -1,12 +1,19 @@
 package sdk
 
 import (
+	"context"
+	"net/http"
+
+	rm "github.com/brigadecore/brigade/sdk/v3/internal/restmachinery"
 	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 )
 
 // AuthnClient is the root of a tree of more specialized API clients for dealing
 // with identity and authentication.
 type AuthnClient interface {
+	// WhoAmI returns a PrincipalReference for the currently authenticated
+	// principal.
+	WhoAmI(context.Context) (PrincipalReference, error)
 	// ServiceAccounts returns a specialized client for ServiceAccount management.
 	ServiceAccounts() ServiceAccountsClient
 	// Sessions returns a specialized client for Session management.
@@ -16,6 +23,7 @@ type AuthnClient interface {
 }
 
 type authnClient struct {
+	*rm.BaseClient
 	// serviceAccountsClient is a specialized client for ServiceAccount
 	// management.
 	serviceAccountsClient ServiceAccountsClient
@@ -34,6 +42,7 @@ func NewAuthnClient(
 	opts *restmachinery.APIClientOptions,
 ) AuthnClient {
 	return &authnClient{
+		BaseClient: rm.NewBaseClient(apiAddress, apiToken, opts),
 		serviceAccountsClient: NewServiceAccountsClient(
 			apiAddress,
 			apiToken,
@@ -42,6 +51,19 @@ func NewAuthnClient(
 		sessionsClient: NewSessionsClient(apiAddress, apiToken, opts),
 		usersClient:    NewUsersClient(apiAddress, apiToken, opts),
 	}
+}
+
+func (a *authnClient) WhoAmI(ctx context.Context) (PrincipalReference, error) {
+	ref := PrincipalReference{}
+	return ref, a.ExecuteRequest(
+		ctx,
+		rm.OutboundRequest{
+			Method:      http.MethodGet,
+			Path:        "v2/whoami",
+			SuccessCode: http.StatusOK,
+			RespObj:     &ref,
+		},
+	)
 }
 
 func (a *authnClient) ServiceAccounts() ServiceAccountsClient {
