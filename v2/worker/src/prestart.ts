@@ -57,19 +57,31 @@ const prepExecOpts: ExecFileSyncOptions = {
   stdio: debug ? "inherit" : undefined
 }
 
+const moduleNamespace = "@brigadecore"
+const moduleName = "brigadier"
+
 // Install dependencies, if any
-if (packageJSON) {
-  useYarn ? yarnInstall() : npmInstall()
+if (packageJSON && packageJSON.dependencies) {
+  // Remove @brigadecore/brigade from the dependencies since we're going to
+  // polyfill it anyway.
+  if (packageJSON.dependencies[`${moduleNamespace}/${moduleName}`]) {
+    logger.debug(`deleting ${moduleNamespace}/${moduleName} from package.json`)
+    delete packageJSON.dependencies[`${moduleNamespace}/${moduleName}`]
+    fs.writeFileSync(packageJSONPath, JSON.stringify(packageJSON))
+  }
+  if (Object.keys(packageJSON.dependencies).length === 0) {
+    logger.debug("no dependencies -- bypassing dependency resolution")
+  } else {
+    useYarn ? yarnInstall() : npmInstall()
+  }
 }
 
 // Add/replace @brigadecore/brigadier with the worker's brigadier polyfill
-const moduleNamespace = "@brigadecore"
 const moduleNamespacePath = path.join(configFilesPath, "node_modules", moduleNamespace)
 if (!fs.existsSync(moduleNamespacePath)) {
   logger.debug(`path ${moduleNamespacePath} does not exist; creating it`)
   fs.mkdirSync(moduleNamespacePath, { recursive: true })
 }
-const moduleName = "brigadier"
 const modulePath = path.join(moduleNamespacePath, moduleName)
 if (fs.existsSync(modulePath)) {
   logger.debug(`path ${modulePath} exists; deleting it`)
