@@ -146,6 +146,9 @@ func main() {
 		coolLogsStore,
 	)
 
+	// Principals service
+	principalsService := api.NewPrincipalsService(authorizer.Authorize)
+
 	// Projects service
 	projectsService := api.NewProjectsService(
 		authorizer.Authorize,
@@ -252,6 +255,10 @@ func main() {
 		}
 		apiServer = restmachinery.NewServer(
 			[]restmachinery.Endpoints{
+				&rest.AuthnEndpoints{
+					AuthFilter: authFilter,
+					Service:    principalsService,
+				},
 				&rest.EventsEndpoints{
 					AuthFilter: authFilter,
 					EventSchemaLoader: gojsonschema.NewReferenceLoader(

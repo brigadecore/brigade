@@ -15,6 +15,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	// Root is a singleton that represents Brigade's "root" user.
+	root = &api.RootPrincipal{}
+	// Scheduler is a singleton that represents Brigade's scheduler component.
+	scheduler = &api.SchedulerPrincipal{}
+	// Observer is a singleton that represents Brigade's observer component.
+	observer = &api.ObserverPrincipal{}
+)
+
 // TokenAuthFilterConfig encapsulates several configuration options for the
 // TokenAuthFilter.
 type TokenAuthFilterConfig struct {
@@ -140,7 +149,8 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 		} else {
-			ctx := api.ContextWithPrincipal(r.Context(), worker(event.ID))
+			ctx :=
+				api.ContextWithPrincipal(r.Context(), api.GetWorkerPrincipal(event.ID))
 			handle(w, r.WithContext(ctx))
 			return
 		}

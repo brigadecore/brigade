@@ -24,6 +24,7 @@ func main() {
 		userCommand,
 		termCommand,
 		versionCommand,
+		whoAmICommand,
 	}
 	fmt.Println()
 	if err := app.RunContext(signals.Context(), os.Args); err != nil {
