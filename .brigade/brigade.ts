@@ -61,6 +61,10 @@ class MakeTargetJob extends Job {
 // builders, we can streamline all of this pretty significantly.
 class BuildImageJob extends MakeTargetJob {
   constructor(target: string, event: Event, env?: {[key: string]: string}) {
+    env ||= {}
+    env["DOCKER_ORG"] = event.project.secrets.dockerhubOrg
+    env["DOCKER_USERNAME"] = event.project.secrets.dockerhubUsername
+    env["DOCKER_PASSWORD"] = event.project.secrets.dockerhubPassword
     super(target, dockerClientImg, event, env)
     this.primaryContainer.environment.DOCKER_HOST = "localhost:2375"
     this.primaryContainer.command = [ "sh" ]
@@ -80,11 +84,7 @@ class BuildImageJob extends MakeTargetJob {
 // PushImageJob is a specialized job type for publishing Docker images.
 class PushImageJob extends BuildImageJob {
   constructor(target: string, event: Event, version?: string) {
-    const env = {
-      "DOCKER_ORG": event.project.secrets.dockerhubOrg,
-      "DOCKER_USERNAME": event.project.secrets.dockerhubUsername,
-      "DOCKER_PASSWORD": event.project.secrets.dockerhubPassword
-    }
+    const env = {}
     if (version) {
       env["VERSION"] = version
     }
