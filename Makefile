@@ -16,7 +16,7 @@ GIT_VERSION = $(shell git describe --always --abbrev=7 --dirty --match=NeVeRmAtC
 
 ifneq ($(SKIP_DOCKER),true)
 	PROJECT_ROOT := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
-	GO_DEV_IMAGE := brigadecore/go-tools:v0.5.0
+	GO_DEV_IMAGE := brigadecore/go-tools:v0.6.0
 
 	GO_DOCKER_CMD := docker run \
 		-it \
