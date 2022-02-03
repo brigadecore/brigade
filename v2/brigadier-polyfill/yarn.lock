@@ -23,10 +23,10 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@brigadecore/brigade-sdk@^v2.1.0":
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/@brigadecore/brigade-sdk/-/brigade-sdk-2.1.0.tgz#a5f65784ee6ff6f12f7dd0dc7d295f8642ccd9b2"
-  integrity sha512-N+7lJX33JFiowyKmBDBoH79ys+Zk20z0LVagEvM+wIRlkNThtWYZujPDP5f3/KlV/oXQlb881caRCs9WKby3kg==
+"@brigadecore/brigade-sdk@^v2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@brigadecore/brigade-sdk/-/brigade-sdk-2.2.0.tgz#7118165aa332c62032d7526af84cee0b03119549"
+  integrity sha512-aQn/fgefzK9jolex+mMqEzLhgzZE53kQqufjp488OPmkjbe29a880MBIX3jyWuxxp6v0ZtBs0LhEky7CBeNWVg==
   dependencies:
     axios "^0.21.2"
     event-source-polyfill "^1.0.22"
