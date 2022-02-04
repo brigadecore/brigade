@@ -272,6 +272,8 @@ spec:
           value: {{ .Values.apiserver.thirdPartyAuth.userSessionTTL }}
         - name: ADMIN_USER_IDS
           value: {{ join "," .Values.apiserver.thirdPartyAuth.admins }}
+        - name: GRANT_READ_ON_INITIAL_LOGIN
+          value: {{ quote .Values.apiserver.thirdPartyAuth.grantReadOnInitialLogin }}
         {{- end }}
         {{- if eq .Values.apiserver.thirdPartyAuth.strategy "oidc" }}
         - name: OIDC_PROVIDER_URL
