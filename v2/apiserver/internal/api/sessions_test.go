@@ -367,6 +367,58 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 		},
 
 		{
+			name: "error granting read-only permissions",
+			service: &sessionsService{
+				config: SessionsServiceConfig{
+					ThirdPartyAuthEnabled:   true,
+					GrantReadOnInitialLogin: true,
+				},
+				sessionsStore: &mockSessionsStore{
+					GetByHashedOAuth2StateFn: func(
+						ctx context.Context,
+						oauth2State string,
+					) (Session, error) {
+						return Session{}, nil
+					},
+				},
+				usersStore: &mockUsersStore{
+					GetFn: func(_ context.Context, id string) (User, error) {
+						return User{}, &meta.ErrNotFound{
+							Type: UserKind,
+							ID:   id,
+						}
+					},
+					CreateFn: func(context.Context, User) error {
+						return nil
+					},
+				},
+				roleAssignmentsStore: &mockRoleAssignmentsStore{
+					GrantFn: func(context.Context, RoleAssignment) error {
+						return errors.New("something went wrong")
+					},
+				},
+				thirdPartyAuthHelper: &mockThirdPartyAuthHelper{
+					ExchangeFn: func(
+						context.Context,
+						string,
+						string,
+					) (ThirdPartyIdentity, error) {
+						return ThirdPartyIdentity{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(
+					t,
+					err.Error(),
+					"error assigning role",
+				)
+				require.Contains(t, err.Error(), "something went wrong")
+			},
+		},
+
+		{
 			name: "error authenticating in session store",
 			service: &sessionsService{
 				sessionsStore: &mockSessionsStore{

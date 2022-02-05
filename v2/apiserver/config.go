@@ -229,10 +229,8 @@ func sessionsServiceConfig() (api.SessionsServiceConfig, error) {
 		os.GetBoolFromEnvVar("ROOT_USER_ENABLED", false); err != nil {
 		return config, err
 	}
-	if config.RootUserSessionTTL, err = os.GetDurationFromEnvVar(
-		"ROOT_USER_SESSION_TTL",
-		time.Hour,
-	); err != nil {
+	if config.RootUserSessionTTL, err =
+		os.GetDurationFromEnvVar("ROOT_USER_SESSION_TTL", time.Hour); err != nil {
 		return config, err
 	}
 	if config.RootUserEnabled {
@@ -245,12 +243,14 @@ func sessionsServiceConfig() (api.SessionsServiceConfig, error) {
 		os.GetEnvVar("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyDisabled)
 	config.ThirdPartyAuthEnabled =
 		thirdPartyAuthStrategy != thirdPartyAuthStrategyDisabled
-	config.UserSessionTTL, err = os.GetDurationFromEnvVar(
-		"USER_SESSION_TTL",
-		time.Hour,
-	)
+	if config.UserSessionTTL, err =
+		os.GetDurationFromEnvVar("USER_SESSION_TTL", time.Hour); err != nil {
+		return config, err
+	}
 	config.AdminUserIDs =
 		os.GetStringSliceFromEnvVar("ADMIN_USER_IDS", []string{})
+	config.GrantReadOnInitialLogin, err =
+		os.GetBoolFromEnvVar("GRANT_READ_ON_INITIAL_LOGIN", false)
 	return config, err
 }
 

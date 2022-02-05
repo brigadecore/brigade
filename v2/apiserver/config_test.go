@@ -536,9 +536,21 @@ func TestSessionsServiceConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "success",
+			name: "GRANT_READ_ON_INITIAL_LOGIN not parsable as bool",
 			setup: func() {
 				t.Setenv("USER_SESSION_TTL", "1h")
+				t.Setenv("GRANT_READ_ON_INITIAL_LOGIN", "aw hell no")
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "was not parsable as a bool")
+				require.Contains(t, err.Error(), "GRANT_READ_ON_INITIAL_LOGIN")
+			},
+		},
+		{
+			name: "success",
+			setup: func() {
+				t.Setenv("GRANT_READ_ON_INITIAL_LOGIN", "true")
 			},
 			assertions: func(err error) {
 				require.NoError(t, err)
