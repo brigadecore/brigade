@@ -85,6 +85,11 @@ apiserver:
     ## have to log in, log out, log back in as root, grant themselves
     ## permissions, then log out, then log back in as themselves.
     admins: []
+    ## Optionally grant global, read-only permissions to all users the first
+    ## time they authenticate. Note that even with global read permissions,
+    ## access to logs still requires the PROJECT_USER for the applicable
+    ## project.
+    grantReadOnInitialLogin: false
 
   tls:
     ## Whether to enable TLS. If true then you MUST do ONE of three things to
