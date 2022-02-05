@@ -133,6 +133,9 @@ type SessionsServiceConfig struct {
 	// AdminUserIDs enumerates users who should be granted system admin privileges
 	// the first time they log in.
 	AdminUserIDs []string
+	// GrantReadOnInitialLogin indicates whether all users should automatically
+	// be granted read-only permissions the first time they log in.
+	GrantReadOnInitialLogin bool
 }
 
 // SessionsService is the specialized interface for managing Sessions. It's
@@ -343,6 +346,25 @@ func (s *sessionsService) Authenticate(
 			}
 			if err = s.usersStore.Create(ctx, user); err != nil {
 				return "", errors.Wrapf(err, "error storing new user %q", user.ID)
+			}
+			if s.config.GrantReadOnInitialLogin {
+				if err = s.roleAssignmentsStore.Grant(
+					ctx,
+					RoleAssignment{
+						Principal: PrincipalReference{
+							Type: "USER",
+							ID:   user.ID,
+						},
+						Role: RoleReader,
+					},
+				); err != nil {
+					return "", errors.Wrapf(
+						err,
+						"error assigning role %q to user %q",
+						RoleReader,
+						user.ID,
+					)
+				}
 			}
 			for _, adminID := range s.config.AdminUserIDs {
 				if user.ID == adminID {
