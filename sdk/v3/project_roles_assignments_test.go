@@ -90,70 +90,106 @@ func TestProjectRoleAssignmentsClientGrant(t *testing.T) {
 
 func TestProjectRoleAssignmentsClientList(t *testing.T) {
 	const testProjectID = "bluebook"
+	const testUserID = "tony@starkindustries.com"
+	const testRole = Role("ceo")
 	testProjectRoleAssignments := ProjectRoleAssignmentList{
 		Items: []ProjectRoleAssignment{
 			{
+				ProjectID: testProjectID,
 				Principal: PrincipalReference{
 					Type: PrincipalTypeUser,
-					ID:   "tony@starkindustries.com",
+					ID:   testUserID,
 				},
-				Role: Role("ceo"),
+				Role: testRole,
 			},
 		},
 	}
-	testProjectRoleAssignmentsSelector := ProjectRoleAssignmentsSelector{
-		Principal: &PrincipalReference{
-			Type: PrincipalTypeUser,
-			ID:   "tony@starkindustries.com",
-		},
-		Role: Role("ceo"),
-	}
-	server := httptest.NewServer(
-		http.HandlerFunc(
-			func(w http.ResponseWriter, r *http.Request) {
-				defer r.Body.Close()
-				require.Equal(t, http.MethodGet, r.Method)
+	testCases := []struct {
+		name       string
+		selector   ProjectRoleAssignmentsSelector
+		assertions func(*testing.T, *http.Request)
+	}{
+		{
+			name: "with project ID specified",
+			selector: ProjectRoleAssignmentsSelector{
+				ProjectID: testProjectID,
+				Principal: &PrincipalReference{
+					Type: PrincipalTypeUser,
+					ID:   testUserID,
+				},
+				Role: testRole,
+			},
+			assertions: func(t *testing.T, r *http.Request) {
 				require.Equal(
 					t,
 					fmt.Sprintf("/v2/projects/%s/role-assignments", testProjectID),
 					r.URL.Path,
 				)
-				require.Equal(
-					t,
-					testProjectRoleAssignmentsSelector.Principal.Type,
-					PrincipalType(r.URL.Query().Get("principalType")),
-				)
-				require.Equal(
-					t,
-					testProjectRoleAssignmentsSelector.Principal.ID,
-					r.URL.Query().Get("principalID"),
-				)
-				require.Equal(
-					t,
-					testProjectRoleAssignmentsSelector.Role,
-					Role(r.URL.Query().Get("role")),
-				)
-				bodyBytes, err := json.Marshal(testProjectRoleAssignments)
-				require.NoError(t, err)
-				w.WriteHeader(http.StatusOK)
-				fmt.Fprintln(w, string(bodyBytes))
 			},
-		),
-	)
-	defer server.Close()
-	client := NewProjectRoleAssignmentsClient(
-		server.URL,
-		rmTesting.TestAPIToken,
-		nil,
-	)
-	projectRoleAssignments, err := client.List(
-		context.Background(),
-		testProjectID,
-		&testProjectRoleAssignmentsSelector,
-		nil,
-	)
-	require.NoError(t, err)
-	require.Equal(t, testProjectRoleAssignments, projectRoleAssignments)
+		},
+		{
+			name: "without project ID specified",
+			selector: ProjectRoleAssignmentsSelector{
+				Principal: &PrincipalReference{
+					Type: PrincipalTypeUser,
+					ID:   testUserID,
+				},
+				Role: testRole,
+			},
+			assertions: func(t *testing.T, r *http.Request) {
+				require.Equal(
+					t,
+					"/v2/project-role-assignments",
+					r.URL.Path,
+				)
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			server := httptest.NewServer(
+				http.HandlerFunc(
+					func(w http.ResponseWriter, r *http.Request) {
+						defer r.Body.Close()
+						require.Equal(t, http.MethodGet, r.Method)
+						require.Equal(
+							t,
+							testCase.selector.Principal.Type,
+							PrincipalType(r.URL.Query().Get("principalType")),
+						)
+						require.Equal(
+							t,
+							testCase.selector.Principal.ID,
+							r.URL.Query().Get("principalID"),
+						)
+						require.Equal(
+							t,
+							testCase.selector.Role,
+							Role(r.URL.Query().Get("role")),
+						)
+						testCase.assertions(t, r)
+						bodyBytes, err := json.Marshal(testProjectRoleAssignments)
+						require.NoError(t, err)
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprintln(w, string(bodyBytes))
+					},
+				),
+			)
+			defer server.Close()
+			client := NewProjectRoleAssignmentsClient(
+				server.URL,
+				rmTesting.TestAPIToken,
+				nil,
+			)
+			projectRoleAssignments, err := client.List(
+				context.Background(),
+				&testCase.selector,
+				nil,
+			)
+			require.NoError(t, err)
+			require.Equal(t, testProjectRoleAssignments, projectRoleAssignments)
+		})
+	}
 }
 
 func TestProjectRoleAssignmentsClientRevoke(t *testing.T) {
