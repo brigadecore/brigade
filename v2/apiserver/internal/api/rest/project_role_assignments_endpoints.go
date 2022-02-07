@@ -34,6 +34,12 @@ func (p *ProjectRoleAssignmentsEndpoints) Register(router *mux.Router) {
 		p.AuthFilter.Decorate(p.list),
 	).Methods(http.MethodGet)
 
+	// Newer role-assignments endpoint that supports querying across projects
+	router.HandleFunc(
+		"/v2/project-role-assignments",
+		p.AuthFilter.Decorate(p.list),
+	).Methods(http.MethodGet)
+
 	// Revoke a Project Role for a User or Service Account
 	router.HandleFunc(
 		"/v2/projects/{id}/role-assignments",
@@ -67,8 +73,20 @@ func (p *ProjectRoleAssignmentsEndpoints) list(
 ) {
 	principalType := req.URL.Query().Get("principalType")
 	principalID := req.URL.Query().Get("principalID")
+
+	// This will yield a project ID if we got her via the original
+	// /v2/projects/{id}/role-assignments endpoint.
+	projectID := mux.Vars(req)["id"]
+	// If we cannot pick a project ID out of the path, try to get it from a query
+	// parameters.
+	if projectID == "" {
+		projectID = req.URL.Query().Get("project")
+	}
+	// It's possible and legitimate if projectID is still an empty-string at this
+	// point.
+
 	selector := api.ProjectRoleAssignmentsSelector{
-		ProjectID: mux.Vars(req)["id"],
+		ProjectID: projectID,
 		Role:      api.Role(req.URL.Query().Get("role")),
 	}
 	if principalType != "" && principalID != "" {
