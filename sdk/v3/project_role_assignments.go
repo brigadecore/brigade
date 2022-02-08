@@ -24,6 +24,8 @@ const (
 // ProjectRoleAssignment represents the assignment of a ProjectRole to a
 // principal such as a User or ServiceAccount.
 type ProjectRoleAssignment struct {
+	// ProjectID qualifies the scope of the Role.
+	ProjectID string `json:"projectID,omitempty"`
 	// Role assigns a Role to the specified principal.
 	Role Role `json:"role"`
 	// Principal specifies the principal to whom the Role is assigned.
@@ -81,6 +83,9 @@ type ProjectRoleAssignmentsSelector struct {
 	// Principal specifies that only ProjectRoleAssignments for the specified
 	// Principal should be selected.
 	Principal *PrincipalReference
+	// ProjectID specifies that only ProjectRoleAssignments for the specified
+	// Project should be selected.
+	ProjectID string
 	// Role specified that only ProjectRoleAssignments for the specified Role
 	// should be selected.
 	Role Role
@@ -115,7 +120,6 @@ type ProjectRoleAssignmentsClient interface {
 	// be specified using the ProjectRoleAssignmentsSelector parameter.
 	List(
 		ctx context.Context,
-		projectID string,
 		selector *ProjectRoleAssignmentsSelector,
 		opts *meta.ListOptions,
 	) (ProjectRoleAssignmentList, error)
@@ -165,10 +169,13 @@ func (p *projectRoleAssignmentsClient) Grant(
 
 func (p *projectRoleAssignmentsClient) List(
 	ctx context.Context,
-	projectID string,
 	selector *ProjectRoleAssignmentsSelector,
 	opts *meta.ListOptions,
 ) (ProjectRoleAssignmentList, error) {
+	path := "v2/project-role-assignments"
+	if selector.ProjectID != "" {
+		path = fmt.Sprintf("v2/projects/%s/role-assignments", selector.ProjectID)
+	}
 	queryParams := map[string]string{}
 	if selector != nil {
 		if selector.Principal != nil {
@@ -184,7 +191,7 @@ func (p *projectRoleAssignmentsClient) List(
 		ctx,
 		rm.OutboundRequest{
 			Method:      http.MethodGet,
-			Path:        fmt.Sprintf("v2/projects/%s/role-assignments", projectID),
+			Path:        path,
 			QueryParams: p.AppendListQueryParams(queryParams, opts),
 			SuccessCode: http.StatusOK,
 			RespObj:     &projectRoleAssignments,

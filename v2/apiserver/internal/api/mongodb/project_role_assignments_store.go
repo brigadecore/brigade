@@ -66,8 +66,9 @@ func (p *projectRoleAssignmentsStore) List(
 ) (api.ProjectRoleAssignmentList, error) {
 	projectRoleAssignments := api.ProjectRoleAssignmentList{}
 
-	criteria := bson.M{
-		"projectID": selector.ProjectID,
+	criteria := bson.M{}
+	if selector.ProjectID != "" {
+		criteria["projectID"] = selector.ProjectID
 	}
 	if selector.Principal != nil {
 		criteria["principal.type"] = selector.Principal.Type
