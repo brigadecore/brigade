@@ -74,11 +74,11 @@ func (p *ProjectRoleAssignmentsEndpoints) list(
 	principalType := req.URL.Query().Get("principalType")
 	principalID := req.URL.Query().Get("principalID")
 
-	// This will yield a project ID if we got her via the original
+	// This will yield a project ID if we got here via the original
 	// /v2/projects/{id}/role-assignments endpoint.
 	projectID := mux.Vars(req)["id"]
 	// If we cannot pick a project ID out of the path, try to get it from a query
-	// parameters.
+	// parameter.
 	if projectID == "" {
 		projectID = req.URL.Query().Get("project")
 	}
