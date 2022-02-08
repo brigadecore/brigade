@@ -22,7 +22,7 @@ const (
 // principal such as a User or ServiceAccount.
 type ProjectRoleAssignment struct {
 	// ProjectID qualifies the scope of the Role.
-	ProjectID string `json:"-" bson:"projectID,omitempty"`
+	ProjectID string `json:"projectID" bson:"projectID,omitempty"`
 	// Role assigns a Role to the specified principal.
 	Role Role `json:"role" bson:"role"`
 	// Principal specifies the principal to whom the Role is assigned.

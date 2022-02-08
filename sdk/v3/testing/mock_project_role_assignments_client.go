@@ -16,7 +16,6 @@ type MockProjectRoleAssignmentsClient struct {
 	) error
 	ListFn func(
 		ctx context.Context,
-		projectID string,
 		selector *sdk.ProjectRoleAssignmentsSelector,
 		opts *meta.ListOptions,
 	) (sdk.ProjectRoleAssignmentList, error)
@@ -39,11 +38,10 @@ func (m *MockProjectRoleAssignmentsClient) Grant(
 
 func (m *MockProjectRoleAssignmentsClient) List(
 	ctx context.Context,
-	projectID string,
 	selector *sdk.ProjectRoleAssignmentsSelector,
 	opts *meta.ListOptions,
 ) (sdk.ProjectRoleAssignmentList, error) {
-	return m.ListFn(ctx, projectID, selector, opts)
+	return m.ListFn(ctx, selector, opts)
 }
 
 func (m *MockProjectRoleAssignmentsClient) Revoke(

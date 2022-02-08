@@ -103,10 +103,9 @@ var projectRolesCommands = &cli.Command{
 			Usage:   "List principals and their project-level roles",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
-					Name:     flagID,
-					Aliases:  []string{"i", flagProject, "p"},
-					Usage:    "List principals and their roles for the specified project",
-					Required: true,
+					Name:    flagID,
+					Aliases: []string{"i", flagProject, "p"},
+					Usage:   "Narrow results to the specified project",
 				},
 				nonInteractiveFlag,
 				&cli.StringFlag{
@@ -251,7 +250,8 @@ func listProjectRoles(c *cli.Context) error {
 	}
 
 	selector := sdk.ProjectRoleAssignmentsSelector{
-		Role: sdk.Role(role),
+		ProjectID: projectID,
+		Role:      sdk.Role(role),
 	}
 
 	if userID != "" {
@@ -277,7 +277,6 @@ func listProjectRoles(c *cli.Context) error {
 		roleAssignments, err :=
 			client.Core().Projects().Authz().RoleAssignments().List(
 				c.Context,
-				projectID,
 				&selector,
 				&opts,
 			)
@@ -293,13 +292,26 @@ func listProjectRoles(c *cli.Context) error {
 		switch strings.ToLower(output) {
 		case flagOutputTable:
 			table := uitable.New()
-			table.AddRow("PRINCIPAL TYPE", "PRINCIPAL ID", "ROLE")
+			if projectID == "" {
+				table.AddRow("PROJECT", "PRINCIPAL TYPE", "PRINCIPAL ID", "ROLE")
+			} else {
+				table.AddRow("PRINCIPAL TYPE", "PRINCIPAL ID", "ROLE")
+			}
 			for _, roleAssignment := range roleAssignments.Items {
-				table.AddRow(
-					roleAssignment.Principal.Type,
-					roleAssignment.Principal.ID,
-					roleAssignment.Role,
-				)
+				if projectID == "" {
+					table.AddRow(
+						roleAssignment.ProjectID,
+						roleAssignment.Principal.Type,
+						roleAssignment.Principal.ID,
+						roleAssignment.Role,
+					)
+				} else {
+					table.AddRow(
+						roleAssignment.Principal.Type,
+						roleAssignment.Principal.ID,
+						roleAssignment.Role,
+					)
+				}
 			}
 			fmt.Println(table)
 
