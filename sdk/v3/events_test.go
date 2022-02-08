@@ -28,17 +28,17 @@ func TestSourceStateMarshalJSON(t *testing.T) {
 }
 
 func TestNewEventsClient(t *testing.T) {
-	client := NewEventsClient(
+	client, ok := NewEventsClient(
 		rmTesting.TestAPIAddress,
 		rmTesting.TestAPIToken,
 		nil,
-	)
-	require.IsType(t, &eventsClient{}, client)
-	rmTesting.RequireBaseClient(t, client.(*eventsClient).BaseClient)
-	require.NotNil(t, client.(*eventsClient).workersClient)
-	require.Equal(t, client.(*eventsClient).workersClient, client.Workers())
-	require.NotNil(t, client.(*eventsClient).logsClient)
-	require.Equal(t, client.(*eventsClient).logsClient, client.Logs())
+	).(*eventsClient)
+	require.True(t, ok)
+	rmTesting.RequireBaseClient(t, client.BaseClient)
+	require.NotNil(t, client.workersClient)
+	require.Equal(t, client.workersClient, client.Workers())
+	require.NotNil(t, client.logsClient)
+	require.Equal(t, client.logsClient, client.Logs())
 }
 
 func TestEventsClientCreate(t *testing.T) {

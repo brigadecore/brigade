@@ -19,31 +19,17 @@ func RequireBaseClient(t *testing.T, baseClient *rm.BaseClient) {
 	require.Equal(t, TestAPIAddress, baseClient.APIAddress)
 	require.Equal(t, TestAPIToken, baseClient.APIToken)
 	require.NotNil(t, baseClient.HTTPClient)
-	// The HTTPClient should be using a retriable transport...
-	require.IsType(
-		t,
-		&retryablehttp.RoundTripper{},
-		baseClient.HTTPClient.Transport,
-	)
+	roundTripper, ok :=
+		baseClient.HTTPClient.Transport.(*retryablehttp.RoundTripper)
+	require.True(t, ok)
 	// Which should delegate to a retriable client...
-	require.NotNil(
-		t,
-		baseClient.HTTPClient.Transport.(*retryablehttp.RoundTripper).Client,
-	)
+	require.NotNil(t, roundTripper.Client)
 	// Which uses a normal client...
-	require.NotNil(
-		t,
-		baseClient.HTTPClient.Transport.(*retryablehttp.RoundTripper).Client.HTTPClient, // nolint: lll
-	)
+	require.NotNil(t, roundTripper.Client.HTTPClient)
 	// With a normal transport...
-	require.IsType(
-		t,
-		&http.Transport{},
-		baseClient.HTTPClient.Transport.(*retryablehttp.RoundTripper).Client.HTTPClient.Transport, // nolint: lll
-	)
+	require.IsType(t, &http.Transport{}, roundTripper.Client.HTTPClient.Transport)
+	transport, ok := roundTripper.Client.HTTPClient.Transport.(*http.Transport)
+	require.True(t, ok)
 	// With TLS config
-	require.NotNil(
-		t,
-		baseClient.HTTPClient.Transport.(*retryablehttp.RoundTripper).Client.HTTPClient.Transport.(*http.Transport).TLSClientConfig, // nolint: lll
-	)
+	require.NotNil(t, transport.TLSClientConfig)
 }

@@ -157,9 +157,11 @@ func TestJobsClientWatchStatus(t *testing.T) {
 				bodyBytes, err := json.Marshal(testStatus)
 				require.NoError(t, err)
 				w.Header().Set("Content-Type", "text/event-stream")
-				w.(http.Flusher).Flush()
+				flusher, ok := w.(http.Flusher)
+				require.True(t, ok)
+				flusher.Flush()
 				fmt.Fprintln(w, string(bodyBytes))
-				w.(http.Flusher).Flush()
+				flusher.Flush()
 			},
 		),
 	)

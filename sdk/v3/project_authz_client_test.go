@@ -8,16 +8,16 @@ import (
 )
 
 func TestNewProjectAuthzClient(t *testing.T) {
-	client := NewProjectAuthzClient(
+	client, ok := NewProjectAuthzClient(
 		rmTesting.TestAPIAddress,
 		rmTesting.TestAPIToken,
 		nil,
-	)
-	require.IsType(t, &projectAuthzClient{}, client)
-	require.NotNil(t, client.(*projectAuthzClient).projectRoleAssignmentsClient)
+	).(*projectAuthzClient)
+	require.True(t, ok)
+	require.NotNil(t, client.projectRoleAssignmentsClient)
 	require.Equal(
 		t,
-		client.(*projectAuthzClient).projectRoleAssignmentsClient,
+		client.projectRoleAssignmentsClient,
 		client.RoleAssignments(),
 	)
 }

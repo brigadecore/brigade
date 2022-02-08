@@ -15,9 +15,13 @@ import (
 )
 
 func TestNewLogsClient(t *testing.T) {
-	client := NewLogsClient(rmTesting.TestAPIAddress, rmTesting.TestAPIToken, nil)
-	require.IsType(t, &logsClient{}, client)
-	rmTesting.RequireBaseClient(t, client.(*logsClient).BaseClient)
+	client, ok := NewLogsClient(
+		rmTesting.TestAPIAddress,
+		rmTesting.TestAPIToken,
+		nil,
+	).(*logsClient)
+	require.True(t, ok)
+	rmTesting.RequireBaseClient(t, client.BaseClient)
 }
 
 func TestLogsClientStream(t *testing.T) {
@@ -57,9 +61,11 @@ func TestLogsClientStream(t *testing.T) {
 					bodyBytes, err := json.Marshal(testLogEntry)
 					require.NoError(t, err)
 					w.Header().Set("Content-Type", "text/event-stream")
-					w.(http.Flusher).Flush()
+					flusher, ok := w.(http.Flusher)
+					require.True(t, ok)
+					flusher.Flush()
 					fmt.Fprintln(w, string(bodyBytes))
-					w.(http.Flusher).Flush()
+					flusher.Flush()
 				},
 			),
 		)
@@ -108,9 +114,11 @@ func TestLogsClientStream(t *testing.T) {
 					bodyBytes, err := json.Marshal(testLogEntry)
 					require.NoError(t, err)
 					w.Header().Set("Content-Type", "text/event-stream")
-					w.(http.Flusher).Flush()
+					flusher, ok := w.(http.Flusher)
+					require.True(t, ok)
+					flusher.Flush()
 					fmt.Fprintln(w, string(bodyBytes))
-					w.(http.Flusher).Flush()
+					flusher.Flush()
 				},
 			),
 		)

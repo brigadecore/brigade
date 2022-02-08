@@ -20,15 +20,15 @@ func TestWorkerStatusMarshalJSON(t *testing.T) {
 }
 
 func TestNewWorkersClient(t *testing.T) {
-	client := NewWorkersClient(
+	client, ok := NewWorkersClient(
 		rmTesting.TestAPIAddress,
 		rmTesting.TestAPIToken,
 		nil,
-	)
-	require.IsType(t, &workersClient{}, client)
-	rmTesting.RequireBaseClient(t, client.(*workersClient).BaseClient)
-	require.NotNil(t, client.(*workersClient).jobsClient)
-	require.Equal(t, client.(*workersClient).jobsClient, client.Jobs())
+	).(*workersClient)
+	require.True(t, ok)
+	rmTesting.RequireBaseClient(t, client.BaseClient)
+	require.NotNil(t, client.jobsClient)
+	require.Equal(t, client.jobsClient, client.Jobs())
 }
 
 func TestWorkersClientStart(t *testing.T) {
@@ -102,9 +102,11 @@ func TestWorkersClientWatchStatus(t *testing.T) {
 				bodyBytes, err := json.Marshal(testStatus)
 				require.NoError(t, err)
 				w.Header().Set("Content-Type", "text/event-stream")
-				w.(http.Flusher).Flush()
+				flusher, ok := w.(http.Flusher)
+				require.True(t, ok)
+				flusher.Flush()
 				fmt.Fprintln(w, string(bodyBytes))
-				w.(http.Flusher).Flush()
+				flusher.Flush()
 			},
 		),
 	)

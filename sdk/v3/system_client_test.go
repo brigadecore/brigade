@@ -13,13 +13,13 @@ import (
 )
 
 func TestNewSystemClient(t *testing.T) {
-	client := NewSystemClient(
+	client, ok := NewSystemClient(
 		rmTesting.TestAPIAddress,
 		rmTesting.TestAPIToken,
 		nil,
-	)
-	require.IsType(t, &systemClient{}, client)
-	rmTesting.RequireBaseClient(t, client.(*systemClient).BaseClient)
+	).(*systemClient)
+	require.True(t, ok)
+	rmTesting.RequireBaseClient(t, client.BaseClient)
 }
 
 func TestAPIClientPing(t *testing.T) {
