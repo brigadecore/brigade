@@ -19,19 +19,20 @@ func TestLogsService(t *testing.T) {
 	eventsStore := &mockEventsStore{}
 	warmLogsStore := &mockLogsStore{}
 	coolLogsStore := &mockLogsStore{}
-	svc := NewLogsService(
+	svc, ok := NewLogsService(
 		alwaysAuthorize,
 		alwaysProjectAuthorize,
 		projectsStore,
 		eventsStore,
 		warmLogsStore,
 		coolLogsStore,
-	)
-	require.NotNil(t, svc.(*logsService).projectAuthorize)
-	require.Same(t, projectsStore, svc.(*logsService).projectsStore)
-	require.Same(t, eventsStore, svc.(*logsService).eventsStore)
-	require.Same(t, warmLogsStore, svc.(*logsService).warmLogsStore)
-	require.Same(t, coolLogsStore, svc.(*logsService).coolLogsStore)
+	).(*logsService)
+	require.True(t, ok)
+	require.NotNil(t, svc.projectAuthorize)
+	require.Same(t, projectsStore, svc.projectsStore)
+	require.Same(t, eventsStore, svc.eventsStore)
+	require.Same(t, warmLogsStore, svc.warmLogsStore)
+	require.Same(t, coolLogsStore, svc.coolLogsStore)
 }
 
 func TestLogsServiceStream(t *testing.T) {
@@ -89,9 +90,10 @@ func TestLogsServiceStream(t *testing.T) {
 			},
 			assertions: func(_ <-chan LogEntry, err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "WorkerContainer", err.(*meta.ErrNotFound).Type)
-				require.Equal(t, "foo", err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, "WorkerContainer", enf.Type)
+				require.Equal(t, "foo", enf.ID)
 			},
 		},
 		{
@@ -109,9 +111,10 @@ func TestLogsServiceStream(t *testing.T) {
 			},
 			assertions: func(_ <-chan LogEntry, err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, JobKind, err.(*meta.ErrNotFound).Type)
-				require.Equal(t, "foo", err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, JobKind, enf.Type)
+				require.Equal(t, "foo", enf.ID)
 			},
 		},
 		{
@@ -138,9 +141,10 @@ func TestLogsServiceStream(t *testing.T) {
 			},
 			assertions: func(_ <-chan LogEntry, err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "JobContainer", err.(*meta.ErrNotFound).Type)
-				require.Equal(t, "bar", err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, "JobContainer", enf.Type)
+				require.Equal(t, "bar", enf.ID)
 			},
 		},
 		{

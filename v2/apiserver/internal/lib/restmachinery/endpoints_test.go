@@ -116,7 +116,9 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				)
 				// We're not expecting our body object to have been populated
 				require.NotNil(t, obj)
-				require.Empty(t, obj.(*testType).Foo)
+				tt, ok := obj.(*testType)
+				require.True(t, ok)
+				require.Empty(t, tt.Foo)
 			},
 		},
 
@@ -181,7 +183,9 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				)
 				// We're not expecting our body object to have been populated
 				require.NotNil(t, obj)
-				require.Empty(t, obj.(*testType).Foo)
+				tt, ok := obj.(*testType)
+				require.True(t, ok)
+				require.Empty(t, tt.Foo)
 			},
 		},
 
@@ -250,7 +254,9 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				require.Empty(t, bodyBytes)
 				// We're expecting our body object to have been populated
 				require.NotNil(t, obj)
-				require.Equal(t, "bar", obj.(*testType).Foo)
+				tt, ok := obj.(*testType)
+				require.True(t, ok)
+				require.Equal(t, "bar", tt.Foo)
 			},
 		},
 
@@ -321,7 +327,9 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				)
 				// We're not expecting our body object to have been populated
 				require.NotNil(t, obj)
-				require.Empty(t, obj.(*testType).Foo)
+				tt, ok := obj.(*testType)
+				require.True(t, ok)
+				require.Empty(t, tt.Foo)
 			},
 		},
 
@@ -390,7 +398,9 @@ func TestReadAndValidateRequestBody(t *testing.T) {
 				require.Empty(t, bodyBytes)
 				// We're expecting our body object to have been populated
 				require.NotNil(t, obj)
-				require.Equal(t, "bar", obj.(*testType).Foo)
+				tt, ok := obj.(*testType)
+				require.True(t, ok)
+				require.Equal(t, "bar", tt.Foo)
 			},
 		},
 	}

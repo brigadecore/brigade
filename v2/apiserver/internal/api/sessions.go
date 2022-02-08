@@ -107,7 +107,7 @@ func SessionIDFromContext(ctx context.Context) string {
 	if token == nil {
 		return ""
 	}
-	return token.(string)
+	return token.(string) // nolint: forcetypeassert
 }
 
 // SessionsServiceConfig encapsulates several configuration options for the

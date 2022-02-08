@@ -11,8 +11,9 @@ import (
 
 func TestNewLogsStore(t *testing.T) {
 	kubeClient := fake.NewSimpleClientset()
-	store := NewLogsStore(kubeClient)
-	require.Same(t, kubeClient, store.(*logsStore).kubeClient)
+	store, ok := NewLogsStore(kubeClient).(*logsStore)
+	require.True(t, ok)
+	require.Same(t, kubeClient, store.kubeClient)
 }
 
 // TODO: This is very difficult, if not impossible, to test in isolation because

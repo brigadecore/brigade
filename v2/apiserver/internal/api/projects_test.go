@@ -82,7 +82,7 @@ func TestNewProjectsService(t *testing.T) {
 	logsStore := &mockLogsStore{}
 	projectRoleAssignmentsStore := &mockProjectRoleAssignmentsStore{}
 	substrate := &mockSubstrate{}
-	svc := NewProjectsService(
+	svc, ok := NewProjectsService(
 		alwaysAuthorize,
 		alwaysProjectAuthorize,
 		projectsStore,
@@ -90,17 +90,14 @@ func TestNewProjectsService(t *testing.T) {
 		logsStore,
 		projectRoleAssignmentsStore,
 		substrate,
-	)
-	require.NotNil(t, svc.(*projectsService).authorize)
-	require.NotNil(t, svc.(*projectsService).projectAuthorize)
-	require.Same(t, projectsStore, svc.(*projectsService).projectsStore)
-	require.Same(t, eventsStore, svc.(*projectsService).eventsStore)
-	require.Same(
-		t,
-		projectRoleAssignmentsStore,
-		svc.(*projectsService).projectRoleAssignmentsStore,
-	)
-	require.Same(t, substrate, svc.(*projectsService).substrate)
+	).(*projectsService)
+	require.True(t, ok)
+	require.NotNil(t, svc.authorize)
+	require.NotNil(t, svc.projectAuthorize)
+	require.Same(t, projectsStore, svc.projectsStore)
+	require.Same(t, eventsStore, svc.eventsStore)
+	require.Same(t, projectRoleAssignmentsStore, svc.projectRoleAssignmentsStore)
+	require.Same(t, substrate, svc.substrate)
 }
 
 func TestProjectServiceCreate(t *testing.T) {
@@ -151,10 +148,11 @@ func TestProjectServiceCreate(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrConflict{}, err)
-				require.Equal(t, ProjectKind, err.(*meta.ErrConflict).Type)
-				require.Equal(t, testProjectID, err.(*meta.ErrConflict).ID)
-				require.Contains(t, err.(*meta.ErrConflict).Reason, "already exists")
+				ec, ok := err.(*meta.ErrConflict)
+				require.True(t, ok)
+				require.Equal(t, ProjectKind, ec.Type)
+				require.Equal(t, testProjectID, ec.ID)
+				require.Contains(t, ec.Reason, "already exists")
 			},
 		},
 		{

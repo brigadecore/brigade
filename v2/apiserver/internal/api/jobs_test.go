@@ -16,18 +16,19 @@ func TestNewjobsService(t *testing.T) {
 	eventsStore := &mockEventsStore{}
 	jobsStore := &mockJobsStore{}
 	substrate := &mockSubstrate{}
-	svc := NewJobsService(
+	svc, ok := NewJobsService(
 		alwaysAuthorize,
 		projectsStore,
 		eventsStore,
 		jobsStore,
 		substrate,
-	)
-	require.NotNil(t, svc.(*jobsService).authorize)
-	require.Same(t, projectsStore, svc.(*jobsService).projectsStore)
-	require.Same(t, eventsStore, svc.(*jobsService).eventsStore)
-	require.Same(t, jobsStore, svc.(*jobsService).jobsStore)
-	require.Same(t, substrate, svc.(*jobsService).substrate)
+	).(*jobsService)
+	require.True(t, ok)
+	require.NotNil(t, svc.authorize)
+	require.Same(t, projectsStore, svc.projectsStore)
+	require.Same(t, eventsStore, svc.eventsStore)
+	require.Same(t, jobsStore, svc.jobsStore)
+	require.Same(t, substrate, svc.substrate)
 }
 
 func TestJobsServiceCreate(t *testing.T) {
@@ -107,12 +108,13 @@ func TestJobsServiceCreate(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrAuthorization{}, err)
+				ea, ok := err.(*meta.ErrAuthorization)
+				require.True(t, ok)
 				require.Equal(
 					t,
 					"Worker configuration forbids jobs from utilizing privileged "+
 						"containers.",
-					err.(*meta.ErrAuthorization).Reason,
+					ea.Reason,
 				)
 			},
 		},
@@ -166,12 +168,13 @@ func TestJobsServiceCreate(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrConflict{}, err)
+				ec, ok := err.(*meta.ErrConflict)
+				require.True(t, ok)
 				require.Equal(
 					t,
 					"The job requested access to the shared workspace, but Worker "+
 						"configuration has not enabled this feature.",
-					err.(*meta.ErrConflict).Reason,
+					ec.Reason,
 				)
 			},
 		},

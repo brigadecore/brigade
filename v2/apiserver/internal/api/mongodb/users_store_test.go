@@ -39,10 +39,11 @@ func TestUsersStoreCreate(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrConflict{}, err)
-				require.Equal(t, "User", err.(*meta.ErrConflict).Type)
-				require.Equal(t, testUser.ID, err.(*meta.ErrConflict).ID)
-				require.Contains(t, err.(*meta.ErrConflict).Reason, "already exists")
+				ec, ok := err.(*meta.ErrConflict)
+				require.True(t, ok)
+				require.Equal(t, "User", ec.Type)
+				require.Equal(t, testUser.ID, ec.ID)
+				require.Contains(t, ec.Reason, "already exists")
 			},
 		},
 
@@ -218,9 +219,10 @@ func TestUsersStoreGet(t *testing.T) {
 			},
 			assertions: func(user api.User, err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "User", err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testUserID, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, "User", enf.Type)
+				require.Equal(t, testUserID, enf.ID)
 			},
 		},
 
@@ -305,9 +307,10 @@ func TestUsersStoreLock(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "User", err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testUserID, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, "User", enf.Type)
+				require.Equal(t, testUserID, enf.ID)
 			},
 		},
 
@@ -381,9 +384,10 @@ func TestUsersStoreUnLock(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "User", err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testUserID, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, "User", enf.Type)
+				require.Equal(t, testUserID, enf.ID)
 			},
 		},
 
@@ -459,9 +463,10 @@ func TestUsersStoreDelete(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, api.UserKind, err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testUserID, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, api.UserKind, enf.Type)
+				require.Equal(t, testUserID, enf.ID)
 			},
 		},
 

@@ -23,11 +23,12 @@ func TestNewSubstrate(t *testing.T) {
 	testClient := fake.NewSimpleClientset()
 	testQueueWriterFactory := &mockQueueWriterFactory{}
 	testConfig := SubstrateConfig{}
-	s := NewSubstrate(testClient, testQueueWriterFactory, testConfig)
-	require.IsType(t, &substrate{}, s)
-	require.Same(t, testClient, s.(*substrate).kubeClient)
-	require.Same(t, testQueueWriterFactory, s.(*substrate).queueWriterFactory)
-	require.Equal(t, testConfig, s.(*substrate).config)
+	s, ok :=
+		NewSubstrate(testClient, testQueueWriterFactory, testConfig).(*substrate)
+	require.True(t, ok)
+	require.Same(t, testClient, s.kubeClient)
+	require.Same(t, testQueueWriterFactory, s.queueWriterFactory)
+	require.Equal(t, testConfig, s.config)
 }
 
 func TestSubstrateCountRunningWorkers(t *testing.T) {

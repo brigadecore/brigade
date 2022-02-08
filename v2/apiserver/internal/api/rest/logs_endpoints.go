@@ -97,7 +97,9 @@ func (l *LogsEndpoints) stream(
 	}
 
 	w.Header().Set("Content-Type", "text/event-stream")
-	w.(http.Flusher).Flush()
+	// This can't not be a http.Flusher
+	flusher := w.(http.Flusher) // nolint: forcetypeassert
+	flusher.Flush()
 	var i int64
 	for logEntry := range logEntryCh {
 		logEntryBytes, err := json.Marshal(logEntry)
@@ -117,11 +119,11 @@ func (l *LogsEndpoints) stream(
 					string(logEntryBytes),
 					i,
 				)
-				w.(http.Flusher).Flush()
+				flusher.Flush()
 			}
 		} else {
 			fmt.Fprint(w, string(logEntryBytes))
-			w.(http.Flusher).Flush()
+			flusher.Flush()
 		}
 	}
 	// If we're using SSE, we'll explicitly send an event that denotes the end of
@@ -129,6 +131,6 @@ func (l *LogsEndpoints) stream(
 	if sse {
 		i++
 		fmt.Fprintf(w, "event: done\ndata: done\nid: %d\n\n", i)
-		w.(http.Flusher).Flush()
+		flusher.Flush()
 	}
 }

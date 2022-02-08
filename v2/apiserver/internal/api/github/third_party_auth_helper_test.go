@@ -13,8 +13,9 @@ import (
 
 func TestNewThirdPartyAuthHelper(t *testing.T) {
 	config := ThirdPartyAuthHelperConfig{}
-	helper := NewThirdPartyAuthHelper(config)
-	require.Equal(t, helper.(*thirdPartyAuthHelper).config, config)
+	helper, ok := NewThirdPartyAuthHelper(config).(*thirdPartyAuthHelper)
+	require.True(t, ok)
+	require.Equal(t, helper.config, config)
 }
 
 func TestAuthURL(t *testing.T) {

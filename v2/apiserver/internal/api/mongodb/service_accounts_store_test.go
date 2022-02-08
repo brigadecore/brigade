@@ -39,10 +39,11 @@ func TestServiceAccountsStoreCreate(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrConflict{}, err)
-				require.Equal(t, "ServiceAccount", err.(*meta.ErrConflict).Type)
-				require.Equal(t, testServiceAccount.ID, err.(*meta.ErrConflict).ID)
-				require.Contains(t, err.(*meta.ErrConflict).Reason, "already exists")
+				ec, ok := err.(*meta.ErrConflict)
+				require.True(t, ok)
+				require.Equal(t, "ServiceAccount", ec.Type)
+				require.Equal(t, testServiceAccount.ID, ec.ID)
+				require.Contains(t, ec.Reason, "already exists")
 			},
 		},
 
@@ -218,9 +219,10 @@ func TestServiceAccountsStoreGet(t *testing.T) {
 			},
 			assertions: func(_ api.ServiceAccount, err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "ServiceAccount", err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testServiceAccountID, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, "ServiceAccount", enf.Type)
+				require.Equal(t, testServiceAccountID, enf.ID)
 			},
 		},
 
@@ -312,9 +314,10 @@ func TestServiceAccountsStoreGetByHashedToken(t *testing.T) {
 			},
 			assertions: func(_ api.ServiceAccount, err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "ServiceAccount", err.(*meta.ErrNotFound).Type)
-				require.Empty(t, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, "ServiceAccount", enf.Type)
+				require.Empty(t, enf.ID)
 			},
 		},
 
@@ -404,9 +407,11 @@ func TestServiceAccountsLock(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
 				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "ServiceAccount", err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testServiceAccountID, err.(*meta.ErrNotFound).ID)
+				require.Equal(t, "ServiceAccount", enf.Type)
+				require.Equal(t, testServiceAccountID, enf.ID)
 			},
 		},
 
@@ -480,9 +485,10 @@ func TestServiceAccountsUnLock(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "ServiceAccount", err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testServiceAccountID, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, "ServiceAccount", enf.Type)
+				require.Equal(t, testServiceAccountID, enf.ID)
 			},
 		},
 
@@ -562,9 +568,10 @@ func TestServiceAccountsStoreDelete(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, api.ServiceAccountKind, err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testServiceAccountID, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, api.ServiceAccountKind, enf.Type)
+				require.Equal(t, testServiceAccountID, enf.ID)
 			},
 		},
 

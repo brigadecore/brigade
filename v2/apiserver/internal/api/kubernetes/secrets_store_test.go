@@ -14,9 +14,9 @@ import (
 
 func TestNewSecretsStore(t *testing.T) {
 	kubeClient := fake.NewSimpleClientset()
-	s := NewSecretsStore(kubeClient)
-	require.IsType(t, &secretsStore{}, s)
-	require.Same(t, kubeClient, s.(*secretsStore).kubeClient)
+	s, ok := NewSecretsStore(kubeClient).(*secretsStore)
+	require.True(t, ok)
+	require.Same(t, kubeClient, s.kubeClient)
 }
 
 func TestSecretsStoreList(t *testing.T) {
