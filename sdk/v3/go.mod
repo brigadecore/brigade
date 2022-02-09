@@ -1,6 +1,6 @@
 module github.com/brigadecore/brigade/sdk/v3
 
-go 1.17
+go 1.18
 
 require (
 	github.com/hashicorp/go-retryablehttp v0.6.7
