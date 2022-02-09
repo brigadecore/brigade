@@ -23,13 +23,13 @@ func TestSecretListMarshalJSON(t *testing.T) {
 }
 
 func TestNewSecretsClient(t *testing.T) {
-	client := NewSecretsClient(
+	client, ok := NewSecretsClient(
 		rmTesting.TestAPIAddress,
 		rmTesting.TestAPIToken,
 		nil,
-	)
-	require.IsType(t, &secretsClient{}, client)
-	rmTesting.RequireBaseClient(t, client.(*secretsClient).BaseClient)
+	).(*secretsClient)
+	require.True(t, ok)
+	rmTesting.RequireBaseClient(t, client.BaseClient)
 }
 
 func TestSecretsClientList(t *testing.T) {

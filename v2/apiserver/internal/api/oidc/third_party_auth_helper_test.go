@@ -17,17 +17,13 @@ import (
 func TestNewThirdPartyAuthHelper(t *testing.T) {
 	oauth2Config := &mockOAuth2Config{}
 	idTokenVerifier := &mockIDTokenVerifier{}
-	helper := NewThirdPartyAuthHelper(oauth2Config, idTokenVerifier)
-	require.Same(
-		t,
-		helper.(*thirdPartyAuthHelper).oauth2Config,
+	helper, ok := NewThirdPartyAuthHelper(
 		oauth2Config,
-	)
-	require.Same(
-		t,
-		helper.(*thirdPartyAuthHelper).idTokenVerifier,
 		idTokenVerifier,
-	)
+	).(*thirdPartyAuthHelper)
+	require.True(t, ok)
+	require.Same(t, helper.oauth2Config, oauth2Config)
+	require.Same(t, helper.idTokenVerifier, idTokenVerifier)
 }
 
 func TestAuthURL(t *testing.T) {

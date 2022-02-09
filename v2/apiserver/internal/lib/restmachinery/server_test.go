@@ -53,9 +53,10 @@ func TestNewServer(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			endpoints := &mockEndpoints{}
-			s := NewServer([]Endpoints{endpoints}, testCase.config)
+			s, ok := NewServer([]Endpoints{endpoints}, testCase.config).(*server)
+			require.True(t, ok)
 			require.True(t, endpoints.registerCalled)
-			testCase.assertions(s.(*server))
+			testCase.assertions(s)
 		})
 	}
 }

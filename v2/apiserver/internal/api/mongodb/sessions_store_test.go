@@ -91,8 +91,9 @@ func TestSessionsStoreGetByHashedOAut2State(t *testing.T) {
 			},
 			assertions: func(session api.Session, err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "Session", err.(*meta.ErrNotFound).Type)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, "Session", enf.Type)
 			},
 		},
 
@@ -181,8 +182,9 @@ func TestSessionsStoreGetByHashedToken(t *testing.T) {
 			},
 			assertions: func(session api.Session, err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "Session", err.(*meta.ErrNotFound).Type)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, "Session", enf.Type)
 			},
 		},
 
@@ -277,9 +279,10 @@ func TestSessionsStoreAuthenticate(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "Session", err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testSessionID, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, "Session", enf.Type)
+				require.Equal(t, testSessionID, enf.ID)
 			},
 		},
 
@@ -362,9 +365,10 @@ func TestSessionsStoreDelete(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, "Session", err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testSessionID, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, "Session", enf.Type)
+				require.Equal(t, testSessionID, enf.ID)
 			},
 		},
 

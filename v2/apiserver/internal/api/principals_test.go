@@ -32,8 +32,9 @@ func TestPrincipalFromContext(t *testing.T) {
 }
 
 func TestNewPrincipalsService(t *testing.T) {
-	svc := NewPrincipalsService(alwaysAuthorize)
-	require.NotNil(t, svc.(*principalsService).authorize)
+	svc, ok := NewPrincipalsService(alwaysAuthorize).(*principalsService)
+	require.True(t, ok)
+	require.NotNil(t, svc.authorize)
 }
 
 func TestPrincipalsServiceWhoAmI(t *testing.T) {

@@ -29,13 +29,13 @@ func TestServiceAccountListMarshalJSON(t *testing.T) {
 }
 
 func TestNewServiceAccountsClient(t *testing.T) {
-	client := NewServiceAccountsClient(
+	client, ok := NewServiceAccountsClient(
 		rmTesting.TestAPIAddress,
 		rmTesting.TestAPIToken,
 		nil,
-	)
-	require.IsType(t, &serviceAccountsClient{}, client)
-	rmTesting.RequireBaseClient(t, client.(*serviceAccountsClient).BaseClient)
+	).(*serviceAccountsClient)
+	require.True(t, ok)
+	rmTesting.RequireBaseClient(t, client.BaseClient)
 }
 
 func TestServiceAccountsClientCreate(t *testing.T) {

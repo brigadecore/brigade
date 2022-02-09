@@ -39,18 +39,19 @@ func TestNewEventsService(t *testing.T) {
 	eventsStore := &mockEventsStore{}
 	logsStore := &mockLogsStore{}
 	substrate := &mockSubstrate{}
-	svc := NewEventsService(
+	svc, ok := NewEventsService(
 		alwaysAuthorize,
 		alwaysProjectAuthorize,
 		projectsStore,
 		eventsStore,
 		logsStore,
 		substrate,
-	)
-	require.NotNil(t, svc.(*eventsService).authorize)
-	require.Same(t, projectsStore, svc.(*eventsService).projectsStore)
-	require.Same(t, eventsStore, svc.(*eventsService).eventsStore)
-	require.Same(t, substrate, svc.(*eventsService).substrate)
+	).(*eventsService)
+	require.True(t, ok)
+	require.NotNil(t, svc.authorize)
+	require.Same(t, projectsStore, svc.projectsStore)
+	require.Same(t, eventsStore, svc.eventsStore)
+	require.Same(t, substrate, svc.substrate)
 }
 
 func TestEventsServiceCreate(t *testing.T) {
@@ -1081,10 +1082,11 @@ func TestEventsServiceCancelMany(t *testing.T) {
 			service:  &eventsService{},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrBadRequest{}, err)
+				ebr, ok := err.(*meta.ErrBadRequest)
+				require.True(t, ok)
 				require.Equal(
 					t,
-					err.(*meta.ErrBadRequest).Reason,
+					ebr.Reason,
 					"Requests to cancel multiple events must be qualified by project.",
 				)
 			},
@@ -1112,10 +1114,11 @@ func TestEventsServiceCancelMany(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrBadRequest{}, err)
+				ebr, ok := err.(*meta.ErrBadRequest)
+				require.True(t, ok)
 				require.Equal(
 					t,
-					err.(*meta.ErrBadRequest).Reason,
+					ebr.Reason,
 					"Requests to cancel multiple events must be qualified by "+
 						"worker phase(s).",
 				)
@@ -1407,10 +1410,11 @@ func TestEventsServiceDeleteMany(t *testing.T) {
 			service:  &eventsService{},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrBadRequest{}, err)
+				ebr, ok := err.(*meta.ErrBadRequest)
+				require.True(t, ok)
 				require.Equal(
 					t,
-					err.(*meta.ErrBadRequest).Reason,
+					ebr.Reason,
 					"Requests to delete multiple events must be qualified by project.",
 				)
 			},
@@ -1438,10 +1442,11 @@ func TestEventsServiceDeleteMany(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrBadRequest{}, err)
+				ebr, ok := err.(*meta.ErrBadRequest)
+				require.True(t, ok)
 				require.Equal(
 					t,
-					err.(*meta.ErrBadRequest).Reason,
+					ebr.Reason,
 					"Requests to delete multiple events must be qualified by "+
 						"worker phase(s).",
 				)

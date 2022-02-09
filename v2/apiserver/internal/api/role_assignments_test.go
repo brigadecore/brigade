@@ -86,24 +86,17 @@ func TestNewRoleAssignmentsService(t *testing.T) {
 	usersStore := &mockUsersStore{}
 	serviceAccountsStore := &mockServiceAccountStore{}
 	roleAssignmentsStore := &mockRoleAssignmentsStore{}
-	svc := NewRoleAssignmentsService(
+	svc, ok := NewRoleAssignmentsService(
 		alwaysAuthorize,
 		usersStore,
 		serviceAccountsStore,
 		roleAssignmentsStore,
-	)
-	require.NotNil(t, svc.(*roleAssignmentsService).authorize)
-	require.Same(t, usersStore, svc.(*roleAssignmentsService).usersStore)
-	require.Same(
-		t,
-		serviceAccountsStore,
-		svc.(*roleAssignmentsService).serviceAccountsStore,
-	)
-	require.Same(
-		t,
-		roleAssignmentsStore,
-		svc.(*roleAssignmentsService).roleAssignmentsStore,
-	)
+	).(*roleAssignmentsService)
+	require.True(t, ok)
+	require.NotNil(t, svc.authorize)
+	require.Same(t, usersStore, svc.usersStore)
+	require.Same(t, serviceAccountsStore, svc.serviceAccountsStore)
+	require.Same(t, roleAssignmentsStore, svc.roleAssignmentsStore)
 }
 
 func TestRoleAssignmentsServiceGrant(t *testing.T) {

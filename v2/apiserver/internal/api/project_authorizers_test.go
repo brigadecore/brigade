@@ -11,11 +11,13 @@ import (
 
 func TestNewProjectAuthorizer(t *testing.T) {
 	projectRoleAssignmentsStore := &mockProjectRoleAssignmentsStore{}
-	svc := NewProjectAuthorizer(projectRoleAssignmentsStore)
+	svc, ok :=
+		NewProjectAuthorizer(projectRoleAssignmentsStore).(*projectAuthorizer)
+	require.True(t, ok)
 	require.Same(
 		t,
 		projectRoleAssignmentsStore,
-		svc.(*projectAuthorizer).projectRoleAssignmentsStore,
+		svc.projectRoleAssignmentsStore,
 	)
 }
 

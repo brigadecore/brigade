@@ -15,18 +15,19 @@ func TestNewWorkersService(t *testing.T) {
 	eventsStore := &mockEventsStore{}
 	workersStore := &mockWorkersStore{}
 	substrate := &mockSubstrate{}
-	svc := NewWorkersService(
+	svc, ok := NewWorkersService(
 		alwaysAuthorize,
 		projectsStore,
 		eventsStore,
 		workersStore,
 		substrate,
-	)
-	require.NotNil(t, svc.(*workersService).authorize)
-	require.Same(t, projectsStore, svc.(*workersService).projectsStore)
-	require.Same(t, eventsStore, svc.(*workersService).eventsStore)
-	require.Same(t, workersStore, svc.(*workersService).workersStore)
-	require.Same(t, substrate, svc.(*workersService).substrate)
+	).(*workersService)
+	require.True(t, ok)
+	require.NotNil(t, svc.authorize)
+	require.Same(t, projectsStore, svc.projectsStore)
+	require.Same(t, eventsStore, svc.eventsStore)
+	require.Same(t, workersStore, svc.workersStore)
+	require.Same(t, substrate, svc.substrate)
 }
 
 func TestWorkersServiceStart(t *testing.T) {
