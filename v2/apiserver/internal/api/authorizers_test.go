@@ -24,8 +24,9 @@ func (p *principal) ProjectRoleAssignments() []ProjectRoleAssignment {
 
 func TestNewAuthorizer(t *testing.T) {
 	roleAssignmentsStore := &mockRoleAssignmentsStore{}
-	svc := NewAuthorizer(roleAssignmentsStore)
-	require.Same(t, roleAssignmentsStore, svc.(*authorizer).roleAssignmentsStore)
+	svc, ok := NewAuthorizer(roleAssignmentsStore).(*authorizer)
+	require.True(t, ok)
+	require.Same(t, roleAssignmentsStore, svc.roleAssignmentsStore)
 }
 
 func TestAuthorizerAuthorize(t *testing.T) {

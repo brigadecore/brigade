@@ -14,18 +14,18 @@ import (
 
 func TestNewWriterFactory(t *testing.T) {
 	const testAddress = "foo"
-	wf := NewWriterFactory(
+	wf, ok := NewWriterFactory(
 		WriterFactoryConfig{
 			Address: testAddress,
 		},
-	)
-	require.IsType(t, &writerFactory{}, wf)
-	require.Equal(t, testAddress, wf.(*writerFactory).address)
-	require.NotEmpty(t, wf.(*writerFactory).dialOpts)
+	).(*writerFactory)
+	require.True(t, ok)
+	require.Equal(t, testAddress, wf.address)
+	require.NotEmpty(t, wf.dialOpts)
 	// Assert we're not connected yet. (It connects lazily.)
-	require.Nil(t, wf.(*writerFactory).amqpClient)
-	require.NotNil(t, wf.(*writerFactory).amqpClientMu)
-	require.NotNil(t, wf.(*writerFactory).connectFn)
+	require.Nil(t, wf.amqpClient)
+	require.NotNil(t, wf.amqpClientMu)
+	require.NotNil(t, wf.connectFn)
 }
 
 func TestWriterFactoryNewWriter(t *testing.T) {
@@ -44,10 +44,11 @@ func TestWriterFactoryNewWriter(t *testing.T) {
 	}
 	w, err := wf.NewWriter(testQueueName)
 	require.NoError(t, err)
-	require.IsType(t, &writer{}, w)
-	require.Equal(t, testQueueName, w.(*writer).queueName)
-	require.NotNil(t, w.(*writer).amqpSession)
-	require.NotNil(t, w.(*writer).amqpSender)
+	writer, ok := w.(*writer)
+	require.True(t, ok)
+	require.Equal(t, testQueueName, writer.queueName)
+	require.NotNil(t, writer.amqpSession)
+	require.NotNil(t, writer.amqpSender)
 }
 
 func TestWriterFactoryClose(t *testing.T) {

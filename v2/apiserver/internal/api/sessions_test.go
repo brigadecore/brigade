@@ -29,26 +29,23 @@ func TestNewSessionsService(t *testing.T) {
 		RootUserEnabled:  true,
 		RootUserPassword: testRootPassword,
 	}
-	svc := NewSessionsService(
+	svc, ok := NewSessionsService(
 		sessionsStore,
 		usersStore,
 		nil,
 		thirdPartyAuthHelper,
 		config,
-	)
-	require.Same(t, sessionsStore, svc.(*sessionsService).sessionsStore)
-	require.Same(t, usersStore, svc.(*sessionsService).usersStore)
-	require.Equal(
-		t,
-		config.RootUserEnabled,
-		svc.(*sessionsService).config.RootUserEnabled,
-	)
+	).(*sessionsService)
+	require.True(t, ok)
+	require.Same(t, sessionsStore, svc.sessionsStore)
+	require.Same(t, usersStore, svc.usersStore)
+	require.Equal(t, config.RootUserEnabled, svc.config.RootUserEnabled)
 	require.Equal(
 		t,
 		crypto.Hash("root", testRootPassword),
-		svc.(*sessionsService).hashedRootUserPassword,
+		svc.hashedRootUserPassword,
 	)
-	require.Empty(t, svc.(*sessionsService).config.RootUserPassword)
+	require.Empty(t, svc.config.RootUserPassword)
 }
 
 func TestSessionsServiceCreateRootSession(t *testing.T) {
@@ -245,12 +242,9 @@ func TestSessionsServiceAuthenticate(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, errors.Cause(err))
-				require.Equal(
-					t,
-					SessionKind,
-					errors.Cause(err).(*meta.ErrNotFound).Type,
-				)
+				enf, ok := errors.Cause(err).(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, SessionKind, enf.Type)
 			},
 		},
 
@@ -549,12 +543,9 @@ func TestSessionsServiceGetByToken(t *testing.T) {
 			},
 			assertions: func(session Session, err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, errors.Cause(err))
-				require.Equal(
-					t,
-					SessionKind,
-					errors.Cause(err).(*meta.ErrNotFound).Type,
-				)
+				enf, ok := errors.Cause(err).(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, SessionKind, enf.Type)
 			},
 		},
 		{
@@ -605,12 +596,9 @@ func TestSessionsServiceDelete(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, errors.Cause(err))
-				require.Equal(
-					t,
-					SessionKind,
-					errors.Cause(err).(*meta.ErrNotFound).Type,
-				)
+				enf, ok := errors.Cause(err).(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, SessionKind, enf.Type)
 			},
 		},
 		{

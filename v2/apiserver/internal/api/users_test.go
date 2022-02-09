@@ -23,27 +23,20 @@ func TestNewUsersService(t *testing.T) {
 	sessionsStore := &mockSessionsStore{}
 	roleAssignmentsStore := &mockRoleAssignmentsStore{}
 	projectRoleAssignmentsStore := &mockProjectRoleAssignmentsStore{}
-	svc := NewUsersService(
+	svc, ok := NewUsersService(
 		alwaysAuthorize,
 		usersStore,
 		sessionsStore,
 		roleAssignmentsStore,
 		projectRoleAssignmentsStore,
 		UsersServiceConfig{},
-	)
-	require.NotNil(t, svc.(*usersService).authorize)
-	require.Same(t, usersStore, svc.(*usersService).usersStore)
-	require.Same(t, sessionsStore, svc.(*usersService).sessionsStore)
-	require.Same(
-		t,
-		roleAssignmentsStore,
-		svc.(*usersService).roleAssignmentsStore,
-	)
-	require.Same(
-		t,
-		projectRoleAssignmentsStore,
-		svc.(*usersService).projectRoleAssignmentsStore,
-	)
+	).(*usersService)
+	require.True(t, ok)
+	require.NotNil(t, svc.authorize)
+	require.Same(t, usersStore, svc.usersStore)
+	require.Same(t, sessionsStore, svc.sessionsStore)
+	require.Same(t, roleAssignmentsStore, svc.roleAssignmentsStore)
+	require.Same(t, projectRoleAssignmentsStore, svc.projectRoleAssignmentsStore)
 }
 
 func TestUserServiceList(t *testing.T) {

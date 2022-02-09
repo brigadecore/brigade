@@ -13,13 +13,13 @@ import (
 )
 
 func TestNewSubstrateClient(t *testing.T) {
-	client := NewSubstrateClient(
+	client, ok := NewSubstrateClient(
 		rmTesting.TestAPIAddress,
 		rmTesting.TestAPIToken,
 		nil,
-	)
-	require.IsType(t, &substrateClient{}, client)
-	rmTesting.RequireBaseClient(t, client.(*substrateClient).BaseClient)
+	).(*substrateClient)
+	require.True(t, ok)
+	rmTesting.RequireBaseClient(t, client.BaseClient)
 }
 
 func TestSubstrateClientCountRunningWorkers(t *testing.T) {

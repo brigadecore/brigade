@@ -22,13 +22,13 @@ func TestThirdPartyAuthDetailsMarshalJSON(t *testing.T) {
 }
 
 func TestNewSessionsClient(t *testing.T) {
-	client := NewSessionsClient(
+	client, ok := NewSessionsClient(
 		rmTesting.TestAPIAddress,
 		rmTesting.TestAPIToken,
 		nil,
-	)
-	require.IsType(t, &sessionsClient{}, client)
-	rmTesting.RequireBaseClient(t, client.(*sessionsClient).BaseClient)
+	).(*sessionsClient)
+	require.True(t, ok)
+	rmTesting.RequireBaseClient(t, client.BaseClient)
 }
 
 func TestSessionsClientCreateRootSession(t *testing.T) {

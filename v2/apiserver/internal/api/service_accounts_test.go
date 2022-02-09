@@ -26,18 +26,15 @@ func TestNewServiceAccountService(t *testing.T) {
 	serviceAccountsStore := &mockServiceAccountStore{}
 	roleAssignmentsStore := &mockRoleAssignmentsStore{}
 	projectRoleAssignmentsStore := &mockProjectRoleAssignmentsStore{}
-	svc := NewServiceAccountsService(
+	svc, ok := NewServiceAccountsService(
 		alwaysAuthorize,
 		serviceAccountsStore,
 		roleAssignmentsStore,
 		projectRoleAssignmentsStore,
-	)
-	require.NotNil(t, svc.(*serviceAccountsService).authorize)
-	require.Same(
-		t,
-		serviceAccountsStore,
-		svc.(*serviceAccountsService).serviceAccountsStore,
-	)
+	).(*serviceAccountsService)
+	require.True(t, ok)
+	require.NotNil(t, svc.authorize)
+	require.Same(t, serviceAccountsStore, svc.serviceAccountsStore)
 }
 
 func TestServiceAccountsServiceCreate(t *testing.T) {

@@ -273,8 +273,10 @@ func TestSyncJobPod(t *testing.T) {
 				},
 				errFn: func(i ...interface{}) {
 					require.Len(t, i, 1)
-					require.Contains(t, i[0].(string), "something went wrong")
-					require.Contains(t, i[0].(string), "error updating status for event")
+					str, ok := i[0].(string)
+					require.True(t, ok)
+					require.Contains(t, str, "something went wrong")
+					require.Contains(t, str, "error updating status for event")
 				},
 			},
 		},
@@ -616,7 +618,9 @@ func TestRunJobTimer(t *testing.T) {
 				},
 				errFn: func(i ...interface{}) {
 					require.Len(t, i, 1)
-					require.Contains(t, i[0].(error).Error(), "something went wrong")
+					err, ok := i[0].(error)
+					require.True(t, ok)
+					require.Contains(t, err.Error(), "something went wrong")
 				},
 			},
 			assertions: func(observer *observer) {

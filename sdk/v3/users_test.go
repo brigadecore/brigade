@@ -23,13 +23,13 @@ func TestUserListMarshalJSON(t *testing.T) {
 }
 
 func TestNewUsersClient(t *testing.T) {
-	client := NewUsersClient(
+	client, ok := NewUsersClient(
 		rmTesting.TestAPIAddress,
 		rmTesting.TestAPIToken,
 		nil,
-	)
-	require.IsType(t, &usersClient{}, client)
-	rmTesting.RequireBaseClient(t, client.(*usersClient).BaseClient)
+	).(*usersClient)
+	require.True(t, ok)
+	rmTesting.RequireBaseClient(t, client.BaseClient)
 }
 
 func TestUsersClientList(t *testing.T) {

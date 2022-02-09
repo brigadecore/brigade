@@ -25,21 +25,17 @@ func TestProjectListMarshalJSON(t *testing.T) {
 }
 
 func TestNewProjectsClient(t *testing.T) {
-	client := NewProjectsClient(
+	client, ok := NewProjectsClient(
 		rmTesting.TestAPIAddress,
 		rmTesting.TestAPIToken,
 		nil,
-	)
-	require.IsType(t, &projectsClient{}, client)
-	rmTesting.RequireBaseClient(t, client.(*projectsClient).BaseClient)
-	require.NotNil(t, client.(*projectsClient).authzClient)
-	require.Equal(
-		t,
-		client.(*projectsClient).authzClient,
-		client.Authz(),
-	)
-	require.NotNil(t, client.(*projectsClient).secretsClient)
-	require.Equal(t, client.(*projectsClient).secretsClient, client.Secrets())
+	).(*projectsClient)
+	require.True(t, ok)
+	rmTesting.RequireBaseClient(t, client.BaseClient)
+	require.NotNil(t, client.authzClient)
+	require.Equal(t, client.authzClient, client.Authz())
+	require.NotNil(t, client.secretsClient)
+	require.Equal(t, client.secretsClient, client.Secrets())
 }
 
 func TestProjectsClientCreate(t *testing.T) {

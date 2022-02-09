@@ -28,9 +28,10 @@ func TestSubstrateJobCountMarshalJSON(t *testing.T) {
 
 func TestNewSubstrateService(t *testing.T) {
 	substrate := &mockSubstrate{}
-	svc := NewSubstrateService(alwaysAuthorize, substrate)
-	require.NotNil(t, svc.(*substrateService).authorize)
-	require.Same(t, substrate, svc.(*substrateService).substrate)
+	svc, ok := NewSubstrateService(alwaysAuthorize, substrate).(*substrateService)
+	require.True(t, ok)
+	require.NotNil(t, svc.authorize)
+	require.Same(t, substrate, svc.substrate)
 }
 
 func TestSubstrateServiceCountRunningWorkers(t *testing.T) {

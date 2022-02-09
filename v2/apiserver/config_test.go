@@ -353,7 +353,9 @@ func TestThirdPartyAuthHelper(t *testing.T) {
 				)
 				require.NoError(t, err)
 				fmt.Fprintln(w, string(bodyBytes))
-				w.(http.Flusher).Flush()
+				flusher, ok := w.(http.Flusher)
+				require.True(t, ok)
+				flusher.Flush()
 			},
 		),
 	)

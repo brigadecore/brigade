@@ -31,16 +31,13 @@ func TestProjectRoleAssignmentListMarshalJSON(t *testing.T) {
 }
 
 func TestNewProjectRoleAssignmentsClient(t *testing.T) {
-	client := NewProjectRoleAssignmentsClient(
+	client, ok := NewProjectRoleAssignmentsClient(
 		rmTesting.TestAPIAddress,
 		rmTesting.TestAPIToken,
 		nil,
-	)
-	require.IsType(t, &projectRoleAssignmentsClient{}, client)
-	rmTesting.RequireBaseClient(
-		t,
-		client.(*projectRoleAssignmentsClient).BaseClient,
-	)
+	).(*projectRoleAssignmentsClient)
+	require.True(t, ok)
+	rmTesting.RequireBaseClient(t, client.BaseClient)
 }
 
 func TestProjectRoleAssignmentsClientGrant(t *testing.T) {

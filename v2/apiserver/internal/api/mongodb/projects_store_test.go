@@ -39,10 +39,11 @@ func TestProjectsStoreCreate(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrConflict{}, err)
-				require.Equal(t, api.ProjectKind, err.(*meta.ErrConflict).Type)
-				require.Equal(t, testProject.ID, err.(*meta.ErrConflict).ID)
-				require.Contains(t, err.(*meta.ErrConflict).Reason, "already exists")
+				ec, ok := err.(*meta.ErrConflict)
+				require.True(t, ok)
+				require.Equal(t, api.ProjectKind, ec.Type)
+				require.Equal(t, testProject.ID, ec.ID)
+				require.Contains(t, ec.Reason, "already exists")
 			},
 		},
 
@@ -311,9 +312,10 @@ func TestProjectsStoreGet(t *testing.T) {
 			},
 			assertions: func(project api.Project, err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, api.ProjectKind, err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testProjectID, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, api.ProjectKind, enf.Type)
+				require.Equal(t, testProjectID, enf.ID)
 			},
 		},
 
@@ -405,9 +407,10 @@ func TestProjectsStoreUpdate(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, api.ProjectKind, err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testProject.ID, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, api.ProjectKind, enf.Type)
+				require.Equal(t, testProject.ID, enf.ID)
 			},
 		},
 
@@ -485,9 +488,10 @@ func TestProjectsStoreDelete(t *testing.T) {
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
-				require.IsType(t, &meta.ErrNotFound{}, err)
-				require.Equal(t, api.ProjectKind, err.(*meta.ErrNotFound).Type)
-				require.Equal(t, testProjectID, err.(*meta.ErrNotFound).ID)
+				enf, ok := err.(*meta.ErrNotFound)
+				require.True(t, ok)
+				require.Equal(t, api.ProjectKind, enf.Type)
+				require.Equal(t, testProjectID, enf.ID)
 			},
 		},
 

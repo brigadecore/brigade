@@ -14,18 +14,18 @@ import (
 
 func TestNewReaderFactory(t *testing.T) {
 	const testAddress = "foo"
-	rf := NewReaderFactory(
+	rf, ok := NewReaderFactory(
 		ReaderFactoryConfig{
 			Address: testAddress,
 		},
-	)
-	require.IsType(t, &readerFactory{}, rf)
-	require.Equal(t, testAddress, rf.(*readerFactory).address)
-	require.NotEmpty(t, rf.(*readerFactory).dialOpts)
+	).(*readerFactory)
+	require.True(t, ok)
+	require.Equal(t, testAddress, rf.address)
+	require.NotEmpty(t, rf.dialOpts)
 	// Assert we're not connected yet. (It connects lazily.)
-	require.Nil(t, rf.(*readerFactory).amqpClient)
-	require.NotNil(t, rf.(*readerFactory).amqpClientMu)
-	require.NotNil(t, rf.(*readerFactory).connectFn)
+	require.Nil(t, rf.amqpClient)
+	require.NotNil(t, rf.amqpClientMu)
+	require.NotNil(t, rf.connectFn)
 }
 
 func TestReaderFactoryNewReader(t *testing.T) {
@@ -46,10 +46,11 @@ func TestReaderFactoryNewReader(t *testing.T) {
 	}
 	w, err := rf.NewReader(testQueueName)
 	require.NoError(t, err)
-	require.IsType(t, &reader{}, w)
-	require.Equal(t, testQueueName, w.(*reader).queueName)
-	require.NotNil(t, w.(*reader).amqpSession)
-	require.NotNil(t, w.(*reader).amqpReceiver)
+	reader, ok := w.(*reader)
+	require.True(t, ok)
+	require.Equal(t, testQueueName, reader.queueName)
+	require.NotNil(t, reader.amqpSession)
+	require.NotNil(t, reader.amqpReceiver)
 }
 
 func TestReadFactoryClose(t *testing.T) {

@@ -133,7 +133,9 @@ func (j *JobsEndpoints) getOrStreamStatus(
 	}
 
 	w.Header().Set("Content-Type", "text/event-stream")
-	w.(http.Flusher).Flush()
+	// This can't not be a http.Flusher
+	flusher := w.(http.Flusher) // nolint: forcetypeassert
+	flusher.Flush()
 	for status := range statusCh {
 		statusBytes, err := json.Marshal(status)
 		if err != nil {
@@ -145,11 +147,11 @@ func (j *JobsEndpoints) getOrStreamStatus(
 		} else {
 			fmt.Fprint(w, string(statusBytes))
 		}
-		w.(http.Flusher).Flush()
+		flusher.Flush()
 		if status.Phase.IsTerminal() {
 			if sse {
 				fmt.Fprintf(w, "event: done\ndata: done\n\n")
-				w.(http.Flusher).Flush()
+				flusher.Flush()
 			}
 			return
 		}

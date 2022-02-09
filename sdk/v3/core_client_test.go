@@ -8,12 +8,16 @@ import (
 )
 
 func TestNewCoreClient(t *testing.T) {
-	client := NewCoreClient(rmTesting.TestAPIAddress, rmTesting.TestAPIToken, nil)
-	require.IsType(t, &coreClient{}, client)
-	require.NotNil(t, client.(*coreClient).projectsClient)
-	require.Equal(t, client.(*coreClient).projectsClient, client.Projects())
-	require.NotNil(t, client.(*coreClient).eventsClient)
-	require.Equal(t, client.(*coreClient).eventsClient, client.Events())
-	require.NotNil(t, client.(*coreClient).substrateClient)
-	require.Equal(t, client.(*coreClient).substrateClient, client.Substrate())
+	client, ok := NewCoreClient(
+		rmTesting.TestAPIAddress,
+		rmTesting.TestAPIToken,
+		nil,
+	).(*coreClient)
+	require.True(t, ok)
+	require.NotNil(t, client.projectsClient)
+	require.Equal(t, client.projectsClient, client.Projects())
+	require.NotNil(t, client.eventsClient)
+	require.Equal(t, client.eventsClient, client.Events())
+	require.NotNil(t, client.substrateClient)
+	require.Equal(t, client.substrateClient, client.Substrate())
 }
