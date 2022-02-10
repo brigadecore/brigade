@@ -333,7 +333,6 @@ push-git-initializer-windows:
 
 .PHONY: push-%
 push-%:
-	docker login $(DOCKER_REGISTRY) -u $(DOCKER_USERNAME) -p $${DOCKER_PASSWORD}
 	docker buildx build \
 		-f v2/$*/Dockerfile \
 		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
@@ -347,7 +346,6 @@ push-%:
 .PHONY: publish-chart
 publish-chart:
 	$(HELM_DOCKER_CMD) sh	-c ' \
-		helm registry login $(HELM_REGISTRY) -u $(HELM_USERNAME) -p $${HELM_PASSWORD} && \
 		cd charts/brigade && \
 		helm dep up && \
 		helm package . --version $(VERSION) --app-version $(VERSION) && \
