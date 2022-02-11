@@ -6,9 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/brigadecore/brigade/sdk/v2"
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v3"
+	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 )
 
 func main() {
@@ -39,7 +38,7 @@ func main() {
 	)
 
 	// Construct a Brigade Event
-	event := core.Event{
+	event := sdk.Event{
 		// This is the source value for this event
 		Source: "example.org/example-gateway",
 		// This is the event's type
@@ -49,7 +48,7 @@ func main() {
 	}
 
 	// Create the Brigade Event
-	events, err := client.Core().Events().Create(ctx, event)
+	events, err := client.Core().Events().Create(ctx, event, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
