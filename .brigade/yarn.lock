@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@brigadecore/brigadier@^2.2.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@brigadecore/brigadier/-/brigadier-2.2.0.tgz#0345375108c3f482f396811d24b3c49bf1fb02ed"
-  integrity sha512-4LKi9vY1n91qz3LDtdD6JxNZgwsWUJClMzUb0YsXfUdtHVldhlFMTnoZJIx/6wjJgJkf3kV6EV8zww28ymRNnQ==
+"@brigadecore/brigadier@^2.3.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@brigadecore/brigadier/-/brigadier-2.3.0.tgz#41672fde58a2767c3cc4d3db95f29ac6425602a9"
+  integrity sha512-j95XN8DEpGcQ9XXIndVIZH9nwbgN2x94RMaTIGvPacdDjSGqsZ+nlXtsveV2G1Sag+jeZ4SQx5iV7aY+/gRHWg==
   dependencies:
     "@types/node" "^16.10.3"
     typescript "4.4.3"
