@@ -314,9 +314,6 @@ const testIntegrationJob = (event: Event) => {
 }
 jobs[testIntegrationJobName] = testIntegrationJob
 
-// Run the entire suite of tests WITHOUT publishing anything initially. If
-// EVERYTHING passes AND this was a push (merge, presumably) to the main branch,
-// then run jobs to publish "edge" images.
 events.on("brigade.sh/github", "ci:pipeline_requested", async event => {
   await new SerialGroup(
     new ConcurrentGroup( // Basic tests
@@ -342,25 +339,6 @@ events.on("brigade.sh/github", "ci:pipeline_requested", async event => {
     ),
     testIntegrationJob(event)
   ).run()
-  if (event.worker?.git?.ref == "main") {
-    // Push "edge" images.
-    //
-    // npm packages MUST be semantically versioned, so we DON'T publish an
-    // edge brigadier package.
-    //
-    // To keep our github releases page tidy, we're also not publishing "edge"
-    // CLI binaries.
-    await new ConcurrentGroup(
-      pushArtemisJob(event),
-      pushAPIServerJob(event),
-      pushGitInitializerJob(event),
-      pushLoggerLinuxJob(event),
-      pushObserverJob(event),
-      pushSchedulerJob(event),
-      pushWorkerJob(event),
-      publishBrigadierDocsJob(event),
-    ).run()
-  }
 })
 
 // This event indicates a specific job is to be re-run.
