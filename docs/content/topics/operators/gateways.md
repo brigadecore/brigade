@@ -108,7 +108,7 @@ To explore the SDK definitions of an Event object, see the [Go SDK Event] and
 [JavaScript/TypeScript SDK Event].
 
 [01-hello-world sample project]: https://github.com/brigadecore/brigade/tree/main/examples/01-hello-world
-[Go SDK Event]: https://github.com/brigadecore/brigade/blob/main/sdk/v2/core/events.go
+[Go SDK Event]: https://github.com/brigadecore/brigade/blob/main/sdk/v3/events.go
 [JavaScript/TypeScript SDK Event]: https://github.com/brigadecore/brigade-sdk-for-js/blob/main/src/core/events.ts
 
 ## Creating Custom Gateways
@@ -214,7 +214,7 @@ and fetching the Brigade SDK dependency:
 $ mkdir example-gateway
 $ cd example-gateway
 $ go mod init example-gateway
-$ go get github.com/brigadecore/brigade/sdk/v2
+$ go get github.com/brigadecore/brigade/sdk/v3
 $ touch main.go
 ```
 
@@ -242,9 +242,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/brigadecore/brigade/sdk/v2"
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
+	"github.com/brigadecore/brigade/sdk/v3"
+	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 )
 
 func main() {
@@ -253,11 +252,11 @@ func main() {
 	// Get the Brigade API server address and token from the environment
 	apiServerAddress := os.Getenv("APISERVER_ADDRESS")
 	if apiServerAddress == "" {
-		log.Fatalf("Required environment variable APISERVER_ADDRESS not found.\n")
+		log.Fatal("Required environment variable APISERVER_ADDRESS not found.")
 	}
 	gatewayToken := os.Getenv("API_TOKEN")
 	if gatewayToken == "" {
-		log.Fatalf("Required environment variable API_TOKEN not found.\n")
+		log.Fatal("Required environment variable API_TOKEN not found.")
 	}
 
 	// The default Brigade deployment mode uses self-signed certs
@@ -275,7 +274,7 @@ func main() {
 	)
 
 	// Construct a Brigade Event
-	event := core.Event{
+	event := sdk.Event{
 		// This is the source value for this event
 		Source: "example.org/example-gateway",
 		// This is the event's type
@@ -285,7 +284,7 @@ func main() {
 	}
 
 	// Create the Brigade Event
-	events, err := client.Core().Events().Create(ctx, event)
+	events, err := client.Core().Events().Create(ctx, event, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -305,7 +304,7 @@ Let's briefly look at the Brigade Event object from above.
 
 ```go
   // Construct a Brigade Event
-  event := core.Event{
+  event := sdk.Event{
     // This is the source value for this event
     Source:    "example.org/example-gateway",
     // This is the event's type
