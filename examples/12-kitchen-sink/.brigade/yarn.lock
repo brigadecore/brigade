@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@brigadecore/brigadier@2.2.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@brigadecore/brigadier/-/brigadier-2.2.0.tgz#0345375108c3f482f396811d24b3c49bf1fb02ed"
-  integrity sha512-4LKi9vY1n91qz3LDtdD6JxNZgwsWUJClMzUb0YsXfUdtHVldhlFMTnoZJIx/6wjJgJkf3kV6EV8zww28ymRNnQ==
+"@brigadecore/brigadier@^2.3.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@brigadecore/brigadier/-/brigadier-2.3.0.tgz#41672fde58a2767c3cc4d3db95f29ac6425602a9"
+  integrity sha512-j95XN8DEpGcQ9XXIndVIZH9nwbgN2x94RMaTIGvPacdDjSGqsZ+nlXtsveV2G1Sag+jeZ4SQx5iV7aY+/gRHWg==
   dependencies:
     "@types/node" "^16.10.3"
     typescript "4.4.3"
@@ -20,7 +20,7 @@ typescript@4.4.3:
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.4.3.tgz#bdc5407caa2b109efd4f82fe130656f977a29324"
   integrity sha512-4xfscpisVgqqDfPaJo5vkd+Qd/ItkoagnHpufr+i2QCHBsNYp+G7UAoyFl8aPtx879u38wPV65rZ8qbGZijalA==
 
-unique-names-generator@4.4.0:
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/unique-names-generator/-/unique-names-generator-4.4.0.tgz#8adc33aaff899beaa36247965090bb154370df3f"
-  integrity sha512-0noP+m59TGwolNqnmXfiqMA5KiTudIk6D0VgzNkk2C1Jv3Lr+sY3T07nEWBg8Uq92/FjGca1klsRR6CXFriqFw==
+unique-names-generator@^4.4.0:
+  version "4.6.0"
+  resolved "https://registry.yarnpkg.com/unique-names-generator/-/unique-names-generator-4.6.0.tgz#852c1db8149815d6cf665a601820fe80ec2fbc37"
+  integrity sha512-m0fke1emBeT96UYn2psPQYwljooDWRTKt9oUZ5vlt88ZFMBGxqwPyLHXwCfkbgdm8jzioCp7oIpo6KdM+fnUlQ==
