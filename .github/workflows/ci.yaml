@@ -1,7 +1,10 @@
-name: Brigade PR
+name: Brigade CI
 
 on:
   pull_request:
+    branches:
+      - main
+  push:
     branches:
       - main
 
