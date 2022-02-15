@@ -7,6 +7,10 @@ const dockerClientImg = "brigadecore/docker-tools:v0.1.0"
 const helmImg = "brigadecore/helm-tools:v0.4.0"
 const localPath = "/workspaces/brigade"
 
+const dindSidecar = new Container(dindImg)
+dindSidecar.privileged = true
+dindSidecar.environment["DOCKER_TLS_CERTDIR"] = ""
+
 // MakeTargetJob is just a job wrapper around a make target.
 class MakeTargetJob extends Job {
   constructor(target: string, img: string, event: Event, env?: {[key: string]: string}) {
@@ -20,7 +24,8 @@ class MakeTargetJob extends Job {
   }
 }
 
-// BuildImageJob is a specialized job type for building multiarch Docker images.
+// BuildImageJob is a specialized job type for building and pushing multiarch
+// Docker images.
 //
 // Note: This isn't the optimal way to do this. It's a workaround. These notes
 // are here so that as the situation improves, we can improve our approach.
@@ -60,35 +65,61 @@ class MakeTargetJob extends Job {
 // If and when the capability exists to use `docker buildx` with existing
 // builders, we can streamline all of this pretty significantly.
 class BuildImageJob extends MakeTargetJob {
-  constructor(target: string, event: Event, env?: {[key: string]: string}) {
-    env ||= {}
-    env["DOCKER_ORG"] = event.project.secrets.dockerhubOrg
-    env["DOCKER_USERNAME"] = event.project.secrets.dockerhubUsername
-    env["DOCKER_PASSWORD"] = event.project.secrets.dockerhubPassword
-    super(target, dockerClientImg, event, env)
-    this.primaryContainer.environment.DOCKER_HOST = "localhost:2375"
+  constructor(image: string, event: Event, version?: string) {
+    const secrets = event.project.secrets
+    const env = {
+      // Use the Docker daemon that's running in a sidecar
+      "DOCKER_HOST": "localhost:2375"
+    }
+    let registry: string
+    let registryOrg: string
+    let registryUsername: string
+    let registryPassword: string
+    if (!version) { // This is where we'll push potentially unstable images
+      registry = secrets.unstableImageRegistry
+      registryOrg = secrets.unstableImageRegistryOrg
+      registryUsername = secrets.unstableImageRegistryUsername
+      registryPassword = secrets.unstableImageRegistryPassword
+    } else { // This is where we'll push stable images only
+      registry = secrets.stableImageRegistry
+      registryOrg = secrets.stableImageRegistryOrg
+      registryUsername = secrets.stableImageRegistryUsername
+      registryPassword = secrets.stableImageRegistryPassword
+      // Since it's defined, the make target will want this env var
+      env["VERSION"] = version
+    }
+    if (registry) {
+      // Since it's defined, the make target will want this env var
+      env["DOCKER_REGISTRY"] = registry
+    }
+    if (registryOrg) {
+      // Since it's defined, the make target will want this env var
+      env["DOCKER_ORG"] = registryOrg
+    }
+    // We ALWAYS log in to Docker Hub because even if we plan to push the images
+    // elsewhere, we still PULL a lot of images from Docker Hub (in FROM
+    // directives of Dockerfiles) and we want to avoid being rate limited.
+    env["DOCKERHUB_PASSWORD"] = secrets.dockerhubPassword
+    let registriesLoginCmd = `docker login -u ${secrets.dockerhubUsername} -p $DOCKERHUB_PASSWORD`
+    // If the registry we push to is defined (not DockerHub; which we're already
+    // logging into) and we have credentials, add a second registry login:
+    if (registry && registryUsername && registryPassword) {
+      env["IMAGE_REGISTRY_PASSWORD"] = registryPassword
+      registriesLoginCmd = `${registriesLoginCmd} && docker login ${registry} -u ${registryUsername} -p $IMAGE_REGISTRY_PASSWORD`
+    }
+    super(`build-${image}`, dockerClientImg, event, env)
     this.primaryContainer.command = [ "sh" ]
     this.primaryContainer.arguments = [
       "-c",
       // The sleep is a grace period after which we assume the DinD sidecar is
       // probably up and running.
-      `sleep 20 && docker buildx create --name builder --use && docker buildx ls && make ${target}`
+      "sleep 20 && " +
+        `${registriesLoginCmd} && ` +
+        "docker buildx create --name builder --use && " +
+        "docker info && " +
+        `make push-${image}`
     ]
-
-    this.sidecarContainers.docker = new Container(dindImg)
-    this.sidecarContainers.docker.privileged = true
-    this.sidecarContainers.docker.environment.DOCKER_TLS_CERTDIR=""
-  }
-}
-
-// PushImageJob is a specialized job type for publishing Docker images.
-class PushImageJob extends BuildImageJob {
-  constructor(target: string, event: Event, version?: string) {
-    const env = {}
-    if (version) {
-      env["VERSION"] = version
-    }
-    super(target, event, env)
+    this.sidecarContainers.dind = dindSidecar
   }
 }
 
@@ -151,88 +182,46 @@ jobs[validateExamplesJobName] = validateExamplesJob;
 // Build / publish stuff:
 
 const buildArtemisJobName = "build-artemis"
-const buildArtemisJob = (event: Event) => {
-  return new BuildImageJob(buildArtemisJobName, event)
+const buildArtemisJob = (event: Event, version?: string) => {
+  return new BuildImageJob("artemis", event, version)
 }
 jobs[buildArtemisJobName] = buildArtemisJob
 
-const pushArtemisJobName = "push-artemis"
-const pushArtemisJob = (event: Event, version?: string) => {
-  return new PushImageJob(pushArtemisJobName, event, version)
-}
-jobs[pushArtemisJobName] = pushArtemisJob
-
 const buildAPIServerJobName = "build-apiserver"
-const buildAPIServerJob = (event: Event) => {
-  return new BuildImageJob(buildAPIServerJobName, event)
+const buildAPIServerJob = (event: Event, version?: string) => {
+  return new BuildImageJob("apiserver", event, version)
 }
 jobs[buildAPIServerJobName] = buildAPIServerJob
 
-const pushAPIServerJobName = "push-apiserver"
-const pushAPIServerJob = (event: Event, version?: string) => {
-  return new PushImageJob(pushAPIServerJobName, event, version)
-}
-jobs[pushAPIServerJobName] = pushAPIServerJob
-
 const buildGitInitializerJobName = "build-git-initializer"
-const buildGitInitializerJob = (event: Event) => {
-  return new BuildImageJob(buildGitInitializerJobName, event)
+const buildGitInitializerJob = (event: Event, version?: string) => {
+  return new BuildImageJob("git-initializer", event, version)
 }
 jobs[buildGitInitializerJobName] = buildGitInitializerJob
 
-const pushGitInitializerJobName = "push-git-initializer"
-const pushGitInitializerJob = (event: Event, version?: string) => {
-  return new PushImageJob(pushGitInitializerJobName, event, version)
-}
-jobs[pushGitInitializerJobName] = pushGitInitializerJob
-
 const buildLoggerLinuxJobName = "build-logger"
-const buildLoggerLinuxJob = (event: Event) => {
-  return new BuildImageJob(buildLoggerLinuxJobName, event)
+const buildLoggerLinuxJob = (event: Event, version?: string) => {
+  return new BuildImageJob("logger", event, version)
 }
 jobs[buildLoggerLinuxJobName] = buildLoggerLinuxJob
 
-const pushLoggerLinuxJobName = "push-logger"
-const pushLoggerLinuxJob = (event: Event, version?: string) => {
-  return new PushImageJob(pushLoggerLinuxJobName, event, version)
-}
-jobs[pushLoggerLinuxJobName] = pushLoggerLinuxJob
-
 const buildObserverJobName = "build-observer"
-const buildObserverJob = (event: Event) => {
-  return new BuildImageJob(buildObserverJobName, event)
+const buildObserverJob = (event: Event, version?: string) => {
+  return new BuildImageJob("observer", event, version)
 }
 jobs[buildObserverJobName] = buildObserverJob
 
-const pushObserverJobName = "push-observer"
-const pushObserverJob = (event: Event, version?: string) => {
-  return new PushImageJob(pushObserverJobName, event, version)
-}
-jobs[pushObserverJobName] = pushObserverJob
-
 const buildSchedulerJobName = "build-scheduler"
-const buildSchedulerJob = (event: Event) => {
-  return new BuildImageJob(buildSchedulerJobName, event)
+const buildSchedulerJob = (event: Event, version?: string) => {
+  return new BuildImageJob("scheduler", event, version)
 }
 jobs[buildSchedulerJobName] = buildSchedulerJob
 
-const pushSchedulerJobName = "push-scheduler"
-const pushSchedulerJob = (event: Event, version?: string) => {
-  return new PushImageJob(pushSchedulerJobName, event, version)
-}
-jobs[pushSchedulerJobName] = pushSchedulerJob
-
 const buildWorkerJobName = "build-worker"
-const buildWorkerJob = (event: Event) => {
-  return new BuildImageJob(buildWorkerJobName, event)
+const buildWorkerJob = (event: Event, version?: string) => {
+  return new BuildImageJob("worker", event, version)
 }
 jobs[buildWorkerJobName] = buildWorkerJob
-
-const pushWorkerJobName = "push-worker"
-const pushWorkerJob = (event: Event, version?: string) => {
-  return new PushImageJob(pushWorkerJobName, event, version)
-}
-jobs[pushWorkerJobName] = pushWorkerJob
 
 const buildBrigadierJobName = "build-brigadier"
 const buildBrigadierJob = (event: Event) => {
@@ -257,24 +246,33 @@ jobs[buildCLIJobName] = buildCLIJob
 
 const publishCLIJobName = "publish-cli"
 const publishCLIJob = (event: Event, version: string) => {
+  const secrets = event.project.secrets
   return new MakeTargetJob(publishCLIJobName, goImg, event, {
     "VERSION": version,
-    "GITHUB_ORG": event.project.secrets.githubOrg,
-    "GITHUB_REPO": event.project.secrets.githubRepo,
-    "GITHUB_TOKEN": event.project.secrets.githubToken
+    "GITHUB_ORG": secrets.githubOrg,
+    "GITHUB_REPO": secrets.githubRepo,
+    "GITHUB_TOKEN": secrets.githubToken
   })
 }
 jobs[publishCLIJobName] = publishCLIJob
 
 const publishChartJobName = "publish-chart"
 const publishChartJob = (event: Event, version: string) => {
-  return new MakeTargetJob(publishChartJobName, helmImg, event, {
+  const secrets = event.project.secrets
+  const helmRegistry = secrets.chartRegistry || "ghcr.io"
+  const job = new MakeTargetJob(publishChartJobName, helmImg, event, {
     "VERSION": version,
-    "HELM_REGISTRY": event.project.secrets.helmRegistry || "ghcr.io",
-    "HELM_ORG": event.project.secrets.helmOrg,
-    "HELM_USERNAME": event.project.secrets.helmUsername,
-    "HELM_PASSWORD": event.project.secrets.helmPassword
+    "HELM_REGISTRY": helmRegistry,
+    "HELM_ORG": secrets.helmOrg,
+    "HELM_REGISTRY_PASSWORD": secrets.helmPassword
   })
+  job.primaryContainer.command = [ "sh" ]
+  job.primaryContainer.arguments = [
+    "-c",
+    `helm registry login ${helmRegistry} -u ${secrets.helmUsername} -p $HELM_REGISTRY_PASSWORD && ` +
+      "make publish-chart"
+  ]
+  return job
 }
 jobs[publishChartJobName] = publishChartJob
 
@@ -289,26 +287,32 @@ jobs[publishBrigadierDocsJobName] = publishBrigadierDocsJob
 
 const testIntegrationJobName = "test-integration"
 const testIntegrationJob = (event: Event) => {
-  const job = new Job(testIntegrationJobName, "brigadecore/int-test-tools:v0.2.0", event)
-  job.primaryContainer.sourceMountPath = localPath
-  job.primaryContainer.workingDirectory = localPath
-  job.primaryContainer.environment = {
-    "SKIP_DOCKER": "true",
-    "DOCKER_HOST": "localhost:2375",
+  const secrets = event.project.secrets
+  const env = {
     "CGO_ENABLED": "0",
-    "BRIGADE_CI_PRIVATE_REPO_SSH_KEY": event.project.secrets.privateRepoSSHKey,
-    "IMAGE_PULL_POLICY": "IfNotPresent"
+    "BRIGADE_CI_PRIVATE_REPO_SSH_KEY": secrets.privateRepoSSHKey,
+    "IMAGE_PULL_POLICY": "IfNotPresent",
+    // Use the Docker daemon that's running in a sidecar
+    "DOCKER_HOST": "localhost:2375"
   }
+  if (secrets.unstableImageRegistry) {
+    env["DOCKER_REGISTRY"] = secrets.unstableImageRegistry
+  }
+  if (secrets.unstableImageRegistryOrg) {
+    env["DOCKER_ORG"] = secrets.unstableImageRegistryOrg
+  }
+  const job = new MakeTargetJob(testIntegrationJobName, "brigadecore/int-test-tools:v0.2.0", event, env)
   job.primaryContainer.command = [ "sh" ]
   job.primaryContainer.arguments = [
     "-c",
     // The sleep is a grace period after which we assume the DinD sidecar is
     // probably up and running.
-    `sleep 20 && kind create cluster && make hack-build-images hack-load-images hack-deploy test-integration`
+    "sleep 20 && " +
+      "docker info && " +
+      "kind create cluster && " +
+      "make hack-deploy test-integration"
   ]
-  job.sidecarContainers.docker = new Container(dindImg)
-  job.sidecarContainers.docker.privileged = true
-  job.sidecarContainers.docker.environment.DOCKER_TLS_CERTDIR=""
+  job.sidecarContainers.dind = dindSidecar
   job.timeoutSeconds = 30 * 60
   return job
 }
@@ -334,7 +338,7 @@ events.on("brigade.sh/github", "ci:pipeline_requested", async event => {
       buildObserverJob(event),
       buildSchedulerJob(event),
       buildWorkerJob(event),
-      buildBrigadierJob(event),  
+      buildBrigadierJob(event),
       buildCLIJob(event)
     ),
     testIntegrationJob(event)
@@ -355,13 +359,13 @@ events.on("brigade.sh/github", "cd:pipeline_requested", async event => {
   const version = JSON.parse(event.payload).release.tag_name
   await new SerialGroup(
     new ConcurrentGroup(
-      pushArtemisJob(event, version),
-      pushAPIServerJob(event, version),
-      pushGitInitializerJob(event, version),
-      pushLoggerLinuxJob(event, version),
-      pushObserverJob(event, version),
-      pushSchedulerJob(event, version),
-      pushWorkerJob(event, version)
+      buildArtemisJob(event, version),
+      buildAPIServerJob(event, version),
+      buildGitInitializerJob(event, version),
+      buildLoggerLinuxJob(event, version),
+      buildObserverJob(event, version),
+      buildSchedulerJob(event, version),
+      buildWorkerJob(event, version)
     ),
     new ConcurrentGroup(
       publishBrigadierJob(event, version),
