@@ -395,7 +395,7 @@ events.on("brigade.sh/cron", "nightly-cleanup", async event => {
     "brigade2-worker"
   ]
   repos.forEach((repo: string) => {
-    script += `&& az acr repository delete --name unstablebrigade --repository ${repo}`
+    script += `&& az acr repository delete --name unstablebrigade --repository ${repo} --yes`
   })
   job.primaryContainer.arguments = ["-c", script]
   await job.run()
