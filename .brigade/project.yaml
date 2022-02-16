@@ -13,6 +13,9 @@ spec:
     - ci:pipeline_requested
     - ci:job_requested
     - cd:pipeline_requested
+  - source: brigade.sh/cron
+    types:
+    - nightly-cleanup
   workerTemplate:
     git:
       cloneURL: https://github.com/brigadecore/brigade.git
