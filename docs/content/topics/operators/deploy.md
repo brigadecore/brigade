@@ -309,9 +309,7 @@ $ helm install brigade \
     --timeout 300s
 ```
 
-Installation and initial startup may take a few minutes to complete and it is
-normal for components to restart repeatedly until their own network-bound
-dependencies are up and running.
+> ⚠️ Installation and initial startup may take a few minutes to complete.
 
 ## Update DNS
 
