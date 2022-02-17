@@ -17,15 +17,3 @@ type Sender interface {
 	// Close closes the Sender and AMQP link.
 	Close(ctx context.Context) error
 }
-
-type sender struct {
-	sender *amqp.Sender
-}
-
-func (s *sender) Send(ctx context.Context, msg *amqp.Message) error {
-	return s.sender.Send(ctx, msg)
-}
-
-func (s *sender) Close(ctx context.Context) error {
-	return s.sender.Close(ctx)
-}

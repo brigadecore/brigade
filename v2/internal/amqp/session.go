@@ -27,17 +27,11 @@ type session struct {
 }
 
 func (s *session) NewSender(opts ...amqp.LinkOption) (Sender, error) {
-	sndr, err := s.session.NewSender(opts...)
-	return &sender{
-		sender: sndr,
-	}, err
+	return s.session.NewSender(opts...)
 }
 
 func (s *session) NewReceiver(opts ...amqp.LinkOption) (Receiver, error) {
-	rcvr, err := s.session.NewReceiver(opts...)
-	return &receiver{
-		receiver: rcvr,
-	}, err
+	return s.session.NewReceiver(opts...)
 }
 
 func (s *session) Close(ctx context.Context) error {
