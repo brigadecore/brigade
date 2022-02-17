@@ -63,10 +63,11 @@ func (w *writerFactory) connect() error {
 			if w.amqpClient != nil {
 				w.amqpClient.Close()
 			}
-			var err error
-			if w.amqpClient, err = myamqp.Dial(w.address, w.dialOpts...); err != nil {
+			amqpClient, err := myamqp.Dial(w.address, w.dialOpts...)
+			if err != nil {
 				return true, errors.Wrap(err, "error dialing endpoint")
 			}
+			w.amqpClient = amqpClient
 			return false, nil
 		},
 	)
