@@ -2,8 +2,11 @@ package main
 
 // nolint: lll
 import (
+	"context"
 	"log"
+	"time"
 
+	"github.com/brigadecore/brigade-foundations/retries"
 	"github.com/brigadecore/brigade-foundations/signals"
 	"github.com/brigadecore/brigade-foundations/version"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/api"
@@ -16,6 +19,7 @@ import (
 	"github.com/brigadecore/brigade/v2/apiserver/internal/lib/restmachinery"
 	"github.com/brigadecore/brigade/v2/internal/kubernetes"
 	"github.com/xeipuuv/gojsonschema"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // main wires up the dependency graph for the API server, then runs the API
@@ -35,9 +39,19 @@ func main() {
 	}
 
 	// Data stores
-	database, err := databaseConnection(ctx)
-	if err != nil {
-		log.Fatal(err)
+	var database *mongo.Database
+	{
+		if database, err = databaseConnection(ctx); err != nil {
+			log.Fatal(err)
+		}
+		// No network I/O occurs when creating the DB connection, so we'll test it
+		// here. This will block until the connection is verified or max retries are
+		// exhausted. What we're trying to prevent is both 1. moving on in the
+		// startup process without the database available AND 2. crashing too
+		// prematurely while waiting for the database become available.
+		if err = testDatabaseConnection(ctx, database); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	var coolLogsStore api.CoolLogsStore
@@ -97,6 +111,16 @@ func main() {
 			log.Fatal(err)
 		}
 		queueWriterFactory = amqp.NewWriterFactory(config)
+		// No network I/O occurs when constructing a queue.WriterFactory, so we'll
+		// test the underlying connection here by using the factory to get a
+		// queue.Writer for the healthz queue. This will block until the underlying
+		// connection succeeds or max retries are exhausted. What we're trying to
+		// prevent is BOTH 1. moving on in the startup process without the message
+		// server available AND 2. crashing too prematurely while waiting for the
+		// message server to become available.
+		if _, err := queueWriterFactory.NewWriter("healthz"); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// Substrate
@@ -352,4 +376,24 @@ func main() {
 
 	// Run it!
 	log.Println(apiServer.ListenAndServe(ctx))
+}
+
+func testDatabaseConnection(
+	ctx context.Context,
+	database *mongo.Database,
+) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+	return retries.ManageRetries(
+		ctx, // The retry loop will exit when this context expires
+		"database ping",
+		0,              // "Infinite" retries
+		10*time.Second, // Max backoff
+		func() (bool, error) {
+			if err := database.Client().Ping(ctx, nil); err != nil {
+				return true, err // Retry
+			}
+			return false, nil // Success
+		},
+	)
 }
