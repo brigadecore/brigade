@@ -74,7 +74,7 @@ cluster, view our [QuickStart](/intro/quickstart/) instead.
 
 ```console
 $ helm inspect values oci://ghcr.io/brigadecore/brigade \
-    --version v2.3.0 > ~/brigade-values.yaml
+    --version v2.3.1 > ~/brigade-values.yaml
 ```
 
 In the next steps, we'll edit `~/brigade-values.yaml` to configure a
@@ -301,7 +301,7 @@ suitable for production, we can proceed with installation:
 ```console
 $ helm install brigade \
     oci://ghcr.io/brigadecore/brigade \
-    --version v2.3.0 \
+    --version v2.3.1 \
     --create-namespace \
     --namespace brigade \
     --values ~/brigade-values.yaml \
@@ -361,7 +361,7 @@ instructions for common environments:
 **Linux**
 
 ```bash
-$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.3.0/brig-linux-amd64
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.3.1/brig-linux-amd64
 $ chmod +x /usr/local/bin/brig
 ```
 
@@ -378,7 +378,7 @@ Alternatively, you can install manually by directly downloading a pre-built
 binary:
 
 ```bash
-$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.3.0/brig-darwin-amd64
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.3.1/brig-darwin-amd64
 $ chmod +x /usr/local/bin/brig
 ```
 
@@ -386,7 +386,7 @@ $ chmod +x /usr/local/bin/brig
 
 ```powershell
 > mkdir -force $env:USERPROFILE\bin
-> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.3.0/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.3.1/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
 > $env:PATH+=";$env:USERPROFILE\bin"
 ```
 
