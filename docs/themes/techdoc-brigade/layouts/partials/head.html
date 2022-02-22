@@ -18,7 +18,15 @@
 {{ $style := resources.Get "scss/theme.scss" | toCSS | minify | fingerprint }} 
 <link rel="stylesheet" href="{{ $style.RelPermalink }}" emotion="🤩">
 
-<link rel="icon" type="image/png" href="https://docs.brigade.sh/img/favicon.png">
+{{- range $i := .Site.Params.faviconSizes }} 
+{{- $favicon := resources.Get "img/favicon.png" }} 
+{{- $image := $favicon.Resize (printf "%dx%d" $i $i) }}
+<link rel="icon" type="image/png" sizes="{{$i}}x{{$i}}" href="{{ $image.Permalink }}"/>
+{{- end }} 
+{{- with resources.Get "img/favicon.png" }} 
+{{- $image := .Resize "180x180" }}
+<link rel="apple-touch-icon" sizes="180x180" href="{{ $image.Permalink }}" />
+{{- end }}
 
 <!-- load google analytics only after user grants consent -->
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.1/cookieconsent.min.css" />
