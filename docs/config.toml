@@ -7,6 +7,7 @@ relativeURLs = "true"
 [params]
   title = "Brigade"
   description = "Brigade: Event-driven scripting for Kubernetes."
+  faviconSizes = [ 16, 32, 48 ]
 
 # main docs 'index' menu on left
 [[menu.index]]
