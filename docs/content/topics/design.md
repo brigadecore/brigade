@@ -25,18 +25,14 @@ __Events__ originate in external systems and arrive in Brigade's
 [event bus](#the-event-bus) via [gateways](#event-gateways) and the
 [Brigade API](#the-api-server).
 
-<center>
-  <img src="../../static/img/design-events.png"/>
-</center>
+![Events](/img/design-events.png)
 
 ### Projects
 
 __Projects__ are user-defined. They pair event subscriptions with configuration
 and scripts that will handle those events.
 
-<center>
-  <img src="../../static/img/design-projects.png"/>
-</center>
+![Projects](/img/design-projects.png)
 
 ### The Lifecycle of an Event
 
@@ -51,9 +47,7 @@ launched to handle each event by executing script.
 
 The following depicts the major components of Brigade:
 
-<center>
-  <img src="../../static/img/design-architecture.png"/>
-</center>
+![Architecture](/img/design-architecture.png)
 
 The following sections describe each of these components in greater detail. They
 are presented in an order that is intended accelerate understanding of the
