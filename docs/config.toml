@@ -9,6 +9,9 @@ relativeURLs = "true"
   description = "Brigade: Event-driven scripting for Kubernetes."
   faviconSizes = [ 16, 32, 48 ]
 
+  # Sidebar menu ordering
+  ordersectionsby = "weight"
+
 # top navigation - project links
 [[menu.main]]
     name = "Docs"
