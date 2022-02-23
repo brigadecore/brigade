@@ -8,6 +8,10 @@ charts/brigade/charts
 .DS_Store
 v2/brigadier/docs
 
+# Docs
+docs/resources/_gen/
+docs/.hugo_build.lock
+
 # IDEs
 .vscode/
 .devcontainer/
