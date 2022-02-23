@@ -1,4 +1,5 @@
 ---
+linkTitle: Deployment
 title: Deploying to Production
 description: How to configure and install a production-grade Brigade deployment
 section: operators

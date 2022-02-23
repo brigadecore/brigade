@@ -1,6 +1,6 @@
 ---
-title: Releasing Brigade 2
-description: How to cut a new release of Brigade 2
+title: Releasing Brigade
+description: How to cut a new release of Brigade
 section: topics
 weight: 9
 aliases:

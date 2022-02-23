@@ -1,4 +1,5 @@
 ---
+linkTitle: The Brigadier Library
 title: The Brigade scripting API
 description: Describing the public APIs typically used for writing Brigade scripts
 section: scripting

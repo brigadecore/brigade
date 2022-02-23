@@ -1,4 +1,5 @@
 ---
+linkTitle: Overview
 title: Brigade Overview
 description: High-level view of Brigade.
 section: intro

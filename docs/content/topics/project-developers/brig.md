@@ -1,6 +1,8 @@
 ---
+linkTitle: Using the brig CLI
 title: Brig
 description: Using the brig CLI
+weight: 4
 aliases:
   - /brig
   - /topics/brig.md
