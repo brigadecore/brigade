@@ -1,4 +1,5 @@
 ---
+linkTitle: Quickstart
 title: A Brigade Quickstart
 description: A Brigade Quickstart.
 section: intro
