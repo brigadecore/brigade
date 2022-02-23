@@ -1,5 +1,5 @@
 ---
-title: Brigterm
+title: brig term
 description: Using Brigade's text-based visualization utility
 section: project-developers
 weight: 5
@@ -9,14 +9,12 @@ aliases:
   - /topics/project-developers/brigterm.md
 ---
 
-# Brig term
-
 Brigade offers a text-based user interface (TUI) for visualizing the activity
 in a Brigade system. This can be a convenient utility for viewing all projects
 and monitoring their events, as well as digging down into worker and job
 logs for an event.
 
-# How to use
+## How to use
 
 To start, log in to the Brigade server that you wish to explore:
 
@@ -33,7 +31,7 @@ $ brig term
 The visualizer will expand to encompass the entire terminal window and you
 should be greeted with a project listing on the main page.
 
-# Sample views
+## Sample views
 
 Here is a sample view of the main project overview page:
 

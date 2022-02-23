@@ -8,8 +8,6 @@ aliases:
   - /topics/developers.md
 ---
 
-# Developer Guide
-
 This document explains how to get started developing Brigade.
 
 Brigade is composed of numerous parts.  The following represent the core

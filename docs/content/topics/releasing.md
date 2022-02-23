@@ -9,9 +9,7 @@ aliases:
   - /topics/releasing.md
 ---
 
-# Releasing Brigade 2
-
-Releasing Brigade 2 is, generally speaking, easy, and mostly automated. Some
+Releasing Brigade is, generally speaking, easy, and mostly automated. Some
 complications are introduced in the _rare_ event that the API version supported
 by the server is changing.
 

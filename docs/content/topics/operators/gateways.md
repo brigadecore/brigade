@@ -9,8 +9,6 @@ aliases:
   - /topics/operators/gateways.md
 ---
 
-# Brigade Gateways
-
 This guide explains how gateways work, and provides guidance for creating your
 own.
 

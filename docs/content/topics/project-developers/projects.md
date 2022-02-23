@@ -9,8 +9,6 @@ aliases:
   - /topics/project-developers/projects.md
 ---
 
-# Managing Projects in Brigade
-
 In Brigade, a project is a conceptual grouping of event subscriptions paired
 with logic expressing how to handle those events.
 

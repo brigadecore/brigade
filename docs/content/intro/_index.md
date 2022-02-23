@@ -8,8 +8,6 @@ aliases:
   - /intro/index/
 ---
 
-# Getting Started
-
 New to Brigade or looking to quickly get up to speed? Well, you came to the right place: read this material to quickly get up and running.
 
 ## How the documentation is organized

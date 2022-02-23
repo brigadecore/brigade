@@ -9,8 +9,6 @@ aliases:
   - /topics/storage.md
 ---
 
-# Storage in Brigade
-
 Brigade utilizes storage in the following ways:
 
   * [Shared Worker storage](#shared-worker-storage) wherein a Brigade Worker's

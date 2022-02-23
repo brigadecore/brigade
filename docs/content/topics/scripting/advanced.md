@@ -9,8 +9,6 @@ aliases:
   - /topics/scripting/advanced.md
 ---
 
-# Advanced Scripting Guide
-
 This guide provides some tips and ideas for advanced scripting. It assumes
 familiarity with [the scripting guide] and the [Brigadier API].
 

@@ -9,8 +9,6 @@ aliases:
   - /topics/administrators/authentication.md
 ---
 
-# Brigade Authentication
-
 Brigade utilizes third-party providers for its user authentication strategy.
 We'll go over the available options and their configuration in this document.
 

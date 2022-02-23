@@ -9,8 +9,6 @@ aliases:
   - /topics/project-developers/secrets.md
 ---
 
-# Secret Management
-
 Brigade provides tools for storing sensitive data outside of your Brigade
 scripts, and then passing that information into the jobs that need them.
 

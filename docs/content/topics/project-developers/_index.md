@@ -9,8 +9,6 @@ aliases:
   - /topics/project-developers/index.md
 ---
 
-# Brigade Project Developers
-
 Users who interact with Brigade at the project-level are known as Project
 Developers.
 

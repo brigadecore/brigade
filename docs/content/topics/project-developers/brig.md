@@ -1,6 +1,5 @@
 ---
-linkTitle: Using the brig CLI
-title: Brig
+title: The brig CLI
 description: Using the brig CLI
 weight: 4
 aliases:
@@ -8,8 +7,6 @@ aliases:
   - /topics/brig.md
   - /topics/project-developers/brig.md
 ---
-
-## The command line interface for interacting with Brigade
 
 The `brig` CLI provides access to the full repertoire of supported user
 interactions in Brigade, whether it's logging into Brigade with `brig login`,
@@ -22,7 +19,7 @@ of the [suite of commands] that brig provides.
 [install brig]: #install-brig
 [suite of commands]: #suite-of-commands
 
-## Install Brig
+## Install brig
 
 In general, `brig` can be installed by downloading the appropriate pre-built
 binary from our [releases page](https://github.com/brigadecore/brigade/releases)

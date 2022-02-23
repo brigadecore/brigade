@@ -8,8 +8,6 @@ aliases:
   - /intro/readnext.md
 ---
 
-# What to Read Next
-
 Now that you've read all of the introductory material, we hope you are as enthusiastic as we are about Brigade.
 
 Henceforth, the documentation will be more in-depth and contextual.  In the [Advanced Topics] sections, we'll
