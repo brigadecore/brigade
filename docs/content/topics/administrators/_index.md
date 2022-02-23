@@ -9,8 +9,6 @@ aliases:
   - /topics/administrators/index.md
 ---
 
-# Brigade Administrators
-
 Users who are in charge of authentication and authorization concerns within the
 Brigade system are known as Administrators.
 

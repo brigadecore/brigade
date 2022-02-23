@@ -9,8 +9,6 @@ aliases:
   - /topics/administrators/authorization.md
 ---
 
-# Brigade Authorization
-
 Authorization in Brigade consists of roles with particular scopes, which are
 granted to users and service accounts. When users interact with Brigade via
 the brig CLI or when a service account interacts with Brigade via an SDK,

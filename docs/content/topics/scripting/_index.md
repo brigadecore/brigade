@@ -8,8 +8,6 @@ aliases:
   - /topics/scripting/index.md
 ---
 
-# Brigade Scripting
-
 By now, you've successfully [deployed] and/or [logged in] to Brigade.
 You may have also created a [project] or two and are now ready to focus on
 writing Brigade scripts for these projects. This scripting guide will go over

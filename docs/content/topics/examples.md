@@ -8,8 +8,6 @@ aliases:
   - /topics/examples.md
 ---
 
-# Brigade Examples
-
 Looking for ready-to-run Brigade project examples to use and/or learn from?
 Check out the [Examples] directory at the root of the Brigade repo.
 

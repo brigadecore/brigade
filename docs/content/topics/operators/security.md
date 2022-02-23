@@ -9,8 +9,6 @@ aliases:
   - /topics/security.md
 ---
 
-# Securing Brigade
-
 The execution of Brigade scripts involves dynamically creating (and destroying)
 a number of Kubernetes objects, including pods, secrets, and persistent volume
 claims. For that reason, it is prudent to configure security.

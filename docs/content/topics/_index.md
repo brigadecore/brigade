@@ -7,8 +7,6 @@ aliases:
   - /topics/index/
 ---
 
-# Topic Guides
-
 This section of the documentation dives deep into individual parts of Brigade. We'll look at Brigade's architecture,
 explore the three main roles of interaction with Brigade, go over Brigade's scripting API and much more.
 This is probably where you’ll want to spend most of your time; if you work your way through these guides you

@@ -9,8 +9,6 @@ aliases:
   - /topics/scripting/dependencies.md
 ---
 
-# Import dependencies in your Brigade script
-
 A Brigade worker is responsible for executing your Brigade script. By default,
 Brigade comes with a general purpose worker which does not have any external
 dependency that is not critical to executing event handlers in Brigade.

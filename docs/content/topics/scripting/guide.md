@@ -9,13 +9,11 @@ aliases:
   - /topics/scripting/guide.md
 ---
 
-# Scripting Guide
-
 This guide explains the basics of how to create and structure Brigade scripts,
 which can be written in either JavaScript (`brigade.js`) or TypeScript
 (`brigade.ts`).
 
-# Brigade Scripts, Projects, and Repositories
+## Brigade Scripts, Projects, and Repositories
 
 At the very core, a Brigade script is simply a JavaScript (or TypeScript) file
 defined by a project, which Brigade executes in the context of a worker to

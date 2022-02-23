@@ -9,8 +9,6 @@ aliases:
   - /topics/project-developers/events.md
 ---
 
-# Brigade Events
-
 Events are the _lingua franca_ in Brigade: [Gateways] emit events and [Project]
 developers write logic to handle them.
 

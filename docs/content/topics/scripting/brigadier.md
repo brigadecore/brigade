@@ -1,6 +1,5 @@
 ---
-linkTitle: The Brigadier Library
-title: The Brigade scripting API
+title: The Brigadier Library
 description: Describing the public APIs typically used for writing Brigade scripts
 section: scripting
 weight: 2
@@ -9,8 +8,6 @@ aliases:
   - /topics/brigadier.md
   - /topics/scripting/brigadier.md
 ---
-
-# The Brigade scripting API
 
 This document describes the public APIs typically used for writing Brigade
 scripts in either JavaScript or TypeScript. It does not describe internal

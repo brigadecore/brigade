@@ -9,8 +9,6 @@ aliases:
   - /topics/scripting/workers.md
 ---
 
-# What is a Brigade Worker?
-
 A worker is the Brigade component that is launched in response to an event that
 a project subscribes to. There is a one-to-one relationship between events and
 workers.
@@ -23,7 +21,7 @@ defining project/event-specific configuration or logic.
 The remainder of this page covers the general approach of creating and using
 custom workers.
 
-# Creating a Custom Worker
+## Creating a Custom Worker
 
 Although it is possible to extend the default Brigade Worker with additional
 Node.js libraries and/or custom JavaScript or TypeScript code (indeed, we've
@@ -42,7 +40,7 @@ for processing an event.
 
 [Dependencies]: /topics/scripting/dependencies
 
-## Event Data
+### Event Data
 
 Workers get the data they need to process an event via JSON mounted to its pod
 by Brigade, each time it runs. This JSON contains configuration that the worker
@@ -54,7 +52,7 @@ inapplicable to the custom behavior they implement. For instance, a field that
 conveys the expected location of the `brigade.js` file is not applicable to a
 worker that does not utilize such configuration.
 
-### Fields
+#### Fields
 
 Here's a rundown on the data present in the event JSON:
 
@@ -90,7 +88,7 @@ Here's a rundown on the data present in the event JSON:
 [long title]: /topics/project-developers/events#long-title
 [payload]: /topics/project-developers/events#payload
 
-## Exit Code
+### Exit Code
 
 Brigade determines the ultimate success or failure of an event by the return
 code from the worker.
@@ -100,7 +98,7 @@ return code 0.
 
 Worker executions that fail MUST exit with a non-zero return code.
 
-# General Worker flow
+## General Worker flow
 
 At a high level, the flow of a custom worker when handling an event for a
 project would be the following:
@@ -115,7 +113,7 @@ project would be the following:
 
 [Brigade SDKs]: https://github.com/brigadecore/brigade/blob/main/README.md#sdks
 
-# Building and Publishing a Custom Worker Image
+## Building and Publishing a Custom Worker Image
 
 When the custom worker code is ready to be used in Brigade, the next step is to
 build a Docker image from your `Dockerfile`.
@@ -136,12 +134,12 @@ Minikube, you do this by running `eval $(minikube docker-env)`.)
 Now that we have our image pushed to a usable location, we can configure Brigade
 to use this new image.
 
-# Configuring Brigade to Use Your Custom Worker Image
+## Configuring Brigade to Use Your Custom Worker Image
 
 The worker image for Brigade can be set globally as well as individually per
 project.
 
-## Global default
+### Global default
 
 To set the version globally, you should supply values for the `repository`,
 `tag` and, optionally, `pullPolicy` fields under the `worker.image` section in
@@ -164,7 +162,8 @@ values.
 
 [Brigade chart]: https://github.com/brigadecore/brigade/tree/main/charts/brigade
 [upgrade command]: https://helm.sh/docs/helm/helm_upgrade/
-## Project Overrides
+
+### Project Overrides
 
 To configure the worker image per-project, you'll supply the same repository,
 tag and pullPolicy values to the project definition under the
@@ -180,7 +179,7 @@ spec:
 
 Then, update the project via `brig project update --file project.yaml`
 
-## Using Your Custom Worker
+### Using Your Custom Worker
 
 Once you have Brigade and/or individual projects updated, your new Brigade
 workers will automatically switch to using this new image.

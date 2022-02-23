@@ -9,8 +9,6 @@ aliases:
   - /topics/operators/index.md
 ---
 
-# Brigade Operators
-
 Users who are in charge of the operational concerns around deploying and
 managing the Brigade server and any auxiliary systems are known as
 Operators.
