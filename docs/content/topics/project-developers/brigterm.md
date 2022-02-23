@@ -37,31 +37,31 @@ should be greeted with a project listing on the main page.
 
 Here is a sample view of the main project overview page:
 
-![Project Overview](https://docs.brigade.sh/img/brigterm_project_overview.png)
+![Project Overview](/img/brigterm_project_overview.png)
 
 From this view, you can navigate to a given project to see its full details and
 event listing using the arrow keys. Press the `Enter` key to select the project
 you wish to view. Here we have selected the `first-job` project:
 
-![Project view](https://docs.brigade.sh/img/brigterm_first-job_project.png)
+![Project view](/img/brigterm_first-job_project.png)
 
 To view details for a specific event, select the ID you wish to explore. Here
 we select the one event available to us:
 
-![Event view](https://docs.brigade.sh/img/brigterm_first-job_event.png)
+![Event view](/img/brigterm_first-job_event.png)
 
 Worker logs for the event can be seen by typing the `L` key:
 
-![Worker logs](https://docs.brigade.sh/img/brigterm_first-job_worker_logs.png)
+![Worker logs](/img/brigterm_first-job_worker_logs.png)
 
 You can also select any job to view its full details. Here we navigate to the
 details for the `my-first-job` job:
 
-![Job view](https://docs.brigade.sh/img/brigterm_first-job_job.png)
+![Job view](/img/brigterm_first-job_job.png)
 
 Finally, job logs can be seen by typing the `L` key:
 
-![Job logs](https://docs.brigade.sh/img/brigterm_first-job_job_logs.png)
+![Job logs](/img/brigterm_first-job_job_logs.png)
 
 We hope this visualizer proves useful for tracking activity in a Brigade
-instance. We're excited to hear about your experiences with it! 
+instance. We're excited to hear about your experiences with it!
