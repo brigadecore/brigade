@@ -1,0 +1,263 @@
+@font-face {
+  font-family: 'work_sansregular';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/worksans-regular-webfont.eot');
+  src: url('../fonts/worksans-regular-webfont.eot?#iefix') format("embedded-opentype"),
+       url('../fonts/worksans-regular-webfont.woff') format('woff'),
+       url('../fonts/worksans-regular-webfont.ttf') format('truetype');
+}
+
+$colord: #277a9f;
+$colorm: #37b0e7;
+$colorl: #EFF4F5;
+$boxl: #E4ECE8;
+$boxd: #9AAACD;
+$text: #647B83;
+$work: 'work_sansregular', 'Helvetica Neue', Helvetica, Arial, Geneva, sans-serif;
+
+:root {
+  font-family: $work;
+}
+
+header {
+  // Put this border back after the "sticky banner" is eventually removed.
+  // border-top: 4px solid $colorm;
+  background: $boxl;
+  background: -webkit-linear-gradient(left, $boxl, $boxd);
+  background: -moz-linear-gradient(left, $boxl, $boxd);
+  background: linear-gradient(to right, $boxl, $boxd);
+  padding: 0px;
+
+  // This sticky banner should be removed when the v1 support window ends.
+  section.sticky-banner {
+    background: $colorm;
+    color: #ffffff;
+    font-size: 0.925em;
+    line-height: 1;
+    padding: 0.75em 0 0.5em;
+    text-align: center;
+    a {
+      color: #ffffff;
+      text-decoration: underline;
+    }
+  }
+
+  // Logo
+  h1  {
+    background: url('../img/brigade.png') no-repeat 0 0;
+    background-size: contain;
+    display: block;
+    font-size: 0;
+    width: 197px;
+    height: 78px;
+    margin: 20px 45px 10px 45px;
+  }
+}
+
+// Note that in the Techdoc theme, the menu is NOT a child of the <header>
+// element.
+div.global-menu {
+  background: $boxl;
+  background: -webkit-linear-gradient(left, $boxl, $boxd);
+  background: -moz-linear-gradient(left, $boxl, $boxd);
+  background: linear-gradient(to right, $boxl, $boxd);
+  nav {
+    left: 0;
+    padding-right: 45px;
+    position: absolute;
+    text-align: right;
+    top: 4.75em;
+    width: 100%;
+    ul {
+      li {
+        margin: 0 0 0 30px;
+        a {
+          color: $colord;
+          font-size: 1.125em;
+        }
+      }
+    }
+  }
+}
+
+div.sidebar {
+  background: #f6f9fa;
+  max-width: 300px !important;
+  nav {
+    padding-top: 1em;
+    ul {
+      li {
+        a {
+          border: none;
+          color: $colord;
+          transition: all 0.3s ease-in-out;
+          &:hover {
+            background: $colorl !important;
+            border-left: 0px solid #ccc !important;
+          }
+        }
+        &.active a {
+          background: $colorl !important;
+          border-left: 0px solid #ccc !important;
+          color: $colorm !important;
+        }
+        ul {
+          li {
+            a {
+              color: $text;
+              font-size: 0.95em;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+main {
+  color: $text;
+  margin-left: auto !important;
+  margin-right: auto !important;
+
+  // This styles links in the main body of the page and specifically excludes
+  // header anchor links and links in the footer (which, in the Techdoc theme,
+  // is a child of the <main> element).
+  p:not(.powered), ul, nav.pagination {
+    a {
+      color: $colorm;
+      position: relative;
+      transition: all 0.3s ease-in-out;
+      &:after {
+        background: $colorm;
+        bottom: -2px;
+        content: " ";
+        display: block;
+        height: 3px;
+        left: 50%;
+        opacity: 0;
+        position: absolute;
+        transition: all 0.3s ease-in-out;
+        width: 10%;
+      }
+      &:hover {
+        text-decoration: none;
+      }
+      &:hover:after {
+        left: 0;
+        opacity: 1;
+        width: 100%;
+      }
+    }
+  }
+
+  blockquote {
+    background: $boxl;
+    border-radius: 0.667rem;
+  }
+
+  footer {
+    padding: 4rem 0 1.5rem;
+    a, p {
+      // TODO: This color doesn't seem to be applied.
+      color: #aaa;
+    }
+    a {
+      text-decoration: underline;
+    }
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: $work;
+  }
+  
+  h1 {
+    color: $colord;
+    font-size: 2em;
+  }
+
+  h2 {
+    color: $colorm;
+    font-size: 1.5em;
+  }
+
+  h3 {
+    font-size: 1.17em;
+  }
+
+  h2, h3, h4, h5, h6 {
+    a.headerlink {
+      opacity: 0;
+      transition: all 0.3s ease-in-out;
+    }
+    &:hover {
+      color: $colord;
+      a.headerlink {
+        opacity: 1;
+        left: -1.75em;
+      }
+    }
+  }
+
+  pre {
+    background: $boxl;
+    border-radius: 0.667rem;
+    line-height: 1.4;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+// For wide viewports, prevent the content from getting too wide.
+@media only screen and (min-width: 1300px) {
+  main {
+    max-width: 1000px !important;
+  }
+}
+
+// For viewports narrower than 600px, the logo and the global menu overlap.
+// The global menu isn't actually terribly important, so we just hide it and
+// center the logo. Note that 600px is ABOVE the 480px threshold where we fully
+// swap to the mobile layout.
+@media only screen and (max-width: 600px) {
+  header h1 {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  div.global-menu nav {
+    display: none;
+  }
+}
+
+// For very narrow viewports (small mobile devices, presumably), we push the
+// sidebar menu down below the content and allow the content to use the full
+// width of the viewport.
+@media only screen and (max-width: 480px) {
+  div.sidebar {
+    max-width: auto !important;
+    min-width: 100% !important;
+    nav {
+      border-top: 12px solid #ccc;
+      bottom: auto;
+      left: auto;
+      max-width: auto !important;
+      min-width: 100% !important;
+      overflow-y: auto;
+      position: relative;
+      top: auto;
+      z-index: 1500;
+      ul {
+        padding-bottom: 0.25rem;
+        li {
+          a {
+            line-height: 2.25;
+          }
+        }
+      }
+    }
+  }
+  main {
+    max-width: 100% !important;
+  }
+}
