@@ -56,7 +56,7 @@ returns a `Promise`, and we call that `Promise`'s `then()` method.
 
 Here's what it looks like when the script is run:
 
-```console
+```plain
 $ brig event create --project promises --payload world --follow
 
 Created event "882f832a-c156-4afc-9936-00d3b2d61083".
@@ -188,7 +188,7 @@ receive.
 
 If we run this, we'll see something like this:
 
-```console
+```plain
 $ brig event create --project await --payload world --follow
 
 Created event "69b5713f-b612-434f-9b52-9bcd57f044c5".
@@ -206,7 +206,7 @@ Note, however, we didn't configure the worker to fail when we caught the
 exception in the example above; we simply logged it. Although the `j2` job
 fails, the worker succeeds. We see this when looking at the event afterwards:
 
-```console
+```plain
 $ brig event get --id 69b5713f-b612-434f-9b52-9bcd57f044c5
 
 ID                                  	PROJECT	SOURCE        	TYPE	AGE	WORKER PHASE
@@ -290,7 +290,7 @@ events.process();
 
 If we were to look at the output of these two jobs, we'd see something like this:
 
-```console
+```plain
 $ brig event create --project jobs --payload world --follow
 
 Created event "c4906ec3-fec1-400f-8d8f-89fd6a379475".

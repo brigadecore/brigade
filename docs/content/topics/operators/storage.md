@@ -36,7 +36,7 @@ its default configured as NFS (Network File System). Therefore, NFS will need
 to be deployed on the same Kubernetes cluster as Brigade. You can use the
 [NFS Server Provisioner][NFS] chart for this purpose:
 
-```console
+```shell
 $ helm repo add stable ttps://charts.helm.sh/stable
 $ helm install nfs stable/nfs-server-provisioner \
   --create-namespace --namespace nfs

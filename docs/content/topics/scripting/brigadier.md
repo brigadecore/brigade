@@ -97,7 +97,7 @@ Then, create a `package.json` file with our brigadier dependency added:
 
 Next, fetch the brigadier dependency (and in turn, its dependencies):
 
-```console
+```plain
 $ npm install
 
 added 3 packages, and audited 4 packages in 1s
@@ -108,7 +108,7 @@ found 0 vulnerabilities
 Now we're ready to run our Brigade script in a development capacity, using only
 the core `brigadier` library: 
 
-```console
+```plain
 $ node brigade.js
 No dummy event file provided
 Generating a dummy event

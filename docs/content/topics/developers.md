@@ -43,7 +43,7 @@ The first step to begin developing on Brigade is to clone the repo locally,
 if you haven't already done so.  First navigate to your preferred work
 directory and then issue the clone command:
 
-```console
+```shell
 # Clone via ssh:
 $ git clone git@github.com:brigadecore/brigade.git
 
@@ -54,13 +54,13 @@ $ git clone https://github.com/brigadecore/brigade.git
 After cloning the project locally, you should run this command to
 [configure the remote](https://help.github.com/articles/configuring-a-remote-for-a-fork/): 
 
-```console
+```shell
 $ git remote add fork https://github.com/<your GitHub username>/brigade
 ```
 
 To push your changes to your fork, run:
 
-```console
+```shell
 $ git push --set-upstream fork <branch>
 ```
 
@@ -97,32 +97,32 @@ Windows Subsystem for Linux 2.  See more details
 
 To run lint checks:
 
-```console
+```shell
 $ make lint-go
 ```
 
 To run the unit tests:
 
-```console
+```shell
 $ make test-unit-go
 ```
 ## Working with JS Code (for the Brigade Worker)
 
 To lint the Javascript files:
 
-```console
+```shell
 $ make lint-js
 ```
 
 To run the tests:
 
-```console
+```shell
 $ make test-unit-js
 ```
 
 To clear the JS dependency cache:
 
-```console
+```shell
 $ make clean-js
 ```
 
@@ -138,33 +138,33 @@ the corresponding publishing flags added.
 
 To build all of the source, run:
 
-```console
+```shell
 $ make build
 ```
 
 To build just the Docker images, run:
 
-```console
+```shell
 $ make build-images
 ```
 
 To build images via Docker directly and preserve images in the Docker cache,
 run:
 
-```console
+```shell
 $ make hack-build-images
 ```
 
 To build all of the supported client binaries (for Mac, Linux, and Windows on
 amd64), run:
 
-```console
+```shell
 $ make build-cli
 ```
 
 To build only the client binary for your current environment, run:
 
-```console
+```shell
 $ make hack-build-cli
 ```
 
@@ -182,27 +182,27 @@ The following, for instance, will build images that can be pushed to the
 specified). Here we use the targets that utilize Docker directly, so that the
 images exist in the local cache: 
 
-```console
+```shell
 $ DOCKER_ORG=krancour make hack-build-images
 ```
 
 To build for the `krancour` org on a different registry, such as `quay.io`:
 
-```console
+```shell
 $ DOCKER_REGISTRY=quay.io DOCKER_ORG=krancour make hack-build-images
 ```
 
 Now you can push these images.  Note also that you _must_ be logged into the
 registry in question _before_ attempting this.
 
-```console
+```shell
 $ make hack-push-images
 ```
 
 Otherwise, when using the kaniko-based targets, the images will be built and
 pushed in one go.  Be sure to export the same registry/org values as above:
 
-```console
+```shell
 $ DOCKER_REGISTRY=quay.io DOCKER_ORG=krancour make push-images
 ```
 
@@ -215,7 +215,7 @@ Start Minikube with the following required addons enabled:
 
 To view all Minikube addons:
 
-```console
+```shell
 $ minikube addons list
 ```
 
@@ -224,7 +224,7 @@ Additionally, for local development, it will be efficient to enable the
 details in the [registry addon docs].  Here is an example on how to enable
 the addon and redirect port 5000 on the Docker VM over to the Minikube machine:
 
-```console
+```shell
 $ minikube addons enable registry
 $ docker run -d --rm --network=host alpine ash \
   -c "apk add socat && socat TCP-LISTEN:5000,reuseaddr,fork TCP:$(minikube ip):5000"
@@ -233,14 +233,14 @@ $ docker run -d --rm --network=host alpine ash \
 Now to build and push images to the local registry and deploy Brigade, simply
 run:
 
-```console
+```shell
 $ export DOCKER_REGISTRY=localhost:5000
 $ make hack
 ```
 
 During active development, the overall flow might then look like this:
 
-```console
+```shell
 $ # make code changes, commit
 $ make hack
 $ # (repeat)
@@ -251,7 +251,7 @@ For finer-grained control over installation, you may opt to create a custom
 `values.yaml` file for the chart and set various values in addition to the
 latest image tags:
 
-```console
+```shell
 $ helm inspect values charts/brigade > myvalues.yaml
 $ open myvalues.yaml    # Change all `registry:` and `tag:` fields as appropriate
 ```
@@ -259,13 +259,13 @@ $ open myvalues.yaml    # Change all `registry:` and `tag:` fields as appropriat
 From here, you can install or upgrade Brigade into Minikube using the Helm
 directly:
 
-```console
+```shell
 $ helm upgrade --install -n brigade brigade charts/brigade -f myvalues.yaml
 ```
 
 To expose the apiserver port, run the following command:
 
-```console
+```shell
 $ make hack-expose-apiserver
 ```
 
@@ -275,7 +275,7 @@ follow the steps provided in the `Notes` section after deployment.
 
 You can then log in to the apiserver with the following `brig` command:
 
-```console
+```shell
 $ brig login -s https://localhost:7000 -r -p <root user password> -k
 ```
 
@@ -295,14 +295,14 @@ script that will create a new kind cluster with a local private registry
 enabled. It also configures nfs as the local storage provisioner and maps
 `localhost:31600` to the API server port. To use this script, run:
 
-```console
+```shell
 $ make hack-new-kind-cluster
 ```
 
 Now you're ready to build and push images to the local registry and deploy
 Brigade:
 
-```console
+```shell
 $ export DOCKER_REGISTRY=localhost:5000
 $ make hack
 ```
@@ -313,7 +313,7 @@ value is hard-coded to `F00Bar!!!`.
 
 You can then log in to the apiserver with the following `brig` command:
 
-```console
+```shell
 $ brig login -s https://localhost:31600 -r -p 'F00Bar!!!' -k
 ```
 
@@ -323,7 +323,7 @@ see how it's done.
 When you're done, if you'd like to clean up the kind cluster and registry
 resources, run the following commands:
 
-```console
+```shell
 $ kind delete cluster --name brigade
 $ docker rm -f kind-registry
 ```
@@ -353,7 +353,7 @@ the following checks:
 
 To run the tests, issue the following command:
 
-```console
+```shell
 $ make test-integration
 ```
 

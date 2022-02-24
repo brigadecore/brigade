@@ -151,7 +151,7 @@ events.process();
 Here is the output when we create an event via `brig` for a project using this
 script (plus `logLevel: DEBUG`):
 
-```console
+```plain
 $ brig event create --project dependencies --follow
 
 Created event "8aa3c5dd-a685-493a-a366-a6183a9e2650".

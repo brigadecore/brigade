@@ -59,7 +59,7 @@ environments:
 
 **Linux**
 
-```bash
+```shell
 $ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.3.1/brig-linux-amd64
 $ chmod +x /usr/local/bin/brig
 ```
@@ -69,14 +69,14 @@ $ chmod +x /usr/local/bin/brig
 The popular [Homebrew](https://brew.sh/) package manager provides the most
 convenient method of installing the Brigade CLI on a Mac:
 
-```bash
+```shell
 $ brew install brigade-cli
 ```
 
 Alternatively, you can install manually by directly downloading a pre-built
 binary:
 
-```bash
+```shell
 $ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.3.1/brig-darwin-amd64
 $ chmod +x /usr/local/bin/brig
 ```
@@ -105,7 +105,7 @@ To install server-side components on your local, development-grade cluster:
 1. Enable Helm's experimental OCI support:
 
     **POSIX**
-    ```bash
+    ```shell
     $ export HELM_EXPERIMENTAL_OCI=1
     ```
 
@@ -116,7 +116,7 @@ To install server-side components on your local, development-grade cluster:
 
 1. Run the following commands to install Brigade with default configuration:
 
-    ```
+    ```shell
     $ helm install brigade \
         oci://ghcr.io/brigadecore/brigade \
         --version v2.3.1 \
@@ -137,7 +137,7 @@ Since you are running Brigade locally, use port forwarding to make the Brigade
 API available via the local network interface:
 
 **POSIX**
-```bash
+```shell
 $ kubectl --namespace brigade port-forward service/brigade-apiserver 8443:443 &>/dev/null &
 ```
 
@@ -154,7 +154,7 @@ To authenticate to Brigade as the root user, you first need to acquire the
 auto-generated root user password:
 
 **POSIX**
-```bash
+```shell
 $ export APISERVER_ROOT_PASSWORD=$(kubectl get secret --namespace brigade brigade-apiserver --output jsonpath='{.data.root-user-password}' | base64 --decode)
 ```
 
@@ -166,7 +166,7 @@ $ export APISERVER_ROOT_PASSWORD=$(kubectl get secret --namespace brigade brigad
 Then:
 
 **POSIX**
-```bash
+```shell
 $ brig login --insecure --server https://localhost:8443 --root --password "${APISERVER_ROOT_PASSWORD}"
 ```
 
@@ -190,7 +190,7 @@ subscriptions with worker (event handler) configuration.
 1. Rather than create a project definition from scratch, we'll accelerate the
    process using the `brig init` command:
 
-    ```console
+    ```shell
     $ mkdir first-project
     $ cd first-project
     $ brig init --id first-project
@@ -239,13 +239,13 @@ subscriptions with worker (event handler) configuration.
 1. The previous command only generated a project definition from a template. We
    still need to upload this definition to Brigade to complete project creation:
 
-    ```console
+    ```shell
     $ brig project create --file .brigade/project.yaml
     ```
 
 1. To see that Brigade now knows about this project, use `brig project list`:
 
-    ```console
+    ```shell
     $ brig project list
 
     ID           	DESCRIPTION                         	AGE
@@ -257,13 +257,13 @@ subscriptions with worker (event handler) configuration.
 With our project defined, we are now ready to manually create an event and watch
 Brigade handle it:
 
-```console
+```shell
 $ brig event create --project first-project --follow
 ```
 
 Below is example output:
 
-```console
+```plain
 Created event "2cb85062-f964-454d-ac5c-526cdbdd2679".
 
 Waiting for event's worker to be RUNNING...
@@ -286,13 +286,13 @@ Waiting for event's worker to be RUNNING...
 If you want to keep your Brigade installation, run the following command to
 remove the example project created in this QuickStart:
 
-```console
+```shell
 $ brig project delete --id first-project
 ```
 
 Otherwise, you can remove _all_ resources created in this QuickStart using:
 
-```console
+```shell
 $ helm delete brigade -n brigade
 ```
 
@@ -322,7 +322,7 @@ one way to recover disk space.
 After you have freed up disk space, remove the bad installation, and then retry
 using the following commands:
 
-```console
+```shell
 $ helm uninstall brigade -n brigade
 $ helm install brigade \
     oci://ghcr.io/brigadecore/brigade \

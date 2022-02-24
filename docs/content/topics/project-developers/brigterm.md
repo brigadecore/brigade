@@ -18,13 +18,13 @@ logs for an event.
 
 To start, log in to the Brigade server that you wish to explore:
 
-```console
+```shell
 $ brig login --server https://my-brigade-server.example.com
 ```
 
 Then, simply invoke the following:
 
-```console
+```shell
 $ brig term
 ```
 

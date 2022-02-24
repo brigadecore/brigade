@@ -46,7 +46,7 @@ lock, unlock and delete users. All of these management functions exist under
 the `brig users` suite of commands. To see the full suite, issue the following
 help command:
 
-```console
+```shell
 $ brig users --help
 ```
 
@@ -61,7 +61,7 @@ Administrators may create, list, get, lock, unlock and delete service accounts.
 All of these management functions exist under the `brig service-accounts` suite
 of commands. To see the full suite, issue the following help command:
 
-```console
+```shell
 $ brig service-accounts --help
 ```
 
@@ -77,7 +77,7 @@ the project-level. All of these management functions exist under the
 `brig roles` or `brig project roles` suites of commands. To see the full
 suites, issue the following help commands:
 
-```console
+```shell
 $ brig roles --help
 $ brig project roles --help
 ```
@@ -99,7 +99,7 @@ Each role is itself a sub-command under `brig role grant` or
 `brig role revoke`. For example, to grant the `ADMIN` role to user `Mary`, the
 following command would be issued:
 
-```console
+```shell
 $ brig role grant ADMIN --user Mary
 ```
 
@@ -122,7 +122,7 @@ Each role is itself a sub-command under `brig project role grant` or
 `brig project role revoke`. For example, to grant the `PROJECT_ADMIN` role to
 user `Mary` for project `Arecibo`, the following command would be issued:
 
-```console
+```shell
 $ brig project role grant ADMIN --id Arecibo --user Mary
 ```
 

@@ -33,7 +33,7 @@ using the [brig] CLI. See the [Quickstart] if you have not already done so.
 
 Then, each example project can be created like so:
 
-```console
+```shell
 $ brig project create -f examples/<project>/project.yaml
 ```
 
@@ -59,7 +59,7 @@ console.log("Hello, World!");
 
 First let's create the example project:
 
-```console
+```plain
 $ brig project create --file examples/01-hello-world/project.yaml
 
 Created project "hello-world".
@@ -73,7 +73,7 @@ configured under the `eventSubscriptions` section of its definition file
 Next, let's trigger execution of the project script by creating an event of
 this type:
 
-```console
+```plain
 $ brig event create --project hello-world --follow
 
 Created event "261229dc-1140-4f6a-bf91-bd2a69f31721".
@@ -134,7 +134,7 @@ There are a few things to note about this script:
 Similarly to our first script, this event handler function displays a message
 to a log, producing the following output:
 
-```console
+```plain
 $ brig event create --project first-event --follow
 
 Created event "5b0bd00a-4f31-40da-ad01-0d2f62f4d70e".
@@ -235,7 +235,7 @@ the beginning, we explained that we think of Brigade scripts as "shell scripts
 for your cluster." When you execute a shell script, it is typically some glue
 code that manages calling one or more external programs in a specific way.
 
-```bash
+```shell
 #!/bin/bash
 
 ps -ef "hello" | grep chrome
@@ -270,8 +270,8 @@ state.
 
 If we run the code above, we'll get output that looks something like this:
 
-```console
-$ b event create --project first-job --follow
+```plain
+$ brig event create --project first-job --follow
 
 Created event "aa8fff14-0b8d-4903-9109-ccadc1d9d3fe".
 
@@ -323,7 +323,7 @@ associated with the project or adding it to a [custom Worker image]).
 
 Let's run the example:
 
-```console
+```plain
 $ brig event create --project first-job --follow
 
 Created event "046c09cd-76cb-49ea-b40c-d3e0e557de62".
@@ -336,7 +336,7 @@ Waiting for event's worker to be RUNNING...
 Now, to see the logs from `my-first-job`, we issue the following brig command
 utilizing the generated event ID.
 
-```console
+```plain
 $ brig event logs --id 046c09cd-76cb-49ea-b40c-d3e0e557de62 --job my-first-job
 
 My first job!
@@ -505,7 +505,7 @@ console.log("Hello, Git!");
 
 Let's run the example:
 
-```console
+```plain
 $ brig event create --project git --follow
 
 Created event "5ff386ed-060e-49fa-8292-0bade75f8840".
@@ -619,7 +619,7 @@ events.process();
 When we create an event with a payload for the script above, we'll see output
 like this:
 
-```console
+```plain
 $ brig event create --project first-payload --payload "Brigade" --follow
 
 Created event "05e31d97-945b-4727-b710-7d983d137d40".
@@ -644,7 +644,7 @@ events.process();
 
 The following output is generated:
 
-```console
+```plain
 $ brig event create --project first-payload --payload "Brigade" --follow
 
 Created event "b45720c4-115c-4c9b-b668-a872479f2210".
@@ -703,7 +703,7 @@ events.process();
 ```
 [08-shared-workspace](https://github.com/brigadecore/brigade/tree/main/examples/08-shared-workspace)
 
-```console
+```plain
 $ brig event create --project shared-workspace
 
 Created event "2eee9044-4469-49bd-a58b-aa659951a502".
@@ -800,7 +800,7 @@ events.process();
 
 Here's the output from creating an event and then looking at the job logs:
 
-```console
+```plain
 $ brig event create --project dind --follow
 
 Created event "94d0fcd5-61dc-49be-bb81-3e5784e66a4a".
@@ -824,7 +824,7 @@ docker.io/library/busybox:latest
 
 Note we could also take a look at the sidecar container logs on the job like so:
 
-```console
+```plain
 $ brig event logs --id 94d0fcd5-61dc-49be-bb81-3e5784e66a4a --job dind --container docker
 
 time="2021-09-23T19:00:11.230907700Z" level=info msg="Starting up"
@@ -874,7 +874,7 @@ events.process();
 
 Here's the output when we create an event for the script above:
 
-```console
+```plain
 $ brig event create --project dood --follow
 
 Created event "283be00c-5481-43ae-8634-bd9bd194488b".
