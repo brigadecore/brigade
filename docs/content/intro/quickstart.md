@@ -14,16 +14,11 @@ install Brigade with default configuration on a local, development-grade
 cluster, create a project and an event, watch Brigade handle that event, then
 clean up.
 
-If you prefer learning through video, check out the [video adaptation](https://www.youtube.com/watch?v=VFyvYOjm6zc) of this QuickStart guide on our YouTube channel.
-
-> ⚠️ Note that the default configuration is appropriate only for evaluating
-> Brigade on a local, development-grade cluster and is not appropriate for _any_
-> shared cluster -- _especially a production one_. See our
-> [Deployment Guide](/topics/operators/deploy/) for instructions suitable for
-> shared or production clusters.
+If you prefer learning through video, check out the
+[video adaptation](https://www.youtube.com/watch?v=VFyvYOjm6zc) of this guide on
+our YouTube channel.
 
 * [Prerequisites](#prerequisites)
-  * [Create a KinD Cluster](#create-a-kind-cluster)
 * [Install Brigade](#install-brigade)
   * [Install the Brigade CLI](#install-the-brigade-cli)
   * [Install Server-Side Components](#install-server-side-components)
@@ -38,67 +33,18 @@ If you prefer learning through video, check out the [video adaptation](https://w
 
 ## Prerequisites
 
-* [A local, development-grade Kubernetes v1.16.0+ cluster](#create-a-kind-cluster)
+> ⚠️ The default configuration used in this guide is appropriate only for
+> evaluating Brigade on a local, development-grade cluster and is not
+> appropriate for _any_ shared cluster -- _especially a production one_. See our
+> [Deployment Guide](/topics/operators/deploy/) for instructions suitable for
+> shared or production clusters. We have tested these instructions on a local
+> [KinD](https://kind.sigs.k8s.io/) cluster.
+
+* A local, _development-grade_ Kubernetes v1.16.0+ cluster
 * [Helm v3.7.0+](https://helm.sh/docs/intro/install/)
 * [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
 * Free disk space. The installation requires sufficient free disk space and will
   fail if your disk is nearly full.
-
-### Create a KinD Cluster
-
-If you do not already have a local, development-grade cluster, we recommend
-using [KinD]. KinD runs an entire Kubernetes cluster locally within a
-[Docker](https://docs.docker.com/get-docker/) container.
-([Minikube](https://minikube.sigs.k8s.io/docs/start/) also works well for local
-development, but isn't covered in this guide.)
-
-1. Ensure that Docker is running on your machine. For example, `docker ps`
-   should return a list of running containers.
-
-1. Install [KinD]. See the KinD documentation for full installation
-   instructions. Below are instructions for common environments:
-
-    **Linux**
-    ```bash
-    $ curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
-    $ chmod +x ./kind
-    $ mv ./kind /usr/local/bin
-    ```
-
-    **macOS with Homebrew**
-    ```bash
-    $ brew install kind
-    ```
-
-    **Windows**
-    ```powershell
-    > mkdir -force $env:USERPROFILE\bin
-    > (New-Object Net.WebClient).DownloadFile("https://kind.sigs.k8s.io/dl/v0.11.1/kind-windows-amd64", "$ENV:USERPROFILE\bin\kind.exe")
-    > $env:PATH+=";$env:USERPROFILE\bin"
-    ```
-
-    The script above downloads `kind.exe` and adds it to your `PATH` for the
-    current session. Add the following line to your
-    [PowerShell Profile](https://www.howtogeek.com/126469/how-to-create-a-powershell-profile/)
-    if you want to make the change permanent:
-
-    ```powershell
-    > $env:PATH+=";$env:USERPROFILE\bin"
-    ```
-
-1. Create a Kubernetes cluster by running the following command:
-
-    ```console
-    $ kind create cluster
-    ```
-
-1. Verify that you can connect to the cluster using `kubectl`:
-
-    ```console
-    $ kubectl cluster-info
-    ```
-
-[KinD]: https://kind.sigs.k8s.io/docs/user/quick-start/
 
 ## Install Brigade
 
@@ -344,12 +290,11 @@ remove the example project created in this QuickStart:
 $ brig project delete --id first-project
 ```
 
-Otherwise, you can remove _all_ resources created in this QuickStart by either:
+Otherwise, you can remove _all_ resources created in this QuickStart using:
 
-* Deleting the KinD cluster that you created at the beginning with `kind delete
-  cluster --name kind-kind` OR
-* Preserving the cluster and uninstalling Brigade with
-  `helm delete brigade -n brigade`
+```console
+$ helm delete brigade -n brigade
+```
 
 ## Next Steps
 
