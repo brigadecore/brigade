@@ -29,13 +29,13 @@ command:
 
  * Set a secret in-line:
 
-  ```console
+  ```shell
   $ brig project secret set --project my-project --set foo=bar
   ```
 
   * Setting a secret via a `secrets.yaml` file:
 
-  ```console
+  ```shell
   $ echo "foo: bar" >> ./secrets.yaml
   $ brig project secret set --project my-project --file ./secrets.yaml
   ```
@@ -65,7 +65,7 @@ events.process();
 
 Here is the output when this event is handled:
 
-```console
+```plain
 $ brig event create --project my-project --follow
 
 Created event "8b44098e-cd4a-416c-9d4e-b361ff300409".
@@ -185,7 +185,7 @@ dedicated to a project for use by that project's Worker/Jobs.
 As a reminder, a project's namespace can be found under `kubernetes.namespace`
 when inspecting a project via:
 
-```console
+```shell
 $ brig project get --id <project name> -o yaml
 ```
 

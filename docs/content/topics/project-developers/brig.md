@@ -32,7 +32,7 @@ You can also build brig from source; see the [Developers] guide for more info.
 
 **linux**
 
-```bash
+```shell
 curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.3.1/brig-linux-amd64
 chmod +x /usr/local/bin/brig
 ```
@@ -42,24 +42,24 @@ chmod +x /usr/local/bin/brig
 The popular [Homebrew](https://brew.sh/) package manager provides the most
 convenient method of installing the Brigade CLI on a Mac:
 
-```bash
+```shell
 $ brew install brigade-cli
 ```
 
 Alternatively, you can install manually by directly downloading a pre-built
 binary:
 
-```bash
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.3.1/brig-darwin-amd64
-chmod +x /usr/local/bin/brig
+```shell
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.3.1/brig-darwin-amd64
+$ chmod +x /usr/local/bin/brig
 ```
 
 **windows**
 
 ```powershell
-mkdir -force $env:USERPROFILE\bin
-(New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.3.1/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
-$env:PATH+=";$env:USERPROFILE\bin"
+> mkdir -force $env:USERPROFILE\bin
+> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.3.1/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+> $env:PATH+=";$env:USERPROFILE\bin"
 ```
 
 The script above downloads brig.exe and adds it to your PATH for the current
@@ -67,7 +67,7 @@ session. Add the following line to your [PowerShell Profile] to make the change
 permanent.
 
 ```powershell
-$env:PATH+=";$env:USERPROFILE\bin"
+> $env:PATH+=";$env:USERPROFILE\bin"
 ```
 
 [releases]: https://github.com/brigadecore/brigade/releases
@@ -91,7 +91,7 @@ include:
 Type any of these commands to get a help menu and start digging deeper into the
 full selection of functionality that each provides. For example:
 
-```console
+```plain
  $ brig event
 
 NAME:

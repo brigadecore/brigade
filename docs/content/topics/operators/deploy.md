@@ -58,7 +58,7 @@ cluster, view our [QuickStart](/intro/quickstart/) instead.
 1. Enable Helm's experimental OCI support:
 
     **POSIX**
-    ```bash
+    ```shell
     $ export HELM_EXPERIMENTAL_OCI=1
     ```
 
@@ -73,7 +73,7 @@ cluster, view our [QuickStart](/intro/quickstart/) instead.
    the remainder of this document, but if you save it to a different location,
    make the appropriate substitutions wherever you see that path.
 
-```console
+```shell
 $ helm inspect values oci://ghcr.io/brigadecore/brigade \
     --version v2.3.1 > ~/brigade-values.yaml
 ```
@@ -299,7 +299,7 @@ tune. The file itself is liberally commented with detailed instructions.
 Finally, it's time. With `~/brigade-values.yaml` updated with configuration
 suitable for production, we can proceed with installation:
 
-```console
+```shell
 $ helm install brigade \
     oci://ghcr.io/brigadecore/brigade \
     --version v2.3.1 \
@@ -322,7 +322,7 @@ server. Which of these is applicable depends on the choice you made in the
 * If you are _not_ using an ingress controller to route inbound traffic to your
   API server, use the following command to determine the API server's public IP:
 
-  ```console
+  ```shell
   $ kubectl get svc brigade-apiserver --namespace brigade \
       --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
   ```
@@ -335,7 +335,7 @@ server. Which of these is applicable depends on the choice you made in the
   determination for our own cluster's
   [Nginx Ingress Controller](https://kubernetes.github.io/ingress-nginx/):
 
-  ```console
+  ```shell
   $ kubectl get svc nginx-ingress-nginx-controller --namespace nginx \
       --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
   ```
@@ -359,7 +359,7 @@ instructions for common environments:
 
 **Linux**
 
-```bash
+```shell
 $ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.3.1/brig-linux-amd64
 $ chmod +x /usr/local/bin/brig
 ```
@@ -369,14 +369,14 @@ $ chmod +x /usr/local/bin/brig
 The popular [Homebrew](https://brew.sh/) package manager provides the most
 convenient method of installing the Brigade CLI on a Mac:
 
-```bash
+```shell
 $ brew install brigade-cli
 ```
 
 Alternatively, you can install manually by directly downloading a pre-built
 binary:
 
-```bash
+```shell
 $ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.3.1/brig-darwin-amd64
 $ chmod +x /usr/local/bin/brig
 ```
@@ -403,7 +403,7 @@ if you want to make the change permanent:
 Now you're ready to log in to Brigade! For the server URL value, use the DNS
 hostname configured above. In the example below, we use `brigade.example.com`:
 
-```console
+```shell
 $ brig login --server https://brigade.example.com
 ```
 

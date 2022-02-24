@@ -118,20 +118,20 @@ For example, to initialize a project named `myproject` with default settings,
 which includes TypeScript as the scripting language and no git configuration,
 run the following:
 
-```console
+```shell
 $ brig init --id myproject
 ```
 
 Or, if the alternate scripting language option of JavaScript is preferred, run:
 
-```console
+```shell
 $ brig init --id myproject --language js
 ```
 
 If the project is git-based, supply the git repository name where the Brigade
 script for this project will reside:
 
-```console
+```shell
 $ brig init --id myproject --git https://github.com/<org>/<repo>.git
 ```
 
@@ -148,7 +148,7 @@ With a project definition file in hand, you're now ready to create the project
 with brig. For purposes of demonstration, let's say the `project.yaml` file
 exists in the same directory as the command being run:
 
-```console
+```shell
 $ brig project create --file project.yaml
 ```
 
@@ -161,7 +161,7 @@ the backing database.
 
 You can update a project at any time with the following command:
 
-```console
+```shell
 $ brig project update --file project.yaml
 ```
 
@@ -169,7 +169,7 @@ $ brig project update --file project.yaml
 
 To delete a project, run:
 
-```console
+```shell
 $ brig project delete --id myproject
 ```
 
@@ -177,14 +177,14 @@ $ brig project delete --id myproject
 
 You can list all projects via:
 
-```console
+```shell
 $ brig project list
 ```
 
 You can also directly inspect your project with `brig project get`. To see the
 full project definition, add `--output [yaml|json]`:
 
-```console
+```shell
 $ brig project get --id myproject --output yaml
 ```
 
@@ -193,7 +193,7 @@ $ brig project get --id myproject --output yaml
 To manage project secrets, the `brig project secret` suite of commands can be
 used. For example, to set secrets for a project via a secrets file, run:
 
-```console
+```shell
 $ brig project secret set --file secrets.yaml
 ```
 
@@ -214,7 +214,7 @@ inspect resources under a project namespace on the substrate, to see which
 unique namespace a project is assigned, run the `brig project get` command and
 note the `kubernetes.namespace` value.  For example:
 
-```console
+```plain
 $ brig project get --id hello-world --output yaml
 
 apiVersion: brigade.sh/v2
@@ -262,7 +262,7 @@ gitSSHKey: |-
 
 The project secrets can then be updated via the usual brig command:
 
-```console
+```shell
 $ brig project secrets set --file secrets.yaml
 ```
 

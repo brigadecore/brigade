@@ -171,7 +171,7 @@ Brigade when submitting an event into the system. As preparation, we'll create
 a service account for this gateway and save the generated token for use in our
 program.
 
-```console
+```shell
 $ brig service-account create \
 	--id example-gateway \
 	--description example-gateway
@@ -182,7 +182,7 @@ your only opportunity to access this value, as Brigade does not save it.
 
 Authorize this service account to create new events of a given source:
 
-```console
+```shell
 $ brig role grant EVENT_CREATOR \
     --service-account example-gateway \
     --source example.org/example-gateway
@@ -208,7 +208,7 @@ Let's create a directory where our program's `main.go` file can reside and
 perform bootstrapping for our Go program, including initializing its Go module
 and fetching the Brigade SDK dependency:
 
-```console
+```shell
 $ mkdir example-gateway
 $ cd example-gateway
 $ go mod init example-gateway
@@ -381,7 +381,7 @@ spec:
 We can save this to `project.yaml` and create it in Brigade via the following
 command:
 
-```console
+```shell
 $ brig project create --file project.yaml
 ```
 
@@ -391,7 +391,7 @@ Now that we have a project subscribing to events from this gateway, we're ready
 to run our program! We export the values required by the gateway and then run
 it:
 
-```console
+```shell
 $ export APISERVER_ADDRESS=<Brigade API server address>
 
 $ export API_TOKEN=<Brigade service account token from above>
@@ -403,7 +403,7 @@ Event created with ID 46a40cff-0689-466a-9cab-05f4bb9ef9f1
 Finally, we can inspect the logs to verify the event was processed by the
 worker successfully and that the event payload came through:
 
-```console
+```shell
 $ brig event logs --id 46a40cff-0689-466a-9cab-05f4bb9ef9f1
 
 2021-08-13T22:10:12.726Z INFO: brigade-worker version: 0d7546a

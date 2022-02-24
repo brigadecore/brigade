@@ -118,7 +118,7 @@ project would be the following:
 When the custom worker code is ready to be used in Brigade, the next step is to
 build a Docker image from your `Dockerfile`.
 
-```console
+```shell
 $ docker build -t myregistry/myworker:latest .
 $ docker push myregistry/myworker:latest
 ```
