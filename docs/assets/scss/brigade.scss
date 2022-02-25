@@ -67,7 +67,7 @@ div.global-menu {
     padding-right: 45px;
     position: absolute;
     text-align: right;
-    top: 4.75em;
+    top: 3.75em;
     width: 100%;
     ul {
       li {
@@ -75,6 +75,23 @@ div.global-menu {
         a {
           color: $colord;
           font-size: 1.125em;
+        }
+      }
+    }
+    ul.language-list {
+      li {
+        margin: 0;
+        a {
+          font-size: 0.9em;
+        }
+      }
+      li:not(:last-of-type) {
+        a {
+          font-size: 0.9em;
+          &:after {
+            margin: 0 15px;
+            content: "|";
+          }
         }
       }
     }
