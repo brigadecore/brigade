@@ -1,34 +1,9 @@
-<meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-{{- if eq .Title "" }}
-<title>{{ .Site.Title }}</title>
+{{- if .Site.IsServer -}}
+<!-- only production, not generate Google Analytics with Hugo’s built-in server -->
 {{- else }}
-<title>{{ .Title }} - {{ .Site.Title }}</title>
-{{- end }}
-{{- if ne .Description "" }}
-<meta name="description" content="{{ .Description }}">
-{{- else if isset .Site.Params "description" }}
-<meta name="description" content="{{ .Site.Params.description }}">
-{{- end }}
-{{ .Hugo.Generator }}
-<link href="{{ .Site.BaseURL }}index.xml" rel="alternate" type="application/rss+xml">
-<link rel="canonical" href="{{ .Permalink }}">
-
-{{ $style := resources.Get "scss/theme.scss" | toCSS | minify | fingerprint }} 
-<link rel="stylesheet" href="{{ $style.RelPermalink }}" emotion="🤩">
-
-{{- range $i := .Site.Params.faviconSizes }} 
-{{- $favicon := resources.Get "img/favicon.png" }} 
-{{- $image := $favicon.Resize (printf "%dx%d" $i $i) }}
-<link rel="icon" type="image/png" sizes="{{$i}}x{{$i}}" href="{{ $image.Permalink }}"/>
-{{- end }} 
-{{- with resources.Get "img/favicon.png" }} 
-{{- $image := .Resize "180x180" }}
-<link rel="apple-touch-icon" sizes="180x180" href="{{ $image.Permalink }}" />
-{{- end }}
-
-<!-- load google analytics only after user grants consent -->
+{{- with .Site.Params.google_analytics_id -}}
+<!-- BEGIN: Google Analytics -->
+<!-- Load google analytics only after user grants consent -->
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.1/cookieconsent.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.1/cookieconsent.min.js" data-cfasync="false"></script>
 <script>
@@ -69,17 +44,16 @@
     });
   });
 
-  //it is absolutely crucial to define gtag in the global scope
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', '${UA-130516746-5}', {'anonymize_ip': true});
+  gtag('config', '{{ . }}');
 
   function setCookies() {
       var s = document.createElement('script');
       s.type = "text/javascript"
       s.async = "true";
-      s.src = "https://www.googletagmanager.com/gtag/js?id=${UA-130516746-5}";
+      s.src = "https://www.googletagmanager.com/gtag/js?id={{ . }}";
       var x = document.getElementsByTagName('script')[0];
       x.parentNode.insertBefore(s, x);
   };
@@ -94,3 +68,6 @@
     });
   };
 </script>
+<!-- END: Google Analytics -->
+{{- end -}}
+{{- end -}}

@@ -1,5 +1,5 @@
 ---
-title: Brigade Documentation
+title: Home
 description: Homepage of the Brigade Documentation
 ---
 

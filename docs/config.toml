@@ -1,37 +1,34 @@
 baseURL = "https://docs.brigade.sh/"
 title = "Brigade Docs"
-theme = "techdoc-brigade"
+theme = "hugo-theme-techdoc"
 canonifyURLs = "true"
 relativeURLs = "true"
 
 [params]
   title = "Brigade"
-  description = "Brigade: Event-driven scripting for Kubernetes."
   faviconSizes = [ 16, 32, 48 ]
 
-  # Sidebar menu ordering
+  # Sidebar menu
+  menu_style = "open-menu" # "open-menu" or "slide-menu" or "" blank is as no sidebar
   ordersectionsby = "weight"
 
-# top navigation - project links
-[[menu.main]]
-    name = "Docs"
-    url = "https://docs.brigade.sh"
-    weight = 1
+  # Google Analytics
+  google_analytics_id = "UA-130516746-5"
 
 [[menu.main]]
-    name = "Examples"
-    url = "https://github.com/brigadecore/brigade/tree/main/examples"
-    weight = 2
+    name = "Brigade Home"
+    url = "https://brigade.sh"
+    weight = 1
 
 [[menu.main]]
     name = "Blog"
     url = "https://blog.brigade.sh"
-    weight = 3
+    weight = 2
 
 [[menu.main]]
-    name = "Github"
+    name = "GitHub"
     url = "https://github.com/brigadecore/brigade"
-    weight = 4
+    weight = 3
 
 [markup]
   [markup.highlight]
