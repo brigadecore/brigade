@@ -1,0 +1,13 @@
+[settings]
+  ID = "porter"
+
+[build]
+  base = "docs/"
+  publish = "docs/public/"
+  command = "hugo"
+
+[build.environment]
+  HUGO_VERSION = "0.92.0"
+  
+[context.deploy-preview]
+  command = "hugo -b $DEPLOY_PRIME_URL"
