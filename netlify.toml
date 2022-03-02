@@ -1,6 +1,3 @@
-[settings]
-  ID = "porter"
-
 [build]
   base = "docs/"
   publish = "docs/public/"
