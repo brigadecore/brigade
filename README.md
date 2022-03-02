@@ -43,11 +43,8 @@ and convert them to Brigade events that are emitted into Brigade's event bus.
 
 ### Other Event Sources
 
-* [Cron-Event-Source](https://github.com/brigadecore/brigade-cron-event-source)
+* [Cron Event Source](https://github.com/brigadecore/brigade-cron-event-source)
 * [Brigade Noisy Neighbor](https://github.com/brigadecore/brigade-noisy-neighbor)
-  (The Brigade team is utilizing "Brigade Noise Neighbor" to keep our own internal 
-  Brigade installation under a steady load. We hope the larger event volumes than 
-  what we generate on our own will help us to identify and resolve bugs sooner.)
 
 ### Monitoring
 
