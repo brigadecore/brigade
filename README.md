@@ -41,25 +41,22 @@ and convert them to Brigade events that are emitted into Brigade's event bus.
 * [GitHub Gateway](https://github.com/brigadecore/brigade-github-gateway)
 * [Slack Gateway](https://github.com/brigadecore/brigade-slack-gateway)
 
+### Other Event Sources
+
+* [Cron Event Source](https://github.com/brigadecore/brigade-cron-event-source)
+* [Brigade Noisy Neighbor](https://github.com/brigadecore/brigade-noisy-neighbor)
+
 ### Monitoring
 
 [Brigade Metrics](https://github.com/brigadecore/brigade-metrics) is a great way
 to obtain operational insights into a Brigade installation.
-
-### Chaos Engineering
-
-The Brigade team is utilizing
-[Brigade Noisy Neighbor](https://github.com/brigadecore/brigade-noisy-neighbor)
-to keep our own internal Brigade installation under a steady load. We hope the
-larger event volumes than what we generate on our own will help us to identify
-and resolve bugs sooner.
 
 ### SDKs
 
 Use any of these to develop your own integrations!
 
 * [Brigade SDK for Go](https://github.com/brigadecore/brigade/tree/main/sdk) (used by Brigade itself)
-* [Brigade SDK for JavaScript](https://github.com/krancour/brigade-sdk-for-js) (and TypeScript)]
+* [Brigade SDK for JavaScript](https://github.com/krancour/brigade-sdk-for-js) (and TypeScript)
 
 ## Contributing
 
