@@ -2,7 +2,7 @@ import { events, Event, Job, ConcurrentGroup, SerialGroup, Container } from "@br
 
 const azImg = "mcr.microsoft.com/azure-cli"
 const goImg = "brigadecore/go-tools:v0.6.0"
-const jsImg = "node:16.11.0-bullseye"
+const jsImg = "node:16.14.0-bullseye"
 const dindImg = "docker:20.10.9-dind"
 const dockerClientImg = "brigadecore/docker-tools:v0.1.0"
 const helmImg = "brigadecore/helm-tools:v0.4.0"
