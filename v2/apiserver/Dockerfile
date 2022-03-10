@@ -18,8 +18,7 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
   -ldflags "-w -X github.com/brigadecore/brigade-foundations/version.version=$VERSION -X github.com/brigadecore/brigade-foundations/version.commit=$COMMIT" \
   ./apiserver
 
-FROM scratch
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+FROM gcr.io/distroless/static:nonroot
 COPY --from=builder /src/bin/ /brigade/bin/
 COPY v2/apiserver/assets/ /brigade/assets/
 COPY v2/apiserver/schemas/ /brigade/schemas/
