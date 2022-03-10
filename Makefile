@@ -28,7 +28,7 @@ ifneq ($(SKIP_DOCKER),true)
 		-w /workspaces/brigade \
 		$(GO_DEV_IMAGE)
 
-	JS_DEV_IMAGE := node:16.11.0-bullseye
+	JS_DEV_IMAGE := node:16.14.0-bullseye
 
 	JS_DOCKER_CMD := docker run \
 		-it \
@@ -267,14 +267,13 @@ build-git-initializer-windows:
 
 .PHONY: build-%
 build-%:
-	docker login $(DOCKER_REGISTRY) -u $(DOCKER_USERNAME) -p $${DOCKER_PASSWORD}
 	docker buildx build \
 		-f v2/$*/Dockerfile \
 		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
 		-t $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
 		--build-arg VERSION=$(VERSION) \
 		--build-arg COMMIT=$(GIT_VERSION) \
-		--platform linux/amd64,linux/arm64 \
+		--platform linux/amd64,linux/arm64v8 \
 		.
 
 .PHONY: build-cli
@@ -339,7 +338,7 @@ push-%:
 		-t $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
 		--build-arg VERSION=$(VERSION) \
 		--build-arg COMMIT=$(GIT_VERSION) \
-		--platform linux/amd64,linux/arm64 \
+		--platform linux/amd64,linux/arm64v8 \
 		--push \
 		.
 
