@@ -1,4 +1,4 @@
-FROM openjdk:8-jre-bullseye
+FROM $TARGETARCH/alpine:3.15.0
 
 ENV ARTEMIS_VERSION=2.19.0
 ENV ARTEMIS_USERNAME=artemis
@@ -10,20 +10,19 @@ WORKDIR /opt/artemis
 ## by version number. If this build starts breaking, the very likely cause is a
 ## 404 on the download. It can be fixed by upgrading to the latest Artemis or
 ## by changing the download URL.
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    libaio1 \
-    xmlstarlet &&\ 
-  rm -rf /var/lib/apt/lists/* && \
+RUN buildDeps="curl" && \ 
+  apk update && \
+  apk add \
+    $buildDeps \
+    openjdk11-jre \
+    xmlstarlet && \
   curl https://dlcdn.apache.org/activemq/activemq-artemis/${ARTEMIS_VERSION}/apache-artemis-${ARTEMIS_VERSION}-bin.tar.gz \
     -o apache-artemis-${ARTEMIS_VERSION}-bin.tar.gz && \
   tar xzf apache-artemis-${ARTEMIS_VERSION}-bin.tar.gz --strip 1 && \
-  rm apache-artemis-${ARTEMIS_VERSION}-bin.tar.gz && \
+  apk del $buildDeps && \
   mkdir /var/lib/artemis && \
-  groupadd -g 1000 -r artemis && \
-  useradd -r -u 1000 -g artemis artemis && \
+  addgroup -S -g 1000 artemis && \
+  adduser -S -u 1000 artemis -G artemis && \
   chown -R artemis.artemis /var/lib/artemis
 
 COPY v2/artemis/docker-entrypoint.sh /
