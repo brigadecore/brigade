@@ -9,8 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 	"go.mongodb.org/mongo-driver/x/mongo/driver"
-	"go.mongodb.org/mongo-driver/x/mongo/driver/description"
 )
 
 type MockCollection struct {
@@ -180,8 +180,11 @@ func MockSingleResult(obj interface{}) (*mongo.SingleResult, error) {
 
 	// Using the document bytes from above, we build out the underlying guts of
 	// the SingleResult's underlying cursor. This is yuck, but it works nicely.
-	cursorResponse, err :=
-		driver.NewCursorResponse(docBytes, nil, description.Server{})
+	cursorResponse, err := driver.NewCursorResponse(
+		driver.ResponseInfo{
+			ServerResponse: bsoncore.Document(docBytes),
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -225,8 +228,11 @@ func MockCursor(objs ...interface{}) (*mongo.Cursor, error) {
 	if err != nil {
 		return nil, err
 	}
-	cursorResponse, err :=
-		driver.NewCursorResponse(docBytes, nil, description.Server{})
+	cursorResponse, err := driver.NewCursorResponse(
+		driver.ResponseInfo{
+			ServerResponse: bsoncore.Document(docBytes),
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
