@@ -2,13 +2,21 @@
 
 set -o errexit
 
+# Create a non-default bridge network
+network_name=brigade-dev
+docker network inspect ${network_name} &> /dev/null || docker network create ${network_name}
+
 # Create a local Docker image registry that we'll hook up to kind
-reg_name="${KIND_REGISTRY_NAME:-kind-registry}"
+reg_name="${KIND_REGISTRY_NAME:-brigade-dev-registry}"
 reg_port="${KIND_REGISTRY_PORT:-5000}"
 running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
 if [ "${running}" != 'true' ]; then
   docker run \
-    -d --restart=always -p "${reg_port}:5000" --name "${reg_name}" \
+    -d \
+    --restart=always \
+    --network ${network_name} \
+    -p "${reg_port}:5000" \
+    --name "${reg_name}" \
     registry:2
 fi
 
@@ -28,9 +36,8 @@ containerdConfigPatches:
     endpoint = ["http://${reg_name}:5000"]
 EOF
 
-# Make sure the local Docker image registry is connected to the same network
-# as the kind cluster
-docker network connect "kind" "${reg_name}" || true
+# Add kind to our non-default bridge network
+docker network connect ${network_name} brigade-control-plane || true
 
 # Tell each node to use the local Docker image registry
 for node in $(kind --name brigade get nodes); do
