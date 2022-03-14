@@ -888,6 +888,12 @@ func (s *substrate) createWorkerPod(
 				},
 			},
 		},
+		{
+			Name: "vcs",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
 	}
 	if event.Worker.Spec.UseWorkspace {
 		volumes = append(
@@ -909,6 +915,10 @@ func (s *substrate) createWorkerPod(
 			MountPath: "/var/event",
 			ReadOnly:  true,
 		},
+		{
+			Name:      "vcs",
+			MountPath: "/var/vcs",
+		},
 	}
 	if event.Worker.Spec.UseWorkspace {
 		volumeMounts = append(
@@ -923,23 +933,6 @@ func (s *substrate) createWorkerPod(
 
 	initContainers := []corev1.Container{}
 	if event.Worker.Spec.Git != nil && event.Worker.Spec.Git.CloneURL != "" {
-		volumes = append(
-			volumes,
-			corev1.Volume{
-				Name: "vcs",
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-		)
-
-		vcsVolumeMount := corev1.VolumeMount{
-			Name:      "vcs",
-			MountPath: "/var/vcs",
-		}
-
-		volumeMounts = append(volumeMounts, vcsVolumeMount)
-
 		initContainers = []corev1.Container{
 			{
 				Name:  "vcs",
@@ -963,6 +956,8 @@ func (s *substrate) createWorkerPod(
 		)
 	}
 
+	// This is the ID of the nonroot user used by the worker image
+	var nonrootID int64 = 65532
 	workerPod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      myk8s.WorkerPodName(event.ID),
@@ -982,6 +977,11 @@ func (s *substrate) createWorkerPod(
 			ImagePullSecrets:   imagePullSecrets,
 			RestartPolicy:      corev1.RestartPolicyNever,
 			InitContainers:     initContainers,
+			SecurityContext: &corev1.PodSecurityContext{
+				// Force the vcs volume and everything on it to be owned by the nonroot
+				// user
+				FSGroup: &nonrootID,
+			},
 			Containers: []corev1.Container{
 				{
 					Name:            myk8s.LabelKeyWorker,
