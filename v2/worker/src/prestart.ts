@@ -4,6 +4,11 @@ import * as path from "path"
 
 import { Event, logger } from "@brigadecore/brigadier-polyfill"
 
+const nodePath = "/nodejs/bin/node"
+const npmPath = "/var/brigade-worker/worker/node_modules/.bin/npm"
+const yarnPath = "/var/brigade-worker/worker/node_modules/.bin/yarn"
+const tscPath = "/var/brigade-worker/worker/node_modules/.bin/tsc"
+
 logger.info(`brigade-worker version: ${process.env.WORKER_VERSION}`)
 
 const event: Event = require("/var/event/event.json") // eslint-disable-line @typescript-eslint/no-var-requires
@@ -120,7 +125,7 @@ if (packageJSON?.scripts?.run) {
 function yarnInstall(): void {
   logger.debug("installing dependencies using yarn")
   try {
-    execFileSync("yarn", ["install", "--prod"], prepExecOpts)
+    execFileSync(nodePath, [yarnPath, "install", "--prod"], prepExecOpts)
   } catch(e) {
     throw new Error(`error executing yarn install:\n\n${e.output}`)
   }
@@ -129,7 +134,7 @@ function yarnInstall(): void {
 function npmInstall(): void {
   logger.debug("installing dependencies using npm")
   try {
-    execFileSync("npm", ["install", "--prod"], prepExecOpts)
+    execFileSync(nodePath, [npmPath, "install", "--prod"], prepExecOpts)
   } catch(e) {
     throw new Error(`error executing npm install:\n\n${e.output}`)
   }
@@ -138,7 +143,7 @@ function npmInstall(): void {
 function yarnBuild(): void {
   logger.debug("running build script with yarn")
   try {
-    execFileSync("yarn", ["build"], prepExecOpts)
+    execFileSync(nodePath, [yarnPath, "build"], prepExecOpts)
   } catch(e) {
     throw new Error(`error executing yarn build:\n\n${e.output}`)
   } 
@@ -147,7 +152,7 @@ function yarnBuild(): void {
 function npmBuild(): void {
   logger.debug("running build script with npm")
   try {
-    execFileSync("npm", ["run-script", "build"], prepExecOpts)
+    execFileSync(nodePath, [npmPath, "run-script", "build"], prepExecOpts)
   } catch(e) {
     throw new Error(`error executing npm run-script build:\n\n${e.output}`)
   }
@@ -156,7 +161,7 @@ function npmBuild(): void {
 function compileWithTSCConfig() {
   logger.debug("compiling typescript project with configuration from tsconfig.json")
   try {
-    execFileSync("tsc", [], prepExecOpts)
+    execFileSync(nodePath, [tscPath], prepExecOpts)
   } catch(e) {
     throw new Error(`error executing tsc:\n\n${e.output}`)
   }
@@ -165,7 +170,7 @@ function compileWithTSCConfig() {
 function defaultCompile() {
   logger.debug("compiling brigade.ts with flags --target ES6 --module commonjs --esModuleInterop")
   try {
-    execFileSync("tsc", ["--target", "ES6", "--module", "commonjs", "--esModuleInterop", "brigade.ts"], prepExecOpts)
+    execFileSync(nodePath, [tscPath, "--target", "ES6", "--module", "commonjs", "--esModuleInterop", "brigade.ts"], prepExecOpts)
   } catch(e) {
     throw new Error(`error compiling brigade.ts:\n\n${e.output}`)
   }
@@ -174,7 +179,7 @@ function defaultCompile() {
 function yarnRun(): void {
   logger.debug("running script with yarn")
   try {
-    execFileSync("yarn", ["run", "run"], runExecOpts)
+    execFileSync(nodePath, [yarnPath, "run", "run"], runExecOpts)
   } catch(e) {
     throw new Error(`error executing yarn run run:\n\n${e.output}`)
   }
@@ -183,7 +188,7 @@ function yarnRun(): void {
 function npmRun(): void {
   logger.debug("running script with npm")
   try {
-    execFileSync("npm", ["run-script", "run"], runExecOpts)
+    execFileSync(nodePath, [npmPath, "run-script", "run"], runExecOpts)
   } catch(e) {
     throw new Error(`error executing npm run-script run:\n\n${e.output}`)
   }
@@ -192,7 +197,7 @@ function npmRun(): void {
 function nodeRun(): void {
   logger.debug("running node brigade.js")
   try {
-    execFileSync("node", ["brigade.js"], runExecOpts)
+    execFileSync(nodePath, ["brigade.js"], runExecOpts)
   } catch(e) {
     throw new Error(`error executing node brigade.js:\n\n${e.output}`)
   }
