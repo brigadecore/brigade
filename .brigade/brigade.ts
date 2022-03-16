@@ -1,10 +1,10 @@
 import { events, Event, Job, ConcurrentGroup, SerialGroup, Container } from "@brigadecore/brigadier"
 
 const azImg = "mcr.microsoft.com/azure-cli"
-const goImg = "brigadecore/go-tools:v0.6.0"
+const goImg = "brigadecore/go-tools:v0.7.0"
 const jsImg = "node:16.11.0-bullseye"
 const dindImg = "docker:20.10.9-dind"
-const dockerClientImg = "brigadecore/docker-tools:v0.1.0"
+const dockerClientImg = "brigadecore/docker-tools:v0.2.0"
 const helmImg = "brigadecore/helm-tools:v0.4.0"
 const localPath = "/workspaces/brigade"
 
