@@ -32,27 +32,31 @@ export type EventHandler = (event: Event) => void
 
 /**
  * Contains event handler registrations for a script.
- * 
+ *
  * Access the registry through the global `events` object.
  */
 export class EventRegistry {
   protected handlers: { [key: string]: EventHandler } = {}
-  
+
   /**
    * Registers a handler to be run when a particular kind of event occurs.
    * When Brigade receives a matching event, it will run the specified
    * handler.
-   * 
+   *
    * Possible event sources depend on the gateways configured in your Brigade
    * system, and possible event types depend on the gateway. See the Brigade
    * and gateway documentation for details.
-   * 
+   *
    * @param eventSource The event source (gateway) to register the handler for
    * @param eventType The event type to register the handler for
    * @param eventHandler The handler to run when an event with the given source and
    * type occurs
    */
-  public on(eventSource: string, eventType: string, eventHandler: EventHandler): this {
+  public on(
+    eventSource: string,
+    eventType: string,
+    eventHandler: EventHandler
+  ): this {
     this.handlers[`${eventSource}:${eventType}`] = eventHandler
     return this
   }
@@ -60,7 +64,9 @@ export class EventRegistry {
   public process(): void {
     let event: Event
     if (process.env.BRIGADE_EVENT_FILE) {
-      console.log(`Loading dummy event from file ${process.env.BRIGADE_EVENT_FILE}`)
+      console.log(
+        `Loading dummy event from file ${process.env.BRIGADE_EVENT_FILE}`
+      )
       event = require(process.env.BRIGADE_EVENT_FILE)
     } else {
       console.log("No dummy event file provided")
@@ -80,12 +86,16 @@ export class EventRegistry {
         }
         source = eventTokens[1]
         type = eventTokens[2]
-        console.log(`Using specified dummy event with source "${source}" and type "${type}"`)
+        console.log(
+          `Using specified dummy event with source "${source}" and type "${type}"`
+        )
       } else {
         console.log("No dummy event type provided")
         source = "brigade.sh/cli"
         type = "exec"
-        console.log(`Using default dummy event with source "${source}" and type "${type}"`)
+        console.log(
+          `Using default dummy event with source "${source}" and type "${type}"`
+        )
       }
       event = {
         id: this.newUUID(),
@@ -114,17 +124,20 @@ export class EventRegistry {
       handlerFn = this.handlers[`${event.source}:*`]
     }
     if (handlerFn) {
-      return handlerFn(event) 
+      return handlerFn(event)
     }
   }
 
   private newUUID(): string {
-    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0, v = c == "x" ? r : (r & 0x3 | 0x8)
-      return v.toString(16)
-    })
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+      /[xy]/g,
+      function (c) {
+        const r = (Math.random() * 16) | 0,
+          v = c == "x" ? r : (r & 0x3) | 0x8
+        return v.toString(16)
+      }
+    )
   }
-
 }
 
 /** Contains event handler registrations for a script. */
