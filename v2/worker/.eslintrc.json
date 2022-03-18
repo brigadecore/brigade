@@ -5,7 +5,8 @@
     },
     "extends": [
         "eslint:recommended",
-        "plugin:@typescript-eslint/recommended"
+        "plugin:@typescript-eslint/recommended",
+        "prettier"
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
@@ -16,10 +17,6 @@
         "@typescript-eslint"
     ],
     "rules": {
-        "indent": [
-            "error",
-            2
-        ],
         "linebreak-style": [
             "error",
             "unix"
