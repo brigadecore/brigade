@@ -118,6 +118,20 @@ test-unit-go:
 			./... \
 	'
 
+.PHONY: style-check-js
+style-check-js:
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		yarn install && \
+		yarn style:check && \
+		cd ../brigadier-polyfill && \
+		yarn install && \
+		yarn style:check && \
+		cd ../worker && \
+		yarn install && \
+		yarn style:check \
+	'
+
 .PHONY: lint-js
 lint-js:
 	$(JS_DOCKER_CMD) sh -c ' \
