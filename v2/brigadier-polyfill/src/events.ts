@@ -1,11 +1,13 @@
-import { Event, EventRegistry as BrigadierEventRegistry } from "@brigadecore/brigadier"
+import {
+  Event,
+  EventRegistry as BrigadierEventRegistry
+} from "@brigadecore/brigadier"
 
 import { core } from "@brigadecore/brigade-sdk"
 
 import { logger } from "./logger"
 
 class EventRegistry extends BrigadierEventRegistry {
-
   public async process(): Promise<void> {
     const event: Event = require("/var/event/event.json") // eslint-disable-line @typescript-eslint/no-var-requires
 
@@ -18,7 +20,7 @@ class EventRegistry extends BrigadierEventRegistry {
       exitCode = 1
     })
 
-    process.on("exit", code => {
+    process.on("exit", (code) => {
       if (code != 0) {
         process.exit(code)
       }
@@ -32,12 +34,11 @@ class EventRegistry extends BrigadierEventRegistry {
       const eventsClient = new core.EventsClient(
         event.worker.apiAddress,
         event.worker.apiToken,
-        {allowInsecureConnections: true},
+        { allowInsecureConnections: true }
       )
-      eventsClient.updateSummary(event.id, {text: summary})
+      eventsClient.updateSummary(event.id, { text: summary })
     }
   }
-
 }
 
 export const events = new EventRegistry()

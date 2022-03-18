@@ -1,4 +1,4 @@
-import { Logger } from "winston" 
+import { Logger } from "winston"
 
 import { Event, Job as BrigadierJob } from "@brigadecore/brigadier"
 
@@ -20,7 +20,7 @@ export class Job extends BrigadierJob {
       const jobsClient = new core.JobsClient(
         this.event.worker.apiAddress,
         this.event.worker.apiToken,
-        {allowInsecureConnections: true},
+        { allowInsecureConnections: true }
       )
 
       const sdkJob: core.Job = {
@@ -33,8 +33,7 @@ export class Job extends BrigadierJob {
         }
       }
       await jobsClient.create(this.event.id, sdkJob)
-    }
-    catch(e) {
+    } catch (e) {
       throw new Error(`Error creating job "${this.name}": ${e.message}`)
     }
     return this.wait()
@@ -45,7 +44,7 @@ export class Job extends BrigadierJob {
       const jobsClient = new core.JobsClient(
         this.event.worker.apiAddress,
         this.event.worker.apiToken,
-        {allowInsecureConnections: true},
+        { allowInsecureConnections: true }
       )
 
       const statusStream = jobsClient.watchStatus(this.event.id, this.name)
@@ -53,24 +52,26 @@ export class Job extends BrigadierJob {
         this.logger.debug(`Current job phase is ${status.phase}`)
         if (!this.fallible) {
           switch (status.phase) {
-          case core.JobPhase.Aborted:
-            reject(new Error(`Job "${this.name}" was aborted`))
-            break
-          case core.JobPhase.Canceled:
-            reject(new Error(`Job "${this.name}" was canceled before starting`))
-            break
-          case core.JobPhase.Failed:
-            reject(new Error(`Job "${this.name}" failed`))
-            break
-          case core.JobPhase.SchedulingFailed:
-            reject(new Error(`Job "${this.name}" scheduling failed`))
-            break
-          case core.JobPhase.Succeeded:
-            resolve()
-            break
-          case core.JobPhase.TimedOut:
-            reject(new Error(`Job "${this.name}" timed out`))
-            break
+            case core.JobPhase.Aborted:
+              reject(new Error(`Job "${this.name}" was aborted`))
+              break
+            case core.JobPhase.Canceled:
+              reject(
+                new Error(`Job "${this.name}" was canceled before starting`)
+              )
+              break
+            case core.JobPhase.Failed:
+              reject(new Error(`Job "${this.name}" failed`))
+              break
+            case core.JobPhase.SchedulingFailed:
+              reject(new Error(`Job "${this.name}" scheduling failed`))
+              break
+            case core.JobPhase.Succeeded:
+              resolve()
+              break
+            case core.JobPhase.TimedOut:
+              reject(new Error(`Job "${this.name}" timed out`))
+              break
           }
         }
       })
@@ -83,7 +84,7 @@ export class Job extends BrigadierJob {
           this.logger.warn(msg)
           resolve()
         } else {
-          reject(new Error(msg)) 
+          reject(new Error(msg))
         }
       })
       statusStream.onError((e: Error) => {
@@ -106,13 +107,13 @@ export class Job extends BrigadierJob {
       const logsClient = new core.LogsClient(
         this.event.worker.apiAddress,
         this.event.worker.apiToken,
-        {allowInsecureConnections: true},
+        { allowInsecureConnections: true }
       )
 
       const logsStream = logsClient.stream(
         this.event.id,
-        {job: this.name},
-        {follow: false},
+        { job: this.name },
+        { follow: false }
       )
       let logs = ""
       logsStream.onData((logEntry: core.LogEntry) => {
@@ -131,7 +132,11 @@ export class Job extends BrigadierJob {
         reject("log stream closed")
       })
       logsStream.onError((e: Error) => {
-        reject(new Error(`Error retrieving logs for job "${this.name}": ${e.message}`))
+        reject(
+          new Error(
+            `Error retrieving logs for job "${this.name}": ${e.message}`
+          )
+        )
       })
       logsStream.onDone(() => {
         resolve(logs)

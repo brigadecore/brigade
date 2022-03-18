@@ -12,10 +12,12 @@ export const logger = winston.createLogger({
     winston.format.timestamp(),
     winston.format.printf((info: TransformableInfo) => {
       if (info.job) {
-        return `${info.timestamp} [job: ${info.job}] ${info.level.toUpperCase()}: ${info.message}`
+        return `${info.timestamp} [job: ${
+          info.job
+        }] ${info.level.toUpperCase()}: ${info.message}`
       }
       return `${info.timestamp} ${info.level.toUpperCase()}: ${info.message}`
     })
   ),
-  transports: [ new winston.transports.Console() ]
+  transports: [new winston.transports.Console()]
 })
