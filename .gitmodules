@@ -4,3 +4,6 @@
 [submodule "docs/content/portuguese"]
 	path = docs/content/portuguese
 	url = https://github.com/brigadecore/docs-portuguese
+[submodule "docs/content/hindi"]
+	path = docs/content/hindi
+	url = https://github.com/brigadecore/docs-hindi
