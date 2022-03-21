@@ -1,6 +1,6 @@
 module github.com/brigadecore/brigade/v2
 
-go 1.17
+go 1.18
 
 replace github.com/brigadecore/brigade/sdk/v3 => ../sdk/v3
 
