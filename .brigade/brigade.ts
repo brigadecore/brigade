@@ -132,6 +132,40 @@ class BuildImageJob extends JobWithSource {
   }
 }
 
+class ScanJob extends MakeTargetJob {
+  constructor(image: string, event: Event) {
+    const env = {}
+    const secrets = event.project.secrets
+    if (secrets.unstableImageRegistry) {
+      env["DOCKER_REGISTRY"] = secrets.unstableImageRegistry
+    }
+    if (secrets.unstableImageRegistryOrg) {
+      env["DOCKER_ORG"] = secrets.unstableImageRegistryOrg
+    }
+    super(`scan-${image}`, [`scan-${image}`], dockerClientImg, event, env)
+    this.fallible = true
+  }
+}
+
+class PublishSBOMJob extends MakeTargetJob {
+  constructor(image: string, event: Event, version: string) {
+    const secrets = event.project.secrets
+    const env = {
+      "GITHUB_ORG": secrets.githubOrg,
+      "GITHUB_REPO": secrets.githubRepo,
+      "GITHUB_TOKEN": secrets.githubToken,
+      "VERSION": version
+    }
+    if (secrets.stableImageRegistry) {
+      env["DOCKER_REGISTRY"] = secrets.stableImageRegistry
+    }
+    if (secrets.stableImageRegistryOrg) {
+      env["DOCKER_ORG"] = secrets.stableImageRegistryOrg
+    }
+    super(`publish-sbom-${image}`, [`publish-sbom-${image}`], dockerClientImg, event, env)
+  }
+}
+
 // A map of all jobs. When a ci:job_requested event wants to re-run a single
 // job, this allows us to easily find that job by name.
 const jobs: {[key: string]: (event: Event, version?: string) => Job } = {}
@@ -202,11 +236,23 @@ const buildArtemisJob = (event: Event, version?: string) => {
 }
 jobs[buildArtemisJobName] = buildArtemisJob
 
+const scanArtemisJobName = "scan-artemis"
+const scanArtemisJob = (event: Event) => {
+  return new ScanJob("artemis", event)
+}
+jobs[scanArtemisJobName] = scanArtemisJob
+
 const buildAPIServerJobName = "build-apiserver"
 const buildAPIServerJob = (event: Event, version?: string) => {
   return new BuildImageJob("apiserver", event, version)
 }
 jobs[buildAPIServerJobName] = buildAPIServerJob
+
+const scanAPIServerJobName = "scan-apiserver"
+const scanAPIServerJob = (event: Event) => {
+  return new ScanJob("apiserver", event)
+}
+jobs[scanAPIServerJobName] = scanAPIServerJob
 
 const buildGitInitializerJobName = "build-git-initializer"
 const buildGitInitializerJob = (event: Event, version?: string) => {
@@ -214,11 +260,23 @@ const buildGitInitializerJob = (event: Event, version?: string) => {
 }
 jobs[buildGitInitializerJobName] = buildGitInitializerJob
 
+const scanGitInitializerJobName = "scan-git-initializer"
+const scanGitInitializerJob = (event: Event) => {
+  return new ScanJob("git-initializer", event)
+}
+jobs[scanGitInitializerJobName] = scanGitInitializerJob
+
 const buildLoggerLinuxJobName = "build-logger"
 const buildLoggerLinuxJob = (event: Event, version?: string) => {
   return new BuildImageJob("logger", event, version)
 }
 jobs[buildLoggerLinuxJobName] = buildLoggerLinuxJob
+
+const scanLoggerLinuxJobName = "scan-logger"
+const scanLoggerLinuxJob = (event: Event) => {
+  return new ScanJob("logger", event)
+}
+jobs[scanLoggerLinuxJobName] = scanLoggerLinuxJob
 
 const buildObserverJobName = "build-observer"
 const buildObserverJob = (event: Event, version?: string) => {
@@ -226,17 +284,35 @@ const buildObserverJob = (event: Event, version?: string) => {
 }
 jobs[buildObserverJobName] = buildObserverJob
 
+const scanObserverJobName = "scan-observer"
+const scanObserverJob = (event: Event) => {
+  return new ScanJob("observer", event)
+}
+jobs[scanObserverJobName] = scanObserverJob
+
 const buildSchedulerJobName = "build-scheduler"
 const buildSchedulerJob = (event: Event, version?: string) => {
   return new BuildImageJob("scheduler", event, version)
 }
 jobs[buildSchedulerJobName] = buildSchedulerJob
 
+const scanSchedulerJobName = "scan-scheduler"
+const scanSchedulerJob = (event: Event) => {
+  return new ScanJob("scheduler", event)
+}
+jobs[scanSchedulerJobName] = scanSchedulerJob
+
 const buildWorkerJobName = "build-worker"
 const buildWorkerJob = (event: Event, version?: string) => {
   return new BuildImageJob("worker", event, version)
 }
 jobs[buildWorkerJobName] = buildWorkerJob
+
+const scanWorkerJobName = "scan-worker"
+const scanWorkerJob = (event: Event) => {
+  return new ScanJob("worker", event)
+}
+jobs[scanWorkerJobName] = scanWorkerJob
 
 const buildBrigadierJobName = "build-brigadier"
 const buildBrigadierJob = (event: Event) => {
@@ -347,13 +423,13 @@ events.on("brigade.sh/github", "ci:pipeline_requested", async event => {
       validateExamplesJob(event)
     ),
     new ConcurrentGroup( // Build everything
-      buildArtemisJob(event),
-      buildAPIServerJob(event),
-      buildGitInitializerJob(event),
-      buildLoggerLinuxJob(event),
-      buildObserverJob(event),
-      buildSchedulerJob(event),
-      buildWorkerJob(event),
+      new SerialGroup(buildArtemisJob(event), scanArtemisJob(event)),
+      new SerialGroup(buildAPIServerJob(event), scanAPIServerJob(event)),
+      new SerialGroup(buildGitInitializerJob(event), scanGitInitializerJob(event)),
+      new SerialGroup(buildLoggerLinuxJob(event), scanLoggerLinuxJob(event)),
+      new SerialGroup(buildObserverJob(event), scanObserverJob(event)),
+      new SerialGroup(buildSchedulerJob(event), scanSchedulerJob(event)),
+      new SerialGroup(buildWorkerJob(event), scanWorkerJob(event)),
       buildBrigadierJob(event),
       buildCLIJob(event)
     ),
