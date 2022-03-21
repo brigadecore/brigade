@@ -150,6 +150,8 @@ $ kubectl --namespace brigade port-forward service/brigade-apiserver 8443:443 &>
 
 ### Log into Brigade
 
+> ⚠️ In this section, we'll be logging in as the root user. This option should typically be disabled in a production-grade Brigade deployment. Read more about user authentication [here](/topics/administrators/authentication/).
+
 To authenticate to Brigade as the root user, you first need to acquire the
 auto-generated root user password:
 
