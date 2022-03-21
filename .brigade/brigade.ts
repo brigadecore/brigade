@@ -148,6 +148,12 @@ const testUnitJSJob = (event: Event) => {
 }
 jobs[testUnitJSJobName] = testUnitJSJob
 
+const styleCheckJSJobName = "style-check-js"
+const styleCheckJSJob = (event: Event) => {
+  return new MakeTargetJob(styleCheckJSJobName, jsImg, event)
+}
+jobs[styleCheckJSJobName] = styleCheckJSJob
+
 const lintJSJobName = "lint-js"
 const lintJSJob = (event: Event) => {
   return new MakeTargetJob(lintJSJobName, jsImg, event)
@@ -325,6 +331,7 @@ events.on("brigade.sh/github", "ci:pipeline_requested", async event => {
       testUnitGoJob(event),
       lintGoJob(event),
       testUnitJSJob(event),
+      styleCheckJSJob(event),
       lintJSJob(event),
       yarnAuditJob(event),
       lintChartJob(event),

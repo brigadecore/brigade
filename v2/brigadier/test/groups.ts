@@ -6,7 +6,6 @@ import { SerialGroup, ConcurrentGroup } from "../src/groups"
 import { MockJob } from "./mocks"
 
 describe("groups", () => {
-
   describe("SerialGroup", () => {
     const event: Event = {
       id: "123456789",
@@ -60,18 +59,28 @@ describe("groups", () => {
       context("when job fails", () => {
         it("stops processing with an error", (done) => {
           const group = new SerialGroup()
-          const job0 = new MockJob("first", "debian:latest", event, () => () => {
-            // Do nothing
-          })
-          const job1 = new MockJob("second", "debian:latest", event, () => () => {
-            // Do nothing
-          })
+          const job0 = new MockJob(
+            "first",
+            "debian:latest",
+            event,
+            () => () => {
+              // Do nothing
+            }
+          )
+          const job1 = new MockJob(
+            "second",
+            "debian:latest",
+            event,
+            () => () => {
+              // Do nothing
+            }
+          )
           job1.fail = true
           const job2 = new MockJob("third", "debian:latest", event, () => {
             done("expected error on job 1")
           })
           group.add(job0, job1, job2)
-          group.run().catch(msg => {
+          group.run().catch((msg) => {
             assert.equal(msg, "Failed")
             done()
           })
@@ -138,26 +147,43 @@ describe("groups", () => {
       context("when job fails", () => {
         const group = new ConcurrentGroup()
         it("stops processing with an error", (done) => {
-          const job0 = new MockJob("first", "debian:latest", event, () => () => {
-            // Do nothing
-          })
-          const job1 = new MockJob("second", "debian:latest", event, () => () => {
-            // Do nothing
-          })
+          const job0 = new MockJob(
+            "first",
+            "debian:latest",
+            event,
+            () => () => {
+              // Do nothing
+            }
+          )
+          const job1 = new MockJob(
+            "second",
+            "debian:latest",
+            event,
+            () => () => {
+              // Do nothing
+            }
+          )
           job1.fail = true
-          const job2 = new MockJob("third", "debian:latest", event, () => () => {
-            // Do nothing
-          })
+          const job2 = new MockJob(
+            "third",
+            "debian:latest",
+            event,
+            () => () => {
+              // Do nothing
+            }
+          )
           group.add(job0, job1, job2)
-          group.run().then(() => {
-            done("expected error on job 2")
-          }).catch(msg => {
-            assert.equal(msg, "Failed")
-            done()
-          })
+          group
+            .run()
+            .then(() => {
+              done("expected error on job 2")
+            })
+            .catch((msg) => {
+              assert.equal(msg, "Failed")
+              done()
+            })
         })
       })
     })
   })
-
 })

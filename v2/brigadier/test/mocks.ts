@@ -10,12 +10,7 @@ export class MockJob extends Job {
   public delay = 1 // Just enough to cause the event loop to sleep.
   public handler: () => void
 
-  constructor(
-    name: string,
-    image: string,
-    event: Event,
-    handler: () => void
-  ) {
+  constructor(name: string, image: string, event: Event, handler: () => void) {
     super(name, image, event)
     this.handler = handler
   }

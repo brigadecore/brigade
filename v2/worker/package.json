@@ -7,6 +7,8 @@
   "author": "Brigade Core Maintainers",
   "license": "Apache-2.0",
   "scripts": {
+    "style:check": "prettier --check .",
+    "style:fix": "prettier --write .",
     "lint": "eslint ./",
     "build": "tsc",
     "start": "node --no-deprecation ./dist/prestart.js"
@@ -22,7 +24,9 @@
     "@typescript-eslint/parser": "^4.33.0",
     "chai": "^4.2.0",
     "eslint": "^7.15.0",
+    "eslint-config-prettier": "^8.5.0",
     "mocha": "^9.2.0",
+    "prettier": "^2.6.0",
     "ts-node": "^10.2.1"
   },
   "dependencies": {

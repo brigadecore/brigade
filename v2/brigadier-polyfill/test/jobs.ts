@@ -5,7 +5,6 @@ import { Container, Event, Job, JobHost } from "../src"
 import { ImagePullPolicy } from "../../brigadier/dist/jobs"
 
 describe("jobs", () => {
-
   describe("Job", () => {
     describe("#constructor", () => {
       const event: Event = {
@@ -27,7 +26,10 @@ describe("jobs", () => {
       it("initializes fields properly", () => {
         assert.equal(job.name, "my-name")
         assert.deepEqual(job.primaryContainer, new Container("debian:latest"))
-        assert.deepEqual(job.primaryContainer.imagePullPolicy, ImagePullPolicy.IfNotPresent)
+        assert.deepEqual(
+          job.primaryContainer.imagePullPolicy,
+          ImagePullPolicy.IfNotPresent
+        )
         assert.deepEqual(job.sidecarContainers, {})
         assert.equal(job.timeoutSeconds, 60 * 15)
         assert.deepEqual(job.host, new JobHost())
@@ -35,5 +37,4 @@ describe("jobs", () => {
       })
     })
   })
-
 })
