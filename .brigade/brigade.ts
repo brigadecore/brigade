@@ -12,16 +12,24 @@ const dindSidecar = new Container(dindImg)
 dindSidecar.privileged = true
 dindSidecar.environment["DOCKER_TLS_CERTDIR"] = ""
 
-// MakeTargetJob is just a job wrapper around a make target.
-class MakeTargetJob extends Job {
-  constructor(target: string, img: string, event: Event, env?: {[key: string]: string}) {
-    super(target, img, event)
+// JobWithSource is a base class for any Job that uses project source code.
+class JobWithSource extends Job {
+  constructor(name: string, img: string, event: Event, env?: {[key: string]: string}) {
+    super(name, img, event)
     this.primaryContainer.sourceMountPath = localPath
     this.primaryContainer.workingDirectory = localPath
-    this.primaryContainer.environment = env || {}
-    this.primaryContainer.environment["SKIP_DOCKER"] = "true"
+    this.primaryContainer.environment = env || {}    
+  }
+}
+
+// MakeTargetJob is just a job wrapper around one or more make targets.
+class MakeTargetJob extends JobWithSource {
+  constructor(name: string, targets: string[], img: string, event: Event, env?: {[key: string]: string}) {
+    env ||= {}
+    env["SKIP_DOCKER"] = "true"
+    super(name, img, event, env)
     this.primaryContainer.command = [ "make" ]
-    this.primaryContainer.arguments = [ target ]
+    this.primaryContainer.arguments = targets
   }
 }
 
@@ -65,7 +73,7 @@ class MakeTargetJob extends Job {
 //
 // If and when the capability exists to use `docker buildx` with existing
 // builders, we can streamline all of this pretty significantly.
-class BuildImageJob extends MakeTargetJob {
+class BuildImageJob extends JobWithSource {
   constructor(image: string, event: Event, version?: string) {
     const secrets = event.project.secrets
     const env = {
@@ -132,37 +140,37 @@ const jobs: {[key: string]: (event: Event, version?: string) => Job } = {}
 
 const testUnitGoJobName = "test-unit-go"
 const testUnitGoJob = (event: Event) => {
-  return new MakeTargetJob(testUnitGoJobName, goImg, event)
+  return new MakeTargetJob(testUnitGoJobName, ["test-unit-go"], goImg, event)
 }
 jobs[testUnitGoJobName] = testUnitGoJob
 
 const lintGoJobName = "lint-go"
 const lintGoJob = (event: Event) => {
-  return new MakeTargetJob(lintGoJobName, goImg, event)
+  return new MakeTargetJob(lintGoJobName, ["lint-go"], goImg, event)
 }
 jobs[lintGoJobName] = lintGoJob
 
 const testUnitJSJobName = "test-unit-js"
 const testUnitJSJob = (event: Event) => {
-  return new MakeTargetJob(testUnitJSJobName, jsImg, event)
+  return new MakeTargetJob(testUnitJSJobName, ["test-unit-js"], jsImg, event)
 }
 jobs[testUnitJSJobName] = testUnitJSJob
 
 const styleCheckJSJobName = "style-check-js"
 const styleCheckJSJob = (event: Event) => {
-  return new MakeTargetJob(styleCheckJSJobName, jsImg, event)
+  return new MakeTargetJob(styleCheckJSJobName, ["style-check-js"], jsImg, event)
 }
 jobs[styleCheckJSJobName] = styleCheckJSJob
 
 const lintJSJobName = "lint-js"
 const lintJSJob = (event: Event) => {
-  return new MakeTargetJob(lintJSJobName, jsImg, event)
+  return new MakeTargetJob(lintJSJobName, ["lint-js"], jsImg, event)
 }
 jobs[lintJSJobName] = lintJSJob
 
 const yarnAuditJobName = "yarn-audit"
 const yarnAuditJob = (event: Event) => {
-  const job = new MakeTargetJob(yarnAuditJobName, jsImg, event) 
+  const job = new MakeTargetJob(yarnAuditJobName, ["yarn-audit"], jsImg, event) 
   job.fallible = true
   return job
 }
@@ -170,19 +178,19 @@ jobs[yarnAuditJobName] = yarnAuditJob
 
 const lintChartJobName = "lint-chart"
 const lintChartJob = (event: Event) => {
-  return new MakeTargetJob(lintChartJobName, helmImg, event)
+  return new MakeTargetJob(lintChartJobName, ["lint-chart"], helmImg, event)
 }
 jobs[lintChartJobName] = lintChartJob
 
 const validateSchemasJobName = "validate-schemas"
 const validateSchemasJob = (event: Event) => {
-  return new MakeTargetJob(validateSchemasJobName, jsImg, event);
+  return new MakeTargetJob(validateSchemasJobName, ["validate-schemas"], jsImg, event);
 }
 jobs[validateSchemasJobName] = validateSchemasJob
 
-const validateExamplesJobName = "validate-examples";
+const validateExamplesJobName = "validate-examples"
 const validateExamplesJob = (event: Event) => {
-  return new MakeTargetJob(validateExamplesJobName, jsImg, event)
+  return new MakeTargetJob(validateExamplesJobName, ["validate-examples"], jsImg, event)
 }
 jobs[validateExamplesJobName] = validateExamplesJob;
 
@@ -232,13 +240,13 @@ jobs[buildWorkerJobName] = buildWorkerJob
 
 const buildBrigadierJobName = "build-brigadier"
 const buildBrigadierJob = (event: Event) => {
-  return new MakeTargetJob(buildBrigadierJobName, jsImg, event)
+  return new MakeTargetJob(buildBrigadierJobName, ["build-brigadier"], jsImg, event)
 }
 jobs[buildBrigadierJobName] = buildBrigadierJob
 
 const publishBrigadierJobName = "publish-brigadier"
 const publishBrigadierJob = (event: Event, version: string) => {
-  return new MakeTargetJob(publishBrigadierJobName, jsImg, event, {
+  return new MakeTargetJob(publishBrigadierJobName, ["publish-brigadier"], jsImg, event, {
     "VERSION": version,
     "NPM_TOKEN": event.project.secrets.npmToken
   })
@@ -247,14 +255,14 @@ jobs[publishBrigadierJobName] = publishBrigadierJob
 
 const buildCLIJobName = "build-cli"
 const buildCLIJob = (event: Event) => {
-  return new MakeTargetJob(buildCLIJobName, goImg, event)
+  return new MakeTargetJob(buildCLIJobName, ["build-cli"], goImg, event)
 }
 jobs[buildCLIJobName] = buildCLIJob
 
 const publishCLIJobName = "publish-cli"
 const publishCLIJob = (event: Event, version: string) => {
   const secrets = event.project.secrets
-  return new MakeTargetJob(publishCLIJobName, goImg, event, {
+  return new MakeTargetJob(publishCLIJobName, ["publish-cli"], goImg, event, {
     "VERSION": version,
     "GITHUB_ORG": secrets.githubOrg,
     "GITHUB_REPO": secrets.githubRepo,
@@ -267,7 +275,7 @@ const publishChartJobName = "publish-chart"
 const publishChartJob = (event: Event, version: string) => {
   const secrets = event.project.secrets
   const helmRegistry = secrets.chartRegistry || "ghcr.io"
-  const job = new MakeTargetJob(publishChartJobName, helmImg, event, {
+  const job = new MakeTargetJob(publishChartJobName, ["publish-chart"], helmImg, event, {
     "VERSION": version,
     "HELM_REGISTRY": helmRegistry,
     "HELM_ORG": secrets.helmOrg,
@@ -285,7 +293,7 @@ jobs[publishChartJobName] = publishChartJob
 
 const publishBrigadierDocsJobName = "publish-brigadier-docs"
 const publishBrigadierDocsJob = (event: Event, version?: string) => {
-  return new MakeTargetJob(publishBrigadierDocsJobName, jsImg, event, {
+  return new MakeTargetJob(publishBrigadierDocsJobName, ["publish-brigadier-docs"], jsImg, event, {
     "VERSION": version,
     "GH_TOKEN": event.project.secrets.ghToken
   })
@@ -308,7 +316,7 @@ const testIntegrationJob = (event: Event) => {
   if (secrets.unstableImageRegistryOrg) {
     env["DOCKER_ORG"] = secrets.unstableImageRegistryOrg
   }
-  const job = new MakeTargetJob(testIntegrationJobName, "brigadecore/int-test-tools:v0.2.0", event, env)
+  const job = new MakeTargetJob(testIntegrationJobName, ["test-integration"], "brigadecore/int-test-tools:v0.2.0", event, env)
   job.primaryContainer.command = [ "sh" ]
   job.primaryContainer.arguments = [
     "-c",
