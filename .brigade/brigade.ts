@@ -148,7 +148,7 @@ class ScanJob extends MakeTargetJob {
 }
 
 class PublishSBOMJob extends MakeTargetJob {
-  constructor(image: string, event: Event, version: string) {
+  constructor(name: string, image: string, event: Event, version: string) {
     const secrets = event.project.secrets
     const env = {
       "GITHUB_ORG": secrets.githubOrg,
@@ -162,7 +162,7 @@ class PublishSBOMJob extends MakeTargetJob {
     if (secrets.stableImageRegistryOrg) {
       env["DOCKER_ORG"] = secrets.stableImageRegistryOrg
     }
-    super(`publish-sbom-${image}`, [`publish-sbom-${image}`], dockerClientImg, event, env)
+    super(name, [`publish-sbom-${image}`], dockerClientImg, event, env)
   }
 }
 
@@ -244,7 +244,7 @@ jobs[scanArtemisJobName] = scanArtemisJob
 
 const publishArtemisSBOMJobName = "publish-sbom-artemis"
 const publishArtemisSBOMJob = (event: Event, version: string) => {
-  return new PublishSBOMJob("artemis", event, version)
+  return new PublishSBOMJob(publishArtemisSBOMJobName, "artemis", event, version)
 }
 jobs[publishArtemisSBOMJobName] = publishArtemisSBOMJob
 
@@ -262,7 +262,7 @@ jobs[scanAPIServerJobName] = scanAPIServerJob
 
 const publishAPIServerSBOMJobName = "publish-sbom-apiserver"
 const publishAPIServerSBOMJob = (event: Event, version: string) => {
-  return new PublishSBOMJob("apiserver", event, version)
+  return new PublishSBOMJob(publishAPIServerSBOMJobName, "apiserver", event, version)
 }
 jobs[publishAPIServerSBOMJobName] = publishAPIServerSBOMJob
 
@@ -280,7 +280,7 @@ jobs[scanGitInitializerJobName] = scanGitInitializerJob
 
 const publishGitInitializerSBOMJobName = "publish-sbom-git-initializer"
 const publishGitInitializerSBOMJob = (event: Event, version: string) => {
-  return new PublishSBOMJob("git-initializer", event, version)
+  return new PublishSBOMJob(publishGitInitializerSBOMJobName, "git-initializer", event, version)
 }
 jobs[publishGitInitializerSBOMJobName] = publishGitInitializerSBOMJob
 
@@ -298,7 +298,7 @@ jobs[scanLoggerLinuxJobName] = scanLoggerLinuxJob
 
 const publishLoggerSBOMJobName = "publish-sbom-logger"
 const publishLoggerSBOMJob = (event: Event, version: string) => {
-  return new PublishSBOMJob("logger", event, version)
+  return new PublishSBOMJob(publishLoggerSBOMJobName, "logger", event, version)
 }
 jobs[publishLoggerSBOMJobName] = publishLoggerSBOMJob
 
@@ -316,7 +316,7 @@ jobs[scanObserverJobName] = scanObserverJob
 
 const publishObserverSBOMJobName = "publish-sbom-observer"
 const publishObserverSBOMJob = (event: Event, version: string) => {
-  return new PublishSBOMJob("observer", event, version)
+  return new PublishSBOMJob(publishObserverSBOMJobName, "observer", event, version)
 }
 jobs[publishObserverSBOMJobName] = publishObserverSBOMJob
 
@@ -334,7 +334,7 @@ jobs[scanSchedulerJobName] = scanSchedulerJob
 
 const publishSchedulerSBOMJobName = "publish-sbom-scheduler"
 const publishSchedulerSBOMJob = (event: Event, version: string) => {
-  return new PublishSBOMJob("scheduler", event, version)
+  return new PublishSBOMJob(publishSchedulerSBOMJobName, "scheduler", event, version)
 }
 jobs[publishSchedulerSBOMJobName] = publishSchedulerSBOMJob
 
@@ -352,7 +352,7 @@ jobs[scanWorkerJobName] = scanWorkerJob
 
 const publishWorkerSBOMJobName = "publish-sbom-worker"
 const publishWorkerSBOMJob = (event: Event, version: string) => {
-  return new PublishSBOMJob("worker", event, version)
+  return new PublishSBOMJob(publishWorkerSBOMJobName, "worker", event, version)
 }
 jobs[publishWorkerSBOMJobName] = publishWorkerSBOMJob
 
