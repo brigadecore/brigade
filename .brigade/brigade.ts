@@ -242,6 +242,12 @@ const scanArtemisJob = (event: Event) => {
 }
 jobs[scanArtemisJobName] = scanArtemisJob
 
+const publishArtemisSBOMJobName = "publish-sbom-artemis"
+const publishArtemisSBOMJob = (event: Event, version: string) => {
+  return new PublishSBOMJob("artemis", event, version)
+}
+jobs[publishArtemisSBOMJobName] = publishArtemisSBOMJob
+
 const buildAPIServerJobName = "build-apiserver"
 const buildAPIServerJob = (event: Event, version?: string) => {
   return new BuildImageJob("apiserver", event, version)
@@ -253,6 +259,12 @@ const scanAPIServerJob = (event: Event) => {
   return new ScanJob("apiserver", event)
 }
 jobs[scanAPIServerJobName] = scanAPIServerJob
+
+const publishAPIServerSBOMJobName = "publish-sbom-apiserver"
+const publishAPIServerSBOMJob = (event: Event, version: string) => {
+  return new PublishSBOMJob("apiserver", event, version)
+}
+jobs[publishAPIServerSBOMJobName] = publishAPIServerSBOMJob
 
 const buildGitInitializerJobName = "build-git-initializer"
 const buildGitInitializerJob = (event: Event, version?: string) => {
@@ -266,6 +278,12 @@ const scanGitInitializerJob = (event: Event) => {
 }
 jobs[scanGitInitializerJobName] = scanGitInitializerJob
 
+const publishGitInitializerSBOMJobName = "publish-sbom-git-initializer"
+const publishGitInitializerSBOMJob = (event: Event, version: string) => {
+  return new PublishSBOMJob("git-initializer", event, version)
+}
+jobs[publishGitInitializerSBOMJobName] = publishGitInitializerSBOMJob
+
 const buildLoggerLinuxJobName = "build-logger"
 const buildLoggerLinuxJob = (event: Event, version?: string) => {
   return new BuildImageJob("logger", event, version)
@@ -277,6 +295,12 @@ const scanLoggerLinuxJob = (event: Event) => {
   return new ScanJob("logger", event)
 }
 jobs[scanLoggerLinuxJobName] = scanLoggerLinuxJob
+
+const publishLoggerSBOMJobName = "publish-sbom-logger"
+const publishLoggerSBOMJob = (event: Event, version: string) => {
+  return new PublishSBOMJob("logger", event, version)
+}
+jobs[publishLoggerSBOMJobName] = publishLoggerSBOMJob
 
 const buildObserverJobName = "build-observer"
 const buildObserverJob = (event: Event, version?: string) => {
@@ -290,6 +314,12 @@ const scanObserverJob = (event: Event) => {
 }
 jobs[scanObserverJobName] = scanObserverJob
 
+const publishObserverSBOMJobName = "publish-sbom-observer"
+const publishObserverSBOMJob = (event: Event, version: string) => {
+  return new PublishSBOMJob("observer", event, version)
+}
+jobs[publishObserverSBOMJobName] = publishObserverSBOMJob
+
 const buildSchedulerJobName = "build-scheduler"
 const buildSchedulerJob = (event: Event, version?: string) => {
   return new BuildImageJob("scheduler", event, version)
@@ -302,6 +332,12 @@ const scanSchedulerJob = (event: Event) => {
 }
 jobs[scanSchedulerJobName] = scanSchedulerJob
 
+const publishSchedulerSBOMJobName = "publish-sbom-scheduler"
+const publishSchedulerSBOMJob = (event: Event, version: string) => {
+  return new PublishSBOMJob("scheduler", event, version)
+}
+jobs[publishSchedulerSBOMJobName] = publishSchedulerSBOMJob
+
 const buildWorkerJobName = "build-worker"
 const buildWorkerJob = (event: Event, version?: string) => {
   return new BuildImageJob("worker", event, version)
@@ -313,6 +349,12 @@ const scanWorkerJob = (event: Event) => {
   return new ScanJob("worker", event)
 }
 jobs[scanWorkerJobName] = scanWorkerJob
+
+const publishWorkerSBOMJobName = "publish-sbom-worker"
+const publishWorkerSBOMJob = (event: Event, version: string) => {
+  return new PublishSBOMJob("worker", event, version)
+}
+jobs[publishWorkerSBOMJobName] = publishWorkerSBOMJob
 
 const buildBrigadierJobName = "build-brigadier"
 const buildBrigadierJob = (event: Event) => {
@@ -451,13 +493,13 @@ events.on("brigade.sh/github", "cd:pipeline_requested", async event => {
   const version = JSON.parse(event.payload).release.tag_name
   await new SerialGroup(
     new ConcurrentGroup(
-      buildArtemisJob(event, version),
-      buildAPIServerJob(event, version),
-      buildGitInitializerJob(event, version),
-      buildLoggerLinuxJob(event, version),
-      buildObserverJob(event, version),
-      buildSchedulerJob(event, version),
-      buildWorkerJob(event, version)
+      new SerialGroup(buildArtemisJob(event, version), publishArtemisSBOMJob(event, version)),
+      new SerialGroup(buildAPIServerJob(event, version), publishAPIServerSBOMJob(event, version)),
+      new SerialGroup(buildGitInitializerJob(event, version), publishGitInitializerSBOMJob(event, version)),
+      new SerialGroup(buildLoggerLinuxJob(event, version), publishLoggerSBOMJob(event, version)),
+      new SerialGroup(buildObserverJob(event, version), publishObserverSBOMJob(event, version)),
+      new SerialGroup(buildSchedulerJob(event, version), publishSchedulerSBOMJob(event, version)),
+      new SerialGroup(buildWorkerJob(event, version), publishWorkerSBOMJob(event, version))
     ),
     new ConcurrentGroup(
       publishBrigadierJob(event, version),

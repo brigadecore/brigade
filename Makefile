@@ -346,6 +346,22 @@ build-cli:
 scan-%:
 	grype $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) -f medium
 
+.PHONY: generate-sbom-%
+generate-sbom-%:
+	syft $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
+		-o spdx-json \
+		--file ./artifacts/brigade2-$*-$(VERSION)-SBOM.json
+
+.PHONY: publish-sbom-%
+publish-sbom-%: generate-sbom-$*
+	ghr \
+		-u $(GITHUB_ORG) \
+		-r $(GITHUB_REPO) \
+		-c $$(git rev-parse HEAD) \
+		-t $${GITHUB_TOKEN} \
+		-n ${VERSION} \
+		${VERSION} ./artifacts/brigade2-$*-$(VERSION)-SBOM.json
+
 ################################################################################
 # Publish                                                                      #
 ################################################################################
