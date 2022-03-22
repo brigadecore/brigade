@@ -54,7 +54,7 @@ type UsersServiceConfig struct {
 // change.
 type UsersService interface {
 	// List returns a UserList.
-	List(context.Context, meta.ListOptions) (UserList, error)
+	List(context.Context, meta.ListOptions) (meta.List[User], error)
 	// Get retrieves a single User specified by their identifier.
 	Get(context.Context, string) (User, error)
 
@@ -101,13 +101,13 @@ func NewUsersService(
 func (u *usersService) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (UserList, error) {
+) (meta.List[User], error) {
 	if err := u.authorize(ctx, RoleReader, ""); err != nil {
-		return UserList{}, err
+		return meta.List[User]{}, err
 	}
 
 	if !u.config.ThirdPartyAuthEnabled {
-		return UserList{}, errUserManagementDisabled()
+		return meta.List[User]{}, errUserManagementDisabled()
 	}
 
 	if opts.Limit == 0 {
@@ -219,7 +219,7 @@ type UsersStore interface {
 	Create(context.Context, User) error
 	// List retrieves a UserList from the underlying data store, with its Items
 	// (Users) ordered by ID.
-	List(context.Context, meta.ListOptions) (UserList, error)
+	List(context.Context, meta.ListOptions) (meta.List[User], error)
 	// Get retrieves a single User from the underlying data store. Implementations
 	// MUST use a case insensitive query for this operation. If the specified User
 	// does not exist, implementations MUST return a *meta.ErrNotFound error.

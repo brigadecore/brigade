@@ -55,39 +55,16 @@ func TestEventsServiceCreate(t *testing.T) {
 		name       string
 		event      Event
 		service    EventsService
-		assertions func(EventList, error)
+		assertions func(meta.List[Event], error)
 	}{
 		{
 			name: "unauthorized",
 			service: &eventsService{
 				authorize: neverAuthorize,
 			},
-			assertions: func(_ EventList, err error) {
+			assertions: func(_ meta.List[Event], err error) {
 				require.Error(t, err)
 				require.IsType(t, &meta.ErrAuthorization{}, err)
-			},
-		},
-		{
-			name: "create single event for specified project; error getting " +
-				"project from store",
-			event: Event{
-				ProjectID: "blue-book",
-			},
-			service: &eventsService{
-				projectAuthorize: alwaysProjectAuthorize,
-				projectsStore: &mockProjectsStore{
-					GetFn: func(context.Context, string) (Project, error) {
-						return Project{}, errors.New("projects store error")
-					},
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{}, nil
-					},
-				},
-			},
-			assertions: func(_ EventList, err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "error retrieving project")
-				require.Contains(t, err.Error(), "projects store error")
 			},
 		},
 		{
@@ -98,22 +75,12 @@ func TestEventsServiceCreate(t *testing.T) {
 			service: &eventsService{
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
-					GetFn: func(context.Context, string) (Project, error) {
-						return Project{
-							ObjectMeta: meta.ObjectMeta{
-								ID: "blue-book",
-							},
-						}, nil
-					},
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{
-							Items: []Project{
-								{
-									ObjectMeta: meta.ObjectMeta{
-										ID: "orange-book",
-									},
-								},
-							},
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{
+							Items: []Project{},
 						}, nil
 					},
 				},
@@ -125,7 +92,7 @@ func TestEventsServiceCreate(t *testing.T) {
 					return Event{}, nil
 				},
 			},
-			assertions: func(events EventList, err error) {
+			assertions: func(events meta.List[Event], err error) {
 				require.NoError(t, err)
 				require.Len(t, events.Items, 0)
 			},
@@ -146,8 +113,11 @@ func TestEventsServiceCreate(t *testing.T) {
 							},
 						}, nil
 					},
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{
 							Items: []Project{
 								{
 									ObjectMeta: meta.ObjectMeta{
@@ -166,7 +136,7 @@ func TestEventsServiceCreate(t *testing.T) {
 					return Event{}, errors.New("error creating single event")
 				},
 			},
-			assertions: func(_ EventList, err error) {
+			assertions: func(_ meta.List[Event], err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error creating single event")
 			},
@@ -187,8 +157,11 @@ func TestEventsServiceCreate(t *testing.T) {
 							},
 						}, nil
 					},
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{
 							Items: []Project{
 								{
 									ObjectMeta: meta.ObjectMeta{
@@ -207,7 +180,7 @@ func TestEventsServiceCreate(t *testing.T) {
 					return Event{}, nil
 				},
 			},
-			assertions: func(events EventList, err error) {
+			assertions: func(events meta.List[Event], err error) {
 				require.NoError(t, err)
 				require.Len(t, events.Items, 1)
 			},
@@ -225,14 +198,17 @@ func TestEventsServiceCreate(t *testing.T) {
 			service: &eventsService{
 				authorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{}, errors.New(
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{}, errors.New(
 							"error getting subscribed projects",
 						)
 					},
 				},
 			},
-			assertions: func(_ EventList, err error) {
+			assertions: func(_ meta.List[Event], err error) {
 				require.Error(t, err)
 				require.Contains(
 					t,
@@ -255,8 +231,11 @@ func TestEventsServiceCreate(t *testing.T) {
 			service: &eventsService{
 				authorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{
 							Items: []Project{{}, {}},
 						}, nil
 					},
@@ -269,7 +248,7 @@ func TestEventsServiceCreate(t *testing.T) {
 					return Event{}, errors.New("error creating single event")
 				},
 			},
-			assertions: func(_ EventList, err error) {
+			assertions: func(_ meta.List[Event], err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error creating single event")
 			},
@@ -286,8 +265,11 @@ func TestEventsServiceCreate(t *testing.T) {
 			service: &eventsService{
 				authorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{
 							Items: []Project{{}, {}},
 						}, nil
 					},
@@ -300,7 +282,7 @@ func TestEventsServiceCreate(t *testing.T) {
 					return Event{}, nil
 				},
 			},
-			assertions: func(events EventList, err error) {
+			assertions: func(events meta.List[Event], err error) {
 				require.NoError(t, err)
 				require.Len(t, events.Items, 2)
 			},
@@ -475,8 +457,8 @@ func TestEventsServiceList(t *testing.T) {
 						context.Context,
 						EventsSelector,
 						meta.ListOptions,
-					) (EventList, error) {
-						return EventList{}, errors.New("error listing events")
+					) (meta.List[Event], error) {
+						return meta.List[Event]{}, errors.New("error listing events")
 					},
 				},
 			},
@@ -495,8 +477,8 @@ func TestEventsServiceList(t *testing.T) {
 						context.Context,
 						EventsSelector,
 						meta.ListOptions,
-					) (EventList, error) {
-						return EventList{}, nil
+					) (meta.List[Event], error) {
+						return meta.List[Event]{}, nil
 					},
 				},
 			},
@@ -672,8 +654,11 @@ func TestEventsServiceClone(t *testing.T) {
 					},
 				},
 				projectsStore: &mockProjectsStore{
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{
 							Items: []Project{{}, {}},
 						}, nil
 					},
@@ -711,8 +696,11 @@ func TestEventsServiceClone(t *testing.T) {
 					},
 				},
 				projectsStore: &mockProjectsStore{
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{
 							Items: []Project{{}, {}},
 						}, nil
 					},
@@ -1619,8 +1607,11 @@ func TestEventsServiceRetry(t *testing.T) {
 					},
 				},
 				projectsStore: &mockProjectsStore{
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{
 							Items: []Project{{}, {}},
 						}, nil
 					},
@@ -1662,8 +1653,11 @@ func TestEventsServiceRetry(t *testing.T) {
 					},
 				},
 				projectsStore: &mockProjectsStore{
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{
 							Items: []Project{{}, {}},
 						}, nil
 					},
@@ -1709,8 +1703,11 @@ func TestEventsServiceRetry(t *testing.T) {
 					},
 				},
 				projectsStore: &mockProjectsStore{
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{
 							Items: []Project{{}, {}},
 						}, nil
 					},
@@ -1760,8 +1757,11 @@ func TestEventsServiceRetry(t *testing.T) {
 					},
 				},
 				projectsStore: &mockProjectsStore{
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{
 							Items: []Project{{}, {}},
 						}, nil
 					},
@@ -1803,8 +1803,11 @@ func TestEventsServiceRetry(t *testing.T) {
 					},
 				},
 				projectsStore: &mockProjectsStore{
-					ListSubscribersFn: func(context.Context, Event) (ProjectList, error) {
-						return ProjectList{
+					ListSubscribersFn: func(
+						context.Context,
+						Event,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{
 							Items: []Project{{}, {}},
 						}, nil
 					},
@@ -1851,7 +1854,7 @@ type mockEventsStore struct {
 		context.Context,
 		EventsSelector,
 		meta.ListOptions,
-	) (EventList, error)
+	) (meta.List[Event], error)
 	GetFn                    func(context.Context, string) (Event, error)
 	GetByHashedWorkerTokenFn func(context.Context, string) (Event, error)
 	UpdateSourceStateFn      func(context.Context, string, SourceState) error
@@ -1877,7 +1880,7 @@ func (m *mockEventsStore) List(
 	ctx context.Context,
 	selector EventsSelector,
 	opts meta.ListOptions,
-) (EventList, error) {
+) (meta.List[Event], error) {
 	return m.ListFn(ctx, selector, opts)
 }
 

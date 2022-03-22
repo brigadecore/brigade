@@ -16,6 +16,10 @@ type Secret struct {
 	Value string `json:"value,omitempty"`
 }
 
+func (s Secret) Less(other Secret) bool {
+	return s.Key < other.Key
+}
+
 // MarshalJSON amends Secret instances with type metadata.
 func (s Secret) MarshalJSON() ([]byte, error) {
 	type Alias Secret
@@ -45,7 +49,7 @@ type SecretsService interface {
 		ctx context.Context,
 		projectID string,
 		opts meta.ListOptions,
-	) (SecretList, error)
+	) (meta.List[Secret], error)
 	// Set sets the value of a new Secret or updates the value of an existing
 	// Secret. If the specified Project does not exist, implementations MUST
 	// return a *meta.ErrNotFound error. If the specified Key does not exist, it
@@ -88,12 +92,12 @@ func (s *secretsService) List(
 	ctx context.Context,
 	projectID string,
 	opts meta.ListOptions,
-) (SecretList, error) {
+) (meta.List[Secret], error) {
 	if err := s.authorize(ctx, RoleReader, ""); err != nil {
-		return SecretList{}, err
+		return meta.List[Secret]{}, err
 	}
 
-	secrets := SecretList{}
+	secrets := meta.List[Secret]{}
 	project, err := s.projectsStore.Get(ctx, projectID)
 	if err != nil {
 		return secrets, errors.Wrapf(
@@ -181,7 +185,7 @@ type SecretsStore interface {
 	List(ctx context.Context,
 		project Project,
 		opts meta.ListOptions,
-	) (SecretList, error)
+	) (meta.List[Secret], error)
 	// Set adds or updates the provided Secret associated with the specified
 	// Project.
 	Set(ctx context.Context, project Project, secret Secret) error

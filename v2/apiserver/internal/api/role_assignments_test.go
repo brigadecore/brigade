@@ -241,8 +241,9 @@ func TestRoleAssignmentsServiceList(t *testing.T) {
 						context.Context,
 						RoleAssignmentsSelector,
 						meta.ListOptions,
-					) (RoleAssignmentList, error) {
-						return RoleAssignmentList{}, errors.New("something went wrong")
+					) (meta.List[RoleAssignment], error) {
+						return meta.List[RoleAssignment]{},
+							errors.New("something went wrong")
 					},
 				},
 			},
@@ -265,8 +266,8 @@ func TestRoleAssignmentsServiceList(t *testing.T) {
 						context.Context,
 						RoleAssignmentsSelector,
 						meta.ListOptions,
-					) (RoleAssignmentList, error) {
-						return RoleAssignmentList{}, nil
+					) (meta.List[RoleAssignment], error) {
+						return meta.List[RoleAssignment]{}, nil
 					},
 				},
 			},
@@ -412,7 +413,7 @@ type mockRoleAssignmentsStore struct {
 		context.Context,
 		RoleAssignmentsSelector,
 		meta.ListOptions,
-	) (RoleAssignmentList, error)
+	) (meta.List[RoleAssignment], error)
 	RevokeFn            func(context.Context, RoleAssignment) error
 	RevokeByPrincipalFn func(context.Context, PrincipalReference) error
 	ExistsFn            func(context.Context, RoleAssignment) (bool, error)
@@ -429,7 +430,7 @@ func (m *mockRoleAssignmentsStore) List(
 	ctx context.Context,
 	selector RoleAssignmentsSelector,
 	opts meta.ListOptions,
-) (RoleAssignmentList, error) {
+) (meta.List[RoleAssignment], error) {
 	return m.ListFn(ctx, selector, opts)
 }
 

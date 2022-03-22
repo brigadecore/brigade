@@ -86,7 +86,7 @@ func TestRoleAssignmentsStoreList(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(api.RoleAssignmentList, error)
+		assertions func(meta.List[api.RoleAssignment], error)
 	}{
 
 		{
@@ -100,7 +100,7 @@ func TestRoleAssignmentsStoreList(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(_ api.RoleAssignmentList, err error) {
+			assertions: func(_ meta.List[api.RoleAssignment], err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(t, err.Error(), "error finding role assignments")
@@ -127,7 +127,10 @@ func TestRoleAssignmentsStoreList(t *testing.T) {
 					return 0, nil
 				},
 			},
-			assertions: func(roleAssignments api.RoleAssignmentList, err error) {
+			assertions: func(
+				roleAssignments meta.List[api.RoleAssignment],
+				err error,
+			) {
 				require.NoError(t, err)
 				require.Empty(t, roleAssignments.Continue)
 				require.Zero(t, roleAssignments.RemainingItemCount)
@@ -154,7 +157,10 @@ func TestRoleAssignmentsStoreList(t *testing.T) {
 					return 5, nil
 				},
 			},
-			assertions: func(roleAssignments api.RoleAssignmentList, err error) {
+			assertions: func(
+				roleAssignments meta.List[api.RoleAssignment],
+				err error,
+			) {
 				require.NoError(t, err)
 				require.Equal(
 					t,

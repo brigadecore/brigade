@@ -139,7 +139,7 @@ type ProjectsService interface {
 	Create(context.Context, Project) (Project, error)
 	// List returns a ProjectList, with its Items (Projects) ordered
 	// alphabetically by Project ID.
-	List(context.Context, meta.ListOptions) (ProjectList, error)
+	List(context.Context, meta.ListOptions) (meta.List[Project], error)
 	// Get retrieves a single Project specified by its identifier. If the
 	// specified Project does not exist, implementations MUST return a
 	// *meta.ErrNotFound error.
@@ -306,9 +306,9 @@ func (p *projectsService) Create(
 func (p *projectsService) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (ProjectList, error) {
+) (meta.List[Project], error) {
 	if err := p.authorize(ctx, RoleReader, ""); err != nil {
-		return ProjectList{}, err
+		return meta.List[Project]{}, err
 	}
 
 	if opts.Limit == 0 {
@@ -439,11 +439,11 @@ type ProjectsStore interface {
 	List(
 		context.Context,
 		meta.ListOptions,
-	) (ProjectList, error)
+	) (meta.List[Project], error)
 	ListSubscribers(
 		ctx context.Context,
 		event Event,
-	) (ProjectList, error)
+	) (meta.List[Project], error)
 	// Get returns a Project having the indicated ID. If no such Project exists,
 	// implementations MUST return a *meta.ErrNotFound error.
 	Get(context.Context, string) (Project, error)

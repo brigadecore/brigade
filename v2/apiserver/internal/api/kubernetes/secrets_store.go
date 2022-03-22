@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"sort"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/api"
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
@@ -33,8 +32,8 @@ func (s *secretsStore) List(
 	ctx context.Context,
 	project api.Project,
 	opts meta.ListOptions,
-) (api.SecretList, error) {
-	secrets := api.SecretList{}
+) (meta.List[api.Secret], error) {
+	secrets := meta.List[api.Secret]{}
 
 	k8sSecret, err := s.kubeClient.CoreV1().Secrets(
 		project.Kubernetes.Namespace,
@@ -53,7 +52,15 @@ func (s *secretsStore) List(
 		i++
 	}
 
-	sort.Sort(secrets)
+	secrets.Sort(func(lhs, rhs api.Secret) int {
+		if lhs.Key < rhs.Key {
+			return -1
+		}
+		if lhs.Key == rhs.Key {
+			return 0
+		}
+		return 1
+	})
 
 	// Paginate...
 
@@ -64,15 +71,15 @@ func (s *secretsStore) List(
 	// here. But we're going to do it anyway just for the sake of making the
 	// ListSecrets operation behave consistently with all other list operations.
 	if opts.Continue != "" {
-		for i := 0; i < len(secrets.Items); i++ {
+		for i := int64(0); i < secrets.Len(); i++ {
 			if secrets.Items[i].Key == opts.Continue {
 				secrets.Items = secrets.Items[i+1:]
 				break
 			}
 		}
 	}
-	if int64(len(secrets.Items)) > opts.Limit {
-		secrets.RemainingItemCount = int64(len(secrets.Items)) - opts.Limit
+	if secrets.Len() > opts.Limit {
+		secrets.RemainingItemCount = secrets.Len() - opts.Limit
 		secrets.Items = secrets.Items[:opts.Limit]
 		secrets.Continue = secrets.Items[opts.Limit-1].Key
 	}

@@ -69,8 +69,8 @@ func (u *usersStore) Create(ctx context.Context, user api.User) error {
 func (u *usersStore) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (api.UserList, error) {
-	users := api.UserList{}
+) (meta.List[api.User], error) {
+	users := meta.List[api.User]{}
 
 	criteria := bson.M{}
 	if opts.Continue != "" {
@@ -95,7 +95,7 @@ func (u *usersStore) List(
 		return users, errors.Wrap(err, "error decoding users")
 	}
 
-	if int64(len(users.Items)) == opts.Limit {
+	if users.Len() == opts.Limit {
 		continueID := users.Items[opts.Limit-1].ID
 		criteria["id"] = bson.M{"$gt": continueID}
 		remaining, err := u.collection.CountDocuments(ctx, criteria)

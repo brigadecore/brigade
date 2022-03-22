@@ -206,8 +206,11 @@ func TestProjectServiceList(t *testing.T) {
 			service: &projectsService{
 				authorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
-					ListFn: func(context.Context, meta.ListOptions) (ProjectList, error) {
-						return ProjectList{}, errors.New("error listing projects")
+					ListFn: func(
+						context.Context,
+						meta.ListOptions,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{}, errors.New("error listing projects")
 					},
 				},
 			},
@@ -222,8 +225,11 @@ func TestProjectServiceList(t *testing.T) {
 			service: &projectsService{
 				authorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
-					ListFn: func(context.Context, meta.ListOptions) (ProjectList, error) {
-						return ProjectList{}, nil
+					ListFn: func(
+						context.Context,
+						meta.ListOptions,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{}, nil
 					},
 				},
 			},
@@ -697,9 +703,12 @@ func TestProjectServiceDelete(t *testing.T) {
 }
 
 type mockProjectsStore struct {
-	CreateFn          func(context.Context, Project) error
-	ListFn            func(context.Context, meta.ListOptions) (ProjectList, error)
-	ListSubscribersFn func(context.Context, Event) (ProjectList, error)
+	CreateFn func(context.Context, Project) error
+	ListFn   func(
+		context.Context,
+		meta.ListOptions,
+	) (meta.List[Project], error)
+	ListSubscribersFn func(context.Context, Event) (meta.List[Project], error)
 	GetFn             func(context.Context, string) (Project, error)
 	UpdateFn          func(context.Context, Project) error
 	DeleteFn          func(context.Context, string) error
@@ -712,14 +721,14 @@ func (m *mockProjectsStore) Create(ctx context.Context, project Project) error {
 func (m *mockProjectsStore) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (ProjectList, error) {
+) (meta.List[Project], error) {
 	return m.ListFn(ctx, opts)
 }
 
 func (m *mockProjectsStore) ListSubscribers(
 	ctx context.Context,
 	event Event,
-) (ProjectList, error) {
+) (meta.List[Project], error) {
 	return m.ListSubscribersFn(ctx, event)
 }
 

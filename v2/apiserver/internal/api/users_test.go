@@ -69,8 +69,11 @@ func TestUserServiceList(t *testing.T) {
 			service: &usersService{
 				authorize: alwaysAuthorize,
 				usersStore: &mockUsersStore{
-					ListFn: func(context.Context, meta.ListOptions) (UserList, error) {
-						return UserList{}, errors.New("error listing users")
+					ListFn: func(
+						context.Context,
+						meta.ListOptions,
+					) (meta.List[User], error) {
+						return meta.List[User]{}, errors.New("error listing users")
 					},
 				},
 				config: UsersServiceConfig{
@@ -88,8 +91,11 @@ func TestUserServiceList(t *testing.T) {
 			service: &usersService{
 				authorize: alwaysAuthorize,
 				usersStore: &mockUsersStore{
-					ListFn: func(context.Context, meta.ListOptions) (UserList, error) {
-						return UserList{}, nil
+					ListFn: func(
+						context.Context,
+						meta.ListOptions,
+					) (meta.List[User], error) {
+						return meta.List[User]{}, nil
 					},
 				},
 				config: UsersServiceConfig{
@@ -535,7 +541,7 @@ func TestUsersServiceDelete(t *testing.T) {
 
 type mockUsersStore struct {
 	CreateFn func(context.Context, User) error
-	ListFn   func(context.Context, meta.ListOptions) (UserList, error)
+	ListFn   func(context.Context, meta.ListOptions) (meta.List[User], error)
 	GetFn    func(context.Context, string) (User, error)
 	LockFn   func(context.Context, string) error
 	UnlockFn func(context.Context, string) error
@@ -549,7 +555,7 @@ func (m *mockUsersStore) Create(ctx context.Context, user User) error {
 func (m *mockUsersStore) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (UserList, error) {
+) (meta.List[User], error) {
 	return m.ListFn(ctx, opts)
 }
 

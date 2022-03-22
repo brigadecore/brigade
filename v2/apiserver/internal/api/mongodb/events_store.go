@@ -67,8 +67,8 @@ func (e *eventsStore) List(
 	ctx context.Context,
 	selector api.EventsSelector,
 	opts meta.ListOptions,
-) (api.EventList, error) {
-	events := api.EventList{}
+) (meta.List[api.Event], error) {
+	events := meta.List[api.Event]{}
 
 	criteria := bson.M{
 		"deleted": bson.M{
@@ -133,7 +133,7 @@ func (e *eventsStore) List(
 		return events, errors.Wrap(err, "error decoding events")
 	}
 
-	if int64(len(events.Items)) == opts.Limit {
+	if events.Len() == opts.Limit {
 		continueTime := events.Items[opts.Limit-1].Created
 		continueID := events.Items[opts.Limit-1].ID
 		criteria["$or"] = []bson.M{

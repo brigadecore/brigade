@@ -57,8 +57,8 @@ func (r *roleAssignmentsStore) List(
 	ctx context.Context,
 	selector api.RoleAssignmentsSelector,
 	opts meta.ListOptions,
-) (api.RoleAssignmentList, error) {
-	roleAssignments := api.RoleAssignmentList{}
+) (meta.List[api.RoleAssignment], error) {
+	roleAssignments := meta.List[api.RoleAssignment]{}
 
 	criteria := bson.M{}
 	if selector.Principal != nil {
@@ -125,7 +125,7 @@ func (r *roleAssignmentsStore) List(
 		return roleAssignments, errors.Wrap(err, "error decoding role assignments")
 	}
 
-	if int64(len(roleAssignments.Items)) == opts.Limit {
+	if roleAssignments.Len() == opts.Limit {
 		continuePrincipalType := roleAssignments.Items[opts.Limit-1].Principal.Type
 		continuePrincipalID := roleAssignments.Items[opts.Limit-1].Principal.ID
 		continueRole := roleAssignments.Items[opts.Limit-1].Role
