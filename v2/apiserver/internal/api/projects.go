@@ -409,13 +409,13 @@ func (p *projectsService) Update(
 }
 
 func (p *projectsService) Delete(ctx context.Context, id string) error {
-	if err := p.projectAuthorize(ctx, id, RoleProjectAdmin); err != nil {
-		return err
-	}
-
 	project, err := p.projectsStore.Get(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving project %q from store", id)
+	}
+
+	if err := p.projectAuthorize(ctx, id, RoleProjectAdmin); err != nil {
+		return err
 	}
 
 	// Delete all events associated with this project
