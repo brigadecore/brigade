@@ -74,14 +74,6 @@ func TestMatches(t *testing.T) {
 	}
 }
 
-func TestRoleAssignmentListMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(
-		t,
-		&RoleAssignmentList{},
-		RoleAssignmentListKind,
-	)
-}
-
 func TestNewRoleAssignmentsService(t *testing.T) {
 	usersStore := &mockUsersStore{}
 	serviceAccountsStore := &mockServiceAccountStore{}

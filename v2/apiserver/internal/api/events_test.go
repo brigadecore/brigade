@@ -14,10 +14,6 @@ func TestEventMarshalJSON(t *testing.T) {
 	metaTesting.RequireAPIVersionAndType(t, &Event{}, EventKind)
 }
 
-func TestEventListMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(t, &EventList{}, "EventList")
-}
-
 func TestCancelManyEventsResultMarshalJSON(t *testing.T) {
 	metaTesting.RequireAPIVersionAndType(
 		t,

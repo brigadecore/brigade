@@ -55,46 +55,6 @@ func (p Project) MarshalJSON() ([]byte, error) {
 	)
 }
 
-// ProjectList is an ordered and pageable list of Projects.
-type ProjectList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of Projects.
-	Items []Project `json:"items"`
-}
-
-// MarshalJSON amends ProjectList instances with type metadata.
-func (p ProjectList) MarshalJSON() ([]byte, error) {
-	type Alias ProjectList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "ProjectList",
-			},
-			Alias: (Alias)(p),
-		},
-	)
-}
-
-// Contains returns a boolean value indicating whether the ProjectList contains
-// the provided Project
-func (p ProjectList) Contains(project Project) bool {
-	for _, proj := range p.Items {
-		if proj.ID == project.ID {
-			if proj.Kubernetes == nil && project.Kubernetes == nil ||
-				proj.Kubernetes != nil && project.Kubernetes != nil &&
-					proj.Kubernetes.Namespace == project.Kubernetes.Namespace {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // ProjectUpdateOptions represents useful, optional settings for updating a
 // Project. It currently has no fields, but exists to preserve the possibility
 // of future expansion without having to change client function signatures.

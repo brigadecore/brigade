@@ -47,31 +47,6 @@ func (s ServiceAccount) MarshalJSON() ([]byte, error) {
 	)
 }
 
-// ServiceAccountList is an ordered and pageable list of ServiceAccounts.
-type ServiceAccountList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of ServiceAccounts.
-	Items []ServiceAccount `json:"items,omitempty"`
-}
-
-// MarshalJSON amends ServiceAccountList instances with type metadata.
-func (s ServiceAccountList) MarshalJSON() ([]byte, error) {
-	type Alias ServiceAccountList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "ServiceAccountList",
-			},
-			Alias: (Alias)(s),
-		},
-	)
-}
-
 // ServiceAccountsService is the specialized interface for managing
 // ServiceAccounts. It's decoupled from underlying technology choices (e.g. data
 // store) to keep business logic reusable and consistent while the underlying

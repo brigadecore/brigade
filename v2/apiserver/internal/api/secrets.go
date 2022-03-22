@@ -8,50 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// SecretList is an ordered and pageable list of Secrets.
-type SecretList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of Secrets.
-	Items []Secret `json:"items,omitempty"`
-}
-
-// All of the following functions are implemented on the SecretsList type to
-// facilitate sorting by each constituent Secret's Key field.
-
-// Len returns the cardinality of the underlying Items field.
-func (s SecretList) Len() int {
-	return len(s.Items)
-}
-
-// Swap swaps Secret i and Secret j in the underlying Items field.
-func (s SecretList) Swap(i, j int) {
-	s.Items[i], s.Items[j] = s.Items[j], s.Items[i]
-}
-
-// Less returns true when Secret i's Key field is less than Secret j's Key field
-// in the underlying Items field (when compared lexically).
-func (s SecretList) Less(i, j int) bool {
-	return s.Items[i].Key < s.Items[j].Key
-}
-
-// MarshalJSON amends SecretList instances with type metadata.
-func (s SecretList) MarshalJSON() ([]byte, error) {
-	type Alias SecretList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "SecretList",
-			},
-			Alias: (Alias)(s),
-		},
-	)
-}
-
 // Secret represents Project-level sensitive information.
 type Secret struct {
 	// Key is a key by which the secret can referred.

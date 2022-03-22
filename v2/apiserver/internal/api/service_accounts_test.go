@@ -14,14 +14,6 @@ func TestServiceAccountMarshalJSON(t *testing.T) {
 	metaTesting.RequireAPIVersionAndType(t, ServiceAccount{}, "ServiceAccount")
 }
 
-func TestServiceAccountListMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(
-		t,
-		ServiceAccountList{},
-		"ServiceAccountList",
-	)
-}
-
 func TestNewServiceAccountService(t *testing.T) {
 	serviceAccountsStore := &mockServiceAccountStore{}
 	roleAssignmentsStore := &mockRoleAssignmentsStore{}

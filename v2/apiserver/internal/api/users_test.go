@@ -14,10 +14,6 @@ func TestUserMarshalJSON(t *testing.T) {
 	metaTesting.RequireAPIVersionAndType(t, User{}, "User")
 }
 
-func TestUserListMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(t, UserList{}, "UserList")
-}
-
 func TestNewUsersService(t *testing.T) {
 	usersStore := &mockUsersStore{}
 	sessionsStore := &mockSessionsStore{}

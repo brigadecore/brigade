@@ -187,31 +187,6 @@ type EventsSelector struct {
 	Labels map[string]string
 }
 
-// EventList is an ordered and pageable list of Events.
-type EventList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of Events.
-	Items []Event `json:"items,omitempty"`
-}
-
-// MarshalJSON amends EventList instances with type metadata.
-func (e EventList) MarshalJSON() ([]byte, error) {
-	type Alias EventList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "EventList",
-			},
-			Alias: (Alias)(e),
-		},
-	)
-}
-
 // CancelManyEventsResult represents a summary of a mass Event cancellation
 // operation.
 type CancelManyEventsResult struct {

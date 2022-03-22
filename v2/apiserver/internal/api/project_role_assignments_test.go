@@ -81,14 +81,6 @@ func TestProjectRoleAssignmentMatches(t *testing.T) {
 	}
 }
 
-func TestProjectRoleAssignmentListMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(
-		t,
-		&ProjectRoleAssignmentList{},
-		ProjectRoleAssignmentListKind,
-	)
-}
-
 func TestNewProjectRoleAssignmentsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	usersStore := &mockUsersStore{}

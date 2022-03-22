@@ -40,31 +40,6 @@ func (u User) MarshalJSON() ([]byte, error) {
 	)
 }
 
-// UserList is an ordered and pageable list of Users.
-type UserList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of Users.
-	Items []User `json:"items,omitempty"`
-}
-
-// MarshalJSON amends UserList instances with type metadata.
-func (u UserList) MarshalJSON() ([]byte, error) {
-	type Alias UserList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "UserList",
-			},
-			Alias: (Alias)(u),
-		},
-	)
-}
-
 // UsersServiceConfig encapsulates several configuration options for the
 // UsersService.
 type UsersServiceConfig struct {
