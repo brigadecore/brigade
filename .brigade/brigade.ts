@@ -4,7 +4,7 @@ const azImg = "mcr.microsoft.com/azure-cli"
 const goImg = "brigadecore/go-tools:v0.8.0"
 const jsImg = "node:16.11.0-bullseye"
 const dindImg = "docker:20.10.9-dind"
-const dockerClientImg = "brigadecore/docker-tools:v0.2.0"
+const dockerClientImg = "brigadecore/docker-tools:v0.3.0"
 const helmImg = "brigadecore/helm-tools:v0.4.0"
 const localPath = "/workspaces/brigade"
 
