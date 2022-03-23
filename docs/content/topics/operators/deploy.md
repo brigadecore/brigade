@@ -106,8 +106,8 @@ You may _optionally_ supply your own values for the following fields as well:
 * `apiserver.rootUser.password`: If you do not set a value for this, one will be
   generated on initial install and _will not_ change on subsequent
   `helm upgrade` operations unless explicitly overridden.
-* `mongodb.auth.passwords`: If you do not set a value for this, one will be
-  generated on initial install _and will be be regenerated/changed by every
+* `mongodb.auth.rootPassword`: If you do not set a value for this, one will be
+  generated on initial install and _will be_ regenerated/changed by every
   subsequent `helm upgrade` operation unless explicitly overridden. Since you
   will rarely, if ever, need to use this password, this is generally not a
   problem.
