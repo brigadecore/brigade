@@ -97,17 +97,20 @@ In the Brigade chart values file (`~/brigade-values.yaml`) there is one
 password with a hard-coded default. For production-grade deployments, it is
 critical to supply your own value for that field.
 
+Replace the value of `mongodb.auth.passwords[0]` with a complex string of your
+own. If you're personally in the habit of using a password manager and it can
+generate strong passwords for you, consider using that.
+
 You may _optionally_ supply your own values for the following fields as well:
 
 * `apiserver.rootUser.password`: If you do not set a value for this, one will be
   generated on initial install and _will not_ change on subsequent
   `helm upgrade` operations unless explicitly overridden.
-* `mongodb.auth.passwords`: If you do not set a value for this, one will be
+* `mongodb.auth.rootPassword`: If you do not set a value for this, one will be
   generated on initial install and _will be_ regenerated/changed by every
   subsequent `helm upgrade` operation unless explicitly overridden. Since you
   will rarely, if ever, need to use this password, this is generally not a
-  problem. If you're personally in the habit of using a password manager and it can
-  generate strong passwords for you, consider using that.
+  problem.
 * `artemis.password`: If you do not set a value for this, one will be
   generated on initial install and _will not_ change on subsequent
   `helm upgrade` operations unless explicitly overridden.
