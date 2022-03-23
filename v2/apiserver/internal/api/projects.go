@@ -409,6 +409,10 @@ func (p *projectsService) Update(
 }
 
 func (p *projectsService) Delete(ctx context.Context, id string) error {
+	if err := p.authorize(ctx, RoleReader, ""); err != nil {
+		return err
+	}
+
 	project, err := p.projectsStore.Get(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "error retrieving project %q from store", id)
