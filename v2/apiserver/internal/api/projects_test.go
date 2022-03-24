@@ -474,7 +474,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		assertions func(error)
 	}{
 		{
-			name: "read unauthorized",
+			name: "user does not have read permissions",
 			service: &projectsService{
 				authorize: neverAuthorize,
 			},
@@ -500,7 +500,7 @@ func TestProjectServiceDelete(t *testing.T) {
 			},
 		},
 		{
-			name: "project access unauthorized",
+			name: "user is not a project admin",
 			service: &projectsService{
 				authorize:        alwaysAuthorize,
 				projectAuthorize: neverProjectAuthorize,
