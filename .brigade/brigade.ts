@@ -84,6 +84,8 @@ class BuildImageJob extends JobWithSource {
     let registryOrg: string
     let registryUsername: string
     let registryPassword: string
+    let signingSetupCommands = ""
+    let signingCommand = ""
     if (!version) { // This is where we'll push potentially unstable images
       registry = secrets.unstableImageRegistry
       registryOrg = secrets.unstableImageRegistryOrg
@@ -96,6 +98,16 @@ class BuildImageJob extends JobWithSource {
       registryPassword = secrets.stableImageRegistryPassword
       // Since it's defined, the make target will want this env var
       env["VERSION"] = version
+      env["BASE64_IMAGE_SIGNING_KEY"] = secrets.base64ImageSigningKey
+      // This env var is documented here:
+      // https://docs.docker.com/engine/security/trust/trust_automation/
+      env["DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"] = secrets.imageSigningKeyPassphrase
+      const keyDir = "~/.docker/trust/private"
+      const keyFile = `${keyDir}/${secrets.imageSigningKeyHash}.key`
+      signingSetupCommands = `mkdir -p ${keyDir} && chmod 700 ${keyDir} && ` +
+        `printf $BASE64_IMAGE_SIGNING_KEY | base64 -d > ${keyFile} && chmod 600 ${keyFile} && ` +
+        `docker trust key load --name ${registryUsername} ${keyFile} && `
+      signingCommand = ` && make sign-${image}`
     }
     if (registry) {
       // Since it's defined, the make target will want this env var
@@ -124,11 +136,15 @@ class BuildImageJob extends JobWithSource {
       // probably up and running.
       "sleep 20 && " +
         `${registriesLoginCmd} && ` +
+        signingSetupCommands +
         "docker buildx create --name builder --use && " +
         "docker info && " +
-        `make push-${image}`
+        `make push-${image}` +
+        signingCommand
     ]
-    this.sidecarContainers.dind = dindSidecar
+    this.sidecarContainers.dind = new Container(dindImg)
+    this.sidecarContainers.dind.privileged = true
+    this.sidecarContainers.dind.environment["DOCKER_TLS_CERTDIR"] = ""
   }
 }
 

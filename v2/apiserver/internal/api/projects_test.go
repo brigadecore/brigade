@@ -474,9 +474,9 @@ func TestProjectServiceDelete(t *testing.T) {
 		assertions func(error)
 	}{
 		{
-			name: "unauthorized",
+			name: "user does not have read permissions",
 			service: &projectsService{
-				projectAuthorize: neverProjectAuthorize,
+				authorize: neverAuthorize,
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -486,7 +486,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error retrieving project from store",
 			service: &projectsService{
-				projectAuthorize: alwaysProjectAuthorize,
+				authorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, errors.New("store error")
@@ -500,8 +500,25 @@ func TestProjectServiceDelete(t *testing.T) {
 			},
 		},
 		{
+			name: "user is not a project admin",
+			service: &projectsService{
+				authorize:        alwaysAuthorize,
+				projectAuthorize: neverProjectAuthorize,
+				projectsStore: &mockProjectsStore{
+					GetFn: func(ctx context.Context, s string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error deleting events associated with project",
 			service: &projectsService{
+				authorize:        alwaysAuthorize,
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
@@ -529,6 +546,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error deleting project logs",
 			service: &projectsService{
+				authorize:        alwaysAuthorize,
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
@@ -570,6 +588,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error deleting role assignments associated with project",
 			service: &projectsService{
+				authorize:        alwaysAuthorize,
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
@@ -611,6 +630,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error deleting project from store",
 			service: &projectsService{
+				authorize:        alwaysAuthorize,
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
@@ -648,6 +668,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "error deleting project from substrate",
 			service: &projectsService{
+				authorize:        alwaysAuthorize,
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
@@ -690,6 +711,7 @@ func TestProjectServiceDelete(t *testing.T) {
 		{
 			name: "success",
 			service: &projectsService{
+				authorize:        alwaysAuthorize,
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
