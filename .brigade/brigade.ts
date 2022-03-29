@@ -534,7 +534,7 @@ events.on("brigade.sh/cron", "nightly-cleanup", async event => {
     "AZ_USERNAME": secrets.azUsername,
     "AZ_TENANT": secrets.azTenant
   }
-  let scriptname = "script/nightly-cleanup.sh"
+  let scriptname = "scripts/nightly-cleanup.sh"
   job.primaryContainer.command = [scriptname]
   await job.run()
 })
