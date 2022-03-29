@@ -530,23 +530,12 @@ events.on("brigade.sh/cron", "nightly-cleanup", async event => {
   const secrets = event.project.secrets
   const job = new Job("unstable-acr-cleanup", azImg, event)
   job.primaryContainer.environment = {
-    "AZ_PASSWORD": secrets.azPassword
+    "AZ_PASSWORD": secrets.azPassword,
+    "AZ_USERNAME": secrets.azUsername,
+    "AZ_TENANT": secrets.azTenant
   }
-  job.primaryContainer.command = ["sh"]
-  let script = `az login --service-principal --username ${secrets.azUsername} --password $AZ_PASSWORD --tenant ${secrets.azTenant} `
-  const repos = [
-    "brigade2-apiserver",
-    "brigade2-artemis",
-    "brigade2-git-initializer",
-    "brigade2-logger",
-    "brigade2-observer",
-    "brigade2-scheduler",
-    "brigade2-worker"
-  ]
-  repos.forEach((repo: string) => {
-    script += `&& az acr repository delete --name unstablebrigade --repository ${repo} --yes`
-  })
-  job.primaryContainer.arguments = ["-c", script]
+  let scriptname = "script/nightly-cleanup.sh"
+  job.primaryContainer.command = [scriptname]
   await job.run()
 })
 
