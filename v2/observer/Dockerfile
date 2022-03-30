@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM brigadecore/go-tools:v0.8.0 as builder
+FROM --platform=$BUILDPLATFORM brigadecore/go-tools:v0.9.0 as builder
 
 ARG VERSION
 ARG COMMIT

@@ -16,7 +16,7 @@ GIT_VERSION = $(shell git describe --always --abbrev=7 --dirty --match=NeVeRmAtC
 
 ifneq ($(SKIP_DOCKER),true)
 	PROJECT_ROOT := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
-	GO_DEV_IMAGE := brigadecore/go-tools:v0.8.0
+	GO_DEV_IMAGE := brigadecore/go-tools:v0.9.0
 
 	GO_DOCKER_CMD := docker run \
 		-it \
@@ -466,7 +466,6 @@ publish-chart:
 .PHONY: publish-cli
 publish-cli: build-cli
 	$(GO_DOCKER_CMD) sh -c ' \
-		go get github.com/tcnksm/ghr && \
 		ghr \
 			-u $(GITHUB_ORG) \
 			-r $(GITHUB_REPO) \
