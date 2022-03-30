@@ -356,7 +356,9 @@ jobs[publishSchedulerSBOMJobName] = publishSchedulerSBOMJob
 
 const buildWorkerJobName = "build-worker"
 const buildWorkerJob = (event: Event, version?: string) => {
-  return new BuildImageJob("worker", event, version)
+  const job = new BuildImageJob("worker", event, version)
+  job.timeoutSeconds = 30 * 60
+  return job
 }
 jobs[buildWorkerJobName] = buildWorkerJob
 
