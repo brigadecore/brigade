@@ -466,7 +466,6 @@ publish-chart:
 .PHONY: publish-cli
 publish-cli: build-cli
 	$(GO_DOCKER_CMD) sh -c ' \
-		go get github.com/tcnksm/ghr && \
 		ghr \
 			-u $(GITHUB_ORG) \
 			-r $(GITHUB_REPO) \
