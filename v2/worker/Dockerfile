@@ -1,4 +1,4 @@
-FROM node:16.11.0-bullseye-slim as builder
+FROM --platform=$BUILDPLATFORM node:16.11.0-bullseye-slim as builder
 
 ARG VERSION
 
