@@ -528,14 +528,12 @@ events.on("brigade.sh/github", "cd:pipeline_requested", async event => {
 
 events.on("brigade.sh/cron", "nightly-cleanup", async event => {
   const secrets = event.project.secrets
-  const job = new Job("unstable-acr-cleanup", azImg, event)
-  job.primaryContainer.environment = {
+  const job = new JobWithSource("unstable-acr-cleanup", azImg, event, {
     "AZ_PASSWORD": secrets.azPassword,
     "AZ_USERNAME": secrets.azUsername,
     "AZ_TENANT": secrets.azTenant
-  }
-  let scriptname = "scripts/nightly-cleanup.sh"
-  job.primaryContainer.command = [scriptname]
+  })
+  job.primaryContainer.command = ["scripts/nightly-cleanup.sh"]
   await job.run()
 })
 
