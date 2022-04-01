@@ -153,7 +153,7 @@ func (s *secretsService) List(
 		s.secretsStore.List(ctx, project, opts); err != nil {
 		return secrets, errors.Wrapf(
 			err,
-			"error getting worker secrets for project %q from store",
+			"error getting secrets for project %q from store",
 			projectID,
 		)
 	}
@@ -180,7 +180,8 @@ func (s *secretsService) Set(
 	if err := s.secretsStore.Set(ctx, project, secret); err != nil {
 		return errors.Wrapf(
 			err,
-			"error setting secret for project %q worker in store",
+			"error setting secret %q for project %q in store",
+			secret.Key,
 			projectID,
 		)
 	}
@@ -208,7 +209,8 @@ func (s *secretsService) Unset(
 		s.secretsStore.Unset(ctx, project, key); err != nil {
 		return errors.Wrapf(
 			err,
-			"error unsetting secrets for project %q worker in store",
+			"error unsetting secret %q for project %q in store",
+			key,
 			projectID,
 		)
 	}
