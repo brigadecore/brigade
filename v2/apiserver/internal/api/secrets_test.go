@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/brigadecore/brigade/v2/apiserver/internal/meta"
-	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing"
+	metaTesting "github.com/brigadecore/brigade/v2/apiserver/internal/meta/testing" // nolint: lll
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
