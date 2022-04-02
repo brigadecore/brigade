@@ -197,7 +197,7 @@ func TestSecretsServiceSet(t *testing.T) {
 		{
 			name: "unauthorized",
 			service: &secretsService{
-				projectAuthorize: neverProjectAuthorize,
+				authorize: neverAuthorize,
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -207,7 +207,7 @@ func TestSecretsServiceSet(t *testing.T) {
 		{
 			name: "error getting project from store",
 			service: &secretsService{
-				projectAuthorize: alwaysProjectAuthorize,
+				authorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
 						return Project{}, errors.New("something went wrong")
@@ -221,8 +221,25 @@ func TestSecretsServiceSet(t *testing.T) {
 			},
 		},
 		{
+			name: "user is not a project admin",
+			service: &secretsService{
+				authorize:        alwaysAuthorize,
+				projectAuthorize: neverProjectAuthorize,
+				projectsStore: &mockProjectsStore{
+					GetFn: func(context.Context, string) (Project, error) {
+						return Project{}, nil
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
 			name: "error setting secret in store",
 			service: &secretsService{
+				authorize:        alwaysAuthorize,
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
@@ -244,6 +261,7 @@ func TestSecretsServiceSet(t *testing.T) {
 		{
 			name: "success",
 			service: &secretsService{
+				authorize:        alwaysAuthorize,
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
 					GetFn: func(context.Context, string) (Project, error) {
