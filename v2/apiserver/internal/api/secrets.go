@@ -16,10 +16,6 @@ type Secret struct {
 	Value string `json:"value,omitempty"`
 }
 
-func (s Secret) Less(other Secret) bool {
-	return s.Key < other.Key
-}
-
 // MarshalJSON amends Secret instances with type metadata.
 func (s Secret) MarshalJSON() ([]byte, error) {
 	type Alias Secret
