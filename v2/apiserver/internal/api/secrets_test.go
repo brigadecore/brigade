@@ -195,7 +195,7 @@ func TestSecretsServiceSet(t *testing.T) {
 		assertions func(error)
 	}{
 		{
-			name: "unauthorized",
+			name: "user does not have read permissions",
 			service: &secretsService{
 				authorize: neverAuthorize,
 			},
