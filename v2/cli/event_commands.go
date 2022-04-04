@@ -311,6 +311,12 @@ var eventCommand = &cli.Command{
 					Usage: "If set, will retrieve events with their worker in RUNNING " +
 						"phase; mutually exclusive with --terminal and --non-terminal",
 				},
+				&cli.StringFlag{
+					Name:    flagSource,
+					Aliases: []string{"s"},
+					Usage: "If set, will retrieve events only from the specified " +
+						"source",
+				},
 				&cli.BoolFlag{
 					Name: flagStarting,
 					Usage: "If set, will retrieve events with their worker in a " +
@@ -333,6 +339,12 @@ var eventCommand = &cli.Command{
 					Usage: "If set, will retrieve events with their worker in a " +
 						"TIMED_OUT phase; mutually exclusive with --terminal and " +
 						"--non-terminal",
+				},
+				&cli.StringFlag{
+					Name:    flagType,
+					Aliases: []string{"t"},
+					Usage: "If set, will retrieve only events having the specified " +
+						"type",
 				},
 				&cli.BoolFlag{
 					Name: flagUnknown,
