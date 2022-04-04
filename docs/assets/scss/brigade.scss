@@ -123,7 +123,7 @@ main {
   // This styles links in the main body of the page and specifically excludes
   // header anchor links and links in the footer (which, in the Techdoc theme,
   // is a child of the <main> element).
-  p:not(.powered), ul, nav.pagination {
+  p:not(.powered), p:not(.copyright), ul, nav.pagination {
     a {
       color: $colorm;
       position: relative;
@@ -157,6 +157,7 @@ main {
   }
 
   footer {
+    display: flex;
     padding: 4rem 0 1.5rem;
     a, p {
       // TODO: This color doesn't seem to be applied.
@@ -164,6 +165,12 @@ main {
     }
     a {
       text-decoration: underline;
+    }
+    .copyright, .powered {
+      color: #999;
+      flex: 1 1 auto;
+      font-size: 80%;
+      margin: 0;
     }
   }
 
