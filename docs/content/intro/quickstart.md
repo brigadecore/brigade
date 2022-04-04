@@ -20,14 +20,13 @@ our YouTube channel.
 
 * [Prerequisites](#prerequisites)
 * [Install Brigade](#install-brigade)
-  * [Install the Brigade CLI](#install-the-brigade-cli)
-  * [Install Server-Side Components](#install-server-side-components)
+* [Try It Out](#try-it-out)
   * [Port Forwarding](#port-forwarding)
-* [Trying It Out](#trying-it-out)
+  * [Install the Brigade CLI](#install-the-brigade-cli)
   * [Log into Brigade](#log-into-brigade)
   * [Create a Project](#create-a-project)
   * [Create an Event](#create-an-event)
-* [Cleanup](#cleanup)
+* [Clean Up](#clean-up)
 * [Next Steps](#next-steps)
 * [Troubleshooting](#troubleshooting)
 
@@ -47,6 +46,56 @@ our YouTube channel.
   fail if your disk is nearly full.
 
 ## Install Brigade
+
+This section specifically covers installation of Brigade's server-side
+components into a local, development-grade Kubernetes cluster. We'll install
+the Brigade CLI later when we're ready to take Brigade for a test drive.
+
+1. Enable Helm's experimental OCI support:
+
+    **POSIX**
+    ```shell
+    $ export HELM_EXPERIMENTAL_OCI=1
+    ```
+
+    **PowerShell**
+    ```powershell
+    > $env:HELM_EXPERIMENTAL_OCI=1
+    ```
+
+1. Run the following commands to install Brigade with default configuration:
+
+    ```shell
+    $ helm install brigade \
+        oci://ghcr.io/brigadecore/brigade \
+        --version v2.3.1 \
+        --create-namespace \
+        --namespace brigade \
+        --wait \
+        --timeout 300s
+    ```
+
+    > ⚠️ Installation and initial startup may take a few minutes to complete.
+
+    If the deployment fails, proceed to the [troubleshooting](#troubleshooting)
+    section.
+
+## Try It Out
+
+### Port Forwarding
+
+Since you are running Brigade locally, use port forwarding to make the Brigade
+API available via the local network interface:
+
+**POSIX**
+```shell
+$ kubectl --namespace brigade port-forward service/brigade-apiserver 8443:443 &>/dev/null &
+```
+
+**PowerShell**
+```powershell
+> kubectl --namespace brigade port-forward service/brigade-apiserver 8443:443 *> $null  
+```
 
 ### Install the Brigade CLI
 
@@ -97,56 +146,6 @@ if you want to make the change permanent:
 ```powershell
 > $env:PATH+=";$env:USERPROFILE\bin"
 ```
-
-### Install Server-Side Components
-
-To install server-side components on your local, development-grade cluster:
-
-1. Enable Helm's experimental OCI support:
-
-    **POSIX**
-    ```shell
-    $ export HELM_EXPERIMENTAL_OCI=1
-    ```
-
-    **PowerShell**
-    ```powershell
-    > $env:HELM_EXPERIMENTAL_OCI=1
-    ```
-
-1. Run the following commands to install Brigade with default configuration:
-
-    ```shell
-    $ helm install brigade \
-        oci://ghcr.io/brigadecore/brigade \
-        --version v2.3.1 \
-        --create-namespace \
-        --namespace brigade \
-        --wait \
-        --timeout 300s
-    ```
-
-    > ⚠️ Installation and initial startup may take a few minutes to complete.
-
-    If the deployment fails, proceed to the [troubleshooting](#troubleshooting)
-    section.
-
-### Port Forwarding
-
-Since you are running Brigade locally, use port forwarding to make the Brigade
-API available via the local network interface:
-
-**POSIX**
-```shell
-$ kubectl --namespace brigade port-forward service/brigade-apiserver 8443:443 &>/dev/null &
-```
-
-**PowerShell**
-```powershell
-> kubectl --namespace brigade port-forward service/brigade-apiserver 8443:443 *> $null  
-```
-
-## Trying It Out
 
 ### Log into Brigade
 
@@ -283,7 +282,7 @@ Waiting for event's worker to be RUNNING...
 > ⚠️ By default, Brigade's scheduler scans for new projects every thirty
 > seconds. If Brigade is slow to handle your first event, this may be why.
 
-## Cleanup
+## Clean Up
 
 If you want to keep your Brigade installation, run the following command to
 remove the example project created in this QuickStart:
