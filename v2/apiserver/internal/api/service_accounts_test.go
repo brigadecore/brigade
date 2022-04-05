@@ -14,14 +14,6 @@ func TestServiceAccountMarshalJSON(t *testing.T) {
 	metaTesting.RequireAPIVersionAndType(t, ServiceAccount{}, "ServiceAccount")
 }
 
-func TestServiceAccountListMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(
-		t,
-		ServiceAccountList{},
-		"ServiceAccountList",
-	)
-}
-
 func TestNewServiceAccountService(t *testing.T) {
 	serviceAccountsStore := &mockServiceAccountStore{}
 	roleAssignmentsStore := &mockRoleAssignmentsStore{}
@@ -116,8 +108,8 @@ func TestServiceAccountsServiceList(t *testing.T) {
 					ListFn: func(
 						context.Context,
 						meta.ListOptions,
-					) (ServiceAccountList, error) {
-						return ServiceAccountList{},
+					) (meta.List[ServiceAccount], error) {
+						return meta.List[ServiceAccount]{},
 							errors.New("error listing service accounts")
 					},
 				},
@@ -140,8 +132,8 @@ func TestServiceAccountsServiceList(t *testing.T) {
 					ListFn: func(
 						context.Context,
 						meta.ListOptions,
-					) (ServiceAccountList, error) {
-						return ServiceAccountList{}, nil
+					) (meta.List[ServiceAccount], error) {
+						return meta.List[ServiceAccount]{}, nil
 					},
 				},
 			},
@@ -504,7 +496,7 @@ type mockServiceAccountStore struct {
 	ListFn   func(
 		context.Context,
 		meta.ListOptions,
-	) (ServiceAccountList, error)
+	) (meta.List[ServiceAccount], error)
 	GetFn              func(context.Context, string) (ServiceAccount, error)
 	GetByHashedTokenFn func(context.Context, string) (ServiceAccount, error)
 	LockFn             func(context.Context, string) error
@@ -526,7 +518,7 @@ func (m *mockServiceAccountStore) Create(
 func (m *mockServiceAccountStore) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (ServiceAccountList, error) {
+) (meta.List[ServiceAccount], error) {
 	return m.ListFn(ctx, opts)
 }
 

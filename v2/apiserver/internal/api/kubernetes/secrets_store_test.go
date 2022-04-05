@@ -26,7 +26,7 @@ func TestSecretsStoreList(t *testing.T) {
 	testCases := []struct {
 		name       string
 		setup      func() *fake.Clientset
-		assertions func(api.SecretList, error)
+		assertions func(meta.List[api.Secret], error)
 	}{
 		{
 			name: "error getting kubernetes secret",
@@ -34,7 +34,7 @@ func TestSecretsStoreList(t *testing.T) {
 				// We'll force an error simply by having the secret not exist
 				return fake.NewSimpleClientset()
 			},
-			assertions: func(secrets api.SecretList, err error,
+			assertions: func(secrets meta.List[api.Secret], err error,
 			) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error retrieving secret")
@@ -69,10 +69,9 @@ func TestSecretsStoreList(t *testing.T) {
 				require.NoError(t, err)
 				return kubeClient
 			},
-			assertions: func(secrets api.SecretList, err error) {
+			assertions: func(secrets meta.List[api.Secret], err error) {
 				require.NoError(t, err)
 				// Check that the Limit param was respected
-				require.Equal(t, testLimit, secrets.Len())
 				require.Len(t, secrets.Items, testLimit)
 				// Check that we got Secrets back, lexically ordered by Key AND the
 				// Continue param was respected

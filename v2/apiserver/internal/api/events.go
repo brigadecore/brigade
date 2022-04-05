@@ -187,31 +187,6 @@ type EventsSelector struct {
 	Labels map[string]string
 }
 
-// EventList is an ordered and pageable list of Events.
-type EventList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of Events.
-	Items []Event `json:"items,omitempty"`
-}
-
-// MarshalJSON amends EventList instances with type metadata.
-func (e EventList) MarshalJSON() ([]byte, error) {
-	type Alias EventList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "EventList",
-			},
-			Alias: (Alias)(e),
-		},
-	)
-}
-
 // CancelManyEventsResult represents a summary of a mass Event cancellation
 // operation.
 type CancelManyEventsResult struct {
@@ -267,7 +242,7 @@ func (d DeleteManyEventsResult) MarshalJSON() ([]byte, error) {
 type EventsService interface {
 	// Create creates a new Event.
 	Create(context.Context, Event) (
-		EventList,
+		meta.List[Event],
 		error,
 	)
 	// List retrieves an EventList, with its Items (Events) ordered by age, newest
@@ -277,7 +252,7 @@ type EventsService interface {
 		context.Context,
 		EventsSelector,
 		meta.ListOptions,
-	) (EventList, error)
+	) (meta.List[Event], error)
 	// Get retrieves a single Event specified by its identifier. If no such event
 	// is found, implementations MUST return a *meta.ErrNotFound error.
 	Get(context.Context, string) (Event, error)
@@ -358,8 +333,8 @@ func NewEventsService(
 func (e *eventsService) Create(
 	ctx context.Context,
 	event Event,
-) (EventList, error) {
-	events := EventList{}
+) (meta.List[Event], error) {
+	events := meta.List[Event]{}
 
 	if event.ProjectID == "" {
 		// This event doesn't reference a discrete project and is instead going to
@@ -407,28 +382,9 @@ func (e *eventsService) Create(
 		)
 	}
 
-	if event.ProjectID != "" {
-		project, err := e.projectsStore.Get(ctx, event.ProjectID)
-		if err != nil {
-			return events, errors.Wrapf(
-				err,
-				"error retrieving project %q from store",
-				event.ProjectID,
-			)
-		}
-
-		if !subscribers.Contains(project) {
-			return events, nil
-		}
-
-		evt, err := e.createSingleEventFn(ctx, project, event)
-		events.Items = []Event{evt}
-		return events, err
-	}
-
 	// If we get to here, no project ID is specified, so we iterate over all
 	// subscribed projects in the list and create a discrete event for each.
-	events.Items = make([]Event, len(subscribers.Items))
+	events.Items = make([]Event, subscribers.Len())
 	for i, project := range subscribers.Items {
 		event.ProjectID = project.ID
 		evt, err := e.createSingleEventFn(ctx, project, event)
@@ -521,9 +477,9 @@ func (e *eventsService) List(
 	ctx context.Context,
 	selector EventsSelector,
 	opts meta.ListOptions,
-) (EventList, error) {
+) (meta.List[Event], error) {
 	if err := e.authorize(ctx, RoleReader, ""); err != nil {
-		return EventList{}, err
+		return meta.List[Event]{}, err
 	}
 
 	// If no worker phase filters were applied, retrieve all phases
@@ -943,7 +899,7 @@ type EventsStore interface {
 		context.Context,
 		EventsSelector,
 		meta.ListOptions,
-	) (EventList, error)
+	) (meta.List[Event], error)
 	// Get retrieves a single Event from the underlying data store. If the
 	// specified Event does not exist, implementations MUST return a
 	// *meta.ErrNotFound error.

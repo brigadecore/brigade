@@ -14,68 +14,6 @@ func TestProjectMarshalJSON(t *testing.T) {
 	metaTesting.RequireAPIVersionAndType(t, &Project{}, ProjectKind)
 }
 
-func TestProjectListMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(t, &ProjectList{}, "ProjectList")
-}
-
-func TestProjectListContains(t *testing.T) {
-	testProject := Project{
-		ObjectMeta: meta.ObjectMeta{
-			ID: "myproject",
-		},
-		Kubernetes: &KubernetesDetails{
-			Namespace: "mynamespace",
-		},
-	}
-
-	t.Run("empty list", func(t *testing.T) {
-		projectList := ProjectList{}
-		require.False(t, projectList.Contains(testProject))
-	})
-
-	t.Run("project not in list", func(t *testing.T) {
-		projectList := ProjectList{
-			Items: []Project{
-				{
-					ObjectMeta: meta.ObjectMeta{
-						ID: "diffproject",
-					},
-				},
-			},
-		}
-		require.False(t, projectList.Contains(testProject))
-	})
-
-	t.Run("name matches, namespace does not", func(t *testing.T) {
-		projectList := ProjectList{
-			Items: []Project{
-				{
-					ObjectMeta: meta.ObjectMeta{
-						ID: "myproject",
-					},
-				},
-			},
-		}
-		require.False(t, projectList.Contains(testProject))
-	})
-
-	t.Run("project matches", func(t *testing.T) {
-		projectList := ProjectList{
-			Items: []Project{
-				{
-					ObjectMeta: meta.ObjectMeta{
-						ID: "myproject",
-					},
-					Kubernetes: &KubernetesDetails{
-						Namespace: "mynamespace",
-					},
-				},
-			},
-		}
-		require.True(t, projectList.Contains(testProject))
-	})
-}
-
 func TestNewProjectsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	eventsStore := &mockEventsStore{}
@@ -268,8 +206,11 @@ func TestProjectServiceList(t *testing.T) {
 			service: &projectsService{
 				authorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
-					ListFn: func(context.Context, meta.ListOptions) (ProjectList, error) {
-						return ProjectList{}, errors.New("error listing projects")
+					ListFn: func(
+						context.Context,
+						meta.ListOptions,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{}, errors.New("error listing projects")
 					},
 				},
 			},
@@ -284,8 +225,11 @@ func TestProjectServiceList(t *testing.T) {
 			service: &projectsService{
 				authorize: alwaysAuthorize,
 				projectsStore: &mockProjectsStore{
-					ListFn: func(context.Context, meta.ListOptions) (ProjectList, error) {
-						return ProjectList{}, nil
+					ListFn: func(
+						context.Context,
+						meta.ListOptions,
+					) (meta.List[Project], error) {
+						return meta.List[Project]{}, nil
 					},
 				},
 			},
@@ -759,9 +703,12 @@ func TestProjectServiceDelete(t *testing.T) {
 }
 
 type mockProjectsStore struct {
-	CreateFn          func(context.Context, Project) error
-	ListFn            func(context.Context, meta.ListOptions) (ProjectList, error)
-	ListSubscribersFn func(context.Context, Event) (ProjectList, error)
+	CreateFn func(context.Context, Project) error
+	ListFn   func(
+		context.Context,
+		meta.ListOptions,
+	) (meta.List[Project], error)
+	ListSubscribersFn func(context.Context, Event) (meta.List[Project], error)
 	GetFn             func(context.Context, string) (Project, error)
 	UpdateFn          func(context.Context, Project) error
 	DeleteFn          func(context.Context, string) error
@@ -774,14 +721,14 @@ func (m *mockProjectsStore) Create(ctx context.Context, project Project) error {
 func (m *mockProjectsStore) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (ProjectList, error) {
+) (meta.List[Project], error) {
 	return m.ListFn(ctx, opts)
 }
 
 func (m *mockProjectsStore) ListSubscribers(
 	ctx context.Context,
 	event Event,
-) (ProjectList, error) {
+) (meta.List[Project], error) {
 	return m.ListSubscribersFn(ctx, event)
 }
 

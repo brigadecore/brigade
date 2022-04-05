@@ -74,8 +74,8 @@ func (p *projectsStore) Create(
 func (p *projectsStore) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (api.ProjectList, error) {
-	projects := api.ProjectList{}
+) (meta.List[api.Project], error) {
+	projects := meta.List[api.Project]{}
 
 	criteria := bson.M{}
 	if opts.Continue != "" {
@@ -100,7 +100,7 @@ func (p *projectsStore) List(
 		return projects, errors.Wrap(err, "error decoding projects")
 	}
 
-	if int64(len(projects.Items)) == opts.Limit {
+	if projects.Len() == opts.Limit {
 		continueID := projects.Items[opts.Limit-1].ID
 		criteria["id"] = bson.M{"$gt": continueID}
 		remaining, err := p.collection.CountDocuments(ctx, criteria)
@@ -119,8 +119,8 @@ func (p *projectsStore) List(
 func (p *projectsStore) ListSubscribers(
 	ctx context.Context,
 	event api.Event,
-) (api.ProjectList, error) {
-	projects := api.ProjectList{}
+) (meta.List[api.Project], error) {
+	projects := meta.List[api.Project]{}
 	// Finding all Projects that are subscribed to a given Event is rather tricky.
 	// Matching on the basis of source, type, and qualifiers is easy enough, but
 	// LABELS account for the difficulty. If we were selecting Events, it's easy
@@ -205,16 +205,16 @@ function() {
 			{Key: "id", Value: 1},
 		},
 	)
-	cur, err := p.collection.Find(
-		ctx,
-		bson.M{
-			"spec.eventSubscriptions": bson.M{
-				"$elemMatch": preliminaryMatchCriteria,
-			},
-			"$where": where,
+	query := bson.M{
+		"spec.eventSubscriptions": bson.M{
+			"$elemMatch": preliminaryMatchCriteria,
 		},
-		findOptions,
-	)
+		"$where": where,
+	}
+	if event.ProjectID != "" {
+		query["id"] = event.ProjectID
+	}
+	cur, err := p.collection.Find(ctx, query, findOptions)
 	if err != nil {
 		return projects, errors.Wrap(err, "error finding projects")
 	}

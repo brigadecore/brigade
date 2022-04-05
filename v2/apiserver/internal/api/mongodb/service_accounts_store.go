@@ -88,8 +88,8 @@ func (s *serviceAccountsStore) Create(
 func (s *serviceAccountsStore) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (api.ServiceAccountList, error) {
-	serviceAccounts := api.ServiceAccountList{}
+) (meta.List[api.ServiceAccount], error) {
+	serviceAccounts := meta.List[api.ServiceAccount]{}
 
 	criteria := bson.M{}
 	if opts.Continue != "" {
@@ -116,7 +116,7 @@ func (s *serviceAccountsStore) List(
 			errors.Wrap(err, "error decoding service accounts")
 	}
 
-	if int64(len(serviceAccounts.Items)) == opts.Limit {
+	if serviceAccounts.Len() == opts.Limit {
 		continueID := serviceAccounts.Items[opts.Limit-1].ID
 		criteria["id"] = bson.M{"$gt": continueID}
 		remaining, err := s.collection.CountDocuments(ctx, criteria)

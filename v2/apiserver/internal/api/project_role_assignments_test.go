@@ -81,14 +81,6 @@ func TestProjectRoleAssignmentMatches(t *testing.T) {
 	}
 }
 
-func TestProjectRoleAssignmentListMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(
-		t,
-		&ProjectRoleAssignmentList{},
-		ProjectRoleAssignmentListKind,
-	)
-}
-
 func TestNewProjectRoleAssignmentsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	usersStore := &mockUsersStore{}
@@ -303,8 +295,8 @@ func TestProjectRoleAssignmentsServiceList(t *testing.T) {
 						context.Context,
 						ProjectRoleAssignmentsSelector,
 						meta.ListOptions,
-					) (ProjectRoleAssignmentList, error) {
-						return ProjectRoleAssignmentList{},
+					) (meta.List[ProjectRoleAssignment], error) {
+						return meta.List[ProjectRoleAssignment]{},
 							errors.New("something went wrong")
 					},
 				},
@@ -328,8 +320,8 @@ func TestProjectRoleAssignmentsServiceList(t *testing.T) {
 						context.Context,
 						ProjectRoleAssignmentsSelector,
 						meta.ListOptions,
-					) (ProjectRoleAssignmentList, error) {
-						return ProjectRoleAssignmentList{}, nil
+					) (meta.List[ProjectRoleAssignment], error) {
+						return meta.List[ProjectRoleAssignment]{}, nil
 					},
 				},
 			},
@@ -517,7 +509,7 @@ type mockProjectRoleAssignmentsStore struct {
 		context.Context,
 		ProjectRoleAssignmentsSelector,
 		meta.ListOptions,
-	) (ProjectRoleAssignmentList, error)
+	) (meta.List[ProjectRoleAssignment], error)
 	RevokeFn            func(context.Context, ProjectRoleAssignment) error
 	RevokeByProjectIDFn func(ctx context.Context, projectID string) error
 	RevokeByPrincipalFn func(context.Context, PrincipalReference) error
@@ -538,7 +530,7 @@ func (m *mockProjectRoleAssignmentsStore) List(
 	ctx context.Context,
 	selector ProjectRoleAssignmentsSelector,
 	opts meta.ListOptions,
-) (ProjectRoleAssignmentList, error) {
+) (meta.List[ProjectRoleAssignment], error) {
 	return m.ListFn(ctx, selector, opts)
 }
 

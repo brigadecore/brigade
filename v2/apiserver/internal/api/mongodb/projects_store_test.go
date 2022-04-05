@@ -103,7 +103,7 @@ func TestProjectsStoreList(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(projects api.ProjectList, err error)
+		assertions func(projects meta.List[api.Project], err error)
 	}{
 
 		{
@@ -117,7 +117,7 @@ func TestProjectsStoreList(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(projects api.ProjectList, err error) {
+			assertions: func(projects meta.List[api.Project], err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(t, err.Error(), "error finding projects")
@@ -144,7 +144,7 @@ func TestProjectsStoreList(t *testing.T) {
 					return 0, nil
 				},
 			},
-			assertions: func(projects api.ProjectList, err error) {
+			assertions: func(projects meta.List[api.Project], err error) {
 				require.NoError(t, err)
 				require.Empty(t, projects.Continue)
 				require.Zero(t, projects.RemainingItemCount)
@@ -171,7 +171,7 @@ func TestProjectsStoreList(t *testing.T) {
 					return 5, nil
 				},
 			},
-			assertions: func(projects api.ProjectList, err error) {
+			assertions: func(projects meta.List[api.Project], err error) {
 				require.NoError(t, err)
 				require.Equal(t, testProject.ID, projects.Continue)
 				require.Equal(t, int64(5), projects.RemainingItemCount)
@@ -218,7 +218,7 @@ func TestProjectsStoreListSubscribers(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(subscribers api.ProjectList, err error)
+		assertions func(subscribers meta.List[api.Project], err error)
 	}{
 		{
 			name: "error finding subscribers",
@@ -231,7 +231,7 @@ func TestProjectsStoreListSubscribers(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(subscribers api.ProjectList, err error) {
+			assertions: func(subscribers meta.List[api.Project], err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(t, err.Error(), "error finding projects")
@@ -251,7 +251,7 @@ func TestProjectsStoreListSubscribers(t *testing.T) {
 					return cursor, nil
 				},
 			},
-			assertions: func(subscribers api.ProjectList, err error) {
+			assertions: func(subscribers meta.List[api.Project], err error) {
 				require.NoError(t, err)
 				require.Empty(t, subscribers.Items)
 			},
@@ -270,7 +270,7 @@ func TestProjectsStoreListSubscribers(t *testing.T) {
 					return cursor, nil
 				},
 			},
-			assertions: func(subscribers api.ProjectList, err error) {
+			assertions: func(subscribers meta.List[api.Project], err error) {
 				require.NoError(t, err)
 				require.Len(t, subscribers.Items, 2)
 			},

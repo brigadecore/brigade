@@ -103,7 +103,7 @@ func TestUsersStoreList(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(api.UserList, error)
+		assertions func(meta.List[api.User], error)
 	}{
 
 		{
@@ -117,7 +117,7 @@ func TestUsersStoreList(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(_ api.UserList, err error) {
+			assertions: func(_ meta.List[api.User], err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(t, err.Error(), "error finding users")
@@ -144,7 +144,7 @@ func TestUsersStoreList(t *testing.T) {
 					return 0, nil
 				},
 			},
-			assertions: func(users api.UserList, err error) {
+			assertions: func(users meta.List[api.User], err error) {
 				require.NoError(t, err)
 				require.Empty(t, users.Continue)
 				require.Zero(t, users.RemainingItemCount)
@@ -171,7 +171,7 @@ func TestUsersStoreList(t *testing.T) {
 					return 5, nil
 				},
 			},
-			assertions: func(users api.UserList, err error) {
+			assertions: func(users meta.List[api.User], err error) {
 				require.NoError(t, err)
 				require.Equal(t, testUser.ID, users.Continue)
 				require.Equal(t, int64(5), users.RemainingItemCount)

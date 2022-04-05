@@ -88,14 +88,14 @@ func TestEventsStoreList(t *testing.T) {
 		name        string
 		listOptions meta.ListOptions
 		collection  mongodb.Collection
-		assertions  func(events api.EventList, err error)
+		assertions  func(events meta.List[api.Event], err error)
 	}{
 		{
 			name: "unparsable continue value",
 			listOptions: meta.ListOptions{
 				Continue: "invalid time",
 			},
-			assertions: func(events api.EventList, err error) {
+			assertions: func(events meta.List[api.Event], err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "error parsing continue time")
 			},
@@ -118,7 +118,7 @@ func TestEventsStoreList(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(events api.EventList, err error) {
+			assertions: func(events meta.List[api.Event], err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(t, err.Error(), "error finding events")
@@ -148,7 +148,7 @@ func TestEventsStoreList(t *testing.T) {
 					return 0, nil
 				},
 			},
-			assertions: func(events api.EventList, err error) {
+			assertions: func(events meta.List[api.Event], err error) {
 				require.NoError(t, err)
 				require.Len(t, events.Items, 1)
 				require.Equal(t, testEvent.ID, events.Items[0].ID)
@@ -180,7 +180,7 @@ func TestEventsStoreList(t *testing.T) {
 					return 5, nil
 				},
 			},
-			assertions: func(events api.EventList, err error) {
+			assertions: func(events meta.List[api.Event], err error) {
 				require.NoError(t, err)
 				require.Len(t, events.Items, 1)
 				require.Equal(t, testEvent.ID, events.Items[0].ID)

@@ -90,7 +90,7 @@ func TestProjectRoleAssignmentsStoreList(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(api.ProjectRoleAssignmentList, error)
+		assertions func(meta.List[api.ProjectRoleAssignment], error)
 	}{
 
 		{
@@ -104,7 +104,7 @@ func TestProjectRoleAssignmentsStoreList(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(_ api.ProjectRoleAssignmentList, err error) {
+			assertions: func(_ meta.List[api.ProjectRoleAssignment], err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(
@@ -136,7 +136,7 @@ func TestProjectRoleAssignmentsStoreList(t *testing.T) {
 				},
 			},
 			assertions: func(
-				projectRoleAssignments api.ProjectRoleAssignmentList,
+				projectRoleAssignments meta.List[api.ProjectRoleAssignment],
 				err error,
 			) {
 				require.NoError(t, err)
@@ -166,7 +166,7 @@ func TestProjectRoleAssignmentsStoreList(t *testing.T) {
 				},
 			},
 			assertions: func(
-				projectRoleAssignments api.ProjectRoleAssignmentList,
+				projectRoleAssignments meta.List[api.ProjectRoleAssignment],
 				err error,
 			) {
 				require.NoError(t, err)

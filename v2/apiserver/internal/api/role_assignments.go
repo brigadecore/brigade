@@ -53,32 +53,6 @@ func (r RoleAssignment) Matches(role Role, scope string) bool {
 		(r.Scope == scope || r.Scope == RoleScopeGlobal)
 }
 
-// RoleAssignmentList is an ordered and pageable list of system-level
-// RoleAssignments.
-type RoleAssignmentList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of RoleAssignments.
-	Items []RoleAssignment `json:"items,omitempty"`
-}
-
-// MarshalJSON amends RoleAssignmentList instances with type metadata.
-func (r RoleAssignmentList) MarshalJSON() ([]byte, error) {
-	type Alias RoleAssignmentList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       RoleAssignmentListKind,
-			},
-			Alias: (Alias)(r),
-		},
-	)
-}
-
 // RoleAssignmentsSelector represents useful filter criteria when selecting
 // multiple RoleAssignments for API group operations like list.
 type RoleAssignmentsSelector struct {
@@ -108,7 +82,7 @@ type RoleAssignmentsService interface {
 		context.Context,
 		RoleAssignmentsSelector,
 		meta.ListOptions,
-	) (RoleAssignmentList, error)
+	) (meta.List[RoleAssignment], error)
 
 	// Revoke revokes the Role specified by the RoleAssignment for the principal
 	// also specified by the RoleAssignment. If the specified principal does not
@@ -197,9 +171,9 @@ func (r *roleAssignmentsService) List(
 	ctx context.Context,
 	selector RoleAssignmentsSelector,
 	opts meta.ListOptions,
-) (RoleAssignmentList, error) {
+) (meta.List[RoleAssignment], error) {
 	if err := r.authorize(ctx, RoleReader, ""); err != nil {
-		return RoleAssignmentList{}, err
+		return meta.List[RoleAssignment]{}, err
 	}
 
 	if opts.Limit == 0 {
@@ -278,7 +252,7 @@ type RoleAssignmentsStore interface {
 		context.Context,
 		RoleAssignmentsSelector,
 		meta.ListOptions,
-	) (RoleAssignmentList, error)
+	) (meta.List[RoleAssignment], error)
 	// Revoke the role specified by the RoleAssignment for the principal specified
 	// by the RoleAssignment.
 	Revoke(context.Context, RoleAssignment) error

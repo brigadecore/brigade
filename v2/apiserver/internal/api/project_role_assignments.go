@@ -56,32 +56,6 @@ func (p ProjectRoleAssignment) MarshalJSON() ([]byte, error) {
 	)
 }
 
-// ProjectRoleAssignmentList is an ordered and pageable list of
-// ProjectRoleAssignments.
-type ProjectRoleAssignmentList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of ProjectRoleAssignments.
-	Items []ProjectRoleAssignment `json:"items,omitempty"`
-}
-
-// MarshalJSON amends ProjectRoleAssignmentList instances with type metadata.
-func (p ProjectRoleAssignmentList) MarshalJSON() ([]byte, error) {
-	type Alias ProjectRoleAssignmentList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       ProjectRoleAssignmentListKind,
-			},
-			Alias: (Alias)(p),
-		},
-	)
-}
-
 // ProjectRoleAssignmentsSelector represents useful filter criteria when
 // selecting multiple ProjectRoleAssignments for API group operations like list.
 type ProjectRoleAssignmentsSelector struct {
@@ -115,7 +89,7 @@ type ProjectRoleAssignmentsService interface {
 		context.Context,
 		ProjectRoleAssignmentsSelector,
 		meta.ListOptions,
-	) (ProjectRoleAssignmentList, error)
+	) (meta.List[ProjectRoleAssignment], error)
 
 	// Revoke revokes the project-level Role specified by the
 	// ProjectRoleAssignment for the principal also specified by the
@@ -226,9 +200,9 @@ func (p *projectRoleAssignmentsService) List(
 	ctx context.Context,
 	selector ProjectRoleAssignmentsSelector,
 	opts meta.ListOptions,
-) (ProjectRoleAssignmentList, error) {
+) (meta.List[ProjectRoleAssignment], error) {
 	if err := p.authorize(ctx, RoleReader, ""); err != nil {
-		return ProjectRoleAssignmentList{}, err
+		return meta.List[ProjectRoleAssignment]{}, err
 	}
 
 	if opts.Limit == 0 {
@@ -323,7 +297,7 @@ type ProjectRoleAssignmentsStore interface {
 		context.Context,
 		ProjectRoleAssignmentsSelector,
 		meta.ListOptions,
-	) (ProjectRoleAssignmentList, error)
+	) (meta.List[ProjectRoleAssignment], error)
 	// Revoke the Project specified by the ProjectRoleAssignment for the principal
 	// specified by the ProjectRoleAssignment.
 	Revoke(context.Context, ProjectRoleAssignment) error

@@ -8,50 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// SecretList is an ordered and pageable list of Secrets.
-type SecretList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of Secrets.
-	Items []Secret `json:"items,omitempty"`
-}
-
-// All of the following functions are implemented on the SecretsList type to
-// facilitate sorting by each constituent Secret's Key field.
-
-// Len returns the cardinality of the underlying Items field.
-func (s SecretList) Len() int {
-	return len(s.Items)
-}
-
-// Swap swaps Secret i and Secret j in the underlying Items field.
-func (s SecretList) Swap(i, j int) {
-	s.Items[i], s.Items[j] = s.Items[j], s.Items[i]
-}
-
-// Less returns true when Secret i's Key field is less than Secret j's Key field
-// in the underlying Items field (when compared lexically).
-func (s SecretList) Less(i, j int) bool {
-	return s.Items[i].Key < s.Items[j].Key
-}
-
-// MarshalJSON amends SecretList instances with type metadata.
-func (s SecretList) MarshalJSON() ([]byte, error) {
-	type Alias SecretList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "SecretList",
-			},
-			Alias: (Alias)(s),
-		},
-	)
-}
-
 // Secret represents Project-level sensitive information.
 type Secret struct {
 	// Key is a key by which the secret can referred.
@@ -89,7 +45,7 @@ type SecretsService interface {
 		ctx context.Context,
 		projectID string,
 		opts meta.ListOptions,
-	) (SecretList, error)
+	) (meta.List[Secret], error)
 	// Set sets the value of a new Secret or updates the value of an existing
 	// Secret. If the specified Project does not exist, implementations MUST
 	// return a *meta.ErrNotFound error. If the specified Key does not exist, it
@@ -132,12 +88,12 @@ func (s *secretsService) List(
 	ctx context.Context,
 	projectID string,
 	opts meta.ListOptions,
-) (SecretList, error) {
+) (meta.List[Secret], error) {
 	if err := s.authorize(ctx, RoleReader, ""); err != nil {
-		return SecretList{}, err
+		return meta.List[Secret]{}, err
 	}
 
-	secrets := SecretList{}
+	secrets := meta.List[Secret]{}
 	project, err := s.projectsStore.Get(ctx, projectID)
 	if err != nil {
 		return secrets, errors.Wrapf(
@@ -230,7 +186,7 @@ type SecretsStore interface {
 	List(ctx context.Context,
 		project Project,
 		opts meta.ListOptions,
-	) (SecretList, error)
+	) (meta.List[Secret], error)
 	// Set adds or updates the provided Secret associated with the specified
 	// Project.
 	Set(ctx context.Context, project Project, secret Secret) error

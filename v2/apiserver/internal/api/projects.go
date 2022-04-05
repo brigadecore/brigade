@@ -55,46 +55,6 @@ func (p Project) MarshalJSON() ([]byte, error) {
 	)
 }
 
-// ProjectList is an ordered and pageable list of Projects.
-type ProjectList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of Projects.
-	Items []Project `json:"items"`
-}
-
-// MarshalJSON amends ProjectList instances with type metadata.
-func (p ProjectList) MarshalJSON() ([]byte, error) {
-	type Alias ProjectList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "ProjectList",
-			},
-			Alias: (Alias)(p),
-		},
-	)
-}
-
-// Contains returns a boolean value indicating whether the ProjectList contains
-// the provided Project
-func (p ProjectList) Contains(project Project) bool {
-	for _, proj := range p.Items {
-		if proj.ID == project.ID {
-			if proj.Kubernetes == nil && project.Kubernetes == nil ||
-				proj.Kubernetes != nil && project.Kubernetes != nil &&
-					proj.Kubernetes.Namespace == project.Kubernetes.Namespace {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // ProjectUpdateOptions represents useful, optional settings for updating a
 // Project. It currently has no fields, but exists to preserve the possibility
 // of future expansion without having to change client function signatures.
@@ -179,7 +139,7 @@ type ProjectsService interface {
 	Create(context.Context, Project) (Project, error)
 	// List returns a ProjectList, with its Items (Projects) ordered
 	// alphabetically by Project ID.
-	List(context.Context, meta.ListOptions) (ProjectList, error)
+	List(context.Context, meta.ListOptions) (meta.List[Project], error)
 	// Get retrieves a single Project specified by its identifier. If the
 	// specified Project does not exist, implementations MUST return a
 	// *meta.ErrNotFound error.
@@ -346,9 +306,9 @@ func (p *projectsService) Create(
 func (p *projectsService) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (ProjectList, error) {
+) (meta.List[Project], error) {
 	if err := p.authorize(ctx, RoleReader, ""); err != nil {
-		return ProjectList{}, err
+		return meta.List[Project]{}, err
 	}
 
 	if opts.Limit == 0 {
@@ -479,11 +439,11 @@ type ProjectsStore interface {
 	List(
 		context.Context,
 		meta.ListOptions,
-	) (ProjectList, error)
+	) (meta.List[Project], error)
 	ListSubscribers(
 		ctx context.Context,
 		event Event,
-	) (ProjectList, error)
+	) (meta.List[Project], error)
 	// Get returns a Project having the indicated ID. If no such Project exists,
 	// implementations MUST return a *meta.ErrNotFound error.
 	Get(context.Context, string) (Project, error)

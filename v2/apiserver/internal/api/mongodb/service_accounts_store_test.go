@@ -103,7 +103,7 @@ func TestServiceAccountsStoreList(t *testing.T) {
 	testCases := []struct {
 		name       string
 		collection mongodb.Collection
-		assertions func(serviceAccounts api.ServiceAccountList, err error)
+		assertions func(serviceAccounts meta.List[api.ServiceAccount], err error)
 	}{
 
 		{
@@ -117,7 +117,7 @@ func TestServiceAccountsStoreList(t *testing.T) {
 					return nil, errors.New("something went wrong")
 				},
 			},
-			assertions: func(_ api.ServiceAccountList, err error) {
+			assertions: func(_ meta.List[api.ServiceAccount], err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "something went wrong")
 				require.Contains(t, err.Error(), "error finding service accounts")
@@ -144,7 +144,10 @@ func TestServiceAccountsStoreList(t *testing.T) {
 					return 0, nil
 				},
 			},
-			assertions: func(serviceAccounts api.ServiceAccountList, err error) {
+			assertions: func(
+				serviceAccounts meta.List[api.ServiceAccount],
+				err error,
+			) {
 				require.NoError(t, err)
 				require.Empty(t, serviceAccounts.Continue)
 				require.Zero(t, serviceAccounts.RemainingItemCount)
@@ -171,7 +174,10 @@ func TestServiceAccountsStoreList(t *testing.T) {
 					return 5, nil
 				},
 			},
-			assertions: func(serviceAccounts api.ServiceAccountList, err error) {
+			assertions: func(
+				serviceAccounts meta.List[api.ServiceAccount],
+				err error,
+			) {
 				require.NoError(t, err)
 				require.Equal(t, testServiceAccount.ID, serviceAccounts.Continue)
 				require.Equal(t, int64(5), serviceAccounts.RemainingItemCount)

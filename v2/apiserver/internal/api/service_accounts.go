@@ -47,31 +47,6 @@ func (s ServiceAccount) MarshalJSON() ([]byte, error) {
 	)
 }
 
-// ServiceAccountList is an ordered and pageable list of ServiceAccounts.
-type ServiceAccountList struct {
-	// ListMeta contains list metadata.
-	meta.ListMeta `json:"metadata"`
-	// Items is a slice of ServiceAccounts.
-	Items []ServiceAccount `json:"items,omitempty"`
-}
-
-// MarshalJSON amends ServiceAccountList instances with type metadata.
-func (s ServiceAccountList) MarshalJSON() ([]byte, error) {
-	type Alias ServiceAccountList
-	return json.Marshal(
-		struct {
-			meta.TypeMeta `json:",inline"`
-			Alias         `json:",inline"`
-		}{
-			TypeMeta: meta.TypeMeta{
-				APIVersion: meta.APIVersion,
-				Kind:       "ServiceAccountList",
-			},
-			Alias: (Alias)(s),
-		},
-	)
-}
-
 // ServiceAccountsService is the specialized interface for managing
 // ServiceAccounts. It's decoupled from underlying technology choices (e.g. data
 // store) to keep business logic reusable and consistent while the underlying
@@ -81,7 +56,7 @@ type ServiceAccountsService interface {
 	// already exists, implementations MUST return a *meta.ErrConflict error.
 	Create(context.Context, ServiceAccount) (Token, error)
 	// List retrieves a ServiceAccountList.
-	List(context.Context, meta.ListOptions) (ServiceAccountList, error)
+	List(context.Context, meta.ListOptions) (meta.List[ServiceAccount], error)
 	// Get retrieves a single ServiceAccount specified by its identifier. If the
 	// specified ServiceAccount does not exist, implementations MUST return a
 	// *meta.ErrNotFound error.
@@ -155,9 +130,9 @@ func (s *serviceAccountsService) Create(
 func (s *serviceAccountsService) List(
 	ctx context.Context,
 	opts meta.ListOptions,
-) (ServiceAccountList, error) {
+) (meta.List[ServiceAccount], error) {
 	if err := s.authorize(ctx, RoleReader, ""); err != nil {
-		return ServiceAccountList{}, err
+		return meta.List[ServiceAccount]{}, err
 	}
 
 	if opts.Limit == 0 {
@@ -294,7 +269,7 @@ type ServiceAccountsStore interface {
 	Create(context.Context, ServiceAccount) error
 	// List retrieves a ServiceAccountList from the underlying data store, with
 	// its Items (ServiceAccounts) ordered by ID.
-	List(context.Context, meta.ListOptions) (ServiceAccountList, error)
+	List(context.Context, meta.ListOptions) (meta.List[ServiceAccount], error)
 	// Get retrieves a single ServiceAccount from the underlying data store. If
 	// the specified ServiceAccount does not exist, implementations MUST return
 	// a *meta.ErrNotFound error.

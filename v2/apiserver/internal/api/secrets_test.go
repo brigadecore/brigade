@@ -14,65 +14,6 @@ func TestSecretMarshalJSON(t *testing.T) {
 	metaTesting.RequireAPIVersionAndType(t, &Secret{}, "Secret")
 }
 
-func TestSecretListMarshalJSON(t *testing.T) {
-	metaTesting.RequireAPIVersionAndType(t, &SecretList{}, "SecretList")
-}
-
-func TestSecretListLen(t *testing.T) {
-	secretList := SecretList{
-		Items: []Secret{
-			{
-				Key:   "foo",
-				Value: "bar",
-			},
-			{
-				Key:   "bat",
-				Value: "baz",
-			},
-		},
-	}
-	require.Equal(t, len(secretList.Items), secretList.Len())
-}
-
-func TestSecretListSwap(t *testing.T) {
-	testSecret0 := Secret{
-		Key:   "foo",
-		Value: "bar",
-	}
-	testSecret1 := Secret{
-		Key:   "bat",
-		Value: "baz",
-	}
-	secretList := SecretList{
-		Items: []Secret{testSecret0, testSecret1},
-	}
-	secretList.Swap(0, 1)
-	require.Equal(
-		t,
-		[]Secret{testSecret1, testSecret0},
-		secretList.Items,
-	)
-}
-
-func TestSecretListLess(t *testing.T) {
-	secretList := SecretList{
-		Items: []Secret{
-			{
-				Key:   "foo",
-				Value: "bar",
-			},
-			{
-				Key:   "bat",
-				Value: "baz",
-			},
-		},
-	}
-	require.False(t, secretList.Less(0, 0))
-	require.False(t, secretList.Less(0, 1))
-	require.True(t, secretList.Less(1, 0))
-	require.False(t, secretList.Less(1, 1))
-}
-
 func TestNewSecretsService(t *testing.T) {
 	projectsStore := &mockProjectsStore{}
 	secretsStore := &mockSecretsStore{}
@@ -136,8 +77,8 @@ func TestSecretsServiceList(t *testing.T) {
 						context.Context,
 						Project,
 						meta.ListOptions,
-					) (SecretList, error) {
-						return SecretList{}, errors.New("something went wrong")
+					) (meta.List[Secret], error) {
+						return meta.List[Secret]{}, errors.New("something went wrong")
 					},
 				},
 			},
@@ -161,8 +102,8 @@ func TestSecretsServiceList(t *testing.T) {
 						context.Context,
 						Project,
 						meta.ListOptions,
-					) (SecretList, error) {
-						return SecretList{}, nil
+					) (meta.List[Secret], error) {
+						return meta.List[Secret]{}, nil
 					},
 				},
 			},
@@ -373,7 +314,11 @@ func TestSecretsServiceUnSet(t *testing.T) {
 }
 
 type mockSecretsStore struct {
-	ListFn  func(context.Context, Project, meta.ListOptions) (SecretList, error)
+	ListFn func(
+		context.Context,
+		Project,
+		meta.ListOptions,
+	) (meta.List[Secret], error)
 	SetFn   func(context.Context, Project, Secret) error
 	UnsetFn func(context.Context, Project, string) error
 }
@@ -382,7 +327,7 @@ func (m *mockSecretsStore) List(
 	ctx context.Context,
 	project Project,
 	opts meta.ListOptions,
-) (SecretList, error) {
+) (meta.List[Secret], error) {
 	return m.ListFn(ctx, project, opts)
 }
 

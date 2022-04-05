@@ -63,8 +63,8 @@ func (p *projectRoleAssignmentsStore) List(
 	ctx context.Context,
 	selector api.ProjectRoleAssignmentsSelector,
 	opts meta.ListOptions,
-) (api.ProjectRoleAssignmentList, error) {
-	projectRoleAssignments := api.ProjectRoleAssignmentList{}
+) (meta.List[api.ProjectRoleAssignment], error) {
+	projectRoleAssignments := meta.List[api.ProjectRoleAssignment]{}
 
 	criteria := bson.M{}
 	if selector.ProjectID != "" {
@@ -136,7 +136,7 @@ func (p *projectRoleAssignmentsStore) List(
 			errors.Wrap(err, "error decoding project role assignments")
 	}
 
-	if int64(len(projectRoleAssignments.Items)) == opts.Limit {
+	if projectRoleAssignments.Len() == opts.Limit {
 		continueProjectID := projectRoleAssignments.Items[opts.Limit-1].ProjectID
 		continuePrincipalType :=
 			projectRoleAssignments.Items[opts.Limit-1].Principal.Type
