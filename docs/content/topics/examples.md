@@ -2,7 +2,7 @@
 title: Examples
 description: Brigade examples
 section: topics
-weight: 8
+weight: 7
 aliases:
   - /examples.md
   - /topics/examples.md
