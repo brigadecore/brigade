@@ -2073,6 +2073,16 @@ mongodb:
       ##
       rules: {}
 
+externalMongodb:
+  ## This connection string and database name are used to point the API server
+  ## and logger components to an external MongoDB database ONLY IF the included
+  ## MongoDB subchart is disabled. (Set mongodb.enabled to false.)
+  ##
+  ## The connection string should begin with mongodb:// and should contain
+  ## all relevant options -- username, password, replicaset, etc.
+  # connectionString: mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?options]]
+  # databaseName: brigade
+
 artemis:
 
   ## It is recommended NOT to scale Artemis beyond a single node. While

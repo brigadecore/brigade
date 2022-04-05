@@ -18,6 +18,7 @@ root user, run:
 
 {{- end }}
 
+{{- if .Values.mongodb.enabled }}
 To retrieve the root password for MongoDB, run:
 
   $ kubectl --namespace {{ .Release.Namespace }} get secret \
@@ -29,6 +30,8 @@ To retrieve the password for the {{ quote (index .Values.mongodb.auth.databases 
   $ kubectl --namespace {{ .Release.Namespace }} get secret \
       {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }} \
       -o jsonpath={.data.mongodb-passwords} | base64 --decode
+
+{{- end }}
 
 To retrieve the auto-generated password for Artemis, run:
 
