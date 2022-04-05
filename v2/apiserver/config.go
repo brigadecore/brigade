@@ -42,16 +42,16 @@ func databaseConnection(ctx context.Context) (*mongo.Database, error) {
 	if dbConnectionStr != "" {
 		dbClientOpts = options.Client().ApplyURI(dbConnectionStr)
 	} else {
-		hosts, err := os.GetRequiredEnvVar("DATABASE_HOSTS")
-		if err != nil {
+		var hosts string
+		if hosts, err = os.GetRequiredEnvVar("DATABASE_HOSTS"); err != nil {
 			return nil, err
 		}
-		username, err := os.GetRequiredEnvVar("DATABASE_USERNAME")
-		if err != nil {
+		var username string
+		if username, err = os.GetRequiredEnvVar("DATABASE_USERNAME"); err != nil {
 			return nil, err
 		}
-		password, err := os.GetRequiredEnvVar("DATABASE_PASSWORD")
-		if err != nil {
+		var password string
+		if password, err = os.GetRequiredEnvVar("DATABASE_PASSWORD"); err != nil {
 			return nil, err
 		}
 		replicaSetName := os.GetEnvVar("DATABASE_REPLICA_SET", "")
