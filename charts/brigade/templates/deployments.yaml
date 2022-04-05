@@ -75,21 +75,21 @@
 {{- $schedulerAPIToken := "" }}
 {{- $data := (lookup "v1" "Secret" .Release.Namespace (include "brigade.scheduler.fullname" . )).data }}
 {{- if $data }}
-  # Reuse the existing token
-  {{- $schedulerAPIToken = b64dec (index $data "api-token") }}
+  # Reuse the existing token unless the operator specified one
+  {{- $schedulerAPIToken = default (b64dec (index $data "api-token")) .Values.scheduler.apiToken }}
 {{- else }}
-  # Generate a new token
-  {{- $schedulerAPIToken = randAlphaNum 30 }}
+  # Generate a new token unless the operator specified one
+  {{- $schedulerAPIToken = default (randAlphaNum 30) .Values.scheduler.apiToken }}
 {{- end }}
 
 {{- $observerAPIToken := "" }}
 {{- $data = (lookup "v1" "Secret" .Release.Namespace (include "brigade.observer.fullname" . )).data }}
 {{- if $data }}
-  # Reuse the existing token
-  {{- $observerAPIToken = b64dec (index $data "api-token") }}
+  # Reuse the existing token unless the operator specified one
+  {{- $observerAPIToken = default (b64dec (index $data "api-token")) .Values.observer.apiToken }}
 {{- else }}
-  # Generate a new token
-  {{- $observerAPIToken = randAlphaNum 30 }}
+  # Generate a new token unless the operator specified one
+  {{- $observerAPIToken = default (randAlphaNum 30) .Values.observer.apiToken }}
 {{- end }}
 
 {{- $apiServerTLSCert := "" }}
