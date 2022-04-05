@@ -33,48 +33,51 @@ const (
 // databaseConnection returns a *mongo.Database connection based on
 // configuration obtained from environment variables.
 func databaseConnection(ctx context.Context) (*mongo.Database, error) {
-	hosts, err := os.GetRequiredEnvVar("DATABASE_HOSTS")
+	dbConnectionStr := os.GetEnvVar("DATABASE_CONNECTION_STRING", "")
+	dbName, err := os.GetRequiredEnvVar("DATABASE_NAME")
 	if err != nil {
 		return nil, err
 	}
-	username, err := os.GetRequiredEnvVar("DATABASE_USERNAME")
-	if err != nil {
-		return nil, err
+	var dbClientOpts *options.ClientOptions
+	if dbConnectionStr != "" {
+		dbClientOpts = options.Client().ApplyURI(dbConnectionStr)
+	} else {
+		hosts, err := os.GetRequiredEnvVar("DATABASE_HOSTS")
+		if err != nil {
+			return nil, err
+		}
+		username, err := os.GetRequiredEnvVar("DATABASE_USERNAME")
+		if err != nil {
+			return nil, err
+		}
+		password, err := os.GetRequiredEnvVar("DATABASE_PASSWORD")
+		if err != nil {
+			return nil, err
+		}
+		replicaSetName := os.GetEnvVar("DATABASE_REPLICA_SET", "")
+		dbClientOpts = &options.ClientOptions{
+			Hosts: strings.Split(hosts, ","),
+			Auth: &options.Credential{
+				AuthSource:  dbName,
+				Username:    username,
+				Password:    password,
+				PasswordSet: true,
+			},
+		}
+		if replicaSetName != "" {
+			dbClientOpts.ReplicaSet = &replicaSetName
+			dbClientOpts.WriteConcern = writeconcern.New(writeconcern.WMajority())
+			dbClientOpts.ReadConcern = readconcern.Linearizable()
+		}
 	}
-	password, err := os.GetRequiredEnvVar("DATABASE_PASSWORD")
-	if err != nil {
-		return nil, err
-	}
-	replicaSetName := os.GetEnvVar("DATABASE_REPLICA_SET", "")
-	name, err := os.GetRequiredEnvVar("DATABASE_NAME")
-	if err != nil {
-		return nil, err
-	}
-
-	opts := &options.ClientOptions{
-		Hosts: strings.Split(hosts, ","),
-		Auth: &options.Credential{
-			AuthSource:  name,
-			Username:    username,
-			Password:    password,
-			PasswordSet: true,
-		},
-	}
-	if replicaSetName != "" {
-		opts.ReplicaSet = &replicaSetName
-		opts.WriteConcern = writeconcern.New(writeconcern.WMajority())
-		opts.ReadConcern = readconcern.Linearizable()
-	}
-
 	connectCtx, connectCancel := context.WithTimeout(ctx, 10*time.Second)
 	defer connectCancel()
 	// This client's settings favor consistency over speed
-	var mongoClient *mongo.Client
-	mongoClient, err = mongo.Connect(connectCtx, opts)
+	mongoClient, err := mongo.Connect(connectCtx, dbClientOpts)
 	if err != nil {
 		return nil, err
 	}
-	return mongoClient.Database(name), nil
+	return mongoClient.Database(dbName), nil
 }
 
 // writerFactoryConfig returns an amqp.WriterFactoryConfig based on
