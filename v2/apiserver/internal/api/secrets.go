@@ -121,7 +121,7 @@ func (s *secretsService) Set(
 	projectID string,
 	secret Secret,
 ) error {
-	if err := s.projectAuthorize(ctx, projectID, RoleProjectAdmin); err != nil {
+	if err := s.authorize(ctx, RoleReader, ""); err != nil {
 		return err
 	}
 
@@ -133,6 +133,11 @@ func (s *secretsService) Set(
 			projectID,
 		)
 	}
+
+	if err := s.projectAuthorize(ctx, projectID, RoleProjectAdmin); err != nil {
+		return err
+	}
+
 	if err := s.secretsStore.Set(ctx, project, secret); err != nil {
 		return errors.Wrapf(
 			err,
