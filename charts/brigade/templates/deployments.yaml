@@ -141,6 +141,8 @@ stringData:
   {{- if .Values.apiserver.rootUser.enabled }}
   root-user-password: {{ $rootUserPassword }}
   {{- end }}
+  observer-api-token: {{ $observerAPIToken }}
+  scheduler-api-token: {{ $schedulerAPIToken }}
   {{- if eq .Values.apiserver.thirdPartyAuth.strategy "oidc" }}
   oidc-client-secret: {{ .Values.apiserver.thirdPartyAuth.oidc.clientSecret }}
   {{- end }}
@@ -306,13 +308,13 @@ spec:
         - name: SCHEDULER_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ include "brigade.scheduler.fullname" . }}
-              key: api-token
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: scheduler-api-token
         - name: OBSERVER_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ include "brigade.observer.fullname" . }}
-              key: api-token
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: observer-api-token
         - name: TLS_ENABLED
           value: {{ quote .Values.apiserver.tls.enabled }}
         {{- if .Values.apiserver.tls.enabled }}
