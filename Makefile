@@ -479,14 +479,6 @@ publish-cli: build-cli
 # Targets to facilitate hacking on Brigade.                                    #
 ################################################################################
 
-# This is our older way of doing things. It's left for now because we haven't
-# yet completed documentation of our newer, less hacky, more productive devx
-# tools. If you're reading this, we urge you to use the hack-kind-up target
-# instead.
-.PHONY: hack-new-kind-cluster
-hack-new-kind-cluster:
-	hack/kind/new-cluster.sh
-
 .PHONY: hack-kind-up
 hack-kind-up:
 	ctlptl apply -f hack/kind/cluster.yaml
