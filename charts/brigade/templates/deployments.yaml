@@ -138,6 +138,9 @@ metadata:
     {{- include "brigade.apiserver.labels" . | nindent 4 }}
 type: Opaque
 stringData:
+  {{- if not .Values.mongodb.enabled }}
+  database-connection-string: {{ .Values.externalMongodb.connectionString }}
+  {{- end }}
   {{- if .Values.apiserver.rootUser.enabled }}
   root-user-password: {{ $rootUserPassword }}
   {{- end }}
@@ -321,6 +324,7 @@ spec:
         - name: TLS_KEY_PATH
           value: /app/certs/tls.key
         {{- end }}
+        {{- if .Values.mongodb.enabled }}
         {{- if eq .Values.mongodb.architecture "replicaset" }}
         {{- $replicaCount := int .Values.mongodb.replicaCount }}
         {{- $fullname := include "call-nested" (list . "mongodb" "mongodb.fullname") }}
@@ -347,6 +351,15 @@ spec:
             secretKeyRef:
               name: {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }}
               key: mongodb-passwords
+        {{- else }}
+        - name: DATABASE_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: database-connection-string
+        - name: DATABASE_NAME
+          value: {{ .Values.externalMongodb.databaseName }}
+        {{- end }}
         - name: AMQP_ADDRESS
           value: amqp://{{ include "brigade.artemis.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:5672
         - name: AMQP_USERNAME
