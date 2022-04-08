@@ -479,9 +479,23 @@ publish-cli: build-cli
 # Targets to facilitate hacking on Brigade.                                    #
 ################################################################################
 
+# This is our older way of doing things. It's left for now because we haven't
+# yet completed documentation of our newer, less hacky, more productive devx
+# tools. If you're reading this, we urge you to use the hack-kind-up target
+# instead.
 .PHONY: hack-new-kind-cluster
 hack-new-kind-cluster:
 	hack/kind/new-cluster.sh
+
+.PHONY: hack-kind-up
+hack-kind-up:
+	ctlptl apply -f hack/kind/cluster.yaml
+	helm repo ls | grep https://charts.helm.sh/stable || helm repo add stable https://charts.helm.sh/stable
+	helm upgrade nfs stable/nfs-server-provisioner --install --create-namespace --namespace nfs
+
+.PHONY: hack-kind-down
+hack-kind-down:
+	ctlptl delete -f hack/kind/cluster.yaml
 
 .PHONY: hack-build-images
 hack-build-images: hack-build-apiserver hack-build-artemis hack-build-git-initializer hack-build-logger hack-build-observer hack-build-scheduler hack-build-worker
