@@ -30,8 +30,33 @@ func TestDatabaseConnection(t *testing.T) {
 		assertions func(*mongo.Database, error)
 	}{
 		{
-			name:  "DATABASE_HOSTS not set",
+			name:  "DATABASE_NAME not set",
 			setup: func() {},
+			assertions: func(_ *mongo.Database, err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "value not found for")
+				require.Contains(t, err.Error(), "DATABASE_NAME")
+			},
+		},
+		{
+			name: "DATABASE_CONNECTION_STRING set; success",
+			setup: func() {
+				t.Setenv(
+					"DATABASE_CONNECTION_STRING",
+					"mongodb://fake-connection-string",
+				)
+				t.Setenv("DATABASE_NAME", "brigade")
+			},
+			assertions: func(database *mongo.Database, err error) {
+				require.NoError(t, err)
+				require.NotNil(t, database)
+			},
+		},
+		{
+			name: "DATABASE_CONNECTION_STRING not set; DATABASE_HOSTS not set",
+			setup: func() {
+				t.Setenv("DATABASE_CONNECTION_STRING", "")
+			},
 			assertions: func(_ *mongo.Database, err error) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "value not found for")
@@ -39,7 +64,7 @@ func TestDatabaseConnection(t *testing.T) {
 			},
 		},
 		{
-			name: "DATABASE_USERNAME not set",
+			name: "DATABASE_CONNECTION_STRING not set; DATABASE_USERNAME not set",
 			setup: func() {
 				t.Setenv("DATABASE_HOSTS", "localhost")
 			},
@@ -50,7 +75,7 @@ func TestDatabaseConnection(t *testing.T) {
 			},
 		},
 		{
-			name: "DATABASE_PASSWORD not set",
+			name: "DATABASE_CONNECTION_STRING not set; DATABASE_PASSWORD not set",
 			setup: func() {
 				t.Setenv("DATABASE_USERNAME", "jarvis")
 			},
@@ -61,20 +86,9 @@ func TestDatabaseConnection(t *testing.T) {
 			},
 		},
 		{
-			name: "DATABASE_NAME not set",
-			setup: func() {
-				t.Setenv("DATABASE_PASSWORD", "yourenotironmaniam")
-			},
-			assertions: func(_ *mongo.Database, err error) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "value not found for")
-				require.Contains(t, err.Error(), "DATABASE_NAME")
-			},
-		},
-		{
 			name: "success",
 			setup: func() {
-				t.Setenv("DATABASE_NAME", "brigade")
+				t.Setenv("DATABASE_PASSWORD", "yourenotironmaniam")
 				t.Setenv("DATABASE_REPLICA_SET", "rs0")
 			},
 			assertions: func(database *mongo.Database, err error) {

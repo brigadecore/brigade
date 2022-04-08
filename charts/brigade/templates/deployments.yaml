@@ -75,21 +75,21 @@
 {{- $schedulerAPIToken := "" }}
 {{- $data := (lookup "v1" "Secret" .Release.Namespace (include "brigade.scheduler.fullname" . )).data }}
 {{- if $data }}
-  # Reuse the existing token
-  {{- $schedulerAPIToken = b64dec (index $data "api-token") }}
+  # Reuse the existing token unless the operator specified one
+  {{- $schedulerAPIToken = default (b64dec (index $data "api-token")) .Values.scheduler.apiToken }}
 {{- else }}
-  # Generate a new token
-  {{- $schedulerAPIToken = randAlphaNum 30 }}
+  # Generate a new token unless the operator specified one
+  {{- $schedulerAPIToken = default (randAlphaNum 30) .Values.scheduler.apiToken }}
 {{- end }}
 
 {{- $observerAPIToken := "" }}
 {{- $data = (lookup "v1" "Secret" .Release.Namespace (include "brigade.observer.fullname" . )).data }}
 {{- if $data }}
-  # Reuse the existing token
-  {{- $observerAPIToken = b64dec (index $data "api-token") }}
+  # Reuse the existing token unless the operator specified one
+  {{- $observerAPIToken = default (b64dec (index $data "api-token")) .Values.observer.apiToken }}
 {{- else }}
-  # Generate a new token
-  {{- $observerAPIToken = randAlphaNum 30 }}
+  # Generate a new token unless the operator specified one
+  {{- $observerAPIToken = default (randAlphaNum 30) .Values.observer.apiToken }}
 {{- end }}
 
 {{- $apiServerTLSCert := "" }}
@@ -138,9 +138,14 @@ metadata:
     {{- include "brigade.apiserver.labels" . | nindent 4 }}
 type: Opaque
 stringData:
+  {{- if not .Values.mongodb.enabled }}
+  database-connection-string: {{ .Values.externalMongodb.connectionString }}
+  {{- end }}
   {{- if .Values.apiserver.rootUser.enabled }}
   root-user-password: {{ $rootUserPassword }}
   {{- end }}
+  observer-api-token: {{ $observerAPIToken }}
+  scheduler-api-token: {{ $schedulerAPIToken }}
   {{- if eq .Values.apiserver.thirdPartyAuth.strategy "oidc" }}
   oidc-client-secret: {{ .Values.apiserver.thirdPartyAuth.oidc.clientSecret }}
   {{- end }}
@@ -306,13 +311,13 @@ spec:
         - name: SCHEDULER_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ include "brigade.scheduler.fullname" . }}
-              key: api-token
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: scheduler-api-token
         - name: OBSERVER_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ include "brigade.observer.fullname" . }}
-              key: api-token
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: observer-api-token
         - name: TLS_ENABLED
           value: {{ quote .Values.apiserver.tls.enabled }}
         {{- if .Values.apiserver.tls.enabled }}
@@ -321,6 +326,7 @@ spec:
         - name: TLS_KEY_PATH
           value: /app/certs/tls.key
         {{- end }}
+        {{- if .Values.mongodb.enabled }}
         {{- if eq .Values.mongodb.architecture "replicaset" }}
         {{- $replicaCount := int .Values.mongodb.replicaCount }}
         {{- $fullname := include "call-nested" (list . "mongodb" "mongodb.fullname") }}
@@ -347,6 +353,15 @@ spec:
             secretKeyRef:
               name: {{ include "call-nested" (list . "mongodb" "mongodb.fullname") }}
               key: mongodb-passwords
+        {{- else }}
+        - name: DATABASE_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade.apiserver.fullname" . }}
+              key: database-connection-string
+        - name: DATABASE_NAME
+          value: {{ .Values.externalMongodb.databaseName }}
+        {{- end }}
         - name: AMQP_ADDRESS
           value: amqp://{{ include "brigade.artemis.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:5672
         - name: AMQP_USERNAME
