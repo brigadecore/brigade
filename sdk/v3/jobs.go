@@ -143,6 +143,15 @@ type JobSpec struct {
 	// non-default operating system (i.e. Windows) or specific hardware (e.g. a
 	// GPU.)
 	Host *JobHost `json:"host,omitempty"`
+	// Fallible specifies whether the job is permitted to fail WITHOUT causing the
+	// worker process to fail. The API server does not use this field directly,
+	// but it is information that may be valuable to gateways that report job
+	// success/failure upstream to original event sources.
+	//
+	// Note that omitempty keeps this compatible with older API servers (whose
+	// schema-based validation will reject the unknown field) as long as it's not
+	// set to true.
+	Fallible bool `json:"fallible,omitempty"`
 }
 
 // JobContainerSpec amends the ContainerSpec type with additional Job-specific

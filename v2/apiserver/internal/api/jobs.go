@@ -135,6 +135,11 @@ type JobSpec struct {
 	// non-default operating system (i.e. Windows) or specific hardware (e.g. a
 	// GPU.)
 	Host *JobHost `json:"host,omitempty" bson:"host,omitempty"`
+	// Fallible specifies whether the job is permitted to fail WITHOUT causing the
+	// worker process to fail. The API server does not use this field directly,
+	// but it is information that may be valuable to gateways that report job
+	// success/failure upstream to original event sources.
+	Fallible bool `json:"fallible" bson:"fallible"`
 }
 
 func (js JobSpec) EqualTo(js2 JobSpec) bool {
