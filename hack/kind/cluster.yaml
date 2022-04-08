@@ -1,0 +1,11 @@
+apiVersion: ctlptl.dev/v1alpha1
+kind: Cluster
+name: kind-brigade-dev-cluster
+product: kind
+kindV1Alpha4Cluster:
+  kind: Cluster
+  apiVersion: kind.x-k8s.io/v1alpha4
+  nodes:
+  - role: control-plane
+    image: brigadecore/kind-node:v1.23.3
+registry: brigade-dev-registry
