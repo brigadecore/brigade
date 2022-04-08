@@ -9,10 +9,12 @@ ENV CGO_ENABLED=0
 WORKDIR /src
 COPY sdk/ sdk/
 WORKDIR /src/v2
-COPY v2/scheduler/ scheduler/
-COPY v2/internal/ internal/
 COPY v2/go.mod go.mod
 COPY v2/go.sum go.sum
+RUN go mod download
+COPY v2/scheduler/ scheduler/
+COPY v2/internal/ internal/
+
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
   -o ../bin/scheduler \
   -ldflags "-w -X github.com/brigadecore/brigade-foundations/version.version=$VERSION -X github.com/brigadecore/brigade-foundations/version.commit=$COMMIT" \
