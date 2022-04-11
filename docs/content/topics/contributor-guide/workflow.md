@@ -212,7 +212,7 @@ users have placed in Brigade and its maintainers.
 * Resist the temptation to bundle _unrelated_ changes into a single PR.
   Discrete PRs are easier for maintainers to review and sign off on.
 
-* A larger PRs is more likely to be merged if it references and address
+* A larger PR is more likely to be merged if it references and addresses
   an existing issue from the
   [issue queue](https://github.com/brigadecore/brigade/issues). Being able to
   link your PR to an existing issue can give you confidence that the changes
@@ -235,9 +235,9 @@ users have placed in Brigade and its maintainers.
 
 * Larger PRs are easier for maintainers to review if they're decomposed into
   several logical commits that can each be understood and reviewed
-  independently. If you've taken the time to do this, be sure to explain in PRs
-  description how you have broken it up. This alone can make larger PRs much
-  more approachable.
+  independently. If you've taken the time to do this, be sure to explain in the
+  PR's description how you have broken it up. This alone can make larger PRs
+  much more approachable.
 
 * The [hacking doc](../hacking) addresses a number off the different tests
   you can run against your changes. These are also run automatically as part

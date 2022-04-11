@@ -277,5 +277,5 @@ To destroy your KinD cluster, use `make hack-kind-down`.
 > If you wish to destroy the registry, use:
 >
 > ```shell
-> $ docker rm -f brigade-github-gateway-dev-cluster-control-plane
+> $ docker rm -f brigade-dev-registry
 > ```
