@@ -29,7 +29,8 @@ export class Job extends BrigadierJob {
           primaryContainer: this.primaryContainer,
           sidecarContainers: this.sidecarContainers,
           timeoutDuration: this.timeoutSeconds + "s",
-          host: this.host
+          host: this.host,
+          fallible: this.fallible
         }
       }
       await jobsClient.create(this.event.id, sdkJob)
