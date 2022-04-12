@@ -1,6 +1,6 @@
 # This Dockerfile builds a custom Fluentd image that layers in the Fluentd
 # plugins we rely upon on top of a standard Fluentd image.
-FROM $TARGETARCH/fluentd:v1.14.0-1.0
+FROM fluentd:v1.14.0-1.0
 
 USER root
 

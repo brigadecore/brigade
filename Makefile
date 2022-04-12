@@ -132,6 +132,20 @@ style-check-js:
 		yarn style:check \
 	'
 
+.PHONY: style-fix-js
+style-fix-js:
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		yarn install && \
+		yarn style:fix && \
+		cd ../brigadier-polyfill && \
+		yarn install && \
+		yarn style:fix && \
+		cd ../worker && \
+		yarn install && \
+		yarn style:fix \
+	'
+
 .PHONY: lint-js
 lint-js:
 	$(JS_DOCKER_CMD) sh -c ' \
@@ -259,15 +273,6 @@ build-brigadier:
 .PHONY: build-images
 build-images: build-apiserver build-artemis build-git-initializer build-logger build-observer build-scheduler build-worker
 
-.PHONY: build-apiserver
-build-apiserver: build-distroless-apiserver
-
-.PHONY: build-artemis
-build-artemis: build-alpine-artemis
-
-.PHONY: build-git-initializer
-build-git-initializer: build-distroless-git-initializer
-
 .PHONY: build-git-initializer-windows
 build-git-initializer-windows:
 	docker build \
@@ -277,9 +282,6 @@ build-git-initializer-windows:
 		--build-arg VERSION=$(VERSION) \
 		--build-arg COMMIT=$(GIT_VERSION) \
 		.
-
-.PHONY: build-logger
-build-logger: build-alpine-logger
 
 .PHONY: build-logger-windows
 build-logger-windows:
@@ -291,28 +293,8 @@ build-logger-windows:
 		--build-arg COMMIT=$(GIT_VERSION) \
 		.
 
-.PHONY: build-observer
-build-observer: build-distroless-observer
-
-.PHONY: build-scheduler
-build-scheduler: build-distroless-scheduler
-
-.PHONY: build-worker
-build-worker: build-distroless-worker
-
-.PHONY: build-alpine-%
-build-alpine-%:
-	docker buildx build \
-		-f v2/$*/Dockerfile \
-		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
-		-t $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
-		--build-arg VERSION=$(VERSION) \
-		--build-arg COMMIT=$(GIT_VERSION) \
-		--platform linux/amd64,linux/arm64v8 \
-		.
-
-.PHONY: build-distroless-%
-build-distroless-%:
+.PHONY: build-%
+build-%:
 	docker buildx build \
 		-f v2/$*/Dockerfile \
 		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
@@ -390,51 +372,18 @@ publish-brigadier-docs: build-brigadier
 .PHONY: push-images
 push-images: push-apiserver push-artemis push-git-initializer push-logger push-observer push-scheduler push-worker
 
-.PHONY: push-apiserver
-push-apiserver: push-distroless-apiserver
-
-.PHONY: push-artemis
-push-artemis: push-alpine-artemis
-
-.PHONY: push-git-initializer
-push-git-initializer: push-distroless-git-initializer
-
 .PHONY: push-git-initializer-windows
 push-git-initializer-windows:
 	docker push $(DOCKER_IMAGE_PREFIX)git-initializer-windows:$(IMMUTABLE_DOCKER_TAG)
 	docker push $(DOCKER_IMAGE_PREFIX)git-initializer-windows:$(MUTABLE_DOCKER_TAG)
-
-.PHONY: push-logger
-push-logger: push-alpine-logger
 
 .PHONY: push-logger-windows
 push-logger-windows:
 	docker push $(DOCKER_IMAGE_PREFIX)logger-windows:$(IMMUTABLE_DOCKER_TAG)
 	docker push $(DOCKER_IMAGE_PREFIX)logger-windows:$(MUTABLE_DOCKER_TAG)
 
-.PHONY: push-observer
-push-observer: push-distroless-observer
-
-.PHONY: push-scheduler
-push-scheduler: push-distroless-scheduler
-
-.PHONY: push-worker
-push-worker: push-distroless-worker
-
-.PHONY: push-alpine-%
-push-alpine-%:
-	docker buildx build \
-		-f v2/$*/Dockerfile \
-		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
-		-t $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
-		--build-arg VERSION=$(VERSION) \
-		--build-arg COMMIT=$(GIT_VERSION) \
-		--platform linux/amd64,linux/arm64v8 \
-		--push \
-		.
-
-.PHONY: push-distroless-%
-push-distroless-%:
+.PHONY: push-%
+push-%:
 	docker buildx build \
 		-f v2/$*/Dockerfile \
 		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
