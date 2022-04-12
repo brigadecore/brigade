@@ -259,7 +259,7 @@ validate-examples:
 ################################################################################
 
 .PHONY: build
-build: build-brigadier build-images build-cli
+build: build-brigadier push-images build-cli
 
 .PHONY: build-brigadier
 build-brigadier:
@@ -269,9 +269,6 @@ build-brigadier:
 		yarn build && \
 		yarn build-docs \
 	'
-
-.PHONY: build-images
-build-images: build-apiserver build-artemis build-git-initializer build-logger build-observer build-scheduler build-worker
 
 .PHONY: build-git-initializer-windows
 build-git-initializer-windows:
@@ -291,17 +288,6 @@ build-logger-windows:
 		-t $(DOCKER_IMAGE_PREFIX)logger-windows:$(MUTABLE_DOCKER_TAG) \
 		--build-arg VERSION=$(VERSION) \
 		--build-arg COMMIT=$(GIT_VERSION) \
-		.
-
-.PHONY: build-%
-build-%:
-	docker buildx build \
-		-f v2/$*/Dockerfile \
-		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
-		-t $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
-		--build-arg VERSION=$(VERSION) \
-		--build-arg COMMIT=$(GIT_VERSION) \
-		--platform linux/amd64,linux/arm64 \
 		.
 
 .PHONY: build-cli
@@ -438,18 +424,6 @@ hack-kind-up:
 hack-kind-down:
 	ctlptl delete -f hack/kind/cluster.yaml
 
-.PHONY: hack-build-images
-hack-build-images: hack-build-apiserver hack-build-artemis hack-build-git-initializer hack-build-logger hack-build-observer hack-build-scheduler hack-build-worker
-
-.PHONY: hack-build-%
-hack-build-%:
-	docker build \
-		-f v2/$*/Dockerfile \
-		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
-		--build-arg VERSION='$(VERSION)' \
-		--build-arg COMMIT='$(GIT_VERSION)' \
-		.
-
 .PHONY: hack-build-cli
 hack-build-cli:
 	$(GO_DOCKER_CMD) sh -c ' \
@@ -460,15 +434,6 @@ hack-build-cli:
 		COMMIT="$(GIT_VERSION)" \
 		../scripts/build-cli.sh \
 	'
-
-.PHONY: hack-push-images
-hack-push-images: hack-push-artemis hack-push-apiserver hack-push-scheduler hack-push-observer hack-push-logger hack-push-git-initializer hack-push-worker
-
-.PHONY: hack-push-%
-hack-push-%: hack-build-%
-	docker push $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)
-
-IMAGE_PULL_POLICY ?= Always
 
 .PHONY: hack-deploy
 hack-deploy:
@@ -481,32 +446,21 @@ hack-deploy:
 		--timeout 600s \
 		--set artemis.image.repository=$(DOCKER_IMAGE_PREFIX)artemis \
 		--set artemis.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set artemis.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set apiserver.image.repository=$(DOCKER_IMAGE_PREFIX)apiserver \
 		--set apiserver.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set apiserver.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set apiserver.service.type=NodePort \
 		--set apiserver.service.nodePort=31600 \
 		--set apiserver.rootUser.password="${APISERVER_ROOT_PASSWORD}" \
 		--set scheduler.image.repository=$(DOCKER_IMAGE_PREFIX)scheduler \
 		--set scheduler.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set scheduler.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set observer.image.repository=$(DOCKER_IMAGE_PREFIX)observer \
 		--set observer.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set observer.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set worker.image.repository=$(DOCKER_IMAGE_PREFIX)worker \
 		--set worker.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set worker.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set gitInitializer.linux.image.repository=$(DOCKER_IMAGE_PREFIX)git-initializer \
 		--set gitInitializer.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set gitInitializer.linux.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set logger.linux.image.repository=$(DOCKER_IMAGE_PREFIX)logger\
-		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set logger.linux.image.pullPolicy=$(IMAGE_PULL_POLICY)
-
-.PHONY: hack
-hack: hack-push-images hack-build-cli hack-deploy
-
+		--set logger.linux.image.tag=$(IMMUTABLE_DOCKER_TAG)
 .PHONY: hack-expose-apiserver
 hack-expose-apiserver:
 	@kubectl --namespace brigade port-forward service/brigade-apiserver 7000:443 &>/dev/null & \
@@ -515,15 +469,6 @@ hack-expose-apiserver:
 .PHONY: hack-unexpose-apiserver
 hack-unexpose-apiserver:
 	@kill -TERM $$(cat /tmp/brigade-apiserver.PID)
-
-# Convenience targets for loading images into a KinD cluster
-.PHONY: hack-load-images
-hack-load-images: load-artemis load-apiserver load-scheduler load-observer load-logger load-git-initializer load-worker
-
-load-%:
-	@echo "Loading $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
-	@kind load docker-image $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
-			|| echo >&2 "kind not installed or error loading image: $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
 
 ################################################################################
 # Docs Preview targets.                                                        #
