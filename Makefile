@@ -132,6 +132,20 @@ style-check-js:
 		yarn style:check \
 	'
 
+.PHONY: style-fix-js
+style-fix-js:
+	$(JS_DOCKER_CMD) sh -c ' \
+		cd v2/brigadier && \
+		yarn install && \
+		yarn style:fix && \
+		cd ../brigadier-polyfill && \
+		yarn install && \
+		yarn style:fix && \
+		cd ../worker && \
+		yarn install && \
+		yarn style:fix \
+	'
+
 .PHONY: lint-js
 lint-js:
 	$(JS_DOCKER_CMD) sh -c ' \
