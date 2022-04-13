@@ -1,3 +1,3 @@
 # Contributing Guide
 
-See our Brigade project [Contributing Guide](https://github.com/brigadecore/community/blob/main/contributing.md).
+See our Brigade project [Contributor Guide](https://docs.brigade.sh/topics/contributor-guide/).
