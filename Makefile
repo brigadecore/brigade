@@ -165,13 +165,13 @@ yarn-audit:
 	$(JS_DOCKER_CMD) sh -c ' \
 		cd v2/brigadier && \
 		yarn install && \
-		yarn audit && \
+		yarn audit --groups dependencies && \
 		cd ../brigadier-polyfill && \
 		yarn install && \
-		yarn audit && \
+		yarn audit --groups dependencies && \
 		cd ../worker && \
 		yarn install && \
-		yarn audit \
+		yarn audit --groups dependencies \
 	'
 
 .PHONY: clean-js
