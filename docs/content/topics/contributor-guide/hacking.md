@@ -227,6 +227,9 @@ To continue, you will need to install the latest stable versions of:
   enables developers to rebuild and replace running components with the click of
   a button.
 
+* [Helm](https://helm.sh/docs/intro/install/): The package manager for
+  Kubernetes. Tilt will use this to help deploy Brigade from source.
+
 Follow the installation instructions for each of the above.
 
 To launch a brand new Kind cluster pre-connected to a local image registry:
@@ -235,7 +238,14 @@ To launch a brand new Kind cluster pre-connected to a local image registry:
 $ make hack-kind-up
 ```
 
-To build and deploy all of Brigade from source:
+To build and deploy all of Brigade from source, first make sure that all of the
+Helm chart's dependencies are satisfied:
+
+```shell
+$ helm dep up charts/brigade
+```
+
+Then:
 
 ```shell
 $ tilt up
