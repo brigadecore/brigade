@@ -79,7 +79,8 @@ broad responsibility for one or more, but not all, projects owned by the
 __@brigadecore__ GitHub org. They are, generally, but not necessarily,
 Organization Members. Project Maintainers (along with Core Maintainers) have
 responsibility for ensuring the quality of code contributions by means of
-conducting (or delegating) thorough reviews of PRs.
+conducting (or delegating) thorough reviews of PRs. This role includes write
+and administrative access to applicable repositories.
 
 Project Maintainers must:
 
@@ -107,9 +108,9 @@ until a simple majority is obtained.
 ## Core Maintainer
 
 Core Maintainers are established Contributors who are granted broad and ultimate
-responsibility for the _entirety_ of the Brigade Project. This includes
-administrative access to all projects owned by the __@brigadecore__ GitHub org
-and administrative access to the org itself.
+responsibility for the _entirety_ of the Brigade Project. This role includes
+write and administrative access to all projects owned by the __@brigadecore__
+GitHub org and administrative access to the org itself.
 
 Core Maintainers must:
 
@@ -130,6 +131,14 @@ Privileges include:
 * Stewardship of Project secrets (passwords, keys, etc.)
 * Having a vote in matters affecting Project direction, including the election
   of new Project Maintainers and Core Maintainers
+
+Becoming a Core Maintainer requires a formal nomination
+by an existing Core Maintainer. All
+existing Core Maintainers are all eligible to vote.
+Nominations and voting must occur publicly in an issue in Brigade's
+[main GitHub repository](https://github.com/brigadecore/brigade). Polling must
+remain open for a period of no less than two weeks or until a simple majority is
+obtained.
 
 ## Maintainer Emeritus
 
