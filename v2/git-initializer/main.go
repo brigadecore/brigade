@@ -10,20 +10,20 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/brigadecore/brigade-foundations/retries"
+	"github.com/brigadecore/brigade-foundations/version"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/cache"
 	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	gitssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/go-git/go-git/v5/storage/filesystem"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
-
-	"github.com/brigadecore/brigade-foundations/retries"
-	"github.com/brigadecore/brigade-foundations/version"
-	"github.com/brigadecore/brigade/sdk/v3"
 )
 
 const (
@@ -74,15 +74,12 @@ func gitCheckout() error {
 
 	// Setup Auth
 	var auth transport.AuthMethod
-	// TODO: What about token-based auth?
-	// (see v1 askpass.sh/BRIGADE_REPO_AUTH_TOKEN)
 
 	// TODO: Check for SSH Cert
 	// (see https://github.com/brigadecore/brigade/pull/1008)
 
 	// Check for SSH Key
-	privateKey, ok := event.Project.Secrets["gitSSHKey"]
-	if ok {
+	if privateKey, ok := event.Project.Secrets["gitSSHKey"]; ok {
 		var publicKeys *gitssh.PublicKeys
 		publicKeys, err = gitssh.NewPublicKeys(
 			"git",
@@ -101,6 +98,15 @@ func gitCheckout() error {
 		// set SSH_KNOWN_HOSTS env variable"
 		publicKeys.HostKeyCallback = ssh.InsecureIgnoreHostKey() // nolint: gosec
 		auth = publicKeys
+	} else if password, ok := event.Project.Secrets["gitPassword"]; ok {
+		username := event.Project.Secrets["gitUsername"]
+		if username == "" {
+			username = "git"
+		}
+		auth = &http.BasicAuth{
+			Username: username,
+			Password: password,
+		}
 	}
 
 	var worktree *git.Worktree
