@@ -76,7 +76,7 @@
 
 		"gitCloneURL": {
 			"type": "string",
-			"pattern": "^(?:(?:(?:https?://)|(?:git@))[\\w:/\\-\\.\\?=@&]+\\.git)?$",
+			"pattern": "^(?:(?:(?:https?://)|(?:git@))[\\w:/\\-\\.\\?=@&%]+)$",
 			"description": "The URL for cloning a git project"
 		},
 
