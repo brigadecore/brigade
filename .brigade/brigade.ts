@@ -440,6 +440,7 @@ const testIntegrationJob = (event: Event) => {
   const env = {
     "CGO_ENABLED": "0",
     "BRIGADE_CI_PRIVATE_REPO_SSH_KEY": secrets.privateRepoSSHKey,
+    "BRIGADE_CI_PRIVATE_REPO_PAT": secrets.privateRepoPersonalAccessToken,
     "IMAGE_PULL_POLICY": "IfNotPresent",
     // Use the Docker daemon that's running in a sidecar
     "DOCKER_HOST": "localhost:2375"

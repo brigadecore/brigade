@@ -210,7 +210,7 @@ var testCases = []struct {
 			ObjectMeta: meta.ObjectMeta{
 				ID: "github-private-ssh",
 			},
-			Description: "GitHub - private repo",
+			Description: "GitHub - private repo over ssh",
 			Spec: sdk.ProjectSpec{
 				EventSubscriptions: testEventSubscriptions,
 				WorkerTemplate: sdk.WorkerSpec{
@@ -229,6 +229,52 @@ var testCases = []struct {
 				sdk.Secret{
 					Key:   "gitSSHKey",
 					Value: os.Getenv("BRIGADE_CI_PRIVATE_REPO_SSH_KEY"),
+				},
+				nil,
+			)
+		},
+		assertions: func(t *testing.T, ctx context.Context, events sdk.EventList) {
+			require.Len(t, events.Items, 1)
+			event := events.Items[0]
+			assertWorkerPhase(t, ctx, event.ID, sdk.WorkerPhaseSucceeded)
+			assertLogs(t, ctx, event.ID, nil, "brigade-worker version")
+			assertJobPhase(t, ctx, event.ID, testJobName, sdk.JobPhaseSucceeded)
+			assertLogs(
+				t,
+				ctx,
+				event.ID,
+				&sdk.LogsSelector{Job: testJobName},
+				"README.md",
+			)
+		},
+	},
+	{
+		shouldTest: func(t *testing.T) bool {
+			return os.Getenv("BRIGADE_CI_PRIVATE_REPO_PAT") != ""
+		},
+		project: sdk.Project{
+			ObjectMeta: meta.ObjectMeta{
+				ID: "github-private-https",
+			},
+			Description: "GitHub - private repo over https",
+			Spec: sdk.ProjectSpec{
+				EventSubscriptions: testEventSubscriptions,
+				WorkerTemplate: sdk.WorkerSpec{
+					Git: &sdk.GitConfig{
+						CloneURL: "https://github.com/brigadecore/private-test-repo.git",
+						Ref:      "main",
+					},
+					DefaultConfigFiles: testConfigFiles,
+				},
+			},
+		},
+		postProjectCreate: func(ctx context.Context) error {
+			return client.Core().Projects().Secrets().Set(
+				ctx,
+				"github-private-https",
+				sdk.Secret{
+					Key:   "gitPassword",
+					Value: os.Getenv("BRIGADE_CI_PRIVATE_REPO_PAT"),
 				},
 				nil,
 			)
