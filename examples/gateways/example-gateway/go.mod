@@ -2,7 +2,7 @@ module github.com/brigadecore/brigade/examples/gateways/example-gateway
 
 go 1.18
 
-require github.com/brigadecore/brigade/sdk/v3 v3.0.0
+require github.com/brigadecore/brigade/sdk/v3 v3.1.0
 
 require (
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
