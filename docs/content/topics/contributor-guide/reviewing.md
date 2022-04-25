@@ -20,10 +20,9 @@ and _how_.
 ## Reviewers
 
 For the Brigade Project, __Reviewer__ is not a formal role in the way that a
-__Project Maintainer__ or __Core Maintainer__ is. Here, a Reviewer is anyone
-who reviews a PR, whether voluntarily or to fulfill commitments they have to the
-Project. This is to say, feedback on any change is always welcome from _any_
-Community Participant who adheres to the
+__Project Maintainer__ or __Core Maintainer__ is. Here, a Reviewer is _anyone_
+who reviews a PR. This is to say, feedback on any change is always welcome from
+_any_ Community Participant who adheres to the
 [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
 
 Despite reviews and comments being welcome from all Community Participants,
@@ -74,10 +73,12 @@ Some important objectives of a PR review are to:
   unilaterally.
 * Ensure changes are well-thought-out and logically correct.
 * Ensure a high level of code quality.
+* Ensure changes are maintainable over the long term and do not introduce a
+  maintenance burden.
 * Ensure changes are well-tested.
 * Ensure changes are well-documented -- both internally and in user-facing
   documentation.
-* Stymy the introduction of new bugs or regressions.
+* Avoid the introduction of new bugs or regressions.
 * Discourage the introduction of breaking changes (except when a major release
   is planned).
 * Prevent the introduction of malicious code.
