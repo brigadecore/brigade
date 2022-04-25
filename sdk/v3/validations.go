@@ -8,7 +8,7 @@ import (
 var projectIDRegex = regexp.MustCompile(`^[a-z][a-z\d-]*[a-z\d]$`)
 
 // nolint: lll
-var gitCloneURLRegex = regexp.MustCompile(`^(?:(?:https?://)|(?:git@))[\w:/\-\.\?=@&]+\.git$`)
+var gitCloneURLRegex = regexp.MustCompile(`^(?:(?:https?://)|(?:git@))[\w:/\-\.\?=@&%]+$`)
 
 // ValidateProjectID checks if a given id is valid.
 func ValidateProjectID(id string) error {
@@ -25,15 +25,14 @@ func ValidateProjectID(id string) error {
 }
 
 // ValidateProjectID checks if a given git clone URL is valid by ensuring it
-// begins with "http://", "https://", or "git@" and ends with ".git"
+// begins with "http://", "https://", or "git@".
 func ValidateGitCloneURL(url string) error {
 
 	urlMatch := gitCloneURLRegex.MatchString(url)
 	if !urlMatch {
 		return fmt.Errorf(
 			"invalid value %q for git clone URL"+
-				" (must start with http://, https://, or git@"+
-				" and must end with .git)",
+				" (must start with http://, https://, or git@)",
 			url,
 		)
 	}
