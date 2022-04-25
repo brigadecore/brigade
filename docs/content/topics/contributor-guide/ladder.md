@@ -79,8 +79,7 @@ broad responsibility for one or more, but not all, projects owned by the
 __@brigadecore__ GitHub org. They are, generally, but not necessarily,
 Organization Members. Project Maintainers (along with Core Maintainers) have
 responsibility for ensuring the quality of code contributions by means of
-conducting (or delegating) thorough reviews of PRs. This role includes write
-and administrative access to applicable repositories.
+conducting (or delegating) thorough reviews of PRs.
 
 Project Maintainers must:
 
@@ -94,13 +93,14 @@ Project Maintainers must:
 
 Privileges include:
 
+* Write and administrative access to applicable repositories
 * Publicly representing their respective project(s)
 * Having a vote in matters affecting project direction, including the election
   of new Project Maintainers
 
 Becoming a Project Maintainer for a given project requires a formal nomination
 by one of that project's existing Maintainers _or_ a Core Maintainer. The
-project's existing Maintainers and Core Maintainers are all eligible to vote.
+project's existing Maintainers and Core Maintainers are eligible to vote.
 Nominations and voting must occur publicly in an issue in the applicable GitHub
 repository. Polling must remain open for a period of no less than two weeks or
 until a simple majority is obtained.
@@ -108,9 +108,7 @@ until a simple majority is obtained.
 ## Core Maintainer
 
 Core Maintainers are established Contributors who are granted broad and ultimate
-responsibility for the _entirety_ of the Brigade Project. This role includes
-write and administrative access to all projects owned by the __@brigadecore__
-GitHub org and administrative access to the org itself.
+responsibility for the _entirety_ of the Brigade Project.
 
 Core Maintainers must:
 
@@ -126,6 +124,8 @@ Core Maintainers must:
 
 Privileges include:
 
+* Write and administrative access to all Project repositories
+* Administrative access to the __@brigadecore__ org
 * Publicly representing the Brigade Project
 * Communicating with CNCF on behalf of the Project
 * Stewardship of Project secrets (passwords, keys, etc.)
