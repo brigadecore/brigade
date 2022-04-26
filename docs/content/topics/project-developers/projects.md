@@ -175,7 +175,7 @@ To list secrets for a project:
 $ brig project secret list --project <project id>
 ```
 
-The above command will display all keys, but will redacted values.
+The above command will display all keys, but with redacted values.
 
 To delete a secret, use:
 
