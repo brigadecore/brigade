@@ -56,17 +56,12 @@ func TestValidateGitCloneURL(t *testing.T) {
 	}{
 		{
 			name:     "valid git clone url",
-			url:      "https://github.com/brigadecore/brigade.git",
+			url:      "https://github.com/brigadecore/brigade?foo=bat%%20baz",
 			expected: true,
 		},
 		{
 			name:     "does not start with https://, http://, or git@",
 			url:      "github.com/brigadecore/brigade.git",
-			expected: false,
-		},
-		{
-			name:     "does not end in .git",
-			url:      "https://github.com/brigadecore/brigade",
 			expected: false,
 		},
 		{
