@@ -18,4 +18,5 @@ This guide is decomposed into the following, high-level topics:
 - [Signing Commits](signing)
 - [Hacking on Brigade](hacking)
 - [Releasing Brigade](releasing)
+- [Contributor Ladder](ladder)
 - [Code Review Guide](reviewing)
