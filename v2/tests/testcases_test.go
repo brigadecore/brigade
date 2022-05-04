@@ -320,8 +320,7 @@ var testCases = []struct {
 				ctx,
 				event.ID,
 				&sdk.LogsSelector{Container: "vcs"},
-				`reference "non-existent" not found in repo `+
-					`"https://github.com/brigadecore/empty-testbed.git"`,
+				`error resolving ref "non-existent"`,
 			)
 		},
 	},
