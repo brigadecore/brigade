@@ -1,3 +1,12 @@
+//go:build !testUnit && !lint
+// +build !testUnit,!lint
+
+// We exclude this file from unit tests and linting because it cannot be
+// compiled without CGO and a specific version of libgit2 pre-installed. To keep
+// our linting and unit tests lightweight, those are complications we'd like to
+// avoid. We'll live without the linting and test this well with integration
+// tests.
+
 package main
 
 import (

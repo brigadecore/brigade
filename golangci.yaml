@@ -1,7 +1,8 @@
 run:
   concurrency: 1
   deadline: 10m
-  skip-files:
+  build-tags:
+  - lint
 
 linters:
   disable-all: true
