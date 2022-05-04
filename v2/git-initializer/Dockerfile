@@ -1,10 +1,7 @@
-FROM --platform=$BUILDPLATFORM brigadecore/go-tools:v0.9.0 as builder
+FROM brigadecore/go-libgit2:v0.1.0 as builder
 
 ARG VERSION
 ARG COMMIT
-ARG TARGETOS
-ARG TARGETARCH
-ENV CGO_ENABLED=0
 
 WORKDIR /src
 COPY sdk/ sdk/
@@ -15,12 +12,15 @@ RUN go mod download
 COPY v2/git-initializer/ git-initializer/
 COPY v2/internal/ internal/
 
-RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
+# Despite CGO being involved, this builds a statically linked binary
+RUN go build \
+  -tags static,system_libgit2 \
   -o ../bin/git-initializer \
-  -ldflags "-w -X github.com/brigadecore/brigade-foundations/version.version=$VERSION -X github.com/brigadecore/brigade-foundations/version.commit=$COMMIT" \
+  -ldflags "-extldflags '-static -lgcrypt -lgpg-error' -w -X github.com/brigadecore/brigade-foundations/version.version=$VERSION -X github.com/brigadecore/brigade-foundations/version.commit=$COMMIT" \
   ./git-initializer
 
-FROM gcr.io/distroless/static:nonroot as final
+# Note: Cannot use gcr.io/distroless/static:nonroot because we still need glibc
+FROM gcr.io/distroless/base:nonroot as final
 
 COPY --from=builder /src/bin/ /brigade/bin/
 
