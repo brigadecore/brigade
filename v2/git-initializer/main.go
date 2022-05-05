@@ -1,19 +1,9 @@
-//go:build !testUnit && !lint
-// +build !testUnit,!lint
-
-// We exclude this file from unit tests and linting because it cannot be
-// compiled without CGO and a specific version of libgit2 pre-installed. To keep
-// our linting and unit tests lightweight, those are complications we'd like to
-// avoid. We'll live without the linting and test this well with integration
-// tests.
-
 package main
 
 import (
 	"log"
 
 	"github.com/brigadecore/brigade-foundations/version"
-	git "github.com/libgit2/git2go/v32"
 )
 
 func main() {
@@ -27,42 +17,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	gitConfig := event.Worker.Git
 	if gitConfig == nil {
 		log.Fatal("event has no git config")
 	}
 
-	credentialsCallback, err := getCredentialsCallback(event.Project.Secrets)
+	repo, err := clone(event)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	const workspacePath = "/var/vcs"
-	log.Printf("cloning repository from %q into %q",
-		gitConfig.CloneURL,
-		workspacePath,
-	)
-	repo, err := git.Clone(
-		event.Worker.Git.CloneURL,
-		workspacePath,
-		&git.CloneOptions{
-			FetchOptions: git.FetchOptions{
-				RemoteCallbacks: git.RemoteCallbacks{
-					CertificateCheckCallback: func(*git.Certificate, bool, string) error {
-						return nil
-					},
-					CredentialsCallback: credentialsCallback,
-				},
-			},
-		},
-	)
-	if err != nil {
-		log.Fatalf(
-			"error cloning repository from %q into %q: %s",
-			gitConfig.CloneURL,
-			workspacePath,
-			err,
-		)
 	}
 	defer repo.Free()
 

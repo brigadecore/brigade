@@ -10,12 +10,74 @@
 package main
 
 import (
+	"context"
 	"log"
 	"strings"
+	"time"
 
+	"github.com/brigadecore/brigade-foundations/retries"
 	git "github.com/libgit2/git2go/v32"
 	"github.com/pkg/errors"
 )
+
+// clone clones the repository indicated by the event, but does NOT check
+// anything out into the working directory.
+func clone(event event) (*git.Repository, error) {
+	const workspacePath = "/var/vcs"
+	gitConfig := event.Worker.Git
+	credentialsCallback, err := getCredentialsCallback(event.Project.Secrets)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("cloning repository from %q into %q",
+		gitConfig.CloneURL,
+		workspacePath,
+	)
+	// On Windows, the git-initializer container can start before the underlying
+	// network stack is fully initialized. This retry loop accounts for that. It
+	// will retry the clone operation for up to 10 seconds, with a max of 2
+	// seconds between attempts, ONLY in the event of a DNS lookup failure, which
+	// is the error condition that is indicative of the networking not being
+	// ready. We'll allow all other errors to surface immediately.
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	var repo *git.Repository
+	return repo, retries.ManageRetries(
+		ctx,                  // The retry loop will if this context expires
+		"cloning repository", // WHAT we're trying/retrying
+		0,                    // Max retries bound only by the context
+		2*time.Second,        // Max backoff
+		func() (bool, error) { // The function to retry
+			if repo, err = git.Clone(
+				event.Worker.Git.CloneURL,
+				workspacePath,
+				&git.CloneOptions{
+					FetchOptions: git.FetchOptions{
+						RemoteCallbacks: git.RemoteCallbacks{
+							CertificateCheckCallback: func(
+								*git.Certificate,
+								bool,
+								string,
+							) error {
+								return nil
+							},
+							CredentialsCallback: credentialsCallback,
+						},
+					},
+				},
+			); err != nil &&
+				strings.Contains(err.Error(), "failed to resolve address") {
+				// Note about the string comparison above: It would be nice to check
+				// for some specific error type or error code, but because git2go is
+				// only a very lightweight wrapper around libgit2, all the errors are
+				// painfully generic and checking for specific error text is about the
+				// best we can do to identify whether or not the issue was DNS-related.
+				return true, err // Retry
+			}
+			return false, err // Don't retry
+		},
+	)
+}
 
 // checkout checks out a specific commit, branch, or tag from the provided repo.
 // Precedence is given to a specific commit, identified by the provided sha. If
