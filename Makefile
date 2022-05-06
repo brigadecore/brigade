@@ -103,7 +103,6 @@ test-unit-go:
 		cd sdk/v3 && \
 		go test \
 			-v \
-			-tags testUnit \
 			-timeout=60s \
 			-race \
 			-coverprofile=coverage.txt \
@@ -112,7 +111,6 @@ test-unit-go:
 		cd ../../v2 && \
 		go test \
 			-v \
-			-tags testUnit \
 			-timeout=60s \
 			-race \
 			-coverprofile=coverage.txt \
