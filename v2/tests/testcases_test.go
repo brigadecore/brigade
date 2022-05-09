@@ -320,8 +320,7 @@ var testCases = []struct {
 				ctx,
 				event.ID,
 				&sdk.LogsSelector{Container: "vcs"},
-				`reference "non-existent" not found in repo `+
-					`"https://github.com/brigadecore/empty-testbed.git"`,
+				"Remote branch non-existent not found in upstream origin",
 			)
 		},
 	},
