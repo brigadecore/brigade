@@ -20,8 +20,16 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
   -ldflags "-w -X github.com/brigadecore/brigade-foundations/version.version=$VERSION -X github.com/brigadecore/brigade-foundations/version.commit=$COMMIT" \
   ./git-initializer
 
-FROM gcr.io/distroless/static:nonroot as final
+FROM alpine:3.15.4 as final
 
+RUN apk update \
+    && apk add git openssh-client \
+    && addgroup -S -g 65532 nonroot \
+    && adduser -S -D -u 65532 -g nonroot -G nonroot nonroot
+
+COPY --chown=nonroot:nonroot v2/git-initializer/ssh_config /home/nonroot/.ssh/config
 COPY --from=builder /src/bin/ /brigade/bin/
+
+USER nonroot
 
 ENTRYPOINT ["/brigade/bin/git-initializer"]
