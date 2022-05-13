@@ -33,7 +33,7 @@ You can also build brig from source; see the [Developers] guide for more info.
 **linux**
 
 ```shell
-curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.4.0/brig-linux-amd64
+curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.5.0/brig-linux-amd64
 chmod +x /usr/local/bin/brig
 ```
 
@@ -50,7 +50,7 @@ Alternatively, you can install manually by directly downloading a pre-built
 binary:
 
 ```shell
-$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.4.0/brig-darwin-amd64
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.5.0/brig-darwin-amd64
 $ chmod +x /usr/local/bin/brig
 ```
 
@@ -58,7 +58,7 @@ $ chmod +x /usr/local/bin/brig
 
 ```powershell
 > mkdir -force $env:USERPROFILE\bin
-> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.4.0/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.5.0/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
 > $env:PATH+=";$env:USERPROFILE\bin"
 ```
 
