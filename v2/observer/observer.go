@@ -27,18 +27,24 @@ func getObserverConfig() (observerConfig, error) {
 	if config.brigadeID, err = os.GetRequiredEnvVar("BRIGADE_ID"); err != nil {
 		return config, err
 	}
+	log.Println("BRIGADE_ID: ", config.brigadeID)
 	config.healthcheckInterval = 30 * time.Second
 	if config.delayBeforeCleanup, err =
 		os.GetDurationFromEnvVar("DELAY_BEFORE_CLEANUP", time.Minute); err != nil {
 		return config, err
 	}
+	log.Println("DELAY_BEFORE_CLEANUP: ", config.delayBeforeCleanup)
 	if config.maxWorkerLifetime, err =
 		os.GetDurationFromEnvVar("MAX_WORKER_LIFETIME", time.Hour*24); err != nil {
 		return config, err
 	}
-	config.maxJobLifetime, err =
-		os.GetDurationFromEnvVar("MAX_JOB_LIFETIME", time.Hour*24)
-	return config, err
+	log.Println("MAX_WORKER_LIFETIME: ", config.maxWorkerLifetime)
+	if config.maxJobLifetime, err =
+		os.GetDurationFromEnvVar("MAX_JOB_LIFETIME", time.Hour*24); err != nil {
+		return config, err
+	}
+	log.Println("MAX_JOB_LIFETIME: ", config.maxJobLifetime)
+	return config, nil
 }
 
 type observer struct {

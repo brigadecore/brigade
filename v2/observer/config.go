@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/brigadecore/brigade-foundations/os"
 	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 )
@@ -11,6 +13,7 @@ func apiClientConfig() (string, string, restmachinery.APIClientOptions, error) {
 	if err != nil {
 		return address, "", opts, err
 	}
+	log.Println("API_ADDRESS: ", address)
 	token, err := os.GetRequiredEnvVar("API_TOKEN")
 	if err != nil {
 		return address, token, opts, err

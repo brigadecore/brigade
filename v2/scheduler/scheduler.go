@@ -27,13 +27,20 @@ func getSchedulerConfig() (schedulerConfig, error) {
 	if err != nil {
 		return config, err
 	}
+	log.Println("ADD_REMOVE_PROJECT_INTERVAL: ",
+		config.addAndRemoveProjectsInterval)
 	config.maxConcurrentWorkers, err =
 		os.GetIntFromEnvVar("MAX_CONCURRENT_WORKERS", 1)
 	if err != nil {
 		return config, err
 	}
+	log.Println("MAX_CONCURRENT_WORKERS: ", config.maxConcurrentWorkers)
 	config.maxConcurrentJobs, err = os.GetIntFromEnvVar("MAX_CONCURRENT_JOBS", 3)
-	return config, err
+	if err != nil {
+		return config, err
+	}
+	log.Println("MAX_CONCURRENT_JOBS: ", config.maxConcurrentJobs)
+	return config, nil
 }
 
 type scheduler struct {

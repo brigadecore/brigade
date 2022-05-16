@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -89,10 +90,12 @@ func writerFactoryConfig() (amqp.WriterFactoryConfig, error) {
 	if err != nil {
 		return config, err
 	}
+	log.Println("AMQP_ADDRESS: ", config.Address)
 	config.Username, err = os.GetRequiredEnvVar("AMQP_USERNAME")
 	if err != nil {
 		return config, err
 	}
+	log.Println("AMQP_USERNAME: ", config.Username)
 	config.Password, err = os.GetRequiredEnvVar("AMQP_PASSWORD")
 	return config, err
 }
@@ -106,20 +109,25 @@ func substrateConfig() (kubernetes.SubstrateConfig, error) {
 	if err != nil {
 		return config, err
 	}
+	log.Println("BRIGADE_ID: ", config.BrigadeID)
 	config.APIAddress, err = os.GetRequiredEnvVar("API_ADDRESS")
 	if err != nil {
 		return config, err
 	}
+	log.Println("API_ADDRESS: ", config.APIAddress)
 	config.GitInitializerImage, err =
 		os.GetRequiredEnvVar("GIT_INITIALIZER_IMAGE")
 	if err != nil {
 		return config, err
 	}
+	log.Println("GIT_INITIALIZER_IMAGE: ", config.GitInitializerImage)
 	gitInitializerImagePullPolicyStr, err :=
 		os.GetRequiredEnvVar("GIT_INITIALIZER_IMAGE_PULL_POLICY")
 	if err != nil {
 		return config, err
 	}
+	log.Println("GIT_INITIALIZER_IMAGE_PULL_POLICY: ",
+		config.GitInitializerImagePullPolicy)
 	config.GitInitializerImagePullPolicy =
 		api.ImagePullPolicy(gitInitializerImagePullPolicyStr)
 	config.GitInitializerWindowsImage, err =
@@ -127,31 +135,42 @@ func substrateConfig() (kubernetes.SubstrateConfig, error) {
 	if err != nil {
 		return config, err
 	}
+	log.Println("GIT_INITIALIZER_WINDOWS_IMAGE: ",
+		config.GitInitializerWindowsImage)
 	gitInitializerWindowsImagePullPolicyStr, err :=
 		os.GetRequiredEnvVar("GIT_INITIALIZER_WINDOWS_IMAGE_PULL_POLICY")
 	if err != nil {
 		return config, err
 	}
+	log.Println("GIT_INITIALIZER_WINDOWS_IMAGE_PULL_POLICY: ",
+		config.GitInitializerWindowsImagePullPolicy)
 	config.GitInitializerWindowsImagePullPolicy =
 		api.ImagePullPolicy(gitInitializerWindowsImagePullPolicyStr)
 	config.DefaultWorkerImage, err = os.GetRequiredEnvVar("DEFAULT_WORKER_IMAGE")
 	if err != nil {
 		return config, err
 	}
+	log.Println("DEFAULT_WORKER_IMAGE: ", config.DefaultWorkerImage)
 	defaultWorkerImagePullPolicyStr, err :=
 		os.GetRequiredEnvVar("DEFAULT_WORKER_IMAGE_PULL_POLICY")
 	if err != nil {
 		return config, err
 	}
+	log.Println("DEFAULT_WORKER_IMAGE_PULL_POLICY: ",
+		config.DefaultWorkerImagePullPolicy)
 	config.DefaultWorkerImagePullPolicy =
 		api.ImagePullPolicy(defaultWorkerImagePullPolicyStr)
 	config.WorkspaceStorageClass, err =
 		os.GetRequiredEnvVar("WORKSPACE_STORAGE_CLASS")
+	if err != nil {
+		return config, err
+	}
+	log.Println("WORKSPACE_STORAGE_CLASS: ", config.WorkspaceStorageClass)
 	config.NodeSelectorKey = os.GetEnvVar("NODE_SELECTOR_KEY", "")
 	config.NodeSelectorValue = os.GetEnvVar("NODE_SELECTOR_VALUE", "")
 	config.TolerationKey = os.GetEnvVar("TOLERATION_KEY", "")
 	config.TolerationValue = os.GetEnvVar("TOLERATION_VALUE", "")
-	return config, err
+	return config, nil
 }
 
 // thirdPartyAuthHelper returns an appropriate instance of
@@ -162,12 +181,14 @@ func thirdPartyAuthHelper(
 ) (api.ThirdPartyAuthHelper, error) {
 	thirdPartyAuthStrategy :=
 		os.GetEnvVar("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyDisabled)
+	log.Println("THIRD_PARTY_AUTH_STRATEGY: ", thirdPartyAuthStrategy)
 	switch api.ThirdPartyAuthStrategy(thirdPartyAuthStrategy) {
 	case thirdPartyAuthStrategyOIDC:
 		providerURL, err := os.GetRequiredEnvVar("OIDC_PROVIDER_URL")
 		if err != nil {
 			return nil, err
 		}
+		log.Println("OIDC_PROVIDER_URL: ", providerURL)
 		provider, err := oidc.NewProvider(ctx, providerURL)
 		if err != nil {
 			return nil, err
@@ -184,6 +205,7 @@ func thirdPartyAuthHelper(
 		if err != nil {
 			return nil, err
 		}
+		log.Println("OIDC_REDIRECT_URL_BASE: ", redirectURLBase)
 		return myOIDC.NewThirdPartyAuthHelper(
 			&oauth2.Config{
 				Endpoint:     provider.Endpoint(),
@@ -211,6 +233,7 @@ func thirdPartyAuthHelper(
 		}
 		config.AllowedOrganizations =
 			os.GetStringSliceFromEnvVar("GITHUB_ALLOWED_ORGANIZATIONS", []string{})
+		log.Println("GITHUB_ALLOWED_ORGANIZATIONS: ", config.AllowedOrganizations)
 		return github.NewThirdPartyAuthHelper(config), nil
 	case thirdPartyAuthStrategyDisabled:
 		return nil, nil
@@ -232,10 +255,12 @@ func sessionsServiceConfig() (api.SessionsServiceConfig, error) {
 		os.GetBoolFromEnvVar("ROOT_USER_ENABLED", false); err != nil {
 		return config, err
 	}
+	log.Println("ROOT_USER_ENABLED: ", config.RootUserEnabled)
 	if config.RootUserSessionTTL, err =
 		os.GetDurationFromEnvVar("ROOT_USER_SESSION_TTL", time.Hour); err != nil {
 		return config, err
 	}
+	log.Println("ROOT_USER_SESSION_TTL: ", config.RootUserSessionTTL)
 	if config.RootUserEnabled {
 		if config.RootUserPassword, err =
 			os.GetRequiredEnvVar("ROOT_USER_PASSWORD"); err != nil {
@@ -244,17 +269,24 @@ func sessionsServiceConfig() (api.SessionsServiceConfig, error) {
 	}
 	thirdPartyAuthStrategy :=
 		os.GetEnvVar("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyDisabled)
+	log.Println("THIRD_PARTY_AUTH_STRATEGY: ", thirdPartyAuthStrategy)
 	config.ThirdPartyAuthEnabled =
 		thirdPartyAuthStrategy != thirdPartyAuthStrategyDisabled
 	if config.UserSessionTTL, err =
 		os.GetDurationFromEnvVar("USER_SESSION_TTL", time.Hour); err != nil {
 		return config, err
 	}
+	log.Println("USER_SESSION_TTL: ", config.UserSessionTTL)
 	config.AdminUserIDs =
 		os.GetStringSliceFromEnvVar("ADMIN_USER_IDS", []string{})
+	log.Println("ADMIN_USER_IDS: ", config.AdminUserIDs)
 	config.GrantReadOnInitialLogin, err =
 		os.GetBoolFromEnvVar("GRANT_READ_ON_INITIAL_LOGIN", false)
-	return config, err
+	if err != nil {
+		return config, err
+	}
+	log.Println("GRANT_READ_ON_INITIAL_LOGIN: ", config.GrantReadOnInitialLogin)
+	return config, nil
 }
 
 // usersServiceConfig returns an api.UsersServiceConfig based on configuration
@@ -281,8 +313,10 @@ func tokenAuthFilterConfig(
 		os.GetBoolFromEnvVar("ROOT_USER_ENABLED", false); err != nil {
 		return config, err
 	}
+	log.Println("ROOT_USER_ENABLED: ", config.RootUserEnabled)
 	thirdPartyAuthStrategy :=
 		os.GetEnvVar("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategyDisabled)
+	log.Println("THIRD_PARTY_AUTH_STRATEGY", thirdPartyAuthStrategy)
 	config.ThirdPartyAuthEnabled = thirdPartyAuthStrategy != "disabled"
 	schedulerToken, err := os.GetRequiredEnvVar("SCHEDULER_TOKEN")
 	if err != nil {
@@ -306,19 +340,23 @@ func serverConfig() (restmachinery.ServerConfig, error) {
 	if err != nil {
 		return config, err
 	}
+	log.Println("API_SERVER_PORT: ", config.Port)
 	config.TLSEnabled, err = os.GetBoolFromEnvVar("TLS_ENABLED", false)
 	if err != nil {
 		return config, err
 	}
+	log.Println("TLS_ENABLED: ", config.TLSEnabled)
 	if config.TLSEnabled {
 		config.TLSCertPath, err = os.GetRequiredEnvVar("TLS_CERT_PATH")
 		if err != nil {
 			return config, err
 		}
+		log.Println("TLS_CERT_PATH: ", config.TLSCertPath)
 		config.TLSKeyPath, err = os.GetRequiredEnvVar("TLS_KEY_PATH")
 		if err != nil {
 			return config, err
 		}
+		log.Println("TLS_KEY_PATH: ", config.TLSKeyPath)
 	}
 	return config, nil
 }
