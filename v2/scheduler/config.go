@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/brigadecore/brigade-foundations/os"
 	"github.com/brigadecore/brigade/sdk/v3/restmachinery"
 	"github.com/brigadecore/brigade/v2/scheduler/internal/lib/queue/amqp"
@@ -12,6 +14,7 @@ func apiClientConfig() (string, string, restmachinery.APIClientOptions, error) {
 	if err != nil {
 		return address, "", opts, err
 	}
+	log.Println("API_ADDRESS: ", address)
 	token, err := os.GetRequiredEnvVar("API_TOKEN")
 	if err != nil {
 		return address, token, opts, err
@@ -30,10 +33,12 @@ func readerFactoryConfig() (amqp.ReaderFactoryConfig, error) {
 	if err != nil {
 		return config, err
 	}
+	log.Println("AMQP_ADDRESS: ", config.Address)
 	config.Username, err = os.GetRequiredEnvVar("AMQP_USERNAME")
 	if err != nil {
 		return config, err
 	}
+	log.Println("AMQP_USERNAME: ", config.Username)
 	config.Password, err = os.GetRequiredEnvVar("AMQP_PASSWORD")
 	return config, err
 }
