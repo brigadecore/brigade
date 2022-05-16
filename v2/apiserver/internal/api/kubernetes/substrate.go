@@ -926,7 +926,6 @@ func (s *substrate) createWorkerPod(
 			corev1.VolumeMount{
 				Name:      "workspace",
 				MountPath: "/var/workspace",
-				ReadOnly:  true,
 			},
 		)
 	}
