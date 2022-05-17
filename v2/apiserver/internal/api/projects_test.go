@@ -311,9 +311,41 @@ func TestProjectServiceUpdate(t *testing.T) {
 		assertions func(error)
 	}{
 		{
-			name: "unauthorized",
+			name: "user does not have read permissions",
 			service: &projectsService{
+				authorize: neverAuthorize,
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.IsType(t, &meta.ErrAuthorization{}, err)
+			},
+		},
+		{
+			name: "error retrieving project from store",
+			service: &projectsService{
+				authorize: alwaysAuthorize,
+				projectsStore: &mockProjectsStore{
+					GetFn: func(ctx context.Context, s string) (Project, error) {
+						return Project{}, errors.New("store error")
+					},
+				},
+			},
+			assertions: func(err error) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "store error")
+				require.Contains(t, err.Error(), "error retrieving project")
+			},
+		},
+		{
+			name: "user is not a project developer",
+			service: &projectsService{
+				authorize:        alwaysAuthorize,
 				projectAuthorize: neverProjectAuthorize,
+				projectsStore: &mockProjectsStore{
+					GetFn: func(ctx context.Context, s string) (Project, error) {
+						return Project{}, nil
+					},
+				},
 			},
 			assertions: func(err error) {
 				require.Error(t, err)
@@ -323,8 +355,12 @@ func TestProjectServiceUpdate(t *testing.T) {
 		{
 			name: "error updating project in store",
 			service: &projectsService{
+				authorize:        alwaysAuthorize,
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
+					GetFn: func(ctx context.Context, s string) (Project, error) {
+						return Project{}, nil
+					},
 					UpdateFn: func(context.Context, Project) error {
 						return errors.New("store error")
 					},
@@ -339,8 +375,12 @@ func TestProjectServiceUpdate(t *testing.T) {
 		{
 			name: "not found error from store; create option not set",
 			service: &projectsService{
+				authorize:        alwaysAuthorize,
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
+					GetFn: func(ctx context.Context, s string) (Project, error) {
+						return Project{}, nil
+					},
 					UpdateFn: func(context.Context, Project) error {
 						return &meta.ErrNotFound{}
 					},
@@ -387,8 +427,12 @@ func TestProjectServiceUpdate(t *testing.T) {
 		{
 			name: "success",
 			service: &projectsService{
+				authorize:        alwaysAuthorize,
 				projectAuthorize: alwaysProjectAuthorize,
 				projectsStore: &mockProjectsStore{
+					GetFn: func(ctx context.Context, s string) (Project, error) {
+						return Project{}, nil
+					},
 					UpdateFn: func(context.Context, Project) error {
 						return nil
 					},
