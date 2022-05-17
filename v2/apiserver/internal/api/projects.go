@@ -345,27 +345,34 @@ func (p *projectsService) Update(
 	project Project,
 	opts ProjectUpdateOptions,
 ) error {
+	if err := p.authorize(ctx, RoleReader, ""); err != nil {
+		return err
+	}
+
+	if _, err := p.projectsStore.Get(ctx, project.ID); err != nil {
+		_, isErrNotFound := errors.Cause(err).(*meta.ErrNotFound)
+		if !isErrNotFound || !opts.CreateIfNotFound {
+			return errors.Wrapf(err, "error retrieving project %q from store",
+				project.ID)
+		}
+
+		_, err = p.Create(ctx, project)
+		return err
+	}
+
 	if err :=
 		p.projectAuthorize(ctx, project.ID, RoleProjectDeveloper); err != nil {
 		return err
 	}
 
-	err := p.projectsStore.Update(ctx, project)
-	if err == nil {
-		return nil
-	}
-	_, isErrNotFound := errors.Cause(err).(*meta.ErrNotFound)
-	if !isErrNotFound || !opts.CreateIfNotFound {
+	if err := p.projectsStore.Update(ctx, project); err != nil {
 		return errors.Wrapf(
 			err,
 			"error updating project %q in store",
 			project.ID,
 		)
 	}
-
-	// If we get to here, we need to try to create the project
-	_, err = p.Create(ctx, project)
-	return err
+	return nil
 }
 
 func (p *projectsService) Delete(ctx context.Context, id string) error {
