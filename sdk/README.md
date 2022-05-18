@@ -13,7 +13,7 @@ consumers of this SDK.
 
 ## Quickstart
 
-```console
+```shell
 $ go get github.com/brigadecore/brigade/sdk/v3
 ```
 
@@ -92,7 +92,7 @@ Brigade 2 CLI (`brig`), and authenticating.
 Once you are set up and have authenticated, you may create a service account
 whose token can be used in testing your new gateway (or other tool).
 
-```console
+```shell
 $ brig service-account create --id <name> --description <description>
 ```
 
