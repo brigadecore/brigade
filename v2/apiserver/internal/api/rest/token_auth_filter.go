@@ -111,7 +111,8 @@ func (t *tokenAuthFilter) Decorate(handle http.HandlerFunc) http.HandlerFunc {
 			" ",
 			2,
 		)
-		if len(headerValueParts) != 2 || headerValueParts[0] != "Bearer" {
+		if len(headerValueParts) != 2 ||
+			strings.ToLower(headerValueParts[0]) != "bearer" {
 			t.writeResponse(
 				w,
 				http.StatusUnauthorized,
