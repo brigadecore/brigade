@@ -1,7 +1,7 @@
 {{$currentNode := .}}
 <nav class="open-menu">
 <ul>
-<li class="{{ if .IsHome }}active{{ end }}"><a href="{{ .Site.BaseURL }}">Home</a></li>
+<li class="{{ if .IsHome }}active{{ end }}"><a href="{{ .Site.BaseURL }}/{{ .Site.Language.Lang }}">Home</a></li>
 {{- if eq .Site.Params.ordersectionsby "title" -}}
   {{- range .Site.Home.Sections.ByTitle -}}
 {{template "open-menu" dict "sect" . "currentnode" $currentNode}}
