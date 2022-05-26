@@ -22,6 +22,6 @@ Happy reading!
 [architecture and design]: /topics/design.md
 [roles of interaction]: /topics/roles.md
 [scripting guides]: /topics/scripting/index.md
-[development on Brigade itself]: /topics/developers.md
+[development on Brigade itself]: /topics/contributor-guide/index.md
 [filing an issue]: https://github.com/brigadecore/brigade/issues/new
 
