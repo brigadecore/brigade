@@ -3,6 +3,8 @@ title: Contributor Guide
 description: How to get contribute to Brigade
 section: contributor-guide
 weight: 8
+aliases:
+  - /topics/contributor-guide/index.md
 ---
 
 This contributor guide is intended as a comprehensive introduction for
