@@ -18,10 +18,10 @@ As you peruse the documentation, if you notice a gap or area needing attention, 
 
 Happy reading!
 
-[Advanced Topics]: ../topics/index.md
-[architecture and design]: ../topics/design.md
-[roles of interaction]: ../topics/roles.md
-[scripting guides]: ../topics/scripting/index.md
-[development on Brigade itself]: ../topics/developers.md
+[Advanced Topics]: /topics/index.md
+[architecture and design]: /topics/design.md
+[roles of interaction]: /topics/roles.md
+[scripting guides]: /topics/scripting/index.md
+[development on Brigade itself]: /topics/contributor-guide/index.md
 [filing an issue]: https://github.com/brigadecore/brigade/issues/new
 

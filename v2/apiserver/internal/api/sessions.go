@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/brigadecore/brigade-foundations/crypto"
@@ -367,7 +368,7 @@ func (s *sessionsService) Authenticate(
 				}
 			}
 			for _, adminID := range s.config.AdminUserIDs {
-				if user.ID == adminID {
+				if strings.ToLower(user.ID) == strings.ToLower(adminID) {
 					for _, role := range []Role{
 						RoleAdmin,
 						RoleProjectCreator,
