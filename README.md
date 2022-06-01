@@ -35,7 +35,6 @@ gateways, and more.
 Our event gateways receive events from upstream systems (the "outside world")
 and convert them to Brigade events that are emitted into Brigade's event bus.
 
-* [ACR (Azure Container Registry) Gateway](https://github.com/brigadecore/brigade-acr-gateway)
 * [Bitbucket Gateway](https://github.com/brigadecore/brigade-bitbucket-gateway/tree/v2)
 * [CloudEvents Gateway](https://github.com/brigadecore/brigade-cloudevents-gateway)
 * [Docker Hub Gateway](https://github.com/brigadecore/brigade-dockerhub-gateway)
