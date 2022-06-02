@@ -68,7 +68,7 @@ the Brigade CLI later when we're ready to take Brigade for a test drive.
     ```shell
     $ helm install brigade \
         oci://ghcr.io/brigadecore/brigade \
-        --version v2.5.0 \
+        --version v2.6.0 \
         --create-namespace \
         --namespace brigade \
         --wait \
@@ -109,7 +109,7 @@ environments:
 **Linux**
 
 ```shell
-$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.5.0/brig-linux-amd64
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.6.0/brig-linux-amd64
 $ chmod +x /usr/local/bin/brig
 ```
 
@@ -126,7 +126,7 @@ Alternatively, you can install manually by directly downloading a pre-built
 binary:
 
 ```shell
-$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.5.0/brig-darwin-amd64
+$ curl -Lo /usr/local/bin/brig https://github.com/brigadecore/brigade/releases/download/v2.6.0/brig-darwin-amd64
 $ chmod +x /usr/local/bin/brig
 ```
 
@@ -134,7 +134,7 @@ $ chmod +x /usr/local/bin/brig
 
 ```powershell
 > mkdir -force $env:USERPROFILE\bin
-> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.5.0/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
+> (New-Object Net.WebClient).DownloadFile("https://github.com/brigadecore/brigade/releases/download/v2.6.0/brig-windows-amd64.exe", "$ENV:USERPROFILE\bin\brig.exe")
 > $env:PATH+=";$env:USERPROFILE\bin"
 ```
 
@@ -268,7 +268,7 @@ Below is example output:
 Created event "2cb85062-f964-454d-ac5c-526cdbdd2679".
 
 Waiting for event's worker to be RUNNING...
-2021-08-10T16:52:01.699Z INFO: brigade-worker version: v2.5.0
+2021-08-10T16:52:01.699Z INFO: brigade-worker version: v2.6.0
 2021-08-10T16:52:01.701Z DEBUG: writing default brigade.ts to /var/vcs/.brigade/brigade.ts
 2021-08-10T16:52:01.702Z DEBUG: using npm as the package manager
 2021-08-10T16:52:01.702Z DEBUG: path /var/vcs/.brigade/node_modules/@brigadecore does not exist; creating it
@@ -327,7 +327,7 @@ using the following commands:
 $ helm uninstall brigade -n brigade
 $ helm install brigade \
     oci://ghcr.io/brigadecore/brigade \
-    --version v2.5.0 \
+    --version v2.6.0 \
     --namespace brigade \
     --wait \
     --timeout 300s

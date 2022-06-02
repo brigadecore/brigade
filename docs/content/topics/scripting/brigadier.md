@@ -90,7 +90,7 @@ Then, create a `package.json` file with our brigadier dependency added:
 ```json
 {
   "dependencies": {
-    "@brigadecore/brigadier": "^2.5.0"
+    "@brigadecore/brigadier": "^2.6.0"
   }
 }
 ```
