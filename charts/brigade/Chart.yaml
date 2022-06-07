@@ -13,6 +13,6 @@ maintainers:
   email: cncf-brigade-maintainers@lists.cncf.io
 dependencies:
 - name: mongodb
-  version: 10.29.2
+  version: 10.31.5
   repository: https://charts.bitnami.com/bitnami
   condition: mongodb.enabled
