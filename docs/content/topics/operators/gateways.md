@@ -34,7 +34,6 @@ listing of compatible gateways.
 
 Currently, the list of official Brigade gateways is as follows:
 
-* [ACR (Azure Container Registry) Gateway](https://github.com/brigadecore/brigade-acr-gateway)
 * [BitBucket Gateway](https://github.com/brigadecore/brigade-bitbucket-gateway/tree/v2)
 * [CloudEvents Gateway](https://github.com/brigadecore/brigade-cloudevents-gateway)
 * [Docker Hub Gateway](https://github.com/brigadecore/brigade-dockerhub-gateway)
