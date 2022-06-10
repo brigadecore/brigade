@@ -1,8 +1,9 @@
-baseURL = "https://docs.brigade.sh/"
+baseURL = "https://docs.brigade.sh"
 title = "Brigade Docs"
 theme = "hugo-theme-techdoc"
 canonifyURLs = "true"
 relativeURLs = "true"
+defaultContentLanguage = "en"
 
 [params]
   title = "Brigade"
@@ -29,6 +30,16 @@ relativeURLs = "true"
     name = "GitHub"
     url = "https://github.com/brigadecore/brigade"
     weight = 3
+
+[languages]
+    [languages.en]
+        contentDir = "content/english"
+        languageName = "English"
+        weight = 1
+    [languages.pt]
+        contentDir = "content/portuguese/conteudo"
+        languageName = "Português"
+        weight = 2
 
 [markup]
   [markup.highlight]
