@@ -2145,13 +2145,3 @@ artemis:
 
   service:
     type: ClusterIP
-
-externalAMQP:
-  address:
-  username:
-  password:
-
-azureServiceBus:
-  address:
-  username:
-  password:
