@@ -158,7 +158,7 @@ multiple containers within a cluster.
 
 Brigade has several functional concepts.
 
-![Design Overview](img/design-overview.png)
+![Design Overview](/img/design-overview.png)
 
 A Gateway is a workload, typically a Kubernetes Deployment fronted by a Service
 or Ingress, that transforms a trigger (inbound webhook, item on queue) into a
