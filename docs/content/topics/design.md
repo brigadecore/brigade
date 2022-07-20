@@ -17,7 +17,7 @@ Brigade is an in-cluster runtime environment. It interprets scripts, and execute
 them often by invoking resources inside of the cluster. Brigade is event-based
 scripting of Kubernetes pipelines.
 
-![Event-based scripting of pipelines](https://v1.docs.brigade.sh/img/design-01.png)
+![Event-based scripting of pipelines](/img/design-01.png)
 
 - Event-based: A script execution is triggered by a Brigade event.
 - Scripting: Programs are expressed as JavaScript files that declare one or more event handlers.
@@ -25,7 +25,7 @@ scripting of Kubernetes pipelines.
 
 ## Terminology
 
-![Brigade Run](https://v1.docs.brigade.sh/img/design-02.png)
+![Brigade Run](/img/design-02.png)
 
 - **Brigade** is the name of the project. Often, the term is used generically to
   refer to the in-cluster Brigade components.
@@ -158,13 +158,13 @@ multiple containers within a cluster.
 
 Brigade has several functional concepts.
 
-![Design Overview](https://v1.docs.brigade.sh/img/design-overview.png)
+![Design Overview](img/design-overview.png)
 
 A Gateway is a workload, typically a Kubernetes Deployment fronted by a Service
 or Ingress, that transforms a trigger (inbound webhook, item on queue) into a
 Brigade event.
 
-![Service, Trigger, Gateway, Event](https://v1.docs.brigade.sh/img/design-trigger-gateway.png)
+![Service, Trigger, Gateway, Event](/img/design-trigger-gateway.png)
 
 The illustration above shows how GitHub translates a Git event into a webhook, which
 the optional [Brigade GitHub Gateway](./github.md) translates into an event to be
