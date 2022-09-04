@@ -40,6 +40,10 @@ defaultContentLanguage = "en"
         contentDir = "content/portuguese/conteudo"
         languageName = "Português"
         weight = 2
+    [languages.hi]
+        contentDir = "content/hindi/content"
+        languageName = "हिंदी"
+        weight = 3
 
 [markup]
   [markup.highlight]
