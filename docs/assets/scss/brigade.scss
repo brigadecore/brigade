@@ -29,18 +29,18 @@ header {
   background: linear-gradient(to right, $boxl, $boxd);
   padding: 0px;
 
-  // This sticky banner should be removed when the v1 support window ends.
   section.sticky-banner {
-    background: $colorm;
+    background: #dc3545;
     color: #ffffff;
     font-size: 0.925em;
     line-height: 1;
-    padding: 0.75em 0 0.5em;
+    padding: 0.75em 0 1.25em;
     text-align: center;
     a {
       color: #ffffff;
       text-decoration: underline;
     }
+    h4 { padding-bottom: 1em; }
   }
 
   // Logo
@@ -67,7 +67,7 @@ div.global-menu {
     padding-right: 45px;
     position: absolute;
     text-align: right;
-    top: 3.75em;
+    top: 7.75em;
     width: 100%;
     ul {
       li {
@@ -194,7 +194,7 @@ main {
   h1, h2, h3, h4, h5, h6 {
     font-family: $work;
   }
-  
+
   h1 {
     color: $colord;
     font-size: 2em;
@@ -248,7 +248,7 @@ main {
     margin-left: auto;
     margin-right: auto;
   }
-  
+
   div.global-menu nav {
     display: none;
   }
