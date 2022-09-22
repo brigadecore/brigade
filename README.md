@@ -8,7 +8,6 @@
 [![slack](https://img.shields.io/badge/slack-brigade-brightgreen.svg?logo=slack)](https://kubernetes.slack.com/messages/C87MF1RFD)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/82538e29-5fcd-4196-8fa5-8de57cc096ed/deploy-status)](https://app.netlify.com/sites/brigade-docs/deploys)
 
-
 <img width="100" align="left" src="logo.png">
 
 Brigade is a full-featured, event-driven scripting platform built on top of
